@@ -747,7 +747,7 @@ YY_RULE_SETUP
 case 2:
 YY_RULE_SETUP
 #line 16 "lexer.l"
-{ return NUMBER; }
+{ yylval=atoi(yytext); return NUMBER; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP

@@ -13,7 +13,7 @@ digit [0-9]
 
 %%
 [ \t\n]         { }
-[0-9]{1}        { return NUMBER; }
+[0-9]{1}        { yylval=atoi(yytext); return NUMBER; }
 [+\-*/]          { return OPERATOR; }
 
 %%
