@@ -457,13 +457,15 @@ int yy_flex_debug = 0;
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
-#line 1 "lex.l"
-#line 4 "lex.l"
+#line 1 "lexer.l"
+#line 4 "lexer.l"
 #include <iostream>
+#include "parser.tab.h"  // to get the token types that we return
+
 using namespace std;
 #define YY_DECL extern "C" int yylex()
 
-#line 467 "lex.yy.c"
+#line 469 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -677,9 +679,9 @@ YY_DECL
 		}
 
 	{
-#line 12 "lex.l"
+#line 14 "lexer.l"
 
-#line 683 "lex.yy.c"
+#line 685 "lex.yy.c"
 
 	while ( 1 )		/* loops until end-of-file is reached */
 		{
@@ -739,25 +741,25 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 /* rule 1 can match eol */
 YY_RULE_SETUP
-#line 13 "lex.l"
-{ cout << "Found newline or tab or space" << endl; }
+#line 15 "lexer.l"
+{ }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 14 "lex.l"
-{ cout << "Found a digit: " << yytext << endl; }
+#line 16 "lexer.l"
+{ return NUMBER; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 15 "lex.l"
-{ cout << "Found an operator: " << yytext << endl; }
+#line 17 "lexer.l"
+{ return OPERATOR; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 17 "lex.l"
+#line 19 "lexer.l"
 ECHO;
 	YY_BREAK
-#line 761 "lex.yy.c"
+#line 763 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1752,10 +1754,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 16 "lex.l"
+#line 18 "lexer.l"
 
 
-int main(int, char**) {
-    yylex();
-}
 
