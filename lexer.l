@@ -12,8 +12,9 @@ using namespace std;
 digit [0-9]
 
 %%
-[ \t\n]         { }
-[0-9]{1}        { yylval=atoi(yytext); return NUMBER; }
-[+\-*/]          { return OPERATOR; }
+[ \t]           { }
+\n              { return ENDL; }
+[0-9]+          { yylval=atoi(yytext); return NUMBER; }
+[+\-*/]         { yylval=yytext[0]; return OPERATOR; }
 
 %%

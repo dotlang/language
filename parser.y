@@ -13,15 +13,44 @@ void yyerror(const char *s);
 
 %token NUMBER
 %token OPERATOR
+%token ENDL
 
-%start EXPR
+%start PROGRAM
 
 %%
 
-EXPR :  NUMBER OPERATOR NUMBER  { cout << "bison found triple: " << $1 << $2 << $3 << endl; }
-        |
-        NUMBER OPERATOR NUMBER EXPR   { cout << "bison found triple: " << $1 << $2 << $3 << endl; }
-        ;
+PROGRAM :   |
+            PROGRAM LINE 
+            ;
+
+LINE:       ENDL {
+            }
+            |
+            EXP ENDL
+            ;
+    
+EXP:        NUMBER {
+            }
+            |
+            NUMBER OPERATOR EXP { 
+                if ( $2 == '+' ) {
+                    $$ = $1+$3;
+                    cout << $1 << '+' << $3 << '=' << $$ << endl;
+                }
+                if ( $2 == '-' ) {
+                    $$ = $1-$3;
+                    cout << $1 << '-' << $3 << '=' << $$ << endl;
+                }
+                if ( $2 == '*' ) {
+                    $$=$1*$3;
+                    cout << $1 << '*' << $3 << '=' << $$ << endl;
+                }
+                if ( $2 == '/' ) {
+                    $$=$1/$3;
+                    cout << $1 << '/' << $3 << '=' << $$ << endl;
+                }
+            }
+            ;
 
 %%
 

@@ -1,0 +1,2 @@
+make
+./out/newlang.out
