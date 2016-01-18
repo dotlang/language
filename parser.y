@@ -9,6 +9,8 @@ extern "C" int yylex();
 extern "C" FILE *yyin;
  
 void yyerror(const char *s);
+
+FILE* output_file;
 %}
 
 %token NUMBER
@@ -36,18 +38,22 @@ EXP:        NUMBER {
                 if ( $2 == '+' ) {
                     $$ = $1+$3;
                     cout << $1 << '+' << $3 << '=' << $$ << endl;
+                    fprintf(output_file, "ADD %d,%d\n", $1, $3);
                 }
                 if ( $2 == '-' ) {
                     $$ = $1-$3;
                     cout << $1 << '-' << $3 << '=' << $$ << endl;
+                    fprintf(output_file, "SUB %d,%d\n", $1, $3);
                 }
                 if ( $2 == '*' ) {
                     $$=$1*$3;
                     cout << $1 << '*' << $3 << '=' << $$ << endl;
+                    fprintf(output_file, "MUL %d,%d\n", $1, $3);
                 }
                 if ( $2 == '/' ) {
                     $$=$1/$3;
                     cout << $1 << '/' << $3 << '=' << $$ << endl;
+                    fprintf(output_file, "DIV %d,%d\n", $1, $3);
                 }
             }
             ;
@@ -65,10 +71,18 @@ int main(int, char**) {
     // set flex to read from it instead of defaulting to STDIN:
     yyin = myfile;
     
+    output_file = fopen("output", "w");
+    if (!output_file) {
+        cout << "I can't open output file!" << endl;
+        return -1;
+    }
+
     // parse through the input until there is no more:
     do {
         yyparse();
     } while (!feof(yyin));
+
+    fclose(output_file);
     
 }
 
