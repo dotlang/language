@@ -33,14 +33,30 @@ void write_to_output(inst_type itype,
     fwrite(&inst, sizeof(instruction), 1, output_file);
 }
 
+void dump_operand(operand* op) {
+    if ( op == NULL ) return;
+
+    switch ( op->type ) {
+        case NONE: printf("NONE"); break;
+        case INT: printf("INT"); break;
+    }
+
+    if ( op->type == NONE ) return;
+
+    printf("(%d), ", op->value.int_value);
+}
+
 void dump_instruction(instruction* inst) {
     switch ( inst->opcode ) {
         case ADD: printf("ADD"); break;
     }
 
-    /*dump_operand(inst->op1);
-    dump_operand(inst->op2);
-    dump_operand(inst->op2);*/
+    printf(" ");
+
+    dump_operand(&inst->op1);
+    dump_operand(&inst->op2);
+    dump_operand(&inst->op3);
+    printf("\n");
 }
 
 %}
@@ -74,9 +90,9 @@ EXP:        NUMBER {
                     operand_value ov1;
                     ov1.int_value = $1;
                     operand_value ov2;
-                    ov2.int_value = $2;
+                    ov2.int_value = $3;
 
-                    write_to_output(ADD, INT, &ov1, INT, &ov2, INT, NULL);
+                    write_to_output(ADD, INT, &ov1, INT, &ov2, NONE, NULL);
                 }
                 if ( $2 == '-' ) {
                     $$ = $1-$3;

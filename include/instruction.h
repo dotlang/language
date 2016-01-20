@@ -7,6 +7,7 @@ typedef enum {
 
 
 typedef enum {
+    NONE,
     INT
 } operand_type;
 
