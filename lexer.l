@@ -1,11 +1,13 @@
 %option noyywrap
 
 %{
-#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "parser.tab.h"  // to get the token types that we return
 
-using namespace std;
-#define YY_DECL extern "C" int yylex()
+#define YY_DECL extern int yylex()
 
 %}
 
@@ -18,5 +20,6 @@ digit [0-9]
 [+\-*/]         { yylval.chr=yytext[0]; return OPERATOR; }
 =               { return EQ; }
 [a-zA-Z]        { yylval.sval = strdup(yytext); return IDENTIFIER; }
+"//"[^\r\n]*    { /* skip comments */ }
 
 %%

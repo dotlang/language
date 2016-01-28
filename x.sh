@@ -1,7 +1,8 @@
+echo ">>>>>>>>>>>>>>>>>>>>>>>BUILD>>>>";
 make
-echo ">>>>>>>>>>>>>>>>>>>>>>>";
-cat input
-echo ">>>>>>>>>>>>>>>>>>>>>>>";
-./out/newlang.out
+echo ">>>>>>>>>>>>>>>>>>>>>>>INPUT>>>>";
+cat ./examples/ex$1.c
+echo ">>>>>>>>>>>>>>>>>>>>>>>OUTPUT>>>>";
+./out/newlang.out ./examples/ex$1.c
 
 
