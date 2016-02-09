@@ -19,14 +19,11 @@ typedef struct hashtable_s {
 
 /* Create a new hashtable. */
 hashtable_t *ht_create( int size );
-int ht_hash( hashtable_t *hashtable, char *key );
-entry_t *ht_newpair( char *key, void *value );
 int ht_set( hashtable_t *hashtable, char *key, void *value );
 void *ht_get( hashtable_t *hashtable, char *key );
 
-
-
-
-
-
+//private
+int ht_hash( hashtable_t *hashtable, char *key );
+//private
+entry_t *ht_newpair( char *key, void *value );
 
