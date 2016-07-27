@@ -1,4 +1,4 @@
-.DEFAULT_GOAL := newlang
+.DEFAULT_GOAL := electron
 
 clean:
 	rm out/newlang.out
@@ -12,5 +12,5 @@ parser.tab.c parser.tab.h: parser.y
 lex.yy.c: lexer.l parser.tab.h
 	cd autogen && flex ../lexer.l
 
-newlang: lex.yy.c parser.tab.c parser.tab.h
+electron: lex.yy.c parser.tab.c parser.tab.h
 	gcc src/hash.c autogen/parser.tab.c autogen/lex.yy.c -o ./out/newlang.out
