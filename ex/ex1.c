@@ -6,15 +6,17 @@
 //write another application in C, called `runner`:
 //  input: binary output of the previous step
 //  output: execution
-package ex1 { 
-    int main() {
+package ex1 
+{ 
+    int main() 
+    {
         return 10;
     }
 }
-//here is the formay way to define what we expect so future tests can be automated
-//** EXIT CODE = 10 (exit code)
-//** OUTPUT ~ (standard output must contain this string), we can have multiple of this
-//** OUTPUT = (standard output must be this)
+//here is the format way to define what we expect so future tests can be automated
+//> EXIT_CODE 10 (exit code)
+//> OUTPUT ~ (standard output must contain this string), we can have multiple of this
+//> OUTPUT = (standard output must be this)
 
 //expected output opcodes:
 //first opcode is ENTR

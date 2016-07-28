@@ -14,9 +14,10 @@
 digit [0-9]
 
 %%
+
 [ \t]           { }
 \n              { return ENDL; }
-[0-9]+          { yylval.ival=atoi(yytext);return NUMBER; }
+[0-9]+          { yylval.ival=atoi(yytext); return NUMBER; }
 [+\-*/]         { yylval.chr=yytext[0]; return OPERATOR; }
 =               { return EQ; }
 [a-zA-Z]        { yylval.sval = strdup(yytext); return IDENTIFIER; }

@@ -36,12 +36,12 @@ void yyerror(const char *s);
 %%
 
 PROGRAM :   |
-            PROGRAM LINE ENDL
+            LINE PROGRAM ENDL
             ;
 
 LINE:       |
             IDENTIFIER EQ postfix_expression {
-                printf("111Assigning %d to %s\n", $3, $1);
+                printf("Assigning %d to %s\n", $3, $1);
                 int* value = (int*)malloc(sizeof(int));
                 (*value) = $3;
 
@@ -111,7 +111,6 @@ int main(int argc, char** argv) {
     }
 
     symtable = ht_create(1000);
-    //ht_set(symtable, "A", NULL);
 
     // set flex to read from it instead of defaulting to STDIN:
     yyin = myfile;

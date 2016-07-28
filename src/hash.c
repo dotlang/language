@@ -29,7 +29,7 @@ hashtable_t *ht_create( int size ) {
 /* Hash a string for a particular hash table. */
 int ht_hash( hashtable_t *hashtable, char *key ) {
 
-	unsigned long int hashval;
+	unsigned long int hashval = 0;
 	int i = 0;
 
 	/* Convert our string to an integer */
@@ -38,6 +38,8 @@ int ht_hash( hashtable_t *hashtable, char *key ) {
 		hashval += key[ i ];
 		i++;
 	}
+
+	/* printf("hash value for %s(%d) is %d\n", key, strlen(key), hashval); */
 
 	return hashval % hashtable->size;
 }
@@ -66,6 +68,7 @@ int ht_set( hashtable_t *hashtable, char *key, void *value ) {
 	entry_t *last = NULL;
 
 	int bin = ht_hash( hashtable, key );
+	/* printf("ht_set at bin %d\n", bin); */
 
 	entry_t* next = hashtable->table[ bin ];
 
@@ -76,6 +79,7 @@ int ht_set( hashtable_t *hashtable, char *key, void *value ) {
 
 	/* There's already a pair with the same key. this is an error */
 	if( next != NULL && next->key != NULL && strcmp( key, next->key ) == 0 ) {
+	    /* printf("ret0 for %s\n", key); */
         return 0;
 	/* Nope, could't find it.  Time to grow a pair. */
 	} else {
@@ -106,6 +110,7 @@ void *ht_get( hashtable_t *hashtable, char *key ) {
 	entry_t *pair;
 
 	bin = ht_hash( hashtable, key );
+	/* printf("get from bin %d\n", bin); */
 
 	/* Step through the bin, looking for our value. */
 	pair = hashtable->table[ bin ];
@@ -115,9 +120,11 @@ void *ht_get( hashtable_t *hashtable, char *key ) {
 
 	/* Did we actually find anything? */
 	if( pair == NULL || pair->key == NULL || strcmp( key, pair->key ) != 0 ) {
+	    /* printf("get - not found for %s\n", key); */
 		return NULL;
 
 	} else {
+	    /* printf("get - found for %s\n", key); */
 		return pair->value;
 	}
 }
