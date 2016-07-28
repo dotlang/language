@@ -2,7 +2,7 @@
 
 ###Note: This pet project is a work in progress, so expect a lot of changes.
 
-After having worked with a lot of different languages (C#, Java, Perl, Javascript, C, C++, Python, D) it still irritates me that these languages are sometimes seem to intend to be overly complex. This doesn't mean I don't like them but still doesn't mean I should not be looking for a programming language which is both simple and powerful.
+After having worked with a lot of different languages (C#, Java, Perl, Javascript, C, C++, Python, D) it still irritates me that these languages are sometimes seem to _intend_ to be overly complex. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
 
 That's why I am creating the new programming language: Electron. 
 
