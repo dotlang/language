@@ -12,7 +12,7 @@ I will follow 3 rules when designing this language:
 2. **Simple**: Easy to learn, read, write and understand. Consistent and logical, as much as possible. 
 3. **Powerful**: It should enable developers to handle large and complex softwre projects, with relative ease.
 
-I know that achieving all of above goals at the same time is something impossible so there will definitely be trade-offs where I will let go of some features to have other (more desirable) features. I will remove some features or limit some features in the language where I think it will help achieve above goals.
+I know that achieving all of above goals at the same time is something impossible so there will definitely be trade-offs where I will let go of some features to have other (more desirable) features. I will remove some features or limit some features in the language where I think it will help achieve above goals. One important guideline I use is "convention over configuration" which basically means, I will prefer a set of pre-defined rules over keywords in the language.
 
 This project will finally consist of these components:
 
@@ -50,7 +50,7 @@ Primitives are passed by value. Everything else (arrays, string, classes, ...) w
 
 ### General structure of source code files
 
-Code is organized into modules. Each module is represented by a directory in the filesystem. Modules have a hierarchical structure:
+Code is organized into packages. Each package is represented by a directory in the file-system. Packages have a hierarchical structure:
 
 core  
 |-----math  
@@ -61,9 +61,26 @@ core
 |-----|-----tcp  
 |-----|-----socket  
 
-In the above examples `core.math, core.io, core.sys, core.net, core.http, core.tcp, core.socket` are all modules. Each module can have zero or more source code files. Each source code file must contains definition for one of `class` or `package` or `interface`. Class and Interface are same as what we have in other PLs. Package is like a static class (so it does not have state). More exaplanation later. Name of the class/interface/package is same as the file-name, so there is no need for a keyword to declare and specify start/end of class definition.
+In the above examples `core.math, core.io, core.sys, core.net, core.http, core.tcp, core.socket` are all packages. Each package can have zero or more source code files. Each source code file represents a module. There are three module types which are differentiated based on their contents: `class`, `static class` and `interface` (More exaplanation later). 
+
+Name of the class/interface is same as the filename, so there is no need for a keyword to declare and specify start/end of a definition.
 
 There are a set of compiler directives which you can use in the source code but they must be first elements in the file (before methods and fields definition).
 
 Definition of fields and methods is very similar to other OOP languages like C# or Java.
+
+###Hello World application
+
+Here's how an almost empty application looks:
+
+file: `simple.e`
+```
+@package
+
+int main()
+{
+    return 0; 
+}
+```
+
 
