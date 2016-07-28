@@ -8,11 +8,11 @@ That's why I am creating the new programming language: Electron.
 
 I will follow 3 rules when designing this language:
 
-1. Fast: Performance of the final output should be high. Much better than dynamic languages like Python. Something like Java.
-2. Simple: Easy to learn, read, write and understand. Consistent and logical, as much as possible. 
-3. Powerful: It should let developer(s) handle large and complex softwre projects, with relative ease.
+1. **Fast**: Performance of the final output should be high. Much better than dynamic languages like Python. Something like Java.
+2. **Simple**: Easy to learn, read, write and understand. Consistent and logical, as much as possible. 
+3. **Powerful**: It should enable developers to handle large and complex softwre projects, with relative ease.
 
-I know that achieving all of above goals at the same time is something impossible so there will definitely be trade-offs where I will let go of some features to have other (more desirable) features. I will remove some features or limit some features in the language where I think it will help achieve design goals.
+I know that achieving all of above goals at the same time is something impossible so there will definitely be trade-offs where I will let go of some features to have other (more desirable) features. I will remove some features or limit some features in the language where I think it will help achieve above goals.
 
 This project will finally consist of these components:
 
