@@ -91,8 +91,9 @@ You don't need to use any keyword or directive about type of class.
 Notes:
 - It is invalid for a class to have bodies only for some of methods. Either all of methods should have bodies or none of them should have.
 - There is no inheritance. We provide composition features instead.
-- If a class name (filename) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is considered public. This rule applies to methods and fields of the class too.
-- 
+- If a class name (filename) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is considered public.
+
+
 ###Class members
 
 - Class members starting with underscore are considered private and can only be accessed by other class members.
@@ -100,10 +101,29 @@ Notes:
 - constructor
 - You can define default values for method parameters (e.g. `int func1(int x, int y=0)`).
 - You can call a method using named arguments (e.g. `func1(x=4, y=9)`).
+- Constructors are special methods named `new` with implicit return type (e.g. `new() { return core.init.create<myclass>(); }`)
+- The syntax to initialize variables is like C++ uniform initialization (e.g. `class1 c = class1 {10, 4};` or `interface1 intr = class1 {3, 5}`)
+- When accessing local class fields, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`).
 
 ###Compiler directives and annotation
+
+You can add compiler directives to the code. These are like Java's annotations or C# attributes. They all start with at sign (@). Below is a list of them:
+- @assert
+- @import
+- @warn
+- @implements
+- @annotate (or @@)
+- @ctor
+- @expose
+
 ###Generics
+
 ###Exception handling
+
+- You can use `throw` keywords to throw an exception object and exit current method: `throw {1, 2}`
+- You can catch thrown exception in your code using: ?
+- You can use `defer` keywords (same as what golang has) to define code that must be executed even in case of exception.
+
 ###Naming
 - It is suggested to use camelCasing for methods, fields and local variables.
 
