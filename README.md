@@ -17,9 +17,9 @@ I know that achieving all of above goals at the same time is something impossibl
 This project will finally consist of these components:
 
 1. A specification of the language (Formal specification + Examples, descriptios and best practices)
-2. A source code compiler (Pre-processor + Interpreter at the first stage, as wiring a compiler needs much more time)
-2. Debugger tools
-3. Package manager (used to create, install and deploy packages, something like CPAN, PyPi + their client-side tools)
+2. A source code compiler (Pre-processor + Interpreter at the first stage, as writing a compiler needs much more time)
+2. Debugger tools (for future)
+3. Package manager (for future, used to create, install and deploy packages, something like CPAN, PyPi + their client-side tools)
  
 ###Paradigm
 
@@ -43,14 +43,17 @@ Usage of these keywords is almost same as C++ or Java.
 ### Operators
 
 The operators are almost similar to C language:
-- Conditional: `&& || ! ==`
+- Conditional: `&& || ! == != >= <=`
 - Bitwise: `& | ^ ~ << >>`
+- Math '\+ \- \* % ++ -- ** `
 
 ### Data passing
 
 Primitives are passed by value. Everything else (arrays, string, classes, ...) will be passed by reference.
 
-### General structure of source code files
+Although `string` is not primitive, but all string literals will be handled by the compiler behind the scene.
+
+### General structure
 
 Code is organized into packages. Each package is represented by a directory in the file-system. Packages have a hierarchical structure:
 
@@ -63,7 +66,7 @@ core
 |-----|-----tcp  
 |-----|-----socket  
 
-In the above examples `core.math, core.io, core.sys, core.net, core.http, core.tcp, core.socket` are all packages. Each package can have zero or more source code files. Each source code file represents a class. Because some OSs have case insensitive naming for file/directory, it is suggested that name of packages and source code files be all lower case. You can separate parts of a name using underscore (e.g. `data_structures`).
+In the above examples `core.math, core.io, core.sys, core.net, core.net.http, core.net.tcp, core.net.socket` are all packages. Each package can have a number of source code files. Each source code file represents one class. Because some OSs have case insensitive naming for file/directory, it is suggested that name of packages and source code files be all lower case. You can separate parts of a name using underscore (e.g. `data_structures`).
 
 There are three types of classes: `simple class`, `static class` and `interface class` (or `interface`). 
 
@@ -81,60 +84,64 @@ int main()
 }
 ```
 
-###Class
+This is a static class with only one method, called `main` which returns `0` (Very similar to C/C++ except no input it sent to the `main` function).
+
+###Classes
 
 Each source code file represents a class which can be a simple class (like a normal class in other OOP languages), static class (exactly as the name suggests, you cannot instantiate them and their fields are shared globally) and interface class (same as interface in other languages). 
 
-You don't need to use any keyword or directive about type of class.
-- If class has no fields and none of methods have a body, then it's an `interface class`.
-- If class has a constructor method, it is a `simple class` and no one can use it as a static class.
+You don't need to use any keyword or directive to explicitly indicate type of the class.
+
+- If class has no fields or constructor, and none of the methods have a body, then it's an `interface class`.
+- If class has a constructor method, it is a `simple class`.
 - If class has no constructor method, it is a `static class`. 
 
 Notes:
-- It is invalid for a class to have bodies only for some of methods. Either all of methods should have bodies or none of them should have.
-- There is no inheritance. We provide composition features instead.
-- If a class name (filename) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is considered public.
+- It is invalid for a class to have bodies only for some of methods. Either all of methods should have bodies or none of them should have (no abstract class).
+- There is no inheritance. We provide composition instead.
+- If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is considered public.
 
 
 ###Class members
 
 - Class members starting with underscore are considered private and can only be accessed by other class members.
-- Some basic methods are provided by default for all classes: `toString`, `getHashCode`. You can override the default implementation by adding these methods to your class.
-- constructor
+- Some basic methods are provided by default for all classes: `toString`, `getHashCode`. You can override the default implementation, simply by adding these methods to your class.
 - You can define default values for method parameters (e.g. `int func1(int x, int y=0)`).
 - You can call a method using named arguments (e.g. `func1(x=4, y=9)`).
-- Constructors are special methods named `new` with implicit return type (e.g. `new() { return core.init.create<myclass>(); }`)
+- Constructors are special methods named `new` with implicit return type (e.g. `new() { return core.init.create<myclass>(); }`).
 - The syntax to initialize variables is like C++ uniform initialization (e.g. `class1 c = class1 {10, 4};` or `interface1 intr = class1 {3, 5}` or `class1 c = {}` to use default constructor)
 - When accessing local class fields, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`).
 
 ###Compiler directives and annotation
 
-You can add compiler directives to the code. These are like Java's annotations or C# attributes. They all start with at sign (@). Below is a list of them:
+You can add compiler directives to the code. These are like Java's annotations or C# attributes. They all start with at sign (`@`). Below is a list of them:
+
 - `@assert`: Insert runtime assertations (pre-requisite for a method) defined before function definition.
-- `@import`: Include another package (e.g. `@import(core.data)`, `@import(core.data.util)` to include a static class, `@import(core.data, ".")` to include members of `core.data` inside current namespace).
+- `@import`: Include another package (e.g. `@import(core.data.*)` to include all classes inside a package, `@import(core.data.util)` to include a static class, `@import(core.data.* -> .)` to include members of `core.data` inside current namespace).
 - `@implements`: Indicate this class should implement methods of another interface.
-- `@annotate` (or `@@`): Apply a custom annotation (e.g. `@@class1 {1, 2, 3}`)
-- `@ctor`: Auto implement a default constructor for current class
-- `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose`), some of them (`@expose(method1, method2)`) or all except some (`@expose(!method1, !method2)`)
+- `@annotate` (or `@@`): Apply a custom annotation (e.g. `@@class1 {1, 2, 3}`).
+- `@ctor`: Auto implement a default constructor for current class.
+- `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose`), some of them (`@expose(method1, method2)`) or all except some (`@expose(!method1, !method2)`).
 - `@enum`: Define enum type (Used in it's own file). `@enum(int) sat=1; sun=2; mon; tue; wed; thu; fri;`.
 - `@template`: Explained in the corresponding section.
 
 ###Generics
 
-You can use compiler directive `@template` to indicate current class is a generic class. You defined arguments of the template like `@template(T)` and use `T` inside the class body.
+You can use compiler directive `@template` to indicate current class is a generic class. You can define arguments of the template like `@template(T)` and use `T` inside the class body.
 
-To use the generic class you use this syntax: `class1<int> c = class1<int> {}`. When you instantiate a generic class, compiler will re-write it's whole file using provided info, compile and run your code. You can even use template for defining non-type data:
+To use the generic class you use this syntax: `class1<int> c = class1<int> {}`. When you instantiate a generic class, compiler will re-write it's whole file using provided data, then compile your code. You can even use template for passing a data which is not a type name:
 
 ```
 @template(T)
 
 int x = T;
-
 ```
 
 Assuming above code is in a file named `class1` you can use `class1 c1 = class1<10>{}` to have `c1.x` equal to 10.
 
 To escape from all the complexities of generics in other languages, we have no other notation to limit template type or variable template types.
+
+? - Maybe we provide default value for template arguments.
 
 ###Exception handling
 
@@ -181,19 +188,22 @@ A set of core packages will be included in the language which provide basic and 
 - Calling C/C++ methods
 - Reflection and extracting annotations
 - Data conversion
+- Exception handling
 
 ###Standard package
 
 There will be another set of packages built on top of core which provide common utilities. This will be much larger and more complex than core, so it will be independent of the core and language. Here is a list of some of classes in this package collection:
 
-- Network and web
+- I/O (Network, Console, File, ...)
 - Thread and synchronization management
 - Serialization/Deserialization
-- map/reduce/filter utilities
-- Regex
+- Functional programming: map/reduce/filter
+- String and Regex
 - Collections (Stack, Queue, Linked List, ...)
 - Encryption
 - Math
-- File I/O
-- Console I/O
 - ...
+
+#Package Manager
+
+The package manager is a separate utility which helps you package, publsh, install and deploy packages (Like `maven` or `dub`).
