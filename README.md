@@ -28,9 +28,11 @@ Electron is a declarative, object-oriented programming language.
 ###Keywords
 
 1. **Conditional**: if, else, switch, case, default
-2. **Loop**: for, break, continue
+2. **Loop**: for, while, break, continue
 2. **Control**: return, defer, throw
 3. **Type handling**: void, const, auto, null
+
+Usage of these keywords is almost same as C++ or Java.
 
 ### Primitive data types
 
@@ -169,4 +171,29 @@ interface1 intr = interface1
 - **Digit separators**: `1_000_000`.
 - **Suffixed if and for**: `return 1 if x>1;`, `x++ for(10)`, `x += y for (y: array)`.
 - **Arrays**: Same notation as Java `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]`.
+- **For**: You can use `for` to iterate over an array `for(x:array1)` or repeat something `n` times `for(n)`.
 
+###Core package
+
+A set of core packages will be included in the language which provide basic and low-level functionality:
+
+- Calling C/C++ methods
+- Calling OS services
+- Thread and synchronization management
+- Reflection and extracting annotations
+- Data conversion
+
+###Standard package
+
+There will be another set of packages built on top of core which provide common utilities. This will be much larger and more complex than core, so it will be independent of the core and language. Here is a list of some of classes in this package collection:
+
+- Network and web
+- Serialization/Deserialization
+- map/reduce/filter utilities
+- Regex
+- Collections (Stack, Queue, Linked List, ...)
+- Encryption
+- Math
+- File I/O
+- Console I/O
+- ...
