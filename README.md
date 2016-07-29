@@ -102,21 +102,37 @@ Notes:
 - You can define default values for method parameters (e.g. `int func1(int x, int y=0)`).
 - You can call a method using named arguments (e.g. `func1(x=4, y=9)`).
 - Constructors are special methods named `new` with implicit return type (e.g. `new() { return core.init.create<myclass>(); }`)
-- The syntax to initialize variables is like C++ uniform initialization (e.g. `class1 c = class1 {10, 4};` or `interface1 intr = class1 {3, 5}`)
+- The syntax to initialize variables is like C++ uniform initialization (e.g. `class1 c = class1 {10, 4};` or `interface1 intr = class1 {3, 5}` or `class1 c = {}` to use default constructor)
 - When accessing local class fields, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`).
 
 ###Compiler directives and annotation
 
 You can add compiler directives to the code. These are like Java's annotations or C# attributes. They all start with at sign (@). Below is a list of them:
-- `@assert`: Insert runtime assertations (pre-requisite for a method)
+- `@assert`: Insert runtime assertations (pre-requisite for a method) defined before function definition.
 - `@import`: Include another module or package
 - `@implements`: Indicate this class should implement methods of another interface.
 - `@annotate` (or `@@`): Apply a custom annotation (e.g. `@@class1 {1, 2, 3}`)
 - `@ctor`: Auto implement a default constructor for current class
 - `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose`), some of them (`@expose(method1, method2)`) or all except some (`@expose(!method1, !method2)`)
-- `@enum`: Define enum type. `@enum(int) sat=1; sun=2; mon; tue; wed; thu; fri;`.
+- `@enum`: Define enum type in it's own file. `@enum(int) sat=1; sun=2; mon; tue; wed; thu; fri;`.
+- `@template`: Explained in the corresponding section.
 
 ###Generics
+
+You can use compiler directive `@template` to indicate current class is a generic class. You defined arguments of the template like `@template(T)` and use `T` inside the class body.
+
+To use the generic class you use this syntax: `class1<int> c = class1<int> {}`. When you instantiate a generic class, compiler will re-write it's whole file using provided info, compile and run your code. You can even use template for defining non-type data:
+
+```
+@template(T)
+
+int x = T;
+
+```
+
+Assuming above code is in a file named `class1` you can use `class1 c1 = class1<10>{}` to have `c1.x` equal to 10.
+
+To escape from all the complexities of generics in other languages, we have no other notation to limit template type or variable template types.
 
 ###Exception handling
 
@@ -155,4 +171,4 @@ interface1 intr = interface1
 - **Literals**: `0xffe`, `0b0101110101`.
 - **Digit separators**: `1_000_000`.
 - **Suffixed if and for**: `return 1 if x>1;`, `x++ for(10)`, `x += y for (y: array)`.
- 
+
