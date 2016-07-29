@@ -111,12 +111,12 @@ Notes:
 
 You can add compiler directives to the code. These are like Java's annotations or C# attributes. They all start with at sign (@). Below is a list of them:
 - `@assert`: Insert runtime assertations (pre-requisite for a method) defined before function definition.
-- `@import`: Include another module or package
+- `@import`: Include another package (e.g. `@import(core.data)`, `@import(core.data.util)` to include a static class, `@import(core.data, ".")` to include members of `core.data` inside current namespace).
 - `@implements`: Indicate this class should implement methods of another interface.
 - `@annotate` (or `@@`): Apply a custom annotation (e.g. `@@class1 {1, 2, 3}`)
 - `@ctor`: Auto implement a default constructor for current class
 - `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose`), some of them (`@expose(method1, method2)`) or all except some (`@expose(!method1, !method2)`)
-- `@enum`: Define enum type in it's own file. `@enum(int) sat=1; sun=2; mon; tue; wed; thu; fri;`.
+- `@enum`: Define enum type (Used in it's own file). `@enum(int) sat=1; sun=2; mon; tue; wed; thu; fri;`.
 - `@template`: Explained in the corresponding section.
 
 ###Generics
@@ -177,9 +177,8 @@ interface1 intr = interface1
 
 A set of core packages will be included in the language which provide basic and low-level functionality:
 
-- Calling C/C++ methods
 - Calling OS services
-- Thread and synchronization management
+- Calling C/C++ methods
 - Reflection and extracting annotations
 - Data conversion
 
@@ -188,6 +187,7 @@ A set of core packages will be included in the language which provide basic and 
 There will be another set of packages built on top of core which provide common utilities. This will be much larger and more complex than core, so it will be independent of the core and language. Here is a list of some of classes in this package collection:
 
 - Network and web
+- Thread and synchronization management
 - Serialization/Deserialization
 - map/reduce/filter utilities
 - Regex
