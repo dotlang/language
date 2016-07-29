@@ -137,7 +137,7 @@ To escape from all the complexities of generics in other languages, we have no o
 ###Exception handling
 
 - You can use `throw` keywords to throw an exception object and exit current method: `throw {1, 2}`
-- You can catch thrown exception in your code using: ?
+- You can catch thrown exception in your code using `if` command: `int y = func1(); if ( $ ) ...`.
 - You can use `defer` keywords (same as what golang has) to define code that must be executed even in case of exception.
 
 ###Anonymous class
@@ -158,13 +158,10 @@ interface1 intr = interface1
 };
 ```
 
-###Naming
+###Misc
 
 - It is suggested to use camelCasing for methods, fields and local variables.
 - It is suggested to name package and classes using lower case names, connecting words using underscore (e.g. `thread_manager`).
-
-###Misc
-
 - **Operator overloading**: A class can overload `[]` and `==` operators for it's instances by having methods called `setData`, `getData` and `equals`.
 - **Checking for implements**: You can use `(interface1)class1` to check if `class1` implements `interface1`.
 - **const**: You can define class fields, function arguments, local variables and function output as constant.
