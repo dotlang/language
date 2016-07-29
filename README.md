@@ -206,4 +206,4 @@ There will be another set of packages built on top of core which provide common 
 
 #Package Manager
 
-The package manager is a separate utility which helps you package, publsh, install and deploy packages (Like `maven` or `dub`).
+The package manager is a separate utility which helps you package, publish, install and deploy packages (Like `maven` or `dub`).
