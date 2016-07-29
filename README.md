@@ -171,4 +171,5 @@ interface1 intr = interface1
 - **Literals**: `0xffe`, `0b0101110101`.
 - **Digit separators**: `1_000_000`.
 - **Suffixed if and for**: `return 1 if x>1;`, `x++ for(10)`, `x += y for (y: array)`.
+- **Arrays**: Same notation as Java `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]`.
 
