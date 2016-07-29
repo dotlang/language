@@ -63,7 +63,7 @@ core
 
 In the above examples `core.math, core.io, core.sys, core.net, core.http, core.tcp, core.socket` are all packages. Each package can have zero or more source code files. Each source code file represents a class. Because some OSs have case insensitive naming for file/directory, it is suggested that name of packages and source code files be all lower case. You can separate parts of a name using underscore (e.g. `data_structures`).
 
-There are three types of classes: `simple class`, `static class` and `interface class` (More exaplanation later). 
+There are three types of classes: `simple class`, `static class` and `interface class` (or `interface`). 
 
 Syntax for definition of fields and methods is very similar to other OOP languages like C# or Java.
 
@@ -108,13 +108,13 @@ Notes:
 ###Compiler directives and annotation
 
 You can add compiler directives to the code. These are like Java's annotations or C# attributes. They all start with at sign (@). Below is a list of them:
-- @assert
-- @import
-- @warn
-- @implements
-- @annotate (or @@)
-- @ctor
-- @expose
+- `@assert`: Insert runtime assertations (pre-requisite for a method)
+- `@import`: Include another module or package
+- `@implements`: Indicate this class should implement methods of another interface.
+- `@annotate` (or `@@`): Apply a custom annotation (e.g. `@@class1 {1, 2, 3}`)
+- `@ctor`: Auto implement a default constructor for current class
+- `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose`), some of them (`@expose(method1, method2)`) or all except some (`@expose(!method1, !method2)`)
+- `@enum`: Define enum type. `@enum(int) sat=1; sun=2; mon; tue; wed; thu; fri;`.
 
 ###Generics
 
@@ -124,9 +124,35 @@ You can add compiler directives to the code. These are like Java's annotations o
 - You can catch thrown exception in your code using: ?
 - You can use `defer` keywords (same as what golang has) to define code that must be executed even in case of exception.
 
+###Anonymous class
+
+You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface. If the interface has only one method, the definition can be in short form.
+
+```
+//short form
+interface1 intr = (x, y) -> { x+y; };
+
+//long form
+interface1 intr = interface1 
+{
+    int function1(int x,int y) 
+    {
+        return x+y;
+    }
+};
+```
+
 ###Naming
+
 - It is suggested to use camelCasing for methods, fields and local variables.
+- It is suggested to name package and classes using lower case names, connecting words using underscore (e.g. `thread_manager`).
 
 ###Misc
-- A class can overload `[]` and `==` operators for it's instances by having methods called `setData`, `getData` and `equals`.
-- 
+
+- **Operator overloading**: A class can overload `[]` and `==` operators for it's instances by having methods called `setData`, `getData` and `equals`.
+- **Checking for implements**: You can use `(interface1)class1` to check if `class1` implements `interface1`.
+- **const**: You can define class fields, function arguments, local variables and function output as constant.
+- **Literals**: `0xffe`, `0b0101110101`.
+- **Digit separators**: `1_000_000`.
+- **Suffixed if and for**: `return 1 if x>1;`, `x++ for(10)`, `x += y for (y: array)`.
+ 
