@@ -39,7 +39,7 @@ The target of this programming language is distributed server-side network softw
 1. **Conditional**: `if`, `else`, `switch`, `case`, `default`, `iif`
 2. **Loop**: `for`, `while`, `break`, `continue`
 2. **Control**: `return`, `defer`, `throw`, `promise`
-3. **Type handling**: `void`, `const`, `auto`, `null`
+3. **Type handling**: `void`, `const`, `auto`, `null`, `this`
 
 Usage of these keywords is almost same as C++ or Java, so I omit explanation of them in detail.
 
@@ -52,14 +52,15 @@ Usage of these keywords is almost same as C++ or Java, so I omit explanation of 
 ### Operators
 
 The operators are almost similar to C language:
+
 - Conditional: `&& || ! == != >= <=`
 - Bitwise: `& | ^ ~ << >>`
 - Math `\+ \- \* % ++ -- ** `
-- Other `() =~ (?->)`
+- Other `{} =~ (?->)`
 
 ### Data passing
 
-Primitives are passed by value. Everything else (arrays, string, classes, ...) will be passed by reference.
+Primitives are passed by value. Everything else (array, string, classes, ...) will be passed by reference.
 
 Although `string` is not primitive, but all string literals will be handled by the compiler behind the scene.
 
@@ -104,7 +105,7 @@ You don't need to use any keyword or directive to explicitly indicate type of th
 
 - If class has no fields or constructor, and none of the methods have a body, then it's an `interface class`.
 - If class has a constructor method, it is a `simple class`.
-- If class has no constructor method, it is a `static class`. So you can reference their members using `class_name.member_name` notation.
+- If class has no constructor method, it is a `static class`. So you can reference their members using `class_name.memberName` notation.
 
 Notes:
 - It is invalid for a class to have bodies only for some of methods. Either all of methods should have bodies or none of them should have (no abstract class).
@@ -120,7 +121,7 @@ Notes:
 - You can overload functions based on their input/output.
 - Constructor is a special method named `new` with implicit return type (e.g. `new() { return {}; }`). The `{}` allocates a new instance of the current class in memory.
 - The syntax to initialize variables is like C++ uniform initialization (e.g. `class1 c = class1 {10, 4};` or `interface1 intr = class1 {3, 5}` or `class1 c = {3}`).
-- When accessing local class fields and methods, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`).
+- When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`). In statis class, you have to refer to them using `class_name.memberName` notation.
 
 ###Compiler directives and annotation
 
@@ -147,8 +148,17 @@ To use the generic class you use this syntax: `class1<int> c = class1<int> {}`. 
 
 int x = T;
 ```
-
 Assuming above code is in a file named `class1` you can use `class1 c1 = class1<10>{}` to have `c1.x` equal to 10.
+
+```
+//default value for U is empty
+template(T,U=void,U_NAME=void)
+
+int x = T;
+
+//if value of U is empty (void) this will create nothing
+U U_NAME;
+```
 
 To escape from all the complexities of generics in other languages, we have no other notation to limit template type or variable template types.
 
@@ -222,11 +232,11 @@ It is discouraged to mix enum-based constructor with other constructors. Your cl
 
 - It is suggested to use camelCasing for methods, fields and local variables.
 - It is suggested to name package and classes using lower case names, connecting words using underscore (e.g. `thread_manager`).
-- It is suggested to use all capital names for `@enum` marks.
+- It is suggested to use all capital names for `@enum` marks and template arguments.
 - **Operator overloading**: A class can overload `[]` and `==` operators for it's instances by having methods called `setData`, `getData` and `equals`.
 - **Checking for implements**: You can use `(interface1)class1` to check if `class1` implements `interface1`.
 - **const**: You can define class fields, function arguments, local variables and function output as constant. You can only delay value assignment for a const variable if it is non-primitive.
-- **Literals**: `0xffe`, `0b0101110101`.
+- **Literals**: `0xffe`, `0b0101110101`, `true`, `false`.
 - **Digit separators**: `1_000_000`.
 - **Suffixed if and for**: `return 1 if x>1;`, `x++ for(10)`, `x += y for (y: array)`.
 - **Arrays**: Same notation as Java `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]`.
@@ -234,6 +244,7 @@ It is discouraged to mix enum-based constructor with other constructors. Your cl
 - **Special variables**: `$` refers to the latest exception thrown. `#` refers to the result of last function call (used in post-condition assertion).
 - **String interpolation**: You can embed variables inside a string to be automatically converted to string.
 - **iif**: if/else as an expression `iif(a, b, c)` is same as `a ? b:c` in other languages.
+- **Hashtable**: `int[string] h = { "OH":12, "CA":33 }; h["NY"] = 9;`
 
 ###Core package
 
