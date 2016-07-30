@@ -17,20 +17,28 @@ I know that achieving all of above goals at the same time is something impossibl
 This project will finally consist of these components:
 
 1. A specification of the language (Formal specification + Examples, descriptios and best practices)
-2. A source code compiler (Pre-processor + Interpreter at the first stage, as writing a compiler needs much more time)
+2. A JIT interpreter/compiler
 2. Debugger tools (for future)
 3. Package manager (for future, used to create, install and deploy packages, something like CPAN, PyPi + their client-side tools)
- 
+
+Why not compile to native code using an ahead-of-time compiler? Because with the ever increasing scope of open source software and Software as a Service revolution, almost always you either use an open source library/framework or use a web-based service. Two main benefits of native code compiler are:
+1. Hide some advanced algorithm or intellectual property
+2. Performance
+
+As I said, the benefits of the first one are more and more deminishing in current IT world. For the second part, a JIT compiler can be at par with an ahead-of-time compiler (if not better). Other than that, the JIT compilation provides more flexibility and better optimization techniques.
+
+Of course the disadvantage of this approach is that the user of your software needs the the JIT compiler in addition to the source code. For the source code, we can make the process as straightforward as possible, using packaging techniques.
+
 ###Paradigm
 
 Electron is a declarative, object-oriented programming language. The target of this programming language is server-side cloud software which normally handle a lot of clients connected remotely over a network.
 
 ###Keywords
 
-1. **Conditional**: if, else, switch, case, default
-2. **Loop**: for, while, break, continue
-2. **Control**: return, defer, throw
-3. **Type handling**: void, const, auto, null
+1. **Conditional**: `if`, `else`, `switch`, `case`, `default`
+2. **Loop**: `for`, `while`, `break`, `continue`
+2. **Control**: `return`, `defer`, `throw`
+3. **Type handling**: `void`, `const`, `auto`, `null`
 
 Usage of these keywords is almost same as C++ or Java.
 
@@ -107,7 +115,7 @@ Notes:
 - Class members starting with underscore are considered private and can only be accessed by other class members.
 - Some basic methods are provided by default for all classes: `toString`, `getHashCode`. You can override the default implementation, simply by adding these methods to your class.
 - You can define default values for method parameters (e.g. `int func1(int x, int y=0)`).
-- Constructor is a special method named `new` with implicit return type (e.g. `new() { return (); }`). The `()` is a special global function which allocates a new instance of the current class in memory.
+- Constructor is a special method named `new` with implicit return type (e.g. `new() { return (); }`). The `()` is a special global operator which allocates a new instance of the current class in memory.
 - The syntax to initialize variables is like C++ uniform initialization (e.g. `class1 c = class1 {10, 4};` or `interface1 intr = class1 {3, 5}` or `class1 c = {3}`).
 - When accessing local class fields, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`).
 
@@ -152,7 +160,7 @@ To escape from all the complexities of generics in other languages, we have no o
 You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface. If the interface has only one method, the definition can be in short form.
 
 ```
-//short form
+//short form, when interface has only one method
 interface1 intr = (x, y) -> { x+y; };
 
 //long form
@@ -206,7 +214,7 @@ It is discouraged to mix enum-based constructor with other constructors. Your cl
 - It is suggested to use all capital names for `@enum` names.
 - **Operator overloading**: A class can overload `[]` and `==` operators for it's instances by having methods called `setData`, `getData` and `equals`.
 - **Checking for implements**: You can use `(interface1)class1` to check if `class1` implements `interface1`.
-- **const**: You can define class fields, function arguments, local variables and function output as constant.
+- **const**: You can define class fields, function arguments, local variables and function output as constant. You can only delay value assignment for a const variable if it is non-primitive.
 - **Literals**: `0xffe`, `0b0101110101`.
 - **Digit separators**: `1_000_000`.
 - **Suffixed if and for**: `return 1 if x>1;`, `x++ for(10)`, `x += y for (y: array)`.
@@ -243,4 +251,12 @@ The package manager is a separate utility which helps you package, publish, inst
 
 #Decisions to make
 
-? - should we have something like `Object` in Java or `void*` in C++? So that we can implement a `printf` method.
+? - should we have something like `Object` in Java or `void*` in C++? So that we can implement a `printf` method. Maybe we can somehow mis-use `auto` keywords for this. `int func(auto x, auto y)`
+? - level of support for concurrency? library level (methods and classes) or syntax level (keywords)? Something like this:
+```
+invoke class1.func1(1, 2, 3), result_callback 
+{
+    void onResult() { ... }
+    void onError() { ... }
+};
+```
