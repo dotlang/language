@@ -10,7 +10,7 @@ I will follow 3 rules when designing this language:
 
 1. **Fast**: Performance of the final output should be high. Much better than dynamic languages like Python. Something like Java.
 2. **Simple**: Easy to learn, read, write and understand. Consistent and logical, as much as possible. Software development is complex enough. Let's keep is as simple as possible and save complexities for when we really need it.
-3. **Powerful**: It should enable developers to handle large and complex softwre projects, with relative ease.
+3. **Powerful**: It should enable developers to handle large and complex softwre projects, with relative ease (even at runtime with hot code reload).
 
 I know that achieving all of above goals at the same time is something impossible so there will definitely be trade-offs where I will let go of some features to have other (more desirable) features. I will remove some features or limit some features in the language where I think it will help achieve above goals. One important guideline I use is "convention over configuration" which basically means, I will prefer a set of pre-defined rules over keywords in the language.
 
@@ -35,9 +35,9 @@ Electron is a declarative, object-oriented programming language. The target of t
 
 ###Keywords
 
-1. **Conditional**: `if`, `else`, `switch`, `case`, `default`
+1. **Conditional**: `if`, `else`, `switch`, `case`, `default`, `iif`
 2. **Loop**: `for`, `while`, `break`, `continue`
-2. **Control**: `return`, `defer`, `throw`
+2. **Control**: `return`, `defer`, `throw`, `promise`
 3. **Type handling**: `void`, `const`, `auto`, `null`
 
 Usage of these keywords is almost same as C++ or Java.
@@ -51,8 +51,8 @@ Usage of these keywords is almost same as C++ or Java.
 ### Operators
 
 The operators are almost similar to C language:
-- Conditional: `&& || ! == != >= <=`
-- Bitwise: `& | ^ ~ << >>`
+- Conditional: `&& || ! == != >= <= (?=>)`
+- Bitwise: `& | ^ ~ << >> =~`
 - Math `\+ \- \* % ++ -- ** `
 
 ### Data passing
@@ -162,6 +162,7 @@ You can define anonymous classes which can act like a function pointer. Each ano
 ```
 //short form, when interface has only one method
 interface1 intr = (x, y) -> x+y;
+interface1 intr2 = x, y -> x+y;
 
 //long form
 interface1 intr = interface1 
@@ -238,6 +239,7 @@ A set of core packages will be included in the language which provide basic and 
 - Calling C/C++ methods
 - Reflection and extracting annotations
 - Data conversion
+- GC
 - Exception handling
 
 ###Standard package
@@ -260,25 +262,39 @@ The package manager is a separate utility which helps you package, publish, inst
 
 #Decision points
 
-? - should we have something like `Object` in Java or `void*` in C++? So that we can implement a `printf` method. Maybe we can somehow mis-use `auto` keywords for this. `int func(auto x, auto y)`. We can easily implement printf with string interpolation.
+N - should we have something like `Object` in Java or `void*` in C++? So that we can implement a `printf` method. Maybe we can somehow mis-use `auto` keywords for this. `int func(auto x, auto y)`. We can easily implement printf with string interpolation.
 
-? - level of support for concurrency? library level (methods and classes) or syntax level (keywords)? Something like this:
+Y - Support for concurrency built into the language
 ```
-invoke class1.func1(1, 2, 3), result_callback 
-{
-    void onResult() { ... }
-    void onError() { ... }
-};
+promise class1.func1();  //normally, run the statement in another co-routine at the moment
+future<string> f1 = promise! class1.func1(1, 2, 3);  //wait for call of invoke
+future<string> f2 = promise! { return "a"; };
+f1.invoke();
+f1.setCallback(...);
+f1.cancel();
+string result = f1.get();
 ```
-This cannot be achieved using `core` because `class1.func1(1, 2, 3)` is an expression which should be evaluated inside a coroutine. If we use `core` is will be evaluated and the result will be sent to the library. We can achieve this by using anonymous functions with help of closure:
-
-```
-int x = 1;
-core.invoke(() -> class1.func1(x, x+1, 3), result_callback { ... });
-```
-But the first version is much cleaner.
 
 Y - ternary operator is very messy but very useful (`a ? b:c`). Is there a way to make use of it in the language? Maybe:
 `if a then b else c` or `iif(a, b, c)`. We only want to evaluate `c` if `b` is `FALSE` so this cannot be done with a library function. `check(a, b, c)` (so `check` will be a keyword), `test(a, b, c)`
 
 N - Support for atomic operations in language level? This can be achieved using `core` so better not to add a new keyword/compiler feature for this.
+
+N - Operators for regex? find/match/substitute? No. This is possible using core.
+    `bool b = str =~ 'pattern'`
+
+N - map/reduce/filter, arri implements a specific interface. will be done in core.
+    arr2 = arr1.map<T>(x -> x+1);
+    arr2 = arr1.filter(x -> x>0);
+    arr2 = arr1.reduce(x,y -> x+y);
+
+N - ser/deser: core
+    string x = core.ser.serialize<obj>(obj1);
+    obj r = core.ser.deserialize<obj>(x);
+    
+N - join/fork
+    fork: using core,
+    join: in future class
+    
+Y - compare and swap
+    `bool b = (x ? 1 => 2);`
