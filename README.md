@@ -131,7 +131,8 @@ You can use compiler directive `@template` to indicate current class is a generi
 To use the generic class you use this syntax: `class1<int> c = class1<int> {}`. When you instantiate a generic class, compiler will re-write it's whole file using provided data, then compile your code. You can even use template for passing a data which is not a type name:
 
 ```
-@template(T)
+//you can set default values for template arguments
+@template(T=5)
 
 int x = T;
 ```
@@ -241,5 +242,5 @@ There will be another set of packages built on top of core which provide common 
 The package manager is a separate utility which helps you package, publish, install and deploy packages (Like `maven` or `dub`).
 
 #Decisions to make
-? - Maybe we provide default value for template arguments.
+
 ? - should we have something like `Object` in Java or `void*` in C++? So that we can implement a `printf` method.
