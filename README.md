@@ -229,6 +229,7 @@ It is discouraged to mix enum-based constructor with other constructors. Your cl
 - **For**: You can use `for` to iterate over an array `for(x:array1)` or repeat something `n` times `for(n)`.
 - **Special variables**: `$` refers to the latest exception thrown. `#` refers to the result of last function call (used in post-condition assertion).
 - **String interpolation**: You can embed variables inside a string to be automatically converted to string.
+- **iif**: if/else as an expression `iif(a, b, c)` is same as `a ? b:c` in other languages.
 
 ###Core package
 
@@ -260,6 +261,7 @@ The package manager is a separate utility which helps you package, publish, inst
 #Decision points
 
 ? - should we have something like `Object` in Java or `void*` in C++? So that we can implement a `printf` method. Maybe we can somehow mis-use `auto` keywords for this. `int func(auto x, auto y)`. We can easily implement printf with string interpolation.
+
 ? - level of support for concurrency? library level (methods and classes) or syntax level (keywords)? Something like this:
 ```
 invoke class1.func1(1, 2, 3), result_callback 
@@ -276,7 +278,7 @@ core.invoke(() -> class1.func1(x, x+1, 3), result_callback { ... });
 ```
 But the first version is much cleaner.
 
-? - ternary operator is very messy but very useful (`a ? b:c`). Is there a way to make use of it in the language? Maybe:
+Y - ternary operator is very messy but very useful (`a ? b:c`). Is there a way to make use of it in the language? Maybe:
 `if a then b else c` or `iif(a, b, c)`. We only want to evaluate `c` if `b` is `FALSE` so this cannot be done with a library function. `check(a, b, c)` (so `check` will be a keyword), `test(a, b, c)`
 
 N - Support for atomic operations in language level? This can be achieved using `core` so better not to add a new keyword/compiler feature for this.
