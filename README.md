@@ -107,23 +107,22 @@ Notes:
 - Class members starting with underscore are considered private and can only be accessed by other class members.
 - Some basic methods are provided by default for all classes: `toString`, `getHashCode`. You can override the default implementation, simply by adding these methods to your class.
 - You can define default values for method parameters (e.g. `int func1(int x, int y=0)`).
-- You can call a method using named arguments (e.g. `func1(x=4, y=9)`).
-- Constructors are special methods named `new` with implicit return type (e.g. `new() { return core.init.create<myclass>(); }`).
-- The syntax to initialize variables is like C++ uniform initialization (e.g. `class1 c = class1 {10, 4};` or `interface1 intr = class1 {3, 5}` or `class1 c = {}` to use default constructor)
+- Constructor is a special method named `new` with implicit return type (e.g. `new() { return core.init.create<myclass>(); }`).
+- The syntax to initialize variables is like C++ uniform initialization (e.g. `class1 c = class1 {10, 4};` or `interface1 intr = class1 {3, 5}` or `class1 c = {3}`).
 - When accessing local class fields, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`).
 
 ###Compiler directives and annotation
 
 You can add compiler directives to the code. These are like Java's annotations or C# attributes. They all start with at sign (`@`). Below is a list of them:
 
-- `@assert`: Insert runtime assertations (pre-requisite for a method) defined before function definition.
+- `@assert`: Insert runtime assertations (pre/post-requisite for a method) defined before function definition (e.g. `@assert(x>0) int func1(int x) { ... }@assert(#!=0)`).
 - `@import`: Include another package (e.g. `@import(core.data.*)` to include all classes inside a package, `@import(core.data.util)` to include a static class, `@import(core.data.* -> .)` to include members of `core.data` inside current namespace).
-- `@implements`: Indicate this class should implement methods of another interface.
+- `@implements`: Indicate this class implements methods of another interface.
+- `@extends`: Indicates this interface includes methods of another interface.
 - `@annotate` (or `@@`): Apply a custom annotation (e.g. `@@class1 {1, 2, 3}`).
-- `@ctor`: Auto implement a default constructor for current class.
+- `@ctor`: Auto implement a default constructor for current class (which implies this is a simple class, not an interface or a static class).
 - `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose`), some of them (`@expose(method1, method2)`) or all except some (`@expose(!method1, !method2)`).
-- `@enum`: Define enum type (Used in it's own file). `@enum(int) sat=1; sun=2; mon; tue; wed; thu; fri;`.
-- `@template`: Explained in the corresponding section.
+- `@template` and `@enum`: Explained in the corresponding section.
 
 ###Generics
 
@@ -166,11 +165,46 @@ interface1 intr = interface1
     }
 };
 ```
+###Enum type
+
+Enum data type is a special kind of `simple class` with one or more private constructors marked with `@enum` compiler directive. The `@enum` directive specifies the name of one or more possible values for instances of the class. 
+Private constructors are responsible to create one and the only one instance for each assigned possible name (specified using `@enum` directive). For example if there is a definition like `@num(A) _new() { ... }` in the class, at the first usage of the `A` value (e.g. `class1 x = class1.A`), this constructor will be called and the result value will be assigned to variable `x`. In each reference to `class1.A` later in the code, the same created instance will be re-used. 
+
+Example:
+```
+//day_of_week.e file
+
+@enum(SAT, SUN, MON, TUE, WED, THU, FRI)
+_new() { ... }
+
+//main.e file
+day_of_week dow = day_of_week.SAT;
+
+```
+
+Another example with value customization:
+
+```
+//option.e file
+@enum(VALID, INVALID)
+_new() { ... }
+
+//output of this constructor will be assigned globally to `option.NOT_READY` value.
+@enum(NOT_READY)
+_new() { ... }
+
+//main.e file
+option opt = option.INVALID;
+
+```
+
+It is discouraged to mix enum-based constructor with other constructors. Your class should either be an implementation of an enumerated type or a normal class.
 
 ###Misc
 
 - It is suggested to use camelCasing for methods, fields and local variables.
 - It is suggested to name package and classes using lower case names, connecting words using underscore (e.g. `thread_manager`).
+- It is suggested to use all capital names for `@enum` names.
 - **Operator overloading**: A class can overload `[]` and `==` operators for it's instances by having methods called `setData`, `getData` and `equals`.
 - **Checking for implements**: You can use `(interface1)class1` to check if `class1` implements `interface1`.
 - **const**: You can define class fields, function arguments, local variables and function output as constant.
@@ -179,12 +213,12 @@ interface1 intr = interface1
 - **Suffixed if and for**: `return 1 if x>1;`, `x++ for(10)`, `x += y for (y: array)`.
 - **Arrays**: Same notation as Java `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]`.
 - **For**: You can use `for` to iterate over an array `for(x:array1)` or repeat something `n` times `for(n)`.
+- **Special variables**: `$` refers to the latest exception thrown. `#` refers to the result of last function call (used in post-condition assertion).
 
 ###Core package
 
 A set of core packages will be included in the language which provide basic and low-level functionality:
 
-- Calling OS services
 - Calling C/C++ methods
 - Reflection and extracting annotations
 - Data conversion
