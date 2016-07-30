@@ -116,7 +116,7 @@ Notes:
 You can add compiler directives to the code. These are like Java's annotations or C# attributes. They all start with at sign (`@`). Below is a list of them:
 
 - `@assert`: Insert runtime assertations (pre/post-requisite for a method) defined before function definition (e.g. `@assert(x>0) int func1(int x) { ... }@assert(#!=0)`).
-- `@import`: Include another package (e.g. `@import(core.data.*)` to include all classes inside a package, `@import(core.data.util)` to include a static class, `@import(core.data.* -> .)` to include members of `core.data` inside current namespace).
+- `@import`: Include another package (e.g. `@import(core.data)` to include all classes inside a package (not it's sub-packages), `@import(core.data -> .)` to import classes inside `core.data` without need to use prefix, so `core.data.stack` will become `stack`), `@import(core.data -> cd)` same as previous example but `core.data.stack` becomes `cd.stack`.
 - `@implements`: Indicate this class implements methods of another interface.
 - `@extends`: Indicates this interface includes methods of another interface.
 - `@annotate` (or `@@`): Apply a custom annotation (e.g. `@@class1 {1, 2, 3}`).
@@ -139,8 +139,6 @@ int x = T;
 Assuming above code is in a file named `class1` you can use `class1 c1 = class1<10>{}` to have `c1.x` equal to 10.
 
 To escape from all the complexities of generics in other languages, we have no other notation to limit template type or variable template types.
-
-? - Maybe we provide default value for template arguments.
 
 ###Exception handling
 
@@ -241,3 +239,7 @@ There will be another set of packages built on top of core which provide common 
 #Package Manager
 
 The package manager is a separate utility which helps you package, publish, install and deploy packages (Like `maven` or `dub`).
+
+#Decisions to make
+? - Maybe we provide default value for template arguments.
+? - should we have something like `Object` in Java or `void*` in C++? So that we can implement a `printf` method.
