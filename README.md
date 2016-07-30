@@ -162,7 +162,7 @@ You can define anonymous classes which can act like a function pointer. Each ano
 ```
 //short form, when interface has only one method
 interface1 intr = (x, y) -> x+y;
-interface1 intr2 = x, y -> x+y;
+interface2 intr2 = x -> x+1;  //you can omit parantheses if you have only one variable
 
 //long form
 interface1 intr = interface1 
@@ -286,7 +286,7 @@ N - Operators for regex? find/match/substitute? No. This is possible using core.
 N - map/reduce/filter, arri implements a specific interface. will be done in core.
     arr2 = arr1.map<T>(x -> x+1);
     arr2 = arr1.filter(x -> x>0);
-    arr2 = arr1.reduce(x,y -> x+y);
+    arr2 = arr1.reduce((x,y) -> x+y);
 
 N - ser/deser: core
     string x = core.ser.serialize<obj>(obj1);
@@ -296,5 +296,5 @@ N - join/fork
     fork: using core,
     join: in future class
     
-Y - compare and swap
+Y - compare and swap, only for numbers
     `bool b = (x ? 1 => 2);`
