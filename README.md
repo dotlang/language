@@ -23,7 +23,7 @@ This project will finally consist of these components:
  
 ###Paradigm
 
-Electron is a declarative, object-oriented programming language.
+Electron is a declarative, object-oriented programming language. The target of this programming language is server-side cloud software which normally handle a lot of clients connected remotely over a network.
 
 ###Keywords
 
