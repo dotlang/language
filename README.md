@@ -31,7 +31,8 @@ Of course the disadvantage of this approach is that the user of your software ne
 
 ###Paradigm
 
-Electron is a declarative, object-oriented programming language. The target of this programming language is server-side cloud software which normally handle a lot of clients connected remotely over a network.
+Electron is a declarative, object-oriented programming language with GC memory. 
+The target of this programming language is distributed server-side network software which normally handle a lot of remote clients.
 
 ###Keywords
 
@@ -40,20 +41,21 @@ Electron is a declarative, object-oriented programming language. The target of t
 2. **Control**: `return`, `defer`, `throw`, `promise`
 3. **Type handling**: `void`, `const`, `auto`, `null`
 
-Usage of these keywords is almost same as C++ or Java.
+Usage of these keywords is almost same as C++ or Java, so I omit explanation of them in detail.
 
 ### Primitive data types
 
-- **integer data types**: int8 (char), int16, int32 (int), int64, uint8 (byte), uint16, uint32, uint64
-- **floating point data types**: float32 (float), float64 (double)
-- **others**: bool
+- **Integer data types**: int8 (char), int16, int32 (int), int64, uint8 (byte), uint16, uint32, uint64
+- **Floating point data types**: float32 (float), float64 (double)
+- **Others**: bool
 
 ### Operators
 
 The operators are almost similar to C language:
-- Conditional: `&& || ! == != >= <= (?=>)`
-- Bitwise: `& | ^ ~ << >> =~`
+- Conditional: `&& || ! == != >= <=`
+- Bitwise: `& | ^ ~ << >>`
 - Math `\+ \- \* % ++ -- ** `
+- Other `() =~ (?->)`
 
 ### Data passing
 
@@ -80,9 +82,9 @@ There are three types of classes: `simple class`, `static class` and `interface 
 
 Syntax for definition of fields and methods is very similar to other OOP languages like C# or Java.
 
-###Hello World application
+###Most basic application
 
-Here's how an almost empty application looks:
+Here's what an almost empty application looks like:
 
 file: `simple.e`
 ```
@@ -92,7 +94,7 @@ int main()
 }
 ```
 
-This is a static class with only one method, called `main` which returns `0` (Very similar to C/C++ except no input it sent to the `main` function).
+This is a static class with only one method, called `main` which returns `0` (very similar to C/C++ except no input it sent to the `main` function).
 
 ###Classes
 
@@ -102,11 +104,11 @@ You don't need to use any keyword or directive to explicitly indicate type of th
 
 - If class has no fields or constructor, and none of the methods have a body, then it's an `interface class`.
 - If class has a constructor method, it is a `simple class`.
-- If class has no constructor method, it is a `static class`. 
+- If class has no constructor method, it is a `static class`. So you can reference their members using `class_name.member_name` notation.
 
 Notes:
 - It is invalid for a class to have bodies only for some of methods. Either all of methods should have bodies or none of them should have (no abstract class).
-- There is no inheritance. We provide composition instead.
+- There is no inheritance. Composition is encouraged instead.
 - If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is considered public.
 
 
@@ -115,9 +117,10 @@ Notes:
 - Class members starting with underscore are considered private and can only be accessed by other class members.
 - Some basic methods are provided by default for all classes: `toString`, `getHashCode`. You can override the default implementation, simply by adding these methods to your class.
 - You can define default values for method parameters (e.g. `int func1(int x, int y=0)`).
-- Constructor is a special method named `new` with implicit return type (e.g. `new() { return (); }`). The `()` is a special global operator which allocates a new instance of the current class in memory.
+- You can overload functions based on their input/output.
+- Constructor is a special method named `new` with implicit return type (e.g. `new() { return {}; }`). The `{}` allocates a new instance of the current class in memory.
 - The syntax to initialize variables is like C++ uniform initialization (e.g. `class1 c = class1 {10, 4};` or `interface1 intr = class1 {3, 5}` or `class1 c = {3}`).
-- When accessing local class fields, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`).
+- When accessing local class fields and methods, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`).
 
 ###Compiler directives and annotation
 
@@ -153,7 +156,7 @@ To escape from all the complexities of generics in other languages, we have no o
 
 - You can use `throw` keywords to throw an exception object and exit current method: `throw {1, 2}`
 - You can catch thrown exception in your code using `if` command: `int y = func1(); if ( $ ) ...`.
-- You can use `defer` keywords (same as what golang has) to define code that must be executed even in case of exception.
+- You can use `defer` keyword (same as what golang has) to define code that must be executed even in case of exception.
 
 ###Anonymous class
 
@@ -219,7 +222,7 @@ It is discouraged to mix enum-based constructor with other constructors. Your cl
 
 - It is suggested to use camelCasing for methods, fields and local variables.
 - It is suggested to name package and classes using lower case names, connecting words using underscore (e.g. `thread_manager`).
-- It is suggested to use all capital names for `@enum` names.
+- It is suggested to use all capital names for `@enum` marks.
 - **Operator overloading**: A class can overload `[]` and `==` operators for it's instances by having methods called `setData`, `getData` and `equals`.
 - **Checking for implements**: You can use `(interface1)class1` to check if `class1` implements `interface1`.
 - **const**: You can define class fields, function arguments, local variables and function output as constant. You can only delay value assignment for a const variable if it is non-primitive.
@@ -234,17 +237,17 @@ It is discouraged to mix enum-based constructor with other constructors. Your cl
 
 ###Core package
 
-A set of core packages will be included in the language which provide basic and low-level functionality:
+A set of core packages will be included in the language which provide basic and low-level functionality (This part may be written in C):
 
 - Calling C/C++ methods
 - Reflection and extracting annotations
 - Data conversion
-- GC
-- Exception handling
+- Garbage collector
+- Exception class
 
 ###Standard package
 
-There will be another set of packages built on top of core which provide common utilities. This will be much larger and more complex than core, so it will be independent of the core and language. Here is a list of some of classes in this package collection:
+There will be another set of packages built on top of core which provide common utilities. This will be much larger and more complex than core, so it will be independent of the core and language (This part will be written in Electron). Here is a list of some of classes in this package collection:
 
 - I/O (Network, Console, File, ...)
 - Thread and synchronization management
@@ -276,7 +279,7 @@ string result = f1.get();
 ```
 
 Y - ternary operator is very messy but very useful (`a ? b:c`). Is there a way to make use of it in the language? Maybe:
-`if a then b else c` or `iif(a, b, c)`. We only want to evaluate `c` if `b` is `FALSE` so this cannot be done with a library function. `check(a, b, c)` (so `check` will be a keyword), `test(a, b, c)`
+`if a then b else c` or `iif(a, b, c)`. We only want to evaluate `c` if `b` is `FALSE` so this cannot be done with a library function. 
 
 N - Support for atomic operations in language level? This can be achieved using `core` so better not to add a new keyword/compiler feature for this.
 
@@ -288,13 +291,17 @@ N - map/reduce/filter, arri implements a specific interface. will be done in cor
     arr2 = arr1.filter(x -> x>0);
     arr2 = arr1.reduce((x,y) -> x+y);
 
-N - ser/deser: core
-    string x = core.ser.serialize<obj>(obj1);
-    obj r = core.ser.deserialize<obj>(x);
+N - serialization/deserialization: Better to be done in core
+    `string x = core.ser.serialize<obj>(obj1);`
+    `obj r = core.ser.deserialize<obj>(x);`
     
 N - join/fork
     fork: using core,
     join: in future class
     
 Y - compare and swap, only for numbers
-    `bool b = (x ? 1 => 2);`
+    `bool b = (x ? 1 -> 2);`
+
+Y - Hash notation, like array with support for hash literals
+    `int[string] hash1 = { "OH":12, "CA":33, ... };`
+    behind the scene this will be a class.
