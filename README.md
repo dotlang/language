@@ -230,9 +230,7 @@ It is discouraged to mix enum-based constructor with other constructors. Your cl
 
 ###Misc
 
-- It is suggested to use camelCasing for methods, fields and local variables.
-- It is suggested to name package and classes using lower case names, connecting words using underscore (e.g. `thread_manager`).
-- It is suggested to use all capital names for `@enum` marks and template arguments.
+- **Naming**: Suggestion: camelCasing for methods, fields and variables, lower_case_with_underscore for package and class names, UPPERCASE for `@enum` names and template arguments.
 - **Operator overloading**: A class can overload `[]` and `==` operators for it's instances by having methods called `setData`, `getData` and `equals`.
 - **Checking for implements**: You can use `(interface1)class1` to check if `class1` implements `interface1`.
 - **const**: You can define class fields, function arguments, local variables and function output as constant. You can only delay value assignment for a const variable if it is non-primitive.
