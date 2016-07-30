@@ -161,7 +161,7 @@ You can define anonymous classes which can act like a function pointer. Each ano
 
 ```
 //short form, when interface has only one method
-interface1 intr = (x, y) -> { x+y; };
+interface1 intr = (x, y) -> x+y;
 
 //long form
 interface1 intr = interface1 
@@ -172,6 +172,13 @@ interface1 intr = interface1
     }
 };
 ```
+
+You can use a similar syntax when defining methods:
+
+```
+int func1(int x, int y) -> x+y;
+```
+
 ###Enum type
 
 Enum data type is a special kind of `simple class` with one or more private constructors marked with `@enum` compiler directive. The `@enum` directive specifies the name of one or more possible values for instances of the class. 
@@ -221,6 +228,7 @@ It is discouraged to mix enum-based constructor with other constructors. Your cl
 - **Arrays**: Same notation as Java `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]`.
 - **For**: You can use `for` to iterate over an array `for(x:array1)` or repeat something `n` times `for(n)`.
 - **Special variables**: `$` refers to the latest exception thrown. `#` refers to the result of last function call (used in post-condition assertion).
+- **String interpolation**: You can embed variables inside a string to be automatically converted to string.
 
 ###Core package
 
@@ -249,9 +257,9 @@ There will be another set of packages built on top of core which provide common 
 
 The package manager is a separate utility which helps you package, publish, install and deploy packages (Like `maven` or `dub`).
 
-#Decisions to make
+#Decision points
 
-? - should we have something like `Object` in Java or `void*` in C++? So that we can implement a `printf` method. Maybe we can somehow mis-use `auto` keywords for this. `int func(auto x, auto y)`
+? - should we have something like `Object` in Java or `void*` in C++? So that we can implement a `printf` method. Maybe we can somehow mis-use `auto` keywords for this. `int func(auto x, auto y)`. We can easily implement printf with string interpolation.
 ? - level of support for concurrency? library level (methods and classes) or syntax level (keywords)? Something like this:
 ```
 invoke class1.func1(1, 2, 3), result_callback 
@@ -260,3 +268,15 @@ invoke class1.func1(1, 2, 3), result_callback
     void onError() { ... }
 };
 ```
+This cannot be achieved using `core` because `class1.func1(1, 2, 3)` is an expression which should be evaluated inside a coroutine. If we use `core` is will be evaluated and the result will be sent to the library. We can achieve this by using anonymous functions with help of closure:
+
+```
+int x = 1;
+core.invoke(() -> class1.func1(x, x+1, 3), result_callback { ... });
+```
+But the first version is much cleaner.
+
+? - ternary operator is very messy but very useful (`a ? b:c`). Is there a way to make use of it in the language? Maybe:
+`if a then b else c` or `iif(a, b, c)`. We only want to evaluate `c` if `b` is `FALSE` so this cannot be done with a library function. `check(a, b, c)` (so `check` will be a keyword), `test(a, b, c)`
+
+N - Support for atomic operations in language level? This can be achieved using `core` so better not to add a new keyword/compiler feature for this.
