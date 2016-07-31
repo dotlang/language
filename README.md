@@ -135,6 +135,7 @@ You can add compiler directives to the code. These are like Java's annotations o
 - `@ctor`: Auto implement a default constructor for current class (which implies this is a simple class, not an interface or a static class).
 - `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose`), some of them (`@expose(method1, method2)`) or all except some (`@expose(!method1, !method2)`).
 - `@template` and `@enum`: Explained in the corresponding section.
+- `@deprecated`
 
 ###Generics
 
@@ -278,9 +279,9 @@ N - should we have something like `Object` in Java or `void*` in C++? So that we
 
 Y - Support for concurrency built into the language
 ```
-promise class1.func1();  //normally, run the statement in another co-routine at the moment
-future<string> f1 = promise! class1.func1(1, 2, 3);  //wait for call of invoke
-future<string> f2 = promise! { return "a"; };
+promise& class1.func1();  //normally, run the statement in another co-routine at the moment
+future<string> f1 = promise class1.func1(1, 2, 3);  //wait for call of invoke
+future<string> f2 = promise { return "a"; };
 f1.invoke();
 f1.setCallback(...);
 f1.cancel();
