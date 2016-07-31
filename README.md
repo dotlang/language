@@ -105,7 +105,7 @@ You don't need to use any keyword or directive to explicitly indicate type of th
 
 - If class has no fields or constructor, and none of the methods have a body, then it's an `interface class`.
 - If class has a constructor method, it is a `simple class`.
-- If class has no constructor method, it is a `static class`. So you can reference their members using `class_name.memberName` notation.
+- If class has no constructor method, it is a `static class`. So you can reference their members using `class_name.memberName` notation. All fields in a `static class` must be const with compile time evaluatable values, because it cannot have a state.
 
 Notes:
 - It is invalid for a class to have bodies only for some of methods. Either all of methods should have bodies or none of them should have (no abstract class).
@@ -196,38 +196,24 @@ int func1(int x, int y) -> x+y;
 
 ###Enum type
 
-Enum data type is a special kind of `simple class` with one or more private constructors marked with `@enum` compiler directive. The `@enum` directive specifies the name of one or more possible values for instances of the class. 
-Private constructors are responsible to create one and the only one instance for each assigned possible name (specified using `@enum` directive). For example if there is a definition like `@num(A) _new() { ... }` in the class, at the first usage of the `A` value (e.g. `class1 x = class1.A`), this constructor will be called and the result value will be assigned to variable `x`. In each reference to `class1.A` later in the code, the same created instance will be re-used. 
+Enum data type is a special kind of `static class` with a set of possible values. Each possible value is tagged with `@enum` directive. Any variable of type of the static class can only have one of those tagged values.
 
 Example:
 ```
-//day_of_week.e file
+//day_of_week.e file (a static class)
 
-@enum(SAT, SUN, MON, TUE, WED, THU, FRI)
-_new() { ... }
+@enum
+const int SAT = 0;
+
+@enum
+const int SUN = 1;
+
+//...
 
 //main.e file
 day_of_week dow = day_of_week.SAT;
 
 ```
-
-Another example with value customization:
-
-```
-//option.e file
-@enum(VALID, INVALID)
-_new() { ... }
-
-//output of this constructor will be assigned globally to `option.NOT_READY` value.
-@enum(NOT_READY)
-_new() { ... }
-
-//main.e file
-option opt = option.INVALID;
-
-```
-
-It is discouraged to mix enum-based constructor with other constructors. Your class should either be an implementation of an enumerated type or a normal class.
 
 ###Misc
 
