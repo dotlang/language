@@ -36,7 +36,7 @@ The target of this programming language is distributed server-side network softw
 
 ###Keywords
 
-1. **Conditional**: `if`, `else`, `switch`, `case`, `default`, `iif`
+1. **Conditional**: `if`, `else`, `switch`, `case`, `default`
 2. **Loop**: `for`, `while`, `break`, `continue`
 2. **Control**: `return`, `defer`, `throw`, `promise`
 3. **Type handling**: `void`, `const`, `auto`, `null`, `this`
@@ -232,7 +232,7 @@ day_of_week dow = day_of_week.SAT;
 - **For**: You can use `for` to iterate over an array `for(x:array1)` or repeat something `n` times `for(n)`.
 - **Special variables**: `$` refers to the latest exception thrown. `#` refers to the result of last function call (used in post-condition assertion).
 - **String interpolation**: You can embed variables inside a string to be automatically converted to string.
-- **iif**: if/else as an expression `iif(a, b, c)` is same as `a ? b:c` in other languages.
+- **Ternary condition**: if/else as an expression `b if a else c` is same as `a ? b:c` in other languages.
 - **Hashtable**: `int[string] h = { "OH":12, "CA":33 }; h["NY"] = 9;`
 
 ###Core package
@@ -279,7 +279,7 @@ string result = f1.get();
 ```
 
 Y - ternary operator is very messy but very useful (`a ? b:c`). Is there a way to make use of it in the language? Maybe:
-`if a then b else c` or `iif(a, b, c)`. We only want to evaluate `c` if `b` is `FALSE` so this cannot be done with a library function. 
+`if a then b else c` or `b if a else c`. We only want to evaluate `c` if `b` is `FALSE` so this cannot be done with a library function. 
 
 N - Support for atomic operations in language level? This can be achieved using `core` so better not to add a new keyword/compiler feature for this.
 
