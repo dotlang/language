@@ -56,7 +56,7 @@ The operators are almost similar to C language:
 - Conditional: `&& || ! == != >= <=`
 - Bitwise: `& | ^ ~ << >>`
 - Math `\+ \- \* % ++ -- ** `
-- Other `{} =~ (?->)`
+- Other `{} =~`
 
 ### Data passing
 
@@ -177,6 +177,7 @@ You can define anonymous classes which can act like a function pointer. Each ano
 //short form, when interface has only one method
 interface1 intr = (x, y) -> x+y;
 interface2 intr2 = x -> x+1;  //you can omit parantheses if you have only one variable
+interface3 intr3 = this.method1; //if method1 confirms to interface3, you can use it as the value
 
 //long form
 interface1 intr = interface1 
@@ -295,7 +296,7 @@ N - join/fork
     fork: using core,
     join: in future class
     
-Y - compare and swap, only for numbers
+N - compare and swap, only for numbers
     `bool b = (x ? 1 -> 2);`
 
 Y - Hash notation, like array with support for hash literals
