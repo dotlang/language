@@ -40,6 +40,7 @@ The target of this programming language is distributed server-side network softw
 2. **Loop**: `for`, `while`, `break`, `continue`
 2. **Control**: `return`, `defer`, `throw`, `promise`
 3. **Type handling**: `void`, `const`, `auto`, `null`, `this`
+4. **Other**: `error`
 
 Usage of these keywords is almost same as C++ or Java, so I omit explanation of them in detail.
 
@@ -124,10 +125,9 @@ Notes:
 
 You can add compiler directives to the code. These are like Java's annotations or C# attributes. They all start with at sign (`@`). Below is a list of them:
 
-- `@assert`: Insert runtime assertations (pre/post-requisite for a method) defined before function definition (e.g. `@assert(x>0) int func1(int x) { ... }@assert(#!=0)`).
+- `@assert`: Insert runtime assertations (pre/post-requisite for a method) defined before function definition (e.g. `@assert(x>0) int func1(int x) { ... }@assert($!=0)`).
 - `@import`: Include another package (e.g. `@import(core.data)` to include all classes inside a package (not it's sub-packages), `@import(core.data -> .)` to import classes inside `core.data` without need to use prefix, so `core.data.stack` will become `stack`), `@import(core.data -> cd)` same as previous example but `core.data.stack` becomes `cd.stack`.
-- `@implements`: Indicate this class implements methods of another interface.
-- `@extends`: Indicates this interface includes methods of another interface.
+- `@basedOn`: Indicate this class implements methods of another interface or this interface includes another interface.
 - `@annotate` (or `@@`): Apply a custom annotation (e.g. `@@class1 {1, 2, 3}`).
 - `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose`), some of them (`@expose(method1, method2)`) or all except some (`@expose(!method1, !method2)`).
 - `@template` and `@enum`: Explained in the corresponding section.
@@ -169,7 +169,7 @@ To escape from all the complexities of generics in other languages, we have no o
 ###Exception handling
 
 - You can use `throw` keywords to throw an exception object and exit current method: `throw {1, 2}`
-- You can catch thrown exception in your code using `if` command: `int y = func1(); if ( $ ) ...`.
+- You can catch thrown exception in your code using `if` command and `error` global variable: `int y = func1(); if ( error ) ...`. You can silence an error by writing `error = null`.
 - You can use `defer` keyword (same as what golang has) to define code that must be executed even in case of exception.
 
 ###Anonymous class
@@ -227,10 +227,10 @@ day_of_week dow = day_of_week.SAT;
 - **const**: You can define class fields, function arguments, local variables and function output as constant. You can only delay value assignment for a const variable if it is non-primitive. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition.
 - **Literals**: `0xffe`, `0b0101110101`, `true`, `false`.
 - **Digit separators**: `1_000_000`.
-- **Suffixed if and for**: `return 1 if x>1;`, `x++ for(10)`, `x += y for (y: array)`.
-- **Arrays**: Same notation as Java `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]`.
 - **For**: You can use `for` to iterate over an array `for(x:array1)` or repeat something `n` times `for(n)`.
-- **Special variables**: `$` refers to the latest exception thrown. `#` refers to the result of last function call (used in post-condition assertion).
+- - **Suffixed if and for**: `return 1 if x>1;`, `x++ for(10)`, `x += y for (y: array)`.
+- **Arrays**: Same notation as Java `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]`.
+- **Special variables**: `$` refers to the result of last function call (used in post-condition assertion).
 - **String interpolation**: You can embed variables inside a string to be automatically converted to string.
 - **Ternary condition**: if/else as an expression `b if a else c` is same as `a ? b:c` in other languages.
 - **Hashtable**: `int[string] h = { "OH":12, "CA":33 }; h["NY"] = 9;`
@@ -269,7 +269,7 @@ N - should we have something like `Object` in Java or `void*` in C++? So that we
 
 Y - Support for concurrency built into the language
 ```
-promise& class1.func1();  //normally, run the statement in another co-routine at the moment
+promise& class1.func1();  //run the statement in another co-routine at the moment
 future<string> f1 = promise class1.func1(1, 2, 3);  //wait for call of invoke
 future<string> f2 = promise { return "a"; };
 f1.invoke();
