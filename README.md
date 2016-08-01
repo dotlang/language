@@ -201,23 +201,31 @@ int func1(int x, int y) -> x+y;
 
 ###Enum type
 
-Enum data type is a special kind of class with a set of possible values. Each possible value is tagged with `@enum` directive. Any variable of type of that class can only have one of those tagged values.
+Enum data type is a special kind of class with a base primitive type and a set of possible values. Each const definition of the based primitive type with capital letters is one of those possible values. Any variable of type of that class can only have one of those tagged values.
 
 Example:
 ```
 //day_of_week.e file
 
-@enum
-const int SAT = 0;
+@enum(int)
 
-@enum
+const int SAT = 0;
 const int SUN = 1;
+
+int temp = 10; //WRONG! you can only have const fields with compile time evaluatable values
+
+void func1(int x) 
+{
+    //do something
+}
 
 //...
 
 //main.e file
 day_of_week dow = day_of_week.SAT;
 
+//you can define methods for enum data type
+dow.func1(10);
 ```
 
 ###Misc
