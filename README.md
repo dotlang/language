@@ -39,9 +39,9 @@ The target of this programming language is distributed server-side network softw
 
 1. **Conditional**: `if`, `else`, `switch`, `case`, `default`
 2. **Loop**: `for`, `while`, `break`, `continue`
-2. **Control**: `return`, `defer`, `throw`, `promise`
-3. **Type handling**: `void`, `const`, `auto`, `null`, `this`
-4. **Other**: `error`
+2. **Control**: `return`, `defer`, `throw`
+3. **Type handling**: `void`, `const`, `auto`, `null`
+4. **Other**: `error`, `promise`, `this`
 
 Usage of these keywords is almost same as C++ or Java, so I omit explanation of them in detail.
 
