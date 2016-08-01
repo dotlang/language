@@ -53,7 +53,7 @@ Usage of these keywords is almost same as C++ or Java, so I omit explanation of 
 
 The operators are almost similar to C language:
 
-- Conditional: `&& || ! == != >= <=`
+- Conditional: `and or not == != >= <=`
 - Bitwise: `& | ^ ~ << >>`
 - Math `\+ \- \* % ++ -- ** `
 - Other `{} =~`
@@ -224,7 +224,7 @@ day_of_week dow = day_of_week.SAT;
 - **Naming**: Suggestion: camelCasing for methods, fields and variables, lower_case_with_underscore for package and class names, UPPERCASE for `@enum` names and template arguments.
 - **Operator overloading**: A class can overload `[]` and `==` operators for it's instances by having methods called `setData`, `getData` and `equals`.
 - **Checking for implements**: You can use `(interface1)class1` to check if `class1` implements `interface1`.
-- **const**: You can define class fields, function arguments, local variables and function output as constant. You can only delay value assignment for a const variable if it is non-primitive.
+- **const**: You can define class fields, function arguments, local variables and function output as constant. You can only delay value assignment for a const variable if it is non-primitive. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition.
 - **Literals**: `0xffe`, `0b0101110101`, `true`, `false`.
 - **Digit separators**: `1_000_000`.
 - **Suffixed if and for**: `return 1 if x>1;`, `x++ for(10)`, `x += y for (y: array)`.
