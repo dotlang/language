@@ -79,8 +79,6 @@ core
 
 In the above examples `core.math, core.io, core.sys, core.net, core.net.http, core.net.tcp, core.net.socket` are all packages. Each package can have a number of source code files. Each source code file represents one class. Because some OSs have case insensitive naming for file/directory, it is suggested that name of packages and source code files be all lower case. You can separate parts of a name using underscore (e.g. `data_structures`).
 
-There are three types of classes: `simple class`, `static class` and `interface class` (or `interface`). 
-
 Syntax for definition of fields and methods is very similar to other OOP languages like C# or Java.
 
 ###Most basic application
@@ -95,23 +93,21 @@ int main()
 }
 ```
 
-This is a static class with only one method, called `main` which returns `0` (very similar to C/C++ except no input it sent to the `main` function).
+This is a class with only one method, called `main` which returns `0` (very similar to C/C++ except no input it sent to the `main` function).
 
 ###Classes
 
-Each source code file represents a class which can be a simple class (like a normal class in other OOP languages), static class (exactly as the name suggests, you cannot instantiate them and their fields are shared globally) and interface class (same as interface in other languages). 
+Each source code file represents a class which can be a simple class (like a normal class in other OOP languages) or an interface (same as interface in other languages). 
 
-You don't need to use any keyword or directive to explicitly indicate type of the class.
+If class has no fields or constructor, and none of the methods have a body, then it's an `interface`, else it is a normal class. In a normal class, all methods must have bodies. 
 
-- If class has no fields or constructor, and none of the methods have a body, then it's an `interface class`.
-- If class has a constructor method, it is a `simple class`.
-- If class has no constructor method, it is a `static class`. So you can reference their members using `class_name.memberName` notation. All fields in a `static class` must be const with compile time evaluatable values, because it cannot have a state.
+Normal classes can be referenced using instance notation (`var_name.memberName`) or static notation (`class_name.memberName`), which will refer to the special instance of the class (static instance). The static instance of class will be initialized upon first reference (static means state-less so it does not need any initialization code upon creation).
 
 Notes:
 - It is invalid for a class to have bodies only for some of methods. Either all of methods should have bodies or none of them should have (no abstract class).
 - There is no inheritance. Composition is encouraged instead.
 - If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is considered public.
-
+- You can prevent usage of a class as a non-static class by defining normal constructor as private.
 
 ###Class members
 
@@ -119,7 +115,8 @@ Notes:
 - Some basic methods are provided by default for all classes: `toString`, `getHashCode`. You can override the default implementation, simply by adding these methods to your class.
 - You can define default values for method parameters (e.g. `int func1(int x, int y=0)`).
 - You can overload functions based on their input/output.
-- Constructor is a special method named `new` with implicit return type (e.g. `new() { return {}; }`). The `{}` allocates a new instance of the current class in memory.
+- Constructor is a special method named `new` with implicit return type (e.g. `new() { return {}; }`). The `{}` allocates a new instance of the current class in memory. 
+- Compiler will add an empty normal constructor to the class if it doesn't have any.
 - The syntax to initialize variables is like C++ uniform initialization (e.g. `class1 c = class1 {10, 4};` or `interface1 intr = class1 {3, 5}` or `class1 c = {3}`).
 - When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`). In statis class, you have to refer to them using `class_name.memberName` notation.
 
@@ -132,16 +129,15 @@ You can add compiler directives to the code. These are like Java's annotations o
 - `@implements`: Indicate this class implements methods of another interface.
 - `@extends`: Indicates this interface includes methods of another interface.
 - `@annotate` (or `@@`): Apply a custom annotation (e.g. `@@class1 {1, 2, 3}`).
-- `@ctor`: Auto implement a default constructor for current class (which implies this is a simple class, not an interface or a static class).
 - `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose`), some of them (`@expose(method1, method2)`) or all except some (`@expose(!method1, !method2)`).
 - `@template` and `@enum`: Explained in the corresponding section.
 - `@deprecated`
 
-###Generics
+###Templates
 
-You can use compiler directive `@template` to indicate current class is a generic class. You can define arguments of the template like `@template(T)` and use `T` inside the class body.
+You can use compiler directive `@template` to indicate current class/method is a generic one. You can define arguments of the template like `@template(T)` and use `T` inside the body of the class or method.
 
-To use the generic class you use this syntax: `class1<int> c = class1<int> {}`. When you instantiate a generic class, compiler will re-write it's whole file using provided data, then compile your code. You can even use template for passing a data which is not a type name:
+To use the generic class you use this syntax: `class1<int> c = class1<int> {}`. When you instantiate a generic class, compiler will re-write it's body using provided data, then compile your code. Value for template arguments must be an identifier or a literal. You can even use template for passing a data:
 
 ```
 //you can set default values for template arguments
@@ -157,9 +153,22 @@ template(T,U=void,U_NAME=void)
 
 int x = T;
 
-//if value of U is empty (void) this will create nothing
+//if value of U is empty (void) this will create nothing (just a place-holder variable which cannot be read or written to)
 U U_NAME;
 ```
+
+You can also define template based methods (but not template based fields):
+
+```
+@template(T)
+int add(T x, T y) { ... }
+
+
+//calling add method
+int result = obj1.add<int>(1, 2);
+```
+
+You can use `@template` when defining interface members but you cannot specify default parameter values in an interface definition.
 
 To escape from all the complexities of generics in other languages, we have no other notation to limit template type or variable template types.
 
@@ -197,11 +206,11 @@ int func1(int x, int y) -> x+y;
 
 ###Enum type
 
-Enum data type is a special kind of `static class` with a set of possible values. Each possible value is tagged with `@enum` directive. Any variable of type of the static class can only have one of those tagged values.
+Enum data type is a special kind of class with a set of possible values. Each possible value is tagged with `@enum` directive. Any variable of type of the class can only have one of those tagged values.
 
 Example:
 ```
-//day_of_week.e file (a static class)
+//day_of_week.e file
 
 @enum
 const int SAT = 0;
