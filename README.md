@@ -57,7 +57,7 @@ The operators are almost similar to C language:
 
 - Conditional: `and or ! == != >= <=`
 - Bitwise: `& | ^ ~ << >>`
-- Math `\+ \- \* % ++ -- ** `
+- Math `+ - * % ++ -- ** `
 - Other `{} =~`
 
 ### Data passing
