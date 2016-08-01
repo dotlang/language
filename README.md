@@ -55,7 +55,7 @@ Usage of these keywords is almost same as C++ or Java, so I omit explanation of 
 
 The operators are almost similar to C language:
 
-- Conditional: `and or not == != >= <=`
+- Conditional: `and or ! == != >= <=`
 - Bitwise: `& | ^ ~ << >>`
 - Math `\+ \- \* % ++ -- ** `
 - Other `{} =~`
