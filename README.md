@@ -109,7 +109,7 @@ Notes:
 - It is invalid for a class to have bodies only for some of methods. Either all of methods should have bodies or none of them should have (no abstract class).
 - There is no inheritance. Composition is encouraged instead.
 - If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is considered public.
-- You can prevent usage of a class as a non-static class by defining normal constructor as private.
+- You can prevent usage of a class as a non-static class by defining constructor as private.
 
 ###Class members
 
@@ -118,7 +118,7 @@ Notes:
 - You can define default values for method parameters (e.g. `int func1(int x, int y=0)`).
 - You can overload functions based on their input/output.
 - Constructor is a special method named `new` with implicit return type (e.g. `new() { return {}; }`). The `{}` allocates a new instance of the current class in memory. 
-- Compiler will add an empty normal constructor to the class if it doesn't have any.
+- Compiler will add an empty constructor to the class if it doesn't have any.
 - The syntax to initialize variables is like C++ uniform initialization (e.g. `class1 c = class1 {10, 4};` or `interface1 intr = class1 {3, 5}` or `class1 c = {3}`).
 - When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`). In statis class, you have to refer to them using `class_name.memberName` notation.
 
