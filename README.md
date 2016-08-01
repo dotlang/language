@@ -79,7 +79,7 @@ core
 |-----|-----tcp  
 |-----|-----socket  
 
-In the above examples `core.math, core.io, core.sys, core.net, core.net.http, core.net.tcp, core.net.socket` are all packages. Each package can have a number of source code files. Each source code file represents one class. Because some OSs have case insensitive naming for file/directory, it is suggested that name of packages and source code files be all lower case. You can separate parts of a name using underscore (e.g. `data_structures`).
+In the above examples `core.math, core.io, core.sys, core.net, core.net.http, core.net.tcp, core.net.socket` are all packages. Each package can have a number of source code files. Each source code file represents one class. 
 
 Syntax for definition of fields and methods is very similar to other OOP languages like C# or Java.
 
@@ -87,7 +87,7 @@ Syntax for definition of fields and methods is very similar to other OOP languag
 
 Here's what an almost empty application looks like:
 
-file: `simple.e`
+file: `Simple.e`
 ```
 int main()
 {
@@ -103,7 +103,7 @@ Each source code file represents a class which can be a simple class (like a nor
 
 If class has no fields or constructor, and none of the methods have a body, then it's an `interface`, else it is a normal class. In a normal class, all methods must have bodies. 
 
-Normal classes can be referenced using instance notation (`var_name.memberName`) or static notation (`class_name.memberName`), which will refer to the special instance of the class (static instance). The static instance of class will be initialized upon first reference (static means state-less so it does not need any initialization code upon creation).
+Normal classes can be referenced using instance notation (`varName.memberName`) or static notation (`ClassName.memberName`), which will refer to the special instance of the class (static instance). The static instance of class will be initialized upon first reference (static means state-less so it does not need any initialization code upon creation).
 
 Notes:
 - It is invalid for a class to have bodies only for some of methods. Either all of methods should have bodies or none of them should have (no abstract class).
@@ -119,8 +119,8 @@ Notes:
 - You can overload functions based on their input/output.
 - Constructor is a special method named `new` with implicit return type (e.g. `new() { return {}; }`). The `{}` allocates a new instance of the current class in memory. 
 - Compiler will add an empty constructor to the class if it doesn't have any.
-- The syntax to initialize variables is like C++ uniform initialization (e.g. `class1 c = class1 {10, 4};` or `interface1 intr = class1 {3, 5}` or `class1 c = {3}`).
-- When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`). In statis class, you have to refer to them using `class_name.memberName` notation.
+- The syntax to initialize variables is like C++ uniform initialization (e.g. `Class1 c = Class1 {10, 4};` or `Interface1 intr = Class1 {3, 5}` or `Class1 c = {3}`).
+- When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`). In statis class, you have to refer to them using `ClassName.memberName` notation.
 
 ###Compiler directives and annotation
 
@@ -138,7 +138,7 @@ You can add compiler directives to the code. These are like Java's annotations o
 
 You can use compiler directive `@template` to indicate current class/method is a generic one. You can define arguments of the template like `@template(T)` and use `T` inside the body of the class or method. Value for `T` must be either a type-name or an identifier. The template directive can be attached to the whole file or a single method.
 
-To use a generic class you use this syntax: `class1<int> c = class1<int> {}` or `auto d = class1<int>{}`. When you instantiate a generic class, compiler will re-write it's body using provided data, then compile your code. Example:
+To use a generic class you use this syntax: `Class1<int> c = Class1<int> {}` or `auto d = Class1<int>{}`. When you instantiate a generic class, compiler will re-write it's body using provided data, then compile your code. Example:
 
 ```
 template(T)
@@ -179,12 +179,12 @@ You can define anonymous classes which can act like a function pointer. Each ano
 
 ```
 //short form, when interface has only one method
-interface1 intr = (x, y) -> x+y;
-interface2 intr2 = x -> x+1;  //you can omit parantheses if you have only one variable
-interface3 intr3 = this.method1; //if method1 confirms to interface3, you can use it as the value
+Interface1 intr = (x, y) -> x+y;
+Interface2 intr2 = x -> x+1;  //you can omit parantheses if you have only one variable
+Interface3 intr3 = this.method1; //if method1 confirms to interface3, you can use it as the value
 
 //long form
-interface1 intr = interface1 
+Interface1 intr = interface1 
 {
     int function1(int x,int y) 
     {
@@ -205,7 +205,7 @@ Enum data type is a special kind of class with a base primitive type and a set o
 
 Example:
 ```
-//day_of_week.e file
+//DayOfWeek.e file
 
 @enum(int)
 
@@ -222,7 +222,7 @@ void func1(int x)
 //...
 
 //main.e file
-day_of_week dow = day_of_week.SAT;
+DayOfWeek dow = DayOfWeek.SAT;
 
 //you can define methods for enum data type
 dow.func1(10);
@@ -230,9 +230,9 @@ dow.func1(10);
 
 ###Misc
 
-- **Naming**: Suggestion: camelCasing for methods, fields and variables, lower_case_with_underscore for package and class names, UPPERCASE for `@enum` names and template arguments.
+- **Naming**: Suggestion: camelCasing for methods, fields and variables, lower_case_with_underscore for package, UpperCamelCase for class, UPPERCASE for `@enum` names, literal constants and template arguments.
 - **Operator overloading**: A class can overload `[]` and `==` operators for it's instances by having methods called `setData`, `getData` and `equals`.
-- **Checking for implements**: You can use `(interface1)class1` to check if `class1` implements `interface1`.
+- **Checking for implements**: You can use `(Interface1)class1` to check if `class1` implements `Interface1`.
 - **const**: You can define class fields, function arguments, local variables and function output as constant. You can only delay value assignment for a const variable if it is non-primitive. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition.
 - **Literals**: `0xffe`, `0b0101110101`, `true`, `false`.
 - **Digit separators**: `1_000_000`.
@@ -302,8 +302,8 @@ N - map/reduce/filter, arri implements a specific interface. will be done in cor
     arr2 = arr1.reduce((x,y) -> x+y);
 
 N - serialization/deserialization: Better to be done in core
-    `string x = core.ser.serialize<obj>(obj1);`
-    `obj r = core.ser.deserialize<obj>(x);`
+    `string x = core.ser.Serialize<obj>(obj1);`
+    `obj r = core.ser.Deserialize<obj>(x);`
     
 N - join/fork
     fork: using core,
