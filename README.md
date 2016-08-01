@@ -135,26 +135,14 @@ You can add compiler directives to the code. These are like Java's annotations o
 
 ###Templates
 
-You can use compiler directive `@template` to indicate current class/method is a generic one. You can define arguments of the template like `@template(T)` and use `T` inside the body of the class or method.
+You can use compiler directive `@template` to indicate current class/method is a generic one. You can define arguments of the template like `@template(T)` and use `T` inside the body of the class or method. Value for `T` must be a type-name. The template directive can be attached to the whole file or a single method.
 
-To use the generic class you use this syntax: `class1<int> c = class1<int> {}`. When you instantiate a generic class, compiler will re-write it's body using provided data, then compile your code. Value for template arguments must be an identifier or a literal. You can even use template for passing a data:
-
-```
-//you can set default values for template arguments
-@template(T=5)
-
-int x = T;
-```
-Assuming above code is in a file named `class1` you can use `class1 c1 = class1<10>{}` to have `c1.x` equal to 10.
+To use a generic class you use this syntax: `class1<int> c = class1<int> {}`. When you instantiate a generic class, compiler will re-write it's body using provided data, then compile your code. Example:
 
 ```
-//default value for U is empty
-template(T,U=void,uName=void)
+template(T)
 
-T x = uName;
-
-//if value of U is empty (void) this will create nothing (just a place-holder variable which cannot be read or written to)
-U uName;
+T x;
 ```
 
 You can also define template based methods (but not template based fields):
@@ -172,7 +160,8 @@ You can use `@template` when defining interface members but you cannot specify d
 
 ```
 //interface1.e
-@template
+@template(T)
+int adder(T a, T b);
 ```
 
 To escape from all the complexities of generics in other languages, we have no other notation to limit template type or variable template types.
