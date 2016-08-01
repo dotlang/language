@@ -136,9 +136,9 @@ You can add compiler directives to the code. These are like Java's annotations o
 
 ###Templates
 
-You can use compiler directive `@template` to indicate current class/method is a generic one. You can define arguments of the template like `@template(T)` and use `T` inside the body of the class or method. Value for `T` must be a type-name. The template directive can be attached to the whole file or a single method.
+You can use compiler directive `@template` to indicate current class/method is a generic one. You can define arguments of the template like `@template(T)` and use `T` inside the body of the class or method. Value for `T` must be either a type-name or an identifier. The template directive can be attached to the whole file or a single method.
 
-To use a generic class you use this syntax: `class1<int> c = class1<int> {}`. When you instantiate a generic class, compiler will re-write it's body using provided data, then compile your code. Example:
+To use a generic class you use this syntax: `class1<int> c = class1<int> {}` or `auto d = class1<int>{}`. When you instantiate a generic class, compiler will re-write it's body using provided data, then compile your code. Example:
 
 ```
 template(T)
@@ -314,3 +314,21 @@ N - compare and swap, only for numbers
 Y - Hash notation, like array with support for hash literals
     `int[string] hash1 = { "OH":12, "CA":33, ... };`
     behind the scene this will be a class.
+
+? - Tuple data type. We have this in C++, C#, D and Java (to some extent). This cannot be implemented using templates because read/write value to the tuple does not have a specific data type.
+    `tuple<int, name1, string, name2, float, name3> t = { 12, "Hello", 3.14 };
+    int x = t.name1;
+    string s = t[1];
+    auto t2 = {1, "str", 12};
+    s = t2[1];
+    
+    @template(T, Tn, U, Un, V, Vn)
+    
+    new(T t, U u, V v) { //assign }
+    
+    T Tn;
+    U Un;
+    V Vn;
+    
+    if we add support for identifier to templates, it is possible to implement tuple.
+    
