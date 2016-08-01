@@ -149,12 +149,12 @@ Assuming above code is in a file named `class1` you can use `class1 c1 = class1<
 
 ```
 //default value for U is empty
-template(T,U=void,U_NAME=void)
+template(T,U=void,uName=void)
 
-int x = T;
+T x = uName;
 
 //if value of U is empty (void) this will create nothing (just a place-holder variable which cannot be read or written to)
-U U_NAME;
+U uName;
 ```
 
 You can also define template based methods (but not template based fields):
@@ -168,7 +168,12 @@ int add(T x, T y) { ... }
 int result = obj1.add<int>(1, 2);
 ```
 
-You can use `@template` when defining interface members but you cannot specify default parameter values in an interface definition.
+You can use `@template` when defining interface members but you cannot specify default parameter values in an interface definition. 
+
+```
+//interface1.e
+@template
+```
 
 To escape from all the complexities of generics in other languages, we have no other notation to limit template type or variable template types.
 
@@ -206,7 +211,7 @@ int func1(int x, int y) -> x+y;
 
 ###Enum type
 
-Enum data type is a special kind of class with a set of possible values. Each possible value is tagged with `@enum` directive. Any variable of type of the class can only have one of those tagged values.
+Enum data type is a special kind of class with a set of possible values. Each possible value is tagged with `@enum` directive. Any variable of type of that class can only have one of those tagged values.
 
 Example:
 ```
