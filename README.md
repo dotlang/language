@@ -243,6 +243,7 @@ dow.func1(10);
 - **String interpolation**: You can embed variables inside a string to be automatically converted to string.
 - **Ternary condition**: if/else as an expression `b if a else c` is same as `a ? b:c` in other languages.
 - **Hashtable**: `int[string] h = { "OH":12, "CA":33 }; h["NY"] = 9;`
+- **Const args**: All function inputs are `const`. So function cannot modify any of it's inputs.
 
 ###Core package
 
@@ -315,20 +316,10 @@ Y - Hash notation, like array with support for hash literals
     `int[string] hash1 = { "OH":12, "CA":33, ... };`
     behind the scene this will be a class.
 
-? - Tuple data type. We have this in C++, C#, D and Java (to some extent). This cannot be implemented using templates because read/write value to the tuple does not have a specific data type.
+N - Tuple data type. We have this in C++, C#, D and Java (to some extent). This cannot be implemented using templates because read/write value to the tuple does not have a specific data type.
     `tuple<int, name1, string, name2, float, name3> t = { 12, "Hello", 3.14 };
-    int x = t.name1;
-    string s = t[1];
-    auto t2 = {1, "str", 12};
-    s = t2[1];
-    
-    @template(T, Tn, U, Un, V, Vn)
-    
-    new(T t, U u, V v) { //assign }
-    
-    T Tn;
-    U Un;
-    V Vn;
-    
+    `int x = t.name1;`
     if we add support for identifier to templates, it is possible to implement tuple.
-    
+
+N - immutability for functions. Like C++ `const` we define a function as const which means it cannot change state of the object. These functions can only call other `const` functions. 
+Go and Java and C# don't have this. Also we can have this by declaring fields of the class as final. 
