@@ -8,8 +8,8 @@ That's why I am creating the new programming language: Electron.
 
 I will follow 3 rules when designing this language:
 
-1. **Simple**: Easy to learn, read, write and understand. Consistent and logical, as much as possible. Software development is complex enough. Let's keep is as simple as possible and save complexities for when we really need it.
-2. **Powerful**: It should enable developers to handle large and complex softwre projects, with relative ease (even at runtime with hot code reload).
+1. **Simple**: Easy to learn, read, write and understand. Consistent and logical, as much as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
+2. **Powerful**: It should enable developers to develop, maintain and operate large and complex software projects, with relative ease.
 3. **Fast**: Performance of the final output should be high. Much better than dynamic languages like Python. Something like Java.
 
 I know that achieving all of above goals at the same time is something impossible so there will definitely be trade-offs where I will let go of some features to have other (more desirable) features. I will remove some features or limit some features in the language where I think it will help achieve above goals. One important guideline I use is "convention over configuration" which basically means, I will prefer a set of pre-defined rules over keywords in the language.
@@ -22,10 +22,11 @@ This project will finally consist of these components:
 3. Package manager (for future, used to create, install and deploy packages, something like CPAN, PyPi + their client-side tools)
 
 Why not compile to native code using an ahead-of-time compiler? Because with the ever increasing scope of open source software and Software as a Service revolution, almost always you either use an open source library/framework or use a web-based service. Two main benefits of native code compiler are:
+
 1. Hide some advanced algorithm or intellectual property
 2. Performance
 
-As I said, the benefits of the first one are more and more deminishing in current IT world. For the second part, a JIT compiler can be at par with an ahead-of-time compiler (if not better). Other than that, the JIT compilation provides more flexibility and better optimization techniques.
+As I said, the benefits of the first one are more and more diminishing in the current IT world. For the second part, a JIT compiler can be at par with an ahead-of-time compiler (if not better). Other than that, the JIT compilation provides more flexibility and better optimization techniques.
 
 Of course the disadvantage of this approach is that the user of your software needs the the JIT compiler in addition to the source code. For the source code, we can make the process as straightforward as possible, using packaging techniques.
 
