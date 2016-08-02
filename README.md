@@ -323,3 +323,5 @@ N - Tuple data type. We have this in C++, C#, D and Java (to some extent). This 
 
 N - immutability for functions. Like C++ `const` we define a function as const which means it cannot change state of the object. These functions can only call other `const` functions. 
 Go and Java and C# don't have this. Also we can have this by declaring fields of the class as final. 
+
+N - Channels like golang. These can be easily implemented using templates and std lib. 
