@@ -136,7 +136,7 @@ You can add compiler directives to the code. These are like Java's annotations o
 
 ###Templates
 
-You can use compiler directive `@template` to indicate current class/method is a generic one. You can define arguments of the template like `@template(T)` and use `T` inside the body of the class or method. Value for `T` must be either a type-name or an identifier. The template directive can be attached to the whole file or a single method.
+You can use compiler directive `@template` to indicate current class/method is a generic one. You can define arguments of the template like `@template(T)` and use `T` inside the body of the class or method. Value for arguments must be either a type-name (single letter arguments) or an identifier (longer arguments). The template directive can be attached to the whole file or a single method.
 
 To use a generic class you use this syntax: `Class1<int> c = Class1<int> {}` or `auto d = Class1<int>{}`. When you instantiate a generic class, compiler will re-write it's body using provided data, then compile your code. Example:
 
@@ -242,7 +242,7 @@ dow.func1(10);
 - **Special variables**: `$` refers to the result of last function call (used in post-condition assertion).
 - **String interpolation**: You can embed variables inside a string to be automatically converted to string.
 - **Ternary condition**: if/else as an expression `b if a else c` is same as `a ? b:c` in other languages.
-- **Hashtable**: `int[string] h = { "OH":12, "CA":33 }; h["NY"] = 9;`
+- **Hashtable**: `int[String] h = { "OH":12, "CA":33 }; h["NY"] = 9;`
 - **Const args**: All function inputs are `const`. So function cannot modify any of it's inputs.
 
 ###Core package
@@ -275,17 +275,17 @@ The package manager is a separate utility which helps you package, publish, inst
 
 #Decision points
 
-N - should we have something like `Object` in Java or `void*` in C++? So that we can implement a `printf` method. Maybe we can somehow mis-use `auto` keywords for this. `int func(auto x, auto y)`. We can easily implement printf with string interpolation.
+N - should we have something like `Object` in Java or `void*` in C++? So that we can implement a `printf` method. Maybe we can somehow mis-use `auto` keywords for this. `int func(auto x, auto y)`. We can easily implement printf with String interpolation.
 
 Y - Support for concurrency built into the language
 ```
 promise& class1.func1();  //run the statement in another co-routine at the moment
-future<string> f1 = promise class1.func1(1, 2, 3);  //wait for call of invoke
-future<string> f2 = promise { return "a"; };
+future<String> f1 = promise class1.func1(1, 2, 3);  //wait for call of invoke
+future<String> f2 = promise { return "a"; };
 f1.invoke();
 f1.setCallback(...);
 f1.cancel();
-string result = f1.get();
+String result = f1.get();
 ```
 
 Y - ternary operator is very messy but very useful (`a ? b:c`). Is there a way to make use of it in the language? Maybe:
@@ -302,7 +302,7 @@ N - map/reduce/filter, arri implements a specific interface. will be done in cor
     arr2 = arr1.reduce((x,y) -> x+y);
 
 N - serialization/deserialization: Better to be done in core
-    `string x = core.ser.Serialize<obj>(obj1);`
+    `String x = core.ser.Serialize<obj>(obj1);`
     `obj r = core.ser.Deserialize<obj>(x);`
     
 N - join/fork
@@ -313,11 +313,11 @@ N - compare and swap, only for numbers
     `bool b = (x ? 1 -> 2);`
 
 Y - Hash notation, like array with support for hash literals
-    `int[string] hash1 = { "OH":12, "CA":33, ... };`
+    `int[String] hash1 = { "OH":12, "CA":33, ... };`
     behind the scene this will be a class.
 
 N - Tuple data type. We have this in C++, C#, D and Java (to some extent). This cannot be implemented using templates because read/write value to the tuple does not have a specific data type.
-    `tuple<int, name1, string, name2, float, name3> t = { 12, "Hello", 3.14 };
+    `tuple<int, name1, String, name2, float, name3> t = { 12, "Hello", 3.14 };`
     `int x = t.name1;`
     if we add support for identifier to templates, it is possible to implement tuple.
 
