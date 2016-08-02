@@ -41,7 +41,7 @@ The target of this programming language is distributed server-side network softw
 2. **Loop**: `for`, `while`, `break`, `continue`
 2. **Control**: `return`, `defer`, `throw`
 3. **Type handling**: `void`, `const`, `auto`, `null`
-4. **Other**: `error`, `promise`, `this`
+4. **Other**: `error`, `promise`, `this`, `import`
 
 Usage of these keywords is almost same as C++ or Java, so I omit explanation of them in detail.
 
@@ -124,19 +124,20 @@ Notes:
 
 ###Compiler directives and annotation
 
-You can add compiler directives to the code. These are like Java's annotations or C# attributes. They all start with at sign (`@`). Below is a list of them:
+You can add compiler directives to the code. These directives give compiler additional information about the code which can be used to generate correct machine code. These are like Java's annotations or C# attributes. They all start with at sign (`@`). Below is a list of them:
 
-- `@assert`: Insert runtime assertations (pre/post-requisite for a method) defined before function definition (e.g. `@assert(x>0) int func1(int x) { ... }@assert($!=0)`). You can use `@` instead of `@assert`.
-- `@import`: Include another package (e.g. `@import(core.data)` to include all classes inside a package (not it's sub-packages), `@import(core.data -> .)` to import classes inside `core.data` without need to use prefix, so `core.data.stack` will become `stack`), `@import(core.data -> cd)` same as previous example but `core.data.stack` becomes `cd.stack`.
-- `@basedOn`: Indicate this class implements methods of another interface or this interface includes another interface.
+- `@`: Insert runtime assertations (pre/post-requisite for a method) defined before function definition (e.g. `@(x>0) int func1(int x) { ... }@($!=0)`).
+- `@basedOn`: Indicate this class implements methods of another interface or this interface includes another interface. If used against a primitive type, it will declare an enumerated type which is explained in the corresponding section.
 - `@annotate` (or `@@`): Apply a custom annotation (e.g. `@@class1 {1, 2, 3}`).
 - `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose`), some of them (`@expose(method1, method2)`) or all except some (`@expose(!method1, !method2)`).
-- `@template` and `@enum`: Explained in the corresponding section.
-- `@deprecated`
+- `@template`: Explained in the corresponding section.
+- `@deprecated`: To indicate a class or method is deprecated.
+
+Directives that apply to the whole file (`@basedOn`, `@template`, `@annotate`, `@deprecated`) should come before any field or method definition. 
 
 ###Templates
 
-You can use compiler directive `@template` to indicate current class/method is a generic one. You can define arguments of the template like `@template(T)` and use `T` inside the body of the class or method. Value for arguments must be either a type-name (single letter arguments) or an identifier (longer arguments). The template directive can be attached to the whole file or a single method.
+You can use compiler directive `@template` to indicate current class/method is a generic one. You can define one argumen per template directive, like `@template(T)` and use `T` inside the body of the class or method. Value for arguments must be either a type-name (single letter arguments) or an identifier (longer arguments). The template directive can be attached to the whole file or a single method.
 
 To use a generic class you use this syntax: `Class1<int> c = Class1<int> {}` or `auto d = Class1<int>{}`. When you instantiate a generic class, compiler will re-write it's body using provided data, then compile your code. Example:
 
@@ -149,7 +150,7 @@ T x;
 You can also define template based methods (but not template based fields):
 
 ```
-@template(T)
+@template(T=int)
 int add(T x, T y) { ... }
 
 
@@ -202,13 +203,13 @@ int func1(int x, int y) -> x+y;
 
 ###Enum type
 
-Enum data type is a special kind of class with a base primitive type and a set of possible values. Each const definition of the based primitive type with capital letters is one of those possible values. Any variable of type of that class can only have one of those tagged values.
+Enum data type is a special kind of class with a base primitive type and a set of possible values. Each const definition of the based primitive type with capital letters is one of those possible values. Any variable of type of that class can only have one of those tagged values. Note that you cannot add non-const fields to these classes, because their base type is a primitive.
 
 Example:
 ```
 //DayOfWeek.e file
 
-@enum(int)
+@basedOn(int)
 
 const int SAT = 0;
 const int SUN = 1;
@@ -231,7 +232,7 @@ dow.func1(10);
 
 ###Misc
 
-- **Naming**: Suggestion: camelCasing for methods, fields and variables, lower_case_with_underscore for package, UpperCamelCase for class, UPPERCASE for `@enum` names, literal constants and template arguments.
+- **Naming**: Suggestion: camelCasing for methods, fields and variables, lower_case_with_underscore for package, UpperCamelCase for class, UPPERCASE for enumerated names, literal constants and template arguments.
 - **Operator overloading**: A class can overload `[]` and `==` operators for it's instances by having methods called `setData`, `getData` and `equals`.
 - **Checking for implements**: You can use `(Interface1)class1` to check if `class1` implements `Interface1`.
 - **const**: You can define class fields, function arguments, local variables and function output as constant. You can only delay value assignment for a const variable if it is non-primitive. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition.
@@ -245,6 +246,7 @@ dow.func1(10);
 - **Ternary condition**: if/else as an expression `b if a else c` is same as `a ? b:c` in other languages.
 - **Hashtable**: `int[String] h = { "OH":12, "CA":33 }; h["NY"] = 9;`
 - **Const args**: All function inputs are `const`. So function cannot modify any of it's inputs.
+- **import**: Include another package (e.g. `import core.data;` to include all classes inside a package (not it's sub-packages), `import core.data -> ;` to import classes inside `core.data` without need to use prefix, so `core.data.stack` will become `stack`), `import core.data -> cd;` same as previous example but `core.data.stack` becomes `cd.stack`.
 
 ###Core package
 
