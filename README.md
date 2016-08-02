@@ -103,7 +103,7 @@ Each source code file represents a class which can be a simple class (like a nor
 
 If class has no fields or constructor, and none of the methods have a body, then it's an `interface`, else it is a normal class. In a normal class, all methods must have bodies. 
 
-Normal classes can be referenced using instance notation (`varName.memberName`) or static notation (`ClassName.memberName`), which will refer to the special instance of the class (static instance). The static instance of class will be initialized upon first reference (static means state-less so it does not need any initialization code upon creation).
+Normal classes can be referenced using instance notation (`varName.memberName`) or static notation (`ClassName.memberName`), which will refer to the special instance of the class (static instance). There is an static instance for every class which will be initialized upon first reference (static means state-less so it does not need any initialization code upon creation).
 
 Notes:
 - It is invalid for a class to have bodies only for some of methods. Either all of methods should have bodies or none of them should have (no abstract class).
@@ -127,7 +127,7 @@ Notes:
 You can add compiler directives to the code. These directives give compiler additional information about the code which can be used to generate correct machine code. These are like Java's annotations or C# attributes. They all start with at sign (`@`). Below is a list of them:
 
 - `@`: Insert runtime assertations (pre/post-requisite for a method) defined before function definition (e.g. `@(x>0) int func1(int x) { ... }@($!=0)`).
-- `@basedOn`: Indicate this class implements methods of another interface or this interface includes another interface. If used against a primitive type, it will declare an enumerated type which is explained in the corresponding section.
+- `@basedOn`: Indicate this class implements methods of another interface or this interface includes another interface. If used against a primitive type, it will declare an extended primitive which can also be used for enumerated type. This is explained in the corresponding section.
 - `@annotate` (or `@@`): Apply a custom annotation (e.g. `@@class1 {1, 2, 3}`).
 - `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose`), some of them (`@expose(method1, method2)`) or all except some (`@expose(!method1, !method2)`).
 - `@template`: Explained in the corresponding section.
@@ -201,7 +201,7 @@ You can use a similar syntax when defining methods:
 int func1(int x, int y) -> x+y;
 ```
 
-###Enum type
+###Extended primitives and Enum type
 
 Enum data type is a special kind of class with a base primitive type and a set of possible values. Each const definition of the based primitive type with capital letters is one of those possible values. Any variable of type of that class can only have one of those tagged values. Note that you cannot add non-const fields to these classes, because their base type is a primitive.
 
@@ -230,12 +230,14 @@ DayOfWeek dow = DayOfWeek.SAT;
 dow.func1(10);
 ```
 
+An instance of an extended primitive which is not enum, can be treated just like a primitive. So you can pass them instead of primitives in your code.
+
 ###Misc
 
-- **Naming**: Suggestion: camelCasing for methods, fields and variables, lower_case_with_underscore for package, UpperCamelCase for class, UPPERCASE for enumerated names, literal constants and template arguments.
+- **Naming rules**: `camelCasing` for methods, fields and variables, `lower_case_with_underscore` for packages, `UpperCamelCase` for classese, `UPPERCASE` for enumerated names, literal constants and template arguments.
 - **Operator overloading**: A class can overload `[]` and `==` operators for it's instances by having methods called `setData`, `getData` and `equals`.
 - **Checking for implements**: You can use `(Interface1)class1` to check if `class1` implements `Interface1`.
-- **const**: You can define class fields, function arguments, local variables and function output as constant. You can only delay value assignment for a const variable if it is non-primitive. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition.
+- **const**: You can define class fields, function arguments, local variables and function output as constant. You can only delay value assignment for a const variable if it is non-primitive. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition. If the const variable is all uppercase, it defines an enum values and can only be used for extended primitives.
 - **Literals**: `0xffe`, `0b0101110101`, `true`, `false`.
 - **Digit separators**: `1_000_000`.
 - **For**: You can use `for` to iterate over an array `for(x:array1)` or repeat something `n` times `for(n)`.
