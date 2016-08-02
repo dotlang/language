@@ -175,7 +175,8 @@ To escape from all the complexities of generics in other languages, we have no o
 
 ###Anonymous class
 
-You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface. If the interface has only one method, the definition can be in short form.
+You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface. If the interface has only one method, the definition can be in short form. 
+Note that both short and long form, the code only has read-only access to variables in the parent method. No access is given to the parent class. 
 
 ```
 //short form, when interface has only one method
