@@ -244,7 +244,7 @@ An instance of an extended primitive which is not enum, can be treated just like
 - **Arrays**: Same notation as Java `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]`.
 - **Special variables**: `$` refers to the result of last function call (used in post-condition assertion).
 - **String interpolation**: You can embed variables inside a string to be automatically converted to string. If string is surrounded by double quote it won't be interpolated. You need to use single quote for interpolation to work.
-- **Ternary condition**: if/else as an expression `b if a else c` is same as `a ? b:c` in other languages.
+- **Ternary condition**: if/else as an expression `iif(a, b, c)` is same as `a ? b:c` in other languages.
 - **Hashtable**: `int[String] h = { "OH":12, "CA":33 }; h["NY"] = 9;`
 - **Const args**: All function inputs are `const`. So function cannot modify any of it's inputs.
 - **import**: Include another package (e.g. `import core.data;` to include all classes inside a package (not it's sub-packages), `import core.data -> ;` to import classes inside `core.data` without need to use prefix, so `core.data.stack` will become `stack`), `import core.data -> cd;` same as previous example but `core.data.stack` becomes `cd.stack`.
@@ -277,8 +277,9 @@ There will be another set of packages built on top of core which provide common 
 #Package Manager
 
 The package manager is a separate utility which helps you package, publish, install and deploy packages (Like `maven` or `dub`).
+Suppose someone downloads the source code for a project written in Electron which has some dependencies. How is he going to compile/run the project? There should be an easy and transparent for fetching dependencies at runtime and defining them at the time of development.
 
-#Decision points
+#Enhancement Proposals
 
 N - should we have something like `Object` in Java or `void*` in C++? So that we can implement a `printf` method. Maybe we can somehow mis-use `auto` keywords for this. `int func(auto x, auto y)`. We can easily implement printf with String interpolation.
 
@@ -295,7 +296,7 @@ String result = f1.get();
 ```
 
 Y - ternary operator is very messy but very useful (`a ? b:c`). Is there a way to make use of it in the language? Maybe:
-`if a then b else c` or `b if a else c`. We only want to evaluate `c` if `b` is `FALSE` so this cannot be done with a library function. 
+`if a then b else c` or `b if a else c`. We only want to evaluate `c` if `b` is `FALSE` so this cannot be done with a library function. Another option: `iif(a, b, c)`.
 
 N - Support for atomic operations in language level? This can be achieved using `core` so better not to add a new keyword/compiler feature for this.
 
