@@ -2,7 +2,7 @@
 
 N - should we have something like `Object` in Java or `void*` in C++? So that we can implement a `printf` method. Maybe we can somehow mis-use `auto` keywords for this. `int func(auto x, auto y)`. We can easily implement printf with String interpolation.
 
-Y - Support for concurrency built into the language
+N - Support for concurrency built into the language
 ```
 future<String> f = promise { ... }, { ... };  //plan to run first block in parallel, when done, run the second block
 promise& class1.func1();  //run the statement in another co-routine at the moment
@@ -13,6 +13,7 @@ f1.setCallback(...);
 f1.cancel();
 String result = f1.get();
 ```
+This can be easily achieved by using std and anonymous function. Why add a new keyword?
 
 Y - ternary operator is very messy but very useful (`a ? b:c`). Is there a way to make use of it in the language? Maybe:
 `if a then b else c` or `b if a else c`. We only want to evaluate `c` if `b` is `FALSE` so this cannot be done with a library function. Another option: `iif(a, b, c)`.
@@ -39,7 +40,7 @@ N - compare and swap, only for numbers
     `bool b = (x ? 1 -> 2);`
 
 Y - Hash notation, like array with support for hash literals
-    `int[String] hash1 = { "OH":12, "CA":33, ... };`
+    `int[String] hash1 = { "OH" => 12, "CA" => 33, ... };`
     behind the scene this will be a class.
 
 N - Tuple data type. We have this in C++, C#, D and Java (to some extent). This cannot be implemented using templates because read/write value to the tuple does not have a specific data type.
