@@ -116,7 +116,7 @@ Notes:
 - Some basic methods are provided by default for all classes: `toString`, `getHashCode`. You can override the default implementation, simply by adding these methods to your class.
 - You can define default values for method parameters (e.g. `int func1(int x, int y=0)`).
 - You can overload functions based on their input/output.
-- Constructor is a special method named `new` with implicit return type (e.g. `new() { return {}; }`). The `{}` allocates a new instance of the current class in memory. 
+- Constructor is a special method named `new` with return type of the class (e.g. `Class1 new() { return {}; }`). The `{}` allocates a new instance of the current class in memory. 
 - Compiler will add an empty constructor to the class if it doesn't have any.
 - The syntax to initialize variables is like C++ uniform initialization (e.g. `Class1 c = Class1 {10, 4};` or `Interface1 intr = Class1 {3, 5}` or `Class1 c = {3}`).
 - When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`). In statis class, you have to refer to them using `ClassName.memberName` notation.
