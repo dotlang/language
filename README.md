@@ -41,7 +41,7 @@ The target of this programming language is distributed server-side network softw
 2. **Loop**: `for`, `break`, `continue`
 2. **Control**: `return`, `defer`, `throw`
 3. **Type handling**: `void`, `const`, `auto`, `null`
-4. **Other**: `error`, `promise`, `this`, `import`
+4. **Other**: `error`, `this`, `import`
 
 Usage of these keywords is almost same as C++ or Java, so I omit explanation of them in detail.
 
@@ -125,7 +125,7 @@ Notes:
 
 You can add compiler directives to the code. These directives give compiler additional information about the code which can be used to generate correct machine code. These are like Java's annotations or C# attributes. They all start with at sign (`@`). Below is a list of them:
 
-- `@`: Insert runtime assertations (pre/post-requisite for a method) defined before function definition (e.g. `@(x>0) int func1(int x) { ... }@($!=0)`). You can add a message to the assertion: `@(x>0 : 'x must be positive')`.
+- `@`: Insert runtime assertations (pre/post-requisite for a method) defined before function definition (e.g. `@(x>0) int func1(int x) { ... }@($!=0)`). You can add a message to the assertion: `@(x>0 : 'x must be positive')`. In case you want to throw exception upon assertion failure you need to use this syntax: `@(x<0, {'error occured'})`.
 - `@basedOn`: Indicate this class implements methods of another interface or this interface includes another interface. If used against a primitive type, it will declare an extended primitive which can also be used for enumerated type. This is explained in the corresponding section.
 - `@annotate` (or `@@`): Apply a custom annotation (e.g. `@@class1 {1, 2, 3}`).
 - `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose`), some of them (`@expose(method1, method2)`) or all except some (`@expose(!method1, !method2)`).
@@ -169,9 +169,10 @@ To escape from all the complexities of generics in other languages, we have no o
 
 ###Exception handling
 
-- You can use `throw` keywords to throw an exception object and exit current method: `throw {1, 2}`
-- You can catch thrown exception in your code using `if` command and `error` global variable: `int y = func1(); if ( error ) ...`. You can silence an error by writing `error = null`.
-- You can use `defer` keyword (same as what golang has) to define code that must be executed even in case of exception.
+- You can initialize `Error` class (defined in core) in case of an exception and return immediately from the function: `Error.set('something wrong happened'); return null;`.
+- You can catch errors using `if` statement: `if (Error.isSet()) ... `.
+- You can silence an error using: `Error.reset()`.
+- You can use `defer` keyword (same as what golang has) to define code that must be executed upon exitting current method.
 
 ###Anonymous function/class
 
@@ -180,16 +181,26 @@ Note that both short and long form, the code only has read-only access to variab
 
 ```
 //short form, when interface has only one method
-Interface1 intr = (x, y) -> x+y;
+Interface1 intr = (x, y) -> x+y;  //specifying type for input is optional
+Intr6 intr5 = () -> 5; //no input
 Interface2 intr2 = x -> x+1;  //you can omit parantheses if you have only one variable
 Interface3 intr3 = this.method1; //if method1 confirms to interface3, you can use it as the value
+Interface1 intr = (x, y) -> { 
+    method1();
+    method2(x,y);
+};
 
 //long form
-Interface1 intr = interface1 
+Interface1 intr = Interface1 
 {
     int function1(int x,int y) 
     {
         return x+y;
+    }
+    
+    int functio2(int x)
+    {
+        return x+1;
     }
 };
 ```
@@ -247,7 +258,7 @@ An instance of an extended primitive which is not enum, can be treated just like
 - **Ternary condition**: if/else as an expression `iif(a, b, c)` is same as `a ? b:c` in other languages.
 - **Hashtable**: `int[String] h = { "OH":12, "CA":33 }; h["NY"] = 9;`
 - **Const args**: All function inputs are `const`. So function cannot modify any of it's inputs.
-- **import**: Include another package (e.g. `import core.data;` to include all classes inside a package (not it's sub-packages), `import core.data -> ;` to import classes inside `core.data` without need to use prefix, so `core.data.stack` will become `stack`), `import core.data -> cd;` same as previous example but `core.data.stack` becomes `cd.stack`.
+- **import**: Include another package (e.g. `import core.data;` to include all classes inside a package (not it's sub-packages), `import core.data => ;` to import classes inside `core.data` without need to use prefix, so `core.data.stack` will become `stack`), `import core.data => cd;` same as previous example but `core.data.stack` becomes `cd.stack`.
 
 ###Core package
 
