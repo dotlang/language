@@ -56,3 +56,15 @@ N - Channels like golang. These can be easily implemented using templates and st
 Y - null coalescing operator (`x = a ?? b` means `x = a` if a is not null, else `x = b`)
 
 N - Functions cannot modify their input values, so why not send everything by reference? Because of the overhead of de-referencing.
+
+? - Simpler switch: If case body is big, it's better to use if. If it's small we can use this:
+```
+switch(x)
+{
+    1: { return 1; }
+    2: { return 2; }
+    3: { return 3; }
+    : { return 0; }  //default
+}
+```
+This will remove `case` and `default` keywords. 
