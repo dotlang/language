@@ -55,9 +55,8 @@ Usage of these keywords is almost same as C++ or Java, so I omit explanation of 
 
 The operators are almost similar to C language:
 
-- Conditional: `and or ! == != >= <=`
-- Bitwise: `& | ^ ~ << >>`
-- Math `+ - * % ++ -- ** `
+- Conditional: `and or not == != >= <= ??`
+- Math `+ - * % ++ -- **`
 - Other `{} =~`
 
 ### Data passing
@@ -137,7 +136,7 @@ Directives that apply to the whole file (`@basedOn`, `@param`, `@annotate`, `@de
 
 ###Templates
 
-You can use compiler directive `@param` to indicate current class/method is a generic one. You can define one argumen per param directive, like `@param(T=x)` with default value of `x`, and use `T` inside the body of the class or method. Value for arguments must be either a type-name (single letter arguments) or an identifier (more than single letter). The param directive can be attached to the whole file or a single method.
+You can use compiler directive `@param` to indicate current class/method is generic. You can define one argumen per param directive, like `@param(T=x)` with default value of `x`, and use `T` inside the body of the class or method. Value for arguments must be either a type-name (single letter arguments) or an identifier (more than single letter). The param directive can be attached to the whole file or a single method.
 
 To use a generic class you use this syntax: `Class1<int> c = Class1<int> {}` or `auto d = Class1<int>{}`. When you instantiate a generic class or call a generic method, compiler will re-write it's body using provided data, then compile your code. Example:
 
@@ -174,7 +173,7 @@ To escape from all the complexities of generics in other languages, we have no o
 - You can catch thrown exception in your code using `if` command and `error` global variable: `int y = func1(); if ( error ) ...`. You can silence an error by writing `error = null`.
 - You can use `defer` keyword (same as what golang has) to define code that must be executed even in case of exception.
 
-###Anonymous class
+###Anonymous function/class
 
 You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface. If the interface has only one method, the definition can be in short form. 
 Note that both short and long form, the code only has read-only access to variables in the parent method. No access is given to the parent class. 
@@ -272,6 +271,7 @@ There will be another set of packages built on top of core which provide common 
 - Collections (Stack, Queue, Linked List, ...)
 - Encryption
 - Math
+- Bitwise operators (and, or, shift, xor, ...)
 - ...
 
 #Package Manager
@@ -331,3 +331,7 @@ N - immutability for functions. Like C++ `const` we define a function as const w
 Go and Java and C# don't have this. Also we can have this by declaring fields of the class as final. 
 
 N - Channels like golang. These can be easily implemented using templates and std lib. 
+
+Y - null coalescing operator (`x = a ?? b` means `x = a` if a is not null, else `x = b`)
+
+N - Functions cannot modify their input values, so why not send everything by reference? Because of the overhead of de-referencing.
