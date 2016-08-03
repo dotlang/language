@@ -256,9 +256,9 @@ An instance of an extended primitive which is not enum, can be treated just like
 - **Special variables**: `$` refers to the result of last function call (used in post-condition assertion).
 - **String interpolation**: You can embed variables inside a string to be automatically converted to string. If string is surrounded by double quote it won't be interpolated. You need to use single quote for interpolation to work.
 - **Ternary condition**: if/else as an expression `iif(a, b, c)` is same as `a ? b:c` in other languages.
-- **Hashtable**: `int[String] h = { "OH":12, "CA":33 }; h["NY"] = 9;`
+- **Hashtable**: Same as enhancement proposal.
 - **Const args**: All function inputs are `const`. So function cannot modify any of it's inputs.
-- **import**: Include another package (e.g. `import core.data;` to include all classes inside a package (not it's sub-packages), `import core.data => ;` to import classes inside `core.data` without need to use prefix, so `core.data.stack` will become `stack`), `import core.data => cd;` same as previous example but `core.data.stack` becomes `cd.stack`.
+- **import**: Include another package (e.g. `import core.data;` to include all classes inside a package (not it's sub-packages), `import core.data =>;` to import classes inside `core.data` without need to use prefix, so `core.data.stack` will become `stack`), `import core.data => cd;` same as previous example but `core.data.stack` becomes `cd.stack`.
 
 ###Core package
 
