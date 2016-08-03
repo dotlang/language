@@ -38,7 +38,7 @@ The target of this programming language is distributed server-side network softw
 ###Keywords
 
 1. **Conditional**: `if`, `else`, `switch`, `case`, `default`
-2. **Loop**: `for`, `while`, `break`, `continue`
+2. **Loop**: `for`, `break`, `continue`
 2. **Control**: `return`, `defer`, `throw`
 3. **Type handling**: `void`, `const`, `auto`, `null`
 4. **Other**: `error`, `promise`, `this`, `import`
@@ -47,9 +47,9 @@ Usage of these keywords is almost same as C++ or Java, so I omit explanation of 
 
 ### Primitive data types
 
-- **Integer data types**: int8 (char), int16, int32 (int), int64, uint8 (byte), uint16, uint32, uint64
-- **Floating point data types**: float32 (float), float64 (double)
-- **Others**: bool
+- **Integer data types**: `int8` (`char`), `int16`, `int32` (`int`), `int64`, `uint8` (`byte`), `uint16`, `uint32`, `uint64`
+- **Floating point data types**: `float32` (`float`), `float64`
+- **Others**: `bool`
 
 ### Operators
 
@@ -126,23 +126,23 @@ Notes:
 
 You can add compiler directives to the code. These directives give compiler additional information about the code which can be used to generate correct machine code. These are like Java's annotations or C# attributes. They all start with at sign (`@`). Below is a list of them:
 
-- `@`: Insert runtime assertations (pre/post-requisite for a method) defined before function definition (e.g. `@(x>0) int func1(int x) { ... }@($!=0)`).
+- `@`: Insert runtime assertations (pre/post-requisite for a method) defined before function definition (e.g. `@(x>0) int func1(int x) { ... }@($!=0)`). You can add a message to the assertion: `@(x>0 : 'x must be positive')`.
 - `@basedOn`: Indicate this class implements methods of another interface or this interface includes another interface. If used against a primitive type, it will declare an extended primitive which can also be used for enumerated type. This is explained in the corresponding section.
 - `@annotate` (or `@@`): Apply a custom annotation (e.g. `@@class1 {1, 2, 3}`).
 - `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose`), some of them (`@expose(method1, method2)`) or all except some (`@expose(!method1, !method2)`).
-- `@template`: Explained in the corresponding section.
+- `@param`: Explained in the corresponding section.
 - `@deprecated`: To indicate a class or method is deprecated.
 
-Directives that apply to the whole file (`@basedOn`, `@template`, `@annotate`, `@deprecated`) should come before any field or method definition. 
+Directives that apply to the whole file (`@basedOn`, `@param`, `@annotate`, `@deprecated`) should come before any field or method definition. 
 
 ###Templates
 
-You can use compiler directive `@template` to indicate current class/method is a generic one. You can define one argumen per template directive, like `@template(T)` and use `T` inside the body of the class or method. Value for arguments must be either a type-name (single letter arguments) or an identifier (longer arguments). The template directive can be attached to the whole file or a single method.
+You can use compiler directive `@param` to indicate current class/method is a generic one. You can define one argumen per param directive, like `@param(T=x)` with default value of `x`, and use `T` inside the body of the class or method. Value for arguments must be either a type-name (single letter arguments) or an identifier (more than single letter). The param directive can be attached to the whole file or a single method.
 
-To use a generic class you use this syntax: `Class1<int> c = Class1<int> {}` or `auto d = Class1<int>{}`. When you instantiate a generic class, compiler will re-write it's body using provided data, then compile your code. Example:
+To use a generic class you use this syntax: `Class1<int> c = Class1<int> {}` or `auto d = Class1<int>{}`. When you instantiate a generic class or call a generic method, compiler will re-write it's body using provided data, then compile your code. Example:
 
 ```
-template(T)
+@param(T)
 
 T x;
 ```
@@ -150,7 +150,7 @@ T x;
 You can also define template based methods (but not template based fields):
 
 ```
-@template(T=int)
+@param(T=int)
 int add(T x, T y) { ... }
 
 
@@ -158,11 +158,11 @@ int add(T x, T y) { ... }
 int result = obj1.add<int>(1, 2);
 ```
 
-You can use `@template` when defining interface members but you cannot specify default parameter values in an interface definition. 
+You can use `@param` when defining interface members but you cannot specify default parameter values in an interface definition. 
 
 ```
 //interface1.e
-@template(T)
+@param(T)
 int adder(T a, T b);
 ```
 
@@ -244,7 +244,7 @@ An instance of an extended primitive which is not enum, can be treated just like
 - - **Suffixed if and for**: `return 1 if x>1;`, `x++ for(10)`, `x += y for (y: array)`.
 - **Arrays**: Same notation as Java `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]`.
 - **Special variables**: `$` refers to the result of last function call (used in post-condition assertion).
-- **String interpolation**: You can embed variables inside a string to be automatically converted to string.
+- **String interpolation**: You can embed variables inside a string to be automatically converted to string. If string is surrounded by double quote it won't be interpolated. You need to use single quote for interpolation to work.
 - **Ternary condition**: if/else as an expression `b if a else c` is same as `a ? b:c` in other languages.
 - **Hashtable**: `int[String] h = { "OH":12, "CA":33 }; h["NY"] = 9;`
 - **Const args**: All function inputs are `const`. So function cannot modify any of it's inputs.
@@ -284,6 +284,7 @@ N - should we have something like `Object` in Java or `void*` in C++? So that we
 
 Y - Support for concurrency built into the language
 ```
+future<String> f = promise { ... }, { ... };  //plan to run first block in parallel, when done, run the second block
 promise& class1.func1();  //run the statement in another co-routine at the moment
 future<String> f1 = promise class1.func1(1, 2, 3);  //wait for call of invoke
 future<String> f2 = promise { return "a"; };
