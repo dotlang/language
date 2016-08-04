@@ -70,8 +70,21 @@ switch(x)
 ```
 This will remove `case` and `default` keywords. 
 
-? - Omit parantheses from if/for/switch
+N - Omit parantheses from if/for/switch. This will decrease code readbility. 
 
-? - Add annotation for documentation of a method or class or interface: `@doc('dsdsadsad')`
+Y - Add annotation for documentation of a method or class or interface: `@doc('dsdsadsad')`
 
-? - Calling methods (including constructor) by providing parameter names: `x.setData(name: 'start', value: 10);`
+Y - Calling methods (including constructor) by providing parameter names: `x.setData(name: 'start', value: 10);`. This will make code more readable without adding much complexity. 
+
+N - Remove braces, like Python (We may also need to decide about notation to define anonymous functions).
+    It's a bad idea to have language's semantics rely on invisible characters. Go doesn't do this.
+
+N - Remove void keyword. No, explicit is better than implicit. `int f1() { ...}; f2() { ... }` they are same thing but seem different because of removal of void.
+
+? - remove semicolon from end of lines.
+
+N - Remove sub-package concept. We only have a set of packages. This is what golang does / But hierarchy is the key to handle the complexity. Also we don't have such a concept, it's just a feature. 
+
+* - How should we specify version number of a package? How should we address the version of a dependency? Later for package/build manager compoennt this will be decided.
+
+Y - No annotations? Configuration should not be part of the code, and most of the time they can be replaced with good design patterns like decorator or ....
