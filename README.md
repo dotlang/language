@@ -26,14 +26,14 @@ Why not compile to native code using an ahead-of-time compiler? Because with the
 1. Hide some advanced algorithm or intellectual property
 2. Performance
 
-As I said, the benefits of the first one are more and more diminishing in the current IT world. For the second part, a JIT compiler can be at par with an ahead-of-time compiler (if not better). Moreover, the JIT compilation provides more flexibility and better optimization techniques.
+As I said, the benefits of the first one are more and more diminishing in the current IT world. For the second part, a JIT compiler can be at par with an ahead-of-time compiler (if not better). Moreover, the JIT compilation provides more flexibility and better optimization possibilities.
 
 Of course the disadvantage of this approach is that the user of your software needs the the JIT compiler in addition to the source code. For the source code, we need to make this process as straightforward as possible.
 
 ###Paradigm
 
 Electron is a object-oriented and imperative  programming language with GC memory. 
-The target use case of this programming language is distributed server-side network software which normally handle a lot of remote clients.
+The target use case of this programming language is distributed server-side network software.
 
 ###Keywords
 
@@ -120,16 +120,16 @@ Each class's instances can be referenced using instance notation (`varName.membe
 - The syntax to initialize variables is like C++ uniform initialization (e.g. `Class1 c = Class1 {10, 4};` or `Interface1 intr = Class1 {3, 5}` or `Class1 c = {3}`).
 - When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`).
 
-###Compiler directives and annotation
+###Compiler directives
 
-You can add compiler directives to the code. These directives give compiler additional information about the code which can be used to generate correct machine code. These are like Java's annotations or C# attributes. They all start with at sign (`@`). Below is a list of them:
+You can add compiler directives to the code. These directives give compiler additional information about the code which can be used to generate correct machine code. They all start with at sign (`@`). Below is a list of them:
 
-- `@`: Insert runtime assertations (can be used for pre/post-condition checks) defined before/after/inside function definition (e.g. `@(x>0) int func1(int x) { ... }@($!=0)`). You can add a message to the assertion: `@(x>0 : 'x must be positive')`. In case you want to throw exception upon assertion failure you need to use this syntax: `@(x<0 : {'error occured'})`.
+- `@`: Assertions (useful for pre/post-condition checks) defined before/after/inside function definition (e.g. `@(x>0) int func1(int x) { ... }@($!=0)`). You can add a message to the assertion: `@(x>0 : 'x must be positive')`. In case you want to throw exception upon assertion failure you need to use this syntax: `@(x<0 : {'error occured'})`.
 - `@basedOn`: Indicate this class implements methods of another interface or this interface includes another interface. If used against a primitive type, it will declare an extended primitive which can also be used for enumerated type. This is explained in the corresponding section.
-- `@@`: Apply a custom annotation (e.g. `@@class1 {1, 2, 3}`) to an interface, class or public member.
-- `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose`), some of them (`@expose(method1, method2)`) or all except some (`@expose(-method1, -method2)`).
+- `@@`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@@`), some of them (`@@(method1, method2)`) or all except some (`@@(-method1, -method2)`).
 - `@param`: Explained in the corresponding section.
 - `@deprecated`: To indicate a class or method is deprecated.
+- `@doc('....')`: Document the class or method or field. 
 
 Directives that apply to the whole file should come before any field or method definition. 
 
@@ -265,7 +265,7 @@ An instance of an extended primitive which is not enum, can be treated just like
 A set of core packages will be included in the language which provide basic and low-level functionality (This part may be written in C):
 
 - Calling C/C++ methods
-- Reflection and extracting annotations
+- Reflection
 - Data conversion
 - Garbage collector
 - Exception class
