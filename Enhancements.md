@@ -69,3 +69,9 @@ switch(x)
 }
 ```
 This will remove `case` and `default` keywords. 
+
+? - Omit parantheses from if/for/switch
+
+? - Add annotation for documentation of a method or class or interface: `@doc('dsdsadsad')`
+
+? - Calling methods (including constructor) by providing parameter names: `x.setData(name: 'start', value: 10);`
