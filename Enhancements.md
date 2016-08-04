@@ -85,6 +85,6 @@ N - Remove void keyword. No, explicit is better than implicit. `int f1() { ...};
 
 N - Remove sub-package concept. We only have a set of packages. This is what golang does / But hierarchy is the key to handle the complexity. Also we don't have such a concept, it's just a feature. 
 
-* - How should we specify version number of a package? How should we address the version of a dependency? Later for package/build manager compoennt this will be decided.
+\* - How should we specify version number of a package? How should we address the version of a dependency? Later for package/build manager compoennt this will be decided.
 
 Y - No annotations? Configuration should not be part of the code, and most of the time they can be replaced with good design patterns like decorator or ....
