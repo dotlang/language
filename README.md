@@ -2,48 +2,48 @@
 
 ###Note: This pet project is a work in progress, so expect a lot of changes.
 
-After having worked with a lot of different languages (C#, Java, Perl, Javascript, C, C++, Python, D) it still irritates me that these languages are sometimes seem to _intend_ to be overly complex. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
+After having worked with a lot of different languages (C#, Java, Perl, Javascript, C, C++, Python, D) and being familiar with some others (including Scala and Rust) it still irritates me that these languages are sometimes seem to _intend_ to be overly complex. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
 
 That's why I am creating the new programming language: Electron. 
 
 I will follow 3 rules when designing this language:
 
 1. **Simple**: Easy to learn, read, write and understand. Consistent and logical, as much as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
-2. **Powerful**: It should enable developers to develop, maintain and operate large and complex software projects, with relative ease.
+2. **Powerful**: It should enable developers to organize, develop, test, maintain and operate a large and complex software project, with relative ease.
 3. **Fast**: Performance of the final output should be high. Much better than dynamic languages like Python. Something like Java.
 
-I know that achieving all of above goals at the same time is something impossible so there will definitely be trade-offs where I will let go of some features to have other (more desirable) features. I will remove some features or limit some features in the language where I think it will help achieve above goals. One important guideline I use is "convention over configuration" which basically means, I will prefer a set of pre-defined rules over keywords in the language.
+I know that achieving all of above goals at the same time is something impossible so there will definitely be trade-offs where I will let go of some features to have other (more desirable) features. I will remove some features or limit some features in the language where I think it will help achieve above goals. One important guideline I use is "convention over configuration" which basically means, I will prefer using a set of pre-defined rules over keywords in the language.
 
 This project will finally consist of these components:
 
-1. A specification of the language (Formal specification + Examples, descriptios and best practices)
+1. A specification of the language (Formal specification + Examples, descriptions and best practices)
 2. A JIT interpreter/compiler
-2. Debugger tools (for future)
-3. Package manager (for future, used to create, install and deploy packages, something like CPAN, PyPi + their client-side tools)
+2. Debugger tools
+3. Package manager (Used to build, create, install and deploy packages, something like CPAN, PyPi + their client-side tools)
 
-Why not compile to native code using an ahead-of-time compiler? Because with the ever increasing scope of open source software and Software as a Service revolution, almost always you either use an open source library/framework or use a web-based service. Two main benefits of native code compiler are:
+Why not compile to native code using an ahead-of-time compiler? Because with the ever increasing range of open source software and Software as a Service revolution, almost always you either use an open source library/framework or use a web-based service. Two main benefits of AOT compiler are:
 
 1. Hide some advanced algorithm or intellectual property
 2. Performance
 
-As I said, the benefits of the first one are more and more diminishing in the current IT world. For the second part, a JIT compiler can be at par with an ahead-of-time compiler (if not better). Other than that, the JIT compilation provides more flexibility and better optimization techniques.
+As I said, the benefits of the first one are more and more diminishing in the current IT world. For the second part, a JIT compiler can be at par with an ahead-of-time compiler (if not better). Moreover, the JIT compilation provides more flexibility and better optimization techniques.
 
-Of course the disadvantage of this approach is that the user of your software needs the the JIT compiler in addition to the source code. For the source code, we can make the process as straightforward as possible, using packaging techniques.
+Of course the disadvantage of this approach is that the user of your software needs the the JIT compiler in addition to the source code. For the source code, we need to make this process as straightforward as possible.
 
 ###Paradigm
 
-Electron is a declarative, object-oriented programming language with GC memory. 
-The target of this programming language is distributed server-side network software which normally handle a lot of remote clients.
+Electron is a object-oriented and imperative  programming language with GC memory. 
+The target use case of this programming language is distributed server-side network software which normally handle a lot of remote clients.
 
 ###Keywords
 
-1. **Conditional**: `if`, `else`, `switch`, `case`, `default`
+1. **Conditional**: `if`, `else`, `switch`
 2. **Loop**: `for`, `break`, `continue`
 2. **Control**: `return`, `defer`, `throw`
 3. **Type handling**: `void`, `const`, `auto`, `null`
 4. **Other**: `error`, `this`, `import`
 
-Usage of these keywords is almost same as C++ or Java, so I omit explanation of them in detail.
+Usage of these keywords is almost same as C++ or Java, so I omit explanation for most of them in detail.
 
 ### Primitive data types
 
@@ -63,7 +63,7 @@ The operators are almost similar to C language:
 
 Primitives are passed by value. Everything else (array, string, classes, ...) will be passed by reference.
 
-Although `string` is not primitive, but all string literals will be handled by the compiler behind the scene.
+Although `String` is not primitive, but all string literals will be handled by the compiler behind the scene.
 
 ### General structure
 
@@ -78,7 +78,7 @@ core
 |-----|-----tcp  
 |-----|-----socket  
 
-In the above examples `core.math, core.io, core.sys, core.net, core.net.http, core.net.tcp, core.net.socket` are all packages. Each package can have a number of source code files. Each source code file represents one class. 
+In the above examples `core.math, core.io, core.sys, core.net, core.net.http, core.net.tcp, core.net.socket` are all packages. Each package can have a number of source code files. Each source code file represents one definition. 
 
 Syntax for definition of fields and methods is very similar to other OOP languages like C# or Java.
 
@@ -98,17 +98,16 @@ This is a class with only one method, called `main` which returns `0` (very simi
 
 ###Classes
 
-Each source code file represents a class which can be a simple class (like a normal class in other OOP languages) or an interface (same as interface in other languages). 
+Each source code file represents either an interface or class. What separates these two is that, an interface has no fieds or constructor, and all method are without body. Everything else is considered a class. 
 
-If class has no fields or constructor, and none of the methods have a body, then it's an `interface`, else it is a normal class. In a normal class, all methods must have bodies. 
+Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be initialized upon first reference (static means state-less so it does not need any initialization code upon creation).
 
-Normal classes can be referenced using instance notation (`varName.memberName`) or static notation (`ClassName.memberName`), which will refer to the special instance of the class (static instance). There is an static instance for every class which will be initialized upon first reference (static means state-less so it does not need any initialization code upon creation).
-
-Notes:
-- It is invalid for a class to have bodies only for some of methods. Either all of methods should have bodies or none of them should have (no abstract class).
+*Notes:*
+- Note that you cannot have bodies only for some of the class methods (no abstract class).
 - There is no inheritance. Composition is encouraged instead.
-- If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is considered public.
+- If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is public.
 - You can prevent usage of a class as a non-static class by defining constructor as private.
+- The order of the contents of source code file matters: First `import` statements, then compiler directions, fields and methods. 
 
 ###Class members
 
@@ -119,20 +118,20 @@ Notes:
 - Constructor is a special method named `new` with return type of the class (e.g. `Class1 new() { return {}; }`). The `{}` allocates a new instance of the current class in memory. 
 - Compiler will add an empty constructor to the class if it doesn't have any.
 - The syntax to initialize variables is like C++ uniform initialization (e.g. `Class1 c = Class1 {10, 4};` or `Interface1 intr = Class1 {3, 5}` or `Class1 c = {3}`).
-- When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`). In statis class, you have to refer to them using `ClassName.memberName` notation.
+- When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`).
 
 ###Compiler directives and annotation
 
 You can add compiler directives to the code. These directives give compiler additional information about the code which can be used to generate correct machine code. These are like Java's annotations or C# attributes. They all start with at sign (`@`). Below is a list of them:
 
-- `@`: Insert runtime assertations (pre/post-requisite for a method) defined before function definition (e.g. `@(x>0) int func1(int x) { ... }@($!=0)`). You can add a message to the assertion: `@(x>0 : 'x must be positive')`. In case you want to throw exception upon assertion failure you need to use this syntax: `@(x<0, {'error occured'})`.
+- `@`: Insert runtime assertations (can be used for pre/post-condition checks) defined before/after/inside function definition (e.g. `@(x>0) int func1(int x) { ... }@($!=0)`). You can add a message to the assertion: `@(x>0 : 'x must be positive')`. In case you want to throw exception upon assertion failure you need to use this syntax: `@(x<0 : {'error occured'})`.
 - `@basedOn`: Indicate this class implements methods of another interface or this interface includes another interface. If used against a primitive type, it will declare an extended primitive which can also be used for enumerated type. This is explained in the corresponding section.
-- `@annotate` (or `@@`): Apply a custom annotation (e.g. `@@class1 {1, 2, 3}`).
-- `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose`), some of them (`@expose(method1, method2)`) or all except some (`@expose(!method1, !method2)`).
+- `@@`: Apply a custom annotation (e.g. `@@class1 {1, 2, 3}`) to an interface, class or public member.
+- `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose`), some of them (`@expose(method1, method2)`) or all except some (`@expose(-method1, -method2)`).
 - `@param`: Explained in the corresponding section.
 - `@deprecated`: To indicate a class or method is deprecated.
 
-Directives that apply to the whole file (`@basedOn`, `@param`, `@annotate`, `@deprecated`) should come before any field or method definition. 
+Directives that apply to the whole file should come before any field or method definition. 
 
 ###Templates
 
@@ -169,7 +168,7 @@ To escape from all the complexities of generics in other languages, we have no o
 
 ###Exception handling
 
-- You can initialize `Error` class (defined in core) in case of an exception and return immediately from the function: `Error.set('something wrong happened'); return null;`.
+- You can initialize `Error` class (defined in core) in case of an exception and return immediately from the function: `Error.set('something wrong happened'); return null;`. This has a short-cut: `throw {'something wrong happened'};` which will return default value of the return type of the function (Usually `null` or 0).
 - You can catch errors using `if` statement: `if (Error.isSet()) ... `.
 - You can silence an error using: `Error.reset()`.
 - You can use `defer` keyword (same as what golang has) to define code that must be executed upon exitting current method.
