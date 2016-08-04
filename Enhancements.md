@@ -57,14 +57,15 @@ Y - null coalescing operator (`x = a ?? b` means `x = a` if a is not null, else 
 
 N - Functions cannot modify their input values, so why not send everything by reference? Because of the overhead of de-referencing.
 
-? - Simpler switch: If case body is big, it's better to use if. If it's small we can use this:
+Y - Simpler switch: If case body is big, it's better to use if. If it's small we can use this:
 ```
 switch(x)
 {
-    1: { return 1; }
+    1: return 1; //if block is just one line, you can omit brces
     2: { return 2; }
     3: { return 3; }
-    : { return 0; }  //default
+    4, 5: x++;
+    _: { return 0; }  //default
 }
 ```
 This will remove `case` and `default` keywords. 
