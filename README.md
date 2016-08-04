@@ -13,7 +13,7 @@ I will follow 3 rules when designing this language:
 3. **Fast**: Performance of the final output should be high. Much better than dynamic languages like Python. Something like Java.
 
 I know that achieving all of above goals at the same time is something impossible so there will definitely be trade-offs where I will let go of some features to have other (more desirable) features. I will remove some features or limit some features in the language where I think it will help achieve above goals. One important guideline I use is "convention over configuration" which basically means, I will prefer using a set of pre-defined rules over keywords in the language.
-
+s
 This project will finally consist of these components:
 
 1. A specification of the language (Formal specification + Examples, descriptions and best practices)
@@ -168,7 +168,7 @@ To escape from all the complexities of generics in other languages, we have no o
 
 ###Exception handling
 
-- You can initialize `Error` class (defined in core) in case of an exception and return immediately from the function: `Error.set('something wrong happened'); return null;`. This has a short-cut: `throw {'something wrong happened'};` which will return default value of the return type of the function (Usually `null` or 0).
+- In case of exception: `throw {'something wrong happened'};`. This will initialize `Error` class (defined in core) and return immediately from the function (Returning default value for method output type).
 - You can catch errors using `if` statement: `if (Error.isSet()) ... `.
 - You can silence an error using: `Error.reset()`.
 - You can use `defer` keyword (same as what golang has) to define code that must be executed upon exitting current method.
@@ -204,7 +204,7 @@ Interface1 intr = Interface1
 };
 ```
 
-You can use a similar syntax when defining methods:
+You can use a similar syntax when defining methods which have only return statement:
 
 ```
 int func1(int x, int y) -> x+y;
@@ -212,7 +212,9 @@ int func1(int x, int y) -> x+y;
 
 ###Extended primitives and Enum type
 
-Enum data type is a special kind of class with a base primitive type and a set of possible values. Each const definition of the based primitive type with capital letters is one of those possible values. Any variable of type of that class can only have one of those tagged values. Note that you cannot add non-const fields to these classes, because their base type is a primitive.
+You can define classes which are based on primitives. These classes will be just like that primitive data type + some extra methods that you have defined. Note that you cannot add non-const fields to these classes, because their base type is a primitive. These classes are called extended primitives.
+
+Enum data type is an extended primitive type with a set of possible values. Each const definition of the based primitive type with capital letters is one of those possible values. Any variable of type of that class can only have one of those tagged values. 
 
 Example:
 ```
@@ -243,20 +245,19 @@ An instance of an extended primitive which is not enum, can be treated just like
 
 ###Misc
 
-- **Naming rules**: `camelCasing` for methods, fields and variables, `lower_case_with_underscore` for packages, `UpperCamelCase` for classese, `UPPERCASE` for enumerated names, literal constants and template arguments.
-- **Operator overloading**: A class can overload `[]` and `==` operators for it's instances by having methods called `setData`, `getData` and `equals`.
-- **Checking for implements**: You can use `(Interface1)class1` to check if `class1` implements `Interface1`.
-- **const**: You can define class fields, function arguments, local variables and function output as constant. You can only delay value assignment for a const variable if it is non-primitive. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition. If the const variable is all uppercase, it defines an enum values and can only be used for extended primitives.
+- **Naming rules**: `camelCasing` for methods, fields and variables, `lower_case_with_underscore` for packages, `UpperCamelCase` for classese, `UPPERCASE` for enumerated names and template parameters.
+- **Checking for implements**: You can use `(Interface1)class1` to check if `class1` variable implements `Interface1`.
+- **const**: You can define class fields, local variables and function output as constant. You can only delay value assignment for a const variable if it is non-primitive. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition.
 - **Literals**: `0xffe`, `0b0101110101`, `true`, `false`.
 - **Digit separators**: `1_000_000`.
-- **For**: You can use `for` to iterate over an array `for(x:array1)` or repeat something `n` times `for(n)`.
-- - **Suffixed if and for**: `return 1 if x>1;`, `x++ for(10)`, `x += y for (y: array)`.
+- **For**: You can use `for` to iterate over an array `for(x:array1)`.
+- **Suffixed if and for**: `return 1 if x>1;`, `x += y for (y: array)`.
 - **Arrays**: Same notation as Java `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]`.
 - **Special variables**: `$` refers to the result of last function call (used in post-condition assertion).
 - **String interpolation**: You can embed variables inside a string to be automatically converted to string. If string is surrounded by double quote it won't be interpolated. You need to use single quote for interpolation to work.
 - **Ternary condition**: if/else as an expression `iif(a, b, c)` is same as `a ? b:c` in other languages.
 - **Hashtable**: Same as enhancement proposal.
-- **Const args**: All function inputs are `const`. So function cannot modify any of it's inputs.
+- **Const args**: All function inputs are `const`. So function cannot modify any of it's inputs' values.
 - **import**: Include another package (e.g. `import core.data;` to include all classes inside a package (not it's sub-packages), `import core.data =>;` to import classes inside `core.data` without need to use prefix, so `core.data.stack` will become `stack`), `import core.data => cd;` same as previous example but `core.data.stack` becomes `cd.stack`.
 
 ###Core package
