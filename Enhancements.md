@@ -125,3 +125,9 @@ Then we can state that interface cannot have a struct section. (Alternative name
 Y - `@param` should only be allowed at file level. Do we really need `@param` at method level? Seems not.
 
 ? - Assume we want to use a template class. `int n = 5; auto x = AClass<n> {};`. Will `AClass` be generated using value of `5` or `n`?
+
+Y - Remove `@` for assertion. Use `assert` keyword which is more readable. And for pre-post condition, use normal syntax and `defer` keyword respectively. For class-wide assertions, we can re-use same keyword. Assume how can someone take a look at assertions in a big file when we use `@` notation?
+
+Y - Rename `@@` to `@expose` because it is explicit. 
+
+Y - Remove `@deprecated` this can easily be achieved using file level assert.
