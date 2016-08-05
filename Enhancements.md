@@ -1,5 +1,7 @@
 #Enhancement Proposals
 
+Note: Y = Approved, N = Rejected, \* = On Hold
+
 N - should we have something like `Object` in Java or `void*` in C++? So that we can implement a `printf` method. Maybe we can somehow mis-use `auto` keywords for this. `int func(auto x, auto y)`. We can easily implement printf with String interpolation.
 
 N - Support for concurrency built into the language
@@ -81,11 +83,13 @@ N - Remove braces, like Python (We may also need to decide about notation to def
 
 N - Remove void keyword. No, explicit is better than implicit. `int f1() { ...}; f2() { ... }` they are same thing but seem different because of removal of void.
 
-? - remove semicolon from end of lines.
+N - remove semicolon from end of lines. Go and Python don't have this. But things like `x = y [
 
 N - Remove sub-package concept. We only have a set of packages. This is what golang does / But hierarchy is the key to handle the complexity. Also we don't have such a concept, it's just a feature. 
 
 \* - How should we specify version number of a package? How should we address the version of a dependency? Later for package/build manager compoennt this will be decided.
+
+\* - How can we define assertion and other directives in interface methods?
 
 Y - No annotations? Configuration should not be part of the code, and most of the time they can be replaced with good design patterns like decorator or ....
 
@@ -94,12 +98,30 @@ N - We expect all `import` statements be grouped together. So why not merge them
 ? - Disable sending param values as another template type to a template: `auto x = tuple<tuple<tuple<int, ivar>...`
 Values for template parameters should be either one of primitive types or a simple class name.
 
-? - Remove template and generic code? Everybody seems complaining about them in other languages. 
+N - Remove template and generic code? Everybody seems complaining about them in other languages. No. We have relied heavily on this (tuple, map/reduce, ...). We just make sure this will be as simple as possible without ambiguity and complexity. Being strongly typed is one of powers of Electron and removing templates will force us to loose this property too. 
 
 ? - Object creation syntax should be completely readable and not to be confused with any other construct. Is it so?
 
-? - Support for higher dimension array as a single block memory allocation. 
+Y - Support for higher dimension array as a single block memory allocation. `int[,] x = int[5, 4];` or `int[][] x = int[5][4]`. The second version is more powerful because we can have `x[0]` as an int array of size 4. But it won't be a continuous block of memory. Both can be possible. First for efficiency and second for language orthogonality.
 
-? - regex is not readable. Let's remove its dedicated operator and use string methods instead (startsWith, endsWith, contains...).
+Y - regex is not readable. Let's remove its dedicated operator and use string methods instead (startsWith, endsWith, contains...).
 
-? - Make string, primitive or have a primitive and a non-primitive string type? non-primitive is basedOn the primitive.
+N - Make string, primitive or have a primitive and a non-primitive string type? non-primitive is basedOn the primitive.
+
+Y - Return bitwise operators. In some cases like hash, encryption, digital signature or network based code this can be useful.
+
+N - If all fields of a class need to be defined in a single location in the file, why not merge them all like import statement?
+```
+struct
+{
+    int x;
+    const int y = 12;
+}
+```
+Then we can state that interface cannot have a struct section. (Alternative names: data, fields, def, definition, allocate).
+
+? - Is semicolon required at the end of directives? When you are 'defining' something (method, struct, ...), you don't need to place semicolon but when you are requesting something to be done (by compiler or OS or CPU) it is needed. If we totally remove semicolon from language this differentiation will not be needed. We cannot force semicolon everywhere because inserting semicolot at the end of method body is unusual. As a general rule, semicolon is not required after closing braces. 
+
+Y - `@param` should only be allowed at file level. Do we really need `@param` at method level? Seems not.
+
+? - Assume we want to use a template class. `int n = 5; auto x = AClass<n> {};`. Will `AClass` be generated using value of `5` or `n`?
