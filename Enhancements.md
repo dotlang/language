@@ -88,3 +88,12 @@ N - Remove sub-package concept. We only have a set of packages. This is what gol
 \* - How should we specify version number of a package? How should we address the version of a dependency? Later for package/build manager compoennt this will be decided.
 
 Y - No annotations? Configuration should not be part of the code, and most of the time they can be replaced with good design patterns like decorator or ....
+
+N - We expect all `import` statements be grouped together. So why not merge them all like go?
+
+? - Disable sending param values as another template type to a template: `auto x = tuple<tuple<tuple<int, ivar>...`
+Values for template parameters should be either one of primitive types or a simple class name.
+
+? - Remove template and generic code? Everybody seems complaining about them in other languages. 
+
+? - Object creation syntax should be completely readable and not to be confused with any other construct. Is it so?
