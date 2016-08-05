@@ -1,6 +1,6 @@
 #Enhancement Proposals
 
-Note: Y = Approved, N = Rejected, \* = On Hold
+Note: Y = Approved, N = Rejected/Clarified, \* = On Hold
 
 N - should we have something like `Object` in Java or `void*` in C++? So that we can implement a `printf` method. Maybe we can somehow mis-use `auto` keywords for this. `int func(auto x, auto y)`. We can easily implement printf with String interpolation.
 
@@ -97,8 +97,8 @@ Y - No annotations? Configuration should not be part of the code, and most of th
 
 N - We expect all `import` statements be grouped together. So why not merge them all like go?
 
-? - Disable sending param values as another template type to a template: `auto x = tuple<tuple<tuple<int, ivar>...`
-Values for template parameters should be either one of primitive types or a simple class name.
+\* - Disable sending param values as another template type to a template: `auto x = tuple<tuple<tuple<int, ivar>...`
+Values for template parameters should be either one of primitive types or a simple class name. Later to be decided.
 
 N - Remove template and generic code? Everybody seems complaining about them in other languages. No. We have relied heavily on this (tuple, map/reduce, ...). We just make sure this will be as simple as possible without ambiguity and complexity. Being strongly typed is one of powers of Electron and removing templates will force us to loose this property too. 
 
@@ -138,3 +138,5 @@ Y - Remove `@deprecated` this can easily be achieved using file level assert.
 IX x = () -> this._outer.dataMember;
 ```
 This method is explicit, not confusing, easy to read and understand. But does not provide access to the parent method, which sometimes can be extra useful.  
+
+Y - Remove `@doc` directive. Define a special comment for this purpose: `/// dsadsada`
