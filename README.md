@@ -258,7 +258,15 @@ An instance of an extended primitive which is not enum, can be treated just like
 - **Ternary condition**: if/else as an expression `iif(a, b, c)` is same as `a ? b:c` in other languages.
 - **Hashtable**: Same as enhancement proposal.
 - **Const args**: All function inputs are `const`. So function cannot modify any of it's inputs' values.
-- **import**: Include another package (e.g. `import core.data;` to include all classes inside a package (not it's sub-packages), `import core.data =>;` to import classes inside `core.data` without need to use prefix, so `core.data.stack` will become `stack`), `import core.data => cd;` same as previous example but `core.data.stack` becomes `cd.stack`.
+- **import**: Include other packages:
+```
+import
+{
+    core.math,   //default import, core.math.c1 becomes core.math.c1
+    core.math => mt,  //import with alias, core.math.c1 becomes mt.c1
+    core.math => _,  //import into current namespace, core.math.c1 becomes c1
+};
+```
 
 ###Core package
 
