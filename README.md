@@ -37,7 +37,7 @@ The target use case of this programming language is distributed server-side netw
 
 ###Keywords
 
-1. **Conditional**: `if`, `else`, `switch`
+1. **Conditional**: `if`, `else`, `switch`, `assert`
 2. **Loop**: `for`, `break`, `continue`
 2. **Control**: `return`, `defer`, `throw`
 3. **Type handling**: `void`, `const`, `auto`, `null`
@@ -108,7 +108,7 @@ Each class's instances can be referenced using instance notation (`varName.membe
 - There is no inheritance. Composition is encouraged instead.
 - If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is public.
 - You can prevent usage of a class as a non-static class by defining constructor as private.
-- The order of the contents of source code file matters: First `import` section, then compiler directives, fields and methods. 
+- The order of the contents of source code file matters: First `import` section, then compiler directives, struct section and methods. 
 
 ###Class members
 
@@ -125,12 +125,10 @@ Each class's instances can be referenced using instance notation (`varName.membe
 
 You can add compiler directives to the code. These directives give compiler additional information about the code which can be used to generate correct machine code. They all start with at sign (`@`). Below is a list of them:
 
-- `@`: Assertions (useful for pre/post-condition checks) defined before/after/inside function definition (e.g. `@(x>0) int func1(int x) { ... }@($!=0)`). You can add a message to the assertion: `@(x>0 : 'x must be positive')`. In case you want to throw exception upon assertion failure you need to use this syntax: `@(x<0 : {'error occured'})`.
-- `@basedOn`: Indicate this class implements methods of another interface or this interface includes another interface. If used against a primitive type, it will declare an extended primitive which can also be used for enumerated type. This is explained in the corresponding section.
-- `@@`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@@`), some of them (`@@(method1, method2)`) or all except some (`@@(-method1, -method2)`).
-- `@param`: Explained in the corresponding section.
-- `@deprecated`: To indicate a class or method is deprecated.
-- `@doc('....')`: Document the class or method or field. 
+- file-level: `@basedOn`: Indicate this class implements methods of another interface or this interface includes another interface. If used against a primitive type, it will declare an extended primitive which can also be used for enumerated type. This is explained in the corresponding section.
+- field-level: `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose`), some of them (`@expose(method1, method2)`) or all except some (`@expose(-method1, -method2)`).
+- file-level: `@param`: Explained in the corresponding section.
+- file and method and field level: `@doc('....')`: Document the class or method or field. 
 
 Directives that apply to the whole file should come before any field or method definition. 
 
@@ -241,6 +239,7 @@ An instance of an extended primitive which is not enum, can be treated just like
 - **Hashtable**: Same as enhancement proposal.
 - **Const args**: All function inputs are `const`. So function cannot modify any of it's inputs' values.
 - **import**: Include other packages:
+- **assert**: You can use this to check for pre-condition and with `defer` it can be used to check for post-condition. `assert x>0 : 'error message'` or to throw exception: `assert x>0 : {'error message'};`.
 ```
 import
 {
