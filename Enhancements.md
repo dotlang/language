@@ -83,13 +83,15 @@ N - Remove braces, like Python (We may also need to decide about notation to def
 
 N - Remove void keyword. No, explicit is better than implicit. `int f1() { ...}; f2() { ... }` they are same thing but seem different because of removal of void.
 
-N - remove semicolon from end of lines. Go and Python don't have this. But things like `x = y [
+N - remove semicolon from end of lines. Go and Python don't have this.
 
 N - Remove sub-package concept. We only have a set of packages. This is what golang does / But hierarchy is the key to handle the complexity. Also we don't have such a concept, it's just a feature. 
 
 \* - How should we specify version number of a package? How should we address the version of a dependency? Later for package/build manager compoennt this will be decided.
 
 \* - How can we define assertion and other directives in interface methods?
+
+\* - Conventions to define unit tests in the code? How to define startup and finalization methods?
 
 Y - No annotations? Configuration should not be part of the code, and most of the time they can be replaced with good design patterns like decorator or ....
 
@@ -100,7 +102,7 @@ Values for template parameters should be either one of primitive types or a simp
 
 N - Remove template and generic code? Everybody seems complaining about them in other languages. No. We have relied heavily on this (tuple, map/reduce, ...). We just make sure this will be as simple as possible without ambiguity and complexity. Being strongly typed is one of powers of Electron and removing templates will force us to loose this property too. 
 
-? - Object creation syntax should be completely readable and not to be confused with any other construct. Is it so?
+N - Object creation syntax should be completely readable and not to be confused with any other construct. Is it so? Yes it is. We don't need `new` keyword here.
 
 Y - Support for higher dimension array as a single block memory allocation. `int[,] x = int[5, 4];` or `int[][] x = int[5][4]`. The second version is more powerful because we can have `x[0]` as an int array of size 4. But it won't be a continuous block of memory. Both can be possible. First for efficiency and second for language orthogonality.
 
@@ -120,14 +122,19 @@ struct
 ```
 Then we can state that interface cannot have a struct section. (Alternative names: data, fields, def, definition, allocate).
 
-? - Is semicolon required at the end of directives? When you are 'defining' something (method, struct, ...), you don't need to place semicolon but when you are requesting something to be done (by compiler or OS or CPU) it is needed. If we totally remove semicolon from language this differentiation will not be needed. We cannot force semicolon everywhere because inserting semicolot at the end of method body is unusual. As a general rule, semicolon is not required after closing braces. 
-
+Y - Is semicolon required at the end of directives? When you are 'defining' something (method, struct, ...), you don't need to place semicolon but when you are requesting something to be done (by compiler or OS or CPU) it is needed. If we totally remove semicolon from language this differentiation will not be needed. We cannot force semicolon everywhere because inserting semicolot at the end of method body is unusual. As a general rule, semicolon is not required after closing braces. 
 Y - `@param` should only be allowed at file level. Do we really need `@param` at method level? Seems not.
 
-? - Assume we want to use a template class. `int n = 5; auto x = AClass<n> {};`. Will `AClass` be generated using value of `5` or `n`?
+N - Assume we want to use a template class. `int n = 5; auto x = AClass<n> {};`. Will `AClass` be generated using value of `5` or `n`? You have to send `'n'` not `n`.
 
 Y - Remove `@` for assertion. Use `assert` keyword which is more readable. And for pre-post condition, use normal syntax and `defer` keyword respectively. For class-wide assertions, we can re-use same keyword. Assume how can someone take a look at assertions in a big file when we use `@` notation?
 
 Y - Rename `@@` to `@expose` because it is explicit. 
 
 Y - Remove `@deprecated` this can easily be achieved using file level assert.
+
+? - More explicit syntax for anonymous function/interface to access outer methods information. Simple using variable names from parent method or class is not elegant and also it's too implicit. One solution is that compiler generates a new class on the fly which implementd target interface and according to the given code and method bodies. And at the end adds a private variable names `_outer` of type parent class which can be used to access public fields and methods of the container class of the parent method of the anonymous function. 
+```
+IX x = () -> this._outer.dataMember;
+```
+This method is explicit, not confusing, easy to read and understand. But does not provide access to the parent method, which sometimes can be extra useful.  
