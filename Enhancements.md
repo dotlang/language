@@ -97,3 +97,9 @@ Values for template parameters should be either one of primitive types or a simp
 ? - Remove template and generic code? Everybody seems complaining about them in other languages. 
 
 ? - Object creation syntax should be completely readable and not to be confused with any other construct. Is it so?
+
+? - Support for higher dimension array as a single block memory allocation. 
+
+? - regex is not readable. Let's remove its dedicated operator and use string methods instead (startsWith, endsWith, contains...).
+
+? - Make string, primitive or have a primitive and a non-primitive string type? non-primitive is basedOn the primitive.
