@@ -128,7 +128,6 @@ You can add compiler directives to the code. These directives give compiler addi
 - file-level: `@basedOn`: Indicate this class implements methods of another interface or this interface includes another interface. If used against a primitive type, it will declare an extended primitive which can also be used for enumerated type. This is explained in the corresponding section.
 - field-level: `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose;`), some of them (`@expose(method1, method2);`) or all except some (`@expose(-method1, -method2);`).
 - file-level: `@param`: Explained in the corresponding section.
-- file and method and field level: `@doc('....')`: Document the class or method or field. 
 
 Note that you have to put semicolon at the end of compiler directives.
 
@@ -255,6 +254,7 @@ import
     core.math => _,  //import into current namespace, core.math.c1 becomes c1
 }
 ```
+- **Documentation**: Any comment before method or field or first line of the file starting with `///` is special comment to be processed by IDEs and automated tools. 
 
 ###Core package
 
