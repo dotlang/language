@@ -126,22 +126,30 @@ Each class's instances can be referenced using instance notation (`varName.membe
 You can add compiler directives to the code. These directives give compiler additional information about the code which can be used to generate correct machine code. They all start with at sign (`@`). Below is a list of them:
 
 - file-level: `@basedOn`: Indicate this class implements methods of another interface or this interface includes another interface. If used against a primitive type, it will declare an extended primitive which can also be used for enumerated type. This is explained in the corresponding section.
-- field-level: `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose`), some of them (`@expose(method1, method2)`) or all except some (`@expose(-method1, -method2)`).
+- field-level: `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose;`), some of them (`@expose(method1, method2);`) or all except some (`@expose(-method1, -method2);`).
 - file-level: `@param`: Explained in the corresponding section.
 - file and method and field level: `@doc('....')`: Document the class or method or field. 
 
-Directives that apply to the whole file should come before any field or method definition. 
+Note that you have to put semicolon at the end of compiler directives.
 
 ###Templates
 
 You can use compiler directive `@param` to indicate current file is generic. You can define one argumen per param directive, like `@param(T=x)` with default value of `x`, and use `T` inside the body of the class. Value for arguments must be either a type-name (single letter arguments) or an identifier (more than single letter).
 
-To use a generic class you use this syntax: `Class1<int> c = Class1<int> {}` or `auto d = Class1<int>{}`. When you instantiate a generic class or call a generic method, compiler will re-write it's body using provided data, then compile your code. Example:
+To use a generic class you use this syntax: `Class1<int> c = Class1<int> {}` or `auto d = Class1<int>{}`. For identifier type parameters, you need to enclose value inside single quotes. When you instantiate a generic class, compiler will re-write it's body using provided data, then compile your code. Example:
 
 ```
-@param(T)
+//tuple.e
+@param(T);
+@param(TNAME);
+@param(R);
+@param(RNAME);
 
-T x;
+T TNAME;
+R RNAME;
+
+//main.e code
+tuple<int, 'age', String, 'name'> student;
 ```
 
 To escape from all the complexities of generics in other languages, we have no other notation to limit template type or variable template types.
@@ -160,10 +168,9 @@ Note that both short and long form, the code only has read-only access to variab
 
 ```
 //short form, when interface has only one method
-Interface1 intr = (x, y) -> x+y;  //specifying type for input is optional
+Interface1 intr = (x, y) -> x+y;  //specifying type for input is not needed
 Intr6 intr5 = () -> 5; //no input
 Interface2 intr2 = x -> x+1;  //you can omit parantheses if you have only one variable
-Interface3 intr3 = this.method1; //if method1 confirms to interface3, you can use it as the value
 Interface1 intr = (x, y) -> { 
     method1();
     method2(x,y);
@@ -200,7 +207,7 @@ Example:
 ```
 //DayOfWeek.e file
 
-@basedOn(int)
+@basedOn(int);
 
 const int SAT = 0;
 const int SUN = 1;
