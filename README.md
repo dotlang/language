@@ -56,8 +56,9 @@ Usage of these keywords is almost same as C++ or Java, so I omit explanation for
 The operators are almost similar to C language:
 
 - Conditional: `and or not == != >= <= ??`
+- Bitwise `& | ^ << >> ~`
 - Math `+ - * % ++ -- **`
-- Other `{} =~`
+- Other `{}`
 
 ### Data passing
 
@@ -107,7 +108,7 @@ Each class's instances can be referenced using instance notation (`varName.membe
 - There is no inheritance. Composition is encouraged instead.
 - If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is public.
 - You can prevent usage of a class as a non-static class by defining constructor as private.
-- The order of the contents of source code file matters: First `import` statements, then compiler directions, fields and methods. 
+- The order of the contents of source code file matters: First `import` section, then compiler directives, fields and methods. 
 
 ###Class members
 
@@ -135,7 +136,7 @@ Directives that apply to the whole file should come before any field or method d
 
 ###Templates
 
-You can use compiler directive `@param` to indicate current class/method is generic. You can define one argumen per param directive, like `@param(T=x)` with default value of `x`, and use `T` inside the body of the class or method. Value for arguments must be either a type-name (single letter arguments) or an identifier (more than single letter). The param directive can be attached to the whole file or a single method.
+You can use compiler directive `@param` to indicate current file is generic. You can define one argumen per param directive, like `@param(T=x)` with default value of `x`, and use `T` inside the body of the class. Value for arguments must be either a type-name (single letter arguments) or an identifier (more than single letter).
 
 To use a generic class you use this syntax: `Class1<int> c = Class1<int> {}` or `auto d = Class1<int>{}`. When you instantiate a generic class or call a generic method, compiler will re-write it's body using provided data, then compile your code. Example:
 
@@ -143,25 +144,6 @@ To use a generic class you use this syntax: `Class1<int> c = Class1<int> {}` or 
 @param(T)
 
 T x;
-```
-
-You can also define template based methods (but not template based fields):
-
-```
-@param(T=int)
-int add(T x, T y) { ... }
-
-
-//calling add method
-int result = obj1.add<int>(1, 2);
-```
-
-You can use `@param` when defining interface members but you cannot specify default parameter values in an interface definition. 
-
-```
-//interface1.e
-@param(T)
-int adder(T a, T b);
 ```
 
 To escape from all the complexities of generics in other languages, we have no other notation to limit template type or variable template types.
@@ -241,7 +223,7 @@ DayOfWeek dow = DayOfWeek.SAT;
 dow.func1(10);
 ```
 
-An instance of an extended primitive which is not enum, can be treated just like a primitive. So you can pass them instead of primitives in your code.
+An instance of an extended primitive which is not enum, can be treated just like a primitive. So you can pass them instead of primitives in your code or pass a primitive instead of an extended primitive.
 
 ###Misc
 
@@ -265,7 +247,7 @@ import
     core.math,   //default import, core.math.c1 becomes core.math.c1
     core.math => mt,  //import with alias, core.math.c1 becomes mt.c1
     core.math => _,  //import into current namespace, core.math.c1 becomes c1
-};
+}
 ```
 
 ###Core package
