@@ -250,12 +250,9 @@ dow.method1();
 - **Const args**: All function inputs are `const`. So function cannot modify any of it's inputs' values.
 - **import**: Include other packages:
 ```
-import
-{
-    core.math,   //default import, core.math.c1 becomes core.math.c1
-    core.math => mt,  //import with alias, core.math.c1 becomes mt.c1
-    core.math => _,  //import into current namespace, core.math.c1 becomes c1
-}
+import core.math;  //default import, core.math.c1 becomes core.math.c1
+import core.math m; //import with alias, core.math.c1 becomes mt.c1
+import core.math _; //import into current namespace, core.math.c1 becomes c1
 ```
 - **assert**: You can use this to check for pre-condition and with `defer` it can be used to check for post-condition. `assert x>0 : 'error message'` or to throw exception: `assert x>0 : throw {'error message'};`.
 - **Documentation**: Any comment before method or field or first line of the file starting with `///` is special comment to be processed by IDEs and automated tools. 
@@ -297,12 +294,9 @@ Suppose someone downloads the source code for a project written in Electron whic
 
 #A sample file
 ```
-import
-{
-    core.math, 
-    core.math => mt,
-    core.math => _,
-}
+import core.math;
+import core.math m;
+import core.math _;
 
 struct
 {
