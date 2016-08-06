@@ -41,7 +41,7 @@ The target use case of this programming language is distributed server-side netw
 2. **Loop**: `for`, `break`, `continue`
 2. **Control**: `return`, `defer`, `throw`
 3. **Type handling**: `void`, `const`, `auto`, `null`
-4. **Other**: `error`, `this`, `import`, `struct`, `extends`
+4. **Other**: `this`, `import`, `struct`, `extends`
 
 Usage of these keywords is almost same as C++ or Java, so I omit explanation for most of them in detail.
 
@@ -71,15 +71,13 @@ Although `String` is not primitive, but all string literals will be handled by t
 Code is organized into packages. Each package is represented by a directory in the file-system. Packages have a hierarchical structure:
 
 core  
-|-----math  
-|-----io  
 |-----sys  
 |-----net  
 |-----|-----http  
 |-----|-----tcp  
-|-----|-----socket  
 
-In the above examples `core.math, core.io, core.sys, core.net, core.net.http, core.net.tcp, core.net.socket` are all packages. Each package can have a number of source code files. Each source code file represents one definition. 
+
+In the above examples `core.sys, core.net, core.net.http, core.net.tcp` are all packages.
 
 Syntax for definition of fields and methods is very similar to other OOP languages like C# or Java.
 
@@ -99,23 +97,35 @@ This is a class with only one method, called `main` which returns `0` (very simi
 
 ###Classes
 
-Each source code file represents either an interface or class. What separates these two is that, an interface has no fieds, and all method are without body. Everything else is considered a class. 
+Each source code file represents either an interface or class. What separates these two is that, an interface has no fieds, and no method has a body. Everything else is considered a class. 
 
-Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be initialized upon first reference (static means state-less so it does not need any initialization code upon creation). You can use class name to refer to it's statis instance: `auto x = MyClass`.
+Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be initialized upon first reference. 
 
 *Notes:*
 - Note that you cannot have bodies only for some of the class methods (no abstract class).
 - There is no inheritance. Composition is encouraged instead.
 - If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is public.
-- The order of the contents of source code file matters: First `import` section, then compiler directives, struct section and methods. 
+- The order of the contents of source code file matters: First `import` section, then `struct` and finally methods. 
 
 ###Class members
 
+```
+struct 
+{
+    const int x = 12;
+    int y {'key1' => 'value1', 'key2' => 'value2' ...};  //this is a hash-like structure for meta-data of the field
+    int h = 12;  //WRONG! You can only init literals for const fields
+}
+
+int func1(int y) { return this.x + y; }
+
+```
+
 - Class members starting with underscore are considered private and can only be accessed by other class members.
-- Some basic methods are provided by default for all classes: `toString`, `getHashCode`. You can override the default implementation, simply by adding these methods to your class.
+- Some basic methods are provided by default for all classes: `equals`, `toString`, `getHashCode`. You can override the default implementation, simply by adding these methods to your class.
 - You can define default values for method parameters (e.g. `int func1(int x, int y=0)`).
 - You can overload functions based on their input/output.
-- There is no specific constructor. If class wants, it can define methods to create instance of it and other can use the static instance of the class to invoke that method. The `{}` allocates a new instance of the current class in memory:
+- There is no specific constructor. If class wants, it can define methods to create instance of it and other can use the static instance of the class to invoke that method. The `{}` allocates a new instance of the current class on heap:
 ```
 //MyClass.e
 MyClass new() { return {}; }
@@ -123,26 +133,21 @@ MyClass new() { return {}; }
 //main.e
 MyClass x = MYClass.new();
 ```
-- The syntax to initialize variables is like C++ uniform initialization (e.g. `Class1 c = Class1 {10, 4};` or `Interface1 intr = Class1 {3, 5}` or `Class1 c = {3}`).
 - When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`).
 
 ###Templates
 
-You can define template arguments and their default values using comment in the beginning of the file. 
+You can define template arguments and their default values using a comment in the beginning of the file. 
 
 ```
 //tuple.e
 //<T, TNAME, R, RNAME>
-//<R>
-template {
-    type T;
-    token TNAME;
-    type R;
-    token RNAME;
-}
 
-T TNAME;
-R RNAME;
+struct 
+{
+    T TNAME;
+    R RNAME;
+}
 
 //main.e code
 tuple<int, 'age', String, 'name'> student;
@@ -198,11 +203,9 @@ int func1(int y) -> this.member1.func1(y); //delegate calls
 
 *Closure*: All anonymous function and classes, have a `this` which will point to a read-only set of local variables in the enclosing method (including input arguments).
 
-###Extended primitives and Enum type
+###Enum type
 
-You can define classes which are based on primitives. These classes will be just like that primitive data type + some extra methods that you have defined. Note that you cannot add non-const fields to these classes, because their base type is a primitive. These classes are called extended primitives.
-
-Enum data type is an extended primitive type with a set of possible values. Each const definition of the based primitive type with capital letters is one of those possible values. Any variable of type of that class can only have one of those tagged values. 
+Enums are value types without any method and only const fields.
 
 Example:
 ```
@@ -222,8 +225,6 @@ DayOfWeek dow = DayOfWeek.SAT;
 
 ```
 
-An instance of an extended primitive which is not enum, can be treated just like a primitive. So you can pass them instead of primitives in your code or pass a primitive instead of an extended primitive.
-
 ###Misc
 
 - **Naming rules**: `camelCasing` for methods, fields and variables, `lower_case_with_underscore` for packages, `UpperCamelCase` for classese, `UPPERCASE` for enumerated names and template parameters.
@@ -234,10 +235,10 @@ An instance of an extended primitive which is not enum, can be treated just like
 - **For**: You can use `for` to iterate over an array `for(x:array1)`.
 - **Suffixed if and for**: `return 1 if x>1;`, `x += y for (y: array)`.
 - **Arrays**: Same notation as Java `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]`.
-- **Special variables**: `$` refers to the result of last function call (used in post-condition assertion).
+- **Special variables**: `$` refers to the result of last function call (used in post-condition assertion): `defer assert $>0;`.
 - **String interpolation**: You can embed variables inside a string to be automatically converted to string. If string is surrounded by double quote it won't be interpolated. You need to use single quote for interpolation to work.
-- **Ternary condition**: if/else as an expression `iif(a, b, c)` is same as `a ? b:c` in other languages.
-- **Hashtable**: Same as enhancement proposal.
+- **Ternary condition**: `iif(a, b, c) ` is same as `a ? b:c` in other languages.
+- **Hashtable**: `int[String] hash1 = { 'OH' => 12, 'CA' => 33, ... };`.
 - **Const args**: All function inputs are `const`. So function cannot modify any of it's inputs' values.
 - **import**: Include other packages:
 ```
@@ -248,11 +249,12 @@ import
     core.math => _,  //import into current namespace, core.math.c1 becomes c1
 }
 ```
-- **assert**: You can use this to check for pre-condition and with `defer` it can be used to check for post-condition. `assert x>0 : 'error message'` or to throw exception: `assert x>0 : {'error message'};`.
+- **assert**: You can use this to check for pre-condition and with `defer` it can be used to check for post-condition. `assert x>0 : 'error message'` or to throw exception: `assert x>0 : throw {'error message'};`.
 - **Documentation**: Any comment before method or field or first line of the file starting with `///` is special comment to be processed by IDEs and automated tools. 
-- **Delegation**: `* -> this.memberName` will convert all method calls like X to `this.memberName.X` if member has X.
+- **Delegation**: `* -> this.memberName;` will convert all method calls like X to `this.memberName.X` if member has X.
 - **Extension**: `extends ABCD;` means current interface is based upon ABCD interface.
 - **Call by name**: `myClass.myMember(x: 10, y: 12);`
+
 
 
 ###Core package
@@ -263,7 +265,7 @@ A set of core packages will be included in the language which provide basic and 
 - Reflection
 - Data conversion
 - Garbage collector
-- Exception class
+- Exception handling
 
 ###Standard package
 
@@ -284,3 +286,28 @@ There will be another set of packages built on top of core which provide common 
 
 The package manager is a separate utility which helps you package, publish, install and deploy packages (Like `maven` or `dub`).
 Suppose someone downloads the source code for a project written in Electron which has some dependencies. How is he going to compile/run the project? There should be an easy and transparent for fetching dependencies at runtime and defining them at the time of development.
+
+#A sample file
+```
+import
+{
+    core.math,   //default import, core.math.c1 becomes core.math.c1
+    core.math => mt,  //import with alias, core.math.c1 becomes mt.c1
+    core.math => _,  //import into current namespace, core.math.c1 becomes c1
+}
+
+struct
+{
+    int x = 12_000;
+    int y;
+    int z { 'json': 'field1' };
+}
+
+int getInstance() -> {};   //enable instantiation of this class
+int func1(int data=9) 
+{
+    Func<int> anonFunc = (u) -> u+1;
+    
+    this.z = data + anonFunc.apply(u: 6);
+}
+```
