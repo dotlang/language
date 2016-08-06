@@ -219,7 +219,7 @@ int func1(int y) -> this.member1.func1(y); //delegate calls
 //all enums are based on int8
 enum
 {
-    SAT = 0,  //value is mandatory
+    SAT,  //value is not mandatory
     SUN = 1,
     MON = 2,
 }
