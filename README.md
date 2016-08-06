@@ -13,7 +13,7 @@ I will follow 3 rules when designing this language:
 3. **Fast**: Performance of the final output should be high. Much better than dynamic languages like Python. Something like Java.
 
 I know that achieving all of above goals at the same time is something impossible so there will definitely be trade-offs where I will let go of some features to have other (more desirable) features. I will remove some features or limit some features in the language where I think it will help achieve above goals. One important guideline I use is "convention over configuration" which basically means, I will prefer using a set of pre-defined rules over keywords in the language.
-s
+
 This project will finally consist of these components:
 
 1. A specification of the language (Formal specification + Examples, descriptions and best practices)
@@ -41,7 +41,7 @@ The target use case of this programming language is distributed server-side netw
 2. **Loop**: `for`, `break`, `continue`
 2. **Control**: `return`, `defer`, `throw`
 3. **Type handling**: `void`, `const`, `auto`, `null`
-4. **Other**: `error`, `this`, `import`
+4. **Other**: `error`, `this`, `import`, `struct`, `extends`
 
 Usage of these keywords is almost same as C++ or Java, so I omit explanation for most of them in detail.
 
@@ -99,7 +99,7 @@ This is a class with only one method, called `main` which returns `0` (very simi
 
 ###Classes
 
-Each source code file represents either an interface or class. What separates these two is that, an interface has no fieds or constructor, and all method are without body. Everything else is considered a class. 
+Each source code file represents either an interface or class. What separates these two is that, an interface has no fieds, and all method are without body. Everything else is considered a class. 
 
 Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be initialized upon first reference (static means state-less so it does not need any initialization code upon creation). You can use class name to refer to it's statis instance: `auto x = MyClass`.
 
@@ -107,7 +107,6 @@ Each class's instances can be referenced using instance notation (`varName.membe
 - Note that you cannot have bodies only for some of the class methods (no abstract class).
 - There is no inheritance. Composition is encouraged instead.
 - If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is public.
-- You can prevent usage of a class as a non-static class by defining constructor as private.
 - The order of the contents of source code file matters: First `import` section, then compiler directives, struct section and methods. 
 
 ###Class members
@@ -116,33 +115,31 @@ Each class's instances can be referenced using instance notation (`varName.membe
 - Some basic methods are provided by default for all classes: `toString`, `getHashCode`. You can override the default implementation, simply by adding these methods to your class.
 - You can define default values for method parameters (e.g. `int func1(int x, int y=0)`).
 - You can overload functions based on their input/output.
-- Constructor is a special method named `new` with return type of the class (e.g. `Class1 new() { return {}; }`). The `{}` allocates a new instance of the current class in memory. 
-- Compiler will add an empty constructor to the class if it doesn't have any.
+- There is no specific constructor. If class wants, it can define methods to create instance of it and other can use the static instance of the class to invoke that method. The `{}` allocates a new instance of the current class in memory:
+```
+//MyClass.e
+MyClass new() { return {}; }
+
+//main.e
+MyClass x = MYClass.new();
+```
 - The syntax to initialize variables is like C++ uniform initialization (e.g. `Class1 c = Class1 {10, 4};` or `Interface1 intr = Class1 {3, 5}` or `Class1 c = {3}`).
 - When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`).
 
-###Compiler directives
-
-You can add compiler directives to the code. These directives give compiler additional information about the code which can be used to generate correct machine code. They all start with at sign (`@`). Below is a list of them:
-
-- field-level: `delegate`: Delegate some method calls to a class member. `delegate Class c = ...` means all public methods of `Class` will be available to call and will be redirected to `c` variable.
-- file-level: `@basedOn`: Indicate this class implements methods of another interface or this interface includes another interface. If used against a primitive type, it will declare an extended primitive which can also be used for enumerated type. This is explained in the corresponding section.
-- file-level: `@param`: Explained in the corresponding section.
-
-Note that you have to put semicolon at the end of compiler directives.
-
 ###Templates
 
-You can use compiler directive `@param` to indicate current file is generic. You can define one argumen per param directive, like `@param(T=x)` with default value of `x`, and use `T` inside the body of the class. Value for arguments must be either a type-name (single letter arguments) or an identifier (more than single letter).
-
-To use a generic class you use this syntax: `Class1<int> c = Class1<int> {}` or `auto d = Class1<int>{}`. For identifier type parameters, you need to enclose value inside single quotes. When you instantiate a generic class, compiler will re-write it's body using provided data, then compile your code. Example:
+You can define template arguments and their default values using comment in the beginning of the file. 
 
 ```
 //tuple.e
-@param(T);
-@param(TNAME);
-@param(R);
-@param(RNAME);
+//<T, TNAME, R, RNAME>
+//<R>
+template {
+    type T;
+    token TNAME;
+    type R;
+    token RNAME;
+}
 
 T TNAME;
 R RNAME;
@@ -196,6 +193,7 @@ You can use a similar syntax when defining methods which have only return statem
 
 ```
 int func1(int x, int y) -> x+y;
+int func1(int y) -> this.member1.func1(y); //delegate calls 
 ```
 
 *Closure*: All anonymous function and classes, have a `this` which will point to a read-only set of local variables in the enclosing method (including input arguments).
@@ -210,16 +208,11 @@ Example:
 ```
 //DayOfWeek.e file
 
-@basedOn(int);
-
-const int SAT = 0;
-const int SUN = 1;
-
-int temp = 10; //WRONG! you can only have const fields with compile time evaluatable values
-
-void func1(int x) 
+//no methods, all data fields are const of primitive with literal values
+struct
 {
-    //do something
+    const int SAT = 0;
+    const int SUN = 1;
 }
 
 //...
@@ -227,8 +220,6 @@ void func1(int x)
 //main.e file
 DayOfWeek dow = DayOfWeek.SAT;
 
-//you can define methods for enum data type
-dow.func1(10);
 ```
 
 An instance of an extended primitive which is not enum, can be treated just like a primitive. So you can pass them instead of primitives in your code or pass a primitive instead of an extended primitive.
@@ -249,7 +240,6 @@ An instance of an extended primitive which is not enum, can be treated just like
 - **Hashtable**: Same as enhancement proposal.
 - **Const args**: All function inputs are `const`. So function cannot modify any of it's inputs' values.
 - **import**: Include other packages:
-- **assert**: You can use this to check for pre-condition and with `defer` it can be used to check for post-condition. `assert x>0 : 'error message'` or to throw exception: `assert x>0 : {'error message'};`.
 ```
 import
 {
@@ -258,7 +248,12 @@ import
     core.math => _,  //import into current namespace, core.math.c1 becomes c1
 }
 ```
+- **assert**: You can use this to check for pre-condition and with `defer` it can be used to check for post-condition. `assert x>0 : 'error message'` or to throw exception: `assert x>0 : {'error message'};`.
 - **Documentation**: Any comment before method or field or first line of the file starting with `///` is special comment to be processed by IDEs and automated tools. 
+- **Delegation**: `* -> this.memberName` will convert all method calls like X to `this.memberName.X` if member has X.
+- **Extension**: `extends ABCD;` means current interface is based upon ABCD interface.
+- **Call by name**: `myClass.myMember(x: 10, y: 12);`
+
 
 ###Core package
 
