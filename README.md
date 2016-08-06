@@ -40,7 +40,7 @@ The target use case of this programming language is distributed server-side netw
 1. **Conditional**: `if`, `else`, `switch`, `assert`
 2. **Loop**: `for`, `break`, `continue`
 2. **Control**: `return`, `defer`, `throw`
-3. **Type handling**: `void`, `const`, `auto`, `null`
+3. **Type handling**: `void`, `const`, `auto`, `null`, `enum`
 4. **Other**: `this`, `import`, `struct`, `extends`
 
 Usage of these keywords is almost same as C++ or Java, so I omit explanation for most of them in detail.
@@ -58,7 +58,7 @@ The operators are almost similar to C language:
 - Conditional: `and or not == != >= <= ??`
 - Bitwise `& | ^ << >> ~`
 - Math `+ - * % ++ -- **`
-- Other `{}`
+- Other `@`
 
 ### Data passing
 
@@ -125,10 +125,10 @@ int func1(int y) { return this.x + y; }
 - Some basic methods are provided by default for all classes: `equals`, `toString`, `getHashCode`. You can override the default implementation, simply by adding these methods to your class.
 - You can define default values for method parameters (e.g. `int func1(int x, int y=0)`).
 - You can overload functions based on their input/output.
-- There is no specific constructor. If class wants, it can define methods to create instance of it and other can use the static instance of the class to invoke that method. The `{}` allocates a new instance of the current class on heap:
+- There is no specific constructor. If class wants, it can define methods to create instance of it and other can use the static instance of the class to invoke that method. The `@` operator allocates a new instance of the current class on heap:
 ```
 //MyClass.e
-MyClass new() { return {}; }
+MyClass new() { return @; }
 
 //main.e
 MyClass x = MYClass.new();
@@ -205,24 +205,23 @@ int func1(int y) -> this.member1.func1(y); //delegate calls
 
 ###Enum type
 
-Enums are value types without any method and only const fields.
-
-Example:
 ```
 //DayOfWeek.e file
 
-//no methods, all data fields are const of primitive with literal values
-struct
+//all enums are based on int8
+enum
 {
-    const int SAT = 0;
-    const int SUN = 1;
+    SAT = 0,  //value is mandatory
+    SUN = 1,
+    MON = 2,
 }
 
-//...
+//no struct, only methods, you can use `this` to refer to the value of enum
+void method1() { }
 
 //main.e file
 DayOfWeek dow = DayOfWeek.SAT;
-
+dow.method1();
 ```
 
 ###Misc
@@ -251,7 +250,7 @@ import
 ```
 - **assert**: You can use this to check for pre-condition and with `defer` it can be used to check for post-condition. `assert x>0 : 'error message'` or to throw exception: `assert x>0 : throw {'error message'};`.
 - **Documentation**: Any comment before method or field or first line of the file starting with `///` is special comment to be processed by IDEs and automated tools. 
-- **Delegation**: `* -> this.memberName;` will convert all method calls like X to `this.memberName.X` if member has X.
+- **Delegation**: `* -> this.memberName;` will convert all method calls like X to `this.memberName.X` if member has X. This can also be used to define type aliases.
 - **Extension**: `extends ABCD;` means current interface is based upon ABCD interface.
 - **Call by name**: `myClass.myMember(x: 10, y: 12);`
 
@@ -291,9 +290,9 @@ Suppose someone downloads the source code for a project written in Electron whic
 ```
 import
 {
-    core.math,   //default import, core.math.c1 becomes core.math.c1
-    core.math => mt,  //import with alias, core.math.c1 becomes mt.c1
-    core.math => _,  //import into current namespace, core.math.c1 becomes c1
+    core.math, 
+    core.math => mt,
+    core.math => _,
 }
 
 struct
@@ -303,7 +302,7 @@ struct
     int z { 'json': 'field1' };
 }
 
-int getInstance() -> {};   //enable instantiation of this class
+int getInstance() -> @;   //enable instantiation of this class
 int func1(int data=9) 
 {
     Func<int> anonFunc = (u) -> u+1;
