@@ -32,7 +32,7 @@ Of course the disadvantage of this approach is that the user of your software ne
 
 ###Paradigm
 
-Electron is a object-oriented and imperative  programming language with GC memory. 
+Electron is a object-oriented and imperative  programming language with garbage collection memory management. 
 The target use case of this programming language is distributed server-side network software.
 
 ###Keywords
@@ -101,7 +101,7 @@ This is a class with only one method, called `main` which returns `0` (very simi
 
 Each source code file represents either an interface or class. What separates these two is that, an interface has no fieds or constructor, and all method are without body. Everything else is considered a class. 
 
-Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be initialized upon first reference (static means state-less so it does not need any initialization code upon creation).
+Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be initialized upon first reference (static means state-less so it does not need any initialization code upon creation). You can use class name to refer to it's statis instance: `auto x = MyClass`.
 
 *Notes:*
 - Note that you cannot have bodies only for some of the class methods (no abstract class).
@@ -125,8 +125,8 @@ Each class's instances can be referenced using instance notation (`varName.membe
 
 You can add compiler directives to the code. These directives give compiler additional information about the code which can be used to generate correct machine code. They all start with at sign (`@`). Below is a list of them:
 
+- field-level: `delegate`: Delegate some method calls to a class member. `delegate Class c = ...` means all public methods of `Class` will be available to call and will be redirected to `c` variable.
 - file-level: `@basedOn`: Indicate this class implements methods of another interface or this interface includes another interface. If used against a primitive type, it will declare an extended primitive which can also be used for enumerated type. This is explained in the corresponding section.
-- field-level: `@expose`: Delegate some method calls to a class member. This can be done for all public methods of the class member (`@expose;`), some of them (`@expose(method1, method2);`) or all except some (`@expose(-method1, -method2);`).
 - file-level: `@param`: Explained in the corresponding section.
 
 Note that you have to put semicolon at the end of compiler directives.
@@ -175,6 +175,8 @@ Interface1 intr = (x, y) -> {
     method2(x,y);
 };
 
+Intr5 pa = this.method1; //compiler handles change in the name
+
 //long form
 Interface1 intr = Interface1 
 {
@@ -195,6 +197,8 @@ You can use a similar syntax when defining methods which have only return statem
 ```
 int func1(int x, int y) -> x+y;
 ```
+
+*Closure*: All anonymous function and classes, have a `this` which will point to a read-only set of local variables in the enclosing method (including input arguments).
 
 ###Extended primitives and Enum type
 
