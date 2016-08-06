@@ -74,7 +74,7 @@ This will remove `case` and `default` keywords.
 
 N - Omit parantheses from if/for/switch. This will decrease code readbility. 
 
-Y - Add annotation for documentation of a method or class or interface: `@doc('dsdsadsad')`
+N - Add annotation for documentation of a method or class or interface: `@doc('dsdsadsad')`
 
 Y - Calling methods (including constructor) by providing parameter names: `x.setData(name: 'start', value: 10);`. This will make code more readable without adding much complexity. 
 
@@ -123,13 +123,13 @@ struct
 Then we can state that interface cannot have a struct section. (Alternative names: data, fields, def, definition, allocate).
 
 Y - Is semicolon required at the end of directives? When you are 'defining' something (method, struct, ...), you don't need to place semicolon but when you are requesting something to be done (by compiler or OS or CPU) it is needed. If we totally remove semicolon from language this differentiation will not be needed. We cannot force semicolon everywhere because inserting semicolot at the end of method body is unusual. As a general rule, semicolon is not required after closing braces. 
-Y - `@param` should only be allowed at file level. Do we really need `@param` at method level? Seems not.
+N - `@param` should only be allowed at file level. Do we really need `@param` at method level? Seems not.
 
 N - Assume we want to use a template class. `int n = 5; auto x = AClass<n> {};`. Will `AClass` be generated using value of `5` or `n`? You have to send `'n'` not `n`.
 
 Y - Remove `@` for assertion. Use `assert` keyword which is more readable. And for pre-post condition, use normal syntax and `defer` keyword respectively. For class-wide assertions, we can re-use same keyword. Assume how can someone take a look at assertions in a big file when we use `@` notation?
 
-Y - Rename `@@` to `@expose` because it is explicit. 
+N - Rename `@@` to `@expose` because it is explicit. 
 
 Y - Remove `@deprecated` this can easily be achieved using file level assert.
 
@@ -180,4 +180,28 @@ struct
 
 N - Can we have tags for methods or class or interfaces? No! We can simulate these with member fields.
 
-? - Provide enum facility by a base class.
+N - Provide enum facility by a base class and template. This is too compelx. 
+```
+//<T, L1, V1, L2, V2>
+struct
+{
+    const T L1=V1;
+    const T L2=V2;
+
+    T value;
+}
+
+void assign(T value)
+{
+    if ( value == N1 ) this.value = value;
+    if ( value == N2 ) this.value = value;
+
+    throw {'invalid value'};
+}
+```
+
+Y - `{}` can be confusing sometimes. Can we replace it with another operator to create an instance of the current class? `@`.
+
+N - With more usage of template, we need something like `typedef` in C++ or `alias` in D. `alias myint = int`. No, this can be done using composition and `* ->` operator. 
+
+Y - Provide enum using it's own keyword: `enum(int)`
