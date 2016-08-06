@@ -42,7 +42,7 @@ N - compare and swap, only for numbers
     `bool b = (x ? 1 -> 2);`
 
 Y - Hash notation, like array with support for hash literals
-    `int[String] hash1 = { "OH" => 12, "CA" => 33, ... };`
+    `int[String] hash1 = { 'OH' => 12, 'CA' => 33, ... };`
     behind the scene this will be a class.
 
 N - Tuple data type. We have this in C++, C#, D and Java (to some extent). This cannot be implemented using templates because read/write value to the tuple does not have a specific data type.
@@ -162,8 +162,22 @@ Y - With removal of basedon/includes/extends/implements, how can I implement enu
 
 Y - In go interfaces can be embedded too. We should use `extends` keyword.
 
-? - Is it possible to remove `struct`? struct is responsible to define data members of the class and it's zero state. 
+N - Is it possible to remove `struct`? struct is responsible to define data members of the class and it's zero state. 
 
 Y - Shall we disable constructor like go? Then how can we enable only static access? We can remove the notation of constructor. Each class can define a method to create instance of it and other use it's static instance to call it. If there is no such method or it is private, other cannot instantiate and can only use the static instance. Class can define a method which takes input values to initialize data.
 
-? - Can we create instances of classes in `struct` section?
+N - Can we create instances of classes in `struct` section? Only const init with literals.
+
+Y - Let's disable init in struct. Only setting literals for const should be supported. Like go.
+
+Y - Go has tags. Shall we add something similar? 
+```
+struct
+{
+    int x { key1 -> 'value1', key2 -> 'value2' ... };  //this is a hash-like structure
+}
+```
+
+N - Can we have tags for methods or class or interfaces? No! We can simulate these with member fields.
+
+? - Provide enum facility by a base class.
