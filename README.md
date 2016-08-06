@@ -55,11 +55,11 @@ Usage of these keywords is almost same as C++ or Java, so I omit explanation for
 
 The operators are almost similar to C language:
 
-- Conditional: `and or not == != >= <= ??`
+- Conditional: `and or not == != >= <= ?`
 - Bitwise `& | ^ << >> ~`
 - Math `+ - * % ++ -- **`
 
-*Special syntax*: `$ @ -> => () :` 
+*Special syntax*: `$ @ -> => () : <>` 
 - `@` for allocation
 - `->` for anonymous
 - `=>` for hash
@@ -177,7 +177,7 @@ Note that both short and long form, the code only has read-only access to variab
 
 ```
 //short form, when interface has only one method
-Interface1 intr = (x, y) -> x+y;  //specifying type for input is not needed
+Interfac-e1 intr = (x, y) -> x+y;  //specifying type for input is not needed
 Intr6 intr5 = () -> 5; //no input
 Interface2 intr2 = x -> x+1;  //you can omit parantheses if you have only one variable
 Interface1 intr = (x, y) -> { 
@@ -185,7 +185,7 @@ Interface1 intr = (x, y) -> {
     method2(x,y);
 };
 
-Intr5 pa = this.method1; //compiler handles change in the name
+Intr5 pa = this.method1; //compiler handles change in the name, note that by default you don't have access to parent class in an anonymous function but in this case, compiler will handle that. 
 
 //long form
 Interface1 intr = Interface1 
@@ -209,7 +209,7 @@ int func1(int x, int y) -> x+y;
 int func1(int y) -> this.member1.func1(y); //delegate calls 
 ```
 
-*Closure*: All anonymous function and classes, have a `this` which will point to a read-only set of local variables in the enclosing method (including input arguments).
+*Closure*: All anonymous function and classes, have a `this` which will point to a read-only set of local variables in the enclosing method (including input arguments). If you need access to the parent class in your anonymous function, define a local variable of appropriate type in the enclosing method. 
 
 ###Enum type
 
@@ -236,15 +236,16 @@ dow.method1();
 
 - **Naming rules**: `camelCasing` for methods, fields and variables, `lower_case_with_underscore` for packages, `UpperCamelCase` for classese, `UPPERCASE` for enumerated names and template parameters.
 - **Checking for implements**: You can use `(Interface1)class1` to check if `class1` variable implements `Interface1`.
-- **const**: You can define class fields, local variables and function output as constant. You can only delay value assignment for a const variable if it is non-primitive. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition.
+- **const**: You can define class fields and local variables as constant. You can only delay value assignment for a const variable if it is non-primitive. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition.
 - **Literals**: `0xffe`, `0b0101110101`, `true`, `false`.
 - **Digit separators**: `1_000_000`.
 - **For**: You can use `for` to iterate over an array `for(x:array1)`.
 - **if and for without braces**: `if (x>1) return 1;`, `for(y:array) x += y;`.
-- **Arrays**: Same notation as Java `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]; int[2,2] x;`.
+- **Arrays**: Same notation as Java `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]; int[2,2] x;`. We have slicing for arrays `x[start:step:end]` with support for negative index.
 - **Special variables**: `$` refers to the result of last function call (used in post-condition assertion): `defer assert $>0;`.
 - **String interpolation**: You can embed variables inside a string to be automatically converted to string. If string is surrounded by double quote it won't be interpolated. You need to use single quote for interpolation to work.
 - **Ternary condition**: `iif(a, b, c) ` is same as `a ? b:c` in other languages.
+- **Null**: `a = b ? 1` means `a=b if b is not null, else a=1`.
 - **Hashtable**: `int[String] hash1 = { 'OH' => 12, 'CA' => 33, ... };`.
 - **Const args**: All function inputs are `const`. So function cannot modify any of it's inputs' values.
 - **import**: Include other packages:
