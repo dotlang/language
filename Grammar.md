@@ -11,13 +11,13 @@ Format:
 
 #Main parts
 
-`SourceFile: [TemplateComment] [ImportSection] [(StructSection | EnumSection)] (InterfaceSection | MethodSection)`
+**`SourceFile`**: `[TemplateComment] [ImportSection] [(StructSection | EnumSection)] (InterfaceSection | MethodSection)`
 
-`TemplateComment: '///<' TemplateParameters '>'`
-`TemplateParameters: TemplateParameterName '=' TemplateParameterValue [',' TemplateParameters]`
-`TemplateParameterName: CapitalLetterToken`
-`TemplateParameterValue: Token`
+**`TemplateComment`**: `'///<' TemplateParameters '>'`  
+**`TemplateParameters`**: `TemplateParameterName '=' TemplateParameterValue [',' TemplateParameters]`  
+**`TemplateParameterName`**: `CapitalLetterToken`  
+**`TemplateParameterValue`**: `Token`  
 
-`ImportSection: 'import' PackageName [ImportAlias] ';' [ImportSection]`
-`PackageName: Token ['.' PackageName]`
-`ImportAlias: '_' | PackageName`
+**`ImportSection`**: `'import' PackageName [ImportAlias] ';' [ImportSection]`  
+**`PackageName`**: `Token ['.' PackageName]`  
+**`ImportAlias`**: `'_' | PackageName`  
