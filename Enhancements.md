@@ -91,7 +91,7 @@ N - Remove sub-package concept. We only have a set of packages. This is what gol
 
 \* - How can we define assertion and other directives in interface methods?
 
-\* - Conventions to define unit tests in the code? How to define startup and finalization methods?
+\* - Conventions to define unit tests in the code? How to define startup and finalization methods? Define test data input table and expected output?
 
 Y - No annotations? Configuration should not be part of the code, and most of the time they can be replaced with good design patterns like decorator or ....
 
@@ -133,10 +133,37 @@ Y - Rename `@@` to `@expose` because it is explicit.
 
 Y - Remove `@deprecated` this can easily be achieved using file level assert.
 
-? - More explicit syntax for anonymous function/interface to access outer methods information. Simple using variable names from parent method or class is not elegant and also it's too implicit. One solution is that compiler generates a new class on the fly which implementd target interface and according to the given code and method bodies. And at the end adds a private variable names `_outer` of type parent class which can be used to access public fields and methods of the container class of the parent method of the anonymous function. 
+Y - More explicit syntax for anonymous function/interface to access outer methods information. Simple using variable names from parent method or class is not elegant and also it's too implicit. One solution is that compiler generates a new class on the fly which implementd target interface and according to the given code and method bodies. And at the end adds a private variable names `_outer` of type parent class which can be used to access public fields and methods of the container class of the parent method of the anonymous function. 
 ```
 IX x = () -> this._outer.dataMember;
 ```
-This method is explicit, not confusing, easy to read and understand. But does not provide access to the parent method, which sometimes can be extra useful.  
+This method is explicit, not confusing, easy to read and understand. But does not provide access to the parent method, which sometimes can be extra useful. Access to the parent method is more important. So `this` will contain read-only set of parent method's variables. 
 
 Y - Remove `@doc` directive. Define a special comment for this purpose: `/// dsadsada`
+
+N - How can someone refer to the static instance of a class? Using name of the class: `auto x = MyClass`; It's not good to use `MyClass` both as a type and as a variable. One solution: `MyClass.instance`. But still `MyClass.myMethod(1)` is valid. It is so rare to refer to static instance of a class, but this will be useful to implement singleton pattern. You can add a method which returns `this`. Calling it on the static instance will give what you want.
+
+Y - We need to use an existing method in places where an interface is needed. e.g. `Intrf1 x = this.method1` where method1 complies with Intrf1 requirements, but it's name may not be exactly the same.
+
+Y - Instead of compiler directives, can we use keywords? `delegate` prefix instead of `@expose`. 
+
+N - Replace `@basedOn` with a keyword: `basedon`. Not good can be read `base don`. `includes`.
+
+Y - Replace `@param` with a keyword. This can be replaced with a comment of special format. `//<T>` or `//<T=int>`. This must be on top of the file. Or we can use `type` and `token` keywords. But this is really non-runtime keyword. Does not produce any CPU instruction. We can use `tokens` section like `import` section. Simpler solution is comment embedding, but how to tell if it is token or type? single character is always type. 
+
+Y - Instead of a complex `@expose` directive, add a simple keyword which exposes the whole object. And let developer customize that with function definition syntax. `auto func1 -> this.var.func1;` (this is too confusing).
+`int func1(int x) -> this.var.func1(x);` This is better which we already have.
+
+Y - Remove inhertance of interface in a class and only have `extends` for interfaces. For class, we act like Go (if it implements interface methods, it is of that type). No `extends` and No `implements`. Just like Go. Then what does an empty interface mean? Means any object (Any class).
+
+Y - Implement `exposed` using internal constructs.
+
+Y - With removal of basedon/includes/extends/implements, how can I implement enum? Convention (consts with literal primitive values)
+
+Y - In go interfaces can be embedded too. We should use `extends` keyword.
+
+? - Is it possible to remove `struct`? struct is responsible to define data members of the class and it's zero state. 
+
+Y - Shall we disable constructor like go? Then how can we enable only static access? We can remove the notation of constructor. Each class can define a method to create instance of it and other use it's static instance to call it. If there is no such method or it is private, other cannot instantiate and can only use the static instance. Class can define a method which takes input values to initialize data.
+
+? - Can we create instances of classes in `struct` section?
