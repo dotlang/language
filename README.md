@@ -260,7 +260,7 @@ import core.math _; //import into current namespace, core.math.c1 becomes c1
 - **Extension**: `extends ABCD;` means current interface is based upon ABCD interface.
 - **Call by name**: `myClass.myMember(x: 10, y: 12);`
 - **assert outside method**: You can have `assert` in a class, outside methods, after struct/enum section to enforce some compile time checks (e.g. deprecated module or template parameter validation).
-
+- **Check is primitive**: If a variable can be cast to empty interface, it is not primitive. This can be useful in template when checking parameters.
 
 
 ###Core package
