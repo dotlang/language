@@ -104,7 +104,7 @@ N - Remove template and generic code? Everybody seems complaining about them in 
 
 N - Object creation syntax should be completely readable and not to be confused with any other construct. Is it so? Yes it is. We don't need `new` keyword here.
 
-Y - Support for higher dimension array as a single block memory allocation. `int[,] x = int[5, 4];` or `int[][] x = int[5][4]`. The second version is more powerful because we can have `x[0]` as an int array of size 4. But it won't be a continuous block of memory. Both can be possible. First for efficiency and second for language orthogonality.
+Y - Support for higher dimension array as a single block memory allocation. `int[,] x = int[5, 4];` or `int[][] x = int[5][4]`. The second version is more powerful because we can have `x[0]` as an int array of size 4. But it won't be a continuous block of memory. Second version can be implemented using template and collections. So we will support only the first method.
 
 Y - regex is not readable. Let's remove its dedicated operator and use string methods instead (startsWith, endsWith, contains...).
 
