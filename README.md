@@ -58,7 +58,15 @@ The operators are almost similar to C language:
 - Conditional: `and or not == != >= <= ??`
 - Bitwise `& | ^ << >> ~`
 - Math `+ - * % ++ -- **`
-- Other `@ for allocation, -> for anonymous, => for hash, () for casting, : for loop and assert and call by name, `
+
+*Special syntax*: `$ @ -> => () :` 
+- `@` for allocation
+- `->` for anonymous
+- `=>` for hash
+- `()` for casting
+- `:` for loop and assert and call by name`
+- `$` for result of last function
+- `<>` template syntax
 
 ### Data passing
 
