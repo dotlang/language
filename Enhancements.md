@@ -89,7 +89,7 @@ N - Remove sub-package concept. We only have a set of packages. This is what gol
 
 \* - How should we specify version number of a package? How should we address the version of a dependency? Later for package/build manager compoennt this will be decided.
 
-\* - How can we define assertion and other directives in interface methods?
+N - How can we define assertion and other directives in interface methods? No need for that.
 
 \* - Conventions to define unit tests in the code? How to define startup and finalization methods? Define test data input table and expected output?
 
@@ -97,8 +97,8 @@ Y - No annotations? Configuration should not be part of the code, and most of th
 
 N - We expect all `import` statements be grouped together. So why not merge them all like go?
 
-\* - Disable sending param values as another template type to a template: `auto x = tuple<tuple<tuple<int, ivar>...`
-Values for template parameters should be either one of primitive types or a simple class name. Later to be decided.
+N - Disable sending param values as another template type to a template: `auto x = tuple<tuple<tuple<int, ivar>...`
+Values for template parameters should be either one of primitive types or a simple class name. Later to be decided. We cannot do that.
 
 N - Remove template and generic code? Everybody seems complaining about them in other languages. No. We have relied heavily on this (tuple, map/reduce, ...). We just make sure this will be as simple as possible without ambiguity and complexity. Being strongly typed is one of powers of Electron and removing templates will force us to loose this property too. 
 
@@ -205,3 +205,10 @@ Y - `{}` can be confusing sometimes. Can we replace it with another operator to 
 N - With more usage of template, we need something like `typedef` in C++ or `alias` in D. `alias myint = int`. No, this can be done using composition and `* ->` operator. 
 
 Y - Provide enum using it's own keyword: `enum(int)`
+
+N - We have `@` which allocates on heap. We can easily add another operator like `#` which allocates on the stack. 
+But what happens when for example method returns a variable which is allocated on the stack? No, this is not good.
+
+Y - We don't have ternary operator `?:` so we can rename `??` to `?`.
+
+N - Define value classes and then we can say primitives are classes too (so you can write intVar.method) but still manage them on the stack. No, this makes everything too complex. 
