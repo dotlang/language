@@ -259,6 +259,7 @@ import core.math _; //import into current namespace, core.math.c1 becomes c1
 - **Delegation**: `* -> this.memberName;` will convert all method calls like X to `this.memberName.X` if member has X. This can also be used to define type aliases.
 - **Extension**: `extends ABCD;` means current interface is based upon ABCD interface.
 - **Call by name**: `myClass.myMember(x: 10, y: 12);`
+- **assert outside method**: You can have `assert` in a class, outside methods, after struct/enum section to enforce some compile time checks (e.g. deprecated module).
 
 
 
