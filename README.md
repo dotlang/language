@@ -40,8 +40,8 @@ The target use case of this programming language is distributed server-side netw
 1. **Conditional**: `if`, `else`, `switch`, `assert`
 2. **Loop**: `for`, `break`, `continue`
 2. **Control**: `return`, `defer`, `throw`
-3. **Type handling**: `void`, `const`, `auto`, `null`, `enum`
-4. **Other**: `this`, `import`, `struct`, `extends`
+3. **Type handling**: `void`, `const`, `auto`, `null`, `enum`, `struct`
+4. **Other**: `this`, `import`, `extends`
 
 Usage of these keywords is almost same as C++ or Java, so I omit explanation for most of them in detail.
 
@@ -58,7 +58,7 @@ The operators are almost similar to C language:
 - Conditional: `and or not == != >= <= ??`
 - Bitwise `& | ^ << >> ~`
 - Math `+ - * % ++ -- **`
-- Other `@`
+- Other `@ for allocation, -> for anonymous, => for hash, () for casting, : for loop and assert and call by name, `
 
 ### Data passing
 
@@ -232,8 +232,8 @@ dow.method1();
 - **Literals**: `0xffe`, `0b0101110101`, `true`, `false`.
 - **Digit separators**: `1_000_000`.
 - **For**: You can use `for` to iterate over an array `for(x:array1)`.
-- **Suffixed if and for**: `return 1 if x>1;`, `x += y for (y: array)`.
-- **Arrays**: Same notation as Java `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]`.
+- **if and for without braces**: `if (x>1) return 1;`, `for(y:array) x += y;`.
+- **Arrays**: Same notation as Java `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]; int[2,2] x;`.
 - **Special variables**: `$` refers to the result of last function call (used in post-condition assertion): `defer assert $>0;`.
 - **String interpolation**: You can embed variables inside a string to be automatically converted to string. If string is surrounded by double quote it won't be interpolated. You need to use single quote for interpolation to work.
 - **Ternary condition**: `iif(a, b, c) ` is same as `a ? b:c` in other languages.
