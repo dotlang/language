@@ -271,3 +271,9 @@ What about assert? `assert x>0 : 'some error'` will set error and return.
 `assert x!=0 : exit()` if right side of `:` has a statement, it will be executed.
 
 Y - Can we remove enum or replace it with other things? `const`
+
+N - Shall we add multiple return? So we won't need global `error`. What happens to method definitions? Anon func?
+`(int,int) f(int x, int y) return y,x;`
+This adds to the complexity. No.
+
+Y - `import a.b =>;` will import into current namespace;
