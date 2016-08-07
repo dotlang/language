@@ -22,32 +22,32 @@ Format:
 **`PackageName`**: `Identifier ['.' PackageName]`  
 **`ImportAlias`**: `'_' | PackageName`  
 
-**`InterfaceDefinition`**: `[InterfaceStructDecl] (Type Identifier '(' [InterfaceMethodInputs] ');')+`
-**`InterfaceStructDecl`**: `'struct {' (Type ';')+ '}'`
-**`InterfaceMethodInputs`**: `Type Identifier [',' InterfaceMethodInputs]`
+**`InterfaceDefinition`**: `[InterfaceStructDecl] (Type Identifier '(' [InterfaceMethodInputs] ');')+`  
+**`InterfaceStructDecl`**: `'struct {' (Type ';')+ '}'`  
+**`InterfaceMethodInputs`**: `Type Identifier [',' InterfaceMethodInputs]`  
 
-**`ClassDefinition`**: `(StructDecl | EnumDecl) [{' (Statement)+ '}'] (MethodDecl)*`
-**`StructDecl`**: `'struct {' (FieldDecl)+ '}'`
-**`FieldDecl`**: `['const'] Type [Identifier] ['=' Literal] ';'`
-**`EnumDecl`**: `'enum {' (EnumValueDecl)+ '}'`
-**`EnumValueDecl`**: `'CapitalIdentifier ['=' IntLiteral] ';'`
+**`ClassDefinition`**: `(StructDecl | EnumDecl) [{' (Statement)+ '}'] (MethodDecl)*`  
+**`StructDecl`**: `'struct {' (FieldDecl)+ '}'`  
+**`FieldDecl`**: `['const'] Type [Identifier] ['=' Literal] ';'`  
+**`EnumDecl`**: `'enum {' (EnumValueDecl)+ '}'`  
+**`EnumValueDecl`**: `'CapitalIdentifier ['=' IntLiteral] ';'`  
 
-**`MethodDecl`**: `Type Identifier '(' [ParamDecls] ')' CodeBlock`
-**`ParamDecls`**: `Type Identifier ['=' Literal] ['.' ParamDecls ]`
-**`CodeBlock`**: `Statement ';' | '{' (Statement ';')+ '}'`
+**`MethodDecl`**: `Type Identifier '(' [ParamDecls] ')' CodeBlock`  
+**`ParamDecls`**: `Type Identifier ['=' Literal] ['.' ParamDecls ]`  
+**`CodeBlock`**: `Statement ';' | '{' (Statement ';')+ '}'`  
 
-**`Statement`**: `VarDecl | ReturnStmt | AssignmentStmt | CtlStmt`
-**`CtlStatement`**: `IfStmt | ForStmt | SwitchStmt | DeferStmt`
+**`Statement`**: `VarDecl | ReturnStmt | AssignmentStmt | CtlStmt`  
+**`CtlStatement`**: `IfStmt | ForStmt | SwitchStmt | DeferStmt`  
 
-**`VarDecl`**: `('auto' | Type) Identifier ['=' Expression] ';'`
-**`Expression`**: `MathExp | AnonFuncExp | AnonClassExp | NewClassExp | Literal | Variable | MethodCall`
-**`ReturnStmt`**: `'return' Expression ';'`
-**`AssignmentStmt`**: `Identifier '=' Expression`
-**`IfStmt`**: `'if (' Expression ')' CodeBlock [ElseStmt]`
-**`ElseStmt`**: `'else' (IfStmt | CodeBlock)`
-**`ForStmt`**: `ForWhileStmt | ForArrayLoopStmt | ForHashLoopStmt | ForStdStmt`
-**`SwitchStmt`**:`'switch(' Expression ')' '{' (CaseStmt)+ '}'
-**`CaseStmt`**: `(Expression | '_'): CodeBlock`
-**`DeferStmt`**:`'defer' Statement ';'`
+**`VarDecl`**: `('auto' | Type) Identifier ['=' Expression] ';'`  
+**`Expression`**: `MathExp | AnonFuncExp | AnonClassExp | NewClassExp | Literal | Variable | MethodCall`  
+**`ReturnStmt`**: `'return' Expression ';'`  
+**`AssignmentStmt`**: `Identifier '=' Expression`  
+**`IfStmt`**: `'if (' Expression ')' CodeBlock [ElseStmt]`  
+**`ElseStmt`**: `'else' (IfStmt | CodeBlock)`  
+**`ForStmt`**: `ForWhileStmt | ForArrayLoopStmt | ForHashLoopStmt | ForStdStmt`  
+**`SwitchStmt`**:`'switch(' Expression ')' '{' (CaseStmt)+ '}'`  
+**`CaseStmt`**: `(Expression | '_'): CodeBlock`  
+**`DeferStmt`**:`'defer' Statement ';'`  
 
 
