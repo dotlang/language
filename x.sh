@@ -1,12 +1,17 @@
 #!/bin/sh
 
 echo ">>>>>>>>>>>>>>>>>>>>>>> Building...";
+make clean > /dev/null
 make > /dev/null
 
 echo ">>>>>>>>>>>>>>>>>>>>>>> Input file:";
-cat ./examples/ex$1.c
+cat -n ./tests/ex$1.c
 
 echo ">>>>>>>>>>>>>>>>>>>>>>> Output:";
-./out/newlang.out ./examples/ex$1.c
+./out/electron ./tests/ex$1.c
+actual=$?
+expected=$(head -n 1 tests/ex$1.c | cut -c5-)
 
-
+echo
+echo
+if [ "$actual" = "$expected" ]; then echo "SUCCESS!"; else echo "FAIL! Got $actual but $expected was expected."; fi

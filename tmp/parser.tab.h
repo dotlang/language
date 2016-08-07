@@ -45,33 +45,35 @@ extern int yydebug;
 # define YYTOKENTYPE
   enum yytokentype
   {
-    ENDL = 258,
-    EQ = 259,
-    IDENTIFIER = 260,
-    NUMBER = 261,
-    OPERATOR = 262
+    IDENTIFIER = 258,
+    NUMBER = 259,
+    RETURN = 260,
+    TYPE = 261
   };
 #endif
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef union YYSTYPE YYSTYPE;
-union YYSTYPE
-{
-#line 18 "../grammar/parser.y" /* yacc.c:1909  */
-
-    int ival;
-    char *sval;
-    char chr;
-
-#line 68 "parser.tab.h" /* yacc.c:1909  */
-};
+typedef int YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif
 
+/* Location type.  */
+#if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
+typedef struct YYLTYPE YYLTYPE;
+struct YYLTYPE
+{
+  int first_line;
+  int first_column;
+  int last_line;
+  int last_column;
+};
+# define YYLTYPE_IS_DECLARED 1
+# define YYLTYPE_IS_TRIVIAL 1
+#endif
 
-extern YYSTYPE yylval;
+
 
 int yyparse (void);
 

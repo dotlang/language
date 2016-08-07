@@ -3,101 +3,45 @@
 #include <stdlib.h>
 
 #include "hash.h"
+#include "parser.tab.h"  // to get the token types that we return
 
 // stuff from flex that bison needs to know about:
 extern int yyparse();
-extern int yylex();
+extern int yylex(YYSTYPE* yylval, YYLTYPE* yylloc);
 extern FILE *yyin;
+
+extern int yylineno;
+extern char* yytext;
 
 hashtable_t *symtable;
 
- 
-void yyerror(const char *s);
+void yyerror(YYLTYPE *locp, const char *s);
 %}
 
-%union {
-    int ival;
-    char *sval;
-    char chr;
-}
+%locations
+%define parse.error verbose
+%define api.pure full
 
-%token ENDL
-%token EQ
-
-%token  <sval>  IDENTIFIER
-%token  <ival>  NUMBER
-%token  <chr>   OPERATOR
-
-%type   <ival>  postfix_expression
-%type   <ival>  primary_expression
+%token IDENTIFIER
+%token NUMBER
+%token RETURN
+%token TYPE
 
 %start PROGRAM
 
 %%
 
-PROGRAM :   |
-            LINE PROGRAM ENDL
-            ;
+PROGRAM :   MethodDecl
+            {
+            };
 
-LINE:       |
-            IDENTIFIER EQ postfix_expression {
-                printf("Assigning %d to %s\n", $3, $1);
-                int* value = (int*)malloc(sizeof(int));
-                (*value) = $3;
+MethodDecl: TYPE IDENTIFIER '(' ')' CodeBlock
+            {
+            };
 
-                ht_set(symtable, $1, value);
-
-
-                void* xvalue = ht_get(symtable, $1);
-                if ( xvalue == NULL ) {
-                    printf("WOWCannot find symbol %s", $1);
-                    exit(-1);
-                }
-                printf("value of %s is %d\n", $1, *(int*)xvalue); 
-            }
-            |
-            postfix_expression {
-            }
-            ;
-primary_expression
-            : NUMBER {
-                $$ = $1;
-            }
-            | IDENTIFIER {
-                void* value = ht_get(symtable, $1);
-
-                if ( value == NULL ) {
-                    printf("Cannot find symbol %s", $1);
-                    exit(-1);
-                }
-
-                $$ = *(int*)value;
-                printf("Assigned $$ to $1\n");
-            }
-            ;
-postfix_expression
-            : primary_expression {
-                $$ = $1;
-            }
-            | postfix_expression OPERATOR postfix_expression { 
-                if ( $2 == '+' ) {
-                    $$ = $1+$3;
-                    printf("%d + %d = %d\n", $1, $3, $$);
-                }
-                if ( $2 == '-' ) {
-                    $$ = $1-$3;
-                    printf("%d - %d = %d\n", $1, $3, $$);
-                }
-                if ( $2 == '*' ) {
-                    $$=$1*$3;
-                    printf("%d * %d = %d\n", $1, $3, $$);
-                }
-                if ( $2 == '/' ) {
-                    $$=$1/$3;
-                    printf("%d / %d = %d\n", $1, $3, $$);
-                }
-            }
-            ;
+CodeBlock: '{' RETURN NUMBER ';' '}'
+            {
+            };
 
 %%
 
@@ -110,19 +54,24 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    symtable = ht_create(1000);
+    /* symtable = ht_create(1000); */
 
     // set flex to read from it instead of defaulting to STDIN:
     yyin = myfile;
-
     // parse through the input until there is no more:
     do {
         yyparse();
     } while (!feof(yyin));
+
+    return 0;
 }
 
-void yyerror(const char *s) {
-    printf("EEK. parse error! message: %s\n", s);
-    // might as well halt now:
+void yyerror(YYLTYPE *locp, const char *s) {
+    if ( locp->first_line == locp->last_line ) {
+        printf("Error at line %d column %d: %s\n", locp->first_line, locp->first_column, s);
+    } else {
+        printf("Error at lines (%d to %d) columns (%d to %d): %s\n", locp->first_line, locp->last_line, locp->first_column, locp->last_column, s);
+    }
+    
     exit(-1);
 }

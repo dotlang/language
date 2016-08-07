@@ -18,4 +18,4 @@ lex.yy.c: grammar/lexer.l parser.tab.h
 SRC=$(wildcard tmp/*.c)
 
 electron: lex.yy.c init
-	gcc $(SRC) -o ./out/electron
+	gcc $(SRC) -std=gnu99 -o ./out/electron
