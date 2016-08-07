@@ -112,7 +112,7 @@ Each class's instances can be referenced using instance notation (`varName.membe
 - There is no inheritance. Composition (By using anonymous fields) is encouraged instead.
 - If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is public.
 - The order of the contents of source code file matters: First `import` section, then `struct` and finally methods. 
-- There is no constructor. Anyone can create a new instance of a class using C++ uniform initialization form: `auto x = Class1 {1,2}; auto y = Class2 {x:1, y:2}`
+- There is no constructor. Anyone can create a new instance of a class using C++ uniform initialization form: `auto x = Class1 {1,2}; auto y = Class2 {x:1, y:2};`
 
 ###Class members
 
