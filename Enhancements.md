@@ -269,3 +269,5 @@ catch return 4;
 So we have a global variable names `error` which you can initialize or check for null.
 What about assert? `assert x>0 : 'some error'` will set error and return.
 `assert x!=0 : exit()` if right side of `:` has a statement, it will be executed.
+
+Y - Can we remove enum or replace it with other things? `const`
