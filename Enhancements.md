@@ -238,3 +238,12 @@ Y - Lets standardize constructor name as `new` or `_new`. Because it will become
 Y - What if we need some initializations for the static instance? Only the owner of an instance knows what to do for init but static instance has only one owner which is compiler. Without static init, the code should handle this but how can it guarantee that this will happen only once? We need to add a section to `main` and each time we need a static instance, call `MyStatic.init()` in that part. Solution: Without changing anonymous block, enable init-code inside this block.
 
 \* - How to do compile time checks? Like assert or check template args? Deprecated module? For deprecated we can add assert to static init block. For template args, compilation will fails if they are not appropriate. Let's do this later.
+
+? - Add a variable type `void` where it can only be written to (which does nothing) but it cannot be read. Maybe this become useful.
+
+\* - Add a function to core which creates an array: `range(10)` creates array with values `0..9` can be used in for loops.
+
+Y - Just like the way we can omit block in if/for/switch/... we should be able to do so for methods:
+`int f(int x) return x+1;`
+
+Y - Rename `_` in switch statement and import. Renamed to '*' in switch and removed from import. 
