@@ -1,6 +1,6 @@
 #Enhancement Proposals
 
-Note: Y = Approved, N = Rejected/Clarified, \* = On Hold
+Note: Y = Approved/Language Spec Changed, N = Rejected/Clarified, \* = On Hold
 
 N - should we have something like `Object` in Java or `void*` in C++? So that we can implement a `printf` method. Maybe we can somehow mis-use `auto` keywords for this. `int func(auto x, auto y)`. We can easily implement printf with String interpolation.
 
@@ -55,7 +55,7 @@ Go and Java and C# don't have this. Also we can have this by declaring fields of
 
 N - Channels like golang. These can be easily implemented using templates and std lib. 
 
-Y - null coalescing operator (`x = a ?? b` means `x = a` if a is not null, else `x = b`)
+Y - null coalescing operator (`x = a ?? b` means `x = a` if a is not null, else `x = b`). This can be simplified more to `?` because we don't have usual ternary opertor.
 
 N - Functions cannot modify their input values, so why not send everything by reference? Because of the overhead of de-referencing.
 
@@ -93,7 +93,7 @@ N - How can we define assertion and other directives in interface methods? No ne
 
 \* - Conventions to define unit tests in the code? How to define startup and finalization methods? Define test data input table and expected output?
 
-Y - No annotations? Configuration should not be part of the code, and most of the time they can be replaced with good design patterns like decorator or ....
+N - No annotations? Configuration should not be part of the code, and most of the time they can be replaced with good design patterns like decorator or ....
 
 N - We expect all `import` statements be grouped together. So why not merge them all like go?
 
@@ -104,7 +104,7 @@ N - Remove template and generic code? Everybody seems complaining about them in 
 
 N - Object creation syntax should be completely readable and not to be confused with any other construct. Is it so? Yes it is. We don't need `new` keyword here.
 
-Y - Support for higher dimension array as a single block memory allocation. `int[,] x = int[5, 4];` or `int[][] x = int[5][4]`. The second version is more powerful because we can have `x[0]` as an int array of size 4. But it won't be a continuous block of memory. Second version can be implemented using template and collections. So we will support only the first method.
+Y - Support for higher dimension array as a single block memory allocation. `int[,] x = int[5, 4];` or `int[][] x = int[5][4]`. The second version is more powerful because we can have `x[0]` as an int array of size 4. But it won't be a continuous block of memory. Second version is the natural result of applying `[]` more than once.
 
 Y - regex is not readable. Let's remove its dedicated operator and use string methods instead (startsWith, endsWith, contains...).
 
@@ -112,7 +112,7 @@ N - Make string, primitive or have a primitive and a non-primitive string type? 
 
 Y - Return bitwise operators. In some cases like hash, encryption, digital signature or network based code this can be useful.
 
-N - If all fields of a class need to be defined in a single location in the file, why not merge them all like import statement?
+Y - If all fields of a class need to be defined in a single location in the file, why not merge them all like import statement?
 ```
 struct
 {
@@ -122,7 +122,7 @@ struct
 ```
 Then we can state that interface cannot have a struct section. (Alternative names: data, fields, def, definition, allocate).
 
-Y - Is semicolon required at the end of directives? When you are 'defining' something (method, struct, ...), you don't need to place semicolon but when you are requesting something to be done (by compiler or OS or CPU) it is needed. If we totally remove semicolon from language this differentiation will not be needed. We cannot force semicolon everywhere because inserting semicolot at the end of method body is unusual. As a general rule, semicolon is not required after closing braces. 
+N - Is semicolon required at the end of directives? When you are 'defining' something (method, struct, ...), you don't need to place semicolon but when you are requesting something to be done (by compiler or OS or CPU) it is needed. If we totally remove semicolon from language this differentiation will not be needed. We cannot force semicolon everywhere because inserting semicolot at the end of method body is unusual. As a general rule, semicolon is not required after closing braces. 
 N - `@param` should only be allowed at file level. Do we really need `@param` at method level? Seems not.
 
 N - Assume we want to use a template class. `int n = 5; auto x = AClass<n> {};`. Will `AClass` be generated using value of `5` or `n`? You have to send `'n'` not `n`.
@@ -145,18 +145,18 @@ N - How can someone refer to the static instance of a class? Using name of the c
 
 Y - We need to use an existing method in places where an interface is needed. e.g. `Intrf1 x = this.method1` where method1 complies with Intrf1 requirements, but it's name may not be exactly the same.
 
-Y - Instead of compiler directives, can we use keywords? `delegate` prefix instead of `@expose`. 
+Y - Instead of compiler directives, can we use keywords? `delegate` prefix instead of `@expose`. We can remove
 
 N - Replace `@basedOn` with a keyword: `basedon`. Not good can be read `base don`. `includes`.
 
 Y - Replace `@param` with a keyword. This can be replaced with a comment of special format. `//<T>` or `//<T=int>`. This must be on top of the file. Or we can use `type` and `token` keywords. But this is really non-runtime keyword. Does not produce any CPU instruction. We can use `tokens` section like `import` section. Simpler solution is comment embedding, but how to tell if it is token or type? single character is always type. 
 
 Y - Instead of a complex `@expose` directive, add a simple keyword which exposes the whole object. And let developer customize that with function definition syntax. `auto func1 -> this.var.func1;` (this is too confusing).
-`int func1(int x) -> this.var.func1(x);` This is better which we already have.
+`int func1(int x) -> this.var.func1(x);` This is better which we already have. 
 
 Y - Remove inhertance of interface in a class and only have `extends` for interfaces. For class, we act like Go (if it implements interface methods, it is of that type). No `extends` and No `implements`. Just like Go. Then what does an empty interface mean? Means any object (Any class).
 
-Y - Implement `exposed` using internal constructs.
+Y - Implement `exposed` using internal constructs: `* -> this.member` to expose all public members.
 
 Y - With removal of basedon/includes/extends/implements, how can I implement enum? Convention (consts with literal primitive values)
 
@@ -170,7 +170,7 @@ N - Can we create instances of classes in `struct` section? Only const init with
 
 Y - Let's disable init in struct. Only setting literals for const should be supported. Like go.
 
-Y - Go has tags. Shall we add something similar? 
+N - Go has tags. Shall we add something similar? 
 ```
 struct
 {
@@ -204,7 +204,7 @@ Y - `{}` can be confusing sometimes. Can we replace it with another operator to 
 
 N - With more usage of template, we need something like `typedef` in C++ or `alias` in D. `alias myint = int`. No, this can be done using composition and `* ->` operator. 
 
-Y - Provide enum using it's own keyword: `enum(int)`
+Y - Provide enum using it's own keyword: `enum`
 
 N - We have `@` which allocates on heap. We can easily add another operator like `#` which allocates on the stack. 
 But what happens when for example method returns a variable which is allocated on the stack? No, this is not good.
@@ -212,3 +212,17 @@ But what happens when for example method returns a variable which is allocated o
 Y - We don't have ternary operator `?:` so we can rename `??` to `?`.
 
 N - Define value classes and then we can say primitives are classes too (so you can write intVar.method) but still manage them on the stack. No, this makes everything too complex. 
+
+Y - Having separate import is more readable than an import block.
+
+N - What happens if exception is thrown in an assert, after return (in a defer statement)? Return value won't be changed but exception will be thrown.
+
+Y - Do we need both optional argument values and method overloading? Not probably. Because later is only needed when former is not supported. So let's remove this functionality.
+
+Y - Can't we remove tags? Instead of specifying tag for each member, class can add a `getTag` method (whatever name it wants) and when another methods will need tags, send output of this method to that function as a hash-ref. So for example 'json_converter` class will receive a json string + a hash + empty class, then will initialize empty class using hash data and json-string.
+
+Y - Instead of using `exposed` or `* -> this.memberName` we use struct members without name (like go). We don't need their name because all public operations are available through `this`. By this way we can easily override functions by adding them to the owner class. 
+
+\* - Maybe in other places where we are using convention, we can do like anonymous field and remove some part of the source code and delegate the task to the compiler.
+
+Y - In function declaration, let's remove -> notation. Although it has a little convenience but is not much readable.
