@@ -1,4 +1,4 @@
-#include "../inc/hash.h"
+#include "hash.h"
 
 /* Create a new hashtable. */
 hashtable_t *ht_create( int size ) {

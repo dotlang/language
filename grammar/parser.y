@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../inc/hash.h"
+#include "hash.h"
 
 // stuff from flex that bison needs to know about:
 extern int yyparse();

@@ -62,12 +62,12 @@
 
 
 /* Copy the first part of user declarations.  */
-#line 1 "../parser.y" /* yacc.c:339  */
+#line 1 "../grammar/parser.y" /* yacc.c:339  */
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../inc/hash.h"
+#include "hash.h"
 
 // stuff from flex that bison needs to know about:
 extern int yyparse();
@@ -127,7 +127,7 @@ extern int yydebug;
 typedef union YYSTYPE YYSTYPE;
 union YYSTYPE
 {
-#line 18 "../parser.y" /* yacc.c:355  */
+#line 18 "../grammar/parser.y" /* yacc.c:355  */
 
     int ival;
     char *sval;
@@ -1221,9 +1221,9 @@ yyreduce:
   switch (yyn)
     {
         case 5:
-#line 43 "../parser.y" /* yacc.c:1646  */
+#line 43 "../grammar/parser.y" /* yacc.c:1646  */
     {
-                printf("111Assigning %d to %s\n", (yyvsp[0].ival), (yyvsp[-2].sval));
+                printf("Assigning %d to %s\n", (yyvsp[0].ival), (yyvsp[-2].sval));
                 int* value = (int*)malloc(sizeof(int));
                 (*value) = (yyvsp[0].ival);
 
@@ -1241,14 +1241,14 @@ yyreduce:
     break;
 
   case 6:
-#line 59 "../parser.y" /* yacc.c:1646  */
+#line 59 "../grammar/parser.y" /* yacc.c:1646  */
     {
             }
 #line 1248 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 7:
-#line 63 "../parser.y" /* yacc.c:1646  */
+#line 63 "../grammar/parser.y" /* yacc.c:1646  */
     {
                 (yyval.ival) = (yyvsp[0].ival);
             }
@@ -1256,7 +1256,7 @@ yyreduce:
     break;
 
   case 8:
-#line 66 "../parser.y" /* yacc.c:1646  */
+#line 66 "../grammar/parser.y" /* yacc.c:1646  */
     {
                 void* value = ht_get(symtable, (yyvsp[0].sval));
 
@@ -1272,7 +1272,7 @@ yyreduce:
     break;
 
   case 9:
-#line 79 "../parser.y" /* yacc.c:1646  */
+#line 79 "../grammar/parser.y" /* yacc.c:1646  */
     {
                 (yyval.ival) = (yyvsp[0].ival);
             }
@@ -1280,7 +1280,7 @@ yyreduce:
     break;
 
   case 10:
-#line 82 "../parser.y" /* yacc.c:1646  */
+#line 82 "../grammar/parser.y" /* yacc.c:1646  */
     { 
                 if ( (yyvsp[-1].chr) == '+' ) {
                     (yyval.ival) = (yyvsp[-2].ival)+(yyvsp[0].ival);
@@ -1531,7 +1531,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 102 "../parser.y" /* yacc.c:1906  */
+#line 102 "../grammar/parser.y" /* yacc.c:1906  */
 
 
 int main(int argc, char** argv) {

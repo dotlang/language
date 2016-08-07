@@ -464,8 +464,8 @@ int yy_flex_debug = 0;
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
-#line 1 "../lexer.l"
-#line 4 "../lexer.l"
+#line 1 "../grammar/lexer.l"
+#line 4 "../grammar/lexer.l"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -688,7 +688,7 @@ YY_DECL
 		}
 
 	{
-#line 16 "../lexer.l"
+#line 16 "../grammar/lexer.l"
 
 
 #line 695 "lex.yy.c"
@@ -750,43 +750,43 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 18 "../lexer.l"
+#line 18 "../grammar/lexer.l"
 { }
 	YY_BREAK
 case 2:
 /* rule 2 can match eol */
 YY_RULE_SETUP
-#line 19 "../lexer.l"
+#line 19 "../grammar/lexer.l"
 { return ENDL; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 20 "../lexer.l"
+#line 20 "../grammar/lexer.l"
 { yylval.ival=atoi(yytext); return NUMBER; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 21 "../lexer.l"
+#line 21 "../grammar/lexer.l"
 { yylval.chr=yytext[0]; return OPERATOR; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 22 "../lexer.l"
+#line 22 "../grammar/lexer.l"
 { return EQ; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 23 "../lexer.l"
+#line 23 "../grammar/lexer.l"
 { yylval.sval = strdup(yytext); return IDENTIFIER; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 24 "../lexer.l"
+#line 24 "../grammar/lexer.l"
 { /* skip comments */ }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 26 "../lexer.l"
+#line 26 "../grammar/lexer.l"
 ECHO;
 	YY_BREAK
 #line 793 "lex.yy.c"
@@ -1784,7 +1784,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 25 "../lexer.l"
+#line 25 "../grammar/lexer.l"
 
 
 

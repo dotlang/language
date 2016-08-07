@@ -1,4 +1,4 @@
-#include "../inc/hash.h"
+#include "list.h"
 
 /* Create a new hashtable. */
 list_t *ll_create() {

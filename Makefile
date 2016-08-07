@@ -1,16 +1,21 @@
 .DEFAULT_GOAL := electron
 
 clean:
-	rm out/newlang.out
-	rm tmp/parser.tab.h
-	rm tmp/parser.tab.c
-	rm tmp/lex.yy.c
+	@rm -f out/electron
+	@rm -f tmp/*
 
-parser.tab.c parser.tab.h: parser.y
-	cd tmp && bison -d ../grammar/parser.y
+init:
+	@cd src && cp *.c ../tmp
+	@cd src && cp *.h ../tmp
 
-lex.yy.c: lexer.l parser.tab.h
-	cd tmp && flex ../grammar/lexer.l
 
-electron: lex.yy.c parser.tab.c parser.tab.h
-	gcc src/hash.c tmp/parser.tab.c autogen/lex.yy.c -o ./out/newlang.out
+parser.tab.c parser.tab.h: grammar/parser.y
+	@cd tmp && bison -d ../grammar/parser.y
+
+lex.yy.c: grammar/lexer.l parser.tab.h
+	@cd tmp && flex ../grammar/lexer.l
+
+SRC=$(wildcard tmp/*.c)
+
+electron: lex.yy.c init
+	gcc $(SRC) -o ./out/electron
