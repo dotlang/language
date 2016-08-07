@@ -53,6 +53,19 @@ int test(int arg=9)
         *: z++;
     }
     
+    int[string] h = { 'A':1, 'B':2 };
+    int g = h['A'];
+    
+    int[,] matrix = int[2,2] {{1, 2}, {3, 4}};
+    int t = matrix[0,0];
+    
+    uint64 bigData = (uint64)t;
+    
+    for(string s, int k: h)
+    {
+        t += k;
+    }
+    
     int g = iif (z>0, 1, 2);
     assert g != 0;
     
