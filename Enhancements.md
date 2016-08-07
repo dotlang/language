@@ -239,7 +239,7 @@ Y - What if we need some initializations for the static instance? Only the owner
 
 \* - How to do compile time checks? Like assert or check template args? Deprecated module? For deprecated we can add assert to static init block. For template args, compilation will fails if they are not appropriate. Let's do this later.
 
-? - Add a variable type `void` where it can only be written to (which does nothing) but it cannot be read. Maybe this become useful.
+? - Add a variable type `void` where it can only be written to (which does nothing) but it cannot be read. Maybe this become useful. What about empty interface?
 
 \* - Add a function to core which creates an array: `range(10)` creates array with values `0..9` can be used in for loops.
 
@@ -247,3 +247,25 @@ Y - Just like the way we can omit block in if/for/switch/... we should be able t
 `int f(int x) return x+1;`
 
 Y - Rename `_` in switch statement and import. Renamed to '*' in switch and removed from import. 
+
+Y - Can we provide a shortcut for `if (Error.isSet())`? 
+```
+//throw applies on classes which implement exception interface
+error = MyException {strMesssage, intCode, stringData};
+return null;
+
+or
+if ( error != null ) 
+{
+    //work with e error 
+    if ( (MyException)e) { ...}
+    return e.basicData;
+}
+//OR
+catch(e) return 5;
+//OR
+catch return 4;
+```
+So we have a global variable names `error` which you can initialize or check for null.
+What about assert? `assert x>0 : 'some error'` will set error and return.
+`assert x!=0 : exit()` if right side of `:` has a statement, it will be executed.
