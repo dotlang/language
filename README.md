@@ -167,7 +167,7 @@ To escape from all the complexities of generics in other languages, we have no o
 ###Anonymous function/class
 
 You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface. If the interface has only one method, the definition can be in short form. 
-Note that both short and long form, the code only has read-only access to variables in the parent method. No access is given to the parent class. 
+Note that both short and long form, the code only has read-only access to variables in the parent method. No access is given to the parent class. In the short-form you cannot use `auto` to define these variables because compiler cannot deduce interface type from right side.
 
 ```
 //short form, when interface has only one method
@@ -182,7 +182,7 @@ Interface1 intr = (x, y) -> {
 Intr5 pa = this.method1; //compiler handles change in the name, note that by default you don't have access to parent class in an anonymous function but in this case, compiler will handle that. 
 
 //long form
-Interface1 intr = Interface1 
+auto intr = Interface1 
 {
     int function1(int x,int y) 
     {
