@@ -29,7 +29,7 @@ Format:
 **`ClassDefinition`**: `(StructDecl | EnumDecl) [{' (Statement)+ '}'] (MethodDecl)*`  
 **`StructDecl`**: `'struct {' (FieldDecl)+ '}'`  
 **`FieldDecl`**: `['const'] Type [Identifier] ['=' Literal] ';'`  
-**`EnumDecl`**: `'enum {' (EnumValueDecl)+ '}'`  
+**`EnumDecl`**: `'const {' (EnumValueDecl)+ '}'`  
 **`EnumValueDecl`**: `'CapitalIdentifier ['=' IntLiteral] ';'`  
 
 **`MethodDecl`**: `Type Identifier '(' [ParamDecls] ')' CodeBlock`  
