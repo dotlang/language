@@ -44,13 +44,13 @@ int test(int arg=9)
     MyClass t = MyClass {};
     MyClass t2 = MyClass {x:1, y:9};
     
-    if ( Error.isSet() ) return -1;
+    if ( error != null ) return -1;
     
     switch ( t2.getData() )
     {
         1: return 0;
         2,3: return 9;
-        *: z++;
+        default: z++;
     }
     
     int[string] h = { 'A':1, 'B':2 };
@@ -68,6 +68,9 @@ int test(int arg=9)
     
     int g = iif (z>0, 1, 2);
     assert g != 0;
+    assert g != 1 : 'error in value of g';  //set error and return
+    assert 
+    
     
     return 0;
 }
