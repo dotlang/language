@@ -59,14 +59,14 @@ The operators are almost similar to C language:
 - Bitwise `& | ^ << >> ~`
 - Math `+ - * % ++ -- **`
 
-*Special syntax*: `$ @ -> => () : <>` 
-- `@` for allocation
+*Special syntax*: `-> => () : <> _` 
 - `->` for anonymous
 - `=>` for hash and import
 - `()` for casting
-- `:` for loop and assert and call by name
-- `$` for result of last function
+- `:` for loop and assert and call by name and array slice
 - `<>` template syntax
+- `*` For default in switch
+
 
 ### Data passing
 
@@ -114,6 +114,7 @@ Each class's instances can be referenced using instance notation (`varName.membe
 - There is no inheritance. Composition (By using anonymous fields) is encouraged instead.
 - If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is public.
 - The order of the contents of source code file matters: First `import` section, then `struct` and finally methods. 
+- There is no constructor. Anyone can create a new instance of a class using C++ uniform initialization form: `auto x = Class1 {1,2}; auto y = Class2 {x:1, y:2}`
 
 ###Class members
 
@@ -133,14 +134,6 @@ int func1(int y) { return this.x + y; }
 - Some basic methods are provided by default for all classes: `equals`, `toString`, `getHashCode`. You can override the default implementation, simply by adding these methods to your class.
 - You can define default values for method parameters (e.g. `int func1(int x, int y=0)`).
 - You can not have methods with the same name.
-- The constructor method should be named `new` or `_new` (Of course having only `_new` means other can only use the statis instance).  If class wants, it can define these methods to create instance of it which can be called through the static instance of the class. The `@` built-in function allocates a new instance of the current class on heap:
-```
-//MyClass.e
-MyClass new() { return @; }
-
-//main.e
-MyClass x = MYClass.new();
-```
 - When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`).
 
 ###Templates
@@ -169,6 +162,7 @@ To escape from all the complexities of generics in other languages, we have no o
 - You can catch errors using `if` statement: `if (Error.isSet()) ... `.
 - You can silence an error using: `Error.reset()`.
 - You can use `defer` keyword (same as what golang has) to define code that must be executed upon exitting current method.
+- You can check output of a function in defer (`defer result>0`) to do a post-condition check.
 
 ###Anonymous function/class
 
@@ -232,27 +226,21 @@ dow.method1();
 - **const**: You can define class fields and local variables as constant. You can only delay value assignment for a const variable if it is non-primitive. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition.
 - **Literals**: `0xffe`, `0b0101110101`, `true`, `false`.
 - **Digit separators**: `1_000_000`.
-- **For**: You can use `for` to iterate over an array `for(x:array1)`.
+- **For**: You can use `for` to iterate over an array or hash `for(x:array1)` or `for(k,v:hash1)`.
 - **if and for without braces**: `if (x>1) return 1;`, `for(y:array) x += y;`.
 - **Arrays**: Same notation as Java `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]; int[2,2] x;`. We have slicing for arrays `x[start:step:end]` with support for negative index.
-- **Special variables**: `$` refers to the result of last function call (used in post-condition assertion): `defer assert $>0;`.
 - **String interpolation**: You can embed variables inside a string to be automatically converted to string. If string is surrounded by double quote it won't be interpolated. You need to use single quote for interpolation to work.
 - **Ternary condition**: `iif(a, b, c) ` is same as `a ? b:c` in other languages.
 - **Null**: `a = b ? 1` means `a=b if b is not null, else a=1`.
 - **Hashtable**: `int[String] hash1 = { 'OH' => 12, 'CA' => 33, ... };`.
 - **Const args**: All function inputs are `const`. So function cannot modify any of it's inputs' values.
-- **import**: Include other packages:
-```
-import core.math;  //default import, core.math.c1 becomes core.math.c1
-import core.math m; //import with alias, core.math.c1 becomes mt.c1
-import core.math _; //import into current namespace, core.math.c1 becomes c1
-```
+- **import**: Include other packages.
 - **assert**: You can use this to check for pre-condition and with `defer` it can be used to check for post-condition. `assert x>0 : 'error message'` or to throw exception: `assert x>0 : throw {'error message'};`.
 - **Documentation**: Any comment before method or field or first line of the file starting with `///` is special comment to be processed by IDEs and automated tools. 
 - **Anonymous field**: Adding a field without name in a class, makes the class expose all public members of it. The class can however override them by adding it's own methods (But still it's possible to call overriden methods by `MyClass.MemberType.method()` notation. This can also be used in an interface to denote interface inheritance.
 - **Call by name**: `myClass.myMember(x: 10, y: 12);`
-- **assert outside method**: You can have `assert` in a class, outside methods, in an anonymous-block, after struct/enum section and before normal methods, to enforce some compile time checks (e.g. deprecated module or template parameter validation).
 - **Check is primitive**: If a variable can be cast to empty interface, it is not primitive. This can be useful in template when checking parameters.
+- You cannot start local variable names with underscore.
 
 
 ###Core package
@@ -288,8 +276,7 @@ Suppose someone downloads the source code for a project written in Electron whic
 #A sample file
 ```
 import core.math;
-import core.math m;
-import core.math _;
+import core.math => m;
 
 struct
 {
@@ -299,22 +286,29 @@ struct
     DataManager;   //this class has anonymous field
 }
 
-//this is an anonymous block
+//this is an anonymous block, used to initialize the static instance or enforce some compilation checks
 {
     //static code when this class is instantiated for the first time ever
-    //this is not a place for per-instance logic like constructor
-    //note that there is no access to the class instance, you can only do compile time checks
-    //here like deprecated module or input checks in templates
-    assert 0 : 'this class is deprecated!';
+    this.z = 19; //init the static instance
 }
 
-int getInstance() { return @; }   //enable instantiation of this class
 int func1(int data=9) 
 {
     Func<int> anonFunc = (u) -> u+1;
-    
     this.z = data + anonFunc.apply(u: 6);
+    
+    int x = 1;
+    switch(data)  //switch is for primitives
+    {
+        1: return 1; //if block is just one line, you can omit brces
+        4, 5: { x++; }
+        *: { return 0; }  //default
+    }
+    retrun x;
 }
+
+//for single statement, you don't need braces
+int func2(int r) return r+1;
 ```
 
 A sample interface:
@@ -332,5 +326,3 @@ int method1(int x, int y);
 - Template naming (Type vs token)
 - Function input are const
 - Default static instance
-- Special `@` function
-- `new` and `_new`
