@@ -37,10 +37,10 @@ The target use case of this programming language is distributed server-side netw
 
 ###Keywords
 
-1. **Conditional**: `if`, `else`, `switch`, `assert`
+1. **Conditional**: `if`, `else`, `switch`, `default`, `assert`
 2. **Loop**: `for`, `break`, `continue`
-2. **Control**: `return`, `defer`, `throw`
-3. **Type handling**: `void`, `const`, `auto`, `null`, `enum`, `struct`
+2. **Control**: `return`, `defer`
+3. **Type handling**: `void`, `const`, `auto`, `null`, `struct`
 4. **Other**: `this`, `import`
 
 Usage of these keywords is almost same as C++ or Java, so I omit explanation for most of them in detail.
@@ -65,8 +65,6 @@ The operators are almost similar to C language:
 - `()` for casting
 - `:` for loop and assert and call by name and array slice
 - `<>` template syntax
-- `*` For default in switch
-
 
 ### Data passing
 
@@ -158,20 +156,23 @@ To escape from all the complexities of generics in other languages, we have no o
 
 ###Exception handling
 
+We have a global variable names `error` which you can initialize (upon exception) or check for null (for catch).
+
 ```
 //callee
 ...
-throw {'something went wrong'};
+//error variable is of the exception interface
+error = MyException {'something went wrong'};
 ...
 
 //caller
 ...
-if ( Error.isSet() ) 
+if ( error != null ) 
 {  
-    Error.reset();
+    if ((MyException)error)) ...
+    error = null;
 }
 ```
-- Error is a special class in core.
 - You can use `defer` keyword (same as what golang has) to define code that must be executed upon exitting current method.
 - You can check output of a function in defer (`defer result>0`) to do a post-condition check.
 
@@ -214,8 +215,8 @@ auto intr = Interface1
 ```
 //DayOfWeek.e file
 
-//all enums are based on int8
-enum
+//all enums are based on int
+const
 {
     SAT;  //value is not mandatory
     SUN = 1;
@@ -246,7 +247,7 @@ dow.method1();
 - **Hashtable**: `int[String] hash1 = { 'OH' => 12, 'CA' => 33, ... };`.
 - **Const args**: All function inputs are `const`. So function cannot modify any of it's inputs' values.
 - **import**: Include other packages.
-- **assert**: You can use this to check for pre-condition and with `defer` it can be used to check for post-condition. `assert x>0 : 'error message'` or to throw exception: `assert x>0 : throw {'error message'};`.
+- **assert**: You can use this to check for pre-condition and with `defer` it can be used to check for post-condition. `assert x>0 : 'error message'` will set error upon failure. `assert x>0 : exit('error message');` this will run the statement upon failure.
 - **Documentation**: Any comment before method or field or first line of the file starting with `///` is special comment to be processed by IDEs and automated tools. 
 - **Anonymous field**: Adding a field without name in a class, makes the class expose all public members of it. The class can however override them by adding it's own methods (But still it's possible to call overriden methods by `MyClass.MemberType.method()` notation. This can also be used in an interface to denote interface inheritance.
 - **Call by name**: `myClass.myMember(x: 10, y: 12);`
@@ -313,7 +314,7 @@ int func1(int data=9)
     {
         1: return 1; //if block is just one line, you can omit brces
         4, 5: { x++; }
-        *: { return 0; }  //default
+        default: { return 0; }  //default
     }
     retrun x;
 }
