@@ -41,7 +41,7 @@ The target use case of this programming language is distributed server-side netw
 2. **Loop**: `for`, `break`, `continue`
 2. **Control**: `return`, `defer`, `throw`
 3. **Type handling**: `void`, `const`, `auto`, `null`, `enum`, `struct`
-4. **Other**: `this`, `import`, `extends`
+4. **Other**: `this`, `import`
 
 Usage of these keywords is almost same as C++ or Java, so I omit explanation for most of them in detail.
 
@@ -64,7 +64,7 @@ The operators are almost similar to C language:
 - `->` for anonymous
 - `=>` for hash and import
 - `()` for casting
-- `:` for loop and assert and call by name`
+- `:` for loop and assert and call by name
 - `$` for result of last function
 - `<>` template syntax
 
@@ -111,7 +111,7 @@ Each class's instances can be referenced using instance notation (`varName.membe
 
 *Notes:*
 - Note that you cannot have bodies only for some of the class methods (no abstract class).
-- There is no inheritance. Composition is encouraged instead.
+- There is no inheritance. Composition (By using anonymous fields) is encouraged instead.
 - If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is public.
 - The order of the contents of source code file matters: First `import` section, then `struct` and finally methods. 
 
@@ -133,7 +133,7 @@ int func1(int y) { return this.x + y; }
 - Some basic methods are provided by default for all classes: `equals`, `toString`, `getHashCode`. You can override the default implementation, simply by adding these methods to your class.
 - You can define default values for method parameters (e.g. `int func1(int x, int y=0)`).
 - You can not have methods with the same name.
-- There is no specific constructor. If class wants, it can define methods to create instance of it and other can use the static instance of the class to invoke that method. The `@` operator allocates a new instance of the current class on heap:
+- The constructor method should be named `new` or `_new` (Of course having only `_new` means other can only use the statis instance).  If class wants, it can define these methods to create instance of it which can be called through the static instance of the class. The `@` built-in function allocates a new instance of the current class on heap:
 ```
 //MyClass.e
 MyClass new() { return @; }
@@ -202,13 +202,6 @@ Interface1 intr = Interface1
 };
 ```
 
-You can use a similar syntax when defining methods which have only return statement:
-
-```
-int func1(int x, int y) -> x+y;
-int func1(int y) -> this.member1.func1(y); //delegate calls 
-```
-
 *Closure*: All anonymous function and classes, have a `this` which will point to a read-only set of local variables in the enclosing method (including input arguments). If you need access to the parent class in your anonymous function, define a local variable of appropriate type in the enclosing method. 
 
 ###Enum type
@@ -219,9 +212,9 @@ int func1(int y) -> this.member1.func1(y); //delegate calls
 //all enums are based on int8
 enum
 {
-    SAT,  //value is not mandatory
-    SUN = 1,
-    MON = 2,
+    SAT;  //value is not mandatory
+    SUN = 1;
+    MON = 2;
 }
 
 //no struct, only methods, you can use `this` to refer to the value of enum
@@ -256,10 +249,9 @@ import core.math _; //import into current namespace, core.math.c1 becomes c1
 ```
 - **assert**: You can use this to check for pre-condition and with `defer` it can be used to check for post-condition. `assert x>0 : 'error message'` or to throw exception: `assert x>0 : throw {'error message'};`.
 - **Documentation**: Any comment before method or field or first line of the file starting with `///` is special comment to be processed by IDEs and automated tools. 
-- **Delegation**: We use anonymous fields in the struct section: `struct { MyClass; }` Then any call to this class will be redirected to an internal variable of type MyClass (if it's supported by MyClass and not overriden in the current class).
-- **Extension**: `extends ABCD;` means current interface is based upon ABCD interface.
+- **Anonymous field**: Adding a field without name in a class, makes the class expose all public members of it. The class can however override them by adding it's own methods (But still it's possible to call overriden methods by `MyClass.MemberType.method()` notation. This can also be used in an interface to denote interface inheritance.
 - **Call by name**: `myClass.myMember(x: 10, y: 12);`
-- **assert outside method**: You can have `assert` in a class, outside methods, after struct/enum section to enforce some compile time checks (e.g. deprecated module or template parameter validation).
+- **assert outside method**: You can have `assert` in a class, outside methods, in an anonymous-block, after struct/enum section and before normal methods, to enforce some compile time checks (e.g. deprecated module or template parameter validation).
 - **Check is primitive**: If a variable can be cast to empty interface, it is not primitive. This can be useful in template when checking parameters.
 
 
@@ -304,6 +296,16 @@ struct
     int x = 12_000;
     int y;
     int z;
+    DataManager;   //this class has anonymous field
+}
+
+//this is an anonymous block
+{
+    //static code when this class is instantiated for the first time ever
+    //this is not a place for per-instance logic like constructor
+    //note that there is no access to the class instance, you can only do compile time checks
+    //here like deprecated module or input checks in templates
+    assert 0 : 'this class is deprecated!';
 }
 
 int getInstance() { return @; }   //enable instantiation of this class
@@ -315,9 +317,20 @@ int func1(int data=9)
 }
 ```
 
+A sample interface:
+```
+struct
+{
+    ParentInterface;
+}
+
+int method1(int x, int y);
+```
+
 #List of conventions
 - Public/Private by using prefix underscore
 - Template naming (Type vs token)
 - Function input are const
 - Default static instance
-- Special `@` operator
+- Special `@` function
+- `new` and `_new`
