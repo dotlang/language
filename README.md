@@ -183,7 +183,10 @@ Note that both short and long form, the code only has read-only access to variab
 
 ```
 //short form, when interface has only one method
-Interfac-e1 intr = (x, y) -> x+y;  //specifying type for input is not needed
+Interface1 intr = (int x, int y) -> x+y;  //specifying type for input is optional
+Interface1 intr = (x, y) -> x+y;
+auto x = (int x) -> x+1;   //compiler will automatically create/find appropriate interface and will init x
+int t = x(10); //t will be 11. compiler will automatically invoke the only method of the interface.
 Intr6 intr5 = () -> 5; //no input
 Interface2 intr2 = x -> x+1;  //you can omit parantheses if you have only one variable
 Interface1 intr = (x, y) -> { 
@@ -209,6 +212,8 @@ auto intr = Interface1
 ```
 
 *Closure*: All anonymous function and classes, have a `this` which will point to a read-only set of local variables in the enclosing method (including input arguments). If you need access to the parent class in your anonymous function, define a local variable of appropriate type in the enclosing method. 
+
+If the interface has only one method and `x` is an anonymouse function of that type, `x(args)` will invoke that single method. 
 
 ###Enum type
 
