@@ -59,7 +59,7 @@ The operators are almost similar to C language:
 - Bitwise `& | ^ << >> ~`
 - Math `+ - * % ++ -- **`
 
-*Special syntax*: `-> => () : <> *` 
+*Special syntax*: `-> => () : <>` 
 - `->` for anonymous
 - `=>` for hash and import
 - `()` for casting
@@ -252,7 +252,7 @@ dow.method1();
 - **Hashtable**: `int[String] hash1 = { 'OH' => 12, 'CA' => 33, ... };`.
 - **Const args**: All function inputs are `const`. So function cannot modify any of it's inputs' values.
 - **import**: Include other packages.
-- **assert**: You can use this to check for pre-condition and with `defer` it can be used to check for post-condition. `assert x>0 : 'error message'` will set error upon failure. `assert x>0 : exit('error message');` this will run the statement upon failure.
+- **assert**: You can use this to check for pre-condition and with `defer` it can be used to check for post-condition. `assert x>0 : 'error message'` will set error upon failure.
 - **Documentation**: Any comment before method or field or first line of the file starting with `///` is special comment to be processed by IDEs and automated tools. 
 - **Anonymous field**: Adding a field without name in a class, makes the class expose all public members of it. The class can however override them by adding it's own methods (But still it's possible to call overriden methods by `MyClass.MemberType.method()` notation. This can also be used in an interface to denote interface inheritance.
 - **Call by name**: `myClass.myMember(x: 10, y: 12);`
