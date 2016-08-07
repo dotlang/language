@@ -154,13 +154,13 @@ Y - Replace `@param` with a keyword. This can be replaced with a comment of spec
 Y - Instead of a complex `@expose` directive, add a simple keyword which exposes the whole object. And let developer customize that with function definition syntax. `auto func1 -> this.var.func1;` (this is too confusing).
 `int func1(int x) -> this.var.func1(x);` This is better which we already have. 
 
-Y - Remove inhertance of interface in a class and only have `extends` for interfaces. For class, we act like Go (if it implements interface methods, it is of that type). No `extends` and No `implements`. Just like Go. Then what does an empty interface mean? Means any object (Any class).
+N - Remove inhertance of interface in a class and only have `extends` for interfaces. For class, we act like Go (if it implements interface methods, it is of that type). No `extends` and No `implements`. Just like Go. Then what does an empty interface mean? Means any object (Any class). This can be achieved using anonymous members in the struct section of interface.
 
 Y - Implement `exposed` using internal constructs: `* -> this.member` to expose all public members.
 
-Y - With removal of basedon/includes/extends/implements, how can I implement enum? Convention (consts with literal primitive values)
+N - With removal of basedon/includes/extends/implements, how can I implement enum? Convention (consts with literal primitive values)
 
-Y - In go interfaces can be embedded too. We should use `extends` keyword.
+N - In go interfaces can be embedded too. We should use `extends` keyword. No this will be done by anonymous fields.
 
 N - Is it possible to remove `struct`? struct is responsible to define data members of the class and it's zero state. 
 
@@ -226,3 +226,15 @@ Y - Instead of using `exposed` or `* -> this.memberName` we use struct members w
 \* - Maybe in other places where we are using convention, we can do like anonymous field and remove some part of the source code and delegate the task to the compiler.
 
 Y - In function declaration, let's remove -> notation. Although it has a little convenience but is not much readable.
+
+Y - Same as the way we provide inhertance in classes, we can do similar in interface extension.
+
+Y - Calling assert in the middle of method definition is not good. We use anonymous block. 
+
+N - If class A embeds class B and still overrides some of B's methods, it is still possible to call overriden methods of B by using `this.B.methodName` notation.
+
+Y - Lets standardize constructor name as `new` or `_new`. Because it will become too confusing when people want to create a lot of classes from a different vendors. But we can get rid of `new` and `@` keyword by adding a new instantiation method. We can also remove need for `_new` by stating that no class can prevent others from instantiating it. So there is no need to define `new` or `_new` methods. Other can use `MyClass.member` to access static instance or `auto x = new MyClass {x: 1, y:2}` to create a new instance. Any heap allocation means `new` in the back-end so even array or hash definition by using `[]` or `{a:b}` notations is handled by compiler to use `new`. Or we can even remove `new` and use C++ uniform initialization: `auto x = Class1 { initdata };`. Note that if `Class1` is name of an interface, this will create an anonymous class.
+
+Y - What if we need some initializations for the static instance? Only the owner of an instance knows what to do for init but static instance has only one owner which is compiler. Without static init, the code should handle this but how can it guarantee that this will happen only once? We need to add a section to `main` and each time we need a static instance, call `MyStatic.init()` in that part. Solution: Without changing anonymous block, enable init-code inside this block.
+
+\* - How to do compile time checks? Like assert or check template args? Deprecated module? For deprecated we can add assert to static init block. For template args, compilation will fails if they are not appropriate. Let's do this later.
