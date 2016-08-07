@@ -18,9 +18,9 @@ Format:
 **`TemplateComment`**: `'//' (TemplateParameterDecl)+`  
 **`TemplateParameterDecl`**: `'<' CapitalIdentifier ['=' Identifier] '>'`  
 
-**`ImportDecl`**: `('import' PackageName [ImportAlias] ';')*`  
-**`PackageName`**: `Identifier ['.' PackageName]`  
-**`ImportAlias`**: `'_' | PackageName`  
+**`ImportDecl`**: `('import' QualifiedIdentifier ['=>' ImportAlias] ';')*`  
+**`QualifiedIdentifier`**: `Identifier ['.' QualifiedIdentifier]`  
+**`ImportAlias`**: `'_' | QualifiedIdentifier`  
 
 **`InterfaceDefinition`**: `[InterfaceStructDecl] (Type Identifier '(' [InterfaceMethodInputs] ');')+`  
 **`InterfaceStructDecl`**: `'struct {' (Type ';')+ '}'`  
@@ -33,21 +33,23 @@ Format:
 **`EnumValueDecl`**: `'CapitalIdentifier ['=' IntLiteral] ';'`  
 
 **`MethodDecl`**: `Type Identifier '(' [ParamDecls] ')' CodeBlock`  
-**`ParamDecls`**: `Type Identifier ['=' Literal] ['.' ParamDecls ]`  
+**`ParamDecls`**: `Type Identifier ['=' Literal] [',' ParamDecls ]`  
 **`CodeBlock`**: `Statement ';' | '{' (Statement ';')+ '}'`  
 
 **`Statement`**: `VarDecl | ReturnStmt | AssignmentStmt | CtlStmt`  
 **`CtlStatement`**: `IfStmt | ForStmt | SwitchStmt | DeferStmt`  
 
-**`VarDecl`**: `('auto' | Type) Identifier ['=' Expression] ';'`  
-**`Expression`**: `MathExp | AnonFuncExp | AnonClassExp | NewClassExp | Literal | Variable | MethodCall`  
-**`ReturnStmt`**: `'return' Expression ';'`  
-**`AssignmentStmt`**: `Identifier '=' Expression`  
+**`VarDecl`**: `('auto' | Type) Identifier ['=' Expression]`  
+**`Expression`**: `MathExp | NewClassExp | Literal | Variable | MethodCall | QualifiedIdentifier | (Type) Expression | QualifiedIdentifier '[' ExprList ']' | QualifiedIdentifier '[' Expression ':' Expression ']'`  
+**`Literl`**: `PrimitiveLiteral | AnonFuncExp | AnonClassExp`
+**`ExprList`**:`Expression | Expression ',' ExprList`
+**`ReturnStmt`**: `'return' Expression`  
+**`AssignmentStmt`**: `QualifiedIdentifier '=' Expression`  
 **`IfStmt`**: `'if (' Expression ')' CodeBlock [ElseStmt]`  
 **`ElseStmt`**: `'else' (IfStmt | CodeBlock)`  
 **`ForStmt`**: `ForWhileStmt | ForArrayLoopStmt | ForHashLoopStmt | ForStdStmt`  
 **`SwitchStmt`**:`'switch(' Expression ')' '{' (CaseStmt)+ '}'`  
 **`CaseStmt`**: `(Expression | '_'): CodeBlock`  
-**`DeferStmt`**:`'defer' Statement ';'`  
+**`DeferStmt`**:`'defer' CodeBlock`  
 
 
