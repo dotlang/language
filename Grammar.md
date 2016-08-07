@@ -18,9 +18,8 @@ Format:
 **`TemplateComment`**: `'//' (TemplateParameterDecl)+`  
 **`TemplateParameterDecl`**: `'<' CapitalIdentifier ['=' Identifier] '>'`  
 
-**`ImportDecl`**: `('import' QualifiedIdentifier ['=>' ImportAlias] ';')*`  
+**`ImportDecl`**: `('import' QualifiedIdentifier ['=>' [QualifiedIdentifier]] ';')*`  
 **`QualifiedIdentifier`**: `Identifier ['.' QualifiedIdentifier]`  
-**`ImportAlias`**: `'_' | QualifiedIdentifier`  
 
 **`InterfaceDefinition`**: `[InterfaceStructDecl] (Type Identifier '(' [InterfaceMethodInputs] ');')+`  
 **`InterfaceStructDecl`**: `'struct {' (Type ';')+ '}'`  
