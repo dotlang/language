@@ -59,7 +59,7 @@ The operators are almost similar to C language:
 - Bitwise `& | ^ << >> ~`
 - Math `+ - * % ++ -- **`
 
-*Special syntax*: `-> => () : <> _` 
+*Special syntax*: `-> => () : <> *` 
 - `->` for anonymous
 - `=>` for hash and import
 - `()` for casting
