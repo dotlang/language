@@ -4,6 +4,7 @@ An example source code, shows multiple code files:
 //Comparer.e - interface
 import core.std;
 import core.data => data;
+import core.data =>;
 
 struct
 {
