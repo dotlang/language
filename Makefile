@@ -2,15 +2,15 @@
 
 clean:
 	rm out/newlang.out
-	rm autogen/parser.tab.h
-	rm autogen/parser.tab.c
-	rm autogen/lex.yy.c
+	rm tmp/parser.tab.h
+	rm tmp/parser.tab.c
+	rm tmp/lex.yy.c
 
 parser.tab.c parser.tab.h: parser.y
-	cd autogen && bison -d ../parser.y
+	cd tmp && bison -d ../grammar/parser.y
 
 lex.yy.c: lexer.l parser.tab.h
-	cd autogen && flex ../lexer.l
+	cd tmp && flex ../grammar/lexer.l
 
 electron: lex.yy.c parser.tab.c parser.tab.h
-	gcc src/hash.c autogen/parser.tab.c autogen/lex.yy.c -o ./out/newlang.out
+	gcc src/hash.c tmp/parser.tab.c autogen/lex.yy.c -o ./out/newlang.out
