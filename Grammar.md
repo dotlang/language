@@ -49,7 +49,7 @@ Format:
 **`ElseStmt`**: `'else' (IfStmt | CodeBlock)`  
 **`ForStmt`**: `ForWhileStmt | ForArrayLoopStmt | ForHashLoopStmt | ForStdStmt`  
 **`SwitchStmt`**:`'switch(' Expression ')' '{' (CaseStmt)+ '}'`  
-**`CaseStmt`**: `(Expression | '_'): CodeBlock`  
+**`CaseStmt`**: `(IntLiterals | 'default'): CodeBlock`  
 **`DeferStmt`**:`'defer' CodeBlock`  
 
 
