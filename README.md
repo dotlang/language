@@ -132,7 +132,7 @@ int func1(int y) { return this.x + y; }
 - Class members starting with underscore are considered private and can only be accessed by other class members.
 - Some basic methods are provided by default for all classes: `equals`, `toString`, `getHashCode`. You can override the default implementation, simply by adding these methods to your class.
 - You can define default values for method parameters (e.g. `int func1(int x, int y=0)`).
-- You can overload functions based on their input/output.
+- You can not have methods with the same name.
 - There is no specific constructor. If class wants, it can define methods to create instance of it and other can use the static instance of the class to invoke that method. The `@` operator allocates a new instance of the current class on heap:
 ```
 //MyClass.e
