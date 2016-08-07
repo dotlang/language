@@ -158,9 +158,20 @@ To escape from all the complexities of generics in other languages, we have no o
 
 ###Exception handling
 
-- In case of exception: `throw {'something wrong happened'};`. This will initialize `Error` class (defined in core) and return immediately from the function (Returning default value for method output type).
-- You can catch errors using `if` statement: `if (Error.isSet()) ... `.
-- You can silence an error using: `Error.reset()`.
+```
+//callee
+...
+throw {'something went wrong'};
+...
+
+//caller
+...
+if ( Error.isSet() ) 
+{  
+    Error.reset();
+}
+```
+- Error is a special class in core.
 - You can use `defer` keyword (same as what golang has) to define code that must be executed upon exitting current method.
 - You can check output of a function in defer (`defer result>0`) to do a post-condition check.
 
