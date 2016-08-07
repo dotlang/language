@@ -62,7 +62,7 @@ The operators are almost similar to C language:
 *Special syntax*: `$ @ -> => () : <>` 
 - `@` for allocation
 - `->` for anonymous
-- `=>` for hash
+- `=>` for hash and import
 - `()` for casting
 - `:` for loop and assert and call by name`
 - `$` for result of last function
@@ -121,8 +121,8 @@ Each class's instances can be referenced using instance notation (`varName.membe
 struct 
 {
     const int x = 12;
-    int y {'key1' => 'value1', 'key2' => 'value2' ...};  //this is a hash-like structure for meta-data of the field
-    int h = 12;  //WRONG! You can only init literals for const fields
+    int y;
+    int h = 12;
 }
 
 int func1(int y) { return this.x + y; }
@@ -303,10 +303,10 @@ struct
 {
     int x = 12_000;
     int y;
-    int z { 'json': 'field1' };
+    int z;
 }
 
-int getInstance() -> @;   //enable instantiation of this class
+int getInstance() { return @; }   //enable instantiation of this class
 int func1(int data=9) 
 {
     Func<int> anonFunc = (u) -> u+1;
