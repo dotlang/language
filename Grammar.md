@@ -41,8 +41,8 @@ Format:
 
 **`VarDecl`**: `('auto' | Type) Identifier ['=' Expression]`  
 **`Expression`**: `MathExp | NewClassExp | Literal | Variable | MethodCall | QualifiedIdentifier | (Type) Expression | QualifiedIdentifier '[' ExprList ']' | QualifiedIdentifier '[' Expression ':' Expression ']'`  
-**`Literl`**: `PrimitiveLiteral | AnonFuncExp | AnonClassExp`
-**`ExprList`**:`Expression | Expression ',' ExprList`
+**`Literl`**: `PrimitiveLiteral | AnonFuncExp | AnonClassExp`  
+**`ExprList`**:`Expression | Expression ',' ExprList`  
 **`ReturnStmt`**: `'return' Expression`  
 **`AssignmentStmt`**: `QualifiedIdentifier '=' Expression`  
 **`IfStmt`**: `'if (' Expression ')' CodeBlock [ElseStmt]`  
