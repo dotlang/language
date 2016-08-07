@@ -11,7 +11,9 @@ Format:
 
 #Main parts
 
-**`SourceFile`**: `[TemplateComment] [ImportSection] [(StructSection | EnumSection)] (InterfaceSection | MethodSection)`
+**`SourceFile`**: `[TemplateComment] [ImportSection] (ClassDefinition | InterfaceDefinition)`  
+
+//(StructSection | EnumSection) MethodSection] (InterfaceSection | MethodSection)`
 
 **`TemplateComment`**: `'///<' TemplateParameters '>'`  
 **`TemplateParameters`**: `TemplateParameterName '=' TemplateParameterValue [',' TemplateParameters]`  
