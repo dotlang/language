@@ -62,7 +62,7 @@ The operators are almost similar to C language:
 *Special syntax*: `$ @ -> => () : <>` 
 - `@` for allocation
 - `->` for anonymous
-- `=>` for hash, import
+- `=>` for hash
 - `()` for casting
 - `:` for loop and assert and call by name`
 - `$` for result of last function
@@ -121,8 +121,8 @@ Each class's instances can be referenced using instance notation (`varName.membe
 struct 
 {
     const int x = 12;
-    int y;
-    int h = 12;
+    int y {'key1' => 'value1', 'key2' => 'value2' ...};  //this is a hash-like structure for meta-data of the field
+    int h = 12;  //WRONG! You can only init literals for const fields
 }
 
 int func1(int y) { return this.x + y; }
@@ -149,7 +149,7 @@ You can define template arguments and their default values using a comment in th
 
 ```
 //tuple.e
-//<T, TNAME, R, RNAME>
+//<T> <TNAME> <R> <RNAME=default>
 
 struct 
 {
@@ -202,6 +202,13 @@ Interface1 intr = Interface1
 };
 ```
 
+You can use a similar syntax when defining methods which have only return statement:
+
+```
+int func1(int x, int y) -> x+y;
+int func1(int y) -> this.member1.func1(y); //delegate calls 
+```
+
 *Closure*: All anonymous function and classes, have a `this` which will point to a read-only set of local variables in the enclosing method (including input arguments). If you need access to the parent class in your anonymous function, define a local variable of appropriate type in the enclosing method. 
 
 ###Enum type
@@ -249,6 +256,7 @@ import core.math _; //import into current namespace, core.math.c1 becomes c1
 ```
 - **assert**: You can use this to check for pre-condition and with `defer` it can be used to check for post-condition. `assert x>0 : 'error message'` or to throw exception: `assert x>0 : throw {'error message'};`.
 - **Documentation**: Any comment before method or field or first line of the file starting with `///` is special comment to be processed by IDEs and automated tools. 
+- **Delegation**: We use anonymous fields in the struct section: `struct { MyClass; }` Then any call to this class will be redirected to an internal variable of type MyClass (if it's supported by MyClass and not overriden in the current class).
 - **Extension**: `extends ABCD;` means current interface is based upon ABCD interface.
 - **Call by name**: `myClass.myMember(x: 10, y: 12);`
 - **assert outside method**: You can have `assert` in a class, outside methods, after struct/enum section to enforce some compile time checks (e.g. deprecated module or template parameter validation).
@@ -295,10 +303,10 @@ struct
 {
     int x = 12_000;
     int y;
-    int z;
+    int z { 'json': 'field1' };
 }
 
-int getInstance() { return @; }   //enable instantiation of this class
+int getInstance() -> @;   //enable instantiation of this class
 int func1(int data=9) 
 {
     Func<int> anonFunc = (u) -> u+1;
@@ -306,3 +314,10 @@ int func1(int data=9)
     this.z = data + anonFunc.apply(u: 6);
 }
 ```
+
+#List of conventions
+- Public/Private by using prefix underscore
+- Template naming (Type vs token)
+- Function input are const
+- Default static instance
+- Special `@` operator
