@@ -3,6 +3,8 @@
 clean:
 	@rm -f out/electron
 	@rm -f tmp/*
+	@mkdir out
+	@mkdir tmp
 
 init:
 	@cd src && cp *.c ../tmp
