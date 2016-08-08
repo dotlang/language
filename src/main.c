@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "common.h"
 #include "hash.h"
 #include <jit/jit.h>
 #include "parser.tab.h"  // to get the token types that we return
@@ -9,22 +10,17 @@
 int processFile(char* filePath);
 
 extern FILE *yyin;
-extern hashtable_t *symtable;
-int hasError = 0;
-jit_context_t context = NULL;
-jit_function_t function = NULL;
-jit_function_t main_function = NULL;
+jit_state state;
 
 int main(int argc, char** argv) {
-    symtable = ht_create(1000);
+    state.function_table = ht_create(1000);
 
-    context = jit_context_create();
+    state.context = jit_context_create();
     int status = processFile(argv[1]);
-
-    jit_context_build_end(context);
+    jit_context_build_end(state.context);
 
     jit_int result;
-    jit_function_t main_function = (jit_function_t) ht_get(symtable, "main");
+    jit_function_t main_function = (jit_function_t) ht_get(state.function_table, "main");
     if ( main_function == NULL ) {
         printf("No function 'main' found!");
         exit(-1);
@@ -32,7 +28,7 @@ int main(int argc, char** argv) {
 
     jit_function_apply(main_function, NULL, &result);
 
-    jit_context_destroy(context);
+    jit_context_destroy(state.context);
 
     return (int)result;
 }
@@ -54,7 +50,7 @@ int processFile(char* filePath) {
         yyparse();
     } while (!feof(yyin));
 
-    if ( hasError ) {
+    if ( state.has_error ) {
         printf("Compilation failed!");
         return -1;
     }

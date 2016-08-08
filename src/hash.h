@@ -1,5 +1,8 @@
 #define _XOPEN_SOURCE 500 /* Enable certain library functions (strdup) on linux.  See feature_test_macros(7) */
 
+#ifndef __HASH_H__
+#define __HASH_H__
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
@@ -27,3 +30,4 @@ int ht_hash( hashtable_t *hashtable, char *key );
 //private
 entry_t *ht_newpair( char *key, void *value );
 
+#endif

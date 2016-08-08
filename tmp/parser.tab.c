@@ -68,26 +68,21 @@
 #include <stdlib.h>
 
 #include "hash.h"
+#include "common.h"
 #include <jit/jit.h>
 #include "parser.tab.h"  // to get the token types that we return
+
+void yyerror(YYLTYPE *locp, const char *s);
 
 // stuff from flex that bison needs to know about:
 extern int yyparse();
 extern int yylex(YYSTYPE* yylval, YYLTYPE* yylloc);
 extern FILE *yyin;
-extern jit_function_t main_function;
-extern int yylineno;
 extern char* yytext;
-extern jit_context_t context;
-extern jit_function_t function;
+extern jit_state state;
 
-hashtable_t *symtable;
-char current_function_name[100];
-extern int hasError;
 
-void yyerror(YYLTYPE *locp, const char *s);
-
-#line 91 "parser.tab.c" /* yacc.c:339  */
+#line 86 "parser.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -158,7 +153,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 162 "parser.tab.c" /* yacc.c:358  */
+#line 157 "parser.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -458,7 +453,7 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    40,    40,    46,    47,    50,    46,    65,    64
+       0,    35,    35,    41,    42,    45,    41,    60,    59
 };
 #endif
 
@@ -1330,29 +1325,29 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 41 "../grammar/parser.y" /* yacc.c:1646  */
+#line 36 "../grammar/parser.y" /* yacc.c:1646  */
     {
-                ht_set(symtable, current_function_name, function);
+                leave_function();
             }
-#line 1338 "parser.tab.c" /* yacc.c:1646  */
+#line 1333 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 46 "../grammar/parser.y" /* yacc.c:1646  */
+#line 41 "../grammar/parser.y" /* yacc.c:1646  */
     { }
-#line 1344 "parser.tab.c" /* yacc.c:1646  */
+#line 1339 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 4:
-#line 47 "../grammar/parser.y" /* yacc.c:1646  */
+#line 42 "../grammar/parser.y" /* yacc.c:1646  */
     {
-                strcpy(current_function_name, yytext);
+                enter_function(yytext);
             }
-#line 1352 "parser.tab.c" /* yacc.c:1646  */
+#line 1347 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 5:
-#line 50 "../grammar/parser.y" /* yacc.c:1646  */
+#line 45 "../grammar/parser.y" /* yacc.c:1646  */
     {
                 jit_type_t params[0];
 
@@ -1360,42 +1355,39 @@ yyreduce:
                 signature = jit_type_create_signature
                     (jit_abi_cdecl, jit_type_int, params, 0, 1);
 
-                function = jit_function_create(context, signature);
+                state.current_function = jit_function_create(state.context, signature);
             }
-#line 1366 "parser.tab.c" /* yacc.c:1646  */
+#line 1361 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 6:
-#line 60 "../grammar/parser.y" /* yacc.c:1646  */
+#line 55 "../grammar/parser.y" /* yacc.c:1646  */
     {
             }
-#line 1373 "parser.tab.c" /* yacc.c:1646  */
+#line 1368 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 7:
-#line 65 "../grammar/parser.y" /* yacc.c:1646  */
+#line 60 "../grammar/parser.y" /* yacc.c:1646  */
     { 
                 jit_value_t temp;
                 int retVal = atoi(yytext);
-                temp = jit_value_create_nint_constant(function, jit_type_int, retVal);
+                temp = jit_value_create_nint_constant(state.current_function, jit_type_int, retVal);
 
-                jit_insn_return(function, temp);
-                /* printf("number to return is %s\n", yytext); */ 
+                jit_insn_return(state.current_function, temp);
             }
-#line 1386 "parser.tab.c" /* yacc.c:1646  */
+#line 1380 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 8:
-#line 73 "../grammar/parser.y" /* yacc.c:1646  */
+#line 67 "../grammar/parser.y" /* yacc.c:1646  */
     {
-                jit_function_compile(function);
-                main_function = function;
             }
-#line 1395 "parser.tab.c" /* yacc.c:1646  */
+#line 1387 "parser.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 1399 "parser.tab.c" /* yacc.c:1646  */
+#line 1391 "parser.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1630,7 +1622,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 79 "../grammar/parser.y" /* yacc.c:1906  */
+#line 71 "../grammar/parser.y" /* yacc.c:1906  */
 
 
 void yyerror(YYLTYPE *locp, const char *s) {
@@ -1640,5 +1632,5 @@ void yyerror(YYLTYPE *locp, const char *s) {
         printf("Error at lines (%d to %d) columns (%d to %d): %s\n", locp->first_line, locp->last_line, locp->first_column, locp->last_column, s);
     }
 
-    hasError = 1;
+    state.has_error = 1;
 }
