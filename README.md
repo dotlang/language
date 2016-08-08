@@ -105,7 +105,7 @@ This is a class with only one method, called `main` which returns `0` (very simi
 
 Each source code file represents either an interface or class. What separates these two is that, an interface has no fieds, and no method has a body. Everything else is considered a class. 
 
-Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be initialized upon first reference. 
+Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be initialized upon first reference. Each class can have an unnamed method which is static initialiazer of the static instance.
 
 *Notes:*
 - Note that you cannot have bodies only for some of the class methods (no abstract class).
