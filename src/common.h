@@ -3,11 +3,22 @@
 
 typedef struct
 {
+    jit_function_t  function;
+
+    //this is updated when we enter the function and
+    //re-used as the key when storing compiled function
+    //in function table
+    char            function_name[100];
+    int             exp_temp;
+} jit_env;
+
+typedef struct
+{
     jit_context_t   context;
-    jit_function_t  current_function;
-    char            current_function_name[100];
     hashtable_t     *function_table;
     int             has_error;
+    jit_env         env;
+
 } jit_state;
 
 void begin_compilation();

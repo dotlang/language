@@ -30,4 +30,6 @@ int ht_hash( hashtable_t *hashtable, char *key );
 //private
 entry_t *ht_newpair( char *key, void *value );
 
+void ht_destroy(hashtable_t* ht);
+
 #endif

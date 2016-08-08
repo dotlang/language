@@ -5,13 +5,13 @@ extern jit_state state;
 
 void begin_compile_function(char* name) 
 {
-   strcpy(state.current_function_name, name);
+   strcpy(state.env.function_name, name);
 }
 
 void end_compile_current_function()
 {
-    jit_function_compile(state.current_function);
-    ht_set(state.function_table, state.current_function_name, state.current_function);
+    jit_function_compile(state.env.function);
+    ht_set(state.function_table, state.env.function_name, state.env.function);
 }
 
 void begin_compilation()
@@ -28,6 +28,7 @@ void end_compilation()
 void end_execution()
 {
     jit_context_destroy(state.context);
+    ht_destroy(state.function_table);
 }
 
 jit_function_t find_function(char* name)

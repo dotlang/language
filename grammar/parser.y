@@ -38,7 +38,7 @@ SourceFile: MethodDecl
             }
             ;
 
-MethodDecl: TYPE { } IDENTIFIER 
+MethodDecl: TYPE IDENTIFIER 
             {
                 begin_compile_function(yytext);
             } 
@@ -50,22 +50,34 @@ MethodDecl: TYPE { } IDENTIFIER
                 signature = jit_type_create_signature
                     (jit_abi_cdecl, jit_type_int, params, 0, 1);
 
-                state.current_function = jit_function_create(state.context, signature);
+                state.env.function = jit_function_create(state.context, signature);
+                jit_type_free(signature);
             }
             CodeBlock
+            ;
+
+CodeBlock: '{' 
+            RETURN Expression
+            { 
+                jit_value_t temp;
+                int retVal = state.env.exp_temp;
+                temp = jit_value_create_nint_constant(state.env.function, jit_type_int, retVal);
+
+                jit_insn_return(state.env.function, temp);
+            }
+            ';' '}'
             {
             }
             ;
 
-CodeBlock: '{' RETURN NUMBER 
-            { 
-                jit_value_t temp;
-                int retVal = atoi(yytext);
-                temp = jit_value_create_nint_constant(state.current_function, jit_type_int, retVal);
-
-                jit_insn_return(state.current_function, temp);
-            }';' '}'
+Expression: NUMBER
             {
+                state.env.exp_temp = atoi(yytext);
+            }
+            '+' 
+            NUMBER
+            {
+                state.env.exp_temp += atoi(yytext);
             }
             ;
 

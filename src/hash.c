@@ -26,6 +26,25 @@ hashtable_t *ht_create( int size ) {
 	return hashtable;	
 }
 
+void ht_destroy(hashtable_t* ht) {
+    if ( ht == NULL ) return;
+
+    for(int i=0;i<ht->size;i++) {
+        entry_t* list = ht->table[i];
+        entry_t* temp = NULL;
+
+        while ( list != NULL ) {
+            temp = list;
+            list = list->next;
+            free(temp);
+        }
+    }
+
+    free(ht->table);
+    free(ht);
+    ht = NULL;
+}
+
 /* Hash a string for a particular hash table. */
 int ht_hash( hashtable_t *hashtable, char *key ) {
 

@@ -3,8 +3,8 @@
 clean:
 	@rm -f out/electron
 	@rm -f tmp/*
-	@mkdir out
-	@mkdir tmp
+	@mkdir -p out
+	@mkdir -p tmp 
 
 init:
 	@cd src && cp *.c ../tmp
@@ -21,3 +21,4 @@ SRC=$(wildcard tmp/*.c)
 
 electron: lex.yy.c init
 	gcc $(SRC) libjit/lib/libjit.a -lpthread -lm -ldl -I libjit/include  -std=gnu99 -o ./out/electron
+#For debug 	gcc $(SRC) libjit/lib/libjit.a -lpthread -v -da -Q -g -O0 -lm -ldl -I libjit/include  -std=gnu99 -o ./out/electron

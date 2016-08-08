@@ -33,11 +33,10 @@ digit [0-9]
 [ \t]          {}
 "//".*         {}
 \n             {}
-int             { return TYPE; }
+int            { return TYPE; }
 [0-9]+         { return NUMBER; }
-return        { return RETURN;}
-[_a-zA-Z]+      { return IDENTIFIER; }
-[(){};]         { return yytext[0];}
-
+return         { return RETURN;}
+[_a-zA-Z]+     { return IDENTIFIER; }
+[(){};+]       { return yytext[0];}
 
 %%
