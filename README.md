@@ -290,6 +290,11 @@ There will be another set of packages built on top of core which provide common 
 The package manager is a separate utility which helps you package, publish, install and deploy packages (Like `maven` or `dub`).
 Suppose someone downloads the source code for a project written in Electron which has some dependencies. How is he going to compile/run the project? There should be an easy and transparent for fetching dependencies at runtime and defining them at the time of development.
 
+Perl has a `MakeFile.PL` where you specify metadata about your package, requirements + their version, test requirements and packaging options.
+Python uses same approach with a `setup.py` file containing similar data like Perl.
+Java without maven has a packaging but not a dependency management system. For dep, you create a `pom.xml` file and describe requirements + their version. 
+C# has dll method which is contains byte-code of the source package. DLL has a version metadata but no dep management. For dep it has NuGet.
+
 #A sample file
 ```
 import core.math;
