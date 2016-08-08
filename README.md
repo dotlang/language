@@ -211,7 +211,7 @@ auto intr = Interface1
 };
 ```
 
-*Closure*: All anonymous function and classes, have a `this` which will point to a read-only set of local variables in the enclosing method (including input arguments). If you need access to the parent class in your anonymous function, define a local variable of appropriate type in the enclosing method. 
+*Closure*: All anonymous function and classes, have a `this` which will point to a read-only set of local variables in the enclosing method (including input arguments and `this` as the container class).
 
 If the interface has only one method and `x` is an anonymouse function of that type, `x(args)` will invoke that single method. 
 
