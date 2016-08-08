@@ -105,7 +105,7 @@ This is a class with only one method, called `main` which returns `0` (very simi
 
 Each source code file represents either an interface or class. What separates these two is that, an interface has no fieds, and no method has a body. Everything else is considered a class. 
 
-Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be initialized upon first reference. 
+Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be initialized upon first reference. Each class can have an unnamed method which is static initialiazer of the static instance.
 
 *Notes:*
 - Note that you cannot have bodies only for some of the class methods (no abstract class).
@@ -211,7 +211,7 @@ auto intr = Interface1
 };
 ```
 
-*Closure*: All anonymous function and classes, have a `this` which will point to a read-only set of local variables in the enclosing method (including input arguments). If you need access to the parent class in your anonymous function, define a local variable of appropriate type in the enclosing method. 
+*Closure*: All anonymous function and classes, have a `this` which will point to a read-only set of local variables in the enclosing method (including input arguments and `this` as the container class).
 
 If the interface has only one method and `x` is an anonymouse function of that type, `x(args)` will invoke that single method. 
 
@@ -289,6 +289,11 @@ There will be another set of packages built on top of core which provide common 
 
 The package manager is a separate utility which helps you package, publish, install and deploy packages (Like `maven` or `dub`).
 Suppose someone downloads the source code for a project written in Electron which has some dependencies. How is he going to compile/run the project? There should be an easy and transparent for fetching dependencies at runtime and defining them at the time of development.
+
+Perl has a `MakeFile.PL` where you specify metadata about your package, requirements + their version, test requirements and packaging options.
+Python uses same approach with a `setup.py` file containing similar data like Perl.
+Java without maven has a packaging but not a dependency management system. For dep, you create a `pom.xml` file and describe requirements + their version. 
+C# has dll method which is contains byte-code of the source package. DLL has a version metadata but no dep management. For dep it has NuGet.
 
 #A sample file
 ```
