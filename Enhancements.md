@@ -277,3 +277,14 @@ N - Shall we add multiple return? So we won't need global `error`. What happens 
 This adds to the complexity. No.
 
 Y - `import a.b =>;` will import into current namespace;
+
+? - To decrease complexity, either 
+remove templates and replace them with something else (like built-in linked-list and force user to create custom classes for other structures like stack, or addition of equivalent of void*)  -> (NO, adding void* will make compiler and runtime complext and language hard)
+or 
+remove hash and replace it with a template (everything will be template except for array)
+Temoplates are needed to help developers be productive, so if we are going to have them, let's make the most use of them. 
+Everything will be a template as much as possible: LinkedList, Set, Stack, ...
+What about Hash? int[string] h; We can make it built-in or make it part of core and let compiler handle everything.
+What about Array? int[] x; int[,] y; -> We need this as a built-in.
+int[string] h = {};
+If we add `void*` we will loose type information at compile time (assume a method which receives a `void*` argument) then runtime and compilation becomes much more complex. 
