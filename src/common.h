@@ -10,6 +10,12 @@ typedef struct
     int             has_error;
 } jit_state;
 
-void enter_function(char* name);
-void leave_function();
+void begin_compilation();
+void end_compilation();
+void end_execution();
+jit_function_t find_function(char* name);
+int execute_main_function();
+
+void begin_compile_function(char* name);
+void end_compile_current_function();
 

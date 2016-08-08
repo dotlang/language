@@ -13,22 +13,10 @@ extern FILE *yyin;
 jit_state state;
 
 int main(int argc, char** argv) {
-    state.function_table = ht_create(1000);
-
-    state.context = jit_context_create();
+    begin_compilation();
     int status = processFile(argv[1]);
-    jit_context_build_end(state.context);
 
-    jit_int result;
-    jit_function_t main_function = (jit_function_t) ht_get(state.function_table, "main");
-    if ( main_function == NULL ) {
-        printf("No function 'main' found!");
-        exit(-1);
-    }
-
-    jit_function_apply(main_function, NULL, &result);
-
-    jit_context_destroy(state.context);
+    int result = execute_main_function();
 
     return (int)result;
 }

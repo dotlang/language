@@ -453,7 +453,7 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    35,    35,    41,    42,    45,    41,    60,    59
+       0,    35,    35,    41,    42,    46,    41,    61,    60
 };
 #endif
 
@@ -1327,7 +1327,7 @@ yyreduce:
         case 2:
 #line 36 "../grammar/parser.y" /* yacc.c:1646  */
     {
-                leave_function();
+                end_compile_current_function();
             }
 #line 1333 "parser.tab.c" /* yacc.c:1646  */
     break;
@@ -1341,13 +1341,13 @@ yyreduce:
   case 4:
 #line 42 "../grammar/parser.y" /* yacc.c:1646  */
     {
-                enter_function(yytext);
+                begin_compile_function(yytext);
             }
 #line 1347 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 5:
-#line 45 "../grammar/parser.y" /* yacc.c:1646  */
+#line 46 "../grammar/parser.y" /* yacc.c:1646  */
     {
                 jit_type_t params[0];
 
@@ -1361,14 +1361,14 @@ yyreduce:
     break;
 
   case 6:
-#line 55 "../grammar/parser.y" /* yacc.c:1646  */
+#line 56 "../grammar/parser.y" /* yacc.c:1646  */
     {
             }
 #line 1368 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 7:
-#line 60 "../grammar/parser.y" /* yacc.c:1646  */
+#line 61 "../grammar/parser.y" /* yacc.c:1646  */
     { 
                 jit_value_t temp;
                 int retVal = atoi(yytext);
@@ -1380,7 +1380,7 @@ yyreduce:
     break;
 
   case 8:
-#line 67 "../grammar/parser.y" /* yacc.c:1646  */
+#line 68 "../grammar/parser.y" /* yacc.c:1646  */
     {
             }
 #line 1387 "parser.tab.c" /* yacc.c:1646  */
@@ -1622,7 +1622,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 71 "../grammar/parser.y" /* yacc.c:1906  */
+#line 72 "../grammar/parser.y" /* yacc.c:1906  */
 
 
 void yyerror(YYLTYPE *locp, const char *s) {

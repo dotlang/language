@@ -34,14 +34,15 @@ extern jit_state state;
 
 SourceFile: MethodDecl
             {
-                leave_function();
+                end_compile_current_function();
             }
             ;
 
 MethodDecl: TYPE { } IDENTIFIER 
             {
-                enter_function(yytext);
-            } '(' ')' 
+                begin_compile_function(yytext);
+            } 
+            '(' ')' 
             {
                 jit_type_t params[0];
 

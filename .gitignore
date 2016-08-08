@@ -26,7 +26,6 @@
 *.exe
 *.out
 *.app
-autogen/*
 out/*
 tmp/*
 
