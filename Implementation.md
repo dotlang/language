@@ -6,3 +6,4 @@
 - Compiler should keep track of processed files so it won't process a file twice. 
 - Compiler should be able to resolve a type name to fully-qualified name (e.g. `Class1` to `pack1.pack2.Class1`).
 - Everything will be a class (except primitives). so we will have `StaticArray<T>` and `Hash<K, V>` with probabaly compiler-provided functions. There will be normal methods for `[]` operators and compiler will translate `x[1]` to `x.get(1)` call. But this is only supported for these types and not all types. 
+- When there is something like `x.method()` in the code, compiler will exactly know which method in which file is going to be called.
