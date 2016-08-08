@@ -519,10 +519,7 @@ extern YYLTYPE yylloc;
 
 #define YY_DECL extern int yylex(YYSTYPE* yylval,YYLTYPE* yylloc)
 
-int lineNumber = 1;
-
-
-#line 526 "lex.yy.c"
+#line 523 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -736,9 +733,9 @@ YY_DECL
 		}
 
 	{
-#line 35 "../grammar/lexer.l"
+#line 32 "../grammar/lexer.l"
 
-#line 742 "lex.yy.c"
+#line 739 "lex.yy.c"
 
 	while ( 1 )		/* loops until end-of-file is reached */
 		{
@@ -807,51 +804,51 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 36 "../grammar/lexer.l"
+#line 33 "../grammar/lexer.l"
 {}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 37 "../grammar/lexer.l"
+#line 34 "../grammar/lexer.l"
 {}
 	YY_BREAK
 case 3:
 /* rule 3 can match eol */
 YY_RULE_SETUP
-#line 38 "../grammar/lexer.l"
+#line 35 "../grammar/lexer.l"
 {}
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 39 "../grammar/lexer.l"
+#line 36 "../grammar/lexer.l"
 { return TYPE; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 40 "../grammar/lexer.l"
+#line 37 "../grammar/lexer.l"
 { return NUMBER; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 41 "../grammar/lexer.l"
+#line 38 "../grammar/lexer.l"
 { return RETURN;}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 42 "../grammar/lexer.l"
+#line 39 "../grammar/lexer.l"
 { return IDENTIFIER; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 43 "../grammar/lexer.l"
+#line 40 "../grammar/lexer.l"
 { return yytext[0];}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 46 "../grammar/lexer.l"
+#line 43 "../grammar/lexer.l"
 ECHO;
 	YY_BREAK
-#line 855 "lex.yy.c"
+#line 852 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1858,7 +1855,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 45 "../grammar/lexer.l"
+#line 42 "../grammar/lexer.l"
 
 
 

@@ -68,21 +68,26 @@
 #include <stdlib.h>
 
 #include "hash.h"
+#include <jit/jit.h>
 #include "parser.tab.h"  // to get the token types that we return
 
 // stuff from flex that bison needs to know about:
 extern int yyparse();
 extern int yylex(YYSTYPE* yylval, YYLTYPE* yylloc);
 extern FILE *yyin;
-
+extern jit_function_t main_function;
 extern int yylineno;
 extern char* yytext;
+extern jit_context_t context;
+extern jit_function_t function;
 
 hashtable_t *symtable;
+char current_function_name[100];
+extern int hasError;
 
 void yyerror(YYLTYPE *locp, const char *s);
 
-#line 86 "parser.tab.c" /* yacc.c:339  */
+#line 91 "parser.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -153,7 +158,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 157 "parser.tab.c" /* yacc.c:358  */
+#line 162 "parser.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -397,16 +402,16 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  5
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   11
+#define YYLAST   10
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  12
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  4
+#define YYNNTS  8
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  4
+#define YYNRULES  8
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  14
+#define YYNSTATES  18
 
 /* YYTRANSLATE[YYX] -- Symbol number corresponding to YYX as returned
    by yylex, with out-of-bounds checking.  */
@@ -453,7 +458,7 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    34,    34,    38,    42
+       0,    40,    40,    46,    47,    50,    46,    65,    64
 };
 #endif
 
@@ -463,8 +468,8 @@ static const yytype_uint8 yyrline[] =
 static const char *const yytname[] =
 {
   "$end", "error", "$undefined", "IDENTIFIER", "NUMBER", "RETURN", "TYPE",
-  "'('", "')'", "'{'", "';'", "'}'", "$accept", "PROGRAM", "MethodDecl",
-  "CodeBlock", YY_NULLPTR
+  "'('", "')'", "'{'", "';'", "'}'", "$accept", "SourceFile", "MethodDecl",
+  "$@1", "$@2", "$@3", "CodeBlock", "$@4", YY_NULLPTR
 };
 #endif
 
@@ -492,8 +497,8 @@ static const yytype_uint16 yytoknum[] =
      STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-      -6,    -2,     2,    -7,    -4,    -7,    -3,    -5,     1,    -7,
-       3,    -1,     0,    -7
+      -6,    -7,     1,    -7,    -1,    -7,    -7,    -4,    -3,    -7,
+      -5,     2,    -7,     4,    -7,     0,    -2,    -7
 };
 
   /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -501,20 +506,20 @@ static const yytype_int8 yypact[] =
      means the default is an error.  */
 static const yytype_uint8 yydefact[] =
 {
-       0,     0,     0,     2,     0,     1,     0,     0,     0,     3,
-       0,     0,     0,     4
+       0,     3,     0,     2,     0,     1,     4,     0,     0,     5,
+       0,     0,     6,     0,     7,     0,     0,     8
 };
 
   /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-      -7,    -7,    -7,    -7
+      -7,    -7,    -7,    -7,    -7,    -7,    -7,    -7
 };
 
   /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-      -1,     2,     3,     9
+      -1,     2,     3,     4,     7,    10,    12,    15
 };
 
   /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -522,34 +527,34 @@ static const yytype_int8 yydefgoto[] =
      number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_uint8 yytable[] =
 {
-       1,     4,     5,     6,     8,     7,    10,    11,     0,    12,
-       0,    13
+       1,     5,     6,     8,    11,     9,     0,    13,    14,    17,
+      16
 };
 
 static const yytype_int8 yycheck[] =
 {
-       6,     3,     0,     7,     9,     8,     5,     4,    -1,    10,
-      -1,    11
+       6,     0,     3,     7,     9,     8,    -1,     5,     4,    11,
+      10
 };
 
   /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
      symbol of state STATE-NUM.  */
 static const yytype_uint8 yystos[] =
 {
-       0,     6,    13,    14,     3,     0,     7,     8,     9,    15,
-       5,     4,    10,    11
+       0,     6,    13,    14,    15,     0,     3,    16,     7,     8,
+      17,     9,    18,     5,     4,    19,    10,    11
 };
 
   /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_uint8 yyr1[] =
 {
-       0,    12,    13,    14,    15
+       0,    12,    13,    15,    16,    17,    14,    19,    18
 };
 
   /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
 static const yytype_uint8 yyr2[] =
 {
-       0,     2,     1,     5,     5
+       0,     2,     1,     0,     0,     0,     8,     0,     6
 };
 
 
@@ -1325,28 +1330,72 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 35 "../grammar/parser.y" /* yacc.c:1646  */
+#line 41 "../grammar/parser.y" /* yacc.c:1646  */
     {
+                ht_set(symtable, current_function_name, function);
             }
-#line 1332 "parser.tab.c" /* yacc.c:1646  */
+#line 1338 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 39 "../grammar/parser.y" /* yacc.c:1646  */
-    {
-            }
-#line 1339 "parser.tab.c" /* yacc.c:1646  */
+#line 46 "../grammar/parser.y" /* yacc.c:1646  */
+    { }
+#line 1344 "parser.tab.c" /* yacc.c:1646  */
     break;
 
   case 4:
-#line 43 "../grammar/parser.y" /* yacc.c:1646  */
+#line 47 "../grammar/parser.y" /* yacc.c:1646  */
+    {
+                strcpy(current_function_name, yytext);
+            }
+#line 1352 "parser.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 5:
+#line 50 "../grammar/parser.y" /* yacc.c:1646  */
+    {
+                jit_type_t params[0];
+
+                jit_type_t signature;
+                signature = jit_type_create_signature
+                    (jit_abi_cdecl, jit_type_int, params, 0, 1);
+
+                function = jit_function_create(context, signature);
+            }
+#line 1366 "parser.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 6:
+#line 60 "../grammar/parser.y" /* yacc.c:1646  */
     {
             }
-#line 1346 "parser.tab.c" /* yacc.c:1646  */
+#line 1373 "parser.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 7:
+#line 65 "../grammar/parser.y" /* yacc.c:1646  */
+    { 
+                jit_value_t temp;
+                int retVal = atoi(yytext);
+                temp = jit_value_create_nint_constant(function, jit_type_int, retVal);
+
+                jit_insn_return(function, temp);
+                /* printf("number to return is %s\n", yytext); */ 
+            }
+#line 1386 "parser.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 8:
+#line 73 "../grammar/parser.y" /* yacc.c:1646  */
+    {
+                jit_function_compile(function);
+                main_function = function;
+            }
+#line 1395 "parser.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 1350 "parser.tab.c" /* yacc.c:1646  */
+#line 1399 "parser.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1581,29 +1630,8 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 46 "../grammar/parser.y" /* yacc.c:1906  */
+#line 79 "../grammar/parser.y" /* yacc.c:1906  */
 
-
-int main(int argc, char** argv) {
-    // open a file handle to a particular file:
-    FILE *myfile = fopen(argv[1], "r");
-    // make sure it is valid:
-    if (!myfile) {
-        printf("cannot open input file %s\n", argv[1]);
-        return -1;
-    }
-
-    /* symtable = ht_create(1000); */
-
-    // set flex to read from it instead of defaulting to STDIN:
-    yyin = myfile;
-    // parse through the input until there is no more:
-    do {
-        yyparse();
-    } while (!feof(yyin));
-
-    return 0;
-}
 
 void yyerror(YYLTYPE *locp, const char *s) {
     if ( locp->first_line == locp->last_line ) {
@@ -1611,6 +1639,6 @@ void yyerror(YYLTYPE *locp, const char *s) {
     } else {
         printf("Error at lines (%d to %d) columns (%d to %d): %s\n", locp->first_line, locp->last_line, locp->first_column, locp->last_column, s);
     }
-    
-    exit(-1);
+
+    hasError = 1;
 }

@@ -23,9 +23,6 @@ extern YYLTYPE yylloc;
 
 #define YY_DECL extern int yylex(YYSTYPE* yylval, YYLTYPE* yylloc)
 
-int lineNumber = 1;
-
-
 %}
 
 %option yylineno
