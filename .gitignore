@@ -26,6 +26,6 @@
 *.exe
 *.out
 *.app
-out/*
-tmp/*
+out/
+tmp/
 
