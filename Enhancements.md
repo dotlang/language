@@ -278,13 +278,19 @@ This adds to the complexity. No.
 
 Y - `import a.b =>;` will import into current namespace;
 
-? - To decrease complexity, either 
-remove templates and replace them with something else (like built-in linked-list and force user to create custom classes for other structures like stack, or addition of equivalent of void*)  -> (NO, adding void* will make compiler and runtime complext and language hard)
-or 
+N - To decrease complexity, either   
+remove templates and replace them with something else (like built-in linked-list and force user to create custom classes for other structures like stack, or addition of equivalent of void*)  -> (NO, adding void* will make compiler and runtime complext and language hard)  
+or   
 remove hash and replace it with a template (everything will be template except for array)
 Temoplates are needed to help developers be productive, so if we are going to have them, let's make the most use of them. 
 Everything will be a template as much as possible: LinkedList, Set, Stack, ...
 What about Hash? int[string] h; We can make it built-in or make it part of core and let compiler handle everything.
-What about Array? int[] x; int[,] y; -> We need this as a built-in.
-int[string] h = {};
-If we add `void*` we will loose type information at compile time (assume a method which receives a `void*` argument) then runtime and compilation becomes much more complex. 
+What about Array? `int[] x; int[,] y;` -> We need this as a built-in.
+`int[string] h = {};`
+If we add `void*` we will loose type information at compile time (assume a method which receives a `void*` argument) then runtime and compilation becomes much more complex.   
+In order to be usable, we need to provide the minimum features (stack/heap, primitives, special behavior for string, array and hash) which we do. But for other things, we try to be consistent in behavior and orthogonal (so there won't be exceptions, if a feature is provided, it should be usable everywhere).
+The simplest language would have no special syntax for array or string or hash. But it won't be useful.
+
+? - Remove special treatment for hash (except for hash literals). So name will be `hash<K,V>` and `[]` will become `set/get`. Like Java. so `return {'A':1, 'B':2}` will be automatically converted to a `hash<string,int>` class.
+
+? - Calling `==` for reference types, should invoke `equals` method or check equality of their references?
