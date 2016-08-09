@@ -292,3 +292,5 @@ In order to be usable, we need to provide the minimum features (stack/heap, prim
 The simplest language would have no special syntax for array or string or hash. But it won't be useful.
 
 ? - Remove special treatment for hash (except for hash literals). So name will be `hash<K,V>` and `[]` will become `set/get`. Like Java.
+
+? - Calling `==` for reference types, should invoke `equals` method or check equality of their references?
