@@ -7,3 +7,5 @@
 - Compiler should be able to resolve a type name to fully-qualified name (e.g. `Class1` to `pack1.pack2.Class1`).
 - Everything will be a class (except primitives). so we will have `StaticArray<T>` and `Hash<K, V>` with probabaly compiler-provided functions. There will be normal methods for `[]` operators and compiler will translate `x[1]` to `x.get(1)` call. But this is only supported for these types and not all types. 
 - When there is something like `x.method()` in the code, compiler will exactly know which method in which file is going to be called.
+- Compiler needs to keep track of a set of native (C written) methods with their singature. This will be a `Hash<String, Pair<Signature, Pointer>>` which given inernal name of a function, will give it's singature and a pointer to the implementation of that function. Then:
+`jit_insn_call_native(current_func, "func1", func1_ptr, func1_signature, input_args, arg_count, JIT_CALL_NOTHROW);`
