@@ -1,4 +1,5 @@
 #include <jit/jit.h>
+#include <jit/jit-dump.h>
 #include "common.h"
 
 extern jit_state state;
@@ -10,6 +11,8 @@ void begin_compile_function(char* name)
 
 void end_compile_current_function()
 {
+    jit_dump_function(stdout, state.env.function, state.env.function_name);
+
     jit_function_compile(state.env.function);
     ht_set(state.function_table, state.env.function_name, state.env.function);
 }

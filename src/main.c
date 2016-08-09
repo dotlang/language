@@ -15,6 +15,7 @@ jit_state state;
 int main(int argc, char** argv) {
     begin_compilation();
     int status = processFile(argv[1]);
+    end_compilation();
 
     //exit if there is error
     if ( status != 0 ) return status;
