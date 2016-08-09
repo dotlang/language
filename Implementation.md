@@ -9,3 +9,6 @@
 - When there is something like `x.method()` in the code, compiler will exactly know which method in which file is going to be called.
 - Compiler needs to keep track of a set of native (C written) methods with their singature. This will be a `Hash<String, Pair<Signature, Pointer>>` which given inernal name of a function, will give it's singature and a pointer to the implementation of that function. Then:
 `jit_insn_call_native(current_func, "func1", func1_ptr, func1_signature, input_args, arg_count, JIT_CALL_NOTHROW);`
+- For example `long currentTime()` method in `Time` class in `core.utils` package will have a full name of: `core.utils.Time.currentTime` and will just call appropriate C STL method.
+- Compiler should be able to get heap size needed to create instances of any class, and offset of each of their members.
+- Also compiler should know name and index of parameters of all methods. So when call by parameter name is used, it can translate the code to a normal call.
