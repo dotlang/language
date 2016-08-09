@@ -1,14 +1,5 @@
-//** EXIT CODE = 1
-package ex5 {
-    int main() {
-        int x = 12;
-        int y = 10;
-
-        if ( x > 10 ) {
-            return 1;
-        } else {
-            return 2;
-        }
-    }
+//**9
+int main() {
+    return 1 + ( 2 - 3 ) - ( 4 + 7 + 9 ) + 8 + ( 1 + 20 );
 }
 

@@ -1,11 +1,7 @@
-//string primitive
-package ex12 {
-    int main() {
-        int a = -12;
-        uint b=13;
-        int8 c='a';
-        string str = "AAAA";
+//**0
+int main()
+{
+    int x = 12;
 
-        str += "B";
-    }
+    assert x==12;
 }

@@ -1,19 +1,9 @@
-package ex8 {
-    int main() {
-        int x = 12;
-        const int t=10;
+//**1
+int main() 
+{
+    int x = 6;
+    int y = 3;
+    int z = 10;
 
-        t++; //should throw error
-
-        for(int y=0;y<10;y++) {
-            if ( y ==7) break;
-            x++;
-        }
-
-        if ( x > 10 ) {
-            return 1;
-        } else {
-            return 2;
-        }
-    }
+    return x + y - (z / 5) * 4;
 }

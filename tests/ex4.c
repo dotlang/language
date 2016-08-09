@@ -1,14 +1,6 @@
-//** EXIT CODE = 1
-package ex4 {
-    int main() {
-        int x = 12;
-        int y = 10;
-
-        if ( x > 10 ) {
-            return 1;
-        }
-
-        return x+y;
-    }
+//**72
+int main() 
+{
+    return 1 + 2 + 3 + 4 - 5 - 6 - 7 + 80;
 }
 
