@@ -9,6 +9,7 @@ typedef struct
     //re-used as the key when storing compiled function
     //in function table
     char            function_name[100];
+    jit_value_t     exp_value;
     int             exp_temp;
 } jit_env;
 

@@ -72,7 +72,11 @@ CodeBlock: '{'
 
 Expression: NUMBER
             {
-                state.env.exp_temp = atoi(yytext);
+                state.env.exp_temp += atoi(yytext);
+                /* if ( state.env.exp_value == null ) { */
+                /*     state.env.exp_value = jit_value_create(state.env.function, jit_type_int); */
+                /* } */
+                
             }
             '+' 
             NUMBER
