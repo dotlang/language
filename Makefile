@@ -12,7 +12,7 @@ init:
 
 
 parser.tab.c parser.tab.h: grammar/parser.y
-	@cd tmp && bison -d ../grammar/parser.y
+	@cd tmp && bison -v -d ../grammar/parser.y
 
 lex.yy.c: grammar/lexer.l parser.tab.h
 	@cd tmp && flex ../grammar/lexer.l

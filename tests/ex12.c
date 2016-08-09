@@ -1,7 +1,19 @@
-//**0
-int main()
-{
-    int x = 12;
+//**21
+int main() {
+    int x = 19;
 
-    assert x==12;
+    if ( x > 5 )
+    {
+        x++;
+    }
+
+    if ( x > 100 )
+    {
+        x = 9;
+    } else
+    {
+        x++;
+    }
+
+    return x;
 }

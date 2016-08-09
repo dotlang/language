@@ -35,6 +35,7 @@ extern jit_state state;
 %token <str> NUMBER
 %token RETURN
 %token IF
+%token ELSE
 %token TYPE
 
 %type <value> Expression
@@ -79,43 +80,82 @@ state.env.function = jit_function_create(state.context, signature);
             CodeBlock
             ;
 
-CodeBlock:  '{' 
-         StmtGroup
-            { 
+CodeBlock:  '{' StmtGroup { }
+            '}'
+            {
             }
-            ';' '}'
+            |
+            Stmt
+            |
+            '{' '}'
+            ;
+
+StmtGroup: 
+            Stmt
+            |
+            StmtGroup Stmt
+            {};
+Stmt:       ReturnStmt 
+            |
+            VarDecl
+            |
+            IfStmt
             {
             }
             ;
-
-StmtGroup:  ReturnStmt StmtGroup
-         |
-            VarDecl StmtGroup
-            |
-            IfStmt StmtGroup
-            {
-            }
-            |
-            {} ;
-IfStmt:     IF '(' Condition ')' 
+IfStmt:     
+      IF '(' Condition ')' 
       {
                 $<label>$ = jit_label_undefined;
                 jit_value_t condition_result = $3;
 
                 jit_insn_branch_if_not(state.env.function, condition_result, &$<label>$);
             }
-            ReturnStmt ';'
+            CodeBlock
             {
+
+               //when if block is finished, jump to after `else` section 
+               $<label>$ = jit_label_undefined;
+               jit_insn_branch(state.env.function, &$<label>$);
+
             //Here $<label>5 means the 'label' data item which was set by 5th component in this rule 
             //and the 5th component was the code block after "Condition ')'".
                jit_insn_label(state.env.function, &$<label>5);
-            };
+            } 
+            IfElsePart
+            {
+               jit_insn_label(state.env.function, &$<label>7);
+            }
+            ;
+IfElsePart:{} |
+            ELSE {
+            }
+            CodeBlock
+            {
+            }
+            ;
+            
 Condition:  IDENTIFIER EQ Expression
          {
                 jit_value_t variable = ht_get(state.env.local_vars, $1);
                 jit_value_t exp = $3;
 
                 $$ = jit_insn_eq(state.env.function, variable, exp);
+            }|
+            IDENTIFIER '>' Expression
+            {
+                jit_value_t variable = ht_get(state.env.local_vars, $1);
+                jit_value_t exp = $3;
+
+                $$ = jit_insn_gt(state.env.function, variable, exp);
+            }
+            |
+            IDENTIFIER '<' Expression 
+            {
+                jit_value_t variable = ht_get(state.env.local_vars, $1);
+                jit_value_t exp = $3;
+
+                $$ = jit_insn_lt(state.env.function, variable, exp);
             };
 VarDecl:    TYPE IDENTIFIER '=' NUMBER ';'
        {
@@ -123,10 +163,10 @@ VarDecl:    TYPE IDENTIFIER '=' NUMBER ';'
                 jit_value_t r_value = jit_value_create_nint_constant(state.env.function, jit_type_int, atoi($4));
                 jit_insn_store(state.env.function, variable, r_value);
 
-//keep track of 
+                //keep track of local variable
                 ht_set(state.env.local_vars, $2, variable);
             };
-ReturnStmt: RETURN Expression
+ReturnStmt: RETURN Expression ';'
             {
                 jit_insn_return(state.env.function, $2);
             } ;

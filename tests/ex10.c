@@ -1,11 +1,9 @@
-//**67
-int main() {
-    int x = 19;
+//**15
+int main() 
+{
+    int x = 10;
 
-    if ( x > 5 )
-    {
-        return 67;
-    }
+    if ( x == 20 ) return 120;
 
-    return 75;
+    return 15;
 }

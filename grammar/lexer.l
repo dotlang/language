@@ -38,7 +38,8 @@ int            { return TYPE; }
 [0-9]+         { yylval->str = strdup(yytext); return NUMBER; }
 return         { return RETURN;}
 if              { return IF; }
+else            { return ELSE;}
 [_a-zA-Z]+     { yylval->str = strdup(yytext); return IDENTIFIER; }
-[=(){};+\-*/]       { return yytext[0];}
+[=(){};+\-*/<>]       { return yytext[0];}
 
 %%
