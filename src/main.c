@@ -11,8 +11,10 @@ int processFile(char* filePath);
 
 extern FILE *yyin;
 jit_state state;
+extern int yydebug;
 
 int main(int argc, char** argv) {
+    /* yydebug=1; */
     begin_compilation();
     int status = processFile(argv[1]);
     end_compilation();
@@ -34,8 +36,6 @@ int processFile(char* filePath) {
         printf("cannot open input file %s\n", filePath);
         return -1;
     }
-
-    /* symtable = ht_create(1000); */
 
     // set flex to read from it instead of defaulting to STDIN:
     yyin = myfile;

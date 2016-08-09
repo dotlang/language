@@ -20,6 +20,7 @@ void end_compile_current_function()
 void begin_compilation()
 {
     state.function_table = ht_create(1000);
+    state.env.local_vars = ht_create(1000);
     state.context = jit_context_create();
 }
 
@@ -32,6 +33,7 @@ void end_execution()
 {
     jit_context_destroy(state.context);
     ht_destroy(state.function_table);
+    ht_destroy(state.env.local_vars);
 }
 
 jit_function_t find_function(char* name)

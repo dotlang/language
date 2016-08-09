@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <jit/jit.h>
 
 #include "parser.tab.h"  // to get the token types that we return
 extern YYLTYPE yylloc;
@@ -22,7 +23,6 @@ extern YYLTYPE yylloc;
     }
 
 #define YY_DECL extern int yylex(YYSTYPE* yylval, YYLTYPE* yylloc)
-
 %}
 
 %option yylineno
@@ -34,9 +34,11 @@ digit [0-9]
 "//".*         {}
 \n             {}
 int            { return TYPE; }
-[0-9]+         { return NUMBER; }
+==             { return EQ; }
+[0-9]+         { yylval->str = strdup(yytext); return NUMBER; }
 return         { return RETURN;}
-[_a-zA-Z]+     { return IDENTIFIER; }
-[(){};+]       { return yytext[0];}
+if              { return IF; }
+[_a-zA-Z]+     { yylval->str = strdup(yytext); return IDENTIFIER; }
+[=(){};+\-*/]       { return yytext[0];}
 
 %%

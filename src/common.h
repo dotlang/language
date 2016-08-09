@@ -10,7 +10,7 @@ typedef struct
     //in function table
     char            function_name[100];
     jit_value_t     exp_value;
-    int             exp_temp;
+    hashtable_t     *local_vars;
 } jit_env;
 
 typedef struct

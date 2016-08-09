@@ -22,7 +22,7 @@ SRC=$(wildcard tmp/*.c)
 GCC_OPT_STATIC_ALL = -static
 GCC_OPT_DEBUG = -v -da -Q -g -O0
 GCC_OPT_OPTIMIZE = -O3
-GCC_OPT_STD = -Wall -lpthread -lm -ldl -std=c11 #-std=gnu99
+GCC_OPT_STD = -Wno-unused-function -Wall -lpthread -lm -ldl -std=gnu99
 
 GCC_OPT = $(GCC_OPT_STD)
 
