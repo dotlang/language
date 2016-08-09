@@ -289,3 +289,4 @@ What about Array? `int[] x; int[,] y;` -> We need this as a built-in.
 `int[string] h = {};`
 If we add `void*` we will loose type information at compile time (assume a method which receives a `void*` argument) then runtime and compilation becomes much more complex.   
 In order to be usable, we need to provide the minimum features (stack/heap, primitives, special behavior for string, array and hash) which we do. But for other things, we try to be consistent in behavior and orthogonal (so there won't be exceptions, if a feature is provided, it should be usable everywhere).
+The simplest language would have no special syntax for array or string or hash. But it won't be useful.
