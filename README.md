@@ -246,7 +246,7 @@ dow.method1();
 - **For**: You can use `for` to iterate over an array or hash `for(x:array1)` or `for(k,v:hash1)`.
 - **if and for without braces**: `if (x>1) return 1;`, `for(y:array) x += y;`.
 - **Arrays**: Same notation as Java `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]; int[2,2] x;`. We have slicing for arrays `x[start:step:end]` with support for negative index.
-- **String interpolation**: You can embed variables inside a string to be automatically converted to string. If string is surrounded by double quote it won't be interpolated. You need to use single quote for interpolation to work.
+- **String interpolation**: You can embed variables inside a string to be automatically converted to string. If string is surrounded by single quotes it won't be interpolated. You need to use double quote for interpolation to work.
 - **Ternary condition**: `iif(a, b, c) ` is same as `a ? b:c` in other languages.
 - **Null**: `a = b ? 1` means `a=b if b is not null, else a=1`.
 - **Hashtable**: `int[String] hash1 = { 'OH' => 12, 'CA' => 33, ... };`.
