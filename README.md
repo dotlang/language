@@ -258,6 +258,7 @@ dow.method1();
 - **Call by name**: `myClass.myMember(x: 10, y: 12);`
 - **Check is primitive**: If a variable can be cast to empty interface, it is not primitive. This can be useful in template when checking parameters.
 - You cannot start local variable names with underscore.
+- If you wnat to disable static instance of a class, you can put an assert in the statis block.
 
 
 ###Core package
