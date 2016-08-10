@@ -43,6 +43,7 @@ else            { return ELSE;}
 and             { return AND; }
 or              { return OR; }
 not             { return NOT; }
+bool            { return BOOL; }
 
 {D}+            { strcpy(yylval->text, yytext); return NUMBER; }
 
@@ -50,13 +51,28 @@ not             { return NOT; }
 "-="            { return OP_ASUB; }
 "*="            { return OP_AMUL; }
 "/="            { return OP_ADIV; }
+
+">>="            { return OP_ASHR; }
+"<<="            { return OP_ASHL; }
+"%="            { return OP_AMOD; }
+"**="            { return OP_APOW; }
+"&="            { return OP_AAND; }
+"|="            { return OP_AOR; }
+"^="            { return OP_AXOR; }
+
 "=="            { return OP_EQ; }
 ">="            { return OP_GE; }
 "<="            { return OP_LE; }
 "!="            { return OP_NE; }
+"**"            { return OP_POW; }
 "++"            { return OP_INC; }
+"--"            { return OP_DEC; }
+">>"            { return OP_SHR; }
+"<<"            { return OP_SHL; }
 {L}({L}|{D})*   { strcpy(yylval->text, yytext); return IDENTIFIER; }
 [+\-*/=]        { return yytext[0];}
+[&|~^%]         { return yytext[0];}
+
 [(){};<>]       { return yytext[0];}
 
 [ \n\f]         {}

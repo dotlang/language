@@ -25,7 +25,7 @@ extern void assertion_failure_handler();
 %locations
 %define parse.error verbose
 %define api.pure full
-%expect 1
+/* %expect 1 */
 
 %union {
     char text[100];
@@ -37,7 +37,7 @@ extern void assertion_failure_handler();
 %token <text> IDENTIFIER
 %token <text> NUMBER
 %token RETURN
-%token AND OR NOT
+%token AND OR NOT BOOL
 %token IF
 %token ELSE
 %token TYPE
@@ -45,12 +45,19 @@ extern void assertion_failure_handler();
 
 %type <value> Expression
 %type <label> IfStmt
-%type <label> Condition             "label to jump setup by outer statement"
+%type <value> Condition
 %type <value> SimpleCondition
 
 
 /* source for operator settings: http://en.cppreference.com/w/c/language/operator_precedence */
 /* higher = lower precedence */
+%right OP_ASHR
+%right OP_ASHL
+%right OP_AMOD
+%right OP_APOW
+%right OP_AAND
+%right OP_AOR
+%right OP_AXOR
 %right OP_ADIV
 %right OP_AADD
 %right OP_AMUL
@@ -60,9 +67,16 @@ extern void assertion_failure_handler();
 %left OP_NE
 %left OP_LE
 %left OP_GE
+%left OP_SHR OP_SHL
 %left '+' '-'
-%left '*' '/'
+%left '*' '/' '%'
+%left '|'
+%left '^'
+%left OP_POW
+%left '&'
+%right '~'
 %left OP_INC
+%left OP_DEC
 %left '('
 %left ')'
 
@@ -117,10 +131,10 @@ AssertStmt
     : ASSERT Condition 
     {
         jit_label_t assertion_ok_label = jit_label_undefined;
-        jit_insn_branch(CFN, &assertion_ok_label);
+        jit_insn_branch_if(CFN, $2, &assertion_ok_label);
 
         //define label for condition to jump to if condition is not met
-        jit_insn_label(CFN, &$<label>2);
+        /* jit_insn_label(CFN, &$<label>2); */
 
         /* jit_value_t exp_result = $2; */
         /* $<label>$ = jit_label_undefined; */
@@ -148,10 +162,8 @@ AssertStmt
 IfStmt
     : IF '(' Condition ')' 
     {
-        /* $<label>$ = jit_label_undefined; */
-        /* jit_value_t condition_result = $3; */
-
-        /* jit_insn_branch_if_not(CFN, condition_result, &$<label>$); */
+        $<label>$ = jit_label_undefined;
+        jit_insn_branch_if_not(CFN, $3, &$<label>$);
     } Block
     {
         //when execution of if block is finished, jump to after `else` section 
@@ -159,7 +171,7 @@ IfStmt
         jit_insn_branch(CFN, &$<label>$);
 
         //setup label for the condition to jump if condition is failed
-        jit_insn_label(CFN, &$<label>3);
+        jit_insn_label(CFN, &$<label>5);
 
 
         //Here $<label>5 means the 'label' data item which was set by 5th component in this rule 
@@ -204,28 +216,68 @@ SimpleCondition
     ;
 
 Condition
-    : SimpleCondition
+    : '(' Condition ')'
     {
-        $<label>$ = jit_label_undefined;
-        jit_insn_branch_if_not(CFN, $1, &$<label>$);
+        $$ = $2;
     }
     | SimpleCondition
     {
-        $<label>$ = jit_label_undefined;
-        //this label will be configured by parent statement
-        jit_insn_branch_if_not(CFN, $1, &$<label>$);
-    } AND SimpleCondition
-    {
-        //this label will be configured by parent statement
-        jit_insn_branch_if_not(CFN, $4, &$<label>2);
-        $$ = $<label>2;
+        $$ = $1;
+        /* $<label>$ = jit_label_undefined; */
+        /* jit_insn_branch_if_not(CFN, $1, &$<label>$); */
     }
-    /* | Condition OR Condition */
-    /* { */
-    /* } */
-    /* | NOT Condition */
-    /* { */
-    /* } */
+    | SimpleCondition AND SimpleCondition
+    {
+        jit_value_t first = $1;
+        jit_value_t second = $3;
+
+        $$ = jit_insn_and(CFN, first, second);
+    }
+    | Condition AND Condition
+    {
+        jit_value_t first = $1;
+        jit_value_t second = $3;
+
+        $$ = jit_insn_and(CFN, first, second);
+        /* $$ = jit_label_undefined; */
+
+        /* jit_label_t label_all_pass = jit_label_undefined; */
+        /* jit_insn_branch(CFN, &label_all_pass); */
+        /* jit_insn_label(CFN, &$1); */
+        /* jit_insn_label(CFN, &$3); */
+        /* jit_insn_branch(CFN, &$$); */
+
+        /* jit_insn_label(CFN, &label_all_pass); */
+
+         
+        
+        /* //this label will be configured by parent statement */
+        /* jit_insn_branch_if_not(CFN, $4, &$<label>2); */
+        /* $$ = $<label>2; */
+
+        /* // */
+        /* jit_insn_label(CFN, &$1); */
+    }
+    | SimpleCondition OR SimpleCondition
+    {
+        jit_value_t first = $1;
+        jit_value_t second = $3;
+
+        $$ = jit_insn_or(CFN, first, second);
+    }
+    | Condition OR Condition
+    {
+        jit_value_t first = $1;
+        jit_value_t second = $3;
+
+        $$ = jit_insn_or(CFN, first, second);
+    }
+    | NOT Condition
+    {
+        jit_value_t first = $2;
+
+        $$ = jit_insn_not(CFN, first);
+    }
     ;
 
 AssignmentStmt
@@ -255,6 +307,48 @@ AssignmentStmt
     {
         jit_value_t variable = get_local_var($1);
         jit_value_t temp = jit_insn_div(CFN, variable, $3);
+        update_local_var($1, temp);
+    }
+    | IDENTIFIER OP_ASHL Expression ';'
+    {
+        jit_value_t variable = get_local_var($1);
+        jit_value_t temp = jit_insn_shl(CFN, variable, $3);
+        update_local_var($1, temp);
+    }
+    | IDENTIFIER OP_ASHR Expression ';'
+    {
+        jit_value_t variable = get_local_var($1);
+        jit_value_t temp = jit_insn_shr(CFN, variable, $3);
+        update_local_var($1, temp);
+    }
+    | IDENTIFIER OP_AMOD Expression ';'
+    {
+        jit_value_t variable = get_local_var($1);
+        jit_value_t temp = jit_insn_rem(CFN, variable, $3);
+        update_local_var($1, temp);
+    }
+    | IDENTIFIER OP_APOW Expression ';'
+    {
+        jit_value_t variable = get_local_var($1);
+        jit_value_t temp = jit_insn_pow(CFN, variable, $3);
+        update_local_var($1, temp);
+    }
+    | IDENTIFIER OP_AAND Expression ';'
+    {
+        jit_value_t variable = get_local_var($1);
+        jit_value_t temp = jit_insn_and(CFN, variable, $3);
+        update_local_var($1, temp);
+    }
+    | IDENTIFIER OP_AOR Expression ';'
+    {
+        jit_value_t variable = get_local_var($1);
+        jit_value_t temp = jit_insn_or(CFN, variable, $3);
+        update_local_var($1, temp);
+    }
+    | IDENTIFIER OP_AXOR Expression ';'
+    {
+        jit_value_t variable = get_local_var($1);
+        jit_value_t temp = jit_insn_xor(CFN, variable, $3);
         update_local_var($1, temp);
     }
     ;
@@ -291,6 +385,15 @@ Expression
         update_local_var($1, result);
         $$ = variable;
     }
+    | IDENTIFIER OP_DEC
+    {
+        jit_value_t variable = get_local_var($1);
+        jit_value_t one_const = jit_value_create_nint_constant(CFN, jit_type_int, 1);
+        jit_value_t result = jit_insn_sub(CFN, variable, one_const);
+
+        update_local_var($1, result);
+        $$ = variable;
+    }
     | Expression '+' Expression
     {
         $$ = jit_insn_add(CFN, $1, $3);
@@ -314,6 +417,38 @@ Expression
     | NUMBER
     {
         $$ = jit_value_create_nint_constant(CFN, jit_type_int, atoi($1));
+    }
+    | Expression OP_POW Expression
+    {
+        $$ = jit_insn_pow(CFN, $1, $3);
+    }
+    | Expression '%' Expression
+    {
+        $$ = jit_insn_rem(CFN, $1, $3);
+    }
+    | Expression '&' Expression
+    {
+        $$ = jit_insn_and(CFN, $1, $3);
+    }
+    | Expression '|' Expression
+    {
+        $$ = jit_insn_or(CFN, $1, $3);
+    }
+    | Expression '^' Expression
+    {
+        $$ = jit_insn_xor(CFN, $1, $3);
+    }
+    | '~' Expression
+    {
+        $$ = jit_insn_not(CFN, $2);
+    }
+    | Expression OP_SHR Expression
+    {
+        $$ = jit_insn_shr(CFN, $1, $3);
+    }
+    | Expression OP_SHL Expression
+    {
+        $$ = jit_insn_shl(CFN, $1, $3);
     }
     | IDENTIFIER
     {

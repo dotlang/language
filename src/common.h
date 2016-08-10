@@ -4,6 +4,7 @@
 //shortcut for current function
 #define CFN state.env.function
 
+
 typedef struct
 {
     jit_function_t  function;
