@@ -1,19 +1,10 @@
-//**21
+//**20
 int main() {
     int x = 19;
 
     if ( x > 5 )
-    {
-        x++;
-    }
+        if ( x > 100 ) return 10; else return 20; 
+    else return 19;
 
-    if ( x > 100 )
-    {
-        x = 9;
-    } else
-    {
-        x++;
-    }
-
-    return x;
+    return 75;
 }
