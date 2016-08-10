@@ -36,14 +36,18 @@ extern void assertion_failure_handler();
 
 %token <text> IDENTIFIER
 %token <text> NUMBER
+%token <text> TYPE
 %token RETURN
-%token AND OR NOT BOOL
+%token STRUCT
+%token TRUE
+%token FALSE
+%token AND OR NOT
 %token IF
 %token ELSE
-%token TYPE
 %token ASSERT
 
 %type <value> Expression
+%type <value> BooleanExpression
 %type <label> IfStmt
 %type <value> Condition
 %type <value> SimpleCondition
@@ -280,8 +284,28 @@ Condition
     }
     ;
 
+BooleanExpression
+    : TRUE
+    {
+        $$ = create_const_by_data_type(find_type("bool"), "1");
+    }
+    | FALSE
+    {
+        $$ = create_const_by_data_type(find_type("bool"), "0");
+    }
+    | Condition
+    {
+        $$ = $1;
+    };
+                
+
 AssignmentStmt
-    : IDENTIFIER '=' Expression ';'
+    : IDENTIFIER '=' BooleanExpression ';'
+    {
+        ONLY_BOOL($1)
+        update_local_var($1, $3);
+    }
+    | IDENTIFIER '=' Expression ';'
     {
         update_local_var($1, $3);
     }
@@ -356,15 +380,18 @@ AssignmentStmt
 VarDecl
     : TYPE IDENTIFIER ';'
     {
-        define_local_var($2);
-        jit_value_t r_value = jit_value_create_nint_constant(CFN, jit_type_int, 0);
-        update_local_var($2, r_value);
+        define_local_var($1, $2);
     }
-    | TYPE IDENTIFIER '=' NUMBER ';'
+    | TYPE IDENTIFIER '=' Expression ';'
     {
-        define_local_var($2);
-        jit_value_t r_value = jit_value_create_nint_constant(CFN, jit_type_int, atoi($4));
-        update_local_var($2, r_value);
+        define_local_var($1, $2);
+        update_local_var($2, $4);
+    }
+    | TYPE IDENTIFIER '=' BooleanExpression ';'
+    {
+        define_local_var($1, $2);
+        ONLY_BOOL($2)
+        update_local_var($2, $4);
     }
     ;
 
@@ -379,7 +406,7 @@ Expression
     : IDENTIFIER OP_INC
     {
         jit_value_t variable = get_local_var($1);
-        jit_value_t one_const = jit_value_create_nint_constant(CFN, jit_type_int, 1);
+        jit_value_t one_const = create_const($1, "1");
         jit_value_t result = jit_insn_add(CFN, variable, one_const);
 
         update_local_var($1, result);
@@ -388,7 +415,7 @@ Expression
     | IDENTIFIER OP_DEC
     {
         jit_value_t variable = get_local_var($1);
-        jit_value_t one_const = jit_value_create_nint_constant(CFN, jit_type_int, 1);
+        jit_value_t one_const = create_const($1, "1");
         jit_value_t result = jit_insn_sub(CFN, variable, one_const);
 
         update_local_var($1, result);
@@ -416,6 +443,7 @@ Expression
     }
     | NUMBER
     {
+        //we don't have a variable here! assume int
         $$ = jit_value_create_nint_constant(CFN, jit_type_int, atoi($1));
     }
     | Expression OP_POW Expression

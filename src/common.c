@@ -36,11 +36,6 @@ void end_execute()
     ht_destroy(state.function_table);
 }
 
-jit_function_t find_function(char* name)
-{
-    return (jit_function_t) ht_get(state.function_table, name);
-}
-
 int start_execute()
 {
     jit_int result;
@@ -56,13 +51,37 @@ int start_execute()
     return (int)result;
 }
 
-void define_local_var(char* name)
+jit_function_t find_function(char* name)
 {
-    jit_value_t zero = jit_value_create_nint_constant(state.env.function, jit_type_int, 0);
-    jit_value_t variable = jit_value_create(state.env.function, jit_type_int);
+    return (jit_function_t) ht_get(state.function_table, name);
+}
+
+jit_value_t create_const_by_data_type(jit_type_t data_type, char* value)
+{
+    return jit_value_create_nint_constant(state.env.function, data_type, atoi(value));
+}
+
+jit_value_t create_const(char* var_name, char* value)
+{
+    jit_type_t data_type = get_local_var_type(var_name);
+    return create_const_by_data_type(data_type, value);
+}
+
+void define_local_var(char* type_name, char* name)
+{
+    jit_type_t data_type = find_type(type_name);
+
+    jit_value_t zero = create_const_by_data_type(data_type, "0");
+    jit_value_t variable = jit_value_create(state.env.function, data_type);
     jit_insn_store(state.env.function, variable, zero);
 
     ht_set(state.env.local_vars, name, variable);
+}
+
+jit_type_t get_local_var_type(char* name) 
+{
+    jit_value_t var = get_local_var(name);
+    return jit_value_get_type(var);
 }
 
 jit_value_t get_local_var(char* name)
@@ -75,4 +94,13 @@ void update_local_var(char* name, jit_value_t new_value)
     jit_value_t current = get_local_var(name);
 
     jit_insn_store(state.env.function, current, new_value);
+}
+
+jit_type_t find_type(char* type_name)
+{
+    if ( !strcmp(type_name, "int") ) return jit_type_int;
+    if ( !strcmp(type_name, "bool") ) return jit_type_ubyte;
+
+
+    exit(41);
 }

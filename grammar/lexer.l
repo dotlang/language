@@ -35,15 +35,18 @@ H   [a-fA-F0-9]
 
 "//".*          {/* comment */}
 
-int             { return TYPE; }
+int             { strcpy(yylval->text, yytext); return TYPE; }
+bool            { strcpy(yylval->text, yytext); return TYPE; }
 return          { return RETURN;}
 if              { return IF; }
+true            { return TRUE; }
+false           { return FALSE; }
+struct          { return STRUCT; }
 assert          { return ASSERT; }
 else            { return ELSE;}
 and             { return AND; }
 or              { return OR; }
 not             { return NOT; }
-bool            { return BOOL; }
 
 {D}+            { strcpy(yylval->text, yytext); return NUMBER; }
 
