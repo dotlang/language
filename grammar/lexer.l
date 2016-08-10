@@ -27,19 +27,29 @@ extern YYLTYPE yylloc;
 
 %option yylineno
 
-digit [0-9]
+D   [0-9]
+L   [a-zA-Z_]
+H   [a-fA-F0-9]
 
 %%
-[ \t]          {}
-"//".*         {}
-\n             {}
-int            { return TYPE; }
-==             { return EQ; }
-[0-9]+         { yylval->str = strdup(yytext); return NUMBER; }
-return         { return RETURN;}
-if              { return IF; }
-else            { return ELSE;}
-[_a-zA-Z]+     { yylval->str = strdup(yytext); return IDENTIFIER; }
-[=(){};+\-*/<>]       { return yytext[0];}
 
+"//".*          {/* comment */}
+
+int             { return TYPE; }
+return          { return RETURN;}
+if              { return IF; }
+assert          { return ASSERT; }
+else            { return ELSE;}
+
+{D}+            { strcpy(yylval->text, yytext); return NUMBER; }
+
+"=="            { return EQ_OP; }
+"++"            { return INC_OP; }
+{L}({L}|{D})*   { strcpy(yylval->text, yytext); return IDENTIFIER; }
+[+\-*/=]        { return yytext[0];}
+[(){};<>]       { return yytext[0];}
+
+[ \n\f]         {}
+[\t\v]          {}
+.               {/* ignore bad characters */}
 %%

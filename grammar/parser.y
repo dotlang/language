@@ -18,25 +18,29 @@ extern FILE *yyin;
 extern char* yytext;
 extern jit_state state;
 
+extern void assertion_failure_handler();
+
 %}
 
 %locations
 %define parse.error verbose
 %define api.pure full
+%expect 1
 
 %union {
-    char *str;
+    char text[100];
     jit_value_t value;
     jit_label_t label;
 }
 
 
-%token <str> IDENTIFIER
-%token <str> NUMBER
+%token <text> IDENTIFIER
+%token <text> NUMBER
 %token RETURN
 %token IF
 %token ELSE
 %token TYPE
+%token ASSERT
 
 %type <value> Expression
 %type <label> IfStmt
@@ -46,9 +50,10 @@ extern jit_state state;
 /* source for operator settings: http://en.cppreference.com/w/c/language/operator_precedence */
 /* higher = lower precedence */
 %right '='
-%left EQ
+%left EQ_OP
 %left '+' '-'
 %left '*' '/'
+%left INC_OP
 %left '('
 %left ')'
 
@@ -56,155 +61,185 @@ extern jit_state state;
 
 %%
 
-SourceFile: MethodDecl
-          {
-                end_compile_current_function();
-            }
-            ;
+SourceFile
+    : MethodDecl
+    {
+        end_function();
+    }
+    ;
 
-MethodDecl: TYPE IDENTIFIER
-          {
-                begin_compile_function(yytext);
-            } 
-            '(' ')' 
-            {
-                jit_type_t params[0];
-
-jit_type_t signature;
-                signature = jit_type_create_signature
+MethodDecl
+    : TYPE IDENTIFIER 
+    {
+        start_function($2);
+    } '(' ')' 
+    {
+        jit_type_t params[0];
+        jit_type_t signature;
+        signature = jit_type_create_signature
                     (jit_abi_cdecl, jit_type_int, params, 0, 1);
 
-state.env.function = jit_function_create(state.context, signature);
+        CFN = jit_function_create(state.context, signature);
                 jit_type_free(signature);
-            }
-            CodeBlock
-            ;
+    } Block
+    ;
 
-CodeBlock:  '{' StmtGroup { }
-            '}'
-            {
-            }
-            |
-            Stmt
-            |
-            '{' '}'
-            ;
+Block
+    : '{' StatementList '}'
+    | Statement
+    | '{' '}'
+    ;
 
-StmtGroup: 
-            Stmt
-            |
-            StmtGroup Stmt
-            {};
-Stmt:       ReturnStmt 
-            |
-            VarDecl
-            |
-            IfStmt
-            {
-            }
-            ;
-IfStmt:     
-      IF '(' Condition ')' 
-      {
-                $<label>$ = jit_label_undefined;
-                jit_value_t condition_result = $3;
+StatementList
+    : Statement
+    | StatementList Statement
+    ;
 
-                jit_insn_branch_if_not(state.env.function, condition_result, &$<label>$);
-            }
-            CodeBlock
-            {
+Statement
+    : ReturnStmt 
+    | VarDecl
+    | IfStmt
+    | Expression ';'
+    | AssignmentStmt
+    | AssertStmt
+    ;
 
-               //when if block is finished, jump to after `else` section 
-               $<label>$ = jit_label_undefined;
-               jit_insn_branch(state.env.function, &$<label>$);
+AssertStmt
+    : ASSERT Condition 
+    {
+        jit_value_t exp_result = $2;
+        $<label>$ = jit_label_undefined;
+        jit_insn_branch_if(CFN, exp_result, &$<label>$);
+        //halt!
+        jit_type_t handler_signature = jit_type_create_signature
+                        (jit_abi_cdecl, jit_type_void, NULL, 0, 0);
 
-            //Here $<label>5 means the 'label' data item which was set by 5th component in this rule 
-            //and the 5th component was the code block after "Condition ')'".
-               jit_insn_label(state.env.function, &$<label>5);
-            } 
-            IfElsePart
-            {
-               jit_insn_label(state.env.function, &$<label>7);
-            }
-            ;
-IfElsePart:{} |
-            ELSE {
-            }
-            CodeBlock
-            {
-            }
-            ;
-            
-Condition:  IDENTIFIER EQ Expression
-         {
-                jit_value_t variable = ht_get(state.env.local_vars, $1);
-                jit_value_t exp = $3;
+        jit_insn_call_native(
+                CFN,
+                "assertion_failure_handler",
+                (void*)assertion_failure_handler,
+                handler_signature,
+                NULL,
+                0,
+                JIT_CALL_NOTHROW|JIT_CALL_NORETURN);
+    } ';'
+    {
+        jit_insn_label(CFN, &$<label>3);
+    }
+    ;
 
-                $$ = jit_insn_eq(state.env.function, variable, exp);
-            }|
-            IDENTIFIER '>' Expression
-            {
-                jit_value_t variable = ht_get(state.env.local_vars, $1);
-                jit_value_t exp = $3;
+IfStmt
+    : IF '(' Condition ')' 
+    {
+        $<label>$ = jit_label_undefined;
+        jit_value_t condition_result = $3;
 
-                $$ = jit_insn_gt(state.env.function, variable, exp);
-            }
-            |
-            IDENTIFIER '<' Expression 
-            {
-                jit_value_t variable = ht_get(state.env.local_vars, $1);
-                jit_value_t exp = $3;
+        jit_insn_branch_if_not(CFN, condition_result, &$<label>$);
+    } Block
+    {
+        //when if block is finished, jump to after `else` section 
+        $<label>$ = jit_label_undefined;
+        jit_insn_branch(CFN, &$<label>$);
 
-                $$ = jit_insn_lt(state.env.function, variable, exp);
-            };
-VarDecl:    TYPE IDENTIFIER '=' NUMBER ';'
-       {
-                jit_value_t variable = jit_value_create(state.env.function, jit_type_int);
-                jit_value_t r_value = jit_value_create_nint_constant(state.env.function, jit_type_int, atoi($4));
-                jit_insn_store(state.env.function, variable, r_value);
+        //Here $<label>5 means the 'label' data item which was set by 5th component in this rule 
+        //and the 5th component was the code block after "Condition ')'".
+        jit_insn_label(CFN, &$<label>5);
+    } IfElsePart
+    {
+       jit_insn_label(CFN, &$<label>7);
+    }
+    ;
 
-                //keep track of local variable
-                ht_set(state.env.local_vars, $2, variable);
-            };
-ReturnStmt: RETURN Expression ';'
-            {
-                jit_insn_return(state.env.function, $2);
-            } ;
-Expression: Expression '+' Expression
-            {
-                $$ = jit_insn_add(state.env.function, $1, $3);
-            }
-            |
-            Expression '-' Expression
-            {
-                $$ = jit_insn_sub(state.env.function, $1, $3);
-            }
-            |
-            Expression '*' Expression
-            {
-                $$ = jit_insn_mul(state.env.function, $1, $3);
-            }
-            |
-            Expression '/' Expression
-            {
-                $$ = jit_insn_div(state.env.function, $1, $3);
-            }
-            |
-            '(' Expression ')'
-            {
-                $$ = $2;
-            }
-            |  
-            NUMBER
-            {
-                $$ = jit_value_create_nint_constant(state.env.function, jit_type_int, atoi($1));
-            }
-            |
-            IDENTIFIER
-            {
-                jit_value_t variable = ht_get(state.env.local_vars, $1);
-                $$ = variable;
-            } ;
+IfElsePart
+    : ELSE Block
+    |
+    ;
+
+Condition
+    : Expression EQ_OP Expression
+    {
+        $$ = jit_insn_eq(CFN, $1, $3);
+    }
+    | Expression '>' Expression
+    {
+        $$ = jit_insn_gt(CFN, $1, $3);
+    }
+    | Expression '<' Expression 
+    {
+        $$ = jit_insn_lt(CFN, $1, $3);
+    }
+    ;
+
+AssignmentStmt
+    : IDENTIFIER '=' Expression ';'
+    {
+        jit_value_t variable = get_local_var($1);
+        jit_insn_store(CFN, variable, $3);
+    }
+    ;
+
+VarDecl
+    : TYPE IDENTIFIER ';'
+    {
+        define_local_var($2);
+        jit_value_t r_value = jit_value_create_nint_constant(CFN, jit_type_int, 0);
+        update_local_var($2, r_value);
+    }
+    | TYPE IDENTIFIER '=' NUMBER ';'
+    {
+        define_local_var($2);
+        jit_value_t r_value = jit_value_create_nint_constant(CFN, jit_type_int, atoi($4));
+        update_local_var($2, r_value);
+    }
+    ;
+
+ReturnStmt
+    : RETURN Expression ';'
+    {
+        jit_insn_return(CFN, $2);
+    } 
+    ;
+
+Expression
+    : IDENTIFIER INC_OP
+    {
+        jit_value_t variable = get_local_var($1);
+        jit_value_t one_const = jit_value_create_nint_constant(CFN, jit_type_int, 1);
+        jit_value_t result = jit_insn_add(CFN, variable, one_const);
+
+        update_local_var($1, result);
+        $$ = variable;
+    }
+    | Expression '+' Expression
+    {
+        $$ = jit_insn_add(CFN, $1, $3);
+    }
+    | Expression '-' Expression
+    {
+        $$ = jit_insn_sub(CFN, $1, $3);
+    }
+    | Expression '*' Expression
+    {
+        $$ = jit_insn_mul(CFN, $1, $3);
+    }
+    | Expression '/' Expression
+    {
+        $$ = jit_insn_div(CFN, $1, $3);
+    }
+    | '(' Expression ')'
+    {
+        $$ = $2;
+    }
+    | NUMBER
+    {
+        $$ = jit_value_create_nint_constant(CFN, jit_type_int, atoi($1));
+    }
+    | IDENTIFIER
+    {
+        jit_value_t variable = get_local_var($1);
+        $$ = variable;
+    }
+    ;
 
 %%
 

@@ -1,6 +1,9 @@
 #include <jit/jit.h>
 #include "hash.h"
 
+//shortcut for current function
+#define CFN state.env.function
+
 typedef struct
 {
     jit_function_t  function;
@@ -9,7 +12,6 @@ typedef struct
     //re-used as the key when storing compiled function
     //in function table
     char            function_name[100];
-    jit_value_t     exp_value;
     hashtable_t     *local_vars;
 } jit_env;
 
@@ -22,12 +24,18 @@ typedef struct
 
 } jit_state;
 
-void begin_compilation();
-void end_compilation();
-void end_execution();
+/* JIT Processing */
+void start_jit();
+void end_jit();
+void end_execute();
+int start_execute();
+
+/* Function Processing */
+void start_function(char* name);
+void end_function();
 jit_function_t find_function(char* name);
-int execute_main_function();
 
-void begin_compile_function(char* name);
-void end_compile_current_function();
-
+/* Local Variable Processing */
+void define_local_var(char* name);
+jit_value_t get_local_var(char* name);
+void update_local_var(char* name, jit_value_t value);

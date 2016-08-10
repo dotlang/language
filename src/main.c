@@ -7,7 +7,7 @@
 #include <jit/jit.h>
 #include "parser.tab.h"  // to get the token types that we return
 
-int processFile(char* filePath);
+int jit_file(char* filePath);
 
 extern FILE *yyin;
 jit_state state;
@@ -15,21 +15,21 @@ extern int yydebug;
 
 int main(int argc, char** argv) {
     /* yydebug=1; */
-    begin_compilation();
-    int status = processFile(argv[1]);
-    end_compilation();
+    start_jit();
+    int status = jit_file(argv[1]);
+    end_jit();
 
     //exit if there is error
     if ( status != 0 ) return status;
 
-    int result = execute_main_function();
+    int result = start_execute();
 
-    end_execution();
+    end_execute();
     
     return result;
 }
 
-int processFile(char* filePath) {
+int jit_file(char* filePath) {
     FILE *myfile = fopen(filePath, "r");
     // make sure it is valid:
     if (!myfile) {
@@ -50,4 +50,10 @@ int processFile(char* filePath) {
     }
 
     return 0;
+}
+
+void assertion_failure_handler()
+{
+    printf("ASSERTION FAILED!\n");
+    exit(254);
 }
