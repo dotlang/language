@@ -1,5 +1,21 @@
 #!/bin/bash
+
+if [ -z "$1" ]; then
+    echo "Usage: x.sh cn | xn | n"
+    echo "    Where n is a test number"
+    echo "    cn will show the test file"
+    echo "    xn will run all tests up to n"
+    exit
+fi
+
 cd "$(dirname "$0")"
+
+if [[ ${1:0:1} = c* ]]; then
+    target=${1:1}
+    cat tests/ex$target.c
+    echo
+    exit
+fi
 
 make clean > /dev/null
 make > /dev/null
