@@ -45,7 +45,8 @@ extern void assertion_failure_handler();
 
 %type <value> Expression
 %type <label> IfStmt
-%type <value> Condition
+%type <label> Condition             "label to jump setup by outer statement"
+%type <value> SimpleCondition
 
 
 /* source for operator settings: http://en.cppreference.com/w/c/language/operator_precedence */
@@ -115,10 +116,17 @@ Statement
 AssertStmt
     : ASSERT Condition 
     {
-        jit_value_t exp_result = $2;
-        $<label>$ = jit_label_undefined;
-        jit_insn_branch_if(CFN, exp_result, &$<label>$);
-        //halt!
+        jit_label_t assertion_ok_label = jit_label_undefined;
+        jit_insn_branch(CFN, &assertion_ok_label);
+
+        //define label for condition to jump to if condition is not met
+        jit_insn_label(CFN, &$<label>2);
+
+        /* jit_value_t exp_result = $2; */
+        /* $<label>$ = jit_label_undefined; */
+        /* jit_insn_branch_if(CFN, exp_result, &$<label>$); */
+
+        /* //halt! */
         jit_type_t handler_signature = jit_type_create_signature
                         (jit_abi_cdecl, jit_type_void, NULL, 0, 0);
 
@@ -130,28 +138,33 @@ AssertStmt
                 NULL,
                 0,
                 JIT_CALL_NOTHROW|JIT_CALL_NORETURN);
+
+        jit_insn_label(CFN, &assertion_ok_label);
     } ';'
     {
-        jit_insn_label(CFN, &$<label>3);
     }
     ;
 
 IfStmt
     : IF '(' Condition ')' 
     {
-        $<label>$ = jit_label_undefined;
-        jit_value_t condition_result = $3;
+        /* $<label>$ = jit_label_undefined; */
+        /* jit_value_t condition_result = $3; */
 
-        jit_insn_branch_if_not(CFN, condition_result, &$<label>$);
+        /* jit_insn_branch_if_not(CFN, condition_result, &$<label>$); */
     } Block
     {
-        //when if block is finished, jump to after `else` section 
+        //when execution of if block is finished, jump to after `else` section 
         $<label>$ = jit_label_undefined;
         jit_insn_branch(CFN, &$<label>$);
 
+        //setup label for the condition to jump if condition is failed
+        jit_insn_label(CFN, &$<label>3);
+
+
         //Here $<label>5 means the 'label' data item which was set by 5th component in this rule 
         //and the 5th component was the code block after "Condition ')'".
-        jit_insn_label(CFN, &$<label>5);
+        /* jit_insn_label(CFN, &$<label>5); */
     } IfElsePart
     {
        jit_insn_label(CFN, &$<label>7);
@@ -163,7 +176,7 @@ IfElsePart
     |
     ;
 
-Condition
+SimpleCondition
     : Expression OP_EQ Expression
     {
         $$ = jit_insn_eq(CFN, $1, $3);
@@ -188,6 +201,31 @@ Condition
     {
         $$ = jit_insn_ne(CFN, $1, $3);
     }
+    ;
+
+Condition
+    : SimpleCondition
+    {
+        $<label>$ = jit_label_undefined;
+        jit_insn_branch_if_not(CFN, $1, &$<label>$);
+    }
+    | SimpleCondition
+    {
+        $<label>$ = jit_label_undefined;
+        //this label will be configured by parent statement
+        jit_insn_branch_if_not(CFN, $1, &$<label>$);
+    } AND SimpleCondition
+    {
+        //this label will be configured by parent statement
+        jit_insn_branch_if_not(CFN, $4, &$<label>2);
+        $$ = $<label>2;
+    }
+    /* | Condition OR Condition */
+    /* { */
+    /* } */
+    /* | NOT Condition */
+    /* { */
+    /* } */
     ;
 
 AssignmentStmt
