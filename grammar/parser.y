@@ -37,6 +37,7 @@ extern void assertion_failure_handler();
 %token <text> IDENTIFIER
 %token <text> NUMBER
 %token RETURN
+%token AND OR NOT
 %token IF
 %token ELSE
 %token TYPE
@@ -49,11 +50,18 @@ extern void assertion_failure_handler();
 
 /* source for operator settings: http://en.cppreference.com/w/c/language/operator_precedence */
 /* higher = lower precedence */
+%right OP_ADIV
+%right OP_AADD
+%right OP_AMUL
+%right OP_ASUB
 %right '='
-%left EQ_OP
+%left OP_EQ
+%left OP_NE
+%left OP_LE
+%left OP_GE
 %left '+' '-'
 %left '*' '/'
-%left INC_OP
+%left OP_INC
 %left '('
 %left ')'
 
@@ -156,7 +164,7 @@ IfElsePart
     ;
 
 Condition
-    : Expression EQ_OP Expression
+    : Expression OP_EQ Expression
     {
         $$ = jit_insn_eq(CFN, $1, $3);
     }
@@ -168,13 +176,48 @@ Condition
     {
         $$ = jit_insn_lt(CFN, $1, $3);
     }
+    | Expression OP_LE Expression 
+    {
+        $$ = jit_insn_le(CFN, $1, $3);
+    }
+    | Expression OP_GE Expression 
+    {
+        $$ = jit_insn_ge(CFN, $1, $3);
+    }
+    | Expression OP_NE Expression 
+    {
+        $$ = jit_insn_ne(CFN, $1, $3);
+    }
     ;
 
 AssignmentStmt
     : IDENTIFIER '=' Expression ';'
     {
+        update_local_var($1, $3);
+    }
+    | IDENTIFIER OP_AADD Expression ';'
+    {
         jit_value_t variable = get_local_var($1);
-        jit_insn_store(CFN, variable, $3);
+        jit_value_t temp = jit_insn_add(CFN, variable, $3);
+        update_local_var($1, temp);
+    }
+    | IDENTIFIER OP_ASUB Expression ';'
+    {
+        jit_value_t variable = get_local_var($1);
+        jit_value_t temp = jit_insn_sub(CFN, variable, $3);
+        update_local_var($1, temp);
+    }
+    | IDENTIFIER OP_AMUL Expression ';'
+    {
+        jit_value_t variable = get_local_var($1);
+        jit_value_t temp = jit_insn_mul(CFN, variable, $3);
+        update_local_var($1, temp);
+    }
+    | IDENTIFIER OP_ADIV Expression ';'
+    {
+        jit_value_t variable = get_local_var($1);
+        jit_value_t temp = jit_insn_div(CFN, variable, $3);
+        update_local_var($1, temp);
     }
     ;
 
@@ -201,7 +244,7 @@ ReturnStmt
     ;
 
 Expression
-    : IDENTIFIER INC_OP
+    : IDENTIFIER OP_INC
     {
         jit_value_t variable = get_local_var($1);
         jit_value_t one_const = jit_value_create_nint_constant(CFN, jit_type_int, 1);

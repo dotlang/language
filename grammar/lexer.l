@@ -40,11 +40,21 @@ return          { return RETURN;}
 if              { return IF; }
 assert          { return ASSERT; }
 else            { return ELSE;}
+and             { return AND; }
+or              { return OR; }
+not             { return NOT; }
 
 {D}+            { strcpy(yylval->text, yytext); return NUMBER; }
 
-"=="            { return EQ_OP; }
-"++"            { return INC_OP; }
+"+="            { return OP_AADD; }
+"-="            { return OP_ASUB; }
+"*="            { return OP_AMUL; }
+"/="            { return OP_ADIV; }
+"=="            { return OP_EQ; }
+">="            { return OP_GE; }
+"<="            { return OP_LE; }
+"!="            { return OP_NE; }
+"++"            { return OP_INC; }
 {L}({L}|{D})*   { strcpy(yylval->text, yytext); return IDENTIFIER; }
 [+\-*/=]        { return yytext[0];}
 [(){};<>]       { return yytext[0];}
