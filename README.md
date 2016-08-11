@@ -8,8 +8,8 @@ That's why I am creating the new programming language: Electron.
 
 I will follow 3 rules when designing this language:
 
-1. **Simple**: Easy to learn, read, write and understand. Consistent and logical, as much as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
-2. **Powerful**: It should enable developers to organize, develop, test, maintain and operate a large and complex software project, with relative ease.
+1. **Simple**: Easy to learn, read, write and understand. Consistent and logical, as much as possible. There shoulbd preferably be only one way to do some small task. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
+2. **Powerful**: It should enable (team of) developers to organize, develop, test, maintain and operate a large and complex software project, with relative ease.
 3. **Fast**: Performance of the final output should be high. Much better than dynamic languages like Python. Something like Java.
 
 I know that achieving all of above goals at the same time is something impossible so there will definitely be trade-offs where I will let go of some features to have other (more desirable) features. I will remove some features or limit some features in the language where I think it will help achieve above goals. One important guideline I use is "convention over configuration" which basically means, I will prefer using a set of pre-defined rules over keywords in the language.
