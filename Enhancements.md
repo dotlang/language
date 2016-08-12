@@ -15,7 +15,7 @@ f1.setCallback(...);
 f1.cancel();
 String result = f1.get();
 ```
-This can be easily achieved by using std and anonymous function. Why add a new keyword?
+This can be easily achieved by using std and anonymous function. Why add a new keyword? LATER: we need a keyword because this is fundamentally different than a method call or thread creation. But it should be very simple.
 
 Y - ternary operator is very messy but very useful (`a ? b:c`). Is there a way to make use of it in the language? Maybe:
 `if a then b else c` or `b if a else c`. We only want to evaluate `c` if `b` is `FALSE` so this cannot be done with a library function. Another option: `iif(a, b, c)`.
@@ -291,20 +291,21 @@ If we add `void*` we will loose type information at compile time (assume a metho
 In order to be usable, we need to provide the minimum features (stack/heap, primitives, special behavior for string, array and hash) which we do. But for other things, we try to be consistent in behavior and orthogonal (so there won't be exceptions, if a feature is provided, it should be usable everywhere).
 The simplest language would have no special syntax for array or string or hash. But it won't be useful.
 
-? - Remove special treatment for hash (except for hash literals). So name will be `hash<K,V>` and `[]` will become `set/get`. Like Java. so `return {'A':1, 'B':2}` will be automatically converted to a `hash<string,int>` class. Same can be done for array. So we will have an array class with normal methods and variables. Only compiler provides some basic services to make working with them easier. Special services: Literals (for hash and array), read and write values.
+Y - Remove special treatment for hash (except for hash literals). So name will be `hash<K,V>` and `[]` will become `set/get`. Like Java. so `return {'A':1, 'B':2}` will be automatically converted to a `hash<string,int>` class. Same can be done for array. So we will have an array class with normal methods and variables. Only compiler provides some basic services to make working with them easier. Special services: Literals (for hash and array), read and write values (`[]`);
 
 ? - We can mark string as a char array, so it will have it's own class + some compiler services to handle string literals and operators (+ ... ). But other than that it will be treated just like a normal class. So we will have primitives and classes and nothing else.
 
-? - Calling `==` for reference types, should invoke `equals` method or check equality of their references?
+N - Calling `==` for reference types, should invoke `equals` method or check equality of their references? Common sense says `==` should compare two values on the left and right. Not calling a special method.
 
 N - What if a function expects a `Stack<T>` and does not mind the type of `T` (some utility function which works on stacks of any type, e.g. get size of stack or some other thing which is not included in the original class).
 We cannot solve this problem, by giving users ability to extend the stack class and add methods. Because what if it needs two stacks or it needs stacks of different types or different generic classes?
 They can add all these functions to a class which exposes `Stack<T>` and it a `<T>` template. or they can use a base interface. There is no need to remove templates or make them more complex than how it is now.
 
-? - By adding default static instance for all classes we are doing a lot of things wrong. 1) we are explicitly introducing global variables, 2) adding an exception for class and instance creation 3) adding special syntax for static initialization of the class. Let's remove them. What about singleton? It's not as important as solving mentioned problems. 
+Y - By adding default static instance for all classes we are doing a lot of things wrong. 1) we are explicitly introducing global variables, 2) adding an exception for class and instance creation 3) adding special syntax for static initialization of the class. Let's remove them. What about singleton? It's not as important as solving mentioned problems. 
 Also we can assume classes without `struct` section are static so utility classes like `Math` can be easily implemented. Same should apply for a singleton class. Because if a class has state, maybe it should not be single. 
+Solution: Static methods are those who don't have `this` argument. Consequently they won't have access to struct members because they dont have `this`.
 
-? - Rust and many functional programming langs, define almost everything as "mutable" meaning they cannot change once they have values. can we incorporate this? But for a complex and big object, this is not practical. 
+N - Rust and many functional programming langs, define almost everything as "mutable" meaning they cannot change once they have values. can we incorporate this? But for a complex and big object, this is not practical. 
 
 ? - Like Smalltalk: Everything is an object, even int. But the class (or compiler) decides whether it wants to be on-stack or on-heap. Compiler can decide so if class's size is small. For stack allocated classes, they are passed by value not reference but all this is handled by compiler. 
 
@@ -312,28 +313,38 @@ Also we can assume classes without `struct` section are static so utility classe
 
 ? - If everything is considered a class and specific ones are allocated on the stack (handled by language or compiler), then we can define almost all operations as a method call. (`x+y` becomes, `x.add(y)` and ...). And this will be provided for all class so language will have orthogonality. (Casting, toString, Math operations, ... can be defined for every class, also classes can have their own methods, e.g. Data.Format).
 
-? - Why use two names for data types? If everyone knows double why use float64?
+Y - Why use two names for data types? If everyone knows double why use float64?
 
-? - No public fields? Then how a constructor is defined? How to organize fields and methods? What about the underscore rule for private data?
+Y - No public fields? Then how a constructor is defined? How to organize fields and methods? What about the underscore rule for private data? 
+One solution: Fields will still be inside `struct` definition. They all need to start with lowercase letter.
+For methods (instance/static), if they start with uppercase, they are public. lowercase means private.
+But classes are all public (file-name cannot be case sensitive, we cannot have two rules for public/private and also this is how go handles it).
 
-? - Difference between instance and static method can be their parameters: if the first argument is of type of the class, then its instance else its static. But its better if static and non-static are not mixed.
+Y - Difference between instance and static method can be their parameters: if the first argument is of type of the class, then its instance else its static. But its better if static and non-static are not mixed.
+This also will help us eliminate some exceptions imposed on the constructor syntax. 
 
 ? - move template args from comment and use a keyword.
 
-? - Return `while` keyword. It only makes the language confusing to use `for` as a loop with condition. Then there would be two ways to do conditional loop.
+N - Return `while` keyword. It only makes the language confusing to use `for` as a loop with condition. Then there would be two ways to do conditional loop. 
 
-? - When we say constructor is a special method (1st exception), which has no return type (2nd exception) and can be called on a class without having an instance (3rd exception), and has a special call syntax (4th exception) it is not consistent with other OOP concepts. In perl constructors return values and use `bless` to make result an object. 
+Y - When we say constructor is a special method (1st exception), which has no return type (2nd exception) and can be called on a class without having an instance (3rd exception), and has a special call syntax (4th exception) it is not consistent with other OOP concepts. In perl constructors return values and use `bless` to make result an object. 
+We can remove 2nd exception (it has a return type) and 4th (give it a name). For 3rd exception, if we define static methods as those who don't have `this` argument, this can be solved. So a class can have a combination of static and non-static methods. so for MyClass: `MyClass new(int x) { MyClass result = #!@#!#!; result.x = x; return result; }`.
+The only special thing and exception here is the name of the method. Because there should be an standard way. But if it is really exception, then why mention the method name? It's better to define a convention/advice here and let developers choose the name of the constructor(s). Users will need to read the documentation to see if they need to call `new` or another static method.
 
-? - If we want to have something like 'goroutine' we need to support them at the syntax level. like `promise`? (But for communication channel and future features like opComplete, ... we can rely on core and std).
+Y - If we want to have something like 'goroutine' we need to support them at the syntax level. like `promise`? (But for communication channel and future features like opComplete, ... we can rely on core and std). Because this will create a new type of thread (a coroutine), so it is an underlying difference. What are we going to write in the code handler for `promise` if it's a member of core? The whole thing should be implemented in the compiler and runtime system level. So we need a keyword here but keep it as simple as possible (e.g. we don't need return type, it can communicate with a channel or shared variable, we don't need an `onComplete` handler. How to stop them? (taken from a discussion about goroutines: Killing individual goroutines is a very unstable thing to do: it's impossible to know what locks or other resources those goroutines had that still needed to be cleaned up for the program to continue running smoothly."). Programmer should handle this in an idiomatic way. It can use channel or any other means for this but its not a good idea to force stop a promise (~goroutine). 
+How to delay execution of goroutine? Again this can be done via channels. Wait for a signal then start the operation. So we really don't need anything other than a keyword which "starts" a promise. Something like `for` statement but with a totally different meaning:
+`promise { //some code }` or
+`promise obj.func(1, 9, 12);`
+Exactly like the way to invoke `for` or `if` statements.
 
 ? - Research more about templates and generics and their use cases to make sure current solution makes sense in real world.
 
-? - Can we have polymorphism when calling constructor? Something like:
+N - Can we have polymorphism when calling constructor? Something like:
 ```
 ParentInterface pi = helper.getInterface();
 MyClass mc = pi.new();
 ```
-Can we make constructor, member of an interface?
+Can we make constructor, member of an interface? No. It's not possible but we can define an interface for a factory class. which has methods which when called, will create objects of specific interfaces.
 
 ? - Can we really know all types at compile time? What about interface?
 ```
@@ -344,3 +355,7 @@ Can we say `doSomething` of which class will be called?
 
 
 ? - We should make compiler/tools development something parallel to core/std/software development. Means after language is fixed, create the most basic compiler (something which just works but is not beautiful, optimized or fast) according to language spec. Then start writing core/std/.... In the meanwhile, the compiler can be enhanced/optimized/refactored/re-written.
+
+? - Shall we add a new keyword for immutable and let const be fore compile-time constants?
+
+? - Shall we have nested definitions inside `struct` section?
