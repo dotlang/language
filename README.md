@@ -39,7 +39,7 @@ The target use case of this programming language is distributed server-side netw
 
 1. **Conditional**: `if`, `else`, `switch`, `default`, `assert`
 2. **Loop**: `for`, `break`, `continue`
-2. **Control**: `return`, `defer`
+2. **Control**: `return`, `defer`, `promise`
 3. **Type handling**: `void`, `const`, `auto`, `null`, `struct`
 4. **Other**: `this`, `import`
 
@@ -355,6 +355,7 @@ int method1(int x, int y);
 - Methods that dont have `this` as their first argument, are considered `static`. They have to come before instance methods in the class file. If a class does not have a `struct` section, all it's methods must be defined static.
 - Behind the scene, hash and array are normal classes. The only difference is compiler handles their literals and `[]` access notation.
 - `promise x.func(1,2 );`, `promise { //some code }`
-- Private = starting with lowercase, public = starting with uppercase. This applies only for methods. Struct members must be private. And classes must be public. 
+- Private = starting with lowercase, public = starting with uppercase. This applies only for methods. Struct members must be private unless they are const. And classes must be public (UpperCamelCase). 
 - Define only one name for all data types (not float and float32)
 - 
+
