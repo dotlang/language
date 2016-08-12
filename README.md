@@ -349,3 +349,12 @@ int method1(int x, int y);
 - Template naming (Type vs token)
 - Function input are const
 - Default static instance
+
+#List of approved enhancements
+- Constructor is a static method (advised to be) named `new`: `MyClass new(int x){ MyClass result = ???; result.x = x; return result;}`. And if it is `new` its private, `New` is public.
+- Methods that dont have `this` as their first argument, are considered `static`. They have to come before instance methods in the class file. If a class does not have a `struct` section, all it's methods must be defined static.
+- Behind the scene, hash and array are normal classes. The only difference is compiler handles their literals and `[]` access notation.
+- `promise x.func(1,2 );`, `promise { //some code }`
+- Private = starting with lowercase, public = starting with uppercase. This applies only for methods. Struct members must be private. And classes must be public. 
+- Define only one name for all data types (not float and float32)
+- 
