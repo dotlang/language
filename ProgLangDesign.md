@@ -1,5 +1,5 @@
 Notes from "Hints on programming language design" and 
-"Everything you've wanted to know about programming languages but have been afraid to ask":
+"Everything you've wanted to know about programming languages but have been afraid to ask" and others:
 
 A good PL will:
 - help programming in most difficult parts of his tasks. This is the only and most important factor.
@@ -18,3 +18,5 @@ So five requirements:
 5. readability
 
 
+- Sign of simplicity: it is easy to use and understand
+- 
