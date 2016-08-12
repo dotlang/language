@@ -293,7 +293,7 @@ The simplest language would have no special syntax for array or string or hash. 
 
 Y - Remove special treatment for hash (except for hash literals). So name will be `hash<K,V>` and `[]` will become `set/get`. Like Java. so `return {'A':1, 'B':2}` will be automatically converted to a `hash<string,int>` class. Same can be done for array. So we will have an array class with normal methods and variables. Only compiler provides some basic services to make working with them easier. Special services: Literals (for hash and array), read and write values (`[]`);
 
-? - We can mark string as a char array, so it will have it's own class + some compiler services to handle string literals and operators (+ ... ). But other than that it will be treated just like a normal class. So we will have primitives and classes and nothing else.
+Y - We can mark string as a char array, so it will have it's own class + some compiler services to handle string literals and operators (+ ... ). But other than that it will be treated just like a normal class. So we will have primitives and classes and nothing else.
 
 N - Calling `==` for reference types, should invoke `equals` method or check equality of their references? Common sense says `==` should compare two values on the left and right. Not calling a special method.
 
@@ -307,11 +307,6 @@ Solution: Static methods are those who don't have `this` argument. Consequently 
 
 N - Rust and many functional programming langs, define almost everything as "mutable" meaning they cannot change once they have values. can we incorporate this? But for a complex and big object, this is not practical. 
 
-? - Like Smalltalk: Everything is an object, even int. But the class (or compiler) decides whether it wants to be on-stack or on-heap. Compiler can decide so if class's size is small. For stack allocated classes, they are passed by value not reference but all this is handled by compiler. 
-
-? - For stack-allocated classes, `this` is the data itself, not a pointer reference. so they need to have only one member (int, float, ...). If they have more than one data member, then `this` will become a reference. But what if a class has 4 byte members. Its still smaller than `double` type. Can we allocate it on the stack and `this` then refer to members on the stack?
-
-? - If everything is considered a class and specific ones are allocated on the stack (handled by language or compiler), then we can define almost all operations as a method call. (`x+y` becomes, `x.add(y)` and ...). And this will be provided for all class so language will have orthogonality. (Casting, toString, Math operations, ... can be defined for every class, also classes can have their own methods, e.g. Data.Format).
 
 Y - Why use two names for data types? If everyone knows double why use float64?
 
@@ -323,7 +318,6 @@ But classes are all public (file-name cannot be case sensitive, we cannot have t
 Y - Difference between instance and static method can be their parameters: if the first argument is of type of the class, then its instance else its static. But its better if static and non-static are not mixed.
 This also will help us eliminate some exceptions imposed on the constructor syntax. 
 
-? - move template args from comment and use a keyword.
 
 N - Return `while` keyword. It only makes the language confusing to use `for` as a loop with condition. Then there would be two ways to do conditional loop. 
 
@@ -337,8 +331,6 @@ How to delay execution of goroutine? Again this can be done via channels. Wait f
 `promise obj.func(1, 9, 12);`
 Exactly like the way to invoke `for` or `if` statements.
 
-? - Research more about templates and generics and their use cases to make sure current solution makes sense in real world.
-
 N - Can we have polymorphism when calling constructor? Something like:
 ```
 ParentInterface pi = helper.getInterface();
@@ -346,16 +338,59 @@ MyClass mc = pi.new();
 ```
 Can we make constructor, member of an interface? No. It's not possible but we can define an interface for a factory class. which has methods which when called, will create objects of specific interfaces.
 
-? - Can we really know all types at compile time? What about interface?
+N - Can we really know all types at compile time? What about interface?
 ```
 MyInterface mi = helper.getInterface('sample_calculator');
 mi.doSomething();
 ```
-Can we say `doSomething` of which class will be called?
+Can we say `doSomething` of which class will be called? No. We have to determine which method to call, at runtime. So we need to store type information with references.
+
+Y - We should make compiler/tools development something parallel to core/std/software development. Means after language is fixed, create the most basic compiler (something which just works but is not beautiful, optimized or fast) according to language spec. Then start writing core/std/.... In the meanwhile, the compiler can be enhanced/optimized/refactored/re-written.
+
+N - Shall we add a new keyword for immutable and let const be fore compile-time constants? No need. This can be handled by compiler/runtime and does not add burden to the developer.
+
+N - Shall we have nested definitions inside `struct` section?
+No. It is unneeded complexity.
+
+Y - Shall we let developer add public fields? What if he only needs a small struct (e.g. Point or FileInfo) with only public members? This can be achieved using Tuple generic class. We can say, only const fields can be public. This makes sense with Point and FileInfo and at least makes sure object's state cannot be set by outsiders.
+
+? - Research more about templates and generics and their use cases to make sure current solution makes sense in real world.
+
+? - move template args from comment and use a keyword.
+
+N - Like Smalltalk: Everything is an object, even int. But the class (or compiler) decides whether it wants to be on-stack or on-heap. Compiler can decide so if class's size is small. For stack allocated classes, they are passed by value not reference but all this is handled by compiler. -> too much complexity
+
+N - For stack-allocated classes, `this` is the data itself, not a pointer reference. so they need to have only one member (int, float, ...). If they have more than one data member, then `this` will become a reference. But what if a class has 4 byte members. Its still smaller than `double` type. Can we allocate it on the stack and `this` then refer to members on the stack?
+
+N - If everything is considered a class and specific ones are allocated on the stack (handled by language or compiler), then we can define almost all operations as a method call. (`x+y` becomes, `x.add(y)` and ...). And this will be provided for all class so language will have orthogonality. (Casting, toString, Math operations, ... can be defined for every class, also classes can have their own methods, e.g. Data.Format). -> but this will make language complex, when I see x+y I really dont know what is going on until I see code for class of x and y.
+
+? - With current status for instance/static methods, what change do we need to apply to interfaces? Interface describes behavior of a class. So it is based on instances. Should all methods include `this`? What would be their type?
+They definitely don't have a struct part. not even const.
+```
+//MyIn.e
+int func1(int x, int y);
+int func2(int x, int y);  should we mention this? What should be its type then?
+```
+All these discussions (static -> constructor -> naming -> interface issue -> ...) are because language is not simple and orthogonal enough. A truly simple, consistent and orthogonal language is really hard to design and implement but will be understood and written easily. 
+Orhogonality says every combination should be possible. OOP and best practices, say some combinations are evil and harmful -> there is a conflict. If we go according to OOP advise, there will be no orth, more compiler checkings, more exceptions in the syntax, less consistency. I think I prefer orthogonality and let the developer decide how to implement the code. So if he wants to define static global variables (for example), it is possible but not advised.
 
 
-? - We should make compiler/tools development something parallel to core/std/software development. Means after language is fixed, create the most basic compiler (something which just works but is not beautiful, optimized or fast) according to language spec. Then start writing core/std/.... In the meanwhile, the compiler can be enhanced/optimized/refactored/re-written.
+? - With this new naming and structure, where should const fields come? 
 
-? - Shall we add a new keyword for immutable and let const be fore compile-time constants?
-
-? - Shall we have nested definitions inside `struct` section?
+? - We need a more orthogonal design even though we ignore some rules/best practices in world of OOP/SE.
+The fact that some types are allocated on stack vs. some on heap makes language less orthogonal. We should give the developer choice of the storage. Of course when the developer has more choices, he will have more responsibilities too and the possibility of making mistake will be higher but this will come at the benefit of having a simple programming language. 
+* No ;
+* Everything is a class (even int or Class definition)
+* Class can define anything public or private or const or non-const.
+* Methods can return any number of elements.
+* Null? Each class CAN define a static member called `null` which all members are in zero state and methods throw exception. If not defined, the class cannot be null. This is up to the developer.
+* As the Class definition is an object, it can implement interfaces and code can use interface to create instance of a class it doesn't know. `FactoryIntr fi = create_fi(); MyInterfaceObject mio = fi.new();` New will call an internal operator which will allocate space for class members on stack or heap?
+* 
+One way to achieve orth and simplicity is unification. See everything as one thing. e.g. say everything is a method/everything is an object. 
+- Enum can be easily implemented by above rules and we don't need a special syntax/keyword.
+- We don't have inheritance but we have composition. 
+- `*` can be used to denote whether a method wants to receive it's inputs by value or by reference. 
+- Function inputs are not const. We can write `auto x = MyClass.new()` or `auto* x = &MyClass.new()`.
+- `int x= 12; iny* y = &x;` Like C.
+- Now that everything is an object, we may be able to write better generics: Empty interface is parent of all objects even int and float. If you want more filtering change interface (E.g. we can define `number` interface which has operators + and - and use this type in the generic class. ...) So we won't need template and generics.
+- What about tuple then? It's just a helper. Not so much important. 
