@@ -320,7 +320,27 @@ Also we can assume classes without `struct` section are static so utility classe
 
 ? - move template args from comment and use a keyword.
 
-? - Return `while` keyword. It only makes the language confusing to use `for` as a loop with condition.
+? - Return `while` keyword. It only makes the language confusing to use `for` as a loop with condition. Then there would be two ways to do conditional loop.
 
-? - When we say constructor is a special method (1st exception), which has no return type (2nd exception) and can be called on a class without having an instance (3rd exception), and has a special call syntax (4th exception) it is not consistent with other OOP concepts.
+? - When we say constructor is a special method (1st exception), which has no return type (2nd exception) and can be called on a class without having an instance (3rd exception), and has a special call syntax (4th exception) it is not consistent with other OOP concepts. In perl constructors return values and use `bless` to make result an object. 
 
+? - If we want to have something like 'goroutine' we need to support them at the syntax level. like `promise`? (But for communication channel and future features like opComplete, ... we can rely on core and std).
+
+? - Research more about templates and generics and their use cases to make sure current solution makes sense in real world.
+
+? - Can we have polymorphism when calling constructor? Something like:
+```
+ParentInterface pi = helper.getInterface();
+MyClass mc = pi.new();
+```
+Can we make constructor, member of an interface?
+
+? - Can we really know all types at compile time? What about interface?
+```
+MyInterface mi = helper.getInterface('sample_calculator');
+mi.doSomething();
+```
+Can we say `doSomething` of which class will be called?
+
+
+? - We should make compiler/tools development something parallel to core/std/software development. Means after language is fixed, create the most basic compiler (something which just works but is not beautiful, optimized or fast) according to language spec. Then start writing core/std/.... In the meanwhile, the compiler can be enhanced/optimized/refactored/re-written.
