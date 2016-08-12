@@ -19,4 +19,3 @@ So five requirements:
 
 
 - Sign of simplicity: it is easy to use and understand
-- 
