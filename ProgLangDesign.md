@@ -17,5 +17,17 @@ So five requirements:
 4. efficient object code
 5. readability
 
+Sign of simplicity: it is easy to use and understand
 
-- Sign of simplicity: it is easy to use and understand
+#Properties of a good PL
+- *Generality*: One `for` statement for all loops.
+- *Less exceptions*
+- *Less rules*
+- *Easily understandable*
+- *Intruitive rules*: Least surprise
+- *Consistency*: `const` should not have two different meanings
+- *Regularity*
+- *Orthogonality*: For example object vs primitive, statement vs expression, returning only one element from function, sealed classes, static methods, null, new & constructor syntax, operators, difference between methods and fields, are all different exceptions which imply different behavior/syntax for different elements.
+- *Reasonable numbers*: They should be 0, 1 or infinity. That's why we have single inheritance.
+
+
