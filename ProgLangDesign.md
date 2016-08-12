@@ -31,3 +31,9 @@ Sign of simplicity: it is easy to use and understand
 - *Reasonable numbers*: They should be 0, 1 or infinity. That's why we have single inheritance.
 
 
+Steps that need to be done:
+1. Define language syntax
+2. Define language bytecode instructions
+3. Given a source code, generate bytecode file
+4. Given a bytecode file, execute it by JIT
+
