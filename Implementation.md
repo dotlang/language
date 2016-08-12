@@ -12,3 +12,4 @@
 - For example `long currentTime()` method in `Time` class in `core.utils` package will have a full name of: `core.utils.Time.currentTime` and will just call appropriate C STL method.
 - Compiler should be able to get heap size needed to create instances of any class, and offset of each of their members.
 - Also compiler should know name and index of parameters of all methods. So when call by parameter name is used, it can translate the code to a normal call.
+- Rutime system should keep track of type of each reference. Because only at runtime we know to which method should `obj.method1` be resolved (if `obj` is of interface type). 
