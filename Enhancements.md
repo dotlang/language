@@ -504,7 +504,7 @@ fn print_area<T: HasArea>(shape: T) {
 Electron:
 ```
 typename K: interface1, interface2;  //if omitted, empty interface is assumed
-typename V: interface2; 
+typename V: interface2 = MyClass; 
 
 void put(K key, V value) ...
 V get(K key) ...
@@ -613,7 +613,7 @@ compiler in above case, will convert return of `func` to `tuple2` type. create a
 
 Y - Anonym classes dont have static instance because they don't have a name.
 
-Y - New keywords: `async (promise), type (alias), typename (template), expose (embedding), tuple (multiple returns)` + operator for `new` method. Removed keywords: `null`, `promise`, `?? null checking`.
+Y - New keywords: `async (promise), type (alias), typename (template), exposed (embedding), tuple (multiple returns)` + operator for `new` method. Removed keywords: `null`, `promise`, `?? null checking`.
 
 Y - How can we implement the code that we want to be executed when static instance is being created? We dont differentiate static and instance method. So maybe these should be in `new` method? But runtime system cannot send args so it cannot have inputs. But we don't want to be bound to names. So: 
 When creating static instance of a class (lets find a better name), runtime system will execute private method of the class definition which has no output and no input, and have no name (if any).
@@ -621,3 +621,39 @@ When creating static instance of a class (lets find a better name), runtime syst
 ```
 void _() { //static initialziation }
 ```
+
+N - compiler WILL NOT create anything for any class automatically. If your class needs to be instantiated, simply write: `auto new() return {};`
+
+N - What about unit tests? We can rely on convention. Classes with `Test` prefix or methods with `test` prefix will be run in a test. this is a small matter and should not affect underlying syntax of the language.
+
+Y - Better syntax for import `=>` seems too heavy. One way is using `type` for aliasing. But this is not a type. this is a package name. We do not import a single class. we import a package. `import core.utils.data`
+one solution: `import a as b` or `import b=a`
+
+Y - Better not to use `=` for type alias because this is not assignment. Something that we will use for import too. 
+:=
+for typename default value, type and import. Where we really don't mean setting value for a variable.
+`type myt := int`
+`typename TT := int`
+`import myname := dsadsa`
+
+? - So we can have abstract class, and we can embed them, and then override their missing methods. but if A is abstract, B embeds A and implements A's methods, will calls to 'A's missing methods' be redirected to B's implementations? If so, will B's implementations have access to private members of A? No. Definitely not. they are private. so in class A calling `this.method1` where method1 has no body, is OK and at runtime this will try to lookup methods in `this` (which can be of other types), and call it.
+We will face a lot of such questions or ambiguities. It is important to behave according to the rule of least surprise. We should exactly define behavior of each of language constructs.
+What about access to private methods? No it shouldn't have access. Implementing method is a member of container class. It does not have any type of special access to abstract class's fields or functions. 
+
+Y - Can we use `type` to define easy enums? There is no easy enum. I we define something it should be applicable to ALL classes. we can say values must be fixed compile time calculatable.
+`type DoW := int (SAT=0, SUN=1, ...)`
+will be translated to:
+`type DoW := int (SAT=int{0}, SUN=int{1}, ...);`
+
+? - What is initial value of an instance variable of type class?
+`MyClass x;` what does `x` contain? can I call `x.method1()`? Is it `nil`?
+If so, can we return `nil` when we are expected to return `MyClass`?
+
+? - Better keyword instead of `exposed`.
+
+? - Calling a not-implemented method will throw exception or do nothing?
+
+? - What happens if we expose a private variable? We don't want to ban that so there should be a consistent, orth, least surprised, general explanation for this situation.
+All publics will become privates? f becomes _f
+
+N - Suppose A implements some methods of B.If we send B's reference inside A, other will have a reference to a class which does not have complete implementations but this reference has implementations? Yes this is possible. If you want others to be sure method will be implemented just pass reference of A.
