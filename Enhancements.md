@@ -376,16 +376,19 @@ Orhogonality says every combination should be possible. OOP and best practices, 
 
 
 
+=========================================
+
+
+
 Y - We need a more orthogonal design even though we ignore some rules/best practices in world of OOP/SE.
-The fact that some types are allocated on stack vs. some on heap makes language less orthogonal. We should give the developer choice of the storage. Of course when the developer has more choices, he will have more responsibilities too and the possibility of making mistake will be higher but this will come at the benefit of having a simple programming language. 
-* No ;
+The fact that some types are allocated on stack vs. some on heap makes language less orthogonal. We should give the developer choice of the storage. Of course when the developer has more choices, he will have more responsibilities too and the possibility of making mistakes will be higher but this will come at the benefit of having a simple (and powerful) programming language. 
 * Everything is a class (even int or Class definition)
-* Class can define anything public or private or const or non-const.
-* Methods can return any number of elements.
+* Class can define anything public or private or const or non-const (method/field).
+* Methods can return any number of elements (using tuple).
 * Null? Each class CAN define a static member called `null` which all members are in zero state and methods throw exception. If not defined, the class cannot be null. This is up to the developer.
 * As the Class definition is an object, it can implement interfaces and code can use interface to create instance of a class it doesn't know. `FactoryIntr fi = create_fi(); MyInterfaceObject mio = fi.new();` New will call an internal operator which will allocate space for class members on stack or heap?
-* 
-One way to achieve orth and simplicity is unification. See everything as one thing. e.g. say everything is a method/everything is an object. 
+* interfaces can contain both instance and static methods and variables.
+* One way to achieve orth and simplicity is unification. See everything as one thing. e.g. say everything is a method/everything is an object. 
 - Enum can be easily implemented by above rules and we don't need a special syntax/keyword. And of course, enum values don't need to be compile time constants.
 - We don't have inheritance but we have composition. 
 - `*` can be used to denote whether a method wants to receive it's inputs by value or by reference. 
@@ -412,7 +415,6 @@ Auto here has same meaning in other contexts although it is a bit different.
 
 N - Then what does `throw` do? We can eliminate this keyword and let the developer decide what to do. `defer` is enough to make sure resources are freed. Like go, `return`. Throw is in itself an exception. 
 
-
 N - We are using dot both for package and for method/field name separation. 
 Rust uses `::` separator. 
 
@@ -428,19 +430,18 @@ struct
 
 void push(int x) { this.Stack.push(x); }
 ```
-But we will have two `push` one with general object and one with `int x`. Unless we hide the stack, not embed it.
-
+But we will have two `push` one with general object and one with `int x`. Unless we hide the stack, not embed it. we add `typename` for type safety.
 
 N - Can we borrow rust's macros? No they are complex.
 
-N Can we handle array/hash literals using language macro or something similar without special treatment of compiler?
+N - Can we handle array/hash literals using language macro or something similar without special treatment of compiler?
 Like the way rust vector initialization works. We can have an `assign` method on array and hash-map. They will be vararg.
 
 Y - Can we define data members or even static methods in interface? According to consistency and orth rules, we should. Application: Define null value for a class. Of course they cannot have values because they will be useless. Class1 implements interface1 only if it has all methods and data members defined in interface1. 
 
 N - Do we need varargs? This can be useful when compiler wants to translate `int[] x = {1, 2, 3, 4}` to a method call on array class. extra complexity.
 
-Maybe - Do we need *tuple*? To support multiple return values? `auto x = func(); (int,int,int) func() { return 1,2,3;}`
+Y - Do we need *tuple*? To support multiple return values? `auto x = func(); (int,int,int) func() { return 1,2,3;}`
 Like `tuple(int, string, float) x = (1, 'a', 3.1); int y = x[0];`. Of course tuple is an object too, but an object which compiler helps us create. NO we don't need them. they can be implemented using normal classes. They make code complex and rise need for type alias. But we can assume `tuple` is a special class like an array. We cannot write one file per method. 
 Notation of `[0]` is not good because it can be replaced with a variable: `tuple(int, float) x=...; int y = x[k];` What should compiler do here? Either we have to ban using variables in `[]` for tuple or use named items. But for named, if we have `tuple(int, int, int)` what should be their name? It's better if we have literal-only tuple. And also compiler will transparently handle tuples:
 ```
@@ -451,7 +452,7 @@ auto y = func2(); //wrong! but compiler can make y of type tuple(int float) and 
 auto x, y = func2(); //correct
 ```
 
-Maybe - Should we support *type alias*? Currently we assume each file = one type. Adding type alias will make everything more complex. But with addition of multiple return value and tuple(?) and generics we may need this. NO. Even if it's needed it can be done by embedding. We can support transparent type alias but the code will seem obfuscated.
+Y - Should we support *type alias*? Currently we assume each file = one type. Adding type alias will make everything more complex. But with addition of multiple return value and tuple(?) and generics we may need this. NO. Even if it's needed it can be done by embedding. We can support transparent type alias but the code will seem obfuscated.
 ```
 import package1.class2;
 
@@ -462,13 +463,14 @@ Where did mytuple come from? It is aliased in class2. I don't like to use `class
 int x = myclass.method1();
 myclass.tuple1 t = some_method();
 alias tt = myclass.tuple1;
+or: type tt = const int&;
 ```
 And when are two tuple types equal? When their member-types are the equal. So maybe mytuple and myclass.tuple1 are equal.
 using `myclass.tuple1` as a data type is better than `tuple1` because at least we know the source of `tuple1`.
 Example: `alias MYT = MyClass; auto x = MYT.new(10);` Type alias is not a new type/object, it's just an alias.
 Tuple can help us enforce single return value. even if func returns multiple, it will be a tuple and compiler will handle it transparently.
 
-? - Think about *stack/heap allocation* notation. Do we need different notations? We have a single notation like `alloc` (to be decided later), which does allocation for you. You can either store the address or a reference to that address. But this will be ambiguous. Developer should not let compiler decide. He should have the power to say what he wants. 
+Y - Think about *stack/heap allocation* notation. Do we need different notations? We have a single notation like `alloc` (to be decided later), which does allocation for you. You can either store the address or a reference to that address. But this will be ambiguous. Developer should not let compiler decide. He should have the power to say what he wants. 
 `auto x = class1.new()`. But this is complexity. Let's just declare we need allocate memory for this class and have a reference to the class. With `*` we accept possibility of `int** x` but we can easily ban it, it's not banned in go. Who decides where to allocate? User of the class? Class developer? Compiler? It's not good to let compiler decide. But it makes thing less complex. Let the user and developer write their code (new, allocate, &x...). Then compiler will decide what to do. If user has a non-pointer data to a class instance, `x=y` will do a full-copy of memory (doesn't matter whether its on heap or stack). if `class1* x = ...; class1* y = x;` will just copy reference from x to y. So from developer perspective, there are classes and references. It doesn't matter where data is stored, only important thing is that data of type `class1` is sent by value while `class1*` is reference.
 We want to be general and orthogonal but we also want to be simple with min rules. We don't want to have 10 rules about where something will be allocated. What if I request stack allocation but `new` returns something which is on heap or vice versa? In C++ the usert decides where to allocate the instance of the object. 
 `int x = 12` this clearly has to be allocated on stack. compiler will translate this to: `int x = int.new(12);`
@@ -492,8 +494,7 @@ What if the code sends a pointer to the data on the stack to some code which sav
 We don't need de-reference operator, `(*x)` does not make sense because everything can be called via `x.` notation. Maybe we can even replace `*` with `&` like ref-var in C++.
 so: `auto x = new Class1{};` will create `Class1*` data type and allocate on heap. `auto x = Class1{}` will allocate on stack. 
 
-
-Maybe - *Generics* What is the class of `int[]`? Is it same as `float[]`? What about `myClass[]`? If we want consistency, we should let other define similar classes. `Tree<int>` same as `Array<int>` or `Queue<float>` same as `Hash<float, string>`. In order to have consistency we need generics. How are we going to represent a tuple? We need varargs generics. But how to stop falling into the endless trap of generics complexity? We can use Rust and Dlang ideas. 
+Y - *Generics* What is the class of `int[]`? Is it same as `float[]`? What about `myClass[]`? If we want consistency, we should let other define similar classes. `Tree<int>` same as `Array<int>` or `Queue<float>` same as `Hash<float, string>`. In order to have consistency we need generics. How are we going to represent a tuple? We need varargs generics. But how to stop falling into the endless trap of generics complexity? We can use Rust and Dlang ideas. 
 ```
 //rust
 fn print_area<T: HasArea>(shape: T) {
@@ -525,4 +526,41 @@ Y - we can also use type alias for alias an import:
 Y - implement/extend vs embedding. Why we can implement as many interfaces as we want? because its guaranteed that there will be no conflicting implementations. 
 we can expose as many members as we want and we can hide their methods by adding methods with same name and we can call them via `this.member.func` notation.
 
-? - What is methods of class have different type for `this`? Can we extend classes using this method? if this happens, then there is no need for struct and methods to be together. Like D's uniform function call syntax. This is complicated because, what about private functions? What about static functions? At least for calling notation we definitely don't want to support `f(x, y)` because it's non-OOP looking. 
+Y - It is mandatory to have `class1& this` as first parameter for non-statics. It cannot be `class1 this`. Better to use auto here: `int func(auto this, int x)` which will translate to `const class1&`, because you cannot change value of `this`.
+
+N - What is methods of class have different type for `this`? Can we extend classes using this method? if this happens, then there is no need for struct and methods to be together. Like D's uniform function call syntax. This is complicated because, what about private functions? What about static functions? At least for calling notation we definitely don't want to support `f(x, y)` because it's non-OOP looking. 
+Can we have `MyClass this` and `MyClass& this` like Go? for small classes like `int` we may want to use `MyClass this`. but this means the method has access to a "Copy" of the object. which we don't want. we always want to access original object.
+```
+int x;
+x.method1();  //can method1 ++ the value of x?
+```
+If someone wants to add a method to a class, he can embed and extend it. Adding new functions to other classes by defining a function in another file and settings `this` to another type will ruin the whole system and rules.
+
+N - Is const part of type alias? What about `&`? Yes.
+```
+type x = const int&;
+x a;  //=const int& a;
+const x& a; //=const int& a, you cannot apply const or & more than once
+```
+
+Y - New keywords: `async (promise), type (alias), typename (template), new (constructor), expose (embedding), tuple`
+
+? - The only exception is the way we create new instances. Either we can go everything be allocated on heap and provide `new` static method and accept low performance. Or we can say some things will be on stack.
+```
+auto x = MyClass{}; //allocate on the stack
+```
+What if we allocate everything on the heap and use stack only for call and return address?
++ providing enhancements like caching to handle small classes, like integer pool or ...
+if we can do this:
+benefit1: providing uniform new syntax 
+benefit2: remove & from language because everything is a reference
+benefit3: class methods will have `myclass this` parameter. not `myclass& this`
+benefit4: we can ask a method to give us some class to call `new` which means constructor polymorphism.
+disadvantage: performance cost when we work with basic types. 
+maybe compiler can handle this and smartly and transparently converts stack-allocated to heap-allocated upon need.
+
+? - Can an interface or class, define static variables? how?
+
+? - We can have `type this { ... }` to define instance members, instead of struct keyword.
+
+? - We "embed" an instance (so it doesn't have anything to do with static members), but when implementing an interface, we should implement whatever there is (instance and static). 
