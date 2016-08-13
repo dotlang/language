@@ -32,9 +32,10 @@ Sign of simplicity: it is easy to use and understand
 
 
 Steps that need to be done:
-- Decide which features we need (allocation, alias, tuple, macro, ...?)
-- Define language syntax
-- Define language bytecode instructions
-- Given a source code, generate bytecode file
-- Given a bytecode file, execute it by JIT
+1. Define language syntax
+2. Define language bytecode instructions
+3. Given a source code, generate bytecode file
+4. Given a bytecode file, execute it by JIT
 
+
+"Only", "Except", "Everything else" are signs of possible non-orth.
