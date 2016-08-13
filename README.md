@@ -2,14 +2,14 @@
 
 ###Note: This pet project is a work in progress, so expect a lot of changes.
 
-After having worked with a lot of different languages (C#, Java, Perl, Javascript, C, C++, Python, D) and being familiar with some others (including Go, Scala and Rust) it still irritates me that these languages are sometimes seem to _intend_ to be overly complex. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
+After having worked with a lot of different languages (C#, Java, Perl, Javascript, C, C++, Python, D) and being familiar with some others (including Go, Scala and Rust) it still irritates me that these languages are sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
 
-That's why I am creating the new programming language: Electron. 
+That's why I am creating a new programming language: Electron. 
 
 I will follow 3 rules when designing this language:
 
-1. **Simple**: Easy to learn, read, write and understand. Consistent and logical, as much as possible. There shoulbd preferably be only one way to do some small task. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
-2. **Powerful**: It should enable (team of) developers to organize, develop, test, maintain and operate a large and complex software project, with relative ease.
+1. **Simple**: Easy to learn, read, write and understand. Consistent, orthogonal and logical, as much as possible with minimum number of exceptions to remember. There should preferably be only one way to do some task. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
+2. **Powerful**: It should enable (a team of) developers to organize, develop, test, maintain and operate a large and complex software project, with relative ease.
 3. **Fast**: Performance of the final output should be high. Much better than dynamic languages like Python. Something like Java.
 
 I know that achieving all of above goals at the same time is something impossible so there will definitely be trade-offs where I will let go of some features to have other (more desirable) features. I will remove some features or limit some features in the language where I think it will help achieve above goals. One important guideline I use is "convention over configuration" which basically means, I will prefer using a set of pre-defined rules over keywords in the language.
@@ -17,77 +17,59 @@ I know that achieving all of above goals at the same time is something impossibl
 This project will finally consist of these components:
 
 1. A specification of the language (Formal specification + Examples, descriptions and best practices)
-2. A JIT interpreter/compiler
+2. An interpreter/compiler
 2. Debugger tools
 3. Package manager (Used to build, create, install and deploy packages, something like CPAN, PyPi + their client-side tools)
-
-Why not compile to native code using an ahead-of-time compiler? Because with the ever increasing range of open source software and Software as a Service revolution, almost always you either use an open source library/framework or use a web-based service. Two main benefits of AOT compiler are:
-
-1. Hide some advanced algorithm or intellectual property
-2. Performance
-
-As I said, the benefits of the first one are more and more diminishing in the current IT world. For the second part, a JIT compiler can be at par with an ahead-of-time compiler (if not better). Moreover, the JIT compilation provides more flexibility and better optimization possibilities.
-
-Of course the disadvantage of this approach is that the user of your software needs the the JIT compiler in addition to the source code. For the source code, we need to make this process as straightforward as possible.
+4. Development plugins (For vim, emacs and other popular code editors)
 
 ###Paradigm
 
-Electron is a object-oriented and imperative  programming language with garbage collection memory management. 
-The target use case of this programming language is distributed server-side network software.
+Electron is an object-oriented and imperative programming language with automatic garbage collection memory management. 
+The target use case of this programming language is server-side software.
 
 ###Keywords
 
-1. **Conditional**: `if`, `else`, `switch`, `default`, `assert`
+1. **Conditional**: `if`, `else`, `switch`, `assert`
 2. **Loop**: `for`, `break`, `continue`
-2. **Control**: `return`, `defer`, `promise`
-3. **Type handling**: `void`, `const`, `auto`, `null`, `struct`
-4. **Other**: `this`, `import`
+2. **Control**: `return`, `defer`, `async`
+3. **Type handling**: `void`, `const`, `auto`, `struct`, `type`, `typename`, `tuple`
+4. **Other**: `import`,  `expose`
+5. **Non-keywords**: `this`
 
-Usage of these keywords is almost same as C++ or Java, so I omit explanation for most of them in detail.
+Usage of most these keywords is almost same as C++ or Java, so I omit explanation for most of them in detail.
 
 ### Primitive data types
 
-- **Integer data types**: `int8` (`char`), `int16`, `int32` (`int`), `int64`, `uint8` (`byte`), `uint16`, `uint32`, `uint64`
-- **Floating point data types**: `float32` (`float`), `float64`
+- **Integer data types**: `char`, `short`, `int`, `long`
+- **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
+- **Floating point data types**: `float`, `double`
 - **Others**: `bool`
 
 ### Operators
 
 The operators are almost similar to C language:
 
-- Conditional: `and or not == != >= <= ?`
+- Conditional: `and or not == != >= <=`
 - Bitwise `& | ^ << >> ~`
 - Math `+ - * % ++ -- **`
 
-*Special syntax*: `-> => () : <>` 
+The bitwise and math operators can be combined with `=` to do the calculation and assignment in one statement.
+
+*Special syntax*: `-> => () {} : <> :=` 
 - `->` for anonymous
-- `=>` for hash and import
-- `()` for casting
-- `:` for loop and assert and call by name and array slice
+- `=>` for import
+- `()` for casting and defining tuple
+- `{}` instantiation
+- `:` for hash, loop, assert, call by name and array slice
 - `<>` template syntax
+- `:=` for typename default value, type alias and import alias
 
-### Data passing
+### Core principle
 
-Primitives are passed by value. Everything else (array, string, classes, ...) will be passed by reference.
+Everything is a class, even basic data types and everything is passed by value, but everything is a reference.
+Every class has a special instance (static instance), which is created by the compiler. This instance can be used to create other instances of the class. But at very few cases does compiler do something for the developer automatically. Most of the time, developer should write the code or add some methods to do something.
 
-Although `String` is not primitive, but all string literals will be handled by the compiler behind the scene.
-
-### General structure
-
-Code is organized into packages. Each package is represented by a directory in the file-system. Packages have a hierarchical structure:
-
-core  
-|-----sys  
-|-----net  
-|-----|-----http  
-|-----|-----tcp  
-
-
-In the above examples `core.sys, core.net, core.net.http, core.net.tcp` are all packages.
-
-Syntax for definition of fields and methods is very similar to other OOP languages like C# or Java.
-
-###Most basic application
+###The most basic application
 
 Here's what an almost empty application looks like:
 
@@ -101,78 +83,168 @@ int main()
 
 This is a class with only one method, called `main` which returns `0` (very similar to C/C++ except no input it sent to the `main` function).
 
+### Packages
+
+Code is organized into packages. Each package is represented by a directory in the file-system. Packages have a hierarchical structure:
+
+core  
+|-----sys  
+|-----net  
+|-----|-----http  
+|-----|-----tcp  
+
+
+In the above examples `core.sys, core.net, core.net.http, core.net.tcp` are all packages.
+
 ###Classes
 
-Each source code file represents either an interface or class. What separates these two is that, an interface has no fieds, and no method has a body. Everything else is considered a class. 
+Each source code file represents one class and has two parts: `struct` part where fields are defined, and method definition.
+Writing body for methods is optional (but of course if a body-less method is called, a runtime error is thrown). Classes with no method body are same as interfaces in other languages but in Electron we don't have the concept of interface.
 
-Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be initialized upon first reference. Each class can have an unnamed method which is static initialiazer of the static instance.
+Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be created upon first reference. 
 
 *Notes:*
-- Note that you cannot have bodies only for some of the class methods (no abstract class).
 - There is no inheritance. Composition (By using anonymous fields) is encouraged instead.
 - If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is public.
-- The order of the contents of source code file matters: First `import` section, then `struct` and finally methods. 
-- There is no constructor. Anyone can create a new instance of a class using C++ uniform initialization form: `auto x = Class1 {1,2}; auto y = Class2 {x:1, y:2};`
+- The order of the contents of source code file matters: First `import` section, `typename`s, `type`s, then `struct` and finally methods. 
 
 ###Class members
 
 ```
 struct 
 {
-    const int x = 12;
+    const int _x = 12;
     int y;
     int h = 12;
 }
 
 int func1(int y) { return this.x + y; }
+MyClass new() return {};
+void _() this.y=9;
 
 ```
 
-- Class members starting with underscore are considered private and can only be accessed by other class members.
-- Some basic methods are provided by default for all classes: `equals`, `toString`, `getHashCode`. You can override the default implementation, simply by adding these methods to your class.
+- Class members (fields, methods and types) starting with underscore are considered private and can only be accessed internally.
+- Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer.
+- The private unnamed method is called by runtime service when static instance of the class is created and is optional.
 - You can define default values for method parameters (e.g. `int func1(int x, int y=0)`).
 - You can not have methods with the same name.
 - When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`).
+- There is no `null` keyword. If a class needs checking for an exceptional state, it is advised to create a special instance and refer to it using static instance: `if (data == DataObject.NullValue ) ...`
+- You can initialize your classes with a simple value if you have appropriate assignment defined in the static instance:
+```
+//in MyClass.e
+auto op_assign(int x) { auto tt = {}; tt.x = x; return tt;}
+//usage:
+MyClass mc = 19;
+```
+
+
+###Exposoing
+
+- You can use `exposed` keyword in `struct` section to denote a composed variable will have it's public methods and fields exposed. 
+- You can hide/implement an exposed method by adding methods with the same name and call the hidden method using field name. The method is hidden if it has a body, implemented if it doesn't. Implemented methods will be accessible from within the contained class too. 
+
+Example:
+```
+//class A
+int f();
+int g() return this.f();
+
+//class B (exposes a field of type A)
+exposed A a;
+int f() return 5; //here we hide not-implemented method `f`
+
+//later:
+B b = B.new();
+int x = b.f(); //returns 5 because we have f in B
+int x = b.a.f(); //returns B.f is implemented in A
+int x = b.g(); //calls A.g returns 5
+int x = b.a.g(); //calls A.g returns 5
+```
+
+
+
+###Operators
+
+Classes can override all the valid operators on them. `int` class defined operator `+` and `-` and many others (math, comparison, ...). This is not specific to `int` and any other class can do this. 
+
+###Tuple
+
+Functions can only return one value but that one value can be a tuple containing multiple values. The `tuple` keyword defines a tuple and the only special thing that compiler does for it is to map it to one of `tuplen` templates in core library.
+
+```
+tuple(int,float) t;
+t[0] = 12;
+t[1] = 1.22;
+
+int x = t[0];
+t[0]++;
+```
+
+Also compiler automatically creates tuples for you when you call a function or return something:
+
+```
+tuple(int,float) func() return (1,2);
+
+/*later*/ 
+int x;
+float y;
+x,y = obj.func();
+```
+
+###Async
+
+This is like `go` in golang. It will start the code or statement in a separate parallel routine.
+
+```
+go obj1.func1(1, 2, 3);
+go { x++; y = y + func(x); }
+```
+
+###Type aliasing
+
+You can use `type` to define type alias:
+```
+type point := tuple(int, int);
+type x := const int&;
+x a;  //=const int& a;
+const x& a; //=const int& a, you cannot apply const or & more than once
+```
+To use a type from outside the defining class:
+```
+MyClass.point pt = (1, 10);
+//you can alias it again
+type mypt := MyClass.point;
+mypt xx = (1, 2);
+```
+
+You can use type alias to narrow valid values for a type (like enum):
+```
+type DoW := int (SAT=0, SUN=1, ...);
+//is same as:
+type DoW := int (SAT=int{0}, SUN=int{1}, ...);
+```
 
 ###Templates
 
-You can define template arguments and their default values using a comment in the beginning of the file. 
+In a class file you can use `typename` keyword to indicate that the user of the class has to provide type names at compile time:
 
 ```
-//tuple.e
-//<T> <TNAME> <R> <RNAME=default>
+typename K: interface1, interface2;  //if omitted, empty interface is assumed
+typename V: interface2 := MyClass; 
 
-struct 
-{
-    T TNAME;
-    R RNAME;
-}
-
-//main.e code
-tuple<int, 'age', String, 'name'> student;
+void put(K key, V value) ...
+V get(K key) ...
 ```
+This is how collections and ... will be implemented in core.
 
-To escape from all the complexities of generics in other languages, we have no other notation to limit template type or variable template types.
+Note that `typename` must come before `struct` section.
 
 ###Exception handling
 
-We have a global variable names `error` which you can initialize (upon exception) or check for null (for catch).
-
-```
-//callee
-...
-//error variable is of the exception interface
-error = MyException {'something went wrong'};
-...
-
-//caller
-...
-if ( error != null ) 
-{  
-    if ((MyException)error)) ...
-    error = null;
-}
-```
+There is no special mechanism for exception handling. You can return error code or do any other thing you need to do. 
+Language provides `defer` keyword:
 - You can use `defer` keyword (same as what golang has) to define code that must be executed upon exitting current method.
 - You can check output of a function in defer (`defer result>0`) to do a post-condition check.
 
@@ -213,34 +285,14 @@ auto intr = Interface1
 
 *Closure*: All anonymous function and classes, have a `this` which will point to a read-only set of local variables in the enclosing method (including input arguments and `this` as the container class).
 
-If the interface has only one method and `x` is an anonymouse function of that type, `x(args)` will invoke that single method. 
-
-###Enum type
-
-```
-//DayOfWeek.e file
-
-//all enums are based on int
-const
-{
-    SAT;  //value is not mandatory
-    SUN = 1;
-    MON = 2;
-}
-
-//no struct, only methods, you can use `this` to refer to the value of enum
-void method1() { }
-
-//main.e file
-DayOfWeek dow = DayOfWeek.SAT;
-dow.method1();
-```
+- As a short-cut provided by compiler, if the anonymous-class `x` has only one method, `x()` will call the only method of that class. You don't need to write the full syntax: `x.only_method()`.
+- Anonymous classes don't have constructor or static instance. Because they don't have names.
 
 ###Misc
 
-- **Naming rules**: `camelCasing` for methods, fields and variables, `lower_case_with_underscore` for packages, `UpperCamelCase` for classese, `UPPERCASE` for enumerated names and template parameters.
-- **Checking for implements**: You can use `(Interface1)class1` to check if `class1` variable implements `Interface1`.
-- **const**: You can define class fields and local variables as constant. You can only delay value assignment for a const variable if it is non-primitive. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition.
+- **Naming rules**: Advised but not mandatory: `lowerCamelCase` for methods, fields and variables, `UpperCamelCase` for packages, `lowercase_with_underscore` for classese.
+- **Checking for implements**: You can use `(other_class)class1` to check if `class1` implements `other_class`.
+- **const**: You can define class fields, local variables and function inputs as constant. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition.
 - **Literals**: `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64.
 - **Digit separators**: `1_000_000`.
 - **For**: You can use `for` to iterate over an array or hash `for(x:array1)` or `for(k,v:hash1)`.
@@ -248,18 +300,11 @@ dow.method1();
 - **Arrays**: Same notation as Java `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]; int[2,2] x;`. We have slicing for arrays `x[start:step:end]` with support for negative index.
 - **String interpolation**: You can embed variables inside a string to be automatically converted to string. If string is surrounded by single quotes it won't be interpolated. You need to use double quote for interpolation to work.
 - **Ternary condition**: `iif(a, b, c) ` is same as `a ? b:c` in other languages.
-- **Null**: `a = b ? 1` means `a=b if b is not null, else a=1`.
-- **Hashtable**: `int[String] hash1 = { 'OH' => 12, 'CA' => 33, ... };`.
-- **Const args**: All function inputs are `const`. So function cannot modify any of it's inputs' values.
+- **Hashtable**: `int[String] hash1 = { 'OH': 12, 'CA': 33, ... };`.
 - **import**: Include other packages.
 - **assert**: You can use this to check for pre-condition and with `defer` it can be used to check for post-condition. `assert x>0 : 'error message'` will set error upon failure.
 - **Documentation**: Any comment before method or field or first line of the file starting with `///` is special comment to be processed by IDEs and automated tools. 
-- **Anonymous field**: Adding a field without name in a class, makes the class expose all public members of it. The class can however override them by adding it's own methods (But still it's possible to call overriden methods by `MyClass.MemberType.method()` notation. This can also be used in an interface to denote interface inheritance.
 - **Call by name**: `myClass.myMember(x: 10, y: 12);`
-- **Check is primitive**: If a variable can be cast to empty interface, it is not primitive. This can be useful in template when checking parameters.
-- You cannot start local variable names with underscore.
-- If you wnat to disable static instance of a class, you can put an assert in the statis block.
-
 
 ###Core package
 
@@ -299,7 +344,7 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 #A sample file
 ```
 import core.math;
-import core.math => m;
+import m := core.math;
 
 struct
 {
@@ -346,16 +391,5 @@ int method1(int x, int y);
 
 #List of conventions
 - Public/Private by using prefix underscore
-- Template naming (Type vs token)
-- Function input are const
 - Default static instance
-
-#List of approved enhancements
-- Constructor is a static method (advised to be) named `new`: `MyClass new(int x){ MyClass result = ???; result.x = x; return result;}`. And if it is `new` its private, `New` is public.
-- Methods that dont have `this` as their first argument, are considered `static`. They have to come before instance methods in the class file. If a class does not have a `struct` section, all it's methods must be defined static.
-- Behind the scene, hash and array are normal classes. The only difference is compiler handles their literals and `[]` access notation.
-- `promise x.func(1,2 );`, `promise { //some code }`
-- Private = starting with lowercase, public = starting with uppercase. This applies only for methods. Struct members must be private unless they are const. And classes must be public (UpperCamelCase). 
-- Define only one name for all data types (not float and float32)
-- 
 
