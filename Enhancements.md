@@ -436,12 +436,9 @@ N - Can we borrow rust's macros? No they are complex.
 N Can we handle array/hash literals using language macro or something similar without special treatment of compiler?
 Like the way rust vector initialization works. We can have an `assign` method on array and hash-map. They will be vararg.
 
-Y Can we define data members in interface? According to consistency and orth rules, we should. Application: Define null value for a class. Of course they cannot have values because they will be useless. Class1 implements interface1 only if it has all methods and data members defined in interface1. 
+Y - Can we define data members or even static methods in interface? According to consistency and orth rules, we should. Application: Define null value for a class. Of course they cannot have values because they will be useless. Class1 implements interface1 only if it has all methods and data members defined in interface1. 
 
-Y - Do we need varargs? This can be useful when compiler wants to translate `int[] x = {1, 2, 3, 4}` to a method call on array class. 
-
-
-
+N - Do we need varargs? This can be useful when compiler wants to translate `int[] x = {1, 2, 3, 4}` to a method call on array class. extra complexity.
 
 Maybe - Do we need *tuple*? To support multiple return values? `auto x = func(); (int,int,int) func() { return 1,2,3;}`
 Like `tuple(int, string, float) x = (1, 'a', 3.1); int y = x[0];`. Of course tuple is an object too, but an object which compiler helps us create. NO we don't need them. they can be implemented using normal classes. They make code complex and rise need for type alias. But we can assume `tuple` is a special class like an array. We cannot write one file per method. 
@@ -449,13 +446,12 @@ Notation of `[0]` is not good because it can be replaced with a variable: `tuple
 ```
 tuple(int, float) func1() { ... return (1, 1,4);}  //will create tuple
 (int, float) func2() { ... return 1, 1,4;}  //will NOT create tuple
-int x; float f;
 auto x = func1(); //x will be tuple(int, float)
-auto y = func2(); //wrong! 
+auto y = func2(); //wrong! but compiler can make y of type tuple(int float) and assign values automatically.
 auto x, y = func2(); //correct
 ```
 
-Maybe - Should we support *type alias*? Currently we assume each file = one type. Adding type alias will make everything more complex. But with addition of multiple return value and tuple(?) we may need this. NO. Even if it's needed it can be done by embedding. We can support transparent type alias but the code will seem obfuscated.
+Maybe - Should we support *type alias*? Currently we assume each file = one type. Adding type alias will make everything more complex. But with addition of multiple return value and tuple(?) and generics we may need this. NO. Even if it's needed it can be done by embedding. We can support transparent type alias but the code will seem obfuscated.
 ```
 import package1.class2;
 
@@ -465,15 +461,36 @@ Where did mytuple come from? It is aliased in class2. I don't like to use `class
 ```
 int x = myclass.method1();
 myclass.tuple1 t = some_method();
+alias tt = myclass.tuple1;
 ```
 And when are two tuple types equal? When their member-types are the equal. So maybe mytuple and myclass.tuple1 are equal.
 using `myclass.tuple1` as a data type is better than `tuple1` because at least we know the source of `tuple1`.
 Example: `alias MYT = MyClass; auto x = MYT.new(10);` Type alias is not a new type/object, it's just an alias.
-
+Tuple can help us enforce single return value. even if func returns multiple, it will be a tuple and compiler will handle it transparently.
 
 ? - Think about *stack/heap allocation* notation. Do we need different notations? We have a single notation like `alloc` (to be decided later), which does allocation for you. You can either store the address or a reference to that address. But this will be ambiguous. Developer should not let compiler decide. He should have the power to say what he wants. 
 `auto x = class1.new()`. But this is complexity. Let's just declare we need allocate memory for this class and have a reference to the class. With `*` we accept possibility of `int** x` but we can easily ban it, it's not banned in go. Who decides where to allocate? User of the class? Class developer? Compiler? It's not good to let compiler decide. But it makes thing less complex. Let the user and developer write their code (new, allocate, &x...). Then compiler will decide what to do. If user has a non-pointer data to a class instance, `x=y` will do a full-copy of memory (doesn't matter whether its on heap or stack). if `class1* x = ...; class1* y = x;` will just copy reference from x to y. So from developer perspective, there are classes and references. It doesn't matter where data is stored, only important thing is that data of type `class1` is sent by value while `class1*` is reference.
-We want to be general and orthogonal but we also want to be simple with min rules. We don't want to have 10 rules about where something will be allocated. What if I request stack allocation but `new` returns something which is on heap or vice versa?
+We want to be general and orthogonal but we also want to be simple with min rules. We don't want to have 10 rules about where something will be allocated. What if I request stack allocation but `new` returns something which is on heap or vice versa? In C++ the usert decides where to allocate the instance of the object. 
+`int x = 12` this clearly has to be allocated on stack. compiler will translate this to: `int x = int.new(12);`
+`tuple(int, int) y = 19, 20; -> tuple(int, int) y = tuple(..).new(19, 20);`
+But clearly, this conflicts with the notation of `new` where the class may want to return a cached copy. maybe we should let go of this and `new` method concept. we have `allocation` and `initialization`. The first one can be on stack/heap and is decided by the user and done by runtime system. The object has nothing to do with this. Result of allocation is creation of a new instance of the class. `initialization` can be done via any of the methods. 
+`auto x = MyClass{x:1, y:2}; //you can set values upon initialization`
+So we don't need static method `new`. Its good because with embedding of types, static methods will be embedded too and we will have two `new` methods which will be confusing.
+```
+MyClass x = MyClass{} //this will allocate on the stack
+MyClass* y = new MyClass{} //this will allocate on heap
+MyClass* z = y;   //copy a pointer
+MyClass t = x; //copy whole data
+int x = 12; //stack
+int* x = new int{12}; //heap
+or: auto x = new Class1(a:1, b:2);
+```
+we can think of another better/more consistent word instead of `new`.
+What if we want to have a pointer to data on the stack? `int* x = &stack_var;`?
+What if the code sends a pointer to the data on the stack to some code which saves the ptr. Later the saved ptr will be invalid! One way is to prevent '&' on stack-allocated vars. We can remove `&` operator altogether. `*` denotes a pointer to heap. we can have `MyClass* y = x` if x is already of pointer type. But we cannot have `MyClass* y = &x` because maybe x is stack-allocated. As a result: How are we going to support double-reference? Let's just ban. (1 is a valid number so we have only 1 level of reference):
+`MyClass* x = new MyClass{}; x.method1();`
+We don't need de-reference operator, `(*x)` does not make sense because everything can be called via `x.` notation. Maybe we can even replace `*` with `&` like ref-var in C++.
+so: `auto x = new Class1{};` will create `Class1*` data type and allocate on heap. `auto x = Class1{}` will allocate on stack. 
 
 
 Maybe - *Generics* What is the class of `int[]`? Is it same as `float[]`? What about `myClass[]`? If we want consistency, we should let other define similar classes. `Tree<int>` same as `Array<int>` or `Queue<float>` same as `Hash<float, string>`. In order to have consistency we need generics. How are we going to represent a tuple? We need varargs generics. But how to stop falling into the endless trap of generics complexity? We can use Rust and Dlang ideas. 
@@ -494,10 +511,18 @@ V get(K key) ...
 By this way we can have collections, array, hash. About tuple, we cannot use `[]` operator in them. So it should remain a `special` class which is handled by compiler. Although it is very similar to other classes. 
 What
 
-? - Can we incorporate uniform function call syntax like D to make language simpler? 
+N - Can we incorporate uniform function call syntax like D to make language simpler? No makes code confusing. `func1(x,y)` where is func1 defined? `x.func1(y)` is more readable.
 
-? - implications of embedding anonymous with static methods like new?
+N - implications of embedding anonymous with static methods like new? We no longer have special `new` method. If both have `new` then there will be a conflict. WE embed instances of a class so no static method is embedded.
 
-? - How to handle multiple pointer dereferencing? `int** x; int y= *(*(x));`?
+N - How to handle multiple pointer dereferencing? `int** x; int y= *(*(x));`?not valid.
 
 Y - interface is a class. Implementing functions in a class is optional. If they are called and not implemented runtime error will happen. We can check `(class1)myObj` which returns true if myObj's class has all methods and data-members specified in class1.
+
+Y - we can also use type alias for alias an import:
+`alias cd = core.data.util.stack`
+
+Y - implement/extend vs embedding. Why we can implement as many interfaces as we want? because its guaranteed that there will be no conflicting implementations. 
+we can expose as many members as we want and we can hide their methods by adding methods with same name and we can call them via `this.member.func` notation.
+
+? - What is methods of class have different type for `this`? Can we extend classes using this method? if this happens, then there is no need for struct and methods to be together. Like D's uniform function call syntax. This is complicated because, what about private functions? What about static functions? At least for calling notation we definitely don't want to support `f(x, y)` because it's non-OOP looking. 
