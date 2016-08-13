@@ -560,7 +560,11 @@ disadvantage: performance cost when we work with basic types.
 maybe compiler can handle this and smartly and transparently converts stack-allocated to heap-allocated upon need.
 
 ? - Can an interface or class, define static variables? how?
+why differentiate between static and non-static methods? If static instance is just a normal instance (only created by compiler) then why it cannot be exactly same as a normal instance? As a result, we don't differentiate between static and instance variables. Each class definition has a single list of fields which is available to all instances (static or non-static). I even suggest to eliminate the word 'static' and assume everything is instance-level. We may even be able to remove `auto this` and simplify interfaces too. I think we added them in the first place to support notation of static methods. 
+
+? - Can we force a class to be only used through static methods? yes if we use `new` method to create instances and define it as private.
 
 ? - We can have `type this { ... }` to define instance members, instead of struct keyword.
 
 ? - We "embed" an instance (so it doesn't have anything to do with static members), but when implementing an interface, we should implement whatever there is (instance and static). 
+
