@@ -492,18 +492,18 @@ What if we want to have a pointer to data on the stack? `int* x = &stack_var;`?
 What if the code sends a pointer to the data on the stack to some code which saves the ptr. Later the saved ptr will be invalid! One way is to prevent '&' on stack-allocated vars. We can remove `&` operator altogether. `*` denotes a pointer to heap. we can have `MyClass* y = x` if x is already of pointer type. But we cannot have `MyClass* y = &x` because maybe x is stack-allocated. As a result: How are we going to support double-reference? Let's just ban. (1 is a valid number so we have only 1 level of reference):
 `MyClass* x = new MyClass{}; x.method1();`
 We don't need de-reference operator, `(*x)` does not make sense because everything can be called via `x.` notation. Maybe we can even replace `*` with `&` like ref-var in C++.
-so: `auto x = new Class1{};` will create `Class1*` data type and allocate on heap. `auto x = Class1{}` will allocate on stack. 
+so: `auto x = new Class1{};` will create `Class1*` data type and allocate on heap. `auto x = Class1{}` will allocate on stack. -> Later: we introduce `new` method + everything is on heap (unless compiler handles it differently transparently)
 
-Y - *Generics* What is the class of `int[]`? Is it same as `float[]`? What about `myClass[]`? If we want consistency, we should let other define similar classes. `Tree<int>` same as `Array<int>` or `Queue<float>` same as `Hash<float, string>`. In order to have consistency we need generics. How are we going to represent a tuple? We need varargs generics. But how to stop falling into the endless trap of generics complexity? We can use Rust and Dlang ideas. 
+Y - *Generics* What is the class of `int[]`? Is it same as `float[]`? What about `myClass[]`? If we want consistency, we should let others define similar classes. `Tree<int>` same as `Array<int>` or `Queue<float>` same as `Hash<float, string>`. In order to have consistency we need generics. How are we going to represent a tuple? We need varargs generics. But how to stop falling into the endless trap of generics complexity? We can use Rust and Dlang ideas. 
 ```
 //rust
 fn print_area<T: HasArea>(shape: T) {
     println!("This shape has an area of {}", shape.area());
 }
 ```
-
+Electron:
 ```
-typename K: interface1;  //if omitted, empty interface is assumed
+typename K: interface1, interface2;  //if omitted, empty interface is assumed
 typename V: interface2; 
 
 void put(K key, V value) ...
@@ -520,15 +520,17 @@ N - How to handle multiple pointer dereferencing? `int** x; int y= *(*(x));`?not
 
 Y - interface is a class. Implementing functions in a class is optional. If they are called and not implemented runtime error will happen. We can check `(class1)myObj` which returns true if myObj's class has all methods and data-members specified in class1.
 
-Y - we can also use type alias for alias an import:
+N - we can also use type alias to alias an import:
 `alias cd = core.data.util.stack`
+This makes import complex. We already have `=>` notation.
 
 Y - implement/extend vs embedding. Why we can implement as many interfaces as we want? because its guaranteed that there will be no conflicting implementations. 
 we can expose as many members as we want and we can hide their methods by adding methods with same name and we can call them via `this.member.func` notation.
 
-Y - It is mandatory to have `class1& this` as first parameter for non-statics. It cannot be `class1 this`. Better to use auto here: `int func(auto this, int x)` which will translate to `const class1&`, because you cannot change value of `this`.
+N - It is mandatory to have `class1& this` as first parameter for non-statics. It cannot be `class1 this`. Better to use auto here: `int func(auto this, int x)` which will translate to `const class1&`, because you cannot change value of `this`.
+Later: There is no static vs non-static. 
 
-N - What is methods of class have different type for `this`? Can we extend classes using this method? if this happens, then there is no need for struct and methods to be together. Like D's uniform function call syntax. This is complicated because, what about private functions? What about static functions? At least for calling notation we definitely don't want to support `f(x, y)` because it's non-OOP looking. 
+N - What if methods of class have different type for `this`? Can we extend classes using this method? if this happens, then there is no need for struct and methods to be together. Like D's uniform function call syntax. This is complicated because, what about private functions? What about static functions? At least for calling notation we definitely don't want to support `f(x, y)` because it's non-OOP looking. 
 Can we have `MyClass this` and `MyClass& this` like Go? for small classes like `int` we may want to use `MyClass this`. but this means the method has access to a "Copy" of the object. which we don't want. we always want to access original object.
 ```
 int x;
@@ -543,9 +545,7 @@ x a;  //=const int& a;
 const x& a; //=const int& a, you cannot apply const or & more than once
 ```
 
-Y - New keywords: `async (promise), type (alias), typename (template), new (constructor), expose (embedding), tuple`
-
-? - The only exception is the way we create new instances. Either we can go everything be allocated on heap and provide `new` static method and accept low performance. Or we can say some things will be on stack.
+Y - The only exception is the way we create new instances. Either we can go everything be allocated on heap and provide `new` static method and accept low performance. Or we can say some things will be on stack.
 ```
 auto x = MyClass{}; //allocate on the stack
 ```
@@ -559,12 +559,65 @@ benefit4: we can ask a method to give us some class to call `new` which means co
 disadvantage: performance cost when we work with basic types. 
 maybe compiler can handle this and smartly and transparently converts stack-allocated to heap-allocated upon need.
 
-? - Can an interface or class, define static variables? how?
-why differentiate between static and non-static methods? If static instance is just a normal instance (only created by compiler) then why it cannot be exactly same as a normal instance? As a result, we don't differentiate between static and instance variables. Each class definition has a single list of fields which is available to all instances (static or non-static). I even suggest to eliminate the word 'static' and assume everything is instance-level. We may even be able to remove `auto this` and simplify interfaces too. I think we added them in the first place to support notation of static methods. 
+Y - Can an interface or class, define static variables? how?
+why differentiate between static and non-static methods? If static instance is just a normal instance (only created by compiler) then why it cannot be exactly same as a normal instance? As a result, we don't differentiate between static and instance variables. Each class definition has a single list of fields which is available to all instances (static or non-static). I even suggest to eliminate the word 'static' and assume everything is instance-level. We may even be able to remove `auto this` and simplify interfaces too. I think we added them in the first place to support notation of static methods. (Returning back to previous steps :) ).
 
-? - Can we force a class to be only used through static methods? yes if we use `new` method to create instances and define it as private.
+N - Can we force a class to be only used through static methods? yes if we use `new` method to create instances and define it as private.
 
-? - We can have `type this { ... }` to define instance members, instead of struct keyword.
+N - We can have `type this { ... }` to define instance members, instead of struct keyword. Why differentiate? Each class has a single list of methods and a single list of fields.
 
-? - We "embed" an instance (so it doesn't have anything to do with static members), but when implementing an interface, we should implement whatever there is (instance and static). 
+N - We "embed" an instance (so it doesn't have anything to do with static members), but when implementing an interface, we should implement whatever there is (instance and static). NO. A class means a single list of methods and fields. When we embed, we expose methods. When we implement, we write bodies for methods.
 
+Y - Classes will have a static (correction: normal, we no longer have static things) method (advised to be named `new`) which you can call to instantiate. 
+```
+auto x = MyClass.new();
+```
+And this `new` method is exactly same as other methods. It can return multiple items, return const, ... .
+Also we don't need to mention `this` or `auto this` in the parameter list. But to reference elements, we have to use `this.x` notation.
+
+Y - Do we still need `&` sign? No. No longer pointer. Everything is a reference even `int x`.
+
+Y - `int x = 12` how compiler will handle this? Is this feature provided for all classes?
+This is same as `int x = int.new(12);` we can say that this can be implemented for other classes too if they have a 
+method with any name, with only one input and type matches and method output is of type of the class, then it will be called. As a result, compiler is not bound to a method name. If there is more than one method then compiler cannot handle these cases.
+```
+MyClass mc = 19;
+//in MyClass.e
+MyClass new(int x) { return #@!#@!;}
+```
+
+N - What happens to `new` method of class when it is embedded? it is also exposed! so parent class either should have its own new method or hide it with: `MyClass new();` This is because we cannot add exceptions. We cannot say, for `new` it is not embedded. 
+
+? - What should be inside `new` method?
+```
+MyClass new(int x) {
+    MyClass result = {};
+    result.x = x;
+    return result;
+}
+```
+We have to select a special operator like `@` or keyword like `alloc` or `{}`. Last one is better.
+
+
+Y - Can we hide tuple? `int, float func() { return 1, 1.4; }` No. but we can standardize it.
+If its hidden: One exception is removed from syste,
+If its there: We don't need multiple return values.
+We can have them an explain this exception like this: compiler creates appropriate classes and writes code for `[]` notations. So:
+`tuple(int, foat) t = (1, 12.1);` will become something like this: `TFFT t; t.set1(1); t.set2(12.1);`
+Tuples don't have `new`. Can you embed them? you have to be able to embed them or else this becomes a bigger exception.
+If we want to remove the exception we need to add variadic template and a special notation for index counting!
+Another solution: Statically define them (tuple with 1 element, 2 elements, 3, 4, ..., maybe 9). And compiler will convert `tuple(int, float)` to template call `tuple2(int, float)`. That's the only special thing that compiler will do, which is dedicated to tuple, no other class in the system has this feature. 
+As a result: we don't support multiple-return types but we support returning tuples and compiler will handle them transparenty for you.
+`tuple(int,float) func() return (1,2);} /*later*/ x,y = obj.func();`
+compiler in above case, will convert return of `func` to `tuple2` type. create appropriate code for return. assign appropriate values for x and y.
+
+Y - Anonym classes dont have static instance because they don't have a name.
+
+Y - New keywords: `async (promise), type (alias), typename (template), expose (embedding), tuple (multiple returns)` + operator for `new` method. Removed keywords: `null`, `promise`, `?? null checking`.
+
+Y - How can we implement the code that we want to be executed when static instance is being created? We dont differentiate static and instance method. So maybe these should be in `new` method? But runtime system cannot send args so it cannot have inputs. But we don't want to be bound to names. So: 
+When creating static instance of a class (lets find a better name), runtime system will execute private method of the class definition which has no output and no input, and have no name (if any).
+
+```
+void _() { //static initialziation }
+```
