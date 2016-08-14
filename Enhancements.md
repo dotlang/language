@@ -239,7 +239,7 @@ Y - What if we need some initializations for the static instance? Only the owner
 
 \* - How to do compile time checks? Like assert or check template args? Deprecated module? For deprecated we can add assert to static init block. For template args, compilation will fails if they are not appropriate. Let's do this later.
 
-? - Add a variable type `void` where it can only be written to (which does nothing) but it cannot be read. Maybe this become useful. What about empty interface?
+N - Add a variable type `void` where it can only be written to (which does nothing) but it cannot be read. Maybe this become useful. What about empty interface?
 
 \* - Add a function to core which creates an array: `range(10)` creates array with values `0..9` can be used in for loops.
 
@@ -588,7 +588,7 @@ MyClass new(int x) { return #@!#@!;}
 
 N - What happens to `new` method of class when it is embedded? it is also exposed! so parent class either should have its own new method or hide it with: `MyClass new();` This is because we cannot add exceptions. We cannot say, for `new` it is not embedded. 
 
-? - What should be inside `new` method?
+Y - What should be inside `new` method?
 ```
 MyClass new(int x) {
     MyClass result = {};
@@ -597,7 +597,6 @@ MyClass new(int x) {
 }
 ```
 We have to select a special operator like `@` or keyword like `alloc` or `{}`. Last one is better.
-
 
 Y - Can we hide tuple? `int, float func() { return 1, 1.4; }` No. but we can standardize it.
 If its hidden: One exception is removed from syste,
@@ -636,7 +635,7 @@ for typename default value, type and import. Where we really don't mean setting 
 `typename TT := int`
 `import myname := dsadsa`
 
-? - So we can have abstract class, and we can embed them, and then override their missing methods. but if A is abstract, B embeds A and implements A's methods, will calls to 'A's missing methods' be redirected to B's implementations? If so, will B's implementations have access to private members of A? No. Definitely not. they are private. so in class A calling `this.method1` where method1 has no body, is OK and at runtime this will try to lookup methods in `this` (which can be of other types), and call it.
+Y - So we can have abstract class, and we can embed them, and then override their missing methods. but if A is abstract, B embeds A and implements A's methods, will calls to 'A's missing methods' be redirected to B's implementations? If so, will B's implementations have access to private members of A? No. Definitely not. they are private. so in class A calling `this.method1` where method1 has no body, is OK and at runtime this will try to lookup methods in `this` (which can be of other types), and call it.
 We will face a lot of such questions or ambiguities. It is important to behave according to the rule of least surprise. We should exactly define behavior of each of language constructs.
 What about access to private methods? No it shouldn't have access. Implementing method is a member of container class. It does not have any type of special access to abstract class's fields or functions. 
 
@@ -645,15 +644,40 @@ Y - Can we use `type` to define easy enums? There is no easy enum. I we define s
 will be translated to:
 `type DoW := int (SAT=int{0}, SUN=int{1}, ...);`
 
-? - What is initial value of an instance variable of type class?
+N - Suppose A implements some methods of B. If we send B's reference inside A, other will have a reference to a class which does not have complete implementations but this reference has implementations? Yes this is possible. If you want others to be sure method will be implemented just pass reference of A.
+
+N - Make the README file as short as possible. Example instead of explanation.
+
+Y - How to handle bad exceptions where we cannot return error code? (like panic). We add throw and catch.
+
+N - Better keyword instead of `exposed`.
+
+Y - What is initial value of an instance variable of type class?
 `MyClass x;` what does `x` contain? can I call `x.method1()`? Is it `nil`?
 If so, can we return `nil` when we are expected to return `MyClass`?
+If we add this new keyword and ban `return nil` it will not be gen or orth. Let's assume it implicitly.
+`if not(x)` means if x is nil.
 
-? - Better keyword instead of `exposed`.
+Y - When a variable is nil and we call one of it's methods, the method will be called normally with `this=nil`.
 
-? - Calling a not-implemented method will throw exception or do nothing?
+Y - Calling a not-implemented method will throw exception or do nothing? It cannot do nothing because it may have some return value. We can say it returns `nil`. Both are possible which one is least surprising and more orth? I think `nil` return is better. Because else, we ban calling not-implemented methods. Same as this, we can new `{}` every class even if it has no method body.
 
-? - What happens if we expose a private variable? We don't want to ban that so there should be a consistent, orth, least surprised, general explanation for this situation.
-All publics will become privates? f becomes _f
+N - What happens if we expose a private variable? We don't want to ban that so there should be a consistent, orth, least surprised, general explanation for this situation.
+All publics will become privates? No.
 
-N - Suppose A implements some methods of B.If we send B's reference inside A, other will have a reference to a class which does not have complete implementations but this reference has implementations? Yes this is possible. If you want others to be sure method will be implemented just pass reference of A.
+Y - Benefits of `class1.nil`: default value when a variable is defined (class1 c, what is value of c?). 
+How should we represent invalid state? Fawler calls this `special case` where for example in a "Customer" class there is a special sub-class called "Missing Customer".
+When we add `MyClass mc;` to the struct, what will be the value of `mc` when class is created if it's not assigned in the constructor?
+We should have an optional static property in classes which will be used for above cases + where developer needs.
+named `nil` and it is initialized inside static constructor (`void _()`).
+If there is no such thing in the class, all objects of that type MUST be initialized upon declaration.
+
+```
+const MyClass nil;
+void _()
+{
+    this.nil = {};
+    this.nil.data = -1;
+    this.nil.message = "";
+}
+```
