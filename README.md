@@ -32,8 +32,10 @@ The target use case of this programming language is server-side software.
 1. **Conditional**: `if`, `else`, `switch`, `assert`
 2. **Loop**: `for`, `break`, `continue`
 2. **Control**: `return`, `defer`, `async`
-3. **Type handling**: `void`, `const`, `auto`, `struct`, `type`, `typename`, `tuple`
-4. **Other**: `import`,  `expose`
+3. **Exceptions**: `throw`, `catch`
+3. **Type handling**: `void`, `auto`, `struct`, `typename`, `tuple`
+4. **Type modifier**: `const`, `type`
+4. **Other**: `import`,  `exposed`
 5. **Non-keywords**: `this`
 
 Usage of most these keywords is almost same as C++ or Java, so I omit explanation for most of them in detail.
@@ -123,14 +125,17 @@ MyClass new() return {};
 void _() this.y=9;
 
 ```
-
+- You cannot assign values in `struct` section because it is not a place for code. You just define fields and possibly compile time evaluatable constants.
 - Class members (fields, methods and types) starting with underscore are considered private and can only be accessed internally.
 - Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer.
 - The private unnamed method is called by runtime service when static instance of the class is created and is optional.
 - You can define default values for method parameters (e.g. `int func1(int x, int y=0)`).
 - You can not have methods with the same name.
 - When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`).
-- There is no `null` keyword. If a class needs checking for an exceptional state, it is advised to create a special instance and refer to it using static instance: `if (data == DataObject.NullValue ) ...`
+- Value of a variable before initialization is empty. You can check for empty value by: `if(not x)`.
+- When a variable is empty and we call one of it's type's methods, the method will be called normally with empty `this`. If we try to read it's fields, it will crash (like Objective-C).
+- If a method has no body, you can still call it and it will return empty value.
+- If a class can have invalid states (nil state), it has to define `nil` member of it's type (and possible initialize it on static constructor). This will be used when variables of that class are defined but not given a value: `MyClass mc;` Then `mc` will be `MyClass.nil`. If a class does not have `nil` any variable defined of its type, MUST be initialized upon declaration. You can check for nil value like other checks: `if (myVar == MyClass.nil) ...`
 - You can initialize your classes with a simple value if you have appropriate assignment defined in the static instance:
 ```
 //in MyClass.e
@@ -139,31 +144,41 @@ auto op_assign(int x) { auto tt = {}; tt.x = x; return tt;}
 MyClass mc = 19;
 ```
 
-
 ###Exposoing
 
-- You can use `exposed` keyword in `struct` section to denote a composed variable will have it's public methods and fields exposed. 
-- You can hide/implement an exposed method by adding methods with the same name and call the hidden method using field name. The method is hidden if it has a body, implemented if it doesn't. Implemented methods will be accessible from within the contained class too. 
+- You can use `exposed` keyword in `struct` section to denote a variable will have it's public methods and fields exposed as public methods and fields of the current class. The visibility of the variable itself is irrelevant, it can be either public or private. 
+- You can rewrite an exposed method/field by adding method/field with the same name. The rewritten method/field will be accessed even when called from contained class (This is like overriding virtual methods in C#).
 
 Example:
 ```
 //class A
+int x;
 int f();
-int g() return this.f();
+int g() return this.h() + this.f();
+int h() return x;
 
 //class B (exposes a field of type A)
 exposed A a;
+int x = 9; //pseudo code
 int f() return 5; //here we hide not-implemented method `f`
+int h() return 9;
 
 //later:
 B b = B.new();
-int x = b.f(); //returns 5 because we have f in B
-int x = b.a.f(); //returns B.f is implemented in A
-int x = b.g(); //calls A.g returns 5
-int x = b.a.g(); //calls A.g returns 5
+int x = b.f(); //call B.f, returns 5
+int x = b.a.f(); //calls B.f
+int x = b.g(); //calls B.f and B.h
+int x = b.a.g(); //calls B.g and B.h
 ```
 
-
+If class B really wants to call the old implementations inside A, it has to save them inside constructor. Note that function names are read-only (const) references to their implementation:
+```
+//B's constructor
+A myA = A.new();
+auto x = myA.f;
+this.a = myA;  //from now on, calling this.f, this.h, this.a.f and this.a.h will call methods in B
+//but you can still call myA's f using x variable
+```
 
 ###Operators
 
@@ -243,10 +258,19 @@ Note that `typename` must come before `struct` section.
 
 ###Exception handling
 
-There is no special mechanism for exception handling. You can return error code or do any other thing you need to do. 
+It is advised to return error code in case of an error:
 Language provides `defer` keyword:
 - You can use `defer` keyword (same as what golang has) to define code that must be executed upon exitting current method.
 - You can check output of a function in defer (`defer result>0`) to do a post-condition check.
+
+
+In case of exception, you can use `throw x` statement (where x can be anything) and `catch` in a defer statement to handle it. If there is no `catch` control will go up in the call hierarchy.
+
+```
+defer { auto r = catch(); if ( r ) return r.getCode(); }
+this.method1();  //-> inside of which we have: throw "abcd"
+defer catch(
+```
 
 ###Anonymous function/class
 
@@ -266,7 +290,14 @@ Interface1 intr = (x, y) -> {
     method2(x,y);
 };
 
-Intr5 pa = this.method1; //compiler handles change in the name, note that by default you don't have access to parent class in an anonymous function but in this case, compiler will handle that. 
+//name of class functions are read-only references to the implementation. You can use them as 
+//anonymous interfaces
+Intr5 pa = this.method1;  
+//if no interface name is specified, compiler will find appropriate template interface "Function" for it
+auto pp = this.method2;  //called later by: pp(1, 2, 3);
+auto xp = (int x, int y) -> x+y;  //again compiler will find and assign appropriate Fucntion interface
+//for example for above case type of xp will be Function<int, int, int>
+//if returning multiple values, it can be Function<tuple(int, int), int, int>
 
 //long form
 auto intr = Interface1 
