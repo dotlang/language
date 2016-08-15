@@ -33,9 +33,11 @@ The target use case of this programming language is server-side software.
 2. **Loop**: `for`, `break`, `continue`
 3. **Control**: `return`, `defer`, `async`
 4. **Exceptions**: `throw`, `catch`
-5. **Type handling**: `void`, `auto`, `typename`, `tuple`, `const`, `type`, `struct`
-6. **Other**: `import`,  `exposed`, `nil`
-7. **Non-keywords**: `this`
+5. **Type handling**: `void`, `auto`, `typename`, `const`, `type`, `struct`
+6. **Other**: `import`, `exposed`, `nil`
+
+These are not keywords but have special meaning:
+`this`, `true`, `false` 
 
 Usage of most these keywords is almost same as C++ or Java, so I omit explanation for most of them in detail.
 
@@ -59,7 +61,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 *Special syntax*: `-> => () {} : <> :=` 
 - `->` for anonymous
 - `=>` for import
-- `()` for casting and defining tuple
+- `()` for casting
 - `{}` instantiation
 - `:` for hash, loop, assert, call by name and array slice
 - `<>` template syntax
@@ -144,66 +146,37 @@ MyClass mc = 19;
 
 ###Exposoing
 
-- You can use `exposed` keyword in `struct` section to denote a variable will have it's public methods and fields exposed as public methods and fields of the current class. The visibility of the variable itself is irrelevant, it can be either public or private. 
-- You can rewrite an exposed method/field by adding method/field with the same name. The rewritten method/field will be accessed even when called from contained class (This is like overriding virtual methods in C#).
-
-Example:
-```
-//class A
-int x;
-int f();
-int g() return this.h() + this.f();
-int h() return x;
-
-//class B (exposes a field of type A)
-exposed A a;
-int x = 9; //pseudo code
-int f() return 5; //here we hide not-implemented method `f`
-int h() return 9;
-
-//later:
-B b = B.new();
-int x = b.f(); //call B.f, returns 5
-int x = b.a.f(); //calls B.f
-int x = b.g(); //calls B.f and B.h
-int x = b.a.g(); //calls B.g and B.h
-```
-
-If class B really wants to call the old implementations inside A, it has to save them inside constructor. Note that function names are read-only (const) references to their implementation:
-```
-//B's constructor
-A myA = A.new();
-auto x = myA.f;
-this.a = myA;  //from now on, calling this.f, this.h, this.a.f and this.a.h will call methods in B
-//but you can still call myA's f using x variable
-```
+- You can use `=>` notation when defining a variable to denote it will handle a set of method call/fields. This set is specified by one or more classes: `MyClass v1 => MetaClass1, MetaClass2;`  
+In above example, all calls to public methods of `MetaClass1` and `MetaClass2` will be redirected to `v1`. You can use variable type as exposed type so this will expose all public methods and fields of the variable:
+`MyClass c1 => MyClass;`
 
 ###Operators
 
 Classes can override all the valid operators on them. `int` class defined operator `+` and `-` and many others (math, comparison, ...). This is not specific to `int` and any other class can do this. 
 
-###Tuple
+###Anonymous struct
 
-Functions can only return one value but that one value can be a tuple containing multiple values. The `tuple` keyword defines a tuple and the only special thing that compiler does for it is to map it to one of `tuplen` templates in core library.
-
-```
-tuple(int,float) t;
-t[0] = 12;
-t[1] = 1.22;
-
-int x = t[0];
-t[0]++;
-```
-
-Also compiler automatically creates tuples for you when you call a function or return something:
+Functions can only return one value but that one value can be an anonymous struct containing multiple values. 
+The only special thing that compiler does for it is to handle literals.
 
 ```
-tuple(int,float) func() return (1,2);
+type myt := struct{int, float};
+t.$0 = 12;
+t.$1 = 1.22;
+
+int x = t.$0
+t.$0++;
+```
+
+Also compiler automatically creates them for you when you call a function or return something:
+
+```
+struct{int,float} func() return (1,2);
 
 /*later*/ 
 int x;
 float y;
-x,y = obj.func();
+x,y = obj.func();  //compiler will automatically assign values
 ```
 
 ###Async
@@ -235,8 +208,6 @@ mypt xx = (1, 2);
 You can use type alias to narrow valid values for a type (like enum):
 ```
 type DoW := int (SAT=0, SUN=1, ...);
-//is same as:
-type DoW := int (SAT=int{0}, SUN=int{1}, ...);
 ```
 
 ###Templates
@@ -319,7 +290,7 @@ auto intr = Interface1
 
 ###Misc
 
-- **Naming rules**: Advised but not mandatory: `lowerCamelCase` for methods, fields and variables, `UpperCamelCase` for packages, `lowercase_with_underscore` for classese.
+- **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage`.
 - **Checking for implements**: You can use `(other_class)class1` to check if `class1` implements `other_class`.
 - **const**: You can define class fields, local variables and function inputs as constant. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition.
 - **Literals**: `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64.
@@ -334,6 +305,7 @@ auto intr = Interface1
 - **assert**: You can use this to check for pre-condition and with `defer` it can be used to check for post-condition. `assert x>0 : 'error message'` will set error upon failure.
 - **Documentation**: Any comment before method or field or first line of the file starting with `///` is special comment to be processed by IDEs and automated tools. 
 - **Call by name**: `myClass.myMember(x: 10, y: 12);`
+- **Literals**: compiler will handle object literals and create corresponding objects (in default arg value, initializations, enum, true, false, ...)
 
 ###Core package
 
@@ -399,7 +371,7 @@ int func1(int data=9)
     {
         1: return 1; //if block is just one line, you can omit brces
         4, 5: { x++; }
-        default: { return 0; }  //default
+        : { return 0; }  //default
     }
     retrun x;
 }
