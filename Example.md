@@ -1,3 +1,4 @@
+```
 //Comparer.e
 import core.std;
 import data := core.data;
@@ -77,5 +78,4 @@ int test(int arg=9)
     return 0;
 }
 
-
-
+```
