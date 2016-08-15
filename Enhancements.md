@@ -665,7 +665,7 @@ Y - Calling a not-implemented method will throw exception or do nothing? It cann
 N - What happens if we expose a private variable? We don't want to ban that so there should be a consistent, orth, least surprised, general explanation for this situation.
 All publics will become privates? No.
 
-Y - Benefits of `class1.nil`: default value when a variable is defined (class1 c, what is value of c?). 
+N - Benefits of `class1.nil`: default value when a variable is defined (class1 c, what is value of c?). 
 How should we represent invalid state? Fawler calls this `special case` where for example in a "Customer" class there is a special sub-class called "Missing Customer".
 When we add `MyClass mc;` to the struct, what will be the value of `mc` when class is created if it's not assigned in the constructor?
 We should have an optional static property in classes which will be used for above cases + where developer needs.
@@ -681,3 +681,46 @@ void _()
     this.nil.message = "";
 }
 ```
+
+N - The notation that some objects have nil and some don't makes everything complex. Although its good to give developer to choose which one can and which one cannot but in other places we will be forced to put exceptions (e.g. calling methods on nil object returns nil object of the result UNLESS the return type does not have a nil defined where we throw exception!).
+So it's better to have it at language level, and of course typed. 
+This is a little confusing too because then we will have two special instances for every class: static instance and nil instance. Maybe we can join these and say nil instance is same as static instance but how are we going to implement "no behavior" of the nil instance?
+nil can represent un-initialized variable or end of a linked list. And we may not really need typed nil.
+So `nil` will be a keyword.
+
+N - Things that compiler does for you automatically: calling static init method (_), array and hash literals, creating correctly typed interfaces for anonymouse functions, calling default constructor upon init (`myclass x = 12`), tuple handling.
+
+
+? - Idea: Naming for methods should be different from variables. variables `some_var` and methods `camelCase`. But there are cases where we treat methods like a variable (for anonymous). It's better to have same naming for them. But we treat class names as variables too (static instance)!
+Except for package, everything else can be mixed together! Still method and variable are separate things. They can be assigned but they are different. so I propose this:
+class: lower_case
+package: UpperCamelCase
+method: camelCase
+variable, argument, field: lower_case
+
+? - Now that everything is a class, there is NO compile time evaluatable constant!
+
+? - Now that everything is a class how are we going to set default values for method arguments? 
+
+? - Now that everything is a class, how do we handle literals like:
+`int x = f(1, 2, 3, 'hello');`
+
+? - Maybe we can remove `default` keyword.
+
+? - Do we need to re-define mechanism of `switch` with everything-class approach?
+
+? - Current way to handle `int x = 12`is not good. Looking for a method with any name which accepts `int` and output is instance of the class. There may be more than one method or the only method may have completely other purpose.
+Maybe we should use casting operator to cast something to the class. 
+There is a paradox here! if everything is a class, then how will we initize `int x=12`? for doing assignment, we need to have an instance of `int` with value of 12. but what is type of `12` itself here? What will be the input of the method which initializes an instance with `12`? Literals are starting points to initialize basic data type classes. Now that `int` or `float` are not keywords, we only can do something like this: `operator=(int other_number)` and call this operator with something which has a value of `12`. Who/how will create a valida `int` instance using given literal? (same for other data types like string). 
+one way: if the struct section of the class has only one member and its type is same as the rvalue, it will be a copy. 
+q:What am I really going to write in struct section for int?
+a: `instruct runtime to allocate 4 byte for me`, the job is done in methods which will be hidden from eyes of end-developer because they will be implemented in the runtime system. There it will treat that 4 bytes as an int and do operations on it.
+ok, how will we handle `12` literal?
+What about these: `int x = 12;` vs `int x; x = 12;` They should be the same. So the first one should be executed in two steps like the second one. 1) create an invalid state (maybe we should change the name), 2) update invalid state by calling `=` operator. `int x = nil; x = 12;`
+Maybe we should call it `base` state.
+What will be the syntax for `opertor=`? Finally at some point, we need to rely on compiler/runtime to convert that literal to an object, or else there will be an endless loop. Same as the way compiler handles literals for array and hash. But this should be provided for ALL classes. we cannot say, this is something only for these special classes. So what's the solution?
+We should ask for help from the class itself. We should send the value bytes to some method of the static instance of the class. `int op_assign(byte[] data);`. too complicated.
+can't we just dump `byte[]` into struct of the class? if class has invalid state, `= literal` will just dump bytes into it's struct. (Internally rvalue literal is not modifiable so we can cache them).
+we cannot write `operator=` or `op_assign` for this purpose because it will make things extra complex. Going with the dump approach is better. `int x = 12`. Who initialized `x`? what if the `int` class does not have a public constructor?
+`int x = int.new(12)` makes sense? it doesn't! because still we need to convert 12 to an instance of `int` class!
+The main problem is with literals (in assignment, in method call, in default argument value, ...)
