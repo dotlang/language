@@ -690,26 +690,78 @@ So `nil` will be a keyword.
 
 N - Things that compiler does for you automatically: calling static init method (_), array and hash literals, creating correctly typed interfaces for anonymouse functions, calling default constructor upon init (`myclass x = 12`), tuple handling.
 
-
-? - Idea: Naming for methods should be different from variables. variables `some_var` and methods `camelCase`. But there are cases where we treat methods like a variable (for anonymous). It's better to have same naming for them. But we treat class names as variables too (static instance)!
+Y - Idea: Naming for methods should be different from variables. variables `some_var` and methods `camelCase`. But there are cases where we treat methods like a variable (for anonymous). It's better to have same naming for them. But we treat class names as variables too (static instance)!
 Except for package, everything else can be mixed together! Still method and variable are separate things. They can be assigned but they are different. so I propose this:
-class: lower_case
-package: UpperCamelCase
+class: UpperCamelCase //for sure
+package: UpperCamelCase //for sure
 method: camelCase
 variable, argument, field: lower_case
+`int release_date`
+`int getReleaseDate()`
 
-? - Now that everything is a class, there is NO compile time evaluatable constant!
+Y - Make use of `=>` and more of `:=`. 
+`:=` is used in 3 places for import, type and template. I think it's enough.
+`auto $ => this._var.$;`. This can replace exposed and also is more configurable.
+`auto data => this._var.some_field;` redirect read and writes.
+```
+auto $() => this._var.$();
+auto $() => this._data.$();
+auto $() => Math.$();  //composing static instances!
+auto method1 => this.vvf.handler;  //automatically generate definition
+```
+what about fields? public fields are changeable so they should be trated just like above methods
+```
+struct {
+    MyData d;
+    auto sample => d.sample; 
+}
+```
+other options: `handles` like Perl, delegation
+This syntax is a little bit confusing.
+`expose this._var;`
+`expose methd := this.var.method1;`
+`expose this._var.field1;`
+`expose ff := this._var.field2;`
+but where should these be defined? in struct? in method part? they do not fit any of them. 
+we should change the syntax to match parts.
 
-? - Now that everything is a class how are we going to set default values for method arguments? 
+```
+struct { int x; }
+struct { auto x => this._var.field1; }
+struct { auto $ => MyClass._var.$; }
+struct { auto <T> => MyClass._var.<T>; }
 
-? - Now that everything is a class, how do we handle literals like:
+int f(int x) { ... }
+auto g => this._var.method1;
+auto $ => this._var.$;
+```
+what about new? What about operators?
+There should be a mechanism to expose a sub-set of methods and fields of a variable (this.var1). This subset can be defined by another class (or maybe the class of this.var1 itself). Actually the 'other class' here plays role of an interface. we exopse a variable according to a contract specified by an interface. Of course this interface is implemented by the class of the variable:
+`MyClass var1; expose var1 as MetaClass1;`
+`MyClass var1 [MetaClass1];`
+`MyClass var1 [handles MetaClass1];`
+`MyClass var1 [delegate MetaClass1];`
+`MyClass var1 {MetaClass1};`
+`MyClass var1 +MetaClass1 +MetaClass2` //support for exposing members of multiple interfaces
+`MC v1 => MetaClass1, MetaClass2;`
+
+N - Now that everything is a class, there is NO compile time evaluatable constant!
+No. We have object literals like `12` or `'this is a test'`
+
+N - Now that everything is a class how are we going to set default values for method arguments? See object literals.
+
+N - Now that everything is a class, how do we handle literals like:
 `int x = f(1, 2, 3, 'hello');`
+Creating automatic object literals
 
-? - Maybe we can remove `default` keyword.
+Y - Maybe we can remove `default` keyword.
 
-? - Do we need to re-define mechanism of `switch` with everything-class approach?
+N - Do we need to re-define mechanism of `switch` with everything-class approach?
+`switch` calls `op_eq` or something like that behind the scene.
 
-? - Current way to handle `int x = 12`is not good. Looking for a method with any name which accepts `int` and output is instance of the class. There may be more than one method or the only method may have completely other purpose.
+\* - After all ambiguities are resolved, I will need to write specification where exact behavior of each statement and exceptions and notable points should be specified.
+
+N - Current way to handle `int x = 12`is not good. Looking for a method with any name which accepts `int` and output is instance of the class. There may be more than one method or the only method may have completely other purpose.
 Maybe we should use casting operator to cast something to the class.   
 There is a paradox here! if everything is a class, then how will we initize `int x=12`? for doing assignment, we need to have an instance of `int` with value of 12. but what is type of `12` itself here? What will be the input of the method which initializes an instance with `12`? Literals are starting points to initialize basic data type classes. Now that `int` or `float` are not keywords, we only can do something like this: `operator=(int other_number)` and call this operator with something which has a value of `12`. Who/how will create a valida `int` instance using given literal? (same for other data types like string).   
 one way: if the struct section of the class has only one member and its type is same as the rvalue, it will be a copy. 
@@ -724,3 +776,32 @@ can't we just dump `byte[]` into struct of the class? if class has invalid state
 we cannot write `operator=` or `op_assign` for this purpose because it will make things extra complex. Going with the dump approach is better. `int x = 12`. Who initialized `x`? what if the `int` class does not have a public constructor?  
 `int x = int.new(12)` makes sense? it doesn't! because still we need to convert 12 to an instance of `int` class!  
 The main problem is with literals (in assignment, in method call, in default argument value, ...)  
+Here definitely compiler should do the job. We can say all liteterals will be converted to their corresponding class. compiler will handle not generating two classes for two 1 literals.
+
+Y - Object literals will be handled when parsing the code. They will be created and used and compiler will guess the best type for them. If you want to force a specific type, you must use `MyClass.new` or other mechanism to create instance of the class.
+
+Y - Rule is, no memory should be allocated for a variable which is not instantiated. So `int x` or `MyClass mc` should not allocate any memory.
+
+N - Do we need any notation to indicate something only belongs to the static instance? Suppose we have Person class and want to keep track of number of instances. In new we ++ it but this is copied for all instances! so for 1000 persons there will be 1001 copies of this var where only one copy is useful! maybe we can store it in a hash which is allocated only in static instance. But we want a mechanism where "obj1.count" and "obj2.count" refer to the same thing!
+
+N - Maybe we can denote "MyClass.myMethod" to indicate a method is only callable on static instance. 
+and `this.myMethod` for instance methods.
+But most of the time either the class is supposed to be used as a static class (like Math), hence no constructor is defined and everything is OK. Or class is supposed to be only used as instance class. In this case, the static instance is just like other instances, and in the usage, code will call `new` and use the instance and has nothing to do with the static instance. Very rarely we have a class which needs both static instance and normal instance and their method MUST be different and normally we should decompose the class in such case.
+
+N - Methods like + for int, will be inlined so we won't need to send address of the int to the method so we will be able to allocate them on the stack. but this is implementation details. 
+
+Y - Maybe we can replace the whole re-implementation which can make the code un-readable with function pointers. The base class has a set of function pointers (single method interfaces), and the container will set them after instantiation. In this way we can implement strategy pattern or other similar patterns.
+But what about method hiding?  Yes. Definitely. Anything that can make language with less rules and exceptions is good.
+
+Y - Now that everything is a reference to a class, what's the meaning of `const`? We can almost define everything const and change everything inside them! I think const should mean real immutable.
+`const int x = 12; x++;` we have not changed x, we have just called one of it's methods!
+or in Math class `const float PI = 3.1415; PI += 4;` this is acceptable! only `Pi = float.new` is not acceptable!
+We can define `const` as making internal/external immutable. You can pass a normal variable when a `const` is expected but not vice versa.
+
+Y - Can we replace `tuple` using `type` and `struct`?
+`tuple(int, float) x`;
+`type myt := struct{int, float};` This is the compressed definition of an object where there is no method, fields have no name, and has `$0, $1, ...` notation to access it's members. It's better not to use `[]` operator because what will be return type of it then?. We can replace `$0` with other notation but not `_0` because underscore means private. 
+maybe `.0, .1, ...`
+We can call this anonymous struct instead of tuple! But still we need help of compiler.
+
+N - Lazy getter like perl? No special behavior.
