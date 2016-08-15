@@ -710,17 +710,17 @@ variable, argument, field: lower_case
 ? - Do we need to re-define mechanism of `switch` with everything-class approach?
 
 ? - Current way to handle `int x = 12`is not good. Looking for a method with any name which accepts `int` and output is instance of the class. There may be more than one method or the only method may have completely other purpose.
-Maybe we should use casting operator to cast something to the class. 
-There is a paradox here! if everything is a class, then how will we initize `int x=12`? for doing assignment, we need to have an instance of `int` with value of 12. but what is type of `12` itself here? What will be the input of the method which initializes an instance with `12`? Literals are starting points to initialize basic data type classes. Now that `int` or `float` are not keywords, we only can do something like this: `operator=(int other_number)` and call this operator with something which has a value of `12`. Who/how will create a valida `int` instance using given literal? (same for other data types like string). 
+Maybe we should use casting operator to cast something to the class.   
+There is a paradox here! if everything is a class, then how will we initize `int x=12`? for doing assignment, we need to have an instance of `int` with value of 12. but what is type of `12` itself here? What will be the input of the method which initializes an instance with `12`? Literals are starting points to initialize basic data type classes. Now that `int` or `float` are not keywords, we only can do something like this: `operator=(int other_number)` and call this operator with something which has a value of `12`. Who/how will create a valida `int` instance using given literal? (same for other data types like string).   
 one way: if the struct section of the class has only one member and its type is same as the rvalue, it will be a copy. 
-q:What am I really going to write in struct section for int?
+q:What am I really going to write in struct section for int?  
 a: `instruct runtime to allocate 4 byte for me`, the job is done in methods which will be hidden from eyes of end-developer because they will be implemented in the runtime system. There it will treat that 4 bytes as an int and do operations on it.
-ok, how will we handle `12` literal?
-What about these: `int x = 12;` vs `int x; x = 12;` They should be the same. So the first one should be executed in two steps like the second one. 1) create an invalid state (maybe we should change the name), 2) update invalid state by calling `=` operator. `int x = nil; x = 12;`
-Maybe we should call it `base` state.
+ok, how will we handle `12` literal?  
+What about these: `int x = 12;` vs `int x; x = 12;` They should be the same. So the first one should be executed in two steps like the second one. 1) create an invalid state (maybe we should change the name), 2) update invalid state by calling `=` operator. `int x = nil; x = 12;`  
+Maybe we should call it `base` state.  
 What will be the syntax for `opertor=`? Finally at some point, we need to rely on compiler/runtime to convert that literal to an object, or else there will be an endless loop. Same as the way compiler handles literals for array and hash. But this should be provided for ALL classes. we cannot say, this is something only for these special classes. So what's the solution?
-We should ask for help from the class itself. We should send the value bytes to some method of the static instance of the class. `int op_assign(byte[] data);`. too complicated.
-can't we just dump `byte[]` into struct of the class? if class has invalid state, `= literal` will just dump bytes into it's struct. (Internally rvalue literal is not modifiable so we can cache them).
-we cannot write `operator=` or `op_assign` for this purpose because it will make things extra complex. Going with the dump approach is better. `int x = 12`. Who initialized `x`? what if the `int` class does not have a public constructor?
-`int x = int.new(12)` makes sense? it doesn't! because still we need to convert 12 to an instance of `int` class!
-The main problem is with literals (in assignment, in method call, in default argument value, ...)
+We should ask for help from the class itself. We should send the value bytes to some method of the static instance of the class. `int op_assign(byte[] data);`. too complicated.  
+can't we just dump `byte[]` into struct of the class? if class has invalid state, `= literal` will just dump bytes into it's struct. (Internally rvalue literal is not modifiable so we can cache them).  
+we cannot write `operator=` or `op_assign` for this purpose because it will make things extra complex. Going with the dump approach is better. `int x = 12`. Who initialized `x`? what if the `int` class does not have a public constructor?  
+`int x = int.new(12)` makes sense? it doesn't! because still we need to convert 12 to an instance of `int` class!  
+The main problem is with literals (in assignment, in method call, in default argument value, ...)  
