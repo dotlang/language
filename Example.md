@@ -1,20 +1,18 @@
-An example source code, shows multiple code files:
-
-```
-//Comparer.e - interface
+//Comparer.e
 import core.std;
-import core.data => data;
-import core.data =>;
+import data := core.data;
 
 struct
 {
-    ParentIntr;
+    exposed parent_interface parent;
+    int dataItem;
+    const int x;
 }
 
-bool doCompare(int x, int y);
+bool doCompare(int x, int y=0);
 
 ===================
-//Handler.e - class
+//Handler.e
 
 struct
 {
@@ -22,6 +20,7 @@ struct
     int external;
 }
 
+void _()
 {
     this.external = 19;
 }
@@ -42,23 +41,23 @@ int test(int arg=9)
     };
     
     int z = fp.doCompare(1, 9);
-    defer fp = null;
+    defer fp = nil;
     
-    MyClass t = MyClass {};
-    MyClass t2 = MyClass {x:1, y:9};
+    MyClass t = MyClass.new();
+    MyClass t2 = MyClass.new(x:1, y:9);
     
-    if ( error != null ) return -1;
+    if ( error != nil ) return -1;
     
     switch ( t2.getData() )
     {
         1: return 0;
         2,3: return 9;
-        default: z++;
+        : z++;
     }
     
-    //type of h is Hash<String, int>
-    int[String] h = { 'A':1, 'B':2 };
-    int g = h['A'];
+    //type of h is hash<string, int>
+    int[string] h = { 'A':1, 'B':2 };
+    auto g = h['A'];  //h.get('A')
     
     //type of matrix is Array2 class
     int[,] matrix = int[2,2] {{1, 2}, {3, 4}};
@@ -80,4 +79,3 @@ int test(int arg=9)
 
 
 
-```
