@@ -2,7 +2,7 @@
 
 ###Note: This pet project is a work in progress, so expect a lot of changes.
 
-After having worked with a lot of different languages (C#, Java, Perl, Javascript, C, C++, Python, D) and being familiar with some others (including Go, Scala and Rust) it still irritates me that these languages are sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
+After having worked with a lot of different languages (C#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages are sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
 
 That's why I am creating a new programming language: Electron. 
 
@@ -31,12 +31,11 @@ The target use case of this programming language is server-side software.
 
 1. **Conditional**: `if`, `else`, `switch`, `assert`
 2. **Loop**: `for`, `break`, `continue`
-2. **Control**: `return`, `defer`, `async`
-3. **Exceptions**: `throw`, `catch`
-3. **Type handling**: `void`, `auto`, `struct`, `typename`, `tuple`
-4. **Type modifier**: `const`, `type`
-4. **Other**: `import`,  `exposed`
-5. **Non-keywords**: `this`
+3. **Control**: `return`, `defer`, `async`
+4. **Exceptions**: `throw`, `catch`
+5. **Type handling**: `void`, `auto`, `typename`, `tuple`, `const`, `type`, `struct`
+6. **Other**: `import`,  `exposed`, `nil`
+7. **Non-keywords**: `this`
 
 Usage of most these keywords is almost same as C++ or Java, so I omit explanation for most of them in detail.
 
@@ -126,16 +125,15 @@ void _() this.y=9;
 
 ```
 - You cannot assign values in `struct` section because it is not a place for code. You just define fields and possibly compile time evaluatable constants.
-- Class members (fields, methods and types) starting with underscore are considered private and can only be accessed internally.
+- Class members (fields, methods and types) starting with underscore are considered private and can only be accessed internally. So the only valid combination that can come before `_` is `this._xxx` not `obj._xxx`.
 - Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer.
 - The private unnamed method is called by runtime service when static instance of the class is created and is optional.
 - You can define default values for method parameters (e.g. `int func1(int x, int y=0)`).
-- You can not have methods with the same name.
+- You can not have methods with the same name in a single class.
 - When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`).
-- Value of a variable before initialization is empty. You can check for empty value by: `if(not x)`.
-- When a variable is empty and we call one of it's type's methods, the method will be called normally with empty `this`. If we try to read it's fields, it will crash (like Objective-C).
-- If a method has no body, you can still call it and it will return empty value.
-- If a class can have invalid states (nil state), it has to define `nil` member of it's type (and possible initialize it on static constructor). This will be used when variables of that class are defined but not given a value: `MyClass mc;` Then `mc` will be `MyClass.nil`. If a class does not have `nil` any variable defined of its type, MUST be initialized upon declaration. You can check for nil value like other checks: `if (myVar == MyClass.nil) ...`
+- Value of a variable before initialization is `nil`. You can also return `nil` when you want to indicate invalid state for a variable.
+- When a variable is nil and we call one of it's type's methods, the method will be called normally with nil `this`. If we try to read it's fields, it will crash (like Objective-C).
+- If a method has no body, you can still call it and it will return `nil`. You can also call methods on a `nil` variable and as long as methods don't need `this` fields, it's fine.
 - You can initialize your classes with a simple value if you have appropriate assignment defined in the static instance:
 ```
 //in MyClass.e
@@ -424,3 +422,4 @@ int method1(int x, int y);
 - Public/Private by using prefix underscore
 - Default static instance
 
+    
