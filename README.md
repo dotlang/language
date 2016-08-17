@@ -33,11 +33,11 @@ The target use case of this programming language is server-side software.
 2. **Loop**: `for`, `break`, `continue`
 3. **Control**: `return`, `defer`, `async`
 4. **Exceptions**: `throw`, `catch`
-5. **Type handling**: `void`, `auto`, `typename`, `const`, `type`, `struct`
-6. **Other**: `import`, `exposed`, `nil`
+5. **Type handling**: `auto`, `typename`, `const`, `type`, `struct`
+6. **Other**: `import`, `void`
 
 These are not keywords but have special meaning:
-`this`, `true`, `false` 
+`this`, `true`, `false`, `nil`
 
 Usage of most these keywords is almost same as C++ or Java, so I omit explanation for most of them in detail.
 
@@ -52,7 +52,7 @@ Usage of most these keywords is almost same as C++ or Java, so I omit explanatio
 
 The operators are almost similar to C language:
 
-- Conditional: `and or not == != >= <=`
+- Conditional: `and or not == != >= <= ??`
 - Bitwise `& | ^ << >> ~`
 - Math `+ - * % ++ -- **`
 
@@ -60,10 +60,10 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 
 *Special syntax*: `-> => () {} : <> :=` 
 - `->` for anonymous
-- `=>` for import
-- `()` for casting
+- `=>` for delegation
+- `()` for casting and defining tuple literals
 - `{}` instantiation
-- `:` for hash, loop, assert, call by name and array slice
+- `:` for hash, loop, assert, call by name, array slice and tuple values
 - `<>` template syntax
 - `:=` for typename default value, type alias and import alias
 
@@ -126,23 +126,16 @@ MyClass new() return {};
 void _() this.y=9;
 
 ```
-- You cannot assign values in `struct` section because it is not a place for code. You just define fields and possibly compile time evaluatable constants.
+- You cannot assign values in `struct` section because it is not a place for code. You just define fields and possibly assign them to literals.
 - Class members (fields, methods and types) starting with underscore are considered private and can only be accessed internally. So the only valid combination that can come before `_` is `this._xxx` not `obj._xxx`.
 - Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer.
 - The private unnamed method is called by runtime service when static instance of the class is created and is optional.
-- You can define default values for method parameters (e.g. `int func1(int x, int y=0)`).
 - You can not have methods with the same name in a single class.
+- There is no default value. If some parameter is not passed, it's value will be `nil`.
 - When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`).
 - Value of a variable before initialization is `nil`. You can also return `nil` when you want to indicate invalid state for a variable.
 - When a variable is nil and we call one of it's type's methods, the method will be called normally with nil `this`. If we try to read it's fields, it will crash (like Objective-C).
 - If a method has no body, you can still call it and it will return `nil`. You can also call methods on a `nil` variable and as long as methods don't need `this` fields, it's fine.
-- You can initialize your classes with a simple value if you have appropriate assignment defined in the static instance:
-```
-//in MyClass.e
-auto op_assign(int x) { auto tt = {}; tt.x = x; return tt;}
-//usage:
-MyClass mc = 19;
-```
 
 ###Exposoing
 
@@ -154,30 +147,20 @@ In above example, all calls to public methods of `MetaClass1` and `MetaClass2` w
 
 Classes can override all the valid operators on them. `int` class defined operator `+` and `-` and many others (math, comparison, ...). This is not specific to `int` and any other class can do this. 
 
-###Anonymous struct
+###Anonymous struct (tuple)
 
 Functions can only return one value but that one value can be an anonymous struct containing multiple values. 
-The only special thing that compiler does for it is to handle literals.
+The only special thing that compiler does for it is to handle literals. Also compiler automatically creates them for you when you call a function or return something:
 
 ```
-type myt := struct{int, float};
-t.$0 = 12;
-t.$1 = 1.22;
-
-int x = t.$0
-t.$0++;
+type myt := (int x, float f);  //defining tuple
+myt func1(){ return (x: 1, f: 1.1); }  //return tuple literal
+(int x, float f) func2() { return (x:1, f:2.3); }
+x,y = func1();  //unpack tuple
+auto x = (age:12, days:31);  //tuple literal
 ```
 
-Also compiler automatically creates them for you when you call a function or return something:
-
-```
-struct{int,float} func() return (1,2);
-
-/*later*/ 
-int x;
-float y;
-x,y = obj.func();  //compiler will automatically assign values
-```
+Tuples are automatically converted to classes by compiler. So they are basically classes but only have a struct section with all-public fields and no methods. 
 
 ###Async
 
@@ -192,7 +175,7 @@ go { x++; y = y + func(x); }
 
 You can use `type` to define type alias:
 ```
-type point := tuple(int, int);
+type point := int[];
 type x := const int&;
 x a;  //=const int& a;
 const x& a; //=const int& a, you cannot apply const or & more than once
@@ -266,7 +249,7 @@ Intr5 pa = this.method1;
 auto pp = this.method2;  //called later by: pp(1, 2, 3);
 auto xp = (int x, int y) -> x+y;  //again compiler will find and assign appropriate Fucntion interface
 //for example for above case type of xp will be Function<int, int, int>
-//if returning multiple values, it can be Function<tuple(int, int), int, int>
+//if returning multiple values, it will be an anonymous struct
 
 //long form
 auto intr = Interface1 
@@ -302,10 +285,12 @@ auto intr = Interface1
 - **Ternary condition**: `iif(a, b, c) ` is same as `a ? b:c` in other languages.
 - **Hashtable**: `int[String] hash1 = { 'OH': 12, 'CA': 33, ... };`.
 - **import**: Include other packages.
+- **Null operator**: `x ?? 5` will evaluate to 5 if x is `nil`.
 - **assert**: You can use this to check for pre-condition and with `defer` it can be used to check for post-condition. `assert x>0 : 'error message'` will set error upon failure.
 - **Documentation**: Any comment before method or field or first line of the file starting with `///` is special comment to be processed by IDEs and automated tools. 
 - **Call by name**: `myClass.myMember(x: 10, y: 12);`
 - **Literals**: compiler will handle object literals and create corresponding objects (in default arg value, initializations, enum, true, false, ...)
+- **Casting**: `float f; int x = f.int();` this will call `int` method on class `int` to do casting.  
 
 ###Core package
 
