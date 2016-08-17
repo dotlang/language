@@ -805,3 +805,60 @@ maybe `.0, .1, ...`
 We can call this anonymous struct instead of tuple! But still we need help of compiler.
 
 N - Lazy getter like perl? No special behavior.
+
+Y - Casting is an operator itself. For example if `f` is float and we want to cast it to int.  
+`(f as int)`  
+`int.(f)`  
+`int(f)`  
+`int.new(f)` this completely makes sense but we have to provide a shortcut  
+Shortcut for above can have a wider scope: shortcut for calling `new` but there is no `new` in the language syntax!
+so let's forget a global shortcut and think of a `casting` operator which can be defined for classes.
+`int(f)` will call `op_cast(float f)` on class `int`.
+
+Y - Modify anonymous struct to have field names:
+`type myt := (int x, float f);`
+Pro: no need to write strange `$0`, more compatible with the way we define normal classes.
+Con: It will be longer.
+We can make name optional but will make thing more complex.
+C#: `var result = (5, 20);` to define tuple
+or `result = (count: 5, sum: 20);` with naming
+`(int Count, int Sum) func()` when calling: `auto result = Tally(list); int x = result.Count;`
+definint tuple literals: `var res = (sum: 0, count: 0);`
+>But now that we want to use `type` to define tupe constructs, maybe adding name is not a big negative.
+Why include word struct? we can omit it to make syntax more clear.
+at one end: remove struct keyword and field names
+at the other end: include struct and field names
+It should be as easy as possible but I don't like code littered with $1, $0 and ... it makes code un-readable but one of my goals is make code easy to understand. So as easy as possible but with field name.
+`type myt := (int x,float f)`  //defining tuple
+`myt func1(){ return (x: 1, f: 1.1); }`  //return tuple literal
+`x,y = func1();`  //unpack tuple
+`auto x = (age:12, days:31);`  //tuple literal
+
+N - Passing some compile time data to the code (e.g. release, debug, ...) which can be checked in the code.
+This can easily be done via env vars or compiler options settings values on static classes:
+`elec test.e --set MyClass.value1=9` This will set value of `MyClass.value1`.
+How to do static check or conditional compilation? static checking upon compilation makes code and compiler complex.
+lets do only `if` and compiler set value and `assert x != nil`.
+These values will be set after creating the static instance and before calling static initializer.
+
+Y - For type casting: `int x = f.int()` notation.
+pro: syntax is consistent with others: a method named `int` is called. the operator notation is a little bit confusing.
+con: if `f` is nil then what? we are using type name as method name? yes. its ok because int is not a keyword.
+
+N - What is interpreation of these?
+`void x` or `auto x = f.void()`.
+Note that there is no standard on what this should mean. The fact that `x.int()` will cast x to int is something
+in core. 
+We can say `void x` is a variable where you can write to it but cannot read from it. Something like a sink.
+But what is use of this? 
+Maybe later.
+
+Y - We can remove optional arguments with assuming missing arguments will be `nil`. And you can write:
+`x //= 5` to set x to 5 if it's nil. and all parameters will be optional, then. 
+Pro: more consistent, less syntax confusion, more flexible.
+Con: maybe less familiar, more operators to learn, it is hard to know default value of arguments.
+
+N - `int x = 12; int y = x; y++` will this change value of x?
+This depends on how `=` operator is implemented for `int`. We expect it to `copy` value of x.
+To make `y` refer to the same thing, `int y = x.ref()` which will return the x reference. In this case
+`y++` will change value of x. x.ref may return `this`.
