@@ -851,7 +851,12 @@ Note that there is no standard on what this should mean. The fact that `x.int()`
 in core. 
 We can say `void x` is a variable where you can write to it but cannot read from it. Something like a sink.
 But what is use of this? 
-Maybe later.
+Maybe later. Maybe we can use this in templates. Where we want to define function pointer templates:
+`func<int, float, char, byte> fp = ...`
+`func: typename T; typename U: void; T apply(U input)`. 
+If there is no input, U will be void and `int apply(void input)` means no input. This makes sense?
+How can we implement such a thing? Goal is support for dynamic function pointers where user just writes input/output
+and compiler infers the appropriate template.
 
 Y - We can remove optional arguments with assuming missing arguments will be `nil`. And you can write:
 `x //= 5` to set x to 5 if it's nil. and all parameters will be optional, then. 
@@ -862,3 +867,28 @@ N - `int x = 12; int y = x; y++` will this change value of x?
 This depends on how `=` operator is implemented for `int`. We expect it to `copy` value of x.
 To make `y` refer to the same thing, `int y = x.ref()` which will return the x reference. In this case
 `y++` will change value of x. x.ref may return `this`.
+
+N - Can we have abstract methods? Can we do this so that compiler can write some call address at compile time?
+suppose that we implement A's methods in B which contains an instance of A. What happens if in B's constructor we call A's constructor which calls some not-implemented methods which have body in B?
+With adding each new feature, we are adding a set of cons and pros.
+Pro: Makes sense, can be used to implement some of design patterns.
+Con: Language will be harder to learn, can be implemented using function pointer, I prefer a simple orth language rather than a bloated language. Needs runtime method finding.
+This may lead to need for protected methods. we should simulate protected by composing public methods.
+This can be done if we assume methods as function pointers which are read/write. This adds no new notation.
+`obj.method1 = this._mymethod;` or `obj.method1 = (x) -> (x+1);`. But this will have a lot of implications.
+Pro: same behavior for field and method. read/write is defined for both of them.
+So for fields we can read/write, for methods we can read/write/invoke. read by `x` write by `x=value` invoke by `x()`.
+Who can write for methods? everybody? which methods can get values? all or only empty methods?
+can we add new methods? definitely not.
+if we say, only empty methods can be overwritten, this is not orth and general. but if everyone can change methods, then? is it bad?
+this is limited to object instances. but can we handle protected?
+How will this new method access private members of the class? This will add to the confusion.
+We can implement abstract method by using fps.
+
+
+N - If we compose X and define empty method A which exists in X too, the X method will be hidden from outer world and is only accessible by container object using `this.Xobj.Amethod` syntax. This is the natural behavior but also we can define appropriate interfaces for expose.
+
+N - Ability to call input-less methods (property) without `()`
+`int age() { return this._data; }`
+`int x = obj.age;`
+Note: This will interfer with notation of having methods as fields (ability to set method values at runtime to provide implementation for methods). `auto x = obj.age` what is type of x? is it int or is it a function pointer which returns int?
