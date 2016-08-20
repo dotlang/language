@@ -291,6 +291,7 @@ auto intr = Interface1
 - **Call by name**: `myClass.myMember(x: 10, y: 12);`
 - **Literals**: compiler will handle object literals and create corresponding objects (in default arg value, initializations, enum, true, false, ...)
 - **Casting**: `float f; int x = f.int();` this will call `int` method on class `int` to do casting.  
+- You can write `auto x = myObj.method1;` and type of `x` will be anon-class of type `func<int, int>` (assuming method1 gets int and returns int).
 
 ###Core package
 
