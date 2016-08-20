@@ -885,10 +885,24 @@ this is limited to object instances. but can we handle protected?
 How will this new method access private members of the class? This will add to the confusion.
 We can implement abstract method by using fps.
 
-
 N - If we compose X and define empty method A which exists in X too, the X method will be hidden from outer world and is only accessible by container object using `this.Xobj.Amethod` syntax. This is the natural behavior but also we can define appropriate interfaces for expose.
 
 N - Ability to call input-less methods (property) without `()`
 `int age() { return this._data; }`
 `int x = obj.age;`
 Note: This will interfer with notation of having methods as fields (ability to set method values at runtime to provide implementation for methods). `auto x = obj.age` what is type of x? is it int or is it a function pointer which returns int?
+
+? - Naming: - **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage`. It's better for classes to start with lowerCase because then we can have `int` and `func` and ... .
+`myClass`, `some_method`, `some_variable_arg_field`, `MyPackage`.
+
+? - Trait?
+trait vs composition: in trait, `this` is the container not the trait.
+
+? - No one should be able to alter class behavior without it's permission. Empty method body is some kind of permission which means others can propose bodies for this method. Other than that, container class cannot hide/shadow methods of composed objects. 
+
+? - When composing two or more objects, how should we handle conflicts?
+rename/remove method? using hash?
+
+? - More control over co-routines (in golang dev mailing list they request for ability to set priority).
+
+? - Do we really need a keyword `promise` for this? Can't we implement a special case in the `core`?
