@@ -925,8 +925,25 @@ Do we really need a keyword `promise` for this? Can't we implement a special cas
 
 N - Ability to `paste` code from another class into current class: `mixin`. We can do this using expose. Although not exactly.
 
-N - If class A wants to confirm to interface I, it has to compose it with `=> I`. But what about interfaces which are not known by this class?
+N - If class A wants to conform to interface I, it has to compose it with `=> I`. But what about interfaces which are not known by this class?
 
 Y - Better syntax to check whether class1 conforms with class2? `if ((class2)class1) ...` is current notation.
 `obj1 ~ Interface1`
 `obj1 ~= Interface1`
+
+Y - We can support implicit conflict resolution: If class1 exposes a and b and both have method `func` then a call to `class1.func` will be redirected to `a` if it is introduced earlier.
+
+N - Treat methods and fields the same. They can be read/write/invoked. 
+Note: `auto x = obj.age` what is type of x? is it int or is it a function pointer which returns int?
+But no one should be able to alter class behavior unless it is explicitly permitted (empty method). 
+current status:
+field: read/write
+method: read/invoke
+`int x = obj.field1(); obj.field1(12);`  //read and write through invoke
+`fp<int> = obj.field1` //read
+maybe we can model everything through `read/invoke` mechanism. Treating everything like methods.
+read will return an fp. invoke can be used to call or read or write.
+`int field1(int value) { if ( value != nil ) current_data = 1 else return current_data; }`
+This is not intuitive.
+
+N - Now that everything is an object, can we add elements to `int[]`? No. Why? they can use `ArrayList` class.
