@@ -153,15 +153,17 @@ Classes can override all the valid operators on them. `int` class defined operat
 
 ###Anonymous struct (tuple)
 
-Functions can only return one value but that one value can be an anonymous struct containing multiple values. 
+Functions can only return one value but that one value can be an anonymous struct containing multiple values. Note that field names are required and should be mentioned or inferable.
 The only special thing that compiler does for it is to handle literals. Also compiler automatically creates them for you when you call a function or return something:
 
 ```
-type myt := (int x, float f);  //defining tuple
+type myt := (int x, float f);  //defining tuple, field names are required
 myt func1(){ return (x: 1, f: 1.1); }  //return tuple literal
+myt func1(){ return (1, 1.1); }    //tuple literal with implicit field names
 (int x, float f) func2() { return (x:1, f:2.3); }
+(int x, float f) func2() { return (1, 2.3); }
 x,y = func1();  //unpack tuple
-auto x = (age:12, days:31);  //tuple literal
+auto x = (age:12, days:31);  //tuple literal, here field name is needed
 ```
 
 Tuples are automatically converted to classes by compiler. So they are basically classes but only have a struct section with all-public fields and no methods. 
