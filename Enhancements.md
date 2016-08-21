@@ -42,7 +42,7 @@ N - compare and swap, only for numbers
     `bool b = (x ? 1 -> 2);`
 
 Y - Hash notation, like array with support for hash literals
-    `int[String] hash1 = { 'OH' => 12, 'CA' => 33, ... };`
+    `int[String] hash1 = { 'OH' : 12, 'CA' : 33, ... };`
     behind the scene this will be a class.
 
 N - Tuple data type. We have this in C++, C#, D and Java (to some extent). This cannot be implemented using templates because read/write value to the tuple does not have a specific data type.
@@ -276,7 +276,7 @@ N - Shall we add multiple return? So we won't need global `error`. What happens 
 `(int,int) f(int x, int y) return y,x;`
 This adds to the complexity. No.
 
-Y - `import a.b =>;` will import into current namespace;
+Y - `import a.b =>;` will import into current namespace; Changed to `:=`
 
 N - To decrease complexity, either   
 remove templates and replace them with something else (like built-in linked-list and force user to create custom classes for other structures like stack, or addition of equivalent of void*)  -> (NO, adding void* will make compiler and runtime complext and language hard)  
@@ -522,7 +522,7 @@ Y - interface is a class. Implementing functions in a class is optional. If they
 
 N - we can also use type alias to alias an import:
 `alias cd = core.data.util.stack`
-This makes import complex. We already have `=>` notation.
+This makes import complex. We already have `:=` notation.
 
 Y - implement/extend vs embedding. Why we can implement as many interfaces as we want? because its guaranteed that there will be no conflicting implementations. 
 we can expose as many members as we want and we can hide their methods by adding methods with same name and we can call them via `this.member.func` notation.
@@ -806,7 +806,7 @@ We can call this anonymous struct instead of tuple! But still we need help of co
 
 N - Lazy getter like perl? No special behavior.
 
-Y - Casting is an operator itself. For example if `f` is float and we want to cast it to int.  
+N - Casting is an operator itself. For example if `f` is float and we want to cast it to int.  
 `(f as int)`  
 `int.(f)`  
 `int(f)`  
@@ -892,17 +892,41 @@ N - Ability to call input-less methods (property) without `()`
 `int x = obj.age;`
 Note: This will interfer with notation of having methods as fields (ability to set method values at runtime to provide implementation for methods). `auto x = obj.age` what is type of x? is it int or is it a function pointer which returns int?
 
-? - Naming: - **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage`. It's better for classes to start with lowerCase because then we can have `int` and `func` and ... .
+N - Naming: - **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage`. It's better for classes to start with lowerCase because then we can have `int` and `func` and ... .
 `myClass`, `some_method`, `some_variable_arg_field`, `MyPackage`.
 
-? - Trait?
+N - Trait?
 trait vs composition: in trait, `this` is the container not the trait.
 
-? - No one should be able to alter class behavior without it's permission. Empty method body is some kind of permission which means others can propose bodies for this method. Other than that, container class cannot hide/shadow methods of composed objects. 
+Y - No one should be able to alter class behavior without it's permission. Empty method body is some kind of permission which means others can propose bodies for this method. Other than that, container class cannot hide/shadow methods of composed objects. This makes sense for interfaces too because all they have is a set of empty methods which must be implemented.
+```
+//B class
+int func();
+int func2() { return func()+1; }
 
-? - When composing two or more objects, how should we handle conflicts?
-rename/remove method? using hash?
+//A class
+struct { B b => B; }
+int func() { return 10; }
+//Main method
+A a;
+a.func2();  //will this call A.func? it should.
+```
+we are changing value of `this` inside A (From A.this to B.this). but not for fields or private methods. 
+`that` can be used to refer to the container. but we cannot assume the class is contained.
+All this confusion and discussions about method hiding and overriding and rename and ... can be easily handles via other mechanisms like DI. Let's not make language more complex. But if something makes life easier for the developer then it's fine. 
 
-? - More control over co-routines (in golang dev mailing list they request for ability to set priority).
+N - When composing two or more objects, how should we handle conflicts?
+rename/remove method? using hash? Rename is definitely not needed because eveything is inside the composed object until we hide something. This makes things more complex.
+Even if we permit method overwriting, the new method won't have access to private vars. also there will be need for another mechanism to call the original method. 
+solution: choose better method names, compose it in another class and compose that class, ...
 
-? - Do we really need a keyword `promise` for this? Can't we implement a special case in the `core`?
+Y - More control over co-routines (in golang dev mailing list they request for ability to set priority). Let's not use a keyword and move things to core. In this way we can have more control over the output. 
+Do we really need a keyword `promise` for this? Can't we implement a special case in the `core`?
+
+N - Ability to `paste` code from another class into current class: `mixin`. We can do this using expose. Although not exactly.
+
+N - If class A wants to confirm to interface I, it has to compose it with `=> I`. But what about interfaces which are not known by this class?
+
+Y - Better syntax to check whether class1 conforms with class2? `if ((class2)class1) ...` is current notation.
+`obj1 ~ Interface1`
+`obj1 ~= Interface1`
