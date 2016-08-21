@@ -31,7 +31,7 @@ The target use case of this programming language is server-side software.
 
 1. **Conditional**: `if`, `else`, `switch`, `assert`
 2. **Loop**: `for`, `break`, `continue`
-3. **Control**: `return`, `defer`, `async`
+3. **Control**: `return`, `defer`
 4. **Exceptions**: `throw`, `catch`
 5. **Type handling**: `auto`, `typename`, `const`, `type`, `struct`
 6. **Other**: `import`, `void`
@@ -58,7 +58,7 @@ The operators are almost similar to C language:
 
 The bitwise and math operators can be combined with `=` to do the calculation and assignment in one statement.
 
-*Special syntax*: `-> => () {} : <> :=` 
+*Special syntax*: `-> => () {} : <> := ~` 
 - `->` for anonymous
 - `=>` for delegation
 - `()` for casting and defining tuple literals
@@ -66,6 +66,8 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `:` for hash, loop, assert, call by name, array slice and tuple values
 - `<>` template syntax
 - `:=` for typename default value, type alias and import alias
+- `~` to check class conforming to another class
+- 
 
 ### Core principle
 
@@ -140,8 +142,10 @@ void _() this.y=9;
 ###Exposoing
 
 - You can use `=>` notation when defining a variable to denote it will handle a set of method call/fields. This set is specified by one or more classes: `MyClass v1 => MetaClass1, MetaClass2;`  
-In above example, all calls to public methods of `MetaClass1` and `MetaClass2` will be redirected to `v1`. You can use variable type as exposed type so this will expose all public methods and fields of the variable:
-`MyClass c1 => MyClass;`
+In above example, all public methods/fields of `MetaClass1` and `MetaClass2` will be added to current cass which will be delegated to method with same signature in `v1`.
+- You can use variable type as exposed type so this will expose all public methods and fields of the variable:
+`MyClass c1 => MyClass;` or `MyClass c1 =>;` for shortcut.
+- If a method is empty in `MyClass`, the container class can provide an implementation for it. This will cause calls to the empty method be redirected to the new implementation, even inside `MyClass`.
 
 ###Operators
 
@@ -161,15 +165,6 @@ auto x = (age:12, days:31);  //tuple literal
 ```
 
 Tuples are automatically converted to classes by compiler. So they are basically classes but only have a struct section with all-public fields and no methods. 
-
-###Async
-
-This is like `go` in golang. It will start the code or statement in a separate parallel routine.
-
-```
-go obj1.func1(1, 2, 3);
-go { x++; y = y + func(x); }
-```
 
 ###Type aliasing
 
@@ -273,8 +268,8 @@ auto intr = Interface1
 
 ###Misc
 
-- **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage`.
-- **Checking for implements**: You can use `(other_class)class1` to check if `class1` implements `other_class`.
+- **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage` (For classes in `core` they can use `myClass` notation, like `int` or `fp`).
+- **Checking for implements**: You can use `other_class ~ class1` to check if `class1` implements `other_class`.
 - **const**: You can define class fields, local variables and function inputs as constant. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition.
 - **Literals**: `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64.
 - **Digit separators**: `1_000_000`.
