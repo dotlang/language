@@ -27,14 +27,18 @@ This project will finally consist of these components:
 Electron is an object-oriented and imperative programming language with automatic garbage collection memory management. 
 The target use case of this programming language is server-side software.
 
+### Core principle
+
+Almost everything is an object, even basic data types and everything is passed by value, but everything is a reference.
+Every class has a special instance (static instance), which is created by the compiler. This instance can be used to create other instances of the class. But at very few cases compiler does something for the developer automatically. Most of the time, developer should do the job manually.
+
 ###Keywords
 
 1. **Conditional**: `if`, `else`, `switch`, `assert`
 2. **Loop**: `for`, `break`, `continue`
 3. **Control**: `return`, `defer`
-4. **Exceptions**: `throw`, `catch`
-5. **Type handling**: `auto`, `typename`, `const`, `type`, `struct`
-6. **Other**: `import`, `void`
+4. **Type handling**: `auto`, `typename`, `const`, `type`, `struct`
+5. **Other**: `import`, `void`
 
 These are not keywords but have special meaning:
 `this`, `true`, `false`, `nil`
@@ -53,26 +57,20 @@ Usage of most these keywords is almost same as C++ or Java, so I omit explanatio
 The operators are almost similar to C language:
 
 - Conditional: `and or not == != >= <= ??`
-- Bitwise `& | ^ << >> ~`
-- Math `+ - * % ++ -- **`
+- Bitwise: `& | ^ << >>`
+- Math: `+ - * % ++ -- **`
 
 The bitwise and math operators can be combined with `=` to do the calculation and assignment in one statement.
 
-*Special syntax*: `-> => () {} : <> := ~` 
-- `->` for anonymous
-- `=>` for delegation
+*Special syntax*:
+- `->` for anonymous class declaration
+- `=>` for delegation (expose)
 - `()` for casting and defining tuple literals
 - `{}` instantiation
 - `:` for hash, loop, assert, call by name, array slice and tuple values
 - `<>` template syntax
 - `:=` for typename default value, type alias and import alias
-- `~` to check class conforming to another class
-- 
 
-### Core principle
-
-Everything is a class, even basic data types and everything is passed by value, but everything is a reference.
-Every class has a special instance (static instance), which is created by the compiler. This instance can be used to create other instances of the class. But at very few cases does compiler do something for the developer automatically. Most of the time, developer should write the code or add some methods to do something.
 
 ###The most basic application
 
@@ -86,7 +84,7 @@ int main()
 }
 ```
 
-This is a class with only one method, called `main` which returns `0` (very similar to C/C++ except no input it sent to the `main` function).
+This is a class with only one method, called `main` which returns `0` (very similar to C/C++ except `main` function has no input).
 
 ### Packages
 
@@ -103,13 +101,13 @@ In the above examples `core.sys, core.net, core.net.http, core.net.tcp` are all 
 
 ###Classes
 
-Each source code file represents one class and has two parts: `struct` part where fields are defined, and method definition.
-Writing body for methods is optional (but of course if a body-less method is called, a runtime error is thrown). Classes with no method body are same as interfaces in other languages but in Electron we don't have the concept of interface.
+Each source code file represents one class and has two important parts: `struct` part where fields are defined, and method definition.
+Writing body for methods is optional (but of course if a body-less method is called, nothing will happen and an empty response will be received). Classes with no method body are same as interfaces in other languages but in Electron we don't have the concept of interface.
 
-Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be created upon first reference. 
+Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be created upon first usage in the code. 
 
 *Notes:*
-- There is no inheritance. Composition (By using anonymous fields) is encouraged instead.
+- There is no inheritance. Composition is used instead.
 - If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is public.
 - The order of the contents of source code file matters: First `import` section, `typename`s, `type`s, then `struct` and finally methods. 
 
@@ -118,14 +116,14 @@ Each class's instances can be referenced using instance notation (`varName.membe
 ```
 struct 
 {
-    const int _x = 12;
+    const int _x = 12;  //private
     int y;
     int h = 12;
 }
 
 int func1(int y) { return this.x + y; }
-MyClass new() return {};
-void _() this.y=9;
+MyClass new() return {};  //new is not part of syntax. You can choose whatever name you want,
+void _() this.y=9;  //initialize code for static instance
 
 ```
 - You cannot assign values in `struct` section because it is not a place for code. You just define fields and possibly assign them to literals.
@@ -133,28 +131,28 @@ void _() this.y=9;
 - Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer.
 - The private unnamed method is called by runtime service when static instance of the class is created and is optional.
 - You can not have methods with the same name in a single class.
-- There is no default value. If some parameter is not passed, it's value will be `nil`.
+- There is no default value for method arguments. If some parameter is not passed, it's value will be `nil`.
 - When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`).
 - Value of a variable before initialization is `nil`. You can also return `nil` when you want to indicate invalid state for a variable.
-- When a variable is nil and we call one of it's type's methods, the method will be called normally with nil `this`. If we try to read it's fields, it will crash (like Objective-C).
+- When a variable is nil and we call one of it's type's methods, the method will be called normally with nil `this`. If we try to read it's fields, it will crash.
 - If a method has no body, you can still call it and it will return `nil`. You can also call methods on a `nil` variable and as long as methods don't need `this` fields, it's fine.
 
 ###Exposoing
 
 - You can use `=>` notation when defining a variable to denote it will handle a set of method call/fields. This set is specified by one or more classes: `MyClass v1 => MetaClass1, MetaClass2;`  
-In above example, all public methods/fields of `MetaClass1` and `MetaClass2` will be added to current cass which will be delegated to method with same signature in `v1`.
+In above example, all public methods/fields of `MetaClass1` and `MetaClass2` will be added to current class and will be delegated to method with same signature in `v1` field.
 - You can use variable type as exposed type so this will expose all public methods and fields of the variable:
 `MyClass c1 => MyClass;` or `MyClass c1 =>;` for shortcut.
 - If a method is empty in `MyClass`, the container class can provide an implementation for it. This will cause calls to the empty method be redirected to the new implementation, even inside `MyClass`.
 
 ###Operators
 
-Classes can override all the valid operators on them. `int` class defined operator `+` and `-` and many others (math, comparison, ...). This is not specific to `int` and any other class can do this. 
+Classes can override all the valid operators on them. `int` class defines operator `+` and `-` and many others (math, comparison, ...). This is not specific to `int` and any other class can do this. 
 
 ###Anonymous struct (tuple)
 
-Functions can only return one value but that one value can be an anonymous struct containing multiple values. Note that field names are required and should be mentioned or inferable.
-The only special thing that compiler does for it is to handle literals. Also compiler automatically creates them for you when you call a function or return something:
+Functions can only return one value but that one value can be an anonymous struct (tuple) containing multiple values. Note that field names are required and should be mentioned or inferable.
+The only special thing that compiler does here is to handle literals. Also compiler automatically creates them for you when you call a function or return something:
 
 ```
 type myt := (int x, float f);  //defining tuple, field names are required
@@ -169,6 +167,10 @@ x,y = func1();  //unpack tuple
 x = func3();
 
 auto x = (age:12, days:31);  //tuple literal, here field name is needed
+auto x = (1, 2); //WRONG! we need field names
+int f(myt input) ... //you can pass tuple to a function
+int f((int x, float f) input) ... //passing tuple to function
+int x = f((x:1, f:1.1)); //calling above function
 ```
 
 Tuples are automatically converted to classes by compiler. So they are basically classes but only have a struct section with all-public fields and no methods. 
@@ -178,9 +180,9 @@ Tuples are automatically converted to classes by compiler. So they are basically
 You can use `type` to define type alias:
 ```
 type point := int[];
-type x := const int&;
-x a;  //=const int& a;
-const x& a; //=const int& a, you cannot apply const or & more than once
+type x := const int;
+x a;  //=const int a;
+const x a; //=const int a, you cannot apply const more than once
 ```
 To use a type from outside the defining class:
 ```
@@ -195,36 +197,39 @@ You can use type alias to narrow valid values for a type (like enum):
 type DoW := int (SAT=0, SUN=1, ...);
 ```
 
+Same as other members, types starting with underscore are private.
+
 ###Templates
 
 In a class file you can use `typename` keyword to indicate that the user of the class has to provide type names at compile time:
 
 ```
-typename K: interface1, interface2;  //if omitted, empty interface is assumed
-typename V: interface2 := MyClass; 
+typename K: interface1, interface2;  //K type should conform to these two interfaces. 
+typename V: interface2 := MyClass;   //default value is MyClass
 
 void put(K key, V value) ...
 V get(K key) ...
 ```
 This is how collections and ... will be implemented in core.
 
-Note that `typename` must come before `struct` section.
+Note that `typename` section must come before `struct` section.
 
 ###Exception handling
 
-It is advised to return error code in case of an error:
-Language provides `defer` keyword:
-- You can use `defer` keyword (same as what golang has) to define code that must be executed upon exitting current method.
+- It is advised to return error code in case of an error. 
+- There is a flag `runtime.mode` which can be either `normal` or `deferred`.
+
+- If defer has an input, it will be mapped to the function output.
 - You can check output of a function in defer (`defer result>0`) to do a post-condition check.
 
-
-In case of exception, you can use `throw x` statement (where x can be anything) and `catch` in a defer statement to handle it. If there is no `catch` control will go up in the call hierarchy.
-
 ```
-defer { auto r = catch(); if ( r != nil ) return -1; }
-defer(x) { if ( x != nil ) x++; }
-this.method1();  //-> inside of which we have: throw "abcd"
-//after throw, method1 will exit immediately and only defers will be executed when going up in call stack.
+//inside function
+data.setError("ERR"); runtime.mode=deferred; return nil; 
+//outside: catching error
+defer { if ( data.hasError() ) runtime.mode = normal; }
+defer { if ( runtime.mode == deferred ) runtime.mode = normal; }
+
+defer(x) { if ( x != nil ) x++; }  //manipulate function output
 ```
 
 ###Anonymous class
@@ -279,13 +284,13 @@ auto intr = Interface1
 ###Misc
 
 - **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage` (For classes in `core` they can use `myClass` notation, like `int` or `fp`).
-- `other_class ~ class1` returns true of `other_class` conforms to `class1`.
-- You can define class fields, local variables and function inputs as constant. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition.
+- `iclass1(my_obj)` returns `nil` if myObj does not conform to iclass1 or else, result will be casted object.
+- You can define class fields, local variables and function inputs as constant. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition (state will be read-only after being assigned). Initially value will be `nil` and you can only set the data once, after which it cannot be changed.
 - `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64, `1_000_000`
 - `for(x:array1)` or `for(int key,string val:hash1)`.
 - `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]; int[2,2] x;`. We have slicing for arrays `x[start:step:end]` with support for negative index.
 - **String interpolation**: You can embed variables inside a string to be automatically converted to string. If string is surrounded by single quotes it won't be interpolated. You need to use double quote for interpolation to work.
-- `iif(a, b, c) ` (if a, b else c).
+- `(if a b:c) ` (if a, b else c).
 - `int[string] hash1 = { 'OH': 12, 'CA': 33};`.
 - `x ?? 5` will evaluate to 5 if x is `nil`.
 - `assert x>0 : 'error message'`
@@ -293,8 +298,10 @@ auto intr = Interface1
 - `myClass.myMember(x: 10, y: 12);`
 - **Literals**: compiler will handle object literals and create corresponding objects (in default arg value, initializations, enum values, true, false, ...).
 - `float f; int x = f.int();` this will call `int` method on class `float` to do casting.  
-- You can write `auto x = myObj.method1;` and type of `x` will be anon-class of type `func<int, int>` (assuming method1 gets int and returns int).
+- You can write `auto x = myObj.method1;` and type of `x` will be anon-class of type `fp<int, int>` (assuming method1 gets int and returns int).
 - `break 2` to break outside 2 nested loops. same for `continue`.
+- `import core.st` or `import aa := core.st` to import with alias.
+- `int f(int x) return x+1;` braces can be eliminated when body is a single statement.
 
 ###Core package
 
@@ -330,6 +337,3 @@ Perl has a `MakeFile.PL` where you specify metadata about your package, requirem
 Python uses same approach with a `setup.py` file containing similar data like Perl.
 Java without maven has a packaging but not a dependency management system. For dep, you create a `pom.xml` file and describe requirements + their version. 
 C# has dll method which is contains byte-code of the source package. DLL has a version metadata but no dep management. For dep it has NuGet.
-
-
-    
