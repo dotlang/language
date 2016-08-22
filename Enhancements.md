@@ -947,3 +947,59 @@ read will return an fp. invoke can be used to call or read or write.
 This is not intuitive.
 
 N - Now that everything is an object, can we add elements to `int[]`? No. Why? they can use `ArrayList` class.
+
+? - What should be the name for empty interface which is implemented by all types?
+
+? - Syntax for throw/catch?
+`throw 'a'; defer { auto x = catch(); }`
+We can implement all this with a simple stack or storage system. store and retrieve. 
+The only missing piece will be forcing exit. Maybe we need something like `strong return` or `forced exit`.
+```
+if ( error == 1 ) {
+    global_stack.push("ERROR");
+    strong_return;
+}
+//outside:
+defer { if (global_stack.hasData()) { doSomething(); stop_strong_return; } }
+```
+but `strong_return` is `throw` and `stop_strong_return` is `catch`. unless we do some conventions!
+For example, a strong return will be initiated if some variable it set (and only defers will be executed) 
+and stop if it is cleared. For this purpose, we only need a simple flag. All other data (details of the 
+exception) should be transmitted through another channel. For example `runtime.ex` is a bool which starts forced return
+when it is set to true.
+```
+handle.setError("ERR");
+runtime.ex = true;
+return;  //!!??
+//caller:
+defer { if ( runtime.ex == true ) { runtime.ex = false; } }
+```
+but empty return does not make sense and is redundant. There should be two statements or function calls.
+function call -> return will be missing. we need two keywords but throw/catch don't make sense now that they
+are not going to send/receive anything.
+`freturn`, `panic`, `eject`
+but empty keyword without any parameter is not beautiful (we already have `break, continue`).
+Maybe we can use `break` and `continue` here. 
+Things we want to do: stop normal execution, check if normal execution is stopped, continue normal execution.
+`break -1`, `runtime.isBreaking`, `continue -1`;
+`set`, `check`, `reset`
+`x=1`, `if(x)`, `x=0` -> but without keywords this 
+`runtime.eject=true`, `if (runtime.eject)`, `runtime.eject=false`
+The keyword should definitely act as return too, so we cannot simply set something.
+```
+data.setError("ERR"); eject; 
+//outside
+defer { if ( data.hasError() regain; ) 
+```
+```
+data.setError("ERR"); runtime.mode=defer; return nil; 
+//outside
+defer { if ( data.hasError() runtime.mode = normal;) } 
+```
+This approach does not need a keyword at all.
+
+Y - for post-condition checking, maybe its good to have a keyword/operator denote output of current function.
+Also this can be used in `defer` to alter function output.
+`defer(x) if ( x!= nil) x++;` this will be called after return and `x` is mapped to function output.
+
+Y - Omit `() ->` when anon-func does not have input.
