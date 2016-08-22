@@ -217,29 +217,35 @@ Note that `typename` section must come before `struct` section.
 ###Exception handling
 
 - It is advised to return error code in case of an error. 
+- You can use `defer` keyword (same as what golang has) for code that must be executed upon exitting current method.
 - There is a flag `runtime.mode` which can be either `normal` or `deferred`.
-
 - If defer has an input, it will be mapped to the function output.
-- You can check output of a function in defer (`defer result>0`) to do a post-condition check.
+- You can check output of a function in defer (`defer(x) x>0`) to do a post-condition check.
 
 ```
 //inside function
-data.setError("ERR"); runtime.mode=deferred; return nil; 
+data.setError("ERR"); 
+runtime.mode=deferred; 
+return nil; //after this return, only defer statements will be executed, until app exit or change in runtime mode
 //outside: catching error
 defer { if ( data.hasError() ) runtime.mode = normal; }
 defer { if ( runtime.mode == deferred ) runtime.mode = normal; }
 
 defer(x) { if ( x != nil ) x++; }  //manipulate function output
+defer(x) assert x>0;  //post-condition check
 ```
 
 ###Anonymous class
 
-You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface specifying one or more functions. If the interface has only one method, the definition can be in short form and it is considered a function pointer. 
-Note that both short and long form, the code only has read-only access to variables in the parent method. No access is given to the parent class. In the short-form you cannot use `auto` to define these variables because compiler cannot deduce interface type from right side.
+You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface specifying one or more functions. If the interface has only one method, the definition can be in short form and it is considered a function pointer. There is a general purpose template class `fp` which is used by compiler to set type of anon-class literals if type is to be inferred.
+
+Note that in both short and long form, the code only has read-only access to variables in the parent method (local variables, input arguments and `this`).
 
 ```
 //short form, when interface has only one method
 Interface1 intr = (int x, int y) -> x+y;  //specifying type for input is optional
+auto ab = (int x) -> x+y; //type will be fp<int, int>
+auto ab = (x) -> 2*x; //WRONG! input type is not specified which is invalid with auto
 Interface1 intr = (x, y) -> x+y;
 Interface1 intr = (x, y) -> (r1:x+y, r2:x);  //returning a tuple from anon-func
 auto x = (int x) -> x+1;   //compiler will automatically create/find appropriate interface and will init x
