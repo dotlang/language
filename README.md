@@ -160,9 +160,14 @@ The only special thing that compiler does for it is to handle literals. Also com
 type myt := (int x, float f);  //defining tuple, field names are required
 myt func1(){ return (x: 1, f: 1.1); }  //return tuple literal
 myt func1(){ return (1, 1.1); }    //tuple literal with implicit field names
-(int x, float f) func2() { return (x:1, f:2.3); }
-(int x, float f) func2() { return (1, 2.3); }
+(int x, float f) func1() { return (x:1, f:2.3); }
+(int x, float f) func1() { return (1, 2.3); }
 x,y = func1();  //unpack tuple
+
+(int x) func3() { return (1); }  //even with one value
+(int x) func3() { return (x:1); }  //even with one value
+x = func3();
+
 auto x = (age:12, days:31);  //tuple literal, here field name is needed
 ```
 
@@ -216,20 +221,22 @@ Language provides `defer` keyword:
 In case of exception, you can use `throw x` statement (where x can be anything) and `catch` in a defer statement to handle it. If there is no `catch` control will go up in the call hierarchy.
 
 ```
-defer { auto r = catch(); if ( r ) return r.getCode(); }
+defer { auto r = catch(); if ( r != nil ) return -1; }
+defer(x) { if ( x != nil ) x++; }
 this.method1();  //-> inside of which we have: throw "abcd"
-defer catch(
+//after throw, method1 will exit immediately and only defers will be executed when going up in call stack.
 ```
 
-###Anonymous function/class
+###Anonymous class
 
-You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface. If the interface has only one method, the definition can be in short form. 
+You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface specifying one or more functions. If the interface has only one method, the definition can be in short form and it is considered a function pointer. 
 Note that both short and long form, the code only has read-only access to variables in the parent method. No access is given to the parent class. In the short-form you cannot use `auto` to define these variables because compiler cannot deduce interface type from right side.
 
 ```
 //short form, when interface has only one method
 Interface1 intr = (int x, int y) -> x+y;  //specifying type for input is optional
 Interface1 intr = (x, y) -> x+y;
+Interface1 intr = (x, y) -> (r1:x+y, r2:x);  //returning a tuple from anon-func
 auto x = (int x) -> x+1;   //compiler will automatically create/find appropriate interface and will init x
 int t = x(10); //t will be 11. compiler will automatically invoke the only method of the interface.
 Intr6 intr5 = () -> 5; //no input
@@ -267,28 +274,27 @@ auto intr = Interface1
 
 - As a short-cut provided by compiler, if the anonymous-class `x` has only one method, `x()` will call the only method of that class. You don't need to write the full syntax: `x.only_method()`.
 - Anonymous classes don't have constructor or static instance. Because they don't have names.
+- If anon-function does not have any input and there is only one function (in short-form), you can omit `() ->` part.
 
 ###Misc
 
 - **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage` (For classes in `core` they can use `myClass` notation, like `int` or `fp`).
-- **Checking for implements**: You can use `other_class ~ class1` to check if `class1` implements `other_class`.
-- **const**: You can define class fields, local variables and function inputs as constant. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition.
-- **Literals**: `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64.
-- **Digit separators**: `1_000_000`.
-- **For**: You can use `for` to iterate over an array or hash `for(x:array1)` or `for(k,v:hash1)`.
-- **if and for without braces**: `if (x>1) return 1;`, `for(y:array) x += y;`.
-- **Arrays**: Same notation as Java `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]; int[2,2] x;`. We have slicing for arrays `x[start:step:end]` with support for negative index.
+- `other_class ~ class1` returns true of `other_class` conforms to `class1`.
+- You can define class fields, local variables and function inputs as constant. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition.
+- `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64, `1_000_000`
+- `for(x:array1)` or `for(int key,string val:hash1)`.
+- `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]; int[2,2] x;`. We have slicing for arrays `x[start:step:end]` with support for negative index.
 - **String interpolation**: You can embed variables inside a string to be automatically converted to string. If string is surrounded by single quotes it won't be interpolated. You need to use double quote for interpolation to work.
-- **Ternary condition**: `iif(a, b, c) ` is same as `a ? b:c` in other languages.
-- **Hashtable**: `int[String] hash1 = { 'OH': 12, 'CA': 33, ... };`.
-- **import**: Include other packages.
-- **Null operator**: `x ?? 5` will evaluate to 5 if x is `nil`.
-- **assert**: You can use this to check for pre-condition and with `defer` it can be used to check for post-condition. `assert x>0 : 'error message'` will set error upon failure.
-- **Documentation**: Any comment before method or field or first line of the file starting with `///` is special comment to be processed by IDEs and automated tools. 
-- **Call by name**: `myClass.myMember(x: 10, y: 12);`
-- **Literals**: compiler will handle object literals and create corresponding objects (in default arg value, initializations, enum, true, false, ...)
-- **Casting**: `float f; int x = f.int();` this will call `int` method on class `int` to do casting.  
+- `iif(a, b, c) ` (if a, b else c).
+- `int[string] hash1 = { 'OH': 12, 'CA': 33};`.
+- `x ?? 5` will evaluate to 5 if x is `nil`.
+- `assert x>0 : 'error message'`
+- `///` before method or field or first line of the file is special comment to be processed by automated tools. 
+- `myClass.myMember(x: 10, y: 12);`
+- **Literals**: compiler will handle object literals and create corresponding objects (in default arg value, initializations, enum values, true, false, ...).
+- `float f; int x = f.int();` this will call `int` method on class `float` to do casting.  
 - You can write `auto x = myObj.method1;` and type of `x` will be anon-class of type `func<int, int>` (assuming method1 gets int and returns int).
+- `break 2` to break outside 2 nested loops. same for `continue`.
 
 ###Core package
 
@@ -325,56 +331,5 @@ Python uses same approach with a `setup.py` file containing similar data like Pe
 Java without maven has a packaging but not a dependency management system. For dep, you create a `pom.xml` file and describe requirements + their version. 
 C# has dll method which is contains byte-code of the source package. DLL has a version metadata but no dep management. For dep it has NuGet.
 
-#A sample file
-```
-import core.math;
-import m := core.math;
-
-struct
-{
-    int x = 12_000;
-    int y;
-    int z;
-    DataManager;   //this class has anonymous field
-}
-
-//this is an anonymous block, used to initialize the static instance or enforce some compilation checks
-{
-    //static code when this class is instantiated for the first time ever
-    this.z = 19; //init the static instance
-}
-
-int func1(int data=9) 
-{
-    Func<int> anonFunc = (u) -> u+1;
-    this.z = data + anonFunc.apply(u: 6);
-    
-    int x = 1;
-    switch(data)  //switch is for primitives
-    {
-        1: return 1; //if block is just one line, you can omit brces
-        4, 5: { x++; }
-        : { return 0; }  //default
-    }
-    retrun x;
-}
-
-//for single statement, you don't need braces
-int func2(int r) return r+1;
-```
-
-A sample interface:
-```
-struct
-{
-    ParentInterface;
-}
-
-int method1(int x, int y);
-```
-
-#List of conventions
-- Public/Private by using prefix underscore
-- Default static instance
 
     
