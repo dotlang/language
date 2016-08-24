@@ -948,9 +948,7 @@ This is not intuitive.
 
 N - Now that everything is an object, can we add elements to `int[]`? No. Why? they can use `ArrayList` class.
 
-? - What should be the name for empty interface which is implemented by all types?
-
-? - Syntax for throw/catch?
+Y - Syntax for throw/catch?
 `throw 'a'; defer { auto x = catch(); }`
 We can implement all this with a simple stack or storage system. store and retrieve. 
 The only missing piece will be forcing exit. Maybe we need something like `strong return` or `forced exit`.
@@ -1003,3 +1001,99 @@ Also this can be used in `defer` to alter function output.
 `defer(x) if ( x!= nil) x++;` this will be called after return and `x` is mapped to function output.
 
 Y - Omit `() ->` when anon-func does not have input.
+
+Y - Using `>` and `<` to check subclass superclass relationship? Note that type name is a static instance too. But how should we cast? 
+`if (myObj > BaseData)` matches if myObj implements BaseData.
+`if ( myObj < BaseData)` matches if BaseData implements myObj.
+This is not very intuitive but is straightforward.
+And does not resolve the problem of "type casting".
+`if ( BaseData(myObj) != nil ) `  this is same as golang
+`if ( runtime.cast(myObj, BaseData) != nil ) `
+
+Y - Simpler than `iif`
+`x = (x>5 : 1,2)`
+`x = (if x>6 1 else 2)`
+`x = (if x>6 then 1 else 2)`
+`x = x>6 ? 1:2`
+`x = iif(x>6, 1, 2)`
+`x = x>6 && 1 || 2`
+`x = x>6 and 1 or 2`
+should be easy to compose:
+`x = (if x>6 1 else if x<5 4 else 2)`
+`x = (if x>6 1:if x<5 4:2)`  //second if is allowed in else section
+`x = (if x>6 and x < 10 1, if x<5 4, 2)`  
+
+N - What should happen when x is nil and someone refers to `x.data_field`? throw exception or return default value for data_field?
+
+Y - Instead of runtime modes, we can have `throw x` to initiate exception and return and `defer(exc)` to recover.
+`defer(out)` to catch function output, `defer(out, exc)` to do both.
+
+Y - to handle built-in types we can define `struct(n){}` in classes which requests n bytes allocation for `this`, without any data field.
+
+Y - Variadic functions?
+go: `func sum(nums ...int) {`
+c#: `void UseParams(params int[] list)`
+java: `boolean bar(Object... values)`
+
+\* - Channel and go keyword built-in, select. -> core
+channel (read only, write only), buffered or un-buffered: classes in core
+select 
+time can create a channel which will send a signal at time "X"
+maybe we can represent go's select using a special channel, multiplexer, this can support variable number of ch too
+we can call `channel.canRead` or `channel.canWrite` to check for select statement.
+we should be able to create a ticker class whcih will send to a given channel at a specific time.
+```
+select
+{
+    rchannel(a): { }
+    wchannel(b): { }
+    c: {}
+    default: {}
+}
+```
+will run appropriate code when any of choices is ready (rchannel is ready for read, wchannel ready for write)
+or default if none is ready.
+channels are very good candidates for core classes. 
+But we are combining core classes with language syntax. is it good?
+Read http://www.jtolds.com/writing/2016/03/go-channels-are-bad-and-you-should-feel-bad/ to solve some of Go's problems about channels.
+what if we need to do `select` on a variable number of channels?
+select on other data like mutex?
+maybe we can combine for and select to support variable number of channels.
+channels should have dup which enables multiple senders, each closing its own clone and channel will be closed when the last sender closes.
+how should we store read output/write input?
+```
+rchannel r1 = ...;
+rchannel r2 = ...;
+wchannel w1 = ...;
+wchannel w2 = ...;
+rwchannel rw1 = rwchanne.new(r1, r2, w1, w2);
+int d1,d2;
+index = rw1.select({ r1: d1, r2: d2, w2: "A", w2: "B");  //index=0 -> r1 read data into d1, 3=> w2 wrote "B" data
+
+auto mx = mxchannel.new(w1);  //multiplexer channel
+auto c1 = mx.newChannel();
+c1.send("A");  //send "A" to w1 channel
+```
+
+\* - Also we need promise. -> core
+start a co-routine -> `async` (scala), `invoke`, `tasklet`, 
+`task<int> a = async func1(10);
+a.andThen(...);
+a.wait();
+`future<int> result = promise ...`
+`result.wait(); result.andThen();...`
+for future we can use channels. for 'andThen' we can compose/pipeline channels.
+`fn<int> result = promise ...; int x = result();`
+Still there is no need for keyword here.
+`auto x = core.runtime.promise(...);`
+
+Y - remove ternary operator
+
+N - Read https://news.ycombinator.com/item?id=7277797 for reasons erlang is not popular'
+
+N - Let's return default keyword. It will be used in switch and select. 
+
+N - easier map/reduce/filter: -> core
+`arr1.map(x -> x+1)`
+`arr1.reduce(x,y -> x+y)`
+`arr1.filter(x-> x>0);`
