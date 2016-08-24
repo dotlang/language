@@ -1097,3 +1097,31 @@ N - easier map/reduce/filter: -> core
 `arr1.map(x -> x+1)`
 `arr1.reduce(x,y -> x+y)`
 `arr1.filter(x-> x>0);`
+
+Y - Use `else` in switch:
+```
+switch(x)
+{
+    1: return 1; //if block is just one line, you can omit brces
+    2: { return 2; }
+    3: { return 3; }
+    4, 5: x++;
+    else: { return 0; }  //default
+}
+```
+
+N - What should happen when we have `i == j` or `x = y`? suppose all vars are int.
+`==` operator compares values for int.
+for other types, `==` will compare references.
+`=` operator makes a copy (for int)
+for other types, `=` will point both references to the same thing. 
+
+N - Lets have two operators, one for duplication and one for assign reference. Advantage: having uniform behavior
+`x := y` will duplicate value of y
+`x = y` will create a new reference to y
+in smalltalk, assignment never creates a new value. so `x=y` will point x to y.
+It should depend on the class and how it handles `=` operator. for primitives, it will clone and for others it will return reference. We can define `x = y.ref()` so x will point to y. and `x = y.clone()` so x will be a copy.
+but `=` operator may refer to one of these two (duplication of re-reference), depending on the class.
+If you want to be sure about the result, you can use `ref` and `clone`. but these are not standard.
+same for `==`. You can compare `x.ref() == y.ref()` to enforce reference comparison. 
+or `x.equals(y)` to enforce value comparison. `==` will map to one of these. 
