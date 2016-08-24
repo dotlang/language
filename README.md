@@ -36,7 +36,7 @@ Every class has a special instance (static instance), which is created by the co
 
 1. **Conditional**: `if`, `else`, `switch`, `assert`
 2. **Loop**: `for`, `break`, `continue`
-3. **Control**: `return`, `defer`
+3. **Control**: `return`, `defer`, `throw`
 4. **Type handling**: `auto`, `typename`, `const`, `type`, `struct`
 5. **Other**: `import`, `void`
 
@@ -65,11 +65,13 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 *Special syntax*:
 - `->` for anonymous class declaration
 - `=>` for delegation (expose)
-- `()` for casting and defining tuple literals
+- `()` for casting and defining tuple literals and ...
 - `{}` instantiation
 - `:` for hash, loop, assert, call by name, array slice and tuple values
 - `<>` template syntax
 - `:=` for typename default value, type alias and import alias
+- `out`: representing function output in defer
+- `exc`: representing current exception in defer
 
 
 ###The most basic application
@@ -136,6 +138,9 @@ void _() this.y=9;  //initialize code for static instance
 - Value of a variable before initialization is `nil`. You can also return `nil` when you want to indicate invalid state for a variable.
 - When a variable is nil and we call one of it's type's methods, the method will be called normally with nil `this`. If we try to read it's fields, it will crash.
 - If a method has no body, you can still call it and it will return `nil`. You can also call methods on a `nil` variable and as long as methods don't need `this` fields, it's fine.
+- `int f(int x) return x+1;` braces can be eliminated when body is a single statement.
+- You can define struct as `struct(n){}` with `n` parameter and empty body to indicate that struct should have `n` bytes allocated from memory represented as `this`. This is used to implement built-in classes like `int`.
+- **Variadic functions**: `boolean bar(int... values)`
 
 ###Exposoing
 
@@ -218,28 +223,25 @@ Note that `typename` section must come before `struct` section.
 
 - It is advised to return error code in case of an error. 
 - You can use `defer` keyword (same as what golang has) for code that must be executed upon exitting current method.
-- There is a flag `runtime.mode` which can be either `normal` or `deferred`.
-- If defer has an input, it will be mapped to the function output.
-- You can check output of a function in defer (`defer(x) x>0`) to do a post-condition check.
+- If defer has an input named `out`, it will be mapped to the function output.
+- If defer has an input named `exc`, it will be mapped to the current exception. If there is no exception, defer won't be executed. If there are multiple defers with `exc` all of them will be executed.
+- You can check output of a function in defer (`defer(out) out>0`) to do a post-condition check.
 
 ```
 //inside function
-data.setError("ERR"); 
-runtime.mode=deferred; 
-return nil; //after this return, only defer statements will be executed, until app exit or change in runtime mode
+throw "Error!";  //throw exception and exit
 //outside: catching error
-defer { if ( data.hasError() ) runtime.mode = normal; }
-defer { if ( runtime.mode == deferred ) runtime.mode = normal; }
+defer(exc) { ... }
+defer(out, exc) { ... }
 
-defer(x) { if ( x != nil ) x++; }  //manipulate function output
-defer(x) assert x>0;  //post-condition check
+defer(out) { if ( out != nil ) out++; }  //manipulate function output
+defer(out) assert out>0;  //post-condition check
 ```
 
 ###Anonymous class
 
 You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface specifying one or more functions. If the interface has only one method, the definition can be in short form and it is considered a function pointer. There is a general purpose template class `fp` which is used by compiler to set type of anon-class literals if type is to be inferred.
 
-Note that in both short and long form, the code only has read-only access to variables in the parent method (local variables, input arguments and `this`).
 
 ```
 //short form, when interface has only one method
@@ -248,25 +250,27 @@ auto ab = (int x) -> x+y; //type will be fp<int, int>
 auto ab = (x) -> 2*x; //WRONG! input type is not specified which is invalid with auto
 Interface1 intr = (x, y) -> x+y;
 Interface1 intr = (x, y) -> (r1:x+y, r2:x);  //returning a tuple from anon-func
-auto x = (int x) -> x+1;   //compiler will automatically create/find appropriate interface and will init x
+auto x = (int x) -> x+1;   //compiler will automatically map to fn<int, int> interface and will init x
 int t = x(10); //t will be 11. compiler will automatically invoke the only method of the interface.
 Intr6 intr5 = () -> 5; //no input
+Intr6 intr6 = { 5; }; //same as above, first part can be omitted
 Interface2 intr2 = x -> x+1;  //you can omit parantheses if you have only one variable
 Interface1 intr = (x, y) -> { 
     method1();
     method2(x,y);
 };
 
-//name of class functions are read-only references to the implementation. You can use them as 
-//anonymous interfaces
-Intr5 pa = this.method1;  
-//if no interface name is specified, compiler will find appropriate template interface "Function" for it
-auto pp = this.method2;  //called later by: pp(1, 2, 3);
-auto xp = (int x, int y) -> x+y;  //again compiler will find and assign appropriate Fucntion interface
-//for example for above case type of xp will be Function<int, int, int>
+//name of functions are read-only references to the implementation. You can use them as 
+//anonymous interfaces of type fn<>
+Intr5 pa = this.method1;
+//if no interface name is specified, compiler will find appropriate template interface "fn" for it
+auto pp = this.method2;  //can be called later through: pp(1, 2, 3);
+auto xp = (int x, int y) -> x+y;  //again compiler will assign appropriate fn interface
+//for example for above case type of xp will be fn<int, int, int>
 //if returning multiple values, it will be an anonymous struct
+auto xp = (int x, int y) -> return (a:1, b:3); //type of xp will be fn<(int, int), int, int>
 
-//long form
+//long form, full implementation of empty methods of a class
 auto intr = Interface1 
 {
     int function1(int x,int y) 
@@ -287,27 +291,25 @@ auto intr = Interface1
 - Anonymous classes don't have constructor or static instance. Because they don't have names.
 - If anon-function does not have any input and there is only one function (in short-form), you can omit `() ->` part.
 
+###Data structures
+
+- `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]; int[2,2] x;`. We have slicing for arrays `x[start:step:end]` with support for negative index.
+- `int[string] hash1 = { 'OH': 12, 'CA': 33};`.
+- `for(x:array1)` or `for(int key,string val:hash1)`.
+
 ###Misc
 
 - **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage` (For classes in `core` they can use `myClass` notation, like `int` or `fp`).
 - `iclass1(my_obj)` returns `nil` if myObj does not conform to iclass1 or else, result will be casted object.
-- You can define class fields, local variables and function inputs as constant. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition (state will be read-only after being assigned). Initially value will be `nil` and you can only set the data once, after which it cannot be changed.
-- `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64, `1_000_000`
-- `for(x:array1)` or `for(int key,string val:hash1)`.
-- `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]; int[2,2] x;`. We have slicing for arrays `x[start:step:end]` with support for negative index.
-- **String interpolation**: You can embed variables inside a string to be automatically converted to string. If string is surrounded by single quotes it won't be interpolated. You need to use double quote for interpolation to work.
-- `(if a b:c) ` (if a, b else c).
-- `int[string] hash1 = { 'OH': 12, 'CA': 33};`.
+- **const**: You can define class fields, local variables and function inputs as constant. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition (state will be read-only after being assigned). Initially value will be `nil` and you can only set the data once, after which it cannot be changed.
+- **Literlas**: `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64, `1_000_000`
 - `x ?? 5` will evaluate to 5 if x is `nil`.
-- `assert x>0 : 'error message'`
 - `///` before method or field or first line of the file is special comment to be processed by automated tools. 
 - `myClass.myMember(x: 10, y: 12);`
 - **Literals**: compiler will handle object literals and create corresponding objects (in default arg value, initializations, enum values, true, false, ...).
 - `float f; int x = f.int();` this will call `int` method on class `float` to do casting.  
-- You can write `auto x = myObj.method1;` and type of `x` will be anon-class of type `fp<int, int>` (assuming method1 gets int and returns int).
 - `break 2` to break outside 2 nested loops. same for `continue`.
 - `import core.st` or `import aa := core.st` to import with alias.
-- `int f(int x) return x+1;` braces can be eliminated when body is a single statement.
 
 ###Core package
 
