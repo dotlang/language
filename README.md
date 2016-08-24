@@ -345,3 +345,17 @@ Perl has a `MakeFile.PL` where you specify metadata about your package, requirem
 Python uses same approach with a `setup.py` file containing similar data like Perl.
 Java without maven has a packaging but not a dependency management system. For dep, you create a `pom.xml` file and describe requirements + their version. 
 C# has dll method which is contains byte-code of the source package. DLL has a version metadata but no dep management. For dep it has NuGet.
+
+
+#Language Reference ToC
+- Version and history
+- Introduction, memory model
+- Tokens and casing, whitespace, source code encoding, comments, literals
+- General rules (underscore, ...)
+- Classes, methods and fields
+- Packages
+- Keywords + brief explanation
+- Operators and special syntax
+- basic syntax rules + explanations
+- Best practices, packaging, versioning, conventions, naming
+- How to update this spec?
