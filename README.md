@@ -148,11 +148,15 @@ void _() this.y=9;  //initialize code for static instance
 In above example, all public methods/fields of `MetaClass1` and `MetaClass2` will be added to current class and will be delegated to method with same signature in `v1` field.
 - You can use variable type as exposed type so this will expose all public methods and fields of the variable:
 `MyClass c1 => MyClass;` or `MyClass c1 =>;` for shortcut.
-- If a method is empty in `MyClass`, the container class can provide an implementation for it. This will cause calls to the empty method be redirected to the new implementation, even inside `MyClass`.
+- If a method is empty in `MyClass`, the container class can provide an implementation for it. This will cause calls to the empty method be redirected to the new implementation, even inside `MyClass`. For other methods, the parent class can define methods with the same name to hide them.
 
 ###Operators
 
 Classes can override all the valid operators on them. `int` class defines operator `+` and `-` and many others (math, comparison, ...). This is not specific to `int` and any other class can do this. 
+
+- `=` operator makes a variable refer to the same object as another variable. `x=y` and cannot be overriden.
+- `@` operator makes a shallow copy of the object and can be overriden in each class. `int x = @y`
+- `@@` operator makes a deep copy of the object and can be overriden.
 
 ###Anonymous struct (tuple)
 
@@ -301,7 +305,7 @@ auto intr = Interface1
 
 - **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage` (For classes in `core` they can use `myClass` notation, like `int` or `fp`).
 - `iclass1(my_obj)` returns `nil` if myObj does not conform to iclass1 or else, result will be casted object.
-- **const**: You can define class fields, local variables and function inputs as constant. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition (state will be read-only after being assigned). Initially value will be `nil` and you can only set the data once, after which it cannot be changed.
+- **const**: You can define class fields, local variables and function inputs as constant. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition (state will be read-only after being assigned). Initially value will be `nil` and you can only set the data once, after which it cannot be changed or mutated.
 - **Literlas**: `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64, `1_000_000`
 - `x ?? 5` will evaluate to 5 if x is `nil`.
 - `///` before method or field or first line of the file is special comment to be processed by automated tools. 
