@@ -1125,3 +1125,39 @@ but `=` operator may refer to one of these two (duplication of re-reference), de
 If you want to be sure about the result, you can use `ref` and `clone`. but these are not standard.
 same for `==`. You can compare `x.ref() == y.ref()` to enforce reference comparison. 
 or `x.equals(y)` to enforce value comparison. `==` will map to one of these. 
+
+Y - In smalltalk, `x:=y` makes x and y refer to the same object. and this is the only operator you cannot override.
+everything is treated just like a class in Java: references no values. so if a parameter is re-assigned a value, 
+original values are not changed.
+We have `=`. 
+Let's add an operator for `clone` data, unlike `=` which just copies the reference. `:=` is already used! but it is a really good candidate!
+`:=` is currently used for: import ailas, type, typename default
+`import aa := a.b.c; type myt := int; typename T := MetaClass1`
+`import aa -> a.b.c;`
+`import aa ::= a.b.c`
+`import aa :=: a.b.c`
+we can use `=` for these places.
+`i := j; i = int.new(j);`
+we can say `=` will work on references. to work on data, use constructor or methods you have:
+`i = int.new(j); i = j.copy();` but it's good to have an operator for this purpose. 
+It is not needed to be a combination of assignment and clone. we can define `:x` an opertor on x which 
+clones x. so `y = :x` will assign a copy of x to y.
+`y = &x` but this is confusing.
+`y = @x`
+`y = #x`
+`y = $x` confused with perl and bash
+we can have two operators for shallow and deep clone. e.g. @ and @@
+or # and ##.
+
+N - Ruby: frozen objects as an alternatives to `const`.
+for compile time constant, we need them and it's ok. what about immutable data?
+class fields
+function argument
+local variable
+if we define a variable as const, can we assign it to a new object? can we mutate the object it is pointing to?
+`const float PI = 3.14` if we can mutate reference the value of PI can be changed!
+1) let people change PI and mutate consts, but don't let re-assign -> needs runtime checking
+2) const means no re-assign and no mutation -> can be checked at compile time
+but we cannot enforce no mutation on an object through compiler.
+
+N - Future operators: Serialization/Deser (`string s = $obj1; x = #s`). 
