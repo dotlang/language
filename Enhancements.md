@@ -1161,3 +1161,85 @@ if we define a variable as const, can we assign it to a new object? can we mutat
 but we cannot enforce no mutation on an object through compiler.
 
 N - Future operators: Serialization/Deser (`string s = $obj1; x = #s`). 
+
+? - Can we remove `const`?
+Maybe use something for compile-time constants and a more OOP style for constant and immutable.
+What about assignability? can we assign non-const var to const obj.
+can we pass const for template arg? for type declaration? 
+what happens if we pass `int x` to `void f(const int a)`?  obviously, reverse is not possible.
+we need immutability for keys of hash-table.
+solution1: mark class as immutable
+solution2: mark object as immutable using a method
+
+? - `type myt := (const int x, const float f);`
+There are two types of immutability: variables based (define var type as const) which is immutable variable, class based (define class methods in a way that it's state won't change, like string or int) or immutable class. 
+immutable reference is not useful for us.
+if hash wants its keys to be immutable, it has to handle that. Store a copy and don't give it out.
+mutable variable is not strong because we can have another reference which is not mutable. so its not guaranteed.
+immutable can mean no change after constructor. but compiler doesn't know anything about constructor.
+maybe we want a collection to be immutable in one case and mut in another.
+if we want to define `int` immutable, how is `++` going to be implemented? no. we are not going to do that.
+we need two things: constant values (object literals), and immutable classes (don't support change in state).
+to support variables which cannot be re-assigned we can add some flag to the class, set it to true and `op_assign` will fail if it is called. Something like `bool can_be_reassigned`.
+maybe we should rely on developer to write the class in immutable way.
+const: in field decl means compile time const, in local var means only one assignment which calls constructor. in function input, means?
+Lets remove `const` for local arguments. Use another keyword (and outside `struct` for compile time const, like type).
+what about function input? we want to tell outside world: "I promise I won't change value of this argument. Of course it cannot re-assign the input, so change means change in the state of the object".
+we can have permanent immutability (defined by the developer in the way he writes the class), and temporary immutability which is enabled/disabled at runtime. so if some class is not imm but we want to share it between threads, we can create and configure it and then make it imm. 
+so we need to do two things: 1) a keyword to define constants outside struct 2) a facility/flag/method to make an object imm/mut at runtime. we can define an operator like `@x` which creates a read-only copy of x. in this way, there is no need to undo the read-only making. this is a deep read-only. we can replace operator with a method too and do not provide un-freeze method. user can clone the object if he is interested in reverting the action. but operator is more readable and findable. 
+if you want others not being able to modify your object, give them a copy! but this is not good for performance or memory if you have lots of functions or threads.
+its good to have something to make object read-only in-place so we can mark one part of an object read-only. when something is marked as read-only it cannot be re-assigned or changed. same for it's components.
+`obj1.part1.make_read_only();obj1.part1.make_read_write();`
+but this is a lot of work for runtime!
+maybe a guarantee of not being able to re-assign it is enough.
+solution: write your classes imm. share only imm classes with others.
+function  are ok with re-assigning. they cannot re-assign input.
+local var: it's local so developer can handle them.
+class fields: they can be re-assigned by outer world too (if they are public). we can say, in struct `const` members can be assigned only once (if they are already nil). other than that, everything is handled by the developer. 
+so we will have `const` to define object literals and struct members which can only be assigned once. deeper than this, it should be handled by the developer by defining appropriate methods.
+What about object literals? we have two options:
+1) object literals `const int x = 12` cannot be re-assigned but can be mutated (`x++`) -> same as other consts.
+2) they cannot be mutated in any-way.
+option one is easier to implement but 2 is better in terms of possible performance gain and code readability and optimizations. But if type of the variable is immutable, then first option and second one will be the same.
+can we define something like `const myclass a = ...`, myclass being mutable and later want to change it? it is allowed (we are orth with min exception) but if you want to disallow it, use an imm type here. 
+but there are places where we want to use mut object as imm -> this happens only for primitives, we will handle this by runtime and core.
+we can guarantee to disable re-assignment with little performance loss. but for being read-only it is hard specially at runtime. `const int x =11;x++` should throw error. ok.
+do we won't expose any state mutating method in primitives. `x++` will re-assign which will fire errors, but what if we don't want const and have `int i` and want to increase it's value? `x++` will be translated to `x=x+1` by compiler which re-assigns value of `i` to the new value without any problem. but `const int i=6` and `i++` will throw error.
+according to compiler `lvalue = rvalue` will throw error if type of `lvalue` is const.
+can we replace `const` with objects? for non-primitive, we can define a class which throws error on `op_assign`. for primitives, the same. but this will be a new type and combining it with normal `int` may cause problems. `cint x = 12` is constant int. `int y = x+11`? no. we need same type/class be able to be defined normal or const. 
+const -> `op_assign` won't work. but its not enough/good to remove/disable this method. we need some declarative mechanism to make code readable. 
+still we have this problem: `const float PI = 3.14; PI++`. 
+one solution: classes can provide a method to disable change in the state. they will be responsible to enforce this check.
+so: `const float PI = 3.14; PI.freeze(); PI++` last statement will cause runtime exception. ok.
+and for `const myclass m = ...; m.update(1,2);` we are updating a const but its ok because const is not supposed to prevent this. for primitives: `const int x =12; x++` will throw error.
+```
+type myt := (const int x, const float f);
+myt a = (x:1, f:1.1);
+a.x++; //throws error
+```
+we can achieve `const` result by classes and add `.int` method for type conversion. and have compiler automatically call this in case needed. `cint x = 12; x++` throws runtime exception, because `cint` class checks state in `op_assign`. By this way we can implement full read-only classes too.
+`type myt := (cint x, cfloat f);`
+
+Y - remove oeprator for deep clone. Lets have method for that.
+
+Y - `@` for clone is not intuitive. maybe we can even remove it. Its only needed for primitives.
+but thins like this wont work it we remove this:
+```
+for(int i=0;i<n;i++) for(int j=i;j<n;j++) { ...}
+```
+any ++ on j will update i too! using `@` makes code pulloted.
+maybe we can define default behavior for `=` as reference assignment and let classes override this.
+so `int` class will have `op_assign` to duplicate the other value. 
+what if we want to duplicate a big class? add your methods for that.
+what if we want to reference assign an `int`? add method? `void ref_assign(int x) { this = x; }` maybe. but this 
+should call `op_assign` which will duplicate vlue of `x`!
+`x = y` will call `op_assign` operator on x which is supposed to duplicate (assume all are int).
+or we can provide a core method for that:
+`void construct_by_another_ref(int obj) { return core.reref(obj); }`
+`int z = int.construct_by_another_ref(x);`
+solution: if you want to assign reference, create another holder class. 
+`MyClass x = MyClass.new(i);`
+So both ref and clone are possible for all classes. But default behavior for `=` is determined by the class.
+
+N - We can remove `{}` operator and replace it with anonym struct assignment. But `{}` does have a special meaning (memory allocation) which `()` does not.
+
