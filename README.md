@@ -65,7 +65,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 *Special syntax*:
 - `->` for anonymous class declaration
 - `=>` for delegation (expose)
-- `()` for casting and defining tuple literals and ...
+- `()` for casting and defining tuple literals and function call
 - `{}` instantiation
 - `:` for hash, loop, assert, call by name, array slice and tuple values
 - `<>` template syntax
@@ -134,7 +134,7 @@ void _() this.y=9;  //initialize code for static instance
 - The private unnamed method is called by runtime service when static instance of the class is created and is optional.
 - You can not have methods with the same name in a single class.
 - There is no default value for method arguments. If some parameter is not passed, it's value will be `nil`.
-- When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`).
+- When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`). `this` is a const variable so you cannot re-assign it.
 - Value of a variable before initialization is `nil`. You can also return `nil` when you want to indicate invalid state for a variable.
 - When a variable is nil and we call one of it's type's methods, the method will be called normally with nil `this`. If we try to read it's fields, it will crash.
 - If a method has no body, you can still call it and it will return `nil`. You can also call methods on a `nil` variable and as long as methods don't need `this` fields, it's fine.
@@ -154,9 +154,7 @@ In above example, all public methods/fields of `MetaClass1` and `MetaClass2` wil
 
 Classes can override all the valid operators on them. `int` class defines operator `+` and `-` and many others (math, comparison, ...). This is not specific to `int` and any other class can do this. 
 
-- `=` operator makes a variable refer to the same object as another variable. `x=y` and cannot be overriden.
-- `@` operator makes a shallow copy of the object and can be overriden in each class. `int x = @y`
-- `@@` operator makes a deep copy of the object and can be overriden.
+- `=` operator, by default makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. You can override this behavior by adding `op_assign` method to your class and clone the data. This is done for primitives like `int` so `int x=y` will duplicate value of y into x. If you need original behavior of `=` you have to embed those variables in holder classes which use default `=` behavior. On the other hand, if you need duplication for classes which do ref-assignment by default, you will need to do it manually in one of methods (like `clone` and call `MyClass x = y.clone()`).
 
 ###Anonymous struct (tuple)
 
@@ -305,13 +303,13 @@ auto intr = Interface1
 
 - **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage` (For classes in `core` they can use `myClass` notation, like `int` or `fp`).
 - `iclass1(my_obj)` returns `nil` if myObj does not conform to iclass1 or else, result will be casted object.
-- **const**: You can define class fields, local variables and function inputs as constant. If value of a const variable is compile time calculatable, it will be used, else it will be an immutable type definition (state will be read-only after being assigned). Initially value will be `nil` and you can only set the data once, after which it cannot be changed or mutated.
+- **const**: You can define class fields as constant. If value of a const variable is compile time calculatable, it will be used, else it can only be assigned once, after which it cannot be re-assigned. But it may still be available for state modifications through it's class members. If you need really read-only classes, you have to implement the logic in your code and possibly provide a `make_read_only` method to the outside world.
 - **Literlas**: `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64, `1_000_000`
 - `x ?? 5` will evaluate to 5 if x is `nil`.
 - `///` before method or field or first line of the file is special comment to be processed by automated tools. 
 - `myClass.myMember(x: 10, y: 12);`
 - **Literals**: compiler will handle object literals and create corresponding objects (in default arg value, initializations, enum values, true, false, ...).
-- `float f; int x = f.int();` this will call `int` method on class `float` to do casting.  
+- `float f; int x = f.int();` this will call `int` method on class `float` to do casting. This can be called automatically by compiler if needed.
 - `break 2` to break outside 2 nested loops. same for `continue`.
 - `import core.st` or `import aa := core.st` to import with alias.
 
