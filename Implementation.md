@@ -13,3 +13,4 @@
 - Compiler should be able to get heap size needed to create instances of any class, and offset of each of their members.
 - Also compiler should know name and index of parameters of all methods. So when call by parameter name is used, it can translate the code to a normal call.
 - Rutime system should keep track of type of each reference. Because only at runtime we know to which method should `obj.method1` be resolved (if `obj` is of interface type). 
+- All method calls can be mapped at implementations at compile time except empty methods. These are like virtual methods in C++ and will be dispatched at runtime. For example we may have an interface `A` and a method like `int func(A data)` which calls some methods on `data` argument. These method calls cannot be determined at compile time. They will be mapped at runtime. So at runtime we have to maintain a table (per variable) of function name and pointers which determine which method to call.
