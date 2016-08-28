@@ -1162,7 +1162,30 @@ but we cannot enforce no mutation on an object through compiler.
 
 N - Future operators: Serialization/Deser (`string s = $obj1; x = #s`). 
 
-? - Can we remove `const`?
+Y - remove oeprator for deep clone. Lets have method for that.
+
+Y - `@` for clone is not intuitive. maybe we can even remove it. Its only needed for primitives.
+but things like this wont work if we remove this:
+```
+for(int i=0;i<n;i++) for(int j=i;j<n;j++) { ...}
+```
+any ++ on j will update i too! using `@` makes code pulloted.
+maybe we can define default behavior for `=` as reference assignment and let classes override this.
+so `int` class will have `op_assign` to duplicate the other value. 
+what if we want to duplicate a big class? add your methods for that.
+what if we want to reference assign an `int`? add method? `void ref_assign(int x) { this = x; }` maybe. but this 
+should call `op_assign` which will duplicate vlue of `x`!
+`x = y` will call `op_assign` operator on x which is supposed to duplicate (assume all are int).
+or we can provide a core method for that:
+`void construct_by_another_ref(int obj) { return core.reref(obj); }`
+`int z = int.construct_by_another_ref(x);`
+solution: if you want to assign reference, create another holder class. 
+`MyClass x = MyClass.new(i);`
+So both ref and clone are possible for all classes. But default behavior for `=` is determined by the class.
+
+N - We can remove `{}` operator and replace it with anonym struct assignment. But `{}` does have a special meaning (memory allocation) which `()` does not.
+
+Y - Can we remove `const`?
 Maybe use something for compile-time constants and a more OOP style for constant and immutable.
 What about assignability? can we assign non-const var to const obj.
 can we pass const for template arg? for type declaration? 
@@ -1171,7 +1194,7 @@ we need immutability for keys of hash-table.
 solution1: mark class as immutable
 solution2: mark object as immutable using a method
 
-? - `type myt := (const int x, const float f);`
+Y - `type myt := (const int x, const float f);`
 There are two types of immutability: variables based (define var type as const) which is immutable variable, class based (define class methods in a way that it's state won't change, like string or int) or immutable class. 
 immutable reference is not useful for us.
 if hash wants its keys to be immutable, it has to handle that. Store a copy and don't give it out.
@@ -1219,27 +1242,38 @@ a.x++; //throws error
 ```
 we can achieve `const` result by classes and add `.int` method for type conversion. and have compiler automatically call this in case needed. `cint x = 12; x++` throws runtime exception, because `cint` class checks state in `op_assign`. By this way we can implement full read-only classes too.
 `type myt := (cint x, cfloat f);`
+what if some function expects `int` and we pass `cint`?
+`void f(cint x){} ... int a=12; f(a);` compiler will call cint.int(a) to create a new instance of cint using `a`.
+`void f(int x){} ... cint a=12; f(a);`
+MyClass.int() will convert an instance of MyClass to int. `MyClass MyClass.int(int x)` will create a new instance of MyClass based on int x. but this makes things more confusing.
+there are 3 ways to provide const: 
+1) a different class (int vs. cint)
+2) same class with suffix (int vs. int&)
+3) same class without suffix, only internal flags (int.make_const)
+we want this to be compile-time check. for run-time checks, everything is to be done by the developer.
+`const int g; g=1;` how is compiler supposed to know this assignment is the only one?
+I think we cannot force this at compile time because we are allowing almost everything.
+One solution: Using `{}` to set value for const members. so, const members cannot be assigned unless in `{}`.
 
-Y - remove oeprator for deep clone. Lets have method for that.
+Y - `const` and immutability: summary of findings
+there only two possible places where we can enforce const at compile-time: upon definition and using `{}` operator.
+we can also define `int` and `cint` for mut and immut variance. or `int` and `int&`. and do the casting automatically by compiler but it will have an overhead. does that make sense to cast const to non-const?
+one solution for imm problem: pass copies of the object to others -> memory overhead if we have thousands of threads.
+const variable: cannot be re-assigned -> ?
+const class: state cannot be changed -> up to developer, we don't have anything
+also we have object literals.
+we can define `cint` which can accept an int and does not provide mutations or `op_assign`. we cannot cast `cint` to `int` automatically. 
+for object literal we can say, `int x = 12` means x will never change, so no keyword will be needed to define an object literal.
+Proposal: Any assignment in `struct` section, is either 1) object literal or 2) value.
+for 1, compiler will assign rvalue to lvalue and no other `=` will be allowed. 
+for 2, `op_assign` won't be called, the rvalue will be copied into lvalue upon instantiation and no assignment will be allowed by compiler. (const by nature).
+so basically, 1 and 2 are the same. 
+if you need to make some variable const (un-re-assignable) but cannot instantiate it on `struct` section (maybe you need some data to be passed to it), compiler/language cannot help you. 
 
-Y - `@` for clone is not intuitive. maybe we can even remove it. Its only needed for primitives.
-but thins like this wont work it we remove this:
-```
-for(int i=0;i<n;i++) for(int j=i;j<n;j++) { ...}
-```
-any ++ on j will update i too! using `@` makes code pulloted.
-maybe we can define default behavior for `=` as reference assignment and let classes override this.
-so `int` class will have `op_assign` to duplicate the other value. 
-what if we want to duplicate a big class? add your methods for that.
-what if we want to reference assign an `int`? add method? `void ref_assign(int x) { this = x; }` maybe. but this 
-should call `op_assign` which will duplicate vlue of `x`!
-`x = y` will call `op_assign` operator on x which is supposed to duplicate (assume all are int).
-or we can provide a core method for that:
-`void construct_by_another_ref(int obj) { return core.reref(obj); }`
-`int z = int.construct_by_another_ref(x);`
-solution: if you want to assign reference, create another holder class. 
-`MyClass x = MyClass.new(i);`
-So both ref and clone are possible for all classes. But default behavior for `=` is determined by the class.
+N - How data casting is handled? for example when we have `float f = int_var;`
+list the methods that compiler calls for casting and their priority.
+first compiler tries to convert rvalue to lvalue by calling `float int_var.float()` method.
+if method does not exist, tries `float float.int(int_var)`
 
-N - We can remove `{}` operator and replace it with anonym struct assignment. But `{}` does have a special meaning (memory allocation) which `()` does not.
-
+N - Can we introduce zero cost type casting where no data casting is involved? it is dangerous.
+and its not much needed.
