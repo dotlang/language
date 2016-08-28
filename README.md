@@ -37,7 +37,7 @@ Every class has a special instance (static instance), which is created by the co
 1. **Conditional**: `if`, `else`, `switch`, `assert`
 2. **Loop**: `for`, `break`, `continue`
 3. **Control**: `return`, `defer`, `throw`
-4. **Type handling**: `auto`, `typename`, `const`, `type`, `struct`
+4. **Type handling**: `auto`, `typename`, `type`, `struct`
 5. **Other**: `import`, `void`
 
 These are not keywords but have special meaning:
@@ -45,7 +45,7 @@ These are not keywords but have special meaning:
 
 Usage of most these keywords is almost same as C++ or Java, so I omit explanation for most of them in detail.
 
-### Primitive data types
+### Primitive data classes
 
 - **Integer data types**: `char`, `short`, `int`, `long`
 - **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
@@ -118,7 +118,7 @@ Each class's instances can be referenced using instance notation (`varName.membe
 ```
 struct 
 {
-    const int _x = 12;  //private
+    int _x = 12;  //private const, is not re-assignable
     int y;
     int h = 12;
 }
@@ -134,7 +134,7 @@ void _() this.y=9;  //initialize code for static instance
 - The private unnamed method is called by runtime service when static instance of the class is created and is optional.
 - You can not have methods with the same name in a single class.
 - There is no default value for method arguments. If some parameter is not passed, it's value will be `nil`.
-- When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`). `this` is a const variable so you cannot re-assign it.
+- When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`). `this` is not re-assignable variable so you cannot re-assign it.
 - Value of a variable before initialization is `nil`. You can also return `nil` when you want to indicate invalid state for a variable.
 - When a variable is nil and we call one of it's type's methods, the method will be called normally with nil `this`. If we try to read it's fields, it will crash.
 - If a method has no body, you can still call it and it will return `nil`. You can also call methods on a `nil` variable and as long as methods don't need `this` fields, it's fine.
@@ -180,16 +180,15 @@ int f((int x, float f) input) ... //passing tuple to function
 int x = f((x:1, f:1.1)); //calling above function
 ```
 
-Tuples are automatically converted to classes by compiler. So they are basically classes but only have a struct section with all-public fields and no methods. 
+Tuples are automatically converted to classes by compiler. So they are basically classes but only have a struct section (without any assignment) with all-public fields and no methods. 
 
 ###Type aliasing
 
 You can use `type` to define type alias:
 ```
 type point := int[];
-type x := const int;
-x a;  //=const int a;
-const x a; //=const int a, you cannot apply const more than once
+type x := int;
+x a;  //=int a;
 ```
 To use a type from outside the defining class:
 ```
@@ -303,7 +302,7 @@ auto intr = Interface1
 
 - **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage` (For classes in `core` they can use `myClass` notation, like `int` or `fp`).
 - `iclass1(my_obj)` returns `nil` if myObj does not conform to iclass1 or else, result will be casted object.
-- **const**: You can define class fields as constant. If value of a const variable is compile time calculatable, it will be used, else it can only be assigned once, after which it cannot be re-assigned. But it may still be available for state modifications through it's class members. If you need really read-only classes, you have to implement the logic in your code and possibly provide a `make_read_only` method to the outside world.
+- **const**: Class fields which are assigned a value inside `struct` section are constant (compiler handles assignment without invoking the code for assignment operator) and cannot be re-assigned later. Note that, they still can be mutated if they provide appropriate methods. If you need fully immutable classes, you have to implement the logic in your code.
 - **Literlas**: `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64, `1_000_000`
 - `x ?? 5` will evaluate to 5 if x is `nil`.
 - `///` before method or field or first line of the file is special comment to be processed by automated tools. 
