@@ -145,7 +145,7 @@ void _() this.y=9;  //initialize code for static instance
 ###Exposoing
 
 - You can use `=>` notation when defining a variable to denote it will handle a set of method call/fields. This set is specified by one or more classes: `MyClass v1 => MetaClass1, MetaClass2;`  
-In above example, all public methods/fields of `MetaClass1` and `MetaClass2` will be added to current class and will be delegated to method with same signature in `v1` field.
+In above example, all public methods/fields of `MetaClass1` and `MetaClass2` will be added to current class and will be delegated to method with same signature in `v1` field. It is assumed that `MyClass` conforms to `MetaClass1` and `MetaClass2`.
 - You can use variable type as exposed type so this will expose all public methods and fields of the variable:
 `MyClass c1 => MyClass;` or `MyClass c1 =>;` for shortcut.
 - If a method is empty in `MyClass`, the container class can provide an implementation for it. This will cause calls to the empty method be redirected to the new implementation, even inside `MyClass`. For other methods, the parent class can define methods with the same name to hide them.
