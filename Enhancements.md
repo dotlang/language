@@ -1277,3 +1277,5 @@ if method does not exist, tries `float float.int(int_var)`
 
 N - Can we introduce zero cost type casting where no data casting is involved? it is dangerous.
 and its not much needed.
+
+? - Make composing easier by introducing some syntax like: `compose MetaClass1;` which adds a variable with the same name and exposes all public methods. and can be customized by adding interfaces. 
