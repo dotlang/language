@@ -1333,7 +1333,7 @@ also name is irrelevant. because there is only one expose per type. if we expose
 can we use convention here? no.
 this should come before struct section, after type section.
 
-? - How do we new anon class? `auto x = MetaClass { ... }`? Compiler is supposed to not know anything about this.
+N - How do we new anon class? `auto x = MetaClass { ... }`? Compiler is supposed to not know anything about this.
 If type is interface (no data), we don't need to instantiate anything.
 but if type is abstract class,
 
@@ -1341,6 +1341,16 @@ N - closure read-only access: clarify
 
 N - note that static instance is not re-assignable same for `this`.
 
-? - How can we define a stack to store arrays of all types? 
+N - How can we define a stack to store arrays of all types? 
 java: `void push(Array<?> x) { ... }`
 java: `void push(Array<? extends IEnumerable> x) { ... }`
+Not possible unless all of them have a common interface which can be used. 
+
+N - So we can call `obj.method1.apply()` same as `obj.method1()`. because `obj.method1` is of type interface.
+
+? - We can also have traits where all code of another class is coppies to the current class. 
+like `include MyClass;`
+or `mixin MyClass;`
+what about constructor? it will be copied too. so either mixin should have no ctor or the parent class cannot have ctor.
+
+? - If we have many methods with the same name in a class definition and only one of them has a body, its fine.
