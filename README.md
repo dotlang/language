@@ -106,12 +106,12 @@ In the above examples `core.sys, core.net, core.net.http, core.net.tcp` are all 
 Each source code file represents one class and has two important parts: `struct` part where fields are defined, and method definition.
 Writing body for methods is optional (but of course if a body-less method is called, nothing will happen and an empty response will be received). Classes with no method body are same as interfaces in other languages but in Electron we don't have the concept of interface.
 
-Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be created upon first usage in the code. 
+Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be created upon first usage in the code and is not re-assignable.  
 
 *Notes:*
 - There is no inheritance. Composition is used instead.
 - If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is public.
-- The order of the contents of source code file matters: First `import` section, `typename`s, `type`s, then `struct` and finally methods. 
+- The order of the contents of source code file matters: First `import` section, `typename`s, `type`s, `expose` then `struct` and finally methods. 
 
 ###Class members
 
@@ -144,11 +144,10 @@ void _() this.y=9;  //initialize code for static instance
 
 ###Exposoing
 
-- You can use `=>` notation when defining a variable to denote it will handle a set of method call/fields. This set is specified by one or more classes: `MyClass v1 => MetaClass1, MetaClass2;`  
-In above example, all public methods/fields of `MetaClass1` and `MetaClass2` will be added to current class and will be delegated to method with same signature in `v1` field. It is assumed that `MyClass` conforms to `MetaClass1` and `MetaClass2`.
-- You can use exposed type same as variable type, so this will expose all public methods and fields of the variable:
-`MyClass c1 => MyClass;` or `MyClass c1 =>;` for shortcut.
-- If a method is empty in `MyClass`, the container class can provide an implementation for it. This will cause calls to the empty method be redirected to the new implementation, even inside `MyClass`. For other methods, the parent class can define methods with the same name to hide them.
+- You can write `expose MyClass;` before struct section and after type section so that the current class will expose all public fields and functions of MyClass and route them to a member variable named `MyClass`. You can customize the name by `expose MMC := MyClass;`
+- You can remove an exposed method by adding same method without body.
+- You can rename an exposed method by removing it and adding your own method.
+- If a method is empty in `MyClass`, the container class can provide an implementation for it. This will cause calls to the empty method be redirected to the new implementation, even inside `MyClass` instance variable. For other methods, the parent class can define methods with the same name to hide them.
 
 ###Operators
 
@@ -286,7 +285,7 @@ auto intr = Interface1
 };
 ```
 
-*Closure*: All anonymous function and classes, have a `this` which will point to a read-only set of local variables in the enclosing method (including input arguments and `this` as the container class).
+*Closure*: All anonymous function and classes, have a `this` which will point to a read-only (not re-assignable) set of local variables in the enclosing method (including input arguments and `this` as the container class).
 
 - As a short-cut provided by compiler, if the anonymous-class `x` has only one method, `x()` will call the only method of that class. You don't need to write the full syntax: `x.only_method()`.
 - Anonymous classes don't have constructor or static instance. Because they don't have names.
@@ -308,7 +307,7 @@ auto intr = Interface1
 - `///` before method or field or first line of the file is special comment to be processed by automated tools. 
 - `myClass.myMember(x: 10, y: 12);`
 - **Literals**: compiler will handle object literals and create corresponding objects (in default arg value, initializations, enum values, true, false, ...).
-- `float f; int x = f.int();` this will call `int` method on class `float` to do casting. This can be called automatically by compiler if needed.
+- `float f; int x = f.int();` this will call `int` method on class `float` to do casting. This can be called automatically by compiler if needed. For template types (like array or hash), you should name the function according to full-name not short-name (`Array<char>` instead of `char[]`).
 - `break 2` to break outside 2 nested loops. same for `continue`.
 - `import core.st` or `import aa := core.st` to import with alias.
 
