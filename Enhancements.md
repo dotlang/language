@@ -1278,4 +1278,69 @@ if method does not exist, tries `float float.int(int_var)`
 N - Can we introduce zero cost type casting where no data casting is involved? it is dangerous.
 and its not much needed.
 
-? - Make composing easier by introducing some syntax like: `compose MetaClass1;` which adds a variable with the same name and exposes all public methods. and can be customized by adding interfaces. 
+
+N - We can even outsource `if` statement to core but there should be a trade-off.
+
+Y - we can define `int` method for type conversion. what about converting to array? What if I want to convert string to `char[]`? what about template classes?
+`char[] Array<char>() { ... }`
+
+Y - Make composing easier by introducing some syntax like: `compose MetaClass1;` which adds a variable with the same name and exposes all public methods. and can be customized by adding interfaces. 
+`MyClass v1 => MetaClass1, MetaClass2;`  
+one solution: define a new section like `expose`.
+```
+struct {
+    int x;
+    float f;
+    MyClass c exposed;
+}
+
+expose MyClass => MetaClass1, Meta2;
+expose MyClass2;  //expose all public members
+expose {
+}
+```
+what about doing vtable works in a user-written method?
+`this.extend(this.var1)`
+`* => this.var1.* [MetaClass1]`
+expose fields and functions separately.
+think about a class which wants to extend `int`.
+expose has two parts: data and methods. why not have them separated? 1) define member var 2) expose fields 3) expose methods. if we define it inside struct, it does not make sense to define methods there.
+`:=` notation?
+outside struct -> what about fields?
+inside struct -> what about methods?
+so maybe we need a separate section
+what is purpose of struct? define fields of the class
+what is the purpose of next section? provide method signature + bodies.
+now we want to add a bunch/batch of methods and fields to the class.
+`promote(MetaClass1(this.var1));`
+```
+struct { ... }
+promote { var1 => MetaClass1; }
+```
+if user wants to filer/map exposed methods, he should do everything manually. We will support only basic expose which applies on all public members. `MyClass x;`?
+what if we want to expose only methods or only fields?
+let's have a two part definition: in struct we "can" expose fields. in outer, we "can" expose methods.
+but this makes things more complex. exposing methods without fields, as a default behavior is not orth.
+what if object methods were writeable and we could add to the collection? like `this.methods.addAll(this.var1.methods);`
+`methods` acts like a hash-map. no! this will introduce a lot of complexities.
+we can delete an exposed method by adding same method without body.
+we can rename an exposed method by deleting it and writing our own method.
+so we will expose all methods. user can remove/rename them.
+also name is irrelevant. because there is only one expose per type. if we expose two fields of the same type there will be a lot of conflicts (we cannot define methods with the same name). so we can assume, field name is same as type name.
+`this.MyClass = MyClass.new();`
+`expose MyClass;` will add public fields to struct section and methods to method section.
+`expose MM := MyClass;`
+can we use convention here? no.
+this should come before struct section, after type section.
+
+? - How do we new anon class? `auto x = MetaClass { ... }`? Compiler is supposed to not know anything about this.
+If type is interface (no data), we don't need to instantiate anything.
+but if type is abstract class,
+
+N - closure read-only access: clarify
+
+N - note that static instance is not re-assignable same for `this`.
+
+? - How can we define a stack to store arrays of all types? 
+java: `void push(Array<?> x) { ... }`
+java: `void push(Array<? extends IEnumerable> x) { ... }`
