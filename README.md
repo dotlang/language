@@ -38,7 +38,7 @@ Every class has a special instance (static instance), which is created by the co
 2. **Loop**: `for`, `break`, `continue`
 3. **Control**: `return`, `defer`, `throw`
 4. **Type handling**: `auto`, `typename`, `type`, `struct`
-5. **Other**: `import`, `void`
+5. **Other**: `import`, `void`, `expose`
 
 These are not keywords but have special meaning:
 `this`, `true`, `false`, `nil`
@@ -64,7 +64,6 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 
 *Special syntax*:
 - `->` for anonymous class declaration
-- `=>` for delegation (expose)
 - `()` for casting and defining tuple literals and function call
 - `{}` instantiation
 - `:` for hash, loop, assert, call by name, array slice and tuple values
@@ -144,10 +143,11 @@ void _() this.y=9;  //initialize code for static instance
 
 ###Exposoing
 
-- You can write `expose MyClass;` before struct section and after type section so that the current class will expose all public fields and functions of MyClass and route them to a member variable named `MyClass`. You can customize the name by `expose MMC := MyClass;`
+- You can write `expose MyClass;` before struct section and after type section so that the current class will expose all public fields and functions of MyClass and route them to a member variable named `MyClass`. 
 - You can remove an exposed method by adding same method without body.
 - You can rename an exposed method by removing it and adding your own method.
 - If a method is empty in `MyClass`, the container class can provide an implementation for it. This will cause calls to the empty method be redirected to the new implementation, even inside `MyClass` instance variable. For other methods, the parent class can define methods with the same name to hide them.
+- Compiler will give error if there will be conflicts in exposed methods (e.g. methods with same name).
 
 ###Operators
 
@@ -240,20 +240,19 @@ defer(out) assert out>0;  //post-condition check
 
 ###Anonymous class
 
-You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface specifying one or more functions. If the interface has only one method, the definition can be in short form and it is considered a function pointer. There is a general purpose template class `fp` which is used by compiler to set type of anon-class literals if type is to be inferred.
-
+You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface specifying one or more functions without any field. If the interface has only one method, the definition can be in short form and it is basically a function pointer. There is a general purpose template class `fn` which is used by compiler to set type of anon-class literals if type is to be inferred.
 
 ```
 //short form, when interface has only one method
 Interface1 intr = (int x, int y) -> x+y;  //specifying type for input is optional
-auto ab = (int x) -> x+y; //type will be fp<int, int>
-auto ab = (x) -> 2*x; //WRONG! input type is not specified which is invalid with auto
+auto ab = (int x) -> x+y; //type will be fn<int, int>
+auto ab = (x) -> 2*x; //WRONG! input type cannot be inferred
 Interface1 intr = (x, y) -> x+y;
 Interface1 intr = (x, y) -> (r1:x+y, r2:x);  //returning a tuple from anon-func
 auto x = (int x) -> x+1;   //compiler will automatically map to fn<int, int> interface and will init x
 int t = x(10); //t will be 11. compiler will automatically invoke the only method of the interface.
 Intr6 intr5 = () -> 5; //no input
-Intr6 intr6 = { 5; }; //same as above, first part can be omitted
+Intr6 intr6 = { return 5; }; //same as above, first part can be omitted
 Interface2 intr2 = x -> x+1;  //you can omit parantheses if you have only one variable
 Interface1 intr = (x, y) -> { 
     method1();
@@ -288,7 +287,7 @@ auto intr = Interface1
 *Closure*: All anonymous function and classes, have a `this` which will point to a read-only (not re-assignable) set of local variables in the enclosing method (including input arguments and `this` as the container class).
 
 - As a short-cut provided by compiler, if the anonymous-class `x` has only one method, `x()` will call the only method of that class. You don't need to write the full syntax: `x.only_method()`.
-- Anonymous classes don't have constructor or static instance. Because they don't have names.
+- Anonymous classes don't have constructor, fields or static instance. Because they don't have names.
 - If anon-function does not have any input and there is only one function (in short-form), you can omit `() ->` part.
 
 ###Data structures
