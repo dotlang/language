@@ -1467,3 +1467,11 @@ Y - `??` shorter operator.
 `y = x .. 5`
 `y = x <- 5`
 `y = x <- 5`
+
+N - Enum and template, type alias, casting, null, tuple, ...?
+`type DoW := int (SAT=0, SUN=1, ...);`
+template: enum can be used for typenames
+type alias: enum is defined using type alias.
+casting: `int x = @int(dow_var);`
+null: they are of type `int` so they can accept `@int` value.
+tuple: enums can specify type for fields of a tuple.
