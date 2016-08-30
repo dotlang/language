@@ -1430,4 +1430,40 @@ advantage of `()` notation is that you can easily concat it to a method casll: `
 
 N - can we embed and implement methods for the static instance? NO. `expose` statement includes a non-static instance of a class.
 
-? - Initial value of MyClass should be `MyClass(nil)`?
+Y - Initial value of MyClass should be `MyClass(nil)`?
+```
+if ( found == true ) return @MyClass(nil);
+MyClass x = @MyClass(nil);
+if ( result == @MyClass(nil) ) ...
+```
+we can eliminate `nil` and instead write `@MyClass()`.
+this is the casting syntax but without input, which gives empty/undefined/not-initialized state.
+this can be short-cut by `@MyClass`.
+
+Y - Make casting a little more explicit. e.g. `#MyClass(obj2)`
+`int x = int(float_var);`
+`int x = @int(float_var);` Good
+`int x = $int(float_var);`
+`int x = #int(float_var);`
+`int x = !int(float_var);`
+`int x = float_var->int;`
+`int x = float_var as int;`
+`int x = int((float_var));`
+`int x = int<float_var>;`
+`int x = int{float_var};`
+`int x = int[float_var];`
+`int x = $int$(float_var);`
+`int x = cast<int>(float_var);`
+
+Y - `??` shorter operator.
+`y = x ?? 5`
+`x ??= 5`
+`if ( x == @MyClass )`
+`y = x # 5`
+`y = x || 5`
+`y = x \ 5` GOOD
+`y = x, 5`
+`y = x; 5`
+`y = x .. 5`
+`y = x <- 5`
+`y = x <- 5`
