@@ -38,7 +38,7 @@ Every class has a special instance (static instance), which is created by the co
 2. **Loop**: `for`, `break`, `continue`
 3. **Control**: `return`, `defer`, `throw`
 4. **Type handling**: `auto`, `typename`, `type`, `struct`
-5. **Other**: `import`, `void`, `expose`
+5. **Other**: `import`, `void`, `expose`, `select`, `invoke`, `include`
 
 These are not keywords but have special meaning:
 `this`, `true`, `false`, `nil`
@@ -131,7 +131,7 @@ void _() this.y=9;  //initialize code for static instance
 - Class members (fields, methods and types) starting with underscore are considered private and can only be accessed internally. So the only valid combination that can come before `_` is `this._xxx` not `obj._xxx`.
 - Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer.
 - The private unnamed method is called by runtime service when static instance of the class is created and is optional.
-- You can not have methods with the same name in a single class.
+- You can not have multiple methods with body with the same name in a single class. 
 - There is no default value for method arguments. If some parameter is not passed, it's value will be `nil`.
 - When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`). `this` is not re-assignable variable so you cannot re-assign it.
 - Value of a variable before initialization is `nil`. You can also return `nil` when you want to indicate invalid state for a variable.
@@ -141,13 +141,30 @@ void _() this.y=9;  //initialize code for static instance
 - You can define struct as `struct(n);` with `n` parameter and empty body to indicate that struct should have `n` bytes allocated from memory represented as `this`. This is used to implement built-in classes like `int`.
 - **Variadic functions**: `bool bar(int... values)`
 
-###Exposoing
+###Composing classes
 
 - You can write `expose MyClass;` before struct section and after type section so that the current class will expose all public fields and functions of MyClass and route them to a member variable named `MyClass`. 
 - You can remove an exposed method by adding same method without body.
 - You can rename an exposed method by removing it and adding your own method.
 - If a method is empty in `MyClass`, the container class can provide an implementation for it. This will cause calls to the empty method be redirected to the new implementation, even inside `MyClass` instance variable. For other methods, the parent class can define methods with the same name to hide them.
 - Compiler will give error if there will be conflicts in exposed methods (e.g. methods with same name).
+- You can write `include MyClass;` to have contents of MyClass included at the current class. This will simply copy all methods and fileds of the class. So the developer has to handle method and field conflicts.
+
+###Concurrency
+
+We have `invoke` and `select` keywords. You can use `future<int> result = invoke obj.method1();` to execute `obj.method1` in another thread and the result will be available through future class (defined in core).
+Also `select` evaluates a set of expressions and executes corresponding code block for the one which evaluates to true:
+```
+select
+{
+    rch1.tryRead(): { a = rch1.peek();}
+    rch2.tryRead(): { b=rch2.peek();}
+    wch1.tryWrite(x): {}
+    wch2: tryWrite(y): {}
+    true: {}  //default branch
+}
+```
+You can use select to read from blocking channels.
 
 ###Operators
 
@@ -298,7 +315,7 @@ auto intr = Interface1
 
 ###Misc
 
-- **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage` (For classes in `core` they can use `myClass` notation, like `int` or `fp`).
+- **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage` (For basic data types classes in `core` they can use `myClass` notation, like `int`).
 - `iclass1(my_obj)` returns `nil` if myObj does not conform to iclass1 or else, result will be casted object.
 - **const**: Class fields which are assigned a value inside `struct` section are constant (compiler handles assignment without invoking the code for assignment operator) and cannot be re-assigned later. Note that, they still can be mutated if they provide appropriate methods. If you need fully immutable classes, you have to implement the logic in your code.
 - **Literlas**: `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64, `1_000_000`
