@@ -41,7 +41,7 @@ Every class has a special instance (static instance), which is created by the co
 5. **Other**: `import`, `void`, `expose`, `select`, `invoke`, `include`
 
 These are not keywords but have special meaning:
-`this`, `true`, `false`, `nil`
+`this`, `true`, `false`
 
 Usage of most these keywords is almost same as C++ or Java, so I omit explanation for most of them in detail.
 
@@ -56,15 +56,16 @@ Usage of most these keywords is almost same as C++ or Java, so I omit explanatio
 
 The operators are almost similar to C language:
 
-- Conditional: `and or not == != >= <= ??`
-- Bitwise: `& | ^ << >>`
+- Conditional: `and or not == != >= <= \`
+- Bitwise: `~ & | ^ << >>`
 - Math: `+ - * % ++ -- **`
 
 The bitwise and math operators can be combined with `=` to do the calculation and assignment in one statement.
 
 *Special syntax*:
 - `->` for anonymous class declaration
-- `()` for casting and defining tuple literals and function call
+- `()` for defining tuple literals and function call
+- `@` for casting
 - `{}` instantiation
 - `:` for hash, loop, assert, call by name, array slice and tuple values
 - `<>` template syntax
@@ -72,6 +73,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `out`: representing function output in defer
 - `exc`: representing current exception in defer
 - `?=>` compare-and-swap
+- `\` nil check
 
 
 ###The most basic application
@@ -133,11 +135,12 @@ void _() this.y=9;  //initialize code for static instance
 - Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer.
 - The private unnamed method is called by runtime service when static instance of the class is created and is optional.
 - You can not have multiple methods with body with the same name in a single class. 
-- There is no default value for method arguments. If some parameter is not passed, it's value will be `nil`.
+- There is no default value for method arguments. If some parameter is not passed, it's value will be undef.
 - When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`). `this` is not re-assignable variable so you cannot re-assign it.
-- Value of a variable before initialization is `nil`. You can also return `nil` when you want to indicate invalid state for a variable.
-- When a variable is nil and we call one of it's type's methods, the method will be called normally with nil `this`. If we try to read it's fields, it will crash.
-- If a method has no body, you can still call it and it will return `nil`. You can also call methods on a `nil` variable and as long as methods don't need `this` fields, it's fine.
+- Value of a variable before initialization is undef which is denoted by `@MyClass` where MyClass is type of the variable. 
+- You can also return `@MyClass` when you want to indicate invalid state for a variable.
+- When a variable is in undefined state and we call one of it's type's methods, the method will be called normally with empty `this`. If we try to read it's fields, it will crash.
+- If a method has no body, you can still call it and it will return undef. You can also call methods on an undef variable and as long as methods don't need `this` fields, it's fine.
 - `int f(int x) return x+1;` braces can be eliminated when body is a single statement.
 - You can define struct as `struct(n);` with `n` parameter and empty body to indicate that struct should have `n` bytes allocated from memory represented as `this`. This is used to implement built-in classes like `int`.
 - **Variadic functions**: `bool bar(int... values)`
@@ -172,6 +175,9 @@ You can use select to read from blocking channels.
 Classes can override all the valid operators on them. `int` class defines operator `+` and `-` and many others (math, comparison, ...). This is not specific to `int` and any other class can do this. 
 
 - `=` operator, by default makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. You can override this behavior by adding `op_assign` method to your class and clone the data. This is done for primitives like `int` so `int x=y` will duplicate value of y into x. If you need original behavior of `=` you have to embed those variables in holder classes which use default `=` behavior. On the other hand, if you need duplication for classes which do ref-assignment by default, you will need to do it manually in one of methods (like `clone` and call `MyClass x = y.clone()`).
+- `x \ 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
+- `bool changed = (x ? 1 => 2);` set x to 2 if it is 1 in an atomic compare-and-swap and return true if swap is done.
+
 
 ###Anonymous struct (tuple)
 
@@ -253,7 +259,7 @@ throw "Error!";  //throw exception and exit
 defer(exc) { ... }
 defer(out, exc) { ... }
 
-defer(out) { if ( out != nil ) out++; }  //manipulate function output
+defer(out) { if ( out != @int() ) out++; }  //manipulate function output
 defer(out) assert out>0;  //post-condition check
 ```
 
@@ -315,20 +321,21 @@ auto intr = Interface1
 - `int[string] hash1 = { 'OH': 12, 'CA': 33};`.
 - `for(x:array1)` or `for(int key,string val:hash1)`.
 
+###Casting and undef state
+
+- `@myclass(my_obj)` returns empty/undefined/not-initialized if myObj cannot be casted to myclass. Compiler will try 3 options for casting: first if `my_obj` conforms to `myclass` it will be casted without change in the data (means `my_obj` has all fields and methods that `myclass` has specified). second looks for a method called `myclass` defined in `my_obj` (This method will convert `my_obj` instance to an instance of `myclass`). third, looks for reverse: a method called `ObjType` in `myclass` static instance (ObjType is type of `my_obj` and this method will crete a new instance of myclass using given `ObjType` instance). All these options will be checked at compile time.
+- `float f; int x = @int(f);` this will call `int` method on class `float` to do casting. This can be called automatically by compiler if needed. For template types (like array or hash), you should name the function according to full-name not short-name (`Array<char>` instead of `char[]`).
+- empty/undefined/not-initialized state of a variable is named "undef" state and is shown by `@MyClass()` which means casting empty to `MyClass` (MyClass is type of the variable). You can shortcut this by `@MyClass` notation.
+
 ###Misc
 
 - **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage` (For basic data types classes in `core` they can use `myClass` notation, like `int`).
-- `myclass(my_obj)` returns `nil` if myObj cannot be casted to myclass. Compiler will try 3 options for casting: first if `my_obj` conforms to `myclass` it will be casted without change in the data (means `my_obj` has all fields and methods that `myclass` has specified). second looks for a method called `myclass` defined in `my_obj` (This method will convert `my_obj` instance to an instance of `myclass`). third, looks for reverse: a method called `ObjType` in `myclass` static instance (ObjType is type of `my_obj` and this method will crete a new instance of myclass using given `ObjType` instance). All these options will be checked at compile time.
 - **const**: Class fields which are assigned a value inside `struct` section are constant (compiler handles assignment without invoking the code for assignment operator) and cannot be re-assigned later. Note that, they still can be mutated if they provide appropriate methods. If you need fully immutable classes, you have to implement the logic in your code.
-- **Literlas**: `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64, `1_000_000`
-- `x ?? 5` will evaluate to 5 if x is `nil`.
+- **Literlas**: `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64, `1_000_000`. compiler will handle object literals and create corresponding objects (in default arg value, initializations, enum values, true, false, ...). `true` is a shortcut for `bool.true`, same for `false`.
 - `///` before method or field or first line of the file is special comment to be processed by automated tools. 
 - `myClass.myMember(x: 10, y: 12);`
-- **Literals**: compiler will handle object literals and create corresponding objects (in default arg value, initializations, enum values, true, false, ...).
-- `float f; int x = f.int();` this will call `int` method on class `float` to do casting. This can be called automatically by compiler if needed. For template types (like array or hash), you should name the function according to full-name not short-name (`Array<char>` instead of `char[]`).
 - `break 2` to break outside 2 nested loops. same for `continue`.
 - `import core.st` or `import aa := core.st` to import with alias.
-- `bool changed = (x ? 1 => 2);` set x to 2 if it is 1 in an atomic compare-and-swap and return true if swap is done.
 
 ###Core package
 
