@@ -375,10 +375,10 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 
 #Language Reference ToC
 - Version and history
-- Introduction, memory model
+- Introduction, paradigm and memory model
 - Tokens and casing, whitespace, source code encoding, comments, literals
-- General rules (underscore, ...)
-- Classes, methods and fields
+- General rules (underscore, ...) and conventions
+- General structure of a source file (classes, methods and fields)
 - Packages
 - Keywords + brief explanation
 - Operators and special syntax
