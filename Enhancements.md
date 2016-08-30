@@ -1386,3 +1386,48 @@ select
 }
 ```
 select will evaluate all expressions until one of them is evaluated to true.
+
+N - It is better for `invoke` to return a general `future` class so we can compose them more easily.
+`future result = invoke a.getData(10);`
+`future<int> data = invoke { x++; y.copy(); }`
+`future<void> result = invoke { x++; }`
+`future<stack<int>> dd = invoke { x++; obj.method1(); channel.sendData(1); return nil; }`
+`int x = obj.method1(10);`
+`future<int> x = invoke obj.method1(10);`
+
+Y - Suppose we have a template class `future<T>` can we add a method which is supposed to work on another template class?
+e.g: `void chain(future<S> otherFuture) { ... }`
+`void chain<S>(future<S> other) { ... }`
+`future<int> x;`
+`x.chain<float>(ff);`
+what if we remove typename for argument?
+`void chain(future other) { ... }`  //this chain method accepts a future. future is a template class but we don't care about it's typename. it can be future<int> or future<float> or anything.
+of course we can only call methods in `other` argument which are not bound to a typename. 
+so when a class is defined and has one or more typenames, it can produce many variants. the most basic one is the original class without typenames applied. this will create an interface which is conformed by all created classes with concrete typenames. So in this class we are defining two things: A common part which does not rely on typenames (base interface) and a typename dependant part. All created classes: MyClass<int>, MyClass<float>, MyClass<x> conform to the base interface. so you can use the base interface "MyClass" to describe all of these classes. Of course the base interface does not have any field or method which is bound to typenames. so "MyClass" means MyClass definition without any of typenames.
+so we can write `void store(Stack s)` where Stack is the base interface and we have `Stack<int>, Stack<float> ...`.
+
+Y - InterlockedExchange and other atomic operators, compare and swap, only for numbers
+`bool changed = (x == 1 ? 2);`
+`bool changed = (x ? 1 -> 2);`
+`bool changed = (x ? 1 => 2);`
+`bool changed = cas(x, 1, 2);`
+`bool changed = x => 1 => 2;`
+`bool changed = x => (1, 2);`
+`bool changed = x ? 1 : 2;`
+
+Y - Shall we use a more consistent casting method used for both type and data casting?
+`int x = float_var.int();`
+`int x = int(float_var);`
+`MetaC x = MetaC(myOBj);`
+`int x = int.float(float_var);`
+there are a lot of different ways to convert something to another type.
+`myclass mc = myclass(obj1);`
+above: cast obj1 to myclass. if obj1 type conforms to myClass it is ok.
+if obj1 has a method called `myclass` it will be called.
+if myclass has a method called `ObjType` (which is type of obj1), it will be called.
+advantage of `()` notation is that you can easily concat it to a method casll: `myClass(obj1).method1()`.
+`auto mc = myclass(obj1);`
+
+N - can we embed and implement methods for the static instance? NO. `expose` statement includes a non-static instance of a class.
+
+? - Initial value of MyClass should be `MyClass(nil)`?
