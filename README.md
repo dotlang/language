@@ -387,6 +387,6 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - How to update this spec?
 
 Sample:
-Java [chrome-extension://oemmndcbldboiebfnladdacbdfmadadm/http://cr.openjdk.java.net/~mr/se/8/java-se-8-fr-spec-01/java-se-8-jls-fr-diffs.pdf]
-Rust [https://doc.rust-lang.org/book/]
-Go [https://golang.org/ref/spec]
+Java [chrome-extension://oemmndcbldboiebfnladdacbdfmadadm/http://cr.openjdk.java.net/~mr/se/8/java-se-8-fr-spec-01/java-se-8-jls-fr-diffs.pdf]  
+Rust [https://doc.rust-lang.org/book/]  
+Go [https://golang.org/ref/spec]  
