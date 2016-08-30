@@ -71,6 +71,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `:=` for typename default value, type alias and import alias
 - `out`: representing function output in defer
 - `exc`: representing current exception in defer
+- `?=>` compare-and-swap
 
 
 ###The most basic application
@@ -235,6 +236,7 @@ V get(K key) ...
 This is how collections and ... will be implemented in core.
 
 Note that `typename` section must come before `struct` section.
+For each tempalte class, there is a base interface class which is equal to the class definition minus everything related to typenames. According to definition, all template class instances, conform to the base class, so base interface can be the base type for all template classes. This means `Stack` is the base interface for `Stack<int>, Stack<float>` and all other stacks and if you need to write a method accepting any stack you can use it: `void getStack(Stack s)`.
 
 ###Exception handling
 
@@ -316,7 +318,7 @@ auto intr = Interface1
 ###Misc
 
 - **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage` (For basic data types classes in `core` they can use `myClass` notation, like `int`).
-- `iclass1(my_obj)` returns `nil` if myObj does not conform to iclass1 or else, result will be casted object.
+- `myclass(my_obj)` returns `nil` if myObj cannot be casted to myclass. Compiler will try 3 options for casting: first if `my_obj` conforms to `myclass` it will be casted without change in the data (means `my_obj` has all fields and methods that `myclass` has specified). second looks for a method called `myclass` defined in `my_obj` (This method will convert `my_obj` instance to an instance of `myclass`). third, looks for reverse: a method called `ObjType` in `myclass` static instance (ObjType is type of `my_obj` and this method will crete a new instance of myclass using given `ObjType` instance). All these options will be checked at compile time.
 - **const**: Class fields which are assigned a value inside `struct` section are constant (compiler handles assignment without invoking the code for assignment operator) and cannot be re-assigned later. Note that, they still can be mutated if they provide appropriate methods. If you need fully immutable classes, you have to implement the logic in your code.
 - **Literlas**: `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64, `1_000_000`
 - `x ?? 5` will evaluate to 5 if x is `nil`.
@@ -326,6 +328,7 @@ auto intr = Interface1
 - `float f; int x = f.int();` this will call `int` method on class `float` to do casting. This can be called automatically by compiler if needed. For template types (like array or hash), you should name the function according to full-name not short-name (`Array<char>` instead of `char[]`).
 - `break 2` to break outside 2 nested loops. same for `continue`.
 - `import core.st` or `import aa := core.st` to import with alias.
+- `bool changed = (x ? 1 => 2);` set x to 2 if it is 1 in an atomic compare-and-swap and return true if swap is done.
 
 ###Core package
 
