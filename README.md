@@ -145,10 +145,10 @@ void _() this.y=9;  //initialize code for static instance
 ###Composing classes
 
 - You can write `expose MyClass;` before struct section and after type section so that the current class will expose all public fields and functions of MyClass and route them to a member variable named `MyClass`. 
-- You can remove an exposed method by adding same method without body.
+- You can hide/remove an exposed method by adding same method with/without body.
 - You can rename an exposed method by removing it and adding your own method.
-- If a method is empty in `MyClass`, the container class can provide an implementation for it. This will cause calls to the empty method be redirected to the new implementation, even inside `MyClass` instance variable. For other methods, the parent class can define methods with the same name to hide them.
-- Compiler will give error if there will be conflicts in exposed methods (e.g. methods with same name).
+- If a method is empty in `MyClass`, the container class can provide an implementation for it. This will cause calls to the empty method be redirected to the new implementation, even inside `MyClass` instance variable (same as virtual methods in other languages).
+- Compiler will give error if there are be conflicts in exposed methods (e.g. methods with same name and with body).
 - You can write `include MyClass;` to have contents of MyClass included at the current class. This will simply copy all methods and fileds of the class. So the developer has to handle method and field conflicts.
 
 ###Concurrency
