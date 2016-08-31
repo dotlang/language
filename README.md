@@ -56,7 +56,7 @@ Usage of most these keywords is almost same as C++ or Java, so I omit explanatio
 
 The operators are almost similar to C language:
 
-- Conditional: `and or not == != >= <= \`
+- Conditional: `and or not == != >= <= #`
 - Bitwise: `~ & | ^ << >>`
 - Math: `+ - * % ++ -- **`
 
@@ -73,7 +73,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `out`: representing function output in defer
 - `exc`: representing current exception in defer
 - `?=>` compare-and-swap
-- `\` nil check
+- `#` undef check
 
 
 ###The most basic application
@@ -175,7 +175,7 @@ You can use select to read from blocking channels.
 Classes can override all the valid operators on them. `int` class defines operator `+` and `-` and many others (math, comparison, ...). This is not specific to `int` and any other class can do this. 
 
 - `=` operator, by default makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. You can override this behavior by adding `op_assign` method to your class and clone the data. This is done for primitives like `int` so `int x=y` will duplicate value of y into x. If you need original behavior of `=` you have to embed those variables in holder classes which use default `=` behavior. On the other hand, if you need duplication for classes which do ref-assignment by default, you will need to do it manually in one of methods (like `clone` and call `MyClass x = y.clone()`).
-- `x \ 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
+- `x # 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
 - `bool changed = (x ? 1 => 2);` set x to 2 if it is 1 in an atomic compare-and-swap and return true if swap is done.
 
 
@@ -246,7 +246,8 @@ For each tempalte class, there is a base interface class which is equal to the c
 
 ###Exception handling
 
-- It is advised to return error code in case of an error. 
+- It is advised to return error code in case of an error and use exceptions in really exceptional cases.
+- You can use `throw X` to create exception and return from current method.
 - You can use `defer` keyword (same as what golang has) for code that must be executed upon exitting current method.
 - If defer has an input named `out`, it will be mapped to the function output.
 - If defer has an input named `exc`, it will be mapped to the current exception. If there is no exception, defer won't be executed. If there are multiple defers with `exc` all of them will be executed.
@@ -374,6 +375,8 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 
 
 #Language Reference ToC
+This is a specification and the implementation may choose any strategy (compile to Java Bytecode, interpret, JIT, compile to native, ...).
+
 - Version and history
 - Introduction, paradigm and memory model
 - Tokens and casing, whitespace, source code encoding, comments, literals
