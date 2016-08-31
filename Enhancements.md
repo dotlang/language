@@ -1478,3 +1478,7 @@ tuple: enums can specify type for fields of a tuple.
 
 Y - `y = x # 5`
 `x #= 5`
+
+? - How can we eliminate static instance of a class? If we don't really need it.
+`_() { MyClass = @MyClass; }` but the static instance is not assignable.
+`bool _() { return false;}` return false to discard static instance.
