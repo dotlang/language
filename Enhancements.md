@@ -1475,3 +1475,6 @@ type alias: enum is defined using type alias.
 casting: `int x = @int(dow_var);`
 null: they are of type `int` so they can accept `@int` value.
 tuple: enums can specify type for fields of a tuple.
+
+Y - `y = x # 5`
+`x #= 5`
