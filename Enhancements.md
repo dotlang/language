@@ -1484,3 +1484,88 @@ N - How can we eliminate static instance of a class? If we don't really need it.
 `_() { MyClass = @MyClass; }` but the static instance is not assignable.
 `bool _() { return false;}` return false to discard static instance.
 how can others instantiate class if it doesn't have any static instance?
+
+N - can a class modify it's own methods?
+e.g. cache method output, log, ...
+it becomes complex.
+
+N - What is the actual difference between `expose` and `include`?
+Both import methods at the class level. 
+in expose, called methods, have this pointed to the internal variable.
+in include, called methods, have this pointed to the class itself.
+can we combine both of them?
+`expose MyClass [that=this.MyClass];`
+`include MyClass [that=this];`
+regarding hiding, deleting and renaming both are same. also for implementing bodyless methods.
+methods -> exactly the same, methods are imported into the class
+fields -> same, actually this.x will point to this.MyClass.x, but in include, this.x will refer to this.x
+expose := introduce a field named MyClass in struct, for all fields of MyClass add same field to struct, for all methods of MyClass add same method to the class, these fields and methods will be mapped to the field
+include := for all fields of MyClass add same field to struct, for all methods of MyClass add same method to the class, , these fields and methods will be mapped to this. 
+`expose means attach to this.MyClass`
+`include means attach to this`
+maybe we can simulate expose as a special case of include. an include which pastes data from a member field.
+`include MyClass;`
+`include this.MyClass;` -> add this field to the struct of the current class, then embed all of it's.
+`embed MyClass;` and `embed this.MyClass;`
+`provide MyClass;` and `provide this.MyClass;`
+expose: expose public methods of a field, nothing to do with private methods or any of fields.
+include: expose public methods of a field, include private methods and all of fields.
+`public MyClass;` and `publish this.MyClass;`
+`+MyClass;` and `+MyClass => this.MyClass`
+If the class has not state, then expose is exactly the same as include.
+we can add a syntax to map fields. for methods it is pure code but for fields we cannot write code.
+`int x := this.myobj.field5;`  //x is an alias for this.myobj.field5.
+by this syntax, we will have a full coverage for expose using built-in syntax. 
+so we can fully implement expose using normal syntax (delegate for methods and fields).
+so again, how can we unify expose and include?
+`include MyClass;` and `include this.vv := MyClass;`
+when exposing, you can hide methods. when including, you cannot hide them -> we can enable hiding for inclusion.
+when exposing, we don't have access to private methods, when including, we have.
+`expose means public inheritance: Class x public y`
+`include means full inheritance: see public and privates`
+can we say, include is an expose which has access to private members?
+the main difference is meaning of this inside methods. for include this is the same as container object.
+include cannot be redirected to a member field. its definition is inconsistent with being restricted.
+`expose MyClass as this.MyClass;`
+`expose MyClass as this;`
+`this += MyClass;`
+`this += this.MyClass;`
+expose and include are the same for public fields. they are similar for public methods too.
+the difference is for private members. 
+`include MyClass;` `include MyClass with privates;`
+`expose MyClass [MyClass::this := this.MyClass];`
+`expose MyClass [MyClass::this := this];`
+we can eliminate the common part `MyClass::this :=`
+`expose MyClass [this.MyClass];`
+`expose MyClass [this];`
+==
+`embed MyClass into this.MyClass;`
+`embed MyClass into this;`
+==
+`expose MyClass [this._myClass];`
+`expose MyClass [this];`
+==
+`this += this._myClass;`
+`this += MyClass;`
+==
+`bind MyClass to this;`
+`bind MyClass to this.MyC;`
+==
+or a general re-direction system.
+`this.* => MyClass;`
+`this.* => this.MyClass2;`
+==
+expose works with variable
+include works with class
+
+N - In `expose` can we get the exposed object from outside instead of instantiating?
+yes. Class is responsible for all of that.
+
+Y - When we `expose MyClass` how are fields of MyClass handled? what happens to them? are they exposed too?
+we do not support redirection of class fields. but we can add the syntax: `int x := this.obj1.field5;`
+can we use this syntax in the code too? inside method body?
+this is assignment but without cloning. if `int` assignment, duplicates upon assignment, `int x = this.obj.field1` will
+put clone of the field1 into x. but if we really need a reference to that field we use this syntax.
+
+Y - Same as what we have for fields `:=` we can have it for methods.
+`int get(int x) := this.obj.myMethod;`  any call to `get` will be redirected to this.obj.myMethod.
