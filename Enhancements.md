@@ -1574,3 +1574,16 @@ N - What if a class requires existence of a method/field when being exposed or i
 This is related to conflict management. for `expose` this is not needed because exposed member does not interact with the parent class, but when including MyClass, how to specify it needs existence of a method or a field?
 one solution: add the method or field inside the class and use it normally. When this is included in the parent class, it can provide body for the method. but for field, it cannot re-define the field because there will be conflicts. it will use the same field. 
 
+Y - When we include MyClass and hide one of it's methods, how can I call the original method?
+```
+include MyClass;  //has myMethod
+auto abc := this.myMethod;  //store a reference befor hiding myMethod
+void myMethod() { this.abc(); }
+```
+
+Y - How developers can handle field conflicts? for include there is no problem because we expact included class to 
+provide common fields. but what about expose?
+we cannot say expose only copies public methods to the container class.
+what if we expose two classes that have a common field?
+one solution: if there is a conflict, nothing will be exposed. all of conflicting fields will be removed.
+one solution: compiler error upon conflict in fields unless main class has a field with the same name.
