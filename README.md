@@ -37,8 +37,10 @@ Every class has a special instance (static instance), which is created by the co
 1. **Conditional**: `if`, `else`, `switch`, `assert`
 2. **Loop**: `for`, `break`, `continue`
 3. **Control**: `return`, `defer`, `throw`
-4. **Type handling**: `auto`, `typename`, `type`, `struct`
-5. **Other**: `import`, `void`, `expose`, `select`, `invoke`, `include`
+4. **Type handling**: `typename`, `type`, `struct`
+5. **Concurrency**: `invoke`, `select`
+6. **Composition**: `expose`, `include`
+5. **Other**: `import`, `void`, `auto`
 
 These are not keywords but have special meaning:
 `this`, `true`, `false`
@@ -153,15 +155,22 @@ void _() this.y=9;  //initialize code for static instance
 
 ###Composing classes
 
-- You can write `expose AA := MyClass;` to add a field named `AA`, expose all public members in MyClass and route them to `AA` (AA can be a private too). 
+- You can write `expose AA := MyClass;` to add a field named `AA`, expose all public members in MyClass and route them to `AA` (AA can be a private too). If you omit AA, class name will be used.
 - You can write `include MyClass;` to have contents of MyClass included at the current class. This will simply copy all methods and fileds of the class.
-- Both expose and include soft-copy members. This means, if there is a member with the same name, it won't be copied.
+- Both expose and include soft-copy members. This means, if there is a member with the same name in main class, it won't be copied.
+- If you expose two classes that have a public fields with the same name, you must define a field with that name in main class (or else there will be a compiler error). 
 - You can hide/remove an exposed/included method by adding same method with/without body (methods of the current class always win).
 - You can rename an exposed method by removing it and adding your own method.
 - If a method is empty in `MyClass`, the exposer class can provide an implementation for it. This will cause calls to the empty method be redirected to the new implementation, even inside `MyClass` instance variable (same as virtual methods in other languages).
 - Compiler will give error if there are be conflicts in exposed/included members (e.g. methods with same name and with body).
 - In expose, you don't have access to private members of composed object while in include, you have.
 - When exposing a variable, class is responsible for initialization and instantiation of the variable. Compiler just generates code to re-direct calls.
+- If you include a class and hide one of it's methods you can access the hidden method by storing a reference before hiding method:
+```
+include MyClass;  //has myMethod
+auto abc := this.myMethod;  //store a reference befor hiding myMethod
+void myMethod(int x) { this.abc(x); }
+```
 
 ###Concurrency
 
