@@ -3,11 +3,14 @@
 import core.std;
 import data := core.data;
 
+expose parentInterface;
+include someClass;
+include Singleton<int>;
+
 struct
 {
-    exposed parent_interface parent;
     int dataItem;
-    const int x;
+    int x = 7;
 }
 
 bool doCompare(int x, int y=0);
