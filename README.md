@@ -124,7 +124,7 @@ struct
     int y;
     int h = 12;
     int gg := this.h;  //gg is a reference to h. any action on gg will be called on h.
-    auto dsa := this.h;
+    auto dsa := this.h;  //:= assignment in struct cannot be re-assigned. but in the code it can. 
     float ff := this.object1.field5;
 }
 
