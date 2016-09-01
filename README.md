@@ -156,7 +156,7 @@ void _() this.y=9;  //initialize code for static instance
 - You can write `expose AA := MyClass;` to add a field named `AA`, expose all public members in MyClass and route them to `AA` (AA can be a private too). 
 - You can write `include MyClass;` to have contents of MyClass included at the current class. This will simply copy all methods and fileds of the class.
 - Both expose and include soft-copy members. This means, if there is a member with the same name, it won't be copied.
-- You can hide/remove an exposed/included method by adding same method with/without body.
+- You can hide/remove an exposed/included method by adding same method with/without body (methods of the current class always win).
 - You can rename an exposed method by removing it and adding your own method.
 - If a method is empty in `MyClass`, the exposer class can provide an implementation for it. This will cause calls to the empty method be redirected to the new implementation, even inside `MyClass` instance variable (same as virtual methods in other languages).
 - Compiler will give error if there are be conflicts in exposed/included members (e.g. methods with same name and with body).
