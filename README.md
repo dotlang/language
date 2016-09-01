@@ -69,7 +69,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `{}` instantiation
 - `:` for hash, loop, assert, call by name, array slice and tuple values
 - `<>` template syntax
-- `:=` for typename default value, type alias and import alias
+- `:=` for typename default value, type alias and import alias, ref-assignment for field and method
 - `out`: representing function output in defer
 - `exc`: representing current exception in defer
 - `?=>` compare-and-swap
@@ -106,7 +106,7 @@ In the above examples `core.sys, core.net, core.net.http, core.net.tcp` are all 
 ###Classes
 
 Each source code file represents one class and has two important parts: `struct` part where fields are defined, and method definition.
-Writing body for methods is optional (but of course if a body-less method is called, nothing will happen and an empty response will be received). Classes with no method body are same as interfaces in other languages but in Electron we don't have the concept of interface.
+Writing body for methods is optional (but of course if a body-less method is called, nothing will happen and an empty response will be received). Classes with no method body are same as interfaces (or abstract class with all methods marked as virtual) in other languages but in Electron we don't have the concept of interface.
 
 Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be created upon first usage in the code and is not re-assignable.  
 
@@ -123,9 +123,14 @@ struct
     int _x = 12;  //private const, is not re-assignable
     int y;
     int h = 12;
+    int gg := this.h;  //gg is a reference to h. any action on gg will be called on h.
+    auto dsa := this.h;
+    float ff := this.object1.field5;
 }
 
 int func1(int y) { return this.x + y; }
+int func2(int x) := this.func1;  //redirect calls to func1, methods should have same signature
+auto func3 := this.func2;  //compiler will infer the input/output types for func3 from func2 signature
 MyClass new() return {};  //new is not part of syntax. You can choose whatever name you want,
 void _() this.y=9;  //initialize code for static instance
 
@@ -144,15 +149,19 @@ void _() this.y=9;  //initialize code for static instance
 - `int f(int x) return x+1;` braces can be eliminated when body is a single statement.
 - You can define struct as `struct(n);` with `n` parameter and empty body to indicate that struct should have `n` bytes allocated from memory represented as `this`. This is used to implement built-in classes like `int`.
 - **Variadic functions**: `bool bar(int... values)`
+- You can use `var1 := var2;` notation to assign a var2 reference to var1. So basically var1 will be an alias for var2. Using normal `var1 = var2` may not do this because the class of var2 may have a duplication based assignment operator.
 
 ###Composing classes
 
-- You can write `expose MyClass;` before struct section and after type section so that the current class will expose all public fields and functions of MyClass and route them to a member variable named `MyClass`. 
-- You can hide/remove an exposed method by adding same method with/without body.
+- You can write `expose AA := MyClass;` to add a field named `AA`, expose all public members in MyClass and route them to `AA` (AA can be a private too). 
+- You can write `include MyClass;` to have contents of MyClass included at the current class. This will simply copy all methods and fileds of the class.
+- Both expose and include soft-copy members. This means, if there is a member with the same name, it won't be copied.
+- You can hide/remove an exposed/included method by adding same method with/without body.
 - You can rename an exposed method by removing it and adding your own method.
-- If a method is empty in `MyClass`, the container class can provide an implementation for it. This will cause calls to the empty method be redirected to the new implementation, even inside `MyClass` instance variable (same as virtual methods in other languages).
-- Compiler will give error if there are be conflicts in exposed methods (e.g. methods with same name and with body).
-- You can write `include MyClass;` to have contents of MyClass included at the current class. This will simply copy all methods and fileds of the class. So the developer has to handle method and field conflicts.
+- If a method is empty in `MyClass`, the exposer class can provide an implementation for it. This will cause calls to the empty method be redirected to the new implementation, even inside `MyClass` instance variable (same as virtual methods in other languages).
+- Compiler will give error if there are be conflicts in exposed/included members (e.g. methods with same name and with body).
+- In expose, you don't have access to private members of composed object while in include, you have.
+- When exposing a variable, class is responsible for initialization and instantiation of the variable. Compiler just generates code to re-direct calls.
 
 ###Concurrency
 
