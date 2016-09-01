@@ -1569,3 +1569,8 @@ put clone of the field1 into x. but if we really need a reference to that field 
 
 Y - Same as what we have for fields `:=` we can have it for methods.
 `int get(int x) := this.obj.myMethod;`  any call to `get` will be redirected to this.obj.myMethod.
+
+N - What if a class requires existence of a method/field when being exposed or included?
+This is related to conflict management. for `expose` this is not needed because exposed member does not interact with the parent class, but when including MyClass, how to specify it needs existence of a method or a field?
+one solution: add the method or field inside the class and use it normally. When this is included in the parent class, it can provide body for the method. but for field, it cannot re-define the field because there will be conflicts. it will use the same field. 
+
