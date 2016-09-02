@@ -1635,7 +1635,7 @@ Y - is syntax for typename intuitive? do we need multiple interfaces?
 
 Y - Maybe its better to remove `:=` notation for method declaration.
 
-? - Better syntax for expose? 
+Y - Better syntax for expose? 
 Better is we reduce usage of `:=`. 
 `expose MyClass;`
 `struct { MyClass M; auto * := this.M.*;} auto * = this.M.*;`
@@ -1652,8 +1652,16 @@ and rely on a naming convention.
 `MyClass _$m;`
 `MyClass _xData;`
 
-? - Let's reduce usage of `:=`
+Y - Let's reduce usage of `:=`
 type, typename
-`typename V: interface2 = MyClass;`
+`typename V : interface2`
+what if we don't specify default value? Everyone has to specify type.
+but how can we model tuple and fn then?
+`typename V : interface2 = default`
+let's assume there is no default and if type is not passed, it will be `void` type.
+`typename V : interface2`
+same as typename, we can use for type. we can even remove `:`.
 
-? - If `Stack` is parent of `Stack<int>`, what
+? - If `Stack` is parent of `Stack<int>`, what happens if Stack has a default value for T?
+How can we refer to Stack without any template arg? `stack<>`?
+this may be the difference between `Stack` and `Stack<>`.
