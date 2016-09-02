@@ -1,32 +1,29 @@
 ```
 //Comparer.e
 import core.std;
-import data := core.data;
+import core.data => data;
 
-expose parentInterface;
-include someClass;
-include Singleton<int>;
+type i32 := uint;
+type point := (int x,int y);
 
-struct
-{
-    int dataItem;
-    int x = 7;
-}
+int dataItem;
+int x := 7;
+int y := x;
+MyClass mc;
+i32 t;
 
 bool doCompare(int x, int y=0);
+bool add(int x, int y) = this.mc.method1;
+Comparer new() return {};
 
 ===================
 //Handler.e
 
-struct
-{
-    int _internal;
-    int external;
-}
+Comparer __c := Comparer.new();
 
 void _()
 {
-    this.external = 19;
+    this.dataItem = 10;
 }
 
 int _init() return this._internal++;
