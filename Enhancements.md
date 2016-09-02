@@ -1587,3 +1587,47 @@ we cannot say expose only copies public methods to the container class.
 what if we expose two classes that have a common field?
 one solution: if there is a conflict, nothing will be exposed. all of conflicting fields will be removed.
 one solution: compiler error upon conflict in fields unless main class has a field with the same name.
+
+? - Better and cleaner conflict resolution rules.
+This does not happen for expose. At worst, item won't be promoted.
+but for include, we have to decide whether we can or cannot include.
+nobody should change a class behavior without its permission (empty methods). so if there is a conflict
+it means compiler error.
+we cannot add dot to methods names because then it will be mistaken with variable names -> confusing.
+adding prefix makes the code un-readable too.
+whatever we do for methods, is not extendable for fields. 
+maybe we can say, included classes are all embedded within their own scope.
+In this way, all fields and methods of the class are prefixed with a given symbol. If symbol is _xxx they all will be private. `include MC := MyClass;int x = this.MC.data;this.MC.method();` or 
+`include __mc := MyClass;int x = this.__mc.data`
+so, in syntax, it is same as expose. here we create a variable too but variable is mapped to this:
+`this.MC` is same as `this`: `this.MC := this;`
+```
+expose MyClass;
+expose MM := My2Class;
+expose MyClass [MyClass::this := this.MyClass];
+expose MyClass [MyClass::this := this];
+expose MC = MyClass;
+expose MC := MyClass;
+```
+expose creates a real variable. include creates a reference for scoping.
+`this.MC.method1();` MC IS a variable but it can be either a real variable or a reference variable.
+`this.MC = MyClass.new(); promote this.MC;`
+`this.MC := this; include MyClass into this.MC; promote this.MC;`
+expose is normal variable declaration (composition) + promote.
+include is meta variable declaration + promote.
+`MyClass mc [exposed];`
+`include MyClass into this.MC;` => `namespace MC := MyClass; promote this.MC;`
+`expose MyClass into this.MM;` => `struct{ MyClass MM;} promote this.MM;`
+suppose that we don't have any promotion. just focus on include/expose behavior:
+=> can't we just define the mixin as a normal class and pass `this` to it if its needed?
+and for expose, we can simplify the syntax.
+e.g.:
+`struct { MyClass M; int x := this.M.x; } auto f := this.M.f;`
+
+
+Y - Using type with import to do aliasing.
+
+Y - is syntax for typename intuitive? do we need multiple interfaces?
+
+? - Easy way to check if method X has a body (is not undef)?
+`if ( this.method1 == @fn<int,int> ) ...` is too long.
