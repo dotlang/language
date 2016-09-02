@@ -73,7 +73,6 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `:=` reference assignment 
 - `out`: representing function output in defer
 - `exc`: representing current exception in defer
-- `?=>` compare-and-swap
 - `#` undef check
 
 
@@ -137,7 +136,7 @@ MyClass new() return {};  //new is not part of syntax. You can choose whatever n
 void _() this.y=9;  //initialize code for static instance
 
 ```
-- You cannot assign values in `struct` section because it is not a place for code. You just define fields and possibly assign them to literals.
+- You cannot assign values in `struct` section because it is not a place for code. You just define fields and possibly ref-assign them.
 - Class members (fields, methods and types) starting with underscore are considered private and can only be accessed internally. So the only valid combination that can come before `_` is `this._xxx` not `obj._xxx`.
 - Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer.
 - The private unnamed method is called by runtime service when static instance of the class is created and is optional.
@@ -186,8 +185,6 @@ Classes can override all the valid operators on them. `int` class defines operat
 
 - `=` operator, by default makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. You can override this behavior by adding `op_assign` method to your class and clone the data. This is done for primitives like `int` so `int x=y` will duplicate value of y into x. If you need original behavior of `=` you have to embed those variables in holder classes which use default `=` behavior. On the other hand, if you need duplication for classes which do ref-assignment by default, you will need to do it manually in one of methods (like `clone` and call `MyClass x = y.clone()`).
 - `x # 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
-- `bool changed = (x ? 1 => 2);` set x to 2 if it is 1 in an atomic compare-and-swap and return true if swap is done.
-
 
 ###Anonymous struct (tuple)
 
@@ -215,7 +212,7 @@ int x = f((x:1, f:1.1)); //calling above function
 
 Tuples are automatically converted to classes by compiler. So they are basically classes but only have a struct section (without any assignment) with all-public fields and no methods. 
 
-###Type aliasing
+###Type aliasing and import
 
 You can use `type` to define type alias:
 ```
@@ -237,11 +234,10 @@ type DoW int (SAT=0, SUN=1, ...);
 ```
 
 Same as other members, types starting with underscore are private.
-You can alias an import too:
 
 ```
 import core.st;
-type CST core.st;
+import core.st => cst;  //alias import
 ```
 
 ###Templates
@@ -257,7 +253,8 @@ V get(K key) ...
 This is how collections and ... will be implemented in core.
 
 Note that `typename` section must come before `struct` section.
-For each tempalte class, there is a base interface class which is equal to the class definition minus everything related to typenames. According to definition, all template class instances, conform to the base class, so base interface can be the base type for all template classes. This means `Stack` is the base interface for `Stack<int>, Stack<float>` and all other stacks and if you need to write a method accepting any stack you can use it: `void getStack(Stack s)`.
+For each tempalte class like `Stack`, there is a base interface class `Stack` which is equal to the class definition minus everything related to typenames. According to definition, all template class instances, conform to the base class, so base interface can be the base type for all template classes. This means `Stack` is the base interface for `Stack<int>, Stack<float>` and all other stacks and if you need to write a method accepting any stack you can use it: `void getStack(Stack s)`. 
+Note that `Stack` is not the same as `Stack<>` which has type set to `void`.
 
 ###Exception handling
 
