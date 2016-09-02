@@ -1588,7 +1588,7 @@ what if we expose two classes that have a common field?
 one solution: if there is a conflict, nothing will be exposed. all of conflicting fields will be removed.
 one solution: compiler error upon conflict in fields unless main class has a field with the same name.
 
-? - Better and cleaner conflict resolution rules.
+Y - Better and cleaner conflict resolution rules.
 This does not happen for expose. At worst, item won't be promoted.
 but for include, we have to decide whether we can or cannot include.
 nobody should change a class behavior without its permission (empty methods). so if there is a conflict
@@ -1623,7 +1623,8 @@ suppose that we don't have any promotion. just focus on include/expose behavior:
 and for expose, we can simplify the syntax.
 e.g.:
 `struct { MyClass M; int x := this.M.x; } auto f := this.M.f;`
-
+we don't want to be another D language. This should be simple. even at cost of not having some features.
+so let's remove include.
 
 Y - Using type with import to do aliasing.
 
@@ -1631,3 +1632,28 @@ Y - is syntax for typename intuitive? do we need multiple interfaces?
 
 ? - Easy way to check if method X has a body (is not undef)?
 `if ( this.method1 == @fn<int,int> ) ...` is too long.
+
+Y - Maybe its better to remove `:=` notation for method declaration.
+
+? - Better syntax for expose? 
+Better is we reduce usage of `:=`. 
+`expose MyClass;`
+`struct { MyClass M; auto * := this.M.*;} auto * = this.M.*;`
+```
+struct 
+{ 
+    MyClass _var; 
+}
+```
+lets force exposed variable to be private (user can easily map a public field to it).
+and rely on a naming convention.
+`MyClass __m;` OK
+`MyClass _m_;`
+`MyClass _$m;`
+`MyClass _xData;`
+
+? - Let's reduce usage of `:=`
+type, typename
+`typename V: interface2 = MyClass;`
+
+? - If `Stack` is parent of `Stack<int>`, what
