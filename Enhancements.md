@@ -1630,7 +1630,7 @@ Y - Using type with import to do aliasing.
 
 Y - is syntax for typename intuitive? do we need multiple interfaces?
 
-? - Easy way to check if method X has a body (is not undef)?
+N - Easy way to check if method X has a body (is not undef)?
 `if ( this.method1 == @fn<int,int> ) ...` is too long.
 
 Y - Maybe its better to remove `:=` notation for method declaration.
@@ -1662,6 +1662,12 @@ let's assume there is no default and if type is not passed, it will be `void` ty
 `typename V : interface2`
 same as typename, we can use for type. we can even remove `:`.
 
-? - If `Stack` is parent of `Stack<int>`, what happens if Stack has a default value for T?
+N - If `Stack` is parent of `Stack<int>`, what happens if Stack has a default value for T?
 How can we refer to Stack without any template arg? `stack<>`?
 this may be the difference between `Stack` and `Stack<>`.
+`Stack` means the stack class without any type related code (field and method)
+`Stack<>` means stack class and set T to void.
+
+Y - Using type for import alias is not good. Lets revert to `=>`
+
+Y - Remove compare-and-swap operator. it is complex and makes language confusing. so `=>` is solely used for import.
