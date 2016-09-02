@@ -39,8 +39,7 @@ Every class has a special instance (static instance), which is created by the co
 3. **Control**: `return`, `defer`, `throw`
 4. **Type handling**: `typename`, `type`, `struct`
 5. **Concurrency**: `invoke`, `select`
-6. **Composition**: `expose`
-5. **Other**: `import`, `void`, `auto`
+6. **Other**: `import`, `void`, `auto`
 
 These are not keywords but have special meaning:
 `this`, `true`, `false`
@@ -71,7 +70,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `{}` instantiation
 - `:` for hash, loop, assert, call by name, array slice and tuple values
 - `<>` template syntax
-- `:=` for typename default value, type alias and import alias, ref-assignment for field and method
+- `:=` meta-assignment: typename default value, type alias, reference assignment 
 - `out`: representing function output in defer
 - `exc`: representing current exception in defer
 - `?=>` compare-and-swap
@@ -122,17 +121,18 @@ Each class's instances can be referenced using instance notation (`varName.membe
 ```
 struct 
 {
-    int _x = 12;  //private const, is not re-assignable
+    int _x := 12;  //private const, is not re-assignable, you cannot write int x=12;
     int y;
-    int h = 12;
+    int h := 12;
     int gg := this.h;  //gg is a reference to h. any action on gg will be called on h.
     auto dsa := this.h;  //:= assignment in struct cannot be re-assigned. but in the code it can. 
     float ff := this.object1.field5;
 }
 
 int func1(int y) { return this.x + y; }
-int func2(int x) := this.func1;  //redirect calls to func1, methods should have same signature
-auto func3 := this.func2;  //compiler will infer the input/output types for func3 from func2 signature
+int func2(int x) = this.func1;  //redirect calls to func1, methods should have same signature
+//note that you can only "assign" to a function, when declaring it.
+auto func3 = this.func2;  //compiler will infer the input/output types for func3 from func2 signature
 MyClass new() return {};  //new is not part of syntax. You can choose whatever name you want,
 void _() this.y=9;  //initialize code for static instance
 
@@ -155,10 +155,10 @@ void _() this.y=9;  //initialize code for static instance
 
 ###Composing classes
 
-- You can write `expose AA := MyClass;` to add a field named `AA`, expose all public members in MyClass and route them to `AA` (AA can be a private too). If you omit AA, class name will be used.
-- expose soft-copy members. This means, if there is a member with the same name in main class, it won't be copied.
+- A field starting with `__` will be promoted/exposed. 
+- expose will soft-copy members. This means, if there is a member with the same name in main class, it won't be copied (main class members always win).
 - If you expose two classes that have a public fields with the same name, you must define a field with that name in main class (or else there will be a compiler error). 
-- You can hide/remove an exposed method by adding same method with/without body (methods of the main class always win).
+- You can hide/remove an exposed method by adding same method with/without body.
 - You can rename an exposed method by removing it and adding your own method.
 - If a method is empty in `MyClass`, the exposer class can provide an implementation for it. This will cause calls to the empty method be redirected to the new implementation, even inside `MyClass` instance variable (same as virtual methods in other languages).
 - In expose, you don't have access to private members of composed object.
@@ -347,7 +347,7 @@ auto intr = Interface1
 ###Misc
 
 - **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage` (For basic data types classes in `core` they can use `myClass` notation, like `int`).
-- **const**: Class fields which are assigned a value inside `struct` section are constant (compiler handles assignment without invoking the code for assignment operator) and cannot be re-assigned later. Note that, they still can be mutated if they provide appropriate methods. If you need fully immutable classes, you have to implement the logic in your code.
+- **const**: Class fields which are assigned a value (using `:=`) inside `struct` section are constant and cannot be re-assigned later. Note that, they still can be mutated if they provide appropriate methods. If you need fully immutable classes, you have to implement the logic in your code.
 - **Literlas**: `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64, `1_000_000`. compiler will handle object literals and create corresponding objects (in default arg value, initializations, enum values, true, false, ...). `true` is a shortcut for `bool.true`, same for `false`.
 - `///` before method or field or first line of the file is special comment to be processed by automated tools. 
 - `myClass.myMember(x: 10, y: 12);`
