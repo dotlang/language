@@ -70,7 +70,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `{}` instantiation
 - `:` for hash, loop, assert, call by name, array slice and tuple values
 - `<>` template syntax
-- `:=` meta-assignment: typename default value, type alias, reference assignment 
+- `:=` reference assignment 
 - `out`: representing function output in defer
 - `exc`: representing current exception in defer
 - `?=>` compare-and-swap
@@ -195,7 +195,7 @@ Functions can only return one value but that one value can be an anonymous struc
 The only special thing that compiler does here is to handle literals. Also compiler automatically creates them for you when you call a function or return something:
 
 ```
-type myt := (int x, float f);  //defining tuple, field names are required
+type myt (int x, float f);  //defining tuple, field names are required
 myt func1(){ return (x: 1, f: 1.1); }  //return tuple literal
 myt func1(){ return (1, 1.1); }    //tuple literal with implicit field names
 (int x, float f) func1() { return (x:1, f:2.3); }
@@ -219,21 +219,21 @@ Tuples are automatically converted to classes by compiler. So they are basically
 
 You can use `type` to define type alias:
 ```
-type point := int[];
-type x := int;
+type point int[];
+type x int;
 x a;  //=int a;
 ```
 To use a type from outside the defining class:
 ```
 MyClass.point pt = (1, 10);
 //you can alias it again
-type mypt := MyClass.point;
+type mypt MyClass.point;
 mypt xx = (1, 2);
 ```
 
 You can use type alias to narrow valid values for a type (like enum):
 ```
-type DoW := int (SAT=0, SUN=1, ...);
+type DoW int (SAT=0, SUN=1, ...);
 ```
 
 Same as other members, types starting with underscore are private.
@@ -241,7 +241,7 @@ You can alias an import too:
 
 ```
 import core.st;
-type CST := core.st;
+type CST core.st;
 ```
 
 ###Templates
@@ -249,8 +249,7 @@ type CST := core.st;
 In a class file you can use `typename` keyword to indicate that the user of the class has to provide type names at compile time:
 
 ```
-typename K: interface1;  //K type should conform to interface1. 
-typename V: interface2 := MyClass;   //default value is MyClass
+typename K interface1;  //K type should conform to interface1. if it's not passed, it will be void
 
 void put(K key, V value) ...
 V get(K key) ...
