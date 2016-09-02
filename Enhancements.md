@@ -1671,3 +1671,31 @@ this may be the difference between `Stack` and `Stack<>`.
 Y - Using type for import alias is not good. Lets revert to `=>`
 
 Y - Remove compare-and-swap operator. it is complex and makes language confusing. so `=>` is solely used for import.
+
+Y - Can we somehow get rid of type? or at least make it class internal?
+also same for typename. 
+type: define tuple, type alias, enum.
+if we remove type keyword, we have to find a way to do all of these.
+what about removing typename?
+`typename T interface1;`
+`type T interface1;`
+we can use convention. if type name starts with ??? it is a template.
+`type __T interface1;`
+`type $T interface1;`
+
+`type X := int;`
+`type Y := int(A=1, B=2);`
+`type Z := (int x, float f);`
+`type T := ?` 
+when a type alias does not have a value, it means it will be provided by outside world. 
+but how can we specify expected interface? do we really need it? we can write a comment!
+`type T;`
+`T.method1();`
+now if someone creates the class with a T type that does not have method1, there will be a compiler error.
+so typename is changed to type without value.
+
+Y - Why do we need the `struct` keyword? It's functionality is just to separate variable definition from other parts but we don't really need a keyword for that.
+the only usage is for basic types like int to define `struct(4)` to have 4 bytes allocated. but this is not for everybody.
+
+N - can we define a class which forces to be allocated on stack? no. because it will complicate everything.
+`int x = y+z;`
