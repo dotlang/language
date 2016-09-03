@@ -146,6 +146,8 @@ void _() this.y=9;  //initialize code for static instance
 - `int f(int x) return x+1;` braces can be eliminated when body is a single statement.
 - **Variadic functions**: `bool bar(int... values)`. values will be an array of int.
 - You can use `var1 := var2;` notation to assign a var2 reference to var1. So basically var1 will be an alias for var2. Using normal `var1 = var2` may not do this because the class of var2 may have a duplication based assignment operator.
+- You cannot start name of a local variable inside method with underscore. If they start with underscore, they will be static method-local variables.
+- Method argument names cannot start with underscore. Because doing so will confuse things with static method-local variables.
 
 ###Composing classes
 
