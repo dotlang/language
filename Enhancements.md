@@ -217,7 +217,7 @@ Y - Having separate import is more readable than an import block.
 
 N - What happens if exception is thrown in an assert, after return (in a defer statement)? Return value won't be changed but exception will be thrown.
 
-Y - Do we need both optional argument values and method overloading? Not probably. Because later is only needed when former is not supported. So let's remove this functionality.
+Y - Do we need both optional argument values and method overloading? Not probably. Because latter is only needed when former is not supported. So let's remove this functionality.
 
 Y - Can't we remove tags? Instead of specifying tag for each member, class can add a `getTag` method (whatever name it wants) and when another methods will need tags, send output of this method to that function as a hash-ref. So for example 'json_converter` class will receive a json string + a hash + empty class, then will initialize empty class using hash data and json-string.
 
@@ -1752,7 +1752,7 @@ Y - Still `#` notation is not good.
 `x // 5`
 `x ?? 5`
 `y=x; if ( x == @ ) y=5;`
-`x ?? 5`
+`x ?? 5` this can be better combined with `=`
 `x ?: 5`
 
 N - double underscore for exposed is a little bit irregular.
@@ -1780,3 +1780,16 @@ now what if either of them is a template? yes. why not? we can even add `Stack<T
 have it with a dynamic convertor.
 
 N - Shall we add something like perl POD? No. not in language spec.
+
+Y - Assigning value to function input is allowed but has no effect outside scope.
+most important usage: null set: `input ??= 5;`
+
+Y - Being able to call a function which takes 5 arguments with 3 arguments is dangerous. developer can make mistakes. 
+the code will accept 3 args and simply assume undef for the rest.
+`int f(int x, int y, int @z);` this means z is optional and will be undef if it's not passed.
+or we can return explicit optionals.
+explicit is better than implicit. maybe function really needs some arguments. they cannot all be optional.
+`@z` is confusing with `@` notation. `_` is also used for local static variables. 
+`int f(int x, int y, int? z);` means z is optional. where else can we use `int?` notation? field declaration? no.
+local variables? no.
+`int f(int x, int y, Stack<int>? z);`
