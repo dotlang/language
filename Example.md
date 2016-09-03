@@ -20,6 +20,7 @@ Comparer new() return {};
 //Handler.e
 
 Comparer __c := Comparer.new();
+int g = 11;
 
 void _()
 {
@@ -28,20 +29,22 @@ void _()
 
 int _init() return this._internal++;
 
-int test(int arg=9)
+int test(int arg)
 {
+    arg ??= 10;
     Comparer fp = (x, y) -> x+y;
-    bool bb = fp(1, 2); 
+    bool bb = fp(1, 2) > 6; 
     
     auto fq = Comparer
     {
-        doCompare(int x, int y)
+        doCompare(int x, int? y)
         {
+            y ??= 6;
             return x>y;
         }
     };
     
-    int z = fp.doCompare(1, 9);
+    int z := fp.doCompare(1, 9);
     defer fp = nil;
     
     MyClass t = MyClass.new();
@@ -64,14 +67,14 @@ int test(int arg=9)
     int[,] matrix = int[2,2] {{1, 2}, {3, 4}};
     int t = matrix[0,0];
     
-    uint64 bigData = (uint64)t;
+    uint64 bigData = @uint64(t);
     
     for(string s, int k: h)
     {
         t += k;
     }
     
-    int g = iif (z>0, 1, 2);
+    int g = 2+t;
     assert g != 0;
     assert g != 1 : 'error in value of g';  //set error and return, for exit, it can be done via std
     
