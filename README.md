@@ -56,7 +56,7 @@ Usage of most these keywords is almost same as C++ or Java, so I omit explanatio
 
 The operators are almost similar to C language:
 
-- Conditional: `and or not == != >= <= ?:`
+- Conditional: `and or not == != >= <= ??`
 - Bitwise: `~ & | ^ << >>`
 - Math: `+ - * % ++ -- **`
 
@@ -72,7 +72,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `:=` reference assignment and type alias
 - `out`: representing function output in defer
 - `exc`: representing current exception in defer
-- `?:` undef check
+- `??` undef check
 
 
 ###The most basic application
@@ -140,8 +140,8 @@ void _() this.y=9;  //initialize code for static instance
 - Class members (fields, methods and types) starting with underscore are considered private and can only be accessed internally. So the only valid combination that can come before `_` is `this._xxx` not `obj._xxx`.
 - Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer.
 - The private unnamed method is called by runtime service when static instance of the class is created and is optional.
-- You can not have multiple methods with body with the same name in a single class. 
-- There is no default value for method arguments. If some parameter is not passed, it's value will be undef.
+- You can not have multiple methods with body with the same signature in a single class. 
+- There is no default value for method arguments. If argument type is suffixed with `?` means, it is optional and will be undef if not passed. `int f(int x, int y, int? z);`
 - When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`). `this` is not re-assignable variable so you cannot re-assign it.
 - When a variable is in undefined state and we call one of it's type's methods, the method will be called normally with empty `this`. If we try to read it's fields, it will crash.
 - If a method has no body, you can still call it and it will return undef. You can also call methods on an undef variable and as long as methods don't need `this` fields, it's fine.
@@ -151,6 +151,7 @@ void _() this.y=9;  //initialize code for static instance
 - You cannot start name of a local variable inside method with underscore. If they start with underscore, they will be static method-local variables.
 - Method argument names cannot start with underscore. Because doing so will confuse things with static method-local variables.
 - You can call a method with arg names: `myClass.myMember(x: 10, y: 12);`
+- Methods can assign values to their inputs, but it won't affect passed data.
 
 ###Composing classes
 
@@ -185,7 +186,7 @@ You can use select to read/write from/to blocking channels.
 Classes can override all the valid operators on them. `int` class defines operator `+` and `-` and many others (math, comparison, ...). This is not specific to `int` and any other class can do this. 
 
 - `=` operator, by default makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. You can override this behavior by adding `op_assign` method to your class and clone the data. This is done for primitives like `int` so `int x=y` will duplicate value of y into x. If you need original behavior of `=` you have to embed those variables in holder classes which use default `=` behavior. On the other hand, if you need duplication for classes which do ref-assignment by default, you will need to do it manually in one of methods (like `clone` and call `MyClass x = y.clone()`).
-- `x ?: 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
+- `x ?? 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
 
 ###Tuple
 
