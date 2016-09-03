@@ -1699,3 +1699,36 @@ the only usage is for basic types like int to define `struct(4)` to have 4 bytes
 
 N - can we define a class which forces to be allocated on stack? no. because it will complicate everything.
 `int x = y+z;`
+
+Y - How can we define local static variables? Each piece of code is located inside a method which is inside a class. 
+a static local variable, is a variable added to the parent class which is only accessible by that method. 
+```
+int x;
+int f() { this.x++; return this.x;}
+```
+how can we define `x` inside method `f` but denote it should preserve value between two calls?
+`int this.x;`
+`int _x;` variables starting with underscore are static.
+first one makes more sense;
+```
+int f() {
+int this._x;  //x should be uniqe inside the class. this is a private variable inside the class
+int this.y;   //y is unique name and is publicly available
+this.x++;
+```
+so methods can add fields to the class. in addition to the fields section of the class.
+q1: this will make code un-readable. because we really don't know full list of fields of the class.
+so -> local vars cannot start with underscore. 
+if they start with `_` they are local static variables of the method. 
+by this way, we are orth. underscore is valid inside a method. 
+
+? - What if function argument name starts with underscore? is it valid? does it have a special meaning?
+solution 1: they can have underscore and it does not have any special meaning.
+```
+int f(int x,int _y) {
+    
+}
+```
+this shouldn't be related to the type. 
+1) it can denote not nullable arg.
+2) we can say _ is forbidden. because it will confuse things with local static methods.
