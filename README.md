@@ -73,6 +73,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `out`: representing function output in defer
 - `exc`: representing current exception in defer
 - `??` undef check
+- `?` optional argument
 
 
 ###The most basic application
@@ -342,6 +343,7 @@ auto intr = Interface1
 - Example: Converting MyClass to YourClass: `yclass = @YourClass(mclass);`
 1) call `mclass.YourClass` method: `yclass = mclass.YourClass();`
 2) call `YourClass.MyClass` static constructor method: `yclass = YourClass.MyClass(mclass);`
+- The only case where `<` and `,` is allowed in method name is for above purpose. 
 - `float f; int x = @int(f);` this will call `int` method on class `float` to do casting. This can be called automatically by compiler if needed. For template types (like array or hash), you should name the function according to full-name not short-name (`Array<char>` instead of `char[]`).
 - empty/undefined/not-initialized state of a variable is named "undef" state and is shown by `@MyClass()` which means casting empty to `MyClass` (MyClass is type of the variable). You can shortcut this by `@MyClass` notation. If type can be inferred you can use only `@`.
 - Value of a variable before initialization is undef which is denoted by `@` or `@MyClass` where MyClass is type of the variable. 
