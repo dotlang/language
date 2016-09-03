@@ -1722,7 +1722,7 @@ so -> local vars cannot start with underscore.
 if they start with `_` they are local static variables of the method. 
 by this way, we are orth. underscore is valid inside a method. 
 
-? - What if function argument name starts with underscore? is it valid? does it have a special meaning?
+N - What if function argument name starts with underscore? is it valid? does it have a special meaning?
 solution 1: they can have underscore and it does not have any special meaning.
 ```
 int f(int x,int _y) {
@@ -1732,3 +1732,51 @@ int f(int x,int _y) {
 this shouldn't be related to the type. 
 1) it can denote not nullable arg.
 2) we can say _ is forbidden. because it will confuse things with local static methods.
+
+N - Can we implement memoization with local static fields? yes we can.
+```
+int f() {
+    int _result = 0;
+    if ( _result != @int ) return _result;
+    
+    defer(out) _result = out;
+}
+```
+
+Y - when checking for undef, can we remove type if it can be inferred?
+`if ( x == int@ )`
+`if ( x == @)`
+
+Y - Still `#` notation is not good.
+`x # 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
+`x // 5`
+`x ?? 5`
+`y=x; if ( x == @ ) y=5;`
+`x ?? 5`
+`x ?: 5`
+
+N - double underscore for exposed is a little bit irregular.
+`MyClass _x; MyClass x := _x;` adding public field with the same name. but this is not as obvious as double under.
+`MyClass MyClass;` public fields with the same name as the type, are exposed. adv: we are sure that they will be exposed only once.
+`MyCalass _MyClass;` private fields with the same name as their type are exposed. but what about templates?
+`Stack<int> _Stack<int>;`?
+we cannot enforce name = typename in a simple manner.
+`MyClass __x;`
+`MyClass _x =:;`
+
+N - Can we have python decorators?
+normal way: write a new class, expose class X, write your own method which inside calls, `this.__var.method`.
+No. they make code complex and are easily doable without new syntax.
+
+N - can write `auto f = core.std.create((x, y) -> x+y);` for function definition?
+it shouldn't be allowed. this syntax is a shortcut to assign one func to another.
+if you need a more complex code, just write a body for the function.
+
+N - Can we have a method named `Stack<int>`? This is needed for casting methods. -> yes we can.
+Converting MyClass to YourClass: `yclass = @YourClass(mclass);`
+1) call mclass.YourClass method: `yclass = mclass.YourClass();`
+2) call YourClass.MyClass static constructor method: `yclass = YourClass.MyClass(mclass);`
+now what if either of them is a template? yes. why not? we can even add `Stack<T>` method to a class and
+have it with a dynamic convertor.
+
+N - Shall we add something like perl POD? No. not in language spec.
