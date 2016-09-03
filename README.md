@@ -56,7 +56,7 @@ Usage of most these keywords is almost same as C++ or Java, so I omit explanatio
 
 The operators are almost similar to C language:
 
-- Conditional: `and or not == != >= <= #`
+- Conditional: `and or not == != >= <= ?:`
 - Bitwise: `~ & | ^ << >>`
 - Math: `+ - * % ++ -- **`
 
@@ -65,14 +65,14 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 *Special syntax*:
 - `->` for anonymous class declaration
 - `()` for defining tuple literals and function call
-- `@` for casting
+- `@` for casting and undef
 - `{}` instantiation
 - `:` for hash, loop, assert, call by name, array slice and tuple values
 - `<>` template syntax
 - `:=` reference assignment and type alias
 - `out`: representing function output in defer
 - `exc`: representing current exception in defer
-- `#` undef check
+- `?:` undef check
 
 
 ###The most basic application
@@ -117,7 +117,8 @@ Each class's instances can be referenced using instance notation (`varName.membe
 ###Class members
 
 ```
-int _x := 12;  //private const, is not re-assignable, you cannot write int x=12;
+int _x := 12;  //private const, is not re-assignable
+int qq = 19;  //public const
 int y;
 int h := 12;
 int gg := this.h;  //gg is a reference to h. any action on gg will be called on h.
@@ -126,21 +127,22 @@ float ff := this.object1.field5;
 
 int func1(int y) { return this.x + y; }
 int func2(int x) = this.func1;  //redirect calls to func1, methods should have same signature
+//when assigning values during function definition, rvalue can only be a simple expression pointing to another function.
+//for any more complex case, write the body.
+auto ff = MyClass.function2; //assign function to a function from static instance of another class
 //note that you can only "assign" to a function, when declaring it.
 auto func3 = this.func2;  //compiler will infer the input/output types for func3 from func2 signature
 MyClass new() return {};  //new is not part of syntax. You can choose whatever name you want,
 void _() this.y=9;  //initialize code for static instance
 
 ```
-- You cannot assign values in field section because it is not a place for code. You just define fields and possibly ref-assign them.
+- Any field assignment (using `=` or `:=`) in class definition marks the fields as const (not re-assignable).  Note that, they still can be mutated if they provide appropriate methods. If you need fully immutable classes, you have to implement the logic in your code.
 - Class members (fields, methods and types) starting with underscore are considered private and can only be accessed internally. So the only valid combination that can come before `_` is `this._xxx` not `obj._xxx`.
 - Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer.
 - The private unnamed method is called by runtime service when static instance of the class is created and is optional.
 - You can not have multiple methods with body with the same name in a single class. 
 - There is no default value for method arguments. If some parameter is not passed, it's value will be undef.
 - When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`). `this` is not re-assignable variable so you cannot re-assign it.
-- Value of a variable before initialization is undef which is denoted by `@MyClass` where MyClass is type of the variable. 
-- You can also return `@MyClass` when you want to indicate invalid state for a variable.
 - When a variable is in undefined state and we call one of it's type's methods, the method will be called normally with empty `this`. If we try to read it's fields, it will crash.
 - If a method has no body, you can still call it and it will return undef. You can also call methods on an undef variable and as long as methods don't need `this` fields, it's fine.
 - `int f(int x) return x+1;` braces can be eliminated when body is a single statement.
@@ -148,6 +150,7 @@ void _() this.y=9;  //initialize code for static instance
 - You can use `var1 := var2;` notation to assign a var2 reference to var1. So basically var1 will be an alias for var2. Using normal `var1 = var2` may not do this because the class of var2 may have a duplication based assignment operator.
 - You cannot start name of a local variable inside method with underscore. If they start with underscore, they will be static method-local variables.
 - Method argument names cannot start with underscore. Because doing so will confuse things with static method-local variables.
+- You can call a method with arg names: `myClass.myMember(x: 10, y: 12);`
 
 ###Composing classes
 
@@ -182,7 +185,7 @@ You can use select to read/write from/to blocking channels.
 Classes can override all the valid operators on them. `int` class defines operator `+` and `-` and many others (math, comparison, ...). This is not specific to `int` and any other class can do this. 
 
 - `=` operator, by default makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. You can override this behavior by adding `op_assign` method to your class and clone the data. This is done for primitives like `int` so `int x=y` will duplicate value of y into x. If you need original behavior of `=` you have to embed those variables in holder classes which use default `=` behavior. On the other hand, if you need duplication for classes which do ref-assignment by default, you will need to do it manually in one of methods (like `clone` and call `MyClass x = y.clone()`).
-- `x # 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
+- `x ?: 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
 
 ###Tuple
 
@@ -334,17 +337,21 @@ auto intr = Interface1
 
 ###Casting and undef state
 
-- `@myclass(my_obj)` returns empty/undefined/not-initialized if myObj cannot be casted to myclass. Compiler will try 3 options for casting: first if `my_obj` conforms to `myclass` it will be casted without change in the data (means `my_obj` has all fields and methods that `myclass` has specified). second looks for a method called `myclass` defined in `my_obj` (This method will convert `my_obj` instance to an instance of `myclass`). third, looks for reverse: a method called `ObjType` in `myclass` static instance (ObjType is type of `my_obj` and this method will crete a new instance of myclass using given `ObjType` instance). All these options will be checked at compile time.
+- `@myclass(my_obj)` is the casting operator and returns empty/undefined/not-initialized if myObj cannot be casted to myclass. Compiler will try 3 options for casting: first if `my_obj` conforms to `myclass` it will be casted without change in the data (means `my_obj` has all fields and methods that `myclass` has specified). second, looks for a method called `myclass` defined in `my_obj` (This method will convert `my_obj` instance to an instance of `myclass`). third, looks for reverse: a method called `ObjType` in `myclass` static instance (ObjType is type of `my_obj` and this method will crete a new instance of myclass using given `ObjType` instance). All these options will be checked at compile time.
+- Example: Converting MyClass to YourClass: `yclass = @YourClass(mclass);`
+1) call `mclass.YourClass` method: `yclass = mclass.YourClass();`
+2) call `YourClass.MyClass` static constructor method: `yclass = YourClass.MyClass(mclass);`
 - `float f; int x = @int(f);` this will call `int` method on class `float` to do casting. This can be called automatically by compiler if needed. For template types (like array or hash), you should name the function according to full-name not short-name (`Array<char>` instead of `char[]`).
-- empty/undefined/not-initialized state of a variable is named "undef" state and is shown by `@MyClass()` which means casting empty to `MyClass` (MyClass is type of the variable). You can shortcut this by `@MyClass` notation.
+- empty/undefined/not-initialized state of a variable is named "undef" state and is shown by `@MyClass()` which means casting empty to `MyClass` (MyClass is type of the variable). You can shortcut this by `@MyClass` notation. If type can be inferred you can use only `@`.
+- Value of a variable before initialization is undef which is denoted by `@` or `@MyClass` where MyClass is type of the variable. 
+- You can also return `@MyClass` when you want to indicate invalid state for a variable.
+
 
 ###Misc
 
 - **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage` (For basic data types classes in `core` they can use `myClass` notation, like `int`).
-- **const**: Class fields which are assigned a value (using `:=`) inside fields section are constant and cannot be re-assigned later. Note that, they still can be mutated if they provide appropriate methods. If you need fully immutable classes, you have to implement the logic in your code.
 - **Literlas**: `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64, `1_000_000`. compiler will handle object literals and create corresponding objects (in default arg value, initializations, enum values, true, false, ...). `true` is a shortcut for `bool.true`, same for `false`.
 - `///` before method or field or first line of the file is special comment to be processed by automated tools. 
-- `myClass.myMember(x: 10, y: 12);`
 - `break 2` to break outside 2 nested loops. same for `continue`.
 
 ###Core package
