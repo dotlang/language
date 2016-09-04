@@ -15,6 +15,7 @@ other external libraries and handling concurrency.
 Also there is a `core` library which is used to implement some basic, low-level classes and operators which can not be 
 simply implemented using pure Electron language.
 The `std` library is a layer above runtime and `core` which contains some general-purpose and common classes.
+This document explains about 
 
 Three main goals are pursued in the design of this language:
 
@@ -36,6 +37,7 @@ As a 10,000 foot view of the language, code is written in files organized in dir
 only one class (fields + methods). In Electron, class is equal to class or abstract class or interface in other languages. Classes can import other classes to use them. The entry point of an application is `main` method.
 
 ##Lexical Syntax
+
 ##Rules and Conventions
 ##Structure of source file
 ##Keywords
