@@ -18,12 +18,12 @@ The `std` library is a layer above runtime and `core` which contains some genera
 
 Three main goals are pursued in the design of this language:
 
-1. #Consistency and Simplicity#: The code written in Electron language should be easy to learn, read, write and understand.
+1. **Consistency and Simplicity**: The code written in Electron language should be easy to learn, read, write and understand.
 There has been a lot of effort to make sure there are as few exceptions as possible. Software development is complex enough. 
 Let's keep the language as simple as possible and save complexities for when we really need them.
-2. #Powerful#: It should enable (a team of) developers to organize, develop, test, maintain and operate a large and complex 
+2. **Powerful**: It should enable (a team of) developers to organize, develop, test, maintain and operate a large and complex 
 software project, with relative ease.
-3. #Fast#: Performance of the final output should be high. Much better than dynamic languages and 
+3. **Fast**: Performance of the final output should be high. Much better than dynamic languages and 
 something like Java.
 
 Achieving all of above goals at the same time is something impossible so there will definitely be trade-offs and exceptions.
@@ -33,9 +33,7 @@ The underlying rules of design of this language are
 [DRY rule] (https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
 As a 10,000 foot view of the language, code is written in files organized in directories. Each file represents one and
-only one class (fields + methods). Classes can import other classes to use them. The entry point of an application 
-is `main` method.
-
+only one class (fields + methods). In Electron, class is equal to class or abstract class or interface in other languages. Classes can import other classes to use them. The entry point of an application is `main` method.
 
 ##Lexical Syntax
 ##Rules and Conventions
