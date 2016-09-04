@@ -33,13 +33,21 @@ The underlying rules of design of this language are
 [KISS rule] (https://en.wikipedia.org/wiki/KISS_principle) and
 [DRY rule] (https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-As a 10,000 foot view of the language, code is written in files organized in directories. Each file represents one and
-only one class (fields + methods). In Electron, class is equal to class or abstract class or interface in other languages. Classes can import other classes to use them. The entry point of an application is `main` method.
+As a 10,000 foot view of the language, code is written in files organized in directories (called packages). Each file represents one and
+only one class (fields + methods). In Electron, class can be analogous to class or abstract class or interface in other languages. Classes can import other packages to use their classes. The entry point of an application is the `main` method.
 
 ##Lexical Syntax
+- **Encoding**: Source code files are encoded in UTF-8 format.
+- **Whitespace**: Any instance of space(' '), tab(\t), newline(\r and \n) are whitespace and will be ignored.
+- **Comments**: C like comments are used (`//` for single line and `/* */` for multi-line).
+- **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0x0101011101` binary number, `192.121f` double, `1234l` long. 
+- **Adressing**: Each type, field or method can be address in the format of `A.B.(...).D` where `A`, `B` and other parts are each either name of a package or class. The last part `D` is name of the field or method or type which is being addressed.
 
 ##Rules and Conventions
+Almost everything is an object, even basic data types and everything is passed by value, but everything is a reference. Every class has a special instance (static instance), which is created by the compiler. This instance can be used to create other instances of the class. But at very few cases compiler does something for the developer automatically. Most of the time, developer should do the job manually.
+
 ##Structure of source file
+
 ##Keywords
 ##Operators and special syntax
 ##Best practice
