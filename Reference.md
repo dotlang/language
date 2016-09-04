@@ -28,9 +28,9 @@ something like Java.
 
 Achieving all of above goals at the same time is something impossible so there will definitely be trade-offs and exceptions.
 The underlying rules of design of this language are 
-(Principle of least astonishment)[https://en.wikipedia.org/wiki/Principle_of_least_astonishment], 
-(KISS rule) [https://en.wikipedia.org/wiki/KISS_principle] and
-(DRY rule) [https://en.wikipedia.org/wiki/Don%27t_repeat_yourself].
+[Principle of least astonishment](https://en.wikipedia.org/wiki/Principle_of_least_astonishment), 
+[KISS rule] (https://en.wikipedia.org/wiki/KISS_principle) and
+[DRY rule] (https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
 As a 10,000 foot view of the language, code is written in files organized in directories. Each file represents one and
 only one class (fields + methods). Classes can import other classes to use them. The entry point of an application 
