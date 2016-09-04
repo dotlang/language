@@ -1793,3 +1793,5 @@ explicit is better than implicit. maybe function really needs some arguments. th
 `int f(int x, int y, int? z);` means z is optional. where else can we use `int?` notation? field declaration? no.
 local variables? no.
 `int f(int x, int y, Stack<int>? z);`
+
+? - What is suffix for double literals? f or d?
