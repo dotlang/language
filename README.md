@@ -407,6 +407,7 @@ This is a specification and the implementation may choose any strategy (compile 
 - basic syntax rules + explanations
 - Best practices, packaging, versioning, conventions, naming
 - How to update this spec?
+- Code examples (quicksort, graph representation, expression parser)
 
 Sample:
 Java [chrome-extension://oemmndcbldboiebfnladdacbdfmadadm/http://cr.openjdk.java.net/~mr/se/8/java-se-8-fr-spec-01/java-se-8-jls-fr-diffs.pdf]  
