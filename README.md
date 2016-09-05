@@ -50,7 +50,7 @@ Every class has a special instance (static instance), which is created by the co
 - **Encoding**: Source code files are encoded in UTF-8 format.
 - **Whitespace**: Any instance of space(' '), tab(\t), newline(\r and \n) are whitespace and will be ignored.
 - **Comments**: C like comments are used (`//` for single line and `/* */` for multi-line).
-- **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0x0101011101` binary number, `192.121f` double, `1234l` long. 
+- **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0x0101011101` binary number, `192.121d` double, `1234l` long. 
 - **Adressing**: Each type, field or method can be address in the format of `A.B.(...).D` where `A`, `B` and other parts are each either name of a package or class. The last part `D` is name of the field or method or type which is being addressed.
 
 ##Keywords
@@ -105,10 +105,10 @@ Usage of most these keywords is almost same as C++ or Java, so I omit explanatio
 
 ### Primitive data classes
 
-- **Integer data types**: `char`, `short`, `int`, `long`
-- **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
-- **Floating point data types**: `float`, `double`
-- **Others**: `bool`
+- **Integer data types**: `Char`, `Short`, `Int`, `Long`
+- **Unsigned data types**: `Byte`, `Ushort`, `Uint`, `Ulong`
+- **Floating point data types**: `Float`, `Double`
+- **Others**: `Bool`
 
 ### Operators
 
@@ -317,6 +317,8 @@ Note that `type` section must come before fields section.
 For each tempalte class like `Stack`, there is a base interface class `Stack` which is equal to the class definition minus everything related to typenames. According to definition, all template class instances, conform to the base class, so base interface can be the base type for all template classes. This means `Stack` is the base interface for `Stack<int>, Stack<float>` and all other stacks and if you need to write a method accepting any stack you can use it: `void getStack(Stack s)`. 
 Note that `Stack` is not the same as `Stack<>` which has type set to `void`.
 
+You can specialize a template class by adding appropriate file. For example for `Stack.e` you can define `Stack[Int].e` to specialize stack for integer.
+
 ###Exception handling
 
 - It is advised to return error code in case of an error and use exceptions in really exceptional cases.
@@ -410,7 +412,7 @@ auto intr = Interface1
 
 ###Misc
 
-- **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage` (For basic data types classes in `core` they can use `myClass` notation, like `int`).
+- **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage`.
 - **Literlas**: `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64, `1_000_000`. compiler will handle object literals and create corresponding objects (in default arg value, initializations, enum values, true, false, ...). `true` is a shortcut for `bool.true`, same for `false`.
 - `///` before method or field or first line of the file is special comment to be processed by automated tools. 
 - `break 2` to break outside 2 nested loops. same for `continue`.
