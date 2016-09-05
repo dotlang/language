@@ -1794,7 +1794,14 @@ explicit is better than implicit. maybe function really needs some arguments. th
 local variables? no.
 `int f(int x, int y, Stack<int>? z);`
 
-? - What is suffix for double literals? f or d?
+\* - `int` should be just like other classes. So we have to think of a clean/good way of representing the class source code. memory byte needed and methods which are not implemented in the source.
+
+\* - Are we going to support reflection?
+
+Y - What is suffix for double literals? f or d? 
+by default compiler tries to convert literal to shortest length.
+`auto x = 12` if we want x to be long we should suffix it with `l`. 
+Like hava `l` for long and `d` for double. 
 
 N - Using `@` as an operator to check for null?
 `if ( @x ) { }` @ClassName is for conversion
@@ -1803,7 +1810,16 @@ N - Using `@` as an operator to check for null?
 `if ( M == @MyClass ) {}`
 no. it will be confusing.
 
-? - `{}` can also be confusing. can we use another operator?
+N - Still not comfortable with double underscore notation for exposed. 
+also the field name should be optional but cannot be same as class name.
+`MyClass __abcd;`
+
+Y - Can we support template specialization? e.g. having `Stack.e` and `Stack<int>.e` files.
+but we cannot have `<>,` in a filename. 
+maybe we can replace `<>` with `[]` because `a[b,c].e` is a valid filename.
+makes sense.
+
+Y - `{}` can also be confusing. can we use another operator?
 ```
 MyClass new(int x) {
     auto result = (x:1);
@@ -1813,15 +1829,12 @@ MyClass new(int x) {
 MyClass new() return $();  //shortest form
 ```
 maybe we can use `$()`. It is also compatible with anonymous tuple notation too.
+and `$(4)` will allocate 4 bytes of memory for `this`.
 we shouldn't mention class name, it should be implicitly defined.
+
+? - Can we set values upon instantiation?
 `result = $(x:1, y:12);`
 `result = $();`
-
-
-? - Still not comfortable with double underscore notation for exposed. 
-also the field name should be optional but cannot be same as class name.
-`MyClass __abcd;`
-
 
 ? - How can developer/compiler know if a class is immutable?
 proposal: if class has an empty assignment operator? no. this is not enough.
@@ -1842,6 +1855,10 @@ proposal: fields with assigned value are const but can get value in instantiatio
 ? - `x==y` does it compare references or calls `equals` of `x`?
 proposal: make ref equality and value eqality same thing, like string interning in java.
 which means, primitive data classes must be immutable.
+So, according to spec, `==` will compare references. To compare values you should use `equals`.
+but for primitive classes, `==` is fine -> developer should not memorize which data it is comparing.
+and interning will add overload to the runtime!
+
 if a class does not have any field and is immutable then compiler will do interning for it.
 if a class is immutable and small (like `int`) when `f(int x)` is called, compiler can simply copy the value onto the stack. 
 if we keep it on the stack, how runtime should handle this:
@@ -1854,11 +1871,3 @@ long z = @long(y);  //how can we know this is not correct?
 ```
 proposal: in non-primitives, we store actual type. so when we have `obj y = @obj(x)` y needs to keep track of it's original type.
 
-\* - `int` should be just like other classes. So we have to think of a clean/good way of representing the class source code. memory byte needed and methods which are not implemented in the source.
-
-\* - Are we going to support reflection?
-
-? - Can we support template specialization? e.g. having `Stack.e` and `Stack<int>.e` files.
-but we cannot have `<>,` in a filename. 
-maybe we can replace `<>` with `[]` because `a[b,c].e` is a valid filename.
-makes sense.
