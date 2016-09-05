@@ -124,7 +124,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `->` for anonymous class declaration
 - `()` for defining tuple literals and function call
 - `@` for casting and undef
-- `{}` instantiation
+- `$` instantiation
 - `:` for hash, loop, assert, call by name, array slice and tuple values
 - `<>` template syntax
 - `:=` reference assignment and type alias
@@ -191,7 +191,7 @@ int func2(int x) = this.func1;  //redirect calls to func1, methods should have s
 auto ff = MyClass.function2; //assign function to a function from static instance of another class
 //note that you can only "assign" to a function, when declaring it.
 auto func3 = this.func2;  //compiler will infer the input/output types for func3 from func2 signature
-MyClass new() return {};  //new is not part of syntax. You can choose whatever name you want,
+MyClass new() return $();  //new is not part of syntax. You can choose whatever name you want,
 void _() this.y=9;  //initialize code for static instance
 
 ```
@@ -211,6 +211,7 @@ void _() this.y=9;  //initialize code for static instance
 - Method argument names cannot start with underscore. Because doing so will confuse things with static method-local variables.
 - You can call a method with arg names: `myClass.myMember(x: 10, y: 12);`
 - Methods can assign values to their inputs, but it won't affect passed data.
+- `$()` allocates memory for a new instance of the current class. `$(4)` will allocate 4 bytes of memory (used for primitive data types where there is no field defined, e.g. Int).
 
 ###Composing classes
 
