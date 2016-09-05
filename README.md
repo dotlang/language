@@ -1,5 +1,4 @@
 ## Electron Programming Language Reference
-
 Version 0.1  
 September 4, 2016
 
@@ -69,23 +68,27 @@ Every class has a special instance (static instance), which is created by the co
 ###invoke
 ###select
 
-###Primitives
+##Primitives
 ##Operators
 Each class can provide implementation for operators. 
 ##Special syntax
-###Anonymous classes `->`
-###Tuples
+###Array and hash and slice
 ###Casting and Undef
 ###Instantiation
+###Reference assignment
+###Tuples
+###Anonymous classes `->`
 ###Templates
 ###Optional arguments
-###Reference assignment
-###Array slice
-###Array and hash
 
 ##Best practice
 ###Naming
 ##Examples
+
+
+
+
+
 
 ###Keywords
 
