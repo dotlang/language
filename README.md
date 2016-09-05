@@ -1,36 +1,91 @@
-## Electron Programming Language
+## Electron Programming Language Reference
 
-###Note: This pet project is a work in progress, so expect a lot of changes.
+Version 0.1  
+September 4, 2016
 
+##History
+- **Version 0.1**: Sep 4, 2016 - Initial document created after more than 9 months of research, comparison and thinking.
+
+##Introduction
 After having worked with a lot of different languages (C#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages are sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
 
 That's why I am creating a new programming language: Electron. 
 
-I will follow 3 rules when designing this language:
+Electron programming language is a general purpose language based on author's experience and doing research on 
+other languages (namely Java, C\#, C, C++, Rust, Go, Python, Perl, Smalltalk and Ruby). This language is 
+Object-oriented, although some of more common OOP techniques are implemented differently. 
 
-1. **Simple**: Easy to learn, read, write and understand. Consistent, orthogonal and logical, as much as possible with minimum number of exceptions to remember. There should preferably be only one way to do some task. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
-2. **Powerful**: It should enable (a team of) developers to organize, develop, test, maintain and operate a large and complex software project, with relative ease.
-3. **Fast**: Performance of the final output should be high. Much better than dynamic languages like Python. Something like Java.
+There is a runtime system which is responsible for memory allocation and management, interaction with OS and 
+other external libraries and handling concurrency.
+Also there is a `core` library which is used to implement some basic, low-level classes and operators which can not be 
+simply implemented using pure Electron language.
+The `std` library is a layer above runtime and `core` which contains some general-purpose and common classes.
+This document explains about 
 
-I know that achieving all of above goals at the same time is something impossible so there will definitely be trade-offs where I will let go of some features to have other (more desirable) features. I will remove some features or limit some features in the language where I think it will help achieve above goals. One important guideline I use is "convention over configuration" which basically means, I will prefer using a set of pre-defined rules over keywords in the language.
+Three main goals are pursued in the design of this language:
 
-This project will finally consist of these components:
+1. **Consistency and Simplicity**: The code written in Electron language should be easy to learn, read, write and understand.
+There has been a lot of effort to make sure there are as few exceptions as possible. Software development is complex enough. 
+Let's keep the language as simple as possible and save complexities for when we really need them.
+2. **Powerful**: It should enable (a team of) developers to organize, develop, test, maintain and operate a large and complex 
+software project, with relative ease.
+3. **Fast**: Performance of the final output should be high. Much better than dynamic languages and 
+something like Java.
 
-1. A specification of the language (Formal specification + Examples, descriptions and best practices)
-2. An interpreter/compiler
-2. Debugger tools
-3. Package manager (Used to build, create, install and deploy packages, something like CPAN, PyPi + their client-side tools)
-4. Development plugins (For vim, emacs and other popular code editors)
 
-###Paradigm
+Achieving all of above goals at the same time is something impossible so there will definitely be trade-offs and exceptions.
+The underlying rules of design of this language are 
+[Principle of least astonishment](https://en.wikipedia.org/wiki/Principle_of_least_astonishment), 
+[KISS rule] (https://en.wikipedia.org/wiki/KISS_principle) and
+[DRY rule] (https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-Electron is an object-oriented and imperative programming language with automatic garbage collection memory management. 
-The target use case of this programming language is server-side software.
+As a 10,000 foot view of the language, code is written in files organized in directories (called packages). Each file represents one and
+only one class (fields + methods). In Electron, class can be analogous to class or abstract class or interface in other languages. Classes can import other packages to use their classes. The entry point of an application is the `main` method.
 
 ### Core principle
 
 Almost everything is an object, even basic data types and everything is passed by value, but everything is a reference.
 Every class has a special instance (static instance), which is created by the compiler. This instance can be used to create other instances of the class. But at very few cases compiler does something for the developer automatically. Most of the time, developer should do the job manually.
+
+##Lexical Syntax
+- **Encoding**: Source code files are encoded in UTF-8 format.
+- **Whitespace**: Any instance of space(' '), tab(\t), newline(\r and \n) are whitespace and will be ignored.
+- **Comments**: C like comments are used (`//` for single line and `/* */` for multi-line).
+- **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0x0101011101` binary number, `192.121f` double, `1234l` long. 
+- **Adressing**: Each type, field or method can be address in the format of `A.B.(...).D` where `A`, `B` and other parts are each either name of a package or class. The last part `D` is name of the field or method or type which is being addressed.
+
+##Keywords
+###if, else
+###switch
+###assert
+###for, break, continue
+###return
+###throw
+###defer
+###type
+###import
+###void
+###auto
+###invoke
+###select
+
+###Primitives
+##Operators
+Each class can provide implementation for operators. 
+##Special syntax
+###Anonymous classes `->`
+###Tuples
+###Casting and Undef
+###Instantiation
+###Templates
+###Optional arguments
+###Reference assignment
+###Array slice
+###Array and hash
+
+##Best practice
+###Naming
+##Examples
 
 ###Keywords
 
