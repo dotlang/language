@@ -1795,3 +1795,70 @@ local variables? no.
 `int f(int x, int y, Stack<int>? z);`
 
 ? - What is suffix for double literals? f or d?
+
+N - Using `@` as an operator to check for null?
+`if ( @x ) { }` @ClassName is for conversion
+`if ( @this.MyClass ) {}` null checking
+`if ( @MyClass ) {}` casting
+`if ( M == @MyClass ) {}`
+no. it will be confusing.
+
+? - `{}` can also be confusing. can we use another operator?
+```
+MyClass new(int x) {
+    auto result = (x:1);
+    resut.x = x;
+    return result;
+}
+MyClass new() return $();  //shortest form
+```
+maybe we can use `$()`. It is also compatible with anonymous tuple notation too.
+we shouldn't mention class name, it should be implicitly defined.
+`result = $(x:1, y:12);`
+`result = $();`
+
+
+? - Still not comfortable with double underscore notation for exposed. 
+also the field name should be optional but cannot be same as class name.
+`MyClass __abcd;`
+
+
+? - How can developer/compiler know if a class is immutable?
+proposal: if class has an empty assignment operator? no. this is not enough.
+if there is no field (e.g. `int`) or all fields are constant and immutable.
+but having no field, is not enough for being immutable.
+but for a complex class which wants to be immutable, what if we assign values upon instantiation?
+maybe with a syntax like: `auto x = {x:1, y:2};` we can assign value to fields, upon instantiation.
+so we need to define x and y as constant (assign some dummy value), and pass values in `{}`?
+
+? - How can we assign values for `const` fields of the class if they are immutable, after creation.
+in `{}` we can assign value for any public field we want, but those with assignment in field section will not be re-assignable.
+but we can assign value for fields normally using `result.value` notation.
+but can we write `result._field1=12;`? we shouldn't be able to do that. we should add a method like `init` and call it from constructor. so we cannot set values in `{}` for private fields too.
+suppose some fields are const and immutable, how can I assign values to them upon creation of the class?
+proposal: fields with assigned value are const but can get value in instantiation operator (public or private).
+
+
+? - `x==y` does it compare references or calls `equals` of `x`?
+proposal: make ref equality and value eqality same thing, like string interning in java.
+which means, primitive data classes must be immutable.
+if a class does not have any field and is immutable then compiler will do interning for it.
+if a class is immutable and small (like `int`) when `f(int x)` is called, compiler can simply copy the value onto the stack. 
+if we keep it on the stack, how runtime should handle this:
+```
+int x = 12;  //this is on stack
+obj y = @obj(x);  //y is an object
+int z = @int(y); //can we assign y to an int?
+long z = @long(y);  //how can we know this is not correct?
+//how can we know exact type of y?
+```
+proposal: in non-primitives, we store actual type. so when we have `obj y = @obj(x)` y needs to keep track of it's original type.
+
+\* - `int` should be just like other classes. So we have to think of a clean/good way of representing the class source code. memory byte needed and methods which are not implemented in the source.
+
+\* - Are we going to support reflection?
+
+? - Can we support template specialization? e.g. having `Stack.e` and `Stack<int>.e` files.
+but we cannot have `<>,` in a filename. 
+maybe we can replace `<>` with `[]` because `a[b,c].e` is a valid filename.
+makes sense.
