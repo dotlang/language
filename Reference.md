@@ -43,12 +43,44 @@ only one class (fields + methods). In Electron, class can be analogous to class 
 - **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0x0101011101` binary number, `192.121f` double, `1234l` long. 
 - **Adressing**: Each type, field or method can be address in the format of `A.B.(...).D` where `A`, `B` and other parts are each either name of a package or class. The last part `D` is name of the field or method or type which is being addressed.
 
-##Rules and Conventions
+##General Rules
 Almost everything is an object, even basic data types and everything is passed by value, but everything is a reference. Every class has a special instance (static instance), which is created by the compiler. This instance can be used to create other instances of the class. But at very few cases compiler does something for the developer automatically. Most of the time, developer should do the job manually.
 
 ##Structure of source file
+1. Imports: importing other packages
+2. Type alias definitions: `type` statements
+3. Fields of the class: fields definition
+4. Methods of the class: method definition
 
 ##Keywords
-##Operators and special syntax
+###if, else
+###switch
+###assert
+###for, break, continue
+###return
+###throw
+###defer
+###type
+###import
+###void
+###auto
+###invoke
+###select
+
+###Primitives
+##Operators
+Each class can provide implementation for operators. 
+##Special syntax
+###Anonymous classes `->`
+###Tuples
+###Casting and Undef
+###Instantiation
+###Templates
+###Optional arguments
+###Reference assignment
+###Array slice
+###Array and hash
+
 ##Best practice
+###Naming
 ##Examples
