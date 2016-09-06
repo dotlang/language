@@ -1909,12 +1909,8 @@ N - `const` is not good for a variable which can change.
 Y - Why `int x=6;x=7;x=8` is wrong? we are assigning new references to `x`. This does not mutate it's state.
 nothing is wrong if variable is not `const`. If it is const, then any second assignment of ref or value is error.
 
-? - can we have similar keyword for exposed? and for static?
-can we compose `exposed` and `const`? yes.
-we need a shorter and more beautiful keyword for `exposed`. ->`exp`?
-but `static` is good and short.
 
-? - This whole `:=` and `=` and immutability and assignment and const is very confusing. Let's make it more clear and easy to udnerstand.
+Y - This whole `:=` and `=` and immutability and assignment and const is very confusing. Let's make it more clear and easy to udnerstand.
 if `x` is int and immutable , we can write `int x; x:=5; x=7;`?
 answer: both are ok and possible. for immutables, `=` works just like `:=`. 
 but: `Int y = 5; Int x=y; x++;` -> this won't change value of `y` because x is now pointing to a new object.
@@ -1923,10 +1919,77 @@ if you need to have that effect, use holder classes.
 `MyClass mc = ??; MyClass mc2:=mc; mc2.change()` this will change mc.
 what about const values? They are not re-assignable so neither of `:=` or `=` is possible on them.
 
-? - if `a=b` will point a to b without data duplication both for primitives and for big classes, maybe we should remove `:=` notation and assume `=` does the job. If someone needs cloning, he can call appropriate method. 
+Y - if `a=b` will point a to b without data duplication both for primitives and for big classes, maybe we should remove `:=` notation and assume `=` does the job. If someone needs cloning, he can call appropriate method. 
 so can we assume there is no need to `:=` and we only need `=` which assigns references?
 This behavior is good for immutable primitives. also good for pure functional classes because there is no data to worry about. if someone needs a custom assignment which copies (and possibly modifies) internal state, we can add a method for that: `void init_from(MyClass obj){...}`. 
 what about `==` and `:==` operators? `==` will call `equals` which by default compares references not their internal data. anyway developer is assured that if `x==y` they have same data. but maybe `x==y` returns false but they have same data. if it is important, appropriate method should be added. but this makes thing complex:
 `int x=5;int y=x; y++; x++; ` now `x==y` returns false.
 proposal: `==` by default will compare references unless it is being overriden by the class. If you want to make sure you dont compare references, call `equals` method of the objects. 
 so for example there is no `++` operator. it is only a syntax sugar for `x = x+1` where `+` is customizable but `=` is not.
+so basically `=` will behave like old `:=`. 
+
+Y - Let's force class to set value for consts upon instantiation.
+
+N - Shall we add a new keyword for method-local static variables?
+makes sense because `_` prefix for static is different behavior and will be confusing.
+
+N - can we define `static const x;`. No. `const` is only valid for field declaration.
+
+N - can we have similar keyword for exposed?
+can we compose `exposed` and `const`? yes. `static const int x`, `exposed const int x`.
+we need a shorter and more beautiful keyword for `exposed`. ->`exp`?
+but `static` is good and short.
+$ is for instantiation and @ for casting. maybe we can make use of #. for static or exposed.
+`int #x;`.
+for exposed it is hard to add prefix. because for fields we already have `_` prefix.
+but what about static? proposal: any variable starting with `#` is static, whether its a field or a local variable.
+`int #x;` but `$` is better as it is similar to (S)tatic. 
+proposal: let `#()` be operator for instantiation and `$` prefix for static variables/fields.
+so if a field is defined using `$` prefix, it will only be accessible inside static instance. 
+what about methods? if a method name starts with `$` it will be only added to static instance? NO>
+We are making things more complex. there should be absolutely no difference between static and normal instances.
+having prefix for variables to declare them as static but prohibiting using it for fields is against orth and gen.
+so, we will use `static` keyword for this purpose. 
+so we need a prefix for exposed variables. but we need these variables to be private. Not really!
+they can be either private or public. but prefix won't be applicable if they can start either with alphabet or underscore. 
+`int _#x;` -> ugly!
+ok. let's use a keyword. `expose` is not good because it is a verb.
+for now, let's post pone this decision. exposed is for variables starting with double underscore.
+
+Y - you should be able to define a method-local variable using `const`. why not?
+
+N - static scope:
+developer can ask: Why I can define local variables using `static` but cannot do this for class fields! 
+what about notation: `int this.x = 12;` this will add `x` to the current instance but it will be only valid within method body. lifetime scope will be same as outer class but access scope is just within the class.
+this is more intuitive, does not breach orth and gen.
+what about class definition? `int MyClass.x = 12;` will add a field only to the static instance?
+`int MyClass.func(int x) {}` will add function only to the static instance?
+so we can have `new` only available through static instance: `MyClass MyClass.new() return $();`
+similarly, a static method should define it's static vars like `int MyClass.x = 12;`.
+so:
+we can define static function, field or variable. 
+static functions are only available from static instance. `int MyClass.f() { return 5;}`
+static fields are only available through static instance. `int MyClass.g = 12;`
+static variables are only available inside the method. 
+`int this.x = 12;` is static variable for a method
+`int MyClass.x = 12;` is a static field so it shared between same method of all instance of MyClass.
+actually we can provide different implementation for each instance: normal and static instance.
+
+N - Let's use `static` instead of prefixing MyClass everywhere.
+
+Y - Static variables are considered bad. But we ARE providing them indirectly through static instance. 
+when normal and static instance are the same, we can simply cast an instance of the class without worrying whether it is normal or static instance. All this static keyword and MyClass. prefix started because we wanted to have static local variables. they are considered bad in the first place. ALSO enabling them makes language way more complex (because we want to keep generality and orth of the language). If developer really needs a static instance, define it without a constructor.
+
+N - shall we explicitly define `this.` prefix for field and functions?
+```
+int this.x = 12;
+int this.func() { return this.x;} 
+```
+makes code too verbose.
+
+N - What if we want to override exposed empty method only in static instance?
+`int MyClass.__member.method() {}`
+no difference between normal and static instance
+
+N - exposed variables are very important because they silently add to fields and functions of the class. 
+we have to denote them through variable name. or else, developer may get confused if `this.x` is exposed or not.
