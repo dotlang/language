@@ -192,7 +192,7 @@ void _() this.y=9;  //initialize code for static instance
 - Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer.
 - The private unnamed method is called by runtime service when static instance of the class is created and is optional.
 - You can not have multiple methods with body with the same signature in a single class. 
-- There is no default value for method arguments. If argument type is suffixed with `?` means, it is optional and will be undef if not passed. `int f(int x, int y, int? z);`. Note that a class with `int f(int x, int? y);` will satisfy an interface with `int f(int x);` too.
+- You can define optional arguments: `int f(int x,int y=1)` the value must be a literal or undef.
 - When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`). `this` is not re-assignable variable so you cannot re-assign it.
 - When a variable is in undefined state and we call one of it's type's methods, the method will be called normally with empty `this`. If we try to read it's fields, it will crash.
 - If a method has no body, you can still call it and it will return undef. You can also call methods on an undef variable and as long as methods don't need `this` fields, it's fine.
