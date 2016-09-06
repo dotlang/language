@@ -1798,6 +1798,8 @@ local variables? no.
 
 \* - Are we going to support reflection?
 
+\* - How runtime should handle immutable types (e.g. int)? Can we treat them just like primitive non-class, and copy their value upon any method call? without allocating heap space.
+
 Y - What is suffix for double literals? f or d? 
 by default compiler tries to convert literal to shortest length.
 `auto x = 12` if we want x to be long we should suffix it with `l`. 
@@ -1843,27 +1845,37 @@ if `x==y` means they have the same content. but maybe they don't refer to the sa
 so how can someone compare their references?
 proposal: casting a class to int. `@int(x) == @int(y)`
 casting a class to ref: `@ref(x) == @ref(y)`. `ref` is a built-in class which has `equals` operator to compare references.
+can we use `if ( x :== y ) {...}`. It is simpler but maybe a little confusing.
+what if a class does not have implementation for equals? it is like calling an un-implemented method.
 
-? - Can we set values upon instantiation?
-`result = $(x:1, y:12);`
-`result = $();`
+Y - How should `int` set it's initial value? 
+suppose we have `int x; x = 5; x = 6;` how is assignment handled in the code? 
+we assume `int` is immutable. so is the above code possible? -> no. it should throw error (by compiler or runtime, we don't care as of now).
+you can write `int x=5; x := 7; x:= 8;`
+or `int x; x = 5; x:= 7; x:= 8;`
+initially `=` is ok but after assignment it's now allowed (for imm types).
 
-? - How can developer/compiler know if a class is immutable?
+Y - How can developer/compiler know if a class is immutable?
 proposal: if class has an empty assignment operator? no. this is not enough.
 if there is no field (e.g. `int`) or all fields are constant and immutable.
+No. if class has a set of imm fields and re-assigns them, the state will change.
 but having no field, is not enough for being immutable.
 but for a complex class which wants to be immutable, what if we assign values upon instantiation?
 maybe with a syntax like: `auto x = {x:1, y:2};` we can assign value to fields, upon instantiation.
 so we need to define x and y as constant (assign some dummy value), and pass values in `{}`?
+proposal1: add a new keyword. 
+proposal2: define conditions: if class does not have any field then compiler assumes it is immutable.
+why do we care if class is immutable? compiler can optimize the code if the variable is immutable. 
 
-? - How can we assign values for `const` fields of the class if they are immutable, after creation.
+Y - How can we assign values for `const` fields of the class if they are immutable, after creation.
 in `{}` we can assign value for any public field we want, but those with assignment in field section will not be re-assignable.
 but we can assign value for fields normally using `result.value` notation.
 but can we write `result._field1=12;`? we shouldn't be able to do that. we should add a method like `init` and call it from constructor. so we cannot set values in `{}` for private fields too.
 suppose some fields are const and immutable, how can I assign values to them upon creation of the class?
 proposal: fields with assigned value are const but can get value in instantiation operator (public or private).
+I think methods of a class should have full access to all variables of the same class. Because else how can we write an `equals` or `clone_object` or `init_from` method in a simple and clear manner?
 
-? - immutability
+Y - immutability
 if a class does not have any field and is immutable then compiler will do interning for it.
 if a class is immutable and small (like `int`) when `f(int x)` is called, compiler can simply copy the value onto the stack. 
 if we keep it on the stack, how runtime should handle this:
@@ -1876,4 +1888,21 @@ long z = @long(y);  //how can we know this is not correct?
 ```
 proposal: in non-primitives, we store actual type. so when we have `obj y = @obj(x)` y needs to keep track of it's original type.
 
+N - We should not have access to another object's private fields and methods even if current method if a member of the class. so how are we going to make sure, new instance is initialized? if we add a public method to do that 1) code becomes more compilcated. 2) other can also call it at anytime!
+so, who is responsible for assigning private fields and calling private methods upon creation and how?
+constructor is responsible for all that and it has access to all privates.
+
+? - What if we have const fields (not re-assignable) but cannot determine their value in fields section?
+
 ? - Provide a more explicit syntax to declare container class has an implementation for an empty method of contained class.
+In container: `int __member.method(int x) { return x+1;}`. Where `__member` is an exposed field which has `method` method empty. what will be type of `this` inside method body? Of course it cannot be contained class. So it will be container class. This may be a little confusing but is logical. but what does c++ do when a class override? It does not specify anything. But in C++ there is no composition but inheritance. 
+By this way, we can provide implementation for multiple composed variables if they have methods with the same name.
+the advantage: it is explicit and more flexible.
+disadvantage: a little bit confusing.
+
+? - This whole `:=` and `=` and immutability and assignment and const is very confusing. Let's make it more clear and easy to udnerstand.
+if `x` is int and immutable , we can write `int x; x:=5; x=7;`?
+answer: both are ok and possible. for immutables, `=` works just like `:=`. 
+but: `Int y = 5; Int x=y; x++;` -> this won't change value of `y` because x is now pointing to a new object.
+if you need to have that effect, use holder classes.
+`MyClass mc = ??; MyClass mc2=mc; mc2.change()` this will NOT change mc
