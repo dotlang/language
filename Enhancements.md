@@ -1876,3 +1876,4 @@ long z = @long(y);  //how can we know this is not correct?
 ```
 proposal: in non-primitives, we store actual type. so when we have `obj y = @obj(x)` y needs to keep track of it's original type.
 
+? - Provide a more explicit syntax to declare container class has an implementation for an empty method of contained class.
