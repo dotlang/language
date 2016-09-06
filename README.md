@@ -95,7 +95,7 @@ Each class can provide implementation for operators.
 1. **Conditional**: `if`, `else`, `switch`, `assert`
 2. **Loop**: `for`, `break`, `continue`
 3. **Control**: `return`, `defer`, `throw`
-4. **Type handling**: `type`, `import`, `void`, `auto`
+4. **Type handling**: `type`, `import`, `void`, `auto`, `const`
 5. **Concurrency**: `invoke`, `select`
 
 These are not keywords but have special meaning:
@@ -176,13 +176,13 @@ Each class's instances can be referenced using instance notation (`varName.membe
 ###Class members
 
 ```
-int _x := 12;  //private const, is not re-assignable
-int qq = 19;  //public const
+int _x := 12;  //private
+int qq = 19;  //public
 int y;
 int h := 12;
-int gg := this.h;  //gg is a reference to h. any action on gg will be called on h.
-auto dsa := this.h;  //:= assignment, cannot be re-assigned. but in the code it can. 
-float ff := this.object1.field5;
+const int gg := this.h;  //gg is a reference to h. any action on gg will be called on h.
+const auto dsa := this.h;  //:= assignment
+const float ff := this.object1.field5;
 
 int func1(int y) { return this.x + y; }
 int func2(int x) = this.func1;  //redirect calls to func1, methods should have same signature
@@ -195,9 +195,10 @@ MyClass new() return $();  //new is not part of syntax. You can choose whatever 
 void _() this.y=9;  //initialize code for static instance
 
 ```
-- Any field assignment (using `=` or `:=`) inside fields section marks the fields as const (not re-assignable, using either `=` or `:=`).  Note that, they still can be mutated if they provide appropriate methods. If you need fully immutable classes, you have to implement the logic in your code.
-- Any class without fields is immutable (this includes primitive types). This will help runtime to optimize the code. 
-- You can assign value to a primitive only once. You can have `int x; x=5; x:=7;` or `int x:=6;x:=8;` but `int x;x=6;x=7;` is wrong, because you cannot assign value for an immutable variable after it's already initialized. Note that by `x:=10` you don't change value of `x` internal state but make `x` point to a new object.
+- You can assign to fields in the field section (using `=` or `:=`).
+- If field is marked with `const`, it is not re-assignable, using either `=` or `:=`. So you can only assign to it once. Note that, they still can be mutated if they provide appropriate methods. If you need truly immutable classes, you have to implement the logic in your code.
+- Any class without fields is immutable from compiler's perspective (this includes primitive types). This will help runtime to optimize the code. 
+- Any assignment to an immutable variable is allowed but will assign to a new reference. You can have `int x; x=5; x:=7;` or `int x:=6;x:=8;`. As long as the variable is not `const` assignments are ok.
 - Class members (fields, methods and types) starting with underscore are considered private and can only be accessed by methods of the same class. So `obj._x` is ok if the code is inside the class type of `obj`.
 - Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer.
 - The private unnamed method is called by runtime service when static instance of the class is created and is optional.
@@ -222,8 +223,8 @@ void _() this.y=9;  //initialize code for static instance
 - If you expose two classes that have a public fields with the same name, you must define a field with that name in main class (or else there will be a compiler error). 
 - You can hide/remove an exposed method by adding same method with/without body.
 - You can rename an exposed method by removing it and adding your own method.
-- If a method is empty in `MyClass`, the exposer class can provide an implementation for it. This will cause calls to the empty method be redirected to the new implementation, even inside `MyClass` instance variable (same as virtual methods in other languages).
-- In expose, you don't have access to private members of composed object.
+- If a method is empty in `MyClass`, the container class can provide an implementation for it by defining a method with the name `__member.methodName`, where `__member` is name of the exposed variable. This will cause calls to the empty method be redirected to the new implementation, even inside `MyClass` instance variable (same as virtual methods in other languages).
+- In expose, you don't have access to private members of exposed object.
 - When exposing a variable, class is responsible for initialization and instantiation of the variable. Compiler just generates code to re-direct calls.
 
 ###Concurrency
