@@ -95,7 +95,7 @@ Each class can provide implementation for operators.
 1. **Conditional**: `if`, `else`, `switch`, `assert`
 2. **Loop**: `for`, `break`, `continue`
 3. **Control**: `return`, `defer`, `throw`
-4. **Type handling**: `type`, `import`, `void`, `auto`, `const`, `static`
+4. **Type handling**: `type`, `import`, `void`, `auto`, `const`
 5. **Concurrency**: `invoke`, `select`
 
 These are not keywords but have special meaning:
@@ -195,7 +195,7 @@ MyClass new() return $();  //new is not part of syntax. You can choose whatever 
 void _() this.y=9;  //initialize code for static instance
 
 ```
-- If field is marked with `const`, it is not re-assignable and must be assigned either upon declaration or upon instaitiation inside `$()`. So you can only assign to it once. Note that, they still can be mutated if they provide appropriate methods. If you need truly immutable classes, you have to implement the logic in your code.
+- If field or local variable is marked with `const`, it is not re-assignable and must be assigned either upon declaration or upon instaitiation inside `$()`. So you can only assign to it once. Note that, they still can be mutated if they provide appropriate methods. If you need truly immutable classes, you have to implement the logic in your code.
 - You can assign value to fields when calling `$()` operatos: `auto result = $(x:1, y:5);`. This is used for const fields.
 - Any class without fields is immutable from compiler's perspective (this includes primitive types). This will help runtime to optimize the code. 
 - Any assignment to an immutable variable is allowed but will create a new reference. As long as the variable is not `const` assignments are ok.
@@ -209,8 +209,7 @@ void _() this.y=9;  //initialize code for static instance
 - If a method has no body, you can still call it and it will return undef. You can also call methods on an undef variable and as long as methods don't need `this` fields, it's fine.
 - `int f(int x) return x+1;` braces can be eliminated when body is a single statement.
 - **Variadic functions**: `bool bar(int... values)`. values will be an array of int.
-- If you define a local variable using `static` keyword, it will be method-local static: `static int x = 12;`. 
-- You cannot define a function input or local variable as `const`, this is only valid for class fields.
+- You cannot define a function input as `const`.
 - Method argument names or local variables cannot start with underscore. 
 - You can call a method with arg names: `myClass.myMember(x: 10, y: 12);`
 - Methods can assign values to their inputs, but it won't affect passed data.
@@ -219,7 +218,7 @@ void _() this.y=9;  //initialize code for static instance
 ###Composing classes
 
 - A field starting with `__` will be promoted/exposed. 
-- expose will soft-copy members. This means, if there is a member with the same name in main class, it won't be copied (main class members always win).
+- An exposed field's public members will be will soft-copied. This means, if there is a member with the same name in main class, it won't be copied (main class members always win).
 - If you expose two classes that have a public fields with the same name, you must define a field with that name in main class (or else there will be a compiler error). 
 - You can hide/remove an exposed method by adding same method with/without body.
 - You can rename an exposed method by removing it and adding your own method.
