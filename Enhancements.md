@@ -1993,3 +1993,38 @@ no difference between normal and static instance
 
 N - exposed variables are very important because they silently add to fields and functions of the class. 
 we have to denote them through variable name. or else, developer may get confused if `this.x` is exposed or not.
+
+Y - Providing body for an empty method, has a confusing syntax!
+`int __member.method1() { return 5;}`
+maybe contained class did not want to let other propose bodies for the method!
+```
+//contained class
+const fn<int> m1;   //const undef field
+int method1() = this.m1;  //method1 is redirected to m1
+MyClass new(fn<int> m) return $(m1: m);  //construct an instance using given value
+
+//container class
+this.__member = MyClass.new(this.implementation);
+```
+this is better! So there is no virtual method or implementation provided from outside.
+
+Y - `int x=5;int y=x;y++`
+this does not change value of x which is consistent with what we see in other languages.
+what about arrays?
+`int[3] a;` -> `Array<int> a = Array<int>.new(3);`
+`Array<int> new(int count) { auto result = $(count*4); }`
+1) this class needs a field: length. so it won't be immutable.
+2) set/get operators will be implemented outside. also we can implement `new` outside.
+maybe we can use `native` keyword to define these cases.
+`native MyClass new(int count);` -> this method has a body but the body is defined by compiler/runtime.
+
+N - hash?
+`Hash<String, Int> h1 = H....new();`
+new/set/get are all implemented by compiler and called automatically.
+
+Y - Let's have lowercase for primitives!
+
+N - Why we cannot assign value to public methods? also why a class cannot assign value to its private methods?
+why we cannot define `const` methods? makes things more complex.
+if you want this, assign method like this `int f() = this.var;` and write to `var`
+
