@@ -95,7 +95,7 @@ Each class can provide implementation for operators.
 1. **Conditional**: `if`, `else`, `switch`, `assert`
 2. **Loop**: `for`, `break`, `continue`
 3. **Control**: `return`, `defer`, `throw`
-4. **Type handling**: `type`, `import`, `void`, `auto`, `const`
+4. **Type handling**: `type`, `import`, `void`, `auto`, `const`, `static`
 5. **Concurrency**: `invoke`, `select`
 
 These are not keywords but have special meaning:
@@ -127,7 +127,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `$` instantiation
 - `:` for hash, loop, assert, call by name, array slice and tuple values
 - `<>` template syntax
-- `:=` reference assignment and type alias
+- `:=` type alias
 - `out`: representing function output in defer
 - `exc`: representing current exception in defer
 - `??` undef check
@@ -176,13 +176,13 @@ Each class's instances can be referenced using instance notation (`varName.membe
 ###Class members
 
 ```
-int _x := 12;  //private
+int _x = 12;  //private
 int qq = 19;  //public
 int y;
-int h := 12;
-const int gg := this.h;  //gg is a reference to h. any action on gg will be called on h.
-const auto dsa := this.h;  //:= assignment
-const float ff := this.object1.field5;
+int h = 12;
+const int gg = this.h;  //gg is a reference to h. any action on gg will be called on h.
+const auto dsa = this.h;  // assignment
+const float ff = this.object1.field5;
 
 int func1(int y) { return this.x + y; }
 int func2(int x) = this.func1;  //redirect calls to func1, methods should have same signature
@@ -195,10 +195,10 @@ MyClass new() return $();  //new is not part of syntax. You can choose whatever 
 void _() this.y=9;  //initialize code for static instance
 
 ```
-- You can assign to fields in the field section (using `=` or `:=`).
-- If field is marked with `const`, it is not re-assignable, using either `=` or `:=`. So you can only assign to it once. Note that, they still can be mutated if they provide appropriate methods. If you need truly immutable classes, you have to implement the logic in your code.
+- If field is marked with `const`, it is not re-assignable and must be assigned either upon declaration or upon instaitiation inside `$()`. So you can only assign to it once. Note that, they still can be mutated if they provide appropriate methods. If you need truly immutable classes, you have to implement the logic in your code.
+- You can assign value to fields when calling `$()` operatos: `auto result = $(x:1, y:5);`. This is used for const fields.
 - Any class without fields is immutable from compiler's perspective (this includes primitive types). This will help runtime to optimize the code. 
-- Any assignment to an immutable variable is allowed but will assign to a new reference. You can have `int x; x=5; x:=7;` or `int x:=6;x:=8;`. As long as the variable is not `const` assignments are ok.
+- Any assignment to an immutable variable is allowed but will create a new reference. As long as the variable is not `const` assignments are ok.
 - Class members (fields, methods and types) starting with underscore are considered private and can only be accessed by methods of the same class. So `obj._x` is ok if the code is inside the class type of `obj`.
 - Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer.
 - The private unnamed method is called by runtime service when static instance of the class is created and is optional.
@@ -209,9 +209,9 @@ void _() this.y=9;  //initialize code for static instance
 - If a method has no body, you can still call it and it will return undef. You can also call methods on an undef variable and as long as methods don't need `this` fields, it's fine.
 - `int f(int x) return x+1;` braces can be eliminated when body is a single statement.
 - **Variadic functions**: `bool bar(int... values)`. values will be an array of int.
-- You can use `var1 := var2;` notation to assign a var2 reference to var1. So basically var1 will be an alias for var2. Using normal `var1 = var2` may not do this because the class of var2 may have a duplication based assignment operator.
-- You cannot start name of a local variable inside method with underscore. If they start with underscore, they will be static method-local variables.
-- Method argument names cannot start with underscore. Because doing so will confuse things with static method-local variables.
+- If you define a local variable using `static` keyword, it will be method-local static: `static int x = 12;`. 
+- You cannot define a function input or local variable as `const`, this is only valid for class fields.
+- Method argument names or local variables cannot start with underscore. 
 - You can call a method with arg names: `myClass.myMember(x: 10, y: 12);`
 - Methods can assign values to their inputs, but it won't affect passed data.
 - `$()` allocates memory for a new instance of the current class. `$(4)` will allocate 4 bytes of memory (used for primitive data types where there is no field defined, e.g. Int).
@@ -248,9 +248,9 @@ You can use select to read/write from/to blocking channels.
 
 Classes can override all the valid operators on them. `int` class defines operator `+` and `-` and many others (math, comparison, ...). This is not specific to `int` and any other class can do this. 
 
-- `=` operator, by default makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. You can override this behavior by adding `op_assign` method to your class and clone the data. This is done for primitives like `int` so `int x=y` will duplicate value of y into x. If you need original behavior of `=` you have to embed those variables in holder classes which use default `=` behavior. On the other hand, if you need duplication for classes which do ref-assignment by default, you will need to do it manually in one of methods (like `clone` and call `MyClass x = y.clone()`).
+- `=` operator, makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. If you want to clone, you need to use custom methods (e.g. `int x = int.new(y);`) or override this behavior by adding `op_assign` method to your class and clone the data. If you need original behavior of `=` you have to embed those variables in holder classes which use default `=` behavior. On the other hand, if you need duplication for classes which do ref-assignment by default, you will need to do it manually in one of methods (like `clone` and call `MyClass x = y.clone()`).
 - `x ?? 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
-- `x == y` will call `equals` method. If you want to check if two variable refer to the same thing, do `x :== y` which compares references. No class can override behavior of `:==` (same as `:=`).
+- `x == y` will call `equals` method. By default this compares reference values but classes can override this.
 
 ###Tuple
 
