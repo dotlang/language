@@ -231,7 +231,6 @@ Classes can override all the valid operators on them. `int` class defines operat
 - `out`: representing function output in defer
 - `exc`: representing current exception in defer
 - `??` undef check
-- `?` optional argument
 
 ###Special variables
 this, true, false
