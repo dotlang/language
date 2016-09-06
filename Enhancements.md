@@ -1832,6 +1832,18 @@ maybe we can use `$()`. It is also compatible with anonymous tuple notation too.
 and `$(4)` will allocate 4 bytes of memory for `this`.
 we shouldn't mention class name, it should be implicitly defined.
 
+Y - `x==y` does it compare references or calls `equals` of `x`?
+proposal: make ref equality and value eqality same thing, like string interning in java.
+which means, primitive data classes must be immutable.
+So, according to spec, `==` will compare references. To compare values you should use `equals`.
+but for primitive classes, `==` is fine -> developer should not memorize which data it is comparing.
+and interning will add overload to the runtime!
+proposal: `==` has it's own operator called `equals`.
+if `x==y` means they have the same content. but maybe they don't refer to the same thing.
+so how can someone compare their references?
+proposal: casting a class to int. `@int(x) == @int(y)`
+casting a class to ref: `@ref(x) == @ref(y)`. `ref` is a built-in class which has `equals` operator to compare references.
+
 ? - Can we set values upon instantiation?
 `result = $(x:1, y:12);`
 `result = $();`
@@ -1851,14 +1863,7 @@ but can we write `result._field1=12;`? we shouldn't be able to do that. we shoul
 suppose some fields are const and immutable, how can I assign values to them upon creation of the class?
 proposal: fields with assigned value are const but can get value in instantiation operator (public or private).
 
-
-? - `x==y` does it compare references or calls `equals` of `x`?
-proposal: make ref equality and value eqality same thing, like string interning in java.
-which means, primitive data classes must be immutable.
-So, according to spec, `==` will compare references. To compare values you should use `equals`.
-but for primitive classes, `==` is fine -> developer should not memorize which data it is comparing.
-and interning will add overload to the runtime!
-
+? - immutability
 if a class does not have any field and is immutable then compiler will do interning for it.
 if a class is immutable and small (like `int`) when `f(int x)` is called, compiler can simply copy the value onto the stack. 
 if we keep it on the stack, how runtime should handle this:
