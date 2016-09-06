@@ -2028,3 +2028,8 @@ N - Why we cannot assign value to public methods? also why a class cannot assign
 why we cannot define `const` methods? makes things more complex.
 if you want this, assign method like this `int f() = this.var;` and write to `var`
 
+Y - Better syntax for optional arguments:
+`int f(int x, int y, int? z);`
+`int f(int x, @int y)`
+`int f(int x, int @y)`
+`int f(int x, int y=4)`
