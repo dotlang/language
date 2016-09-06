@@ -141,11 +141,14 @@ You can use select to read/write from/to blocking channels.
 
 ###select
 ###const
+###native
+Denote method is implemented by runtime or external libraries.
+
 ##Primitives
-- **Integer data types**: `Char`, `Short`, `Int`, `Long`
-- **Unsigned data types**: `Byte`, `Ushort`, `Uint`, `Ulong`
-- **Floating point data types**: `Float`, `Double`
-- **Others**: `Bool`
+- **Integer data types**: `char`, `short`, `int`, `long`
+- **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
+- **Floating point data types**: `float`, `double`
+- **Others**: `bool`
 
 ##Class file
 
@@ -377,6 +380,9 @@ You can specialize a template class by adding appropriate file. For example for 
 ##Best practice
 ###Naming
 - **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage`.
+- constructor is called `new` in core classes.
+- For primitive classes, name starts with lowercase to denote they are primitive and have no fields.
+
 ##Examples
 ###Empty application
 ```
@@ -426,3 +432,8 @@ Perl has a `MakeFile.PL` where you specify metadata about your package, requirem
 Python uses same approach with a `setup.py` file containing similar data like Perl.
 Java without maven has a packaging but not a dependency management system. For dep, you create a `pom.xml` file and describe requirements + their version. 
 C# has dll method which is contains byte-code of the source package. DLL has a version metadata but no dep management. For dep it has NuGet.
+
+##Misc
+
+- Compiler will decide which methods should be inlined.
+- 
