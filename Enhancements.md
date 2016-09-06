@@ -1892,13 +1892,27 @@ N - We should not have access to another object's private fields and methods eve
 so, who is responsible for assigning private fields and calling private methods upon creation and how?
 constructor is responsible for all that and it has access to all privates.
 
-? - What if we have const fields (not re-assignable) but cannot determine their value in fields section?
-
-? - Provide a more explicit syntax to declare container class has an implementation for an empty method of contained class.
+Y - Provide a more explicit syntax to declare container class has an implementation for an empty method of contained class.
 In container: `int __member.method(int x) { return x+1;}`. Where `__member` is an exposed field which has `method` method empty. what will be type of `this` inside method body? Of course it cannot be contained class. So it will be container class. This may be a little confusing but is logical. but what does c++ do when a class override? It does not specify anything. But in C++ there is no composition but inheritance. 
 By this way, we can provide implementation for multiple composed variables if they have methods with the same name.
 the advantage: it is explicit and more flexible.
 disadvantage: a little bit confusing.
+
+Y - What if we have const fields (not re-assignable) but cannot determine their value in fields section?
+`int x := 1; ... auto result = @(x: 5);` - does not make sense. assigning a dummy value.
+`int x :=; ... auto result = @(x: 5);` - is not beautiful. although makes sense.
+`const int x; ... auto result = @(x: 5);` - makes sense. but makes language more complex. but explicit is better!
+`const` can be used in field definition to denote a field which will not be assignable once it has been assigned a value either through `=` or `:=`.
+
+N - `const` is not good for a variable which can change. 
+
+Y - Why `int x=6;x=7;x=8` is wrong? we are assigning new references to `x`. This does not mutate it's state.
+nothing is wrong if variable is not `const`. If it is const, then any second assignment of ref or value is error.
+
+? - can we have similar keyword for exposed? and for static?
+can we compose `exposed` and `const`? yes.
+we need a shorter and more beautiful keyword for `exposed`. ->`exp`?
+but `static` is good and short.
 
 ? - This whole `:=` and `=` and immutability and assignment and const is very confusing. Let's make it more clear and easy to udnerstand.
 if `x` is int and immutable , we can write `int x; x:=5; x=7;`?
@@ -1906,3 +1920,13 @@ answer: both are ok and possible. for immutables, `=` works just like `:=`.
 but: `Int y = 5; Int x=y; x++;` -> this won't change value of `y` because x is now pointing to a new object.
 if you need to have that effect, use holder classes.
 `MyClass mc = ??; MyClass mc2=mc; mc2.change()` this will NOT change mc
+`MyClass mc = ??; MyClass mc2:=mc; mc2.change()` this will change mc.
+what about const values? They are not re-assignable so neither of `:=` or `=` is possible on them.
+
+? - if `a=b` will point a to b without data duplication both for primitives and for big classes, maybe we should remove `:=` notation and assume `=` does the job. If someone needs cloning, he can call appropriate method. 
+so can we assume there is no need to `:=` and we only need `=` which assigns references?
+This behavior is good for immutable primitives. also good for pure functional classes because there is no data to worry about. if someone needs a custom assignment which copies (and possibly modifies) internal state, we can add a method for that: `void init_from(MyClass obj){...}`. 
+what about `==` and `:==` operators? `==` will call `equals` which by default compares references not their internal data. anyway developer is assured that if `x==y` they have same data. but maybe `x==y` returns false but they have same data. if it is important, appropriate method should be added. but this makes thing complex:
+`int x=5;int y=x; y++; x++; ` now `x==y` returns false.
+proposal: `==` by default will compare references unless it is being overriden by the class. If you want to make sure you dont compare references, call `equals` method of the objects. 
+so for example there is no `++` operator. it is only a syntax sugar for `x = x+1` where `+` is customizable but `=` is not.
