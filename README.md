@@ -436,4 +436,3 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 ##Misc
 
 - Compiler will decide which methods should be inlined.
-- 
