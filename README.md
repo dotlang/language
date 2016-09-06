@@ -215,7 +215,7 @@ Classes can override all the valid operators on them. `int` class defines operat
 - `=` operator, makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. If you want to clone, you need to use custom methods (e.g. `int x = int.new(y);`) or override this behavior by adding `op_assign` method to your class and clone the data. If you need original behavior of `=` you have to embed those variables in holder classes which use default `=` behavior. On the other hand, if you need duplication for classes which do ref-assignment by default, you will need to do it manually in one of methods (like `clone` and call `MyClass x = y.clone()`).
 - `x ?? 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
 - `x == y` will call `equals` method. By default this compares reference values but classes can override this.
-- 
+
 
 ##Special syntax
 - `->` for anonymous class declaration
@@ -263,7 +263,7 @@ this, true, false
 - empty/undefined/not-initialized state of a variable is named "undef" state and is shown by `@MyClass()` which means casting empty to `MyClass` (MyClass is type of the variable). You can shortcut this by `@MyClass` notation. If type can be inferred you can use only `@`.
 - Value of a variable before initialization is undef which is denoted by `@` or `@MyClass` where MyClass is type of the variable. 
 - You can also return `@MyClass` when you want to indicate invalid state for a variable.
-- 
+
 
 ###Undef
 ###Instantiation
