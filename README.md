@@ -195,8 +195,10 @@ MyClass new() return $();  //new is not part of syntax. You can choose whatever 
 void _() this.y=9;  //initialize code for static instance
 
 ```
-- Any field assignment (using `=` or `:=`) in class definition marks the fields as const (not re-assignable).  Note that, they still can be mutated if they provide appropriate methods. If you need fully immutable classes, you have to implement the logic in your code.
-- Class members (fields, methods and types) starting with underscore are considered private and can only be accessed internally. So the only valid combination that can come before `_` is `this._xxx` not `obj._xxx`.
+- Any field assignment (using `=` or `:=`) inside fields section marks the fields as const (not re-assignable, using either `=` or `:=`).  Note that, they still can be mutated if they provide appropriate methods. If you need fully immutable classes, you have to implement the logic in your code.
+- Any class without fields is immutable (this includes primitive types). This will help runtime to optimize the code. 
+- You can assign value to a primitive only once. You can have `int x; x=5; x:=7;` or `int x:=6;x:=8;` but `int x;x=6;x=7;` is wrong, because you cannot assign value for an immutable variable after it's already initialized. Note that by `x:=10` you don't change value of `x` internal state but make `x` point to a new object.
+- Class members (fields, methods and types) starting with underscore are considered private and can only be accessed by methods of the same class. So `obj._x` is ok if the code is inside the class type of `obj`.
 - Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer.
 - The private unnamed method is called by runtime service when static instance of the class is created and is optional.
 - You can not have multiple methods with body with the same signature in a single class. 
@@ -247,6 +249,7 @@ Classes can override all the valid operators on them. `int` class defines operat
 
 - `=` operator, by default makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. You can override this behavior by adding `op_assign` method to your class and clone the data. This is done for primitives like `int` so `int x=y` will duplicate value of y into x. If you need original behavior of `=` you have to embed those variables in holder classes which use default `=` behavior. On the other hand, if you need duplication for classes which do ref-assignment by default, you will need to do it manually in one of methods (like `clone` and call `MyClass x = y.clone()`).
 - `x ?? 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
+- `x == y` will call `equals` method. If you want to check if two variable refer to the same thing, do `x :== y` which compares references. No class can override behavior of `:==` (same as `:=`).
 
 ###Tuple
 
