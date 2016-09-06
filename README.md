@@ -240,7 +240,17 @@ this, true, false
 - If you expose two classes that have a public fields with the same name, you must define a field with that name in main class (or else there will be a compiler error). 
 - You can hide/remove an exposed method by adding same method with/without body.
 - You can rename an exposed method by removing it and adding your own method.
-- If a method is empty in `MyClass`, the container class can provide an implementation for it by defining a method with the name `__member.methodName`, where `__member` is name of the exposed variable. This will cause calls to the empty method be redirected to the new implementation, even inside `MyClass` instance variable (same as virtual methods in other languages).
+- A container class can provide implementation for methods of contained class if it is allowed:
+```
+//contained class
+const fn<int> m1;   //const undef field
+int method1() = this.m1;  //method1 is redirected to m1, we can even remove this and only use m1
+MyClass new(fn<int> m) return $(m1: m);  //construct an instance using given value
+
+//container class
+this.__member = MyClass.new(this.implementation);  //pass my method as an implementation 
+```
+
 - In expose, you don't have access to private members of exposed object.
 - When exposing a variable, class is responsible for initialization and instantiation of the variable. Compiler just generates code to re-direct calls.
 
