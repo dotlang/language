@@ -39,9 +39,9 @@ The underlying rules of design of this language are
 [DRY rule] (https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
 As a 10,000 foot view of the language, code is written in files organized in directories (called packages). Each file represents one and
-only one class (fields + methods). In Electron, class can be analogous to class or abstract class or interface in other languages. Classes can import other packages to use their classes. The entry point of an application is the `main` method.
+only one class (fields + methods). In Electron, class can be analogous to class or abstract class or interface in other languages. Classes can import other packages to use their classes. Concurrency, templates (generics), anonymous functions/classes and exception handling are supported.
 
-### Core principle
+### Core principles
 
 Almost everything is an object, even basic data types and everything is passed by value, but everything is a reference.
 Every class has a special instance (static instance), which is created by the compiler. This instance can be used to create other instances of the class. But at very few cases compiler does something for the developer automatically. Most of the time, developer should do the job manually.
@@ -49,107 +49,9 @@ Every class has a special instance (static instance), which is created by the co
 ##Lexical Syntax
 - **Encoding**: Source code files are encoded in UTF-8 format.
 - **Whitespace**: Any instance of space(' '), tab(\t), newline(\r and \n) are whitespace and will be ignored.
-- **Comments**: C like comments are used (`//` for single line and `/* */` for multi-line).
-- **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0x0101011101` binary number, `192.121d` double, `1234l` long. 
+- **Comments**: C like comments are used (`//` for single line and `/* */` for multi-line). `///` before method or field or first line of the file is special comment to be processed by automated tools. 
+- **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0x0101011101` binary number, `192.121d` double, `1234l` long. - **Literlas**: `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64, `1_000_000`. compiler will handle object literals and create corresponding objects (in default arg value, initializations, enum values, true, false, ...). `true` is a shortcut for `bool.true`, same for `false`.
 - **Adressing**: Each type, field or method can be address in the format of `A.B.(...).D` where `A`, `B` and other parts are each either name of a package or class. The last part `D` is name of the field or method or type which is being addressed.
-
-##Keywords
-###if, else
-###switch
-###assert
-###for, break, continue
-###return
-###throw
-###defer
-###type
-###import
-###void
-###auto
-###invoke
-###select
-
-##Primitives
-##Operators
-Each class can provide implementation for operators. 
-##Special syntax
-###Array and hash and slice
-###Casting and Undef
-###Instantiation
-###Reference assignment
-###Tuples
-###Anonymous classes `->`
-###Templates
-###Optional arguments
-
-##Best practice
-###Naming
-##Examples
-
-
-
-
-
-
-###Keywords
-
-1. **Conditional**: `if`, `else`, `switch`, `assert`
-2. **Loop**: `for`, `break`, `continue`
-3. **Control**: `return`, `defer`, `throw`
-4. **Type handling**: `type`, `import`, `void`, `auto`, `const`
-5. **Concurrency**: `invoke`, `select`
-
-These are not keywords but have special meaning:
-`this`, `true`, `false`
-
-Usage of most these keywords is almost same as C++ or Java, so I omit explanation for most of them in detail.
-
-### Primitive data classes
-
-- **Integer data types**: `Char`, `Short`, `Int`, `Long`
-- **Unsigned data types**: `Byte`, `Ushort`, `Uint`, `Ulong`
-- **Floating point data types**: `Float`, `Double`
-- **Others**: `Bool`
-
-### Operators
-
-The operators are almost similar to C language:
-
-- Conditional: `and or not == != >= <= ??`
-- Bitwise: `~ & | ^ << >>`
-- Math: `+ - * % ++ -- **`
-
-The bitwise and math operators can be combined with `=` to do the calculation and assignment in one statement.
-
-*Special syntax*:
-- `->` for anonymous class declaration
-- `()` for defining tuple literals and function call
-- `@` for casting and undef
-- `$` instantiation
-- `:` for hash, loop, assert, call by name, array slice and tuple values
-- `<>` template syntax
-- `:=` type alias
-- `out`: representing function output in defer
-- `exc`: representing current exception in defer
-- `??` undef check
-- `?` optional argument
-
-
-###The most basic application
-
-Here's what an almost empty application looks like:
-
-file: `Simple.e`
-```
-int main()
-{
-    return 0; 
-}
-```
-
-This is a class with only one method, called `main` which returns `0` (very similar to C/C++ except `main` function has no input).
-
-### Packages
-
 Code is organized into packages. Each package is represented by a directory in the file-system. Packages have a hierarchical structure:
 
 core  
@@ -161,7 +63,91 @@ core
 
 In the above examples `core.sys, core.net, core.net.http, core.net.tcp` are all packages.
 
-###Classes
+##Keywords
+###if, else
+###switch
+###assert
+###for, break, continue
+`break 2` to break outside 2 nested loops. same for `continue`.
+ 
+###return
+###throw
+- It is advised to return error code in case of an error and use exceptions in really exceptional cases.
+- You can use `throw X` to create exception and return from current method.
+- You can use `defer` keyword (same as what golang has) for code that must be executed upon exitting current method.
+- If defer has an input named `out`, it will be mapped to the function output.
+- If defer has an input named `exc`, it will be mapped to the current exception. If there is no exception, defer won't be executed. If there are multiple defers with `exc` all of them will be executed.
+- You can check output of a function in defer (`defer(out) out>0`) to do a post-condition check.
+
+```
+//inside function
+throw "Error!";  //throw exception and exit
+//outside: catching error
+defer(exc) { ... }
+defer(out, exc) { ... }
+
+defer(out) { if ( out != @int() ) out++; }  //manipulate function output
+defer(out) assert out>0;  //post-condition check
+```
+
+###defer
+###type
+You can use `type` to define type alias:
+```
+type point := int[];
+type x := int;
+x a;  //=int a;
+```
+To use a type from outside the defining class:
+```
+MyClass.point pt = (1, 10);
+//you can alias it again
+type mypt := MyClass.point;
+mypt xx = (1, 2);
+```
+
+You can use type alias to narrow valid values for a type (like enum):
+```
+type DoW := int (SAT=0, SUN=1, ...);
+```
+
+###import
+
+Same as other members, types starting with underscore are private.
+
+```
+import core.st;
+import core.st => cst;  //alias import
+```
+
+
+###void
+###auto
+###invoke
+We have `invoke` and `select` keywords. You can use `future<int> result = invoke obj.method1();` to execute `obj.method1` in another thread and the result will be available through future class (defined in core).
+
+Also `select` evaluates a set of expressions and executes corresponding code block for the one which evaluates to true:
+```
+select
+{
+    rch1.tryRead(): { a = rch1.peek();}
+    rch2.tryRead(): { b=rch2.peek();}
+    wch1.tryWrite(x): {}
+    wch2.tryWrite(y): {}
+    true: {}  //default branch
+}
+```
+You can use select to read/write from/to blocking channels.
+
+###select
+###const
+##Primitives
+- **Integer data types**: `Char`, `Short`, `Int`, `Long`
+- **Unsigned data types**: `Byte`, `Ushort`, `Uint`, `Ulong`
+- **Floating point data types**: `Float`, `Double`
+- **Others**: `Bool`
+
+##Class file
 
 Each source code file represents one class and has two important parts: part where fields are defined, and method definition.
 Writing body for methods is optional (but of course if a body-less method is called, nothing will happen and an empty response will be received). Classes with no method body are same as interfaces (or abstract class with all methods marked as virtual) in other languages but in Electron we don't have the concept of interface.
@@ -215,7 +201,39 @@ void _() this.y=9;  //initialize code for static instance
 - Methods can assign values to their inputs, but it won't affect passed data.
 - `$()` allocates memory for a new instance of the current class. `$(4)` will allocate 4 bytes of memory (used for primitive data types where there is no field defined, e.g. Int).
 
-###Composing classes
+##Operators
+
+- Conditional: `and or not == != >= <= ??`
+- Bitwise: `~ & | ^ << >>`
+- Math: `+ - * % ++ -- **`
+The bitwise and math operators can be combined with `=` to do the calculation and assignment in one statement.
+
+
+Each class can provide implementation for operators. 
+Classes can override all the valid operators on them. `int` class defines operator `+` and `-` and many others (math, comparison, ...). This is not specific to `int` and any other class can do this. 
+
+- `=` operator, makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. If you want to clone, you need to use custom methods (e.g. `int x = int.new(y);`) or override this behavior by adding `op_assign` method to your class and clone the data. If you need original behavior of `=` you have to embed those variables in holder classes which use default `=` behavior. On the other hand, if you need duplication for classes which do ref-assignment by default, you will need to do it manually in one of methods (like `clone` and call `MyClass x = y.clone()`).
+- `x ?? 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
+- `x == y` will call `equals` method. By default this compares reference values but classes can override this.
+- 
+
+##Special syntax
+- `->` for anonymous class declaration
+- `()` for defining tuple literals and function call
+- `@` for casting and undef
+- `$` instantiation
+- `:` for hash, loop, assert, call by name, array slice and tuple values
+- `<>` template syntax
+- `:=` type alias
+- `out`: representing function output in defer
+- `exc`: representing current exception in defer
+- `??` undef check
+- `?` optional argument
+
+###Special variables
+this, true, false
+
+###Exposure
 
 - A field starting with `__` will be promoted/exposed. 
 - An exposed field's public members will be will soft-copied. This means, if there is a member with the same name in main class, it won't be copied (main class members always win).
@@ -226,33 +244,30 @@ void _() this.y=9;  //initialize code for static instance
 - In expose, you don't have access to private members of exposed object.
 - When exposing a variable, class is responsible for initialization and instantiation of the variable. Compiler just generates code to re-direct calls.
 
-###Concurrency
 
-We have `invoke` and `select` keywords. You can use `future<int> result = invoke obj.method1();` to execute `obj.method1` in another thread and the result will be available through future class (defined in core).
 
-Also `select` evaluates a set of expressions and executes corresponding code block for the one which evaluates to true:
-```
-select
-{
-    rch1.tryRead(): { a = rch1.peek();}
-    rch2.tryRead(): { b=rch2.peek();}
-    wch1.tryWrite(x): {}
-    wch2.tryWrite(y): {}
-    true: {}  //default branch
-}
-```
-You can use select to read/write from/to blocking channels.
+###Array and slice
 
-###Operators
+- `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]; int[2,2] x;`. We have slicing for arrays `x[start:step:end]` with support for negative index.
+- `int[string] hash1 = { 'OH': 12, 'CA': 33};`.
+- `for(x:array1)` or `for(int key,string val:hash1)`.
 
-Classes can override all the valid operators on them. `int` class defines operator `+` and `-` and many others (math, comparison, ...). This is not specific to `int` and any other class can do this. 
+###Hashtable
+###Casting
+- `@myclass(my_obj)` is the casting operator and returns empty/undefined/not-initialized if myObj cannot be casted to myclass. Compiler will try 3 options for casting: first if `my_obj` conforms to `myclass` it will be casted without change in the data (means `my_obj` has all fields and methods that `myclass` has specified). second, looks for a method called `myclass` defined in `my_obj` (This method will convert `my_obj` instance to an instance of `myclass`). third, looks for reverse: a method called `ObjType` in `myclass` static instance (ObjType is type of `my_obj` and this method will crete a new instance of myclass using given `ObjType` instance). All these options will be checked at compile time.
+- Example: Converting MyClass to YourClass: `yclass = @YourClass(mclass);`
+1) call `mclass.YourClass` method: `yclass = mclass.YourClass();`
+2) call `YourClass.MyClass` static constructor method: `yclass = YourClass.MyClass(mclass);`
+- The only case where `<` and `,` is allowed in method name is for above purpose. 
+- `float f; int x = @int(f);` this will call `int` method on class `float` to do casting. This can be called automatically by compiler if needed. For template types (like array or hash), you should name the function according to full-name not short-name (`Array<char>` instead of `char[]`).
+- empty/undefined/not-initialized state of a variable is named "undef" state and is shown by `@MyClass()` which means casting empty to `MyClass` (MyClass is type of the variable). You can shortcut this by `@MyClass` notation. If type can be inferred you can use only `@`.
+- Value of a variable before initialization is undef which is denoted by `@` or `@MyClass` where MyClass is type of the variable. 
+- You can also return `@MyClass` when you want to indicate invalid state for a variable.
+- 
 
-- `=` operator, makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. If you want to clone, you need to use custom methods (e.g. `int x = int.new(y);`) or override this behavior by adding `op_assign` method to your class and clone the data. If you need original behavior of `=` you have to embed those variables in holder classes which use default `=` behavior. On the other hand, if you need duplication for classes which do ref-assignment by default, you will need to do it manually in one of methods (like `clone` and call `MyClass x = y.clone()`).
-- `x ?? 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
-- `x == y` will call `equals` method. By default this compares reference values but classes can override this.
-
-###Tuple
-
+###Undef
+###Instantiation
+###Tuples
 Functions can only return one value but that one value can be a tuple (anonymous class with only fields and no method) containing multiple values. Note that field names are required and should be mentioned or inferable.
 The only special thing that compiler does here is to handle literals. Also compiler automatically creates them for you when you call a function or return something:
 
@@ -277,73 +292,7 @@ int x = f((x:1, f:1.1)); //calling above function
 
 Tuples are automatically converted to classes by compiler. So they are basically classes but only have a fields section (without any assignment) with all-public fields and no methods. 
 
-###Type aliasing and import
-
-You can use `type` to define type alias:
-```
-type point := int[];
-type x := int;
-x a;  //=int a;
-```
-To use a type from outside the defining class:
-```
-MyClass.point pt = (1, 10);
-//you can alias it again
-type mypt := MyClass.point;
-mypt xx = (1, 2);
-```
-
-You can use type alias to narrow valid values for a type (like enum):
-```
-type DoW := int (SAT=0, SUN=1, ...);
-```
-
-Same as other members, types starting with underscore are private.
-
-```
-import core.st;
-import core.st => cst;  //alias import
-```
-
-###Templates
-
-In a class file you can use `type` keyword without value, to indicate that the user of the class has to provide type names at compile time:
-
-```
-type K;  //K is a type which will be provided at compile time. if it's not passed, it will be void
-
-void put(K key, V value) ...
-V get(K key) ...
-```
-This is how collections and ... will be implemented in core.
-
-Note that `type` section must come before fields section.
-For each tempalte class like `Stack`, there is a base interface class `Stack` which is equal to the class definition minus everything related to typenames. According to definition, all template class instances, conform to the base class, so base interface can be the base type for all template classes. This means `Stack` is the base interface for `Stack<int>, Stack<float>` and all other stacks and if you need to write a method accepting any stack you can use it: `void getStack(Stack s)`. 
-Note that `Stack` is not the same as `Stack<>` which has type set to `void`.
-
-You can specialize a template class by adding appropriate file. For example for `Stack.e` you can define `Stack[Int].e` to specialize stack for integer.
-
-###Exception handling
-
-- It is advised to return error code in case of an error and use exceptions in really exceptional cases.
-- You can use `throw X` to create exception and return from current method.
-- You can use `defer` keyword (same as what golang has) for code that must be executed upon exitting current method.
-- If defer has an input named `out`, it will be mapped to the function output.
-- If defer has an input named `exc`, it will be mapped to the current exception. If there is no exception, defer won't be executed. If there are multiple defers with `exc` all of them will be executed.
-- You can check output of a function in defer (`defer(out) out>0`) to do a post-condition check.
-
-```
-//inside function
-throw "Error!";  //throw exception and exit
-//outside: catching error
-defer(exc) { ... }
-defer(out, exc) { ... }
-
-defer(out) { if ( out != @int() ) out++; }  //manipulate function output
-defer(out) assert out>0;  //post-condition check
-```
-
-###Anonymous class
+###Anonymous classes `->`
 
 You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface specifying one or more functions without any field. If the interface has only one method, the definition can be in short form and it is basically a function pointer. There is a general purpose template class `fn` which is used by compiler to set type of anon-class literals if type is to be inferred.
 
@@ -395,33 +344,45 @@ auto intr = Interface1
 - Anonymous classes don't have constructor, fields or static instance. Because they don't have names.
 - If anon-function does not have any input and there is only one function (in short-form), you can omit `() ->` part.
 
-###Data structures
 
-- `int[] x = {1, 2, 3}; int[3] y; y[0] = 11; int[n] t; int[] u; u = int[5]; int[2,2] x;`. We have slicing for arrays `x[start:step:end]` with support for negative index.
-- `int[string] hash1 = { 'OH': 12, 'CA': 33};`.
-- `for(x:array1)` or `for(int key,string val:hash1)`.
+###Templates
+In a class file you can use `type` keyword without value, to indicate that the user of the class has to provide type names at compile time:
 
-###Casting and undef state
+```
+type K;  //K is a type which will be provided at compile time. if it's not passed, it will be void
 
-- `@myclass(my_obj)` is the casting operator and returns empty/undefined/not-initialized if myObj cannot be casted to myclass. Compiler will try 3 options for casting: first if `my_obj` conforms to `myclass` it will be casted without change in the data (means `my_obj` has all fields and methods that `myclass` has specified). second, looks for a method called `myclass` defined in `my_obj` (This method will convert `my_obj` instance to an instance of `myclass`). third, looks for reverse: a method called `ObjType` in `myclass` static instance (ObjType is type of `my_obj` and this method will crete a new instance of myclass using given `ObjType` instance). All these options will be checked at compile time.
-- Example: Converting MyClass to YourClass: `yclass = @YourClass(mclass);`
-1) call `mclass.YourClass` method: `yclass = mclass.YourClass();`
-2) call `YourClass.MyClass` static constructor method: `yclass = YourClass.MyClass(mclass);`
-- The only case where `<` and `,` is allowed in method name is for above purpose. 
-- `float f; int x = @int(f);` this will call `int` method on class `float` to do casting. This can be called automatically by compiler if needed. For template types (like array or hash), you should name the function according to full-name not short-name (`Array<char>` instead of `char[]`).
-- empty/undefined/not-initialized state of a variable is named "undef" state and is shown by `@MyClass()` which means casting empty to `MyClass` (MyClass is type of the variable). You can shortcut this by `@MyClass` notation. If type can be inferred you can use only `@`.
-- Value of a variable before initialization is undef which is denoted by `@` or `@MyClass` where MyClass is type of the variable. 
-- You can also return `@MyClass` when you want to indicate invalid state for a variable.
+void put(K key, V value) ...
+V get(K key) ...
+```
+This is how collections and ... will be implemented in core.
 
+Note that `type` section must come before fields section.
+For each tempalte class like `Stack`, there is a base interface class `Stack` which is equal to the class definition minus everything related to typenames. According to definition, all template class instances, conform to the base class, so base interface can be the base type for all template classes. This means `Stack` is the base interface for `Stack<int>, Stack<float>` and all other stacks and if you need to write a method accepting any stack you can use it: `void getStack(Stack s)`. 
+Note that `Stack` is not the same as `Stack<>` which has type set to `void`.
 
-###Misc
+You can specialize a template class by adding appropriate file. For example for `Stack.e` you can define `Stack[Int].e` to specialize stack for integer.
 
+###Optional arguments
+
+##Best practice
+###Naming
 - **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage`.
-- **Literlas**: `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64, `1_000_000`. compiler will handle object literals and create corresponding objects (in default arg value, initializations, enum values, true, false, ...). `true` is a shortcut for `bool.true`, same for `false`.
-- `///` before method or field or first line of the file is special comment to be processed by automated tools. 
-- `break 2` to break outside 2 nested loops. same for `continue`.
+##Examples
+###Empty application
+```
+int main()
+{
+    return 0; 
+}
+```
+This is a class with only one method, called `main` which returns `0` (very similar to C/C++ except `main` function has no input).
 
-###Core package
+###Hello world
+###Quick sort
+###Graph class
+###Expression parser
+
+##Core packages
 
 A set of core packages will be included in the language which provide basic and low-level functionality (This part may be written in C):
 
@@ -431,7 +392,7 @@ A set of core packages will be included in the language which provide basic and 
 - Garbage collector
 - Exception handling
 
-###Standard package
+##Standard packages
 
 There will be another set of packages built on top of core which provide common utilities. This will be much larger and more complex than core, so it will be independent of the core and language (This part will be written in Electron). Here is a list of some of classes in this package collection:
 
@@ -446,7 +407,7 @@ There will be another set of packages built on top of core which provide common 
 - Bitwise operators (and, or, shift, xor, ...)
 - ...
 
-#Package Manager
+##Package Manager
 
 The package manager is a separate utility which helps you package, publish, install and deploy packages (Like `maven` or `dub`).
 Suppose someone downloads the source code for a project written in Electron which has some dependencies. How is he going to compile/run the project? There should be an easy and transparent for fetching dependencies at runtime and defining them at the time of development.
@@ -455,25 +416,3 @@ Perl has a `MakeFile.PL` where you specify metadata about your package, requirem
 Python uses same approach with a `setup.py` file containing similar data like Perl.
 Java without maven has a packaging but not a dependency management system. For dep, you create a `pom.xml` file and describe requirements + their version. 
 C# has dll method which is contains byte-code of the source package. DLL has a version metadata but no dep management. For dep it has NuGet.
-
-
-#Language Reference ToC
-This is a specification and the implementation may choose any strategy (compile to Java Bytecode, interpret, JIT, compile to native, ...).
-
-- Version and history
-- Introduction, paradigm and memory model
-- Tokens and casing, whitespace, source code encoding, comments, literals
-- General rules (underscore, ...) and conventions
-- General structure of a source file (classes, methods and fields)
-- Packages
-- Keywords + brief explanation
-- Operators and special syntax
-- basic syntax rules + explanations
-- Best practices, packaging, versioning, conventions, naming
-- How to update this spec?
-- Code examples (quicksort, graph representation, expression parser)
-
-Sample:
-Java [chrome-extension://oemmndcbldboiebfnladdacbdfmadadm/http://cr.openjdk.java.net/~mr/se/8/java-se-8-fr-spec-01/java-se-8-jls-fr-diffs.pdf]  
-Rust [https://doc.rust-lang.org/book/]  
-Go [https://golang.org/ref/spec]  
