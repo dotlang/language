@@ -1850,7 +1850,7 @@ what if a class does not have implementation for equals? it is like calling an u
 
 Y - How should `int` set it's initial value? 
 suppose we have `int x; x = 5; x = 6;` how is assignment handled in the code? 
-we assume `int` is immutable. so is the above code possible? -> no. it should throw error (by compiler or runtime, we don't care as of now).
+we assume `int` is immutable. so is the above code possible? > no. it should throw error (by compiler or runtime, we don't care as of now).
 you can write `int x=5; x := 7; x:= 8;`
 or `int x; x = 5; x:= 7; x:= 8;`
 initially `=` is ok but after assignment it's now allowed (for imm types).
