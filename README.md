@@ -140,8 +140,6 @@ select
 You can use select to read/write from/to blocking channels.
 
 ###select
-###const
-- if a field is marked const and has a value, you can still override it's value in the $() call. if no value is provided, default value in the declaration will be used.
 
 ###native
 Denote method is implemented by runtime or external libraries.
@@ -173,19 +171,23 @@ Each class's instances can be referenced using instance notation (`varName.membe
 ```
 int _x = 12;  //private
 int qq = 19;  //public
-int y;
+int qw = this.qq //WRONG! there is no `this`
+
+int y = MyClass.data  //WRONG: upon creation of the static instance, `MyClass` is same as `this` which is not available
 int h = 12;
-const int gg = this.h;  //gg is a reference to h. any action on gg will be called on h.
-const auto dsa = this.h;  // assignment
-const float ff = this.object1.field5;
+int gg;
+
+float PI() { return 3.14; } //calling obj.PI() is same as obj.PI because PI method does not have any input
+float PI() := 3.14;  //another way to implement above
+float PI() := this.get_pi_value; //another way to implement above
+float get_pi_value() { return 3.14;}
 
 int func1(int y) { return this.x + y; }
-int func2(int x) = this.func1;  //redirect calls to func1, methods should have same signature
-//when assigning values during function definition, rvalue can only be a simple expression pointing to another function.
+int func2(int x) := this.func1;  //redirect calls to func1, methods must have same/compatible signature
 //for any more complex case, write the body.
-auto ff = MyClass.function2; //assign function to a function from static instance of another class
+auto ff := MyClass.function2; //assign function to a function from static instance of another class
 //note that you can only "assign" to a function, when declaring it.
-auto func3 = this.func2;  //compiler will infer the input/output types for func3 from func2 signature
+auto func3 := this.func2;  //compiler will infer the input/output types for func3 from func2 signature
 MyClass new() return $();  //new is not part of syntax. You can choose whatever name you want,
 void _() this.y=9;  //initialize code for static instance
 
@@ -209,6 +211,11 @@ void _() this.y=9;  //initialize code for static instance
 - You can call a method with arg names: `myClass.myMember(x: 10, y: 12);`
 - Methods can assign values to their inputs, but it won't affect passed data.
 - `$()` allocates memory for a new instance of the current class. `$(4)` will allocate 4 bytes of memory (used for primitive data types where there is no field defined, e.g. Int).
+- `auto f := g`, when g is name of a method, is a shortcut for `out f(all_inputs) { return g(all_inputs); }`. You cannot change any input/output when calling g. if `g` is name of a field or literal, then `auto f := g` means `g_type f() { return g;}`. `g` can be a complex expression: `auto f(int x) := this.g(3, x);`.
+- Using `:=` notation you can simplify calling long named methods: `auto p := core.io.screen.printf;`
+- Most simple constructor: `auto new() := $();`
+- Including parantheses is optional when calling a function which has no inputs. 
+- When you are assigning value to fields upon declaration, you don't have access to `this` or the static instance. So either you need to use literals or call outside methods.
 
 ##Operators
 
@@ -234,7 +241,7 @@ Classes can override all the valid operators on them. `int` class defines operat
 - `#` for reference id
 - `:` for hash, loop, assert, call by name, array slice and tuple values
 - `<>` template syntax
-- `:=` type alias
+- `:=` type alias and function redirection
 - `out`: representing function output in defer
 - `exc`: representing current exception in defer
 - `??` undef check
