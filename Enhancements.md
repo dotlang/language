@@ -2034,21 +2034,6 @@ Y - Better syntax for optional arguments:
 `int f(int x, int @y)`
 `int f(int x, int y=4)`
 
-? - `future<int> ff = invoke this.method1();`
-`invoke (future<int> ff) -> ff.result = this.method1();`
-Can we make `invoke` as simple as possible?
-what is role of future? get result, check if its done, check if there was an exception, get with timeout, event handlers
-Future: state (running, success, exception), get(with optionaltimeout), onSuccess (for chaining), onException.
-`future<int> f = ...; f.onSuccess = ?; f.onException = ?;invoke(f, method1);`
-```
-void invoke(fn<> function, future f) { 
-defer(exc) future.onException(); 
-defer(out) future.value = out;
-function();
-}
-```
-advantage of returning something in invoke: dev has control over the micro-thread.
-
 N - `build_x` is quite useful in our company. can we have such a thing?
 Moose: `is: ro/rw, default, builder`
 `int x := this.getx;`  lazy calculate value of x. 
@@ -2178,13 +2163,14 @@ in _ we can say: `if ( this == MyClass)` to check if we are acting on the stinst
 N - What if MyClass has overriden `equals` but now somewhere needs to check for ref equality?
 castnig to ref? `if ( @ref(this) == @ref(data) ) ...`
 
-? - Add a new operator: `defined x` which returns true if `x` is not undef. 
+Y - Add a new operator: `defined x` which returns true if `x` is not undef. 
 `if ( defined x )`
 `if ( not defined x)`
 this is more readable, than `if ( x == @ )` and also does not rely on equals operator which is good -> not good. not gen.
 lets ban equality check for undef. `if ( x == @)` or `if ( x == @int)` or `if ( x == @int())`
 lets completely remove notation of `@int()` and all its shortcuts.
 but how can we send undef to a function then?
+`if ( defined x)` is same as `if ( #x == #@ )`
 
 Y - What are the operators that a class can override?
 `if ( int1 == int2 ) ...` clearly needs data comparison
@@ -2204,3 +2190,22 @@ explicit is better than implicit.
 by default `==` compares member by member deep comparison. you can override it.
 python has `id(x)` to return unique id of object.
 `#x == #y` where `#x` returns unique id of x, which is `int`. same as `id` in python.
+
+N - `future<int> ff = invoke this.method1();`
+`invoke (future<int> ff) -> ff.result = this.method1();`
+Can we make `invoke` as simple as possible?
+what is role of future? get result, check if its done, check if there was an exception, get with timeout, event handlers
+Future: state (running, success, exception), get(with optionaltimeout), onSuccess (for chaining), onException.
+`future<int> f = ...; f.onSuccess = ?; f.onException = ?;invoke(f, method1);`
+```
+void invoke(fn<> function, future f) { 
+defer(exc) future.onException(); 
+defer(out) future.value = out;
+function();
+}
+```
+advantage of returning something in invoke: dev has control over the micro-thread.
+
+N - `static`? although it is not recommended, but our principle is to let developers have as much as possible.
+and rely on them to use it wisely.
+but dev, can use private fields to simulate static.
