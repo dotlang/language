@@ -211,7 +211,7 @@ void _() this.y=9;  //initialize code for static instance
 - You can call a method with arg names: `myClass.myMember(x: 10, y: 12);`
 - Methods can assign values to their inputs, but it won't affect passed data.
 - `$()` allocates memory for a new instance of the current class. `$(4)` will allocate 4 bytes of memory (used for primitive data types where there is no field defined, e.g. Int).
-- `auto f := g`, when g is name of a method, is a shortcut for `out f(all_inputs) { return g(all_inputs); }`. You cannot change any input/output when calling g. if `g` is name of a field or literal, then `auto f := g` means `g_type f() { return g;}`. `g` can be a complex expression: `auto f(int x) := this.g(3, x);`.
+- `auto f(auto) := g`, when g is name of a method, is a shortcut for `out f(all_inputs) { return g(all_inputs); }`. You cannot change any input/output when calling g. if `g` is name of a field or literal, then `auto f() := g` means `g_type f() { return g;}`. `g` can be a complex expression: `auto f(int x) := this.g(3, x);`.
 - Using `:=` notation you can simplify calling long named methods: `auto p := core.io.screen.printf;`
 - Most simple constructor: `auto new() := $();`
 - Including parantheses is optional when calling a function which has no inputs. 
