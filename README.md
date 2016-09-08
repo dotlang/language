@@ -67,9 +67,8 @@ In the above examples `core.sys, core.net, core.net.http, core.net.tcp` are all 
 Electronc has a small set of basic keywords: `if, else, switch, assert, for, break, continue, return, throw, defer, type, import, void, auto, import, select, native, defined`.
 
 ###if, else
-Grammar:
 ```
-IfElse := IF ( condition ) Block [ELSE IfElse]
+IfElse := 'if' ( condition ) Block ['else' ( IfElse | Block)]
 Block := Statement | { (Statement)* }
 ```
 Semantics of this keywords are same as other mainstream languages.
@@ -78,6 +77,14 @@ Semantics of this keywords are same as other mainstream languages.
 - Also you can use a simple boolean variable (or a method with output of boolean) for condition.
 
 ###switch
+```
+SwitchStmt: 'switch' ( expression ) { (CaseStmt)+ }
+CaseStmt: (IdentifierList | 'else') ':' Block
+```
+- `switch` is same as what we have in C language except you can have any expression in the cast list.
+- First case which is matching will be executed and others will be skipped.
+- `else` case is executed if none of other cases match.
+
 ###assert
 ###for, break, continue
 `break 2` to break outside 2 nested loops. same for `continue`.
