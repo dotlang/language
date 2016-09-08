@@ -2209,3 +2209,30 @@ advantage of returning something in invoke: dev has control over the micro-threa
 N - `static`? although it is not recommended, but our principle is to let developers have as much as possible.
 and rely on them to use it wisely.
 but dev, can use private fields to simulate static.
+
+Y - Can't I define a const field which redirects to a method?
+like function: `int func2(int x) = this.func1` redirects calls to func2 to func1.
+same for fields, and as we cannot assign to functions, it will need to be const.
+`const int x = this.func2;` when I call `this.x` or other write `myObj.x` it will call func2 and return the value.
+problem with above statement is that, rvalue's type does not match with lvalue.
+we can use `:=` for this and function.
+because we have assumed that function is read-only.
+can't we implement this in another way with simplicity?
+instead of `int func2(int x) = this.func1` we can write: `int func2(int x) { return this.func1(x); }`
+but it won't be simple. we can define this syntax sugar: `f = g` means `f { return g(all inputs); }`
+but we are re-defining meaning of `=`! let's use `:=`
+what about fields? `int x := this.func2`
+setting value for x will call `void func2(int x)` -> we discussed this before, where will be the real storage then?
+so this can only be applied when reading the value of the field? isn't this the same as defining a nick-name for a function?
+isn't this the same as calling input-less function without `()`? if we adopt this notation, we don't need to define `:=` to redirect field to method. 
+
+Y - if we adopt, omitting () when calling input-less function, can this implement `const` for us?
+`float PI() { return 3.1415;}`
+`MyClass get() { return obj; }`
+so basically we won't need const and `:=` for assignment.
+we will have constants, ability to call a function when a (seemingly) field is referenced.
+`float PI() {}` does not satisfy `float PI;` because second declaration implies r/w.
+and we can write: `float PI() := this.calculate(3.14);` to redirect a call.
+what happens to const? real constants have a fixed body like above example. 
+so:
+proposal: remove const from language. provide syntax sugar to write `a.b` instead of `a.b()`.
