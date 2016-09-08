@@ -146,6 +146,9 @@ You can use select to read/write from/to blocking channels.
 ###native
 Denote method is implemented by runtime or external libraries.
 
+###defined
+`if ( defined x)` is same as `if ( #x == #@ )`
+
 ##Primitives
 - **Integer data types**: `char`, `short`, `int`, `long`
 - **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
