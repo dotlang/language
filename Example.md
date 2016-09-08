@@ -56,7 +56,7 @@ int test(int arg)
     {
         1: return 0;
         2,3: return 9;
-        : z++;
+        else: z++;
     }
     
     //type of h is hash<string, int>
