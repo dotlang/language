@@ -2033,3 +2033,174 @@ Y - Better syntax for optional arguments:
 `int f(int x, @int y)`
 `int f(int x, int @y)`
 `int f(int x, int y=4)`
+
+? - `future<int> ff = invoke this.method1();`
+`invoke (future<int> ff) -> ff.result = this.method1();`
+Can we make `invoke` as simple as possible?
+what is role of future? get result, check if its done, check if there was an exception, get with timeout, event handlers
+Future: state (running, success, exception), get(with optionaltimeout), onSuccess (for chaining), onException.
+`future<int> f = ...; f.onSuccess = ?; f.onException = ?;invoke(f, method1);`
+```
+void invoke(fn<> function, future f) { 
+defer(exc) future.onException(); 
+defer(out) future.value = out;
+function();
+}
+```
+advantage of returning something in invoke: dev has control over the micro-thread.
+
+N - `build_x` is quite useful in our company. can we have such a thing?
+Moose: `is: ro/rw, default, builder`
+`int x := this.getx;`  lazy calculate value of x. 
+can it be read/write? or only read-only?
+if `getx` has two versions (one without input for read, one without output for write) it will be r/w.
+if we only have `int getx()` it will be read-only.
+if we only have `void getx(int value)` it will be write-only.
+how to ensure lazy read?
+default value: `int x = 11 := get`
+`const int x = 11 := get` is wrong. x has a value and is read-only!
+`const int x := get` is wrong. const means value should be provided upon declaration or instantiation.
+`property int x` -> setting value of x will call `set_x` and reading will call `get_x`. if either of these methods does not exist means it is read or write only. you cannot combine property and const.
+`property int _x` -> set__x. get__x.
+we can enforce read/write only. how to enforce caching of value, and calling get__x only on the first case? 
+q: how can we cache a function output? of course it does not have any input: `int get_x()`
+define: `get_x` to read, `set_x` for write, `build_x` for only first-time get.
+you can either have `get_x` or `build_x`. with get, its called upon each reference. with `build` it's cached, until 
+value is changed by calling `set_x` (if available). 
+what about naming convention? `buildX`, `getX`, `setX`. 
+`property int myData;` -> `get_myData`? `get_mydata`? `getMyData`?
+prefix should be combinable with field name. 
+`my_var` -> get and set can have the same name. `int my_var()` for get, `void my_var(int x)` for set. 
+`myVar`
+q: how should get/set work? what is the variable to actually store data into?
+`Property<int> x;` -> not flexible. what if I want to have my own set/get code?
+I strongly prefer using convention here: `get_x, set_x, build_x`. 
+`int get_x() { return this.x; }`
+`void set_x(int x) { this.x = x;}`
+`int build_x() { return 4;}`
+why do we need get and set? the initial reason was for `build` and caching the value.
+using get and set will add the the confusion as to how to handle the original value.
+so `build_x` will be called upon first reference to `x`. 
+whenever value of `x` is undef, and it is being read, `build_x` will be called. 
+if you assign a value to it, build method will never be called. 
+can we also have a method which is called whenever value is written to the field? this may be useful and does not introduce cnofusion. because I think there will be a need for a new keyword to explicitly tell compiler about this behavior for x. so let's make more use of this new keyword.
+so if `x` is being assigned a value, this new method will be called before assignment.
+e.g. `void updating_x(int new_value);`
+but we have a full set of operators. If you need special behavior upon assignment, add it to `op_assign` operator.
+but maybe we don't want to add a new class for this. we have `int x` and want to be notified when it is being updated.
+-> if so, make it private and add `set_x` method yourself.
+same for `get_x`. this can be easily handled using existing tools. and minimum confusion.
+also we can implement `build` with `get_x`. 
+```
+int get_x() {
+    if ( this._x == @ ) calculate_x();
+    return this._x;
+}
+```
+
+Y - also add default for switch. or maybe we can use `else`. 
+
+Y - Can we make use of nonamed public function maybe for constructor. `MyClass (int x) { }`
+what if we don't want to have a static instance? it's good if _ method creates the static instance too.
+so it can return undef which means there is no static instance. but how are we going to instantiate the class then?
+only static -> don't define constructor
+only instance -> return undef in _ method. how to create those instances?
+no. this is not good. this should be minimum possible code: `int main() { return 0; }`
+there is no _ method. so by default, every class has a static instance: _ is implemented by compiler by default. you can override it. so _ creating the static instance is fine.
+why there should be a difference between static and normal instance? why do they have separate methods and way of constructor?
+why not write a normal class with a constructor. compiler calls the constructor to create the static instance.
+code calls it to create normal instance. a single method is used for creation of instances of the class.
+that special method is the unnamed method. so if unnamed method is private, means only compiler can call it -> it has only static instance.
+if it is public -> it has both public and private instance.
+if there are both public and private: everyone will call public.
+if there is none: compiler defines default private constructor.
+but no-named method makes reading code harder. `MyClass (int x) { return $(); }`
+let's give it a symbolic name: `#`.
+`MyClass x = MyClass(10);` //this will call unnamed public method.
+`return this._(10);` this will call unnamed private method.
+so compiler is just like normal code: it asks the class for an instance, assigns it to `MyClass` global variable and done.
+(note: if you define constructor, it must accept no-input, else: compiler cannot call it so there won't be a static instance)
+can we instantiate the class if it does not have a static instance? NO. 
+so either there is no instance, or only static instance or both static and normal instance.
+so static instance MUST be create-able, but normal instance can be either provided or no.
+so static instance will use private unnamed no-input method: `MyClass _() {}` will create and return. or if not defined compiler will define.
+normal instance will use public no-name method from static instance: `MyClass () {}`
+`MyClass x = MyClass(10);`  
+but this is confusing with casting! are we casting `10` to MyClass? or creating a new instance of MyClass?
+NO! Casting has a @ prefix.
+result: static instance is created by compiler automatically. _ method will be called if present, to initi the static instance.
+if class wants to have normal instances too, for outside, it will define no-name method `MyClass ()` which others can call. But then there would be two ways to create instances of a class: static methods or no-name method.
+solution: calling `$()` is only allowed inside noname method.
+so how can we define a private constructor? why do we need one? 
+static instance is mandatory. normal instance is optionals
+static instance is just like normal instance. -> WRONG. it is not optional.
+let's just ignore the concept of initializing static instance.
+if we force developer to have a no-input constructor then static instance can be created normally.
+what if we have const members which don't have values? then creating static instance is not possible!
+so we cannot say compiler creates the static instance magically.
+static instance must be created using constructor. so ctor should be able to work without any inputs.
+but what if the developer creates the static instance with his own parameters?
+e.g MyClass(10) be the static instance.
+so: user can define public or private constructor. which is unnamed. it can have any number of inputs.
+all is fine not considering static instance. 
+static instance is created by compiler, calling public or private ctor of the class, without any inputs.
+if class has no ctor, compiler will add `auto _() return $();` for creation of static instance.
+if class has public ctor, it will be called by compiler to create sinstance.
+if class has only a private ctor, will be called.
+what are our goals?
+1. we want developer have control over creation of sinst -> `auto _()` is required and will be added on demand.
+2. we want developer disable instance creation. -> don't define unnamed public.
+3. we want developer disable sint creation. -> not possible.
+normal instances will be created by calling unnamed public method.
+static instance will be created by calling unnamed private method.
+calling `$()` is only allowed in unnamed methods. 
+so unnamed public method is required if we need class to be instantiatble. `auto () return $();`
+but private unnamed ctor is callable by static methods! so we don't really need public unnamed method. 
+developer can just ignore public unnamed method and create instances by calling private unnamed.
+and saying: you can only call `$()` inside this method is against orth and gen.
+so: calling `$()` is allowed from everywhere. compiler will call `_()` to create the static instance. 
+for creation of normal instances.
+proposal: calling `$()` is only allowed inside `_()` method. any other method can call this to create an instance. 
+adv: static and normal instance are the same.
+we can also force calling `_()` only to public unnamed method. but interfaces for this will not be readable. 
+can `_()` call other methods? yes and no. yes because it is a class method. no because there is no instance.
+it does not have a `this`. it can create a new instance and call it's methods.
+`MyClass _(int x=1) { auto result = $(data:x); result._method1(); return result; }`
+proposal 1) all other methods should call _() to create a new instance.
+proposal 2) no method can call _(). other methods have to use $() themselves.
+proposal 3) there is no need for _(). compiler will automatically create the new instance of the class. init all fields. if there is a const field without having a value, it will be undef and cannot be re-assigned. class can have as many ctor as it wants, each of them calling $ to create new instance.
+but initialization of the static inst can have lots of advantages. ok we will have _.
+compiler creates stinst and calls _ for initialization.
+but why limit _ to the static instance? because for other instances we have full control over inst.
+can we say _ will be called after creation of all instances (static or normal)?
+in _ we can say: `if ( this == MyClass)` to check if we are acting on the stinst.
+
+N - What if MyClass has overriden `equals` but now somewhere needs to check for ref equality?
+castnig to ref? `if ( @ref(this) == @ref(data) ) ...`
+
+? - Add a new operator: `defined x` which returns true if `x` is not undef. 
+`if ( defined x )`
+`if ( not defined x)`
+this is more readable, than `if ( x == @ )` and also does not rely on equals operator which is good -> not good. not gen.
+lets ban equality check for undef. `if ( x == @)` or `if ( x == @int)` or `if ( x == @int())`
+lets completely remove notation of `@int()` and all its shortcuts.
+but how can we send undef to a function then?
+
+Y - What are the operators that a class can override?
+`if ( int1 == int2 ) ...` clearly needs data comparison
+`if ( this == MyClass) ...` clearly needs ref comparison
+let's ban overriding `==` opertor. 
+same as `=`. it assigns reference. you want to customize call clone or duplicate.
+in C# we have `equals` and `reference_equals`.
+equals should return false if one of ops are undef.
+we can have `==` and `!=` for data comparison.
+`===` and `!==` for reference comparison.
+or we can have `==` for data comparison which is overridable. and 
+use `ref(x) == ref(y)` for ref comparison.
+or: `if ( ref_eq(x,y)) ...` to compare two references.
+`if ( x ~ y ) ...` not intuitive.
+we can have built-in methods for ref comparison.
+explicit is better than implicit. 
+by default `==` compares member by member deep comparison. you can override it.
+python has `id(x)` to return unique id of object.
+`#x == #y` where `#x` returns unique id of x, which is `int`. same as `id` in python.
