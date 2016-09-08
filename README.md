@@ -141,6 +141,8 @@ You can use select to read/write from/to blocking channels.
 
 ###select
 ###const
+- if a field is marked const and has a value, you can still override it's value in the $() call. if no value is provided, default value in the declaration will be used.
+
 ###native
 Denote method is implemented by runtime or external libraries.
 
@@ -155,12 +157,13 @@ Denote method is implemented by runtime or external libraries.
 Each source code file represents one class and has two important parts: part where fields are defined, and method definition.
 Writing body for methods is optional (but of course if a body-less method is called, nothing will happen and an empty response will be received). Classes with no method body are same as interfaces (or abstract class with all methods marked as virtual) in other languages but in Electron we don't have the concept of interface.
 
-Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be created upon first usage in the code and is not re-assignable.  
+Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be created by compiler upon first usage in the code and is not re-assignable.  
 
 *Notes:*
 - There is no inheritance. Composition is used instead.
 - If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is public.
-- The order of the contents of source code file matters: First `import` section, `type` section, fields and finally methods. 
+- The order of the contents of source code file matters: First `import` section, `type` section, fields and finally methods.
+- After creation of any instance of a class (including static instance), `_()` method will be called if it exists. You can initialize the instance in this method.
 
 ###Class members
 
@@ -184,8 +187,8 @@ MyClass new() return $();  //new is not part of syntax. You can choose whatever 
 void _() this.y=9;  //initialize code for static instance
 
 ```
-- If field or local variable is marked with `const`, it is not re-assignable and must be assigned either upon declaration or upon instaitiation inside `$()`. So you can only assign to it once. Note that, they still can be mutated if they provide appropriate methods. If you need truly immutable classes, you have to implement the logic in your code.
-- You can assign value to fields when calling `$()` operatos: `auto result = $(x:1, y:5);`. This is used for const fields.
+- You can assign value to fields when calling `$()` operatos: `auto result = $(x:1, y:5);`.
+- If field or local variable is marked with `const`, it is not re-assignable and must be assigned either upon declaration or upon calling `$()`. Assignments inside `$()` override declaration assignments. Note that, they still can be mutated if they provide appropriate methods. If you need truly immutable classes, you have to implement the logic in your code.
 - Any class without fields is immutable from compiler's perspective (this includes primitive types). This will help runtime to optimize the code. 
 - Any assignment to an immutable variable is allowed but will create a new reference. As long as the variable is not `const` assignments are ok.
 - Class members (fields, methods and types) starting with underscore are considered private and can only be accessed by methods of the same class. So `obj._x` is ok if the code is inside the class type of `obj`.
@@ -215,9 +218,9 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 Each class can provide implementation for operators. 
 Classes can override all the valid operators on them. `int` class defines operator `+` and `-` and many others (math, comparison, ...). This is not specific to `int` and any other class can do this. 
 
-- `=` operator, makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. If you want to clone, you need to use custom methods (e.g. `int x = int.new(y);`) or override this behavior by adding `op_assign` method to your class and clone the data. If you need original behavior of `=` you have to embed those variables in holder classes which use default `=` behavior. On the other hand, if you need duplication for classes which do ref-assignment by default, you will need to do it manually in one of methods (like `clone` and call `MyClass x = y.clone()`).
+- `=` operator, makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. If you want to clone, you need to use custom methods (e.g. `int x = int.new(y);`). You cannot override this operator.
 - `x ?? 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
-- `x == y` will call `equals` method. By default this compares reference values but classes can override this.
+- `x == y` will call `equals` method, which by default compares field-by-field values but classes can override this. If you need to compare references, you can use `#x == #y` where `#` is unique-id operator which returns same integer id for same references. 
 
 
 ##Special syntax
@@ -225,6 +228,7 @@ Classes can override all the valid operators on them. `int` class defines operat
 - `()` for defining tuple literals and function call
 - `@` for casting and undef
 - `$` instantiation
+- `#` for reference id
 - `:` for hash, loop, assert, call by name, array slice and tuple values
 - `<>` template syntax
 - `:=` type alias
@@ -378,7 +382,7 @@ You can specialize a template class by adding appropriate file. For example for 
 
 ##Best practice
 ###Naming
-- **Naming rules**: Advised but not mandatory: `someMethodName`, `some_variable_arg_field`, `MyClass`, `MyPackage`.
+- **Naming rules**: Advised but not mandatory: `some_method_name`, `someVariableName`, `MyClass`, `MyPackage`.
 - constructor is called `new` in core classes.
 - For primitive classes, name starts with lowercase to denote they are primitive and have no fields.
 
