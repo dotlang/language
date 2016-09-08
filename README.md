@@ -23,14 +23,10 @@ This document explains about
 
 Three main goals are pursued in the design of this language:
 
-1. **Consistency and Simplicity**: The code written in Electron language should be easy to learn, read, write and understand.
-There has been a lot of effort to make sure there are as few exceptions as possible. Software development is complex enough. 
-Let's keep the language as simple as possible and save complexities for when we really need them.
-2. **Powerful**: It should enable (a team of) developers to organize, develop, test, maintain and operate a large and complex 
-software project, with relative ease.
-3. **Fast**: Performance of the final output should be high. Much better than dynamic languages and 
-something like Java.
-
+1. **Simple**: The code written in Electron language should be consistent, easy to learn, read, write and understand.
+There has been a lot of effort to make sure there are as few exceptions as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
+2. **Powerful**: It should enable (a team of) developers to organize, develop, test, maintain and operate a large and complex software project, with relative ease.
+3. **Fast**: Performance of the final output should be high. Much better than dynamic languages and something like Java.
 
 Achieving all of above goals at the same time is something impossible so there will definitely be trade-offs and exceptions.
 The underlying rules of design of this language are 
@@ -44,14 +40,8 @@ only one class (fields + methods). In Electron, class can be analogous to class 
 ### Core principles
 
 Almost everything is an object, even basic data types and everything is passed by value, but everything is a reference.
-Every class has a special instance (static instance), which is created by the compiler. This instance can be used to create other instances of the class. But at very few cases compiler does something for the developer automatically. Most of the time, developer should do the job manually.
-
-##Lexical Syntax
-- **Encoding**: Source code files are encoded in UTF-8 format.
-- **Whitespace**: Any instance of space(' '), tab(\t), newline(\r and \n) are whitespace and will be ignored.
-- **Comments**: C like comments are used (`//` for single line and `/* */` for multi-line). `///` before method or field or first line of the file is special comment to be processed by automated tools. 
-- **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0x0101011101` binary number, `192.121d` double, `1234l` long. - **Literlas**: `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64, `1_000_000`. compiler will handle object literals and create corresponding objects (in default arg value, initializations, enum values, true, false, ...). `true` is a shortcut for `bool.true`, same for `false`.
-- **Adressing**: Each type, field or method can be address in the format of `A.B.(...).D` where `A`, `B` and other parts are each either name of a package or class. The last part `D` is name of the field or method or type which is being addressed.
+Every class has a special, default instance, which is created by the compiler. This instance can be used to create other instances of the class.
+At very few cases compiler does something for the developer automatically. Most of the time, developer should do the job manually.
 Code is organized into packages. Each package is represented by a directory in the file-system. Packages have a hierarchical structure:
 
 core  
@@ -63,8 +53,30 @@ core
 
 In the above examples `core.sys, core.net, core.net.http, core.net.tcp` are all packages.
 
+##Lexical Syntax
+- **Encoding**: Source code files are encoded in UTF-8 format.
+- **Whitespace**: Any instance of space(' '), tab(\t), newline(\r and \n) are whitespace and will be ignored.
+- **Comments**: C like comments are used (`//` for single line and `/* */` for multi-line). `///` before method or field or first line of the file is special comment to be processed by automated tools. 
+- **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0x0101011101` binary number, `192.121d` double, `1234l` long. - **Literlas**: `0xffe`, `0b0101110101`, `true`, `false`, `119l` for long, `113.121f` for float64.
+- You can separate number using undescore: `1_000_000`
+- Compiler will handle object literals and create corresponding objects (for field and variable assignment, default argument value, enum values, tuple initialization, ...).
+- `true` is a shortcut for `bool.true`, same for `false`.
+- **Adressing**: Each type, field or method can be address in the format of `A.B.(...).D` where `A`, `B` and other parts are each either name of a package, class or field. The last part `D` is name of the field or method or type which is being addressed.
+
 ##Keywords
+Electronc has a small set of basic keywords: `if, else, switch, assert, for, break, continue, return, throw, defer, type, import, void, auto, import, select, native, defined`.
+
 ###if, else
+Grammar:
+```
+IfElse := IF ( condition ) Block [ELSE IfElse]
+Block := Statement | { (Statement)* }
+```
+Semantics of this keywords are same as other mainstream languages.
+- Note that condition must be of type `bool`.
+- You can use any of available operators for condition part. 
+- Also you can use a simple boolean variable (or a method with output of boolean) for condition.
+
 ###switch
 ###assert
 ###for, break, continue
