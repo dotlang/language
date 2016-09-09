@@ -2438,3 +2438,10 @@ why not use `=`? because type of lvalue and rvalue are not the same.
 
 Y - local variables starting with underscore are static.
 this can be used for caching or `once` effect (`build_x` in perl).
+
+Y - For anon-func `_` can denote the only input, resulting in a shorter code:
+`auto ff = (int x) -> x+1;`
+`auto ff = _+1;`
+
+N - instead of `->` notation we can simply use `=` and write anon-func or class inside some container.
+we are already using `=`
