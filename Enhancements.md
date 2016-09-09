@@ -2295,7 +2295,7 @@ for constraint:
 so we don't need to have convention for this.
 `type T := int @{};`
 `type T := int @{Type1, Type2};`
-Now, if someone writes `Stack s = Stack.new()` it will be what? -> this is not possible!
+Now, if someone writes `Stack s = Stack.new()` it will be what?-> this is not possible!
 `Stack<int> s = Stack<int>.new();` //T will be int
 what will be meaning of `Stack` and `Stack<>` then?
 compiler for each template will create another class without any template type (definition and usage)
@@ -2304,7 +2304,7 @@ result will be a class which all template instances conform to. possibility to i
 
 Y - Let's remove template specialization. what if developer specializes and result is something totally different! it has to be conforming to base impl.
 
-? - Fantom doesn't include support for 32-bit, 16-bit, and 8-bit integers and floats. There is only a 64-bit Int and a 64-bit Float.
+N - Fantom doesn't include support for 32-bit, 16-bit, and 8-bit integers and floats. There is only a 64-bit Int and a 64-bit Float.
 what's use of this? primitives are classes.
 we have 8, 16, 32 and 64 bits. we definitely need 8 for string. for unicode? we won't need 16 bit int, atleast.
 we need 64 bit too, so: char, byte, int64, uint64.
@@ -2314,7 +2314,7 @@ but I think we can safely remove 16 bits: `short` and `ushort`.
 for crypto or network code we may really need to work with a 16 bit data block, but this can be done via a simulator class.
 also when working with other systems (C code, databases, web-service API, ...) we may need these types.
 
-? - remove `void` keyword. return `this` if you dont have anything to return.
+Y - remove `void` keyword. return `this` if you dont have anything to return.
 if there is no `return` statement, function will return `this`, so code doesn't get messy.
 but return type must be specified. user can write `~` to indicate return type is same as the class.
 `~ new() := $();`
@@ -2327,21 +2327,114 @@ can we write `~.method2`? no. it can only be used as a type-name not variable na
 so it can be used for input type, output type, variable type, ...
 `int x; ~ pp;` not elegant and explicit.
 `int f(~ me, ~ other);` its better if we limit usage of `~` for input/output of function.
+we can only limit usage of `~` to output type and this will mean implicitly return `this`.
 
-? - non nullable types
+N - non nullable types
 `int!` cannot accept nil value.
 by default, it will have `0` value (but `int x` will be `nil`).
 but what about a class? `MyClass! x;`, `NetworkStream! ns`
 how can we say T must be non-nullable in a generic class?
 what happens when we create an array of these? `int![10] x;`
+what if we want to create a non-nullable array of non-nullable integers? `int![10]! x`?
+or we can act in reverse: all type are non-nullable unless we say so. `int` cannot be null.
+`int?` can be null too. 
+so methods that return `int` MUST return something. if there is a chance that they cannot return anything they have to change their signature to `int?`.
+proposal: each class defines it's default value. if it is nil then it is nullable.
+but a class can have default value of 6 and be nullable too!
+it's better to define nullability at variable level.
+we need to pay attention to array and complex objects.
+what if we define an array `int?[]`, 
+what will be default value of array of int? 
+how can we have non-nullable array of nullable ints?
+how can we have nullable array or non-nullable ints?
+if Person is non-nullable, what should be it's default value?
+how are we going to handle conversion? can we convert `int?[]` to `int[]`?
+default assumption of all objects non-nullable by default makes thing difficult when developer has complex classes. 
+what if we add it as a contract? then we can have contract for x being >0 too!
+design by contract is an alternative, but it acts on class level.
+what should be type of hashtable query? it can be non-existent or it can really be null.
+`int? x = map["data"];` what does null x mean? map does not have this key? or the actual value is null?
+it will add lots of complexity.
+maybe we can narrow this: we want to declare output of a function or a field cannot be null.
+maybe this can be boiled down to `assert` and `defer`.
+if contracts are not part of code, then all intheritance and shadowing may become complex.
 
+Y - design by contract - built-in support?
+`@in(x>0)`  ensure x input is >0
+`@out(out>0)` ensure output is >0
+how can we share data? e.g. check if length of array is not changed before/after method?
+contracts follow rule of explicity.
+no sharing of data is supported. we are not trying to solve all of the world's problems.
+if class A has method M with contracts, and class B composes class A. 
+if B does not have method named M, it will be promoted (with all it's contracts).
+if B hides it, then it won't be promoted but when its called it will have it's contract.
+maybe we can use contracts for templates too. so we won't beed `@{Type1, Type2}` part.
+so we will have 4 types of contracts: `expect, ensure, invariant, init`
+- expect: checked before method execution
+- ensure: after method execution
+- invariant: before/after all public methods execution
+- init: after instance creation, this is of type ensure.
+`#check(this)` for invariant
+`#check(in)` method pre-condition
+`#check(out)` method post-condition
+for template check:
+`#check[in](@?Type1(T))`
+`#check[in](x > 0)`
+`#check[in]x > 0)`
+`#require(x>0)`
+`#ensure(out !=0)`
+we can use `expects` for class invariant too, when it is defined before fields section.
+so, we can simply add: `#ensure(out != @)` to make function output non-nullable.
+`#require{x>0}`
+`#ensure{out != @}`
+braces is better because using paren implies we need semicolon at the end of the line
+```
+#invariant{this.x>0}
 
-? - Do we still need to provide values inside $?
+#require{x>0}
+#ensure{this.result == out}
+~ f(int x) 
+{
+    return x+1;
+}
+```
 
-? - can we simplify type names? 
+Y - `@int(x)` casts x to integer.
+`@?int(float)` returns true if float can be casted to int.
+`assert @?int(input1)`
+`@int[float]`
+
+Y - if `~ func();` is called it won't return null but `this`.
+
+Y - Do we still need to provide values inside $? no
+
+N - can we simplify type names? 
 `Map<Stack<int[string]>, string[int[]]> data_types;`
 maybe using `int#` for array of integer.
 `int#string` for hash.
 `Map<Stack<int#string>, string#int#>`
 `int# arr = int#.new(3);`
+or more explicit: `array<int>` and `map<string, int>`
 
+N - can we make hash literals a language feature?
+`h = { 1:10, 2:20, 3:30}`
+no. scala can because it has a different ctor system.
+
+N - more undef related operators
+we have @ for undef and ?? for null casting. 
+maybe `?.` but we already have this.
+
+Y - more thinking about immutability.
+return `const`. It is not covered completely by accepting `a.b` as `a.b()`.
+
+Y - more clear syntax for func redir.
+`:=` is used for type and typename. it's better if use another notation.
+why not use `=`? because type of lvalue and rvalue are not the same.
+`=>` is too messy and not beautiful.
+`auto f :: g;`
+`auto f :: 5;`
+`auto f :: this.func(10);`
+`auto f(int x) :: this.func(10,x);`
+
+Y - local variables starting with underscore are static.
+this can be used for caching or `once` effect (`build_x` in perl).
