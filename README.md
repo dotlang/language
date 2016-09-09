@@ -68,8 +68,8 @@ Electronc has a small set of basic keywords: `if, else, switch, assert, for, bre
 
 ###if, else
 ```
-IfElse := 'if' ( condition ) Block ['else' ( IfElse | Block)]
-Block := Statement | { (Statement)* }
+IfElse = 'if' ( condition ) Block ['else' ( IfElse | Block)]
+Block = Statement | { (Statement)* }
 ```
 Semantics of this keywords are same as other mainstream languages.
 - Note that condition must be of type `bool`.
@@ -78,15 +78,36 @@ Semantics of this keywords are same as other mainstream languages.
 
 ###switch
 ```
-SwitchStmt: 'switch' ( expression ) { (CaseStmt)+ }
-CaseStmt: (IdentifierList | 'else') ':' Block
+SwitchStmt = 'switch' ( expression ) { (CaseStmt)+ }
+CaseStmt = (IdentifierList | 'else') ':' Block
 ```
 - `switch` is same as what we have in C language except you can have any expression in the cast list.
 - First case which is matching will be executed and others will be skipped.
 - `else` case is executed if none of other cases match.
+- You cannot use expressions (which implies a side-effect) for cast statements. 
+- Case identifiers should be either literals or simple identifiers (variable names).
+- For each case, the `==` operator will be called on the result of the expression for comparison.
 
 ###assert
+```
+AssertStmt = 'assert' condition [':' expression] ';'
+```
+- Assert makes sure the given `condition` is satisfied. 
+- If condition is not satisfied and there is a given expression, it will run `throw expression` statement.
+- If condition is not satisfied and there is no expression, it will exit immediately.
+
 ###for, break, continue
+```
+ForStmt = 'for' ( Condition ) Block
+ForStmt = 'for' ([Init ';'] Condition ';' Update) Block
+ForStmt = 'for' (var ':' Identifier) Block
+ForStmt = 'for' (var1, var2 ':' Identifier) Block
+BreakStmt = 'break' [Number] ';'
+ContinueStmt = 'continue' [Number] ';'
+```
+- `for` statement is used for running a block of code multiple times.
+- First case: Run the block while the condition is met.
+
 `break 2` to break outside 2 nested loops. same for `continue`.
  
 ###return
@@ -164,7 +185,7 @@ You can use select to read/write from/to blocking channels.
 Denote method is implemented by runtime or external libraries.
 
 ###defined
-`if ( defined x)` is same as `if ( #x == #@ )`
+`if ( defined x)` is same as `if ( @ref(x) == @ )`
 
 ##Primitives
 - **Integer data types**: `char`, `short`, `int`, `long`
@@ -249,7 +270,7 @@ Classes can override all the valid operators on them. `int` class defines operat
 
 - `=` operator, makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. If you want to clone, you need to use custom methods (e.g. `int x = int.new(y);`). You cannot override this operator.
 - `x ?? 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
-- `x == y` will call `equals` method, which by default compares field-by-field values but classes can override this. If you need to compare references, you can use `#x == #y` where `#` is unique-id operator which returns same integer id for same references. 
+- `x == y` will call `equals` method, which by default compares field-by-field values but classes can override this. If you need to compare references, you can use `@ref(x) == @ref(y)` where `ref` is unique-id class in core. 
 
 
 ##Special syntax
