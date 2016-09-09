@@ -415,7 +415,8 @@ auto intr = Interface1
 In a class file you can use `type` keyword without value, to indicate that the user of the class has to provide type names at compile time:
 
 ```
-type K;  //K is a type which will be provided at compile time. if it's not passed, it will be void
+type K := int @{};  //K is a template type (default is int), which will be provided at compile time.
+type V := float @{Type1, Type2}; //type V is float by default and must conform to Type1 and Type2 classes
 
 void put(K key, V value) ...
 V get(K key) ...
@@ -423,10 +424,9 @@ V get(K key) ...
 This is how collections and ... will be implemented in core.
 
 Note that `type` section must come before fields section.
-For each tempalte class like `Stack`, there is a base interface class `Stack` which is equal to the class definition minus everything related to typenames. According to definition, all template class instances, conform to the base class, so base interface can be the base type for all template classes. This means `Stack` is the base interface for `Stack<int>, Stack<float>` and all other stacks and if you need to write a method accepting any stack you can use it: `void getStack(Stack s)`. 
-Note that `Stack` is not the same as `Stack<>` which has type set to `void`.
-
-You can specialize a template class by adding appropriate file. For example for `Stack.e` you can define `Stack[Int].e` to specialize stack for integer.
+For each tempalte class like `Stack`, there is a base interface class `Stack` which is equal to the class definition minus everything related to typenames (declaration, usage, ...) which is created by the compiler. According to definition, all template class instances, conform to this base interface. This means `Stack` is the base interface for `Stack<int>, Stack<float>` and all other stacks and if you need to write a method accepting any stack you can use it: `void getStack(Stack s)`. 
+Note that `Stack` is not the same as `Stack<>` which has type set to it's default.
+- When creating instances of template class you can explicitly speciy type name: `Stack<T=int, V=float>`
 
 ###Optional arguments
 
