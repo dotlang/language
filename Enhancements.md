@@ -2243,3 +2243,105 @@ Y - replace `#` with `@ref` class. this class is built-in and can be used to com
 
 \* - `:=` notation for function decl, can hint compiler to inline method. 
 
+\* - String interpolation `result of $x is $y'. OK.
+single quote can be used for normal string. double quote for inperpolated string.
+
+N - fantom: a?.func()     // safe invoke operator (like Groovy)
+Groovy: `name = person?.name `
+Ruby: `account&.owner&.address`
+C#: `i = f?.Measure;`
+I dont like this operator. It encourages the developer to ignore null data.
+
+N - Discussion about including generics in Fantom:
+http://fantom.org/forum/topic/1433
+Eiffel has anchor which means method input or output type can refer to a field of the class.
+`T1 method(T2 input) {...}`
+benefit: there will not be a magical syntax: `MyClass<int, string>`.
+`int func1(string s) {...}`
+```
+int x = 11;
+Type T = int;
+T[] d;
+//later:
+MyClass m = MyClass.new(T: int);
+```
+con: in this case we may have two instances of `MyClass` which cannot be converted to each-other?
+no. stack of int and stack of float should have explicitly different type names.
+
+N - Once methods only compute their result the first time they are called and then return a cached value on subsequent calls. `once Str fullName() { return "$firstName  $lastName" }`
+we are already using `:=` notation. also these method may be longer than one line.
+they cannot have any input parameters. so basically they are fields!
+maybe we can use `:=` notation for this but it will become too confusing. `:=` will have 3 meanings!
+`int x := this.calculate_data;` upon first usage of `x` it will be calculated and cached.
+`int x := { do_calc; return 6; }` - this is confusing and is adding a new syntax construct.
+`once int func() { return 5;}`
+this is not general -> method must be input-less. so we will loose generality.
+making it general (support all methods), will add a lot to the runtime system.
+
+Y - more limitations for generics: single capital letters, types without value. ->No
+we need to specify default + constraints for template type and be more explicit than `type T;`
+more generic structure to instantiate generics: 
+`Stack<int>` == `Stack<T:=int>` which can be shortcut to Stack<int>
+class can provide default value for types: `type T := int;`
+so without `<>` the class can be created: `Stack s = Stack.new();` is stack of int
+`Stack<float> s = Stack<float>.new()` is stack of float.
+how can we enforce type constraints? we want to state type T must implement type U, where U can be another type or a literal type name also we need the default value.
+default value can be handled using normal syntax: `type T := int;`
+for constraint:
+`type T := int [+Type1 +Type2 +Type3];` adv: we can make template explicit.
+`type T := int; @assert @Type1(T);` adv: we use existing syntax.
+`type T := int [@Type1 @Type2 @Type3];`  //T must be castable to these types
+`type T := int [];` //means T is a template argument -> this is same as int array!
+so we don't need to have convention for this.
+`type T := int @{};`
+`type T := int @{Type1, Type2};`
+Now, if someone writes `Stack s = Stack.new()` it will be what? -> this is not possible!
+`Stack<int> s = Stack<int>.new();` //T will be int
+what will be meaning of `Stack` and `Stack<>` then?
+compiler for each template will create another class without any template type (definition and usage)
+result will be a class which all template instances conform to. possibility to instantiate this will depend on the syntax of the ctor but we can cast other classes to it. so we can cast `Stack<int>` and `Stack<float>` to `Stack`. of course we won't have access to type-specific methods of stack in `Stack` class.
+`Stack<>` means stack with default arg value.
+
+Y - Let's remove template specialization. what if developer specializes and result is something totally different! it has to be conforming to base impl.
+
+? - Fantom doesn't include support for 32-bit, 16-bit, and 8-bit integers and floats. There is only a 64-bit Int and a 64-bit Float.
+what's use of this? primitives are classes.
+we have 8, 16, 32 and 64 bits. we definitely need 8 for string. for unicode? we won't need 16 bit int, atleast.
+we need 64 bit too, so: char, byte, int64, uint64.
+what about 16 and 32?
+if all data be 8 bytes, we will consume more memory.
+but I think we can safely remove 16 bits: `short` and `ushort`.
+for crypto or network code we may really need to work with a 16 bit data block, but this can be done via a simulator class.
+also when working with other systems (C code, databases, web-service API, ...) we may need these types.
+
+? - remove `void` keyword. return `this` if you dont have anything to return.
+if there is no `return` statement, function will return `this`, so code doesn't get messy.
+but return type must be specified. user can write `~` to indicate return type is same as the class.
+`~ new() := $();`
+so user can easily chain method calls.
+`x.method1() = yy;`
+`x = yy;`
+but note that this result cannot be lvalue. 
+so `~` is a shortcut for name of the class. 
+can we write `~.method2`? no. it can only be used as a type-name not variable name.
+so it can be used for input type, output type, variable type, ...
+`int x; ~ pp;` not elegant and explicit.
+`int f(~ me, ~ other);` its better if we limit usage of `~` for input/output of function.
+
+? - non nullable types
+`int!` cannot accept nil value.
+by default, it will have `0` value (but `int x` will be `nil`).
+but what about a class? `MyClass! x;`, `NetworkStream! ns`
+how can we say T must be non-nullable in a generic class?
+what happens when we create an array of these? `int![10] x;`
+
+
+? - Do we still need to provide values inside $?
+
+? - can we simplify type names? 
+`Map<Stack<int[string]>, string[int[]]> data_types;`
+maybe using `int#` for array of integer.
+`int#string` for hash.
+`Map<Stack<int#string>, string#int#>`
+`int# arr = int#.new(3);`
+
