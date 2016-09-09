@@ -2236,3 +2236,10 @@ and we can write: `float PI() := this.calculate(3.14);` to redirect a call.
 what happens to const? real constants have a fixed body like above example. 
 so:
 proposal: remove const from language. provide syntax sugar to write `a.b` instead of `a.b()`.
+
+Y - replace `#` with `@ref` class. this class is built-in and can be used to compare references.
+
+\* - serialization. we reflection for this, if we want to have developer do it -> core
+
+\* - `:=` notation for function decl, can hint compiler to inline method. 
+
