@@ -2445,3 +2445,11 @@ Y - For anon-func `_` can denote the only input, resulting in a shorter code:
 
 N - instead of `->` notation we can simply use `=` and write anon-func or class inside some container.
 we are already using `=`
+
+? - support for regex
+match, grouping, replace
+using regex in other cases (e.g. split string)
+`s ~ regex` for matching, returns true or false
+`list<?> groups = (s ~ regex)` grouping
+`s =~ /regex1/regex2/` replace.
+proposal: do all in library, except for normal matching `s ~ regex`
