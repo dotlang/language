@@ -64,7 +64,10 @@ In the above examples `core.sys, core.net, core.net.http, core.net.tcp` are all 
 - **Adressing**: Each type, field or method can be address in the format of `A.B.(...).D` where `A`, `B` and other parts are each either name of a package, class or field. The last part `D` is name of the field or method or type which is being addressed.
 
 ##Keywords
-Electronc has a small set of basic keywords: `if, else, switch, assert, for, break, continue, return, throw, defer, type, import, void, auto, import, select, native, defined`.
+Electronc has a small set of basic keywords: `if, else, switch, assert, for, break, continue, return, throw, defer, type, import, auto, import, select, native, defined, typename`.
+`require, ensure, invariant`
+`const`
+
 
 ###if, else
 ```
@@ -84,13 +87,13 @@ CaseStmt = (IdentifierList | 'else') ':' Block
 - `switch` is same as what we have in C language except you can have any expression in the cast list.
 - First case which is matching will be executed and others will be skipped.
 - `else` case is executed if none of other cases match.
-- You cannot use expressions (which implies a side-effect) for cast statements. 
+- You cannot use expressions (which implies a side-effect) for case statements. 
 - Case identifiers should be either literals or simple identifiers (variable names).
 - For each case, the `==` operator will be called on the result of the expression for comparison.
 
 ###assert
 ```
-AssertStmt = 'assert' condition [':' expression] ';'
+AssertStmt = 'assert' condition [',' expression] ';'
 ```
 - Assert makes sure the given `condition` is satisfied. 
 - If condition is not satisfied and there is a given expression, it will run `throw expression` statement.
@@ -160,8 +163,6 @@ import core.st;
 import core.st => cst;  //alias import
 ```
 
-
-###void
 ###auto
 ###invoke
 We have `invoke` and `select` keywords. You can use `future<int> result = invoke obj.method1();` to execute `obj.method1` in another thread and the result will be available through future class (defined in core).
@@ -186,6 +187,9 @@ Denote method is implemented by runtime or external libraries.
 
 ###defined
 `if ( defined x)` is same as `if ( @ref(x) == @ )`
+
+###typename
+for templates
 
 ##Primitives
 - **Integer data types**: `char`, `short`, `int`, `long`
@@ -214,9 +218,10 @@ int qq = 19;  //public
 int qw = this.qq //WRONG! there is no `this`
 
 int y = MyClass.data  //WRONG: upon creation of the static instance, `MyClass` is same as `this` which is not available
-int h = 12;
+const int h = 12;
 int gg;
 
+//below we simulate const!
 float PI() { return 3.14; } //calling obj.PI() is same as obj.PI because PI method does not have any input
 float PI() := 3.14;  //another way to implement above
 float PI() := this.get_pi_value; //another way to implement above
@@ -228,11 +233,10 @@ int func2(int x) := this.func1;  //redirect calls to func1, methods must have sa
 auto ff := MyClass.function2; //assign function to a function from static instance of another class
 //note that you can only "assign" to a function, when declaring it.
 auto func3 := this.func2;  //compiler will infer the input/output types for func3 from func2 signature
-MyClass new() return $();  //new is not part of syntax. You can choose whatever name you want,
-void _() this.y=9;  //initialize code for static instance
+MyClass new() return $(h:11);  //new is not part of syntax. You can choose whatever name you want,
+this _() this.y=9;  //initialize code for static instance, implicitly return this
 
 ```
-- You can assign value to fields when calling `$()` operatos: `auto result = $(x:1, y:5);`.
 - If field or local variable is marked with `const`, it is not re-assignable and must be assigned either upon declaration or upon calling `$()`. Assignments inside `$()` override declaration assignments. Note that, they still can be mutated if they provide appropriate methods. If you need truly immutable classes, you have to implement the logic in your code.
 - Any class without fields is immutable from compiler's perspective (this includes primitive types). This will help runtime to optimize the code. 
 - Any assignment to an immutable variable is allowed but will create a new reference. As long as the variable is not `const` assignments are ok.
@@ -246,16 +250,19 @@ void _() this.y=9;  //initialize code for static instance
 - If a method has no body, you can still call it and it will return undef. You can also call methods on an undef variable and as long as methods don't need `this` fields, it's fine.
 - `int f(int x) return x+1;` braces can be eliminated when body is a single statement.
 - **Variadic functions**: `bool bar(int... values)`. values will be an array of int.
-- You cannot define a function input as `const`.
+- You cannot define a function input as `const`, because they are const by nature.
+- You can define local variables as const and set their value upon declaration.
 - Method argument names or local variables cannot start with underscore. 
 - You can call a method with arg names: `myClass.myMember(x: 10, y: 12);`
 - Methods can assign values to their inputs, but it won't affect passed data.
 - `$()` allocates memory for a new instance of the current class. `$(4)` will allocate 4 bytes of memory (used for primitive data types where there is no field defined, e.g. Int).
-- `auto f(auto) := g`, when g is name of a method, is a shortcut for `out f(all_inputs) { return g(all_inputs); }`. You cannot change any input/output when calling g. if `g` is name of a field or literal, then `auto f() := g` means `g_type f() { return g;}`. `g` can be a complex expression: `auto f(int x) := this.g(3, x);`.
-- Using `:=` notation you can simplify calling long named methods: `auto p := core.io.screen.printf;`
-- Most simple constructor: `auto new() := $();`
+- `auto f :: g`, when g is name of a method, is a shortcut for `out f(all_inputs) { return g(all_inputs); }`. You cannot change any input/output when calling g. if `g` is name of a field or literal, then `auto f() :: g` means `g_type f() { return g;}`. `g` can be a complex expression: `auto f(int x) :: this.g(3, x);`.
+- Using `::` notation you can simplify calling long named methods: `auto p :: core.io.screen.printf;`
+- Most simple constructor: `auto new :: $();`
 - Including parantheses is optional when calling a function which has no inputs. 
 - When you are assigning value to fields upon declaration, you don't have access to `this` or the static instance. So either you need to use literals or call outside methods.
+- Functions should have an output type (there is no `void`). If they don't return anything, you can use `this` as their return type which means current class. If a function is defined using `this`, compiler will automatically add `return this` to the function.
+- method-local variables which start with `_` are static (they preserve value between two calls). 
 
 ##Operators
 
@@ -275,13 +282,15 @@ Classes can override all the valid operators on them. `int` class defines operat
 
 ##Special syntax
 - `->` for anonymous class declaration
+- `_` input place-holder for anon-func
 - `()` for defining tuple literals and function call
 - `@` for casting and undef
 - `$` instantiation
-- `#` for reference id
-- `:` for hash, loop, assert, call by name, array slice and tuple values
+- `#` for contracts
+- `:` for hash literal, loop, call by name, array slice and tuple values
 - `<>` template syntax
-- `:=` type alias and function redirection
+- `:=` type alias and typename
+- `::` function redirection
 - `out`: representing function output in defer
 - `exc`: representing current exception in defer
 - `??` undef check
@@ -301,7 +310,7 @@ this, true, false
 //contained class
 const fn<int> m1;   //const undef field
 int method1() = this.m1;  //method1 is redirected to m1, we can even remove this and only use m1
-MyClass new(fn<int> m) return $(m1: m);  //construct an instance using given value
+MyClass new(fn<int> m) return $();  //construct an instance using given value
 
 //container class
 this.__member = MyClass.new(this.implementation);  //pass my method as an implementation 
@@ -329,7 +338,21 @@ this.__member = MyClass.new(this.implementation);  //pass my method as an implem
 - empty/undefined/not-initialized state of a variable is named "undef" state and is shown by `@MyClass()` which means casting empty to `MyClass` (MyClass is type of the variable). You can shortcut this by `@MyClass` notation. If type can be inferred you can use only `@`.
 - Value of a variable before initialization is undef which is denoted by `@` or `@MyClass` where MyClass is type of the variable. 
 - You can also return `@MyClass` when you want to indicate invalid state for a variable.
+- `@int[float]` will return true if float can be casted to int. This is for type compatibility checking.
 
+###Contracts
+We have `#require` and `#ensure`. These can be used before function declaration for pre/post condition.
+or you can use `#invariant` before fields section for invariant of the class.
+for ensure you have a variable named `out` pointing to output of the function.
+```
+#invariant{this.x>0}
+
+#require{x>0}
+#ensure{this.result == out.result}
+this f(int x) { this.result = x;}
+```
+- You can implement non-nullability using contracts.
+- invariant code is called before/after all of public method.
 
 ###Undef
 ###Instantiation
@@ -366,6 +389,7 @@ You can define anonymous classes which can act like a function pointer. Each ano
 //short form, when interface has only one method
 Interface1 intr = (int x, int y) -> x+y;  //specifying type for input is optional
 auto ab = (int x) -> x+y; //type will be fn<int, int>
+Interface2 ac = _+1;  //Interface2 has only one method which has only one input. for the input we use place-holder
 auto ab = (x) -> 2*x; //WRONG! input type cannot be inferred
 Interface1 intr = (x, y) -> x+y;
 Interface1 intr = (x, y) -> (r1:x+y, r2:x);  //returning a tuple from anon-func
@@ -412,21 +436,24 @@ auto intr = Interface1
 
 
 ###Templates
-In a class file you can use `type` keyword without value, to indicate that the user of the class has to provide type names at compile time:
+In a class file you can use `typename` keyword, to indicate that the user of the class has to provide type names at compile time:
 
 ```
-type K := int @{};  //K is a template type (default is int), which will be provided at compile time.
-type V := float @{Type1, Type2}; //type V is float by default and must conform to Type1 and Type2 classes
+typename K := int;  //K is a template type (default is int), which will be provided at compile time.
+typename V := float @{Type1, Type2}; //type V is float by default and must conform to Type1 and Type2
 
 void put(K key, V value) ...
 V get(K key) ...
 ```
 This is how collections and ... will be implemented in core.
 
-Note that `type` section must come before fields section.
+Note that `typename` section must come before fields section.
 For each tempalte class like `Stack`, there is a base interface class `Stack` which is equal to the class definition minus everything related to typenames (declaration, usage, ...) which is created by the compiler. According to definition, all template class instances, conform to this base interface. This means `Stack` is the base interface for `Stack<int>, Stack<float>` and all other stacks and if you need to write a method accepting any stack you can use it: `void getStack(Stack s)`. 
 Note that `Stack` is not the same as `Stack<>` which has type set to it's default.
 - When creating instances of template class you can explicitly speciy type name: `Stack<T=int, V=float>`
+- To do type checking you can use invariant contracts.
+- `Stack<>` means the stack class with all default values of typenames.
+- `Stack` means stack class without any code related to typename. (non-template version of the class)
 
 ###Optional arguments
 
