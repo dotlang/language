@@ -2456,3 +2456,5 @@ proposal: do all in library, except for normal matching `s ~ regex`
 
 Y - now that we have contracts, lets use them as much as possible. 
 e.g. type checking for typename.
+
+? - We may need more `#xyz`. How can we say some field should not be serialized?
