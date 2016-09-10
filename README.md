@@ -353,6 +353,7 @@ this f(int x) { this.result = x;}
 ```
 - You can implement non-nullability using contracts.
 - invariant code is called before/after all of public method.
+- Contracts can be used for methods, class, typename.
 
 ###Undef
 ###Instantiation
@@ -440,7 +441,10 @@ In a class file you can use `typename` keyword, to indicate that the user of the
 
 ```
 typename K := int;  //K is a template type (default is int), which will be provided at compile time.
-typename V := float @{Type1, Type2}; //type V is float by default and must conform to Type1 and Type2
+
+#require{@Type1[V]}
+#require{@Type1[V]}
+typename V := float; //type V is float by default and must conform to Type1 and Type2
 
 void put(K key, V value) ...
 V get(K key) ...
