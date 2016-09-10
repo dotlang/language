@@ -2454,5 +2454,5 @@ using regex in other cases (e.g. split string)
 `s =~ /regex1/regex2/` replace.
 proposal: do all in library, except for normal matching `s ~ regex`
 
-? - now that we have contracts, lets use them as much as possible. 
+Y - now that we have contracts, lets use them as much as possible. 
 e.g. type checking for typename.
