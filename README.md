@@ -129,7 +129,7 @@ throw "Error!";  //throw exception and exit
 defer(exc) { ... }
 defer(out, exc) { ... }
 
-defer(out) { if ( out != @int() ) out++; }  //manipulate function output
+defer(out) { if ( out != #int() ) out++; }  //manipulate function output
 defer(out) assert out>0;  //post-condition check
 ```
 
@@ -186,7 +186,7 @@ You can use select to read/write from/to blocking channels.
 Denote method is implemented by runtime or external libraries.
 
 ###defined
-`if ( defined x)` is same as `if ( @ref(x) == @ )`
+`if ( defined x)` is same as `if ( #ref(x) == # )`
 
 ###typename
 for templates
@@ -277,16 +277,16 @@ Classes can override all the valid operators on them. `int` class defines operat
 
 - `=` operator, makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. If you want to clone, you need to use custom methods (e.g. `int x = int.new(y);`). You cannot override this operator.
 - `x ?? 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
-- `x == y` will call `equals` method, which by default compares field-by-field values but classes can override this. If you need to compare references, you can use `@ref(x) == @ref(y)` where `ref` is unique-id class in core. 
+- `x == y` will call `equals` method, which by default compares field-by-field values but classes can override this. If you need to compare references, you can use `#ref(x) == #ref(y)` where `ref` is unique-id class in core. 
 
 
 ##Special syntax
 - `->` for anonymous class declaration
 - `_` input place-holder for anon-func
 - `()` for defining tuple literals and function call
-- `@` for casting and undef
+- `#` for casting and undef
 - `$` instantiation
-- `#` for contracts
+- `@` for annotations
 - `:` for hash literal, loop, call by name, array slice and tuple values
 - `<>` template syntax
 - `:=` type alias and typename
@@ -320,6 +320,13 @@ this.__member = MyClass.new(this.implementation);  //pass my method as an implem
 - When exposing a variable, class is responsible for initialization and instantiation of the variable. Compiler just generates code to re-direct calls.
 
 
+###Annotations
+You can annotate a class, field or method with this syntax:
+`@custom_name{key1:value1, key2:value2, ...}`
+custom_name is whatever you want. value(i) is optional and is assumed to be true if omitted.
+for example:
+`@json{ignore} int x;`
+
 
 ###Array and slice
 
@@ -329,31 +336,15 @@ this.__member = MyClass.new(this.implementation);  //pass my method as an implem
 
 ###Hashtable
 ###Casting
-- `@myclass(my_obj)` is the casting operator and returns empty/undefined/not-initialized if myObj cannot be casted to myclass. Compiler will try 3 options for casting: first if `my_obj` conforms to `myclass` it will be casted without change in the data (means `my_obj` has all fields and methods that `myclass` has specified). second, looks for a method called `myclass` defined in `my_obj` (This method will convert `my_obj` instance to an instance of `myclass`). third, looks for reverse: a method called `ObjType` in `myclass` static instance (ObjType is type of `my_obj` and this method will crete a new instance of myclass using given `ObjType` instance). All these options will be checked at compile time.
-- Example: Converting MyClass to YourClass: `yclass = @YourClass(mclass);`
+- `#myclass(my_obj)` is the casting operator and returns empty/undefined/not-initialized if myObj cannot be casted to myclass. Compiler will try 3 options for casting: first if `my_obj` conforms to `myclass` it will be casted without change in the data (means `my_obj` has all fields and methods that `myclass` has specified). second, looks for a method called `myclass` defined in `my_obj` (This method will convert `my_obj` instance to an instance of `myclass`). third, looks for reverse: a method called `ObjType` in `myclass` static instance (ObjType is type of `my_obj` and this method will crete a new instance of myclass using given `ObjType` instance). All these options will be checked at compile time.
+- Example: Converting MyClass to YourClass: `yclass = #YourClass(mclass);`
 1) call `mclass.YourClass` method: `yclass = mclass.YourClass();`
 2) call `YourClass.MyClass` static constructor method: `yclass = YourClass.MyClass(mclass);`
 - The only case where `<` and `,` is allowed in method name is for above purpose. 
-- `float f; int x = @int(f);` this will call `int` method on class `float` to do casting. This can be called automatically by compiler if needed. For template types (like array or hash), you should name the function according to full-name not short-name (`Array<char>` instead of `char[]`).
-- empty/undefined/not-initialized state of a variable is named "undef" state and is shown by `@MyClass()` which means casting empty to `MyClass` (MyClass is type of the variable). You can shortcut this by `@MyClass` notation. If type can be inferred you can use only `@`.
-- Value of a variable before initialization is undef which is denoted by `@` or `@MyClass` where MyClass is type of the variable. 
-- You can also return `@MyClass` when you want to indicate invalid state for a variable.
-- `@int[float]` will return true if float can be casted to int. This is for type compatibility checking.
-
-###Contracts
-We have `#require` and `#ensure`. These can be used before function declaration for pre/post condition.
-or you can use `#invariant` before fields section for invariant of the class.
-for ensure you have a variable named `out` pointing to output of the function.
-```
-#invariant{this.x>0}
-
-#require{x>0}
-#ensure{this.result == out.result}
-this f(int x) { this.result = x;}
-```
-- You can implement non-nullability using contracts.
-- invariant code is called before/after all of public method.
-- Contracts can be used for methods, class, typename.
+- `float f; int x = #int(f);` this will call `int` method on class `float` to do casting. This can be called automatically by compiler if needed. For template types (like array or hash), you should name the function according to full-name not short-name (`Array<char>` instead of `char[]`).
+- empty/undefined/not-initialized state of a variable is named "undef" state and is shown by `#MyClass()` which means casting empty to `MyClass` (MyClass is type of the variable). You can shortcut this by `#MyClass` notation. If type can be inferred you can use only `#`.
+- Value of a variable before initialization is undef which is denoted by `#` or `#MyClass` where MyClass is type of the variable. 
+- You can also return `#MyClass` when you want to indicate invalid state for a variable.
 
 ###Undef
 ###Instantiation
@@ -442,9 +433,7 @@ In a class file you can use `typename` keyword, to indicate that the user of the
 ```
 typename K := int;  //K is a template type (default is int), which will be provided at compile time.
 
-#require{@Type1[V]}
-#require{@Type1[V]}
-typename V := float; //type V is float by default and must conform to Type1 and Type2
+typename V := float #{Type1, Type2}; //type V is float by default and must conform to Type1 and Type2
 
 void put(K key, V value) ...
 V get(K key) ...
@@ -455,7 +444,6 @@ Note that `typename` section must come before fields section.
 For each tempalte class like `Stack`, there is a base interface class `Stack` which is equal to the class definition minus everything related to typenames (declaration, usage, ...) which is created by the compiler. According to definition, all template class instances, conform to this base interface. This means `Stack` is the base interface for `Stack<int>, Stack<float>` and all other stacks and if you need to write a method accepting any stack you can use it: `void getStack(Stack s)`. 
 Note that `Stack` is not the same as `Stack<>` which has type set to it's default.
 - When creating instances of template class you can explicitly speciy type name: `Stack<T=int, V=float>`
-- To do type checking you can use invariant contracts.
 - `Stack<>` means the stack class with all default values of typenames.
 - `Stack` means stack class without any code related to typename. (non-template version of the class)
 
