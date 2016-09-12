@@ -236,7 +236,7 @@ func2 :: this.func1;  //redirect calls to func1, methods must have same/compatib
 ff :: MyClass.function2; //assign function to a function from static instance of another class
 //note that you can only "assign" to a function, when declaring it.
 func3 :: this.func2;  //compiler will infer the input/output types for func3 from func2 signature
-MyClass new() return $(h:11);  //new is not part of syntax. You can choose whatever name you want,
+MyClass new() return $();  //new is not part of syntax. You can choose whatever name you want,
 this _() this.y=9;  //initialize code for static instance, implicitly return this
 
 ```
