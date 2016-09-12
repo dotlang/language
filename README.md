@@ -66,7 +66,7 @@ In the above examples `core.sys, core.net, core.net.http, core.net.tcp` are all 
 ##Keywords
 Electronc has a small set of basic keywords: `if, else, switch, assert, for, break, continue, return, throw, defer, type, import, auto, import, select, native, defined, typename`.
 `require, ensure, invariant`
-`const`
+
 
 
 ###if, else
@@ -96,8 +96,7 @@ CaseStmt = (IdentifierList | 'else') ':' Block
 AssertStmt = 'assert' condition [',' expression] ';'
 ```
 - Assert makes sure the given `condition` is satisfied. 
-- If condition is not satisfied and there is a given expression, it will run `throw expression` statement.
-- If condition is not satisfied and there is no expression, it will exit immediately.
+- If condition is not satisfied, it will run `throw expression` statement.
 
 ###for, break, continue
 ```
@@ -217,29 +216,31 @@ int _x = 12;  //private
 int qq = 19;  //public
 int qw = this.qq //WRONG! there is no `this`
 
+//here data is not a real field. it is a property which redirects read/write to a method.
+int data :: this.fnc;  //reading data will call int this.fnc(), writing will call void this.fnc(int x)
+
+
 int y = MyClass.data  //WRONG: upon creation of the static instance, `MyClass` is same as `this` which is not available
-const int h = 12;
+int h = 12;
 int gg;
 
 //below we simulate const!
 float PI() { return 3.14; } //calling obj.PI() is same as obj.PI because PI method does not have any input
-float PI() := 3.14;  //another way to implement above
-float PI() := this.get_pi_value; //another way to implement above
+PI :: 3.14;  //another way to implement above
+PI :: this.get_pi_value; //another way to implement above
 float get_pi_value() { return 3.14;}
 
 int func1(int y) { return this.x + y; }
-int func2(int x) := this.func1;  //redirect calls to func1, methods must have same/compatible signature
+func2 :: this.func1;  //redirect calls to func1, methods must have same/compatible signature
 //for any more complex case, write the body.
-auto ff := MyClass.function2; //assign function to a function from static instance of another class
+ff :: MyClass.function2; //assign function to a function from static instance of another class
 //note that you can only "assign" to a function, when declaring it.
-auto func3 := this.func2;  //compiler will infer the input/output types for func3 from func2 signature
+func3 :: this.func2;  //compiler will infer the input/output types for func3 from func2 signature
 MyClass new() return $(h:11);  //new is not part of syntax. You can choose whatever name you want,
 this _() this.y=9;  //initialize code for static instance, implicitly return this
 
 ```
-- If field or local variable is marked with `const`, it is not re-assignable and must be assigned either upon declaration or upon calling `$()`. Assignments inside `$()` override declaration assignments. Note that, they still can be mutated if they provide appropriate methods. If you need truly immutable classes, you have to implement the logic in your code.
 - Any class without fields is immutable from compiler's perspective (this includes primitive types). This will help runtime to optimize the code. 
-- Any assignment to an immutable variable is allowed but will create a new reference. As long as the variable is not `const` assignments are ok.
 - Class members (fields, methods and types) starting with underscore are considered private and can only be accessed by methods of the same class. So `obj._x` is ok if the code is inside the class type of `obj`.
 - Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer.
 - The private unnamed method is called by runtime service when static instance of the class is created and is optional.
@@ -250,19 +251,18 @@ this _() this.y=9;  //initialize code for static instance, implicitly return thi
 - If a method has no body, you can still call it and it will return undef. You can also call methods on an undef variable and as long as methods don't need `this` fields, it's fine.
 - `int f(int x) return x+1;` braces can be eliminated when body is a single statement.
 - **Variadic functions**: `bool bar(int... values)`. values will be an array of int.
-- You cannot define a function input as `const`, because they are const by nature.
-- You can define local variables as const and set their value upon declaration.
 - Method argument names or local variables cannot start with underscore. 
 - You can call a method with arg names: `myClass.myMember(x: 10, y: 12);`
 - Methods can assign values to their inputs, but it won't affect passed data.
 - `$()` allocates memory for a new instance of the current class. `$(4)` will allocate 4 bytes of memory (used for primitive data types where there is no field defined, e.g. Int).
-- `auto f :: g`, when g is name of a method, is a shortcut for `out f(all_inputs) { return g(all_inputs); }`. You cannot change any input/output when calling g. if `g` is name of a field or literal, then `auto f() :: g` means `g_type f() { return g;}`. `g` can be a complex expression: `auto f(int x) :: this.g(3, x);`.
-- Using `::` notation you can simplify calling long named methods: `auto p :: core.io.screen.printf;`
-- Most simple constructor: `auto new :: $();`
+- `f :: g`, when g is name of a method, is a shortcut for `out f(all_inputs) { return g(all_inputs); }`. You cannot change any input/output when calling g. if `g` is name of a field or literal, then `f :: g` means `g_type f() { return g;}`. Note that no `()` or output type needs to be specified for function redirection. 
+- Using `::` notation you can simplify calling long named methods: `p :: core.io.screen.printf;`
+- Simplest constructor: `new :: $;`
 - Including parantheses is optional when calling a function which has no inputs. 
 - When you are assigning value to fields upon declaration, you don't have access to `this` or the static instance. So either you need to use literals or call outside methods.
 - Functions should have an output type (there is no `void`). If they don't return anything, you can use `this` as their return type which means current class. If a function is defined using `this`, compiler will automatically add `return this` to the function.
 - method-local variables which start with `_` are static (they preserve value between two calls). 
+- `::` for properties, makes field read-only if there is no appropriate method for writing value. Note that you must specify type. Also fields and methods appear on different sections of the class so they wont be confusing.
 
 ##Operators
 
@@ -290,7 +290,7 @@ Classes can override all the valid operators on them. `int` class defines operat
 - `:` for hash literal, loop, call by name, array slice and tuple values
 - `<>` template syntax
 - `:=` type alias and typename
-- `::` function redirection
+- `::` function and field redirection
 - `out`: representing function output in defer
 - `exc`: representing current exception in defer
 - `??` undef check
@@ -301,14 +301,14 @@ this, true, false
 ###Exposure
 
 - A field starting with `__` will be promoted/exposed. 
-- An exposed field's public members will be will soft-copied. This means, if there is a member with the same name in main class, it won't be copied (main class members always win).
+- An exposed field's public members will be will soft-copied. This means, if there is a member (field or method) with the same name in main class, it won't be copied (main class members always win).
 - If you expose two classes that have a public fields with the same name, you must define a field with that name in main class (or else there will be a compiler error). 
 - You can hide/remove an exposed method by adding same method with/without body.
 - You can rename an exposed method by removing it and adding your own method.
 - A container class can provide implementation for methods of contained class if it is allowed:
 ```
 //contained class
-const fn<int> m1;   //const undef field
+fn<int> m1;  
 int method1() = this.m1;  //method1 is redirected to m1, we can even remove this and only use m1
 MyClass new(fn<int> m) return $();  //construct an instance using given value
 
@@ -326,6 +326,7 @@ You can annotate a class, field or method with this syntax:
 custom_name is whatever you want. value(i) is optional and is assumed to be true if omitted.
 for example:
 `@json{ignore} int x;`
+Later you can extract annotations in the form of: `List<Annotation>` where `Annotation` is a tuple of `(name:string, hash_args)`.
 
 
 ###Array and slice
@@ -375,7 +376,8 @@ Tuples are automatically converted to classes by compiler. So they are basically
 
 ###Anonymous classes `->`
 
-You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface specifying one or more functions without any field. If the interface has only one method, the definition can be in short form and it is basically a function pointer. There is a general purpose template class `fn` which is used by compiler to set type of anon-class literals if type is to be inferred.
+You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface specifying one or more empty functions. If the interface has only one method, the definition can be in short form and it is basically a function pointer. There is a general purpose template class `fn` which is used by compiler to set type of anon-class literals if type is to be inferred.
+Note that when writing anon-class, we are creating a new class and instantiate it at the same time. We just mention interface/type name so the structure of the newly created class is specified.
 
 ```
 //short form, when interface has only one method
@@ -422,9 +424,10 @@ auto intr = Interface1
 
 *Closure*: All anonymous function and classes, have a `this` which will point to a read-only (not re-assignable) set of local variables in the enclosing method (including input arguments and `this` as the container class).
 
-- As a short-cut provided by compiler, if the anonymous-class `x` has only one method, `x()` will call the only method of that class. You don't need to write the full syntax: `x.only_method()`.
 - Anonymous classes don't have constructor, fields or static instance. Because they don't have names.
 - If anon-function does not have any input and there is only one function (in short-form), you can omit `() ->` part.
+- Note that if the type contains methods with bodies, you cannot define anon-class (short or long form) based on it.
+- Anon-class can contain fields.
 
 
 ###Templates
