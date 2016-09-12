@@ -185,7 +185,8 @@ You can use select to read/write from/to blocking channels.
 Denote method is implemented by runtime or external libraries.
 
 ###defined
-`if ( defined x)` is same as `if ( $ref(x) == $ )`
+`if ( defined x)` returns true if x is nil.
+
 
 ###typename
 for templates
