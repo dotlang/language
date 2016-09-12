@@ -2686,3 +2686,66 @@ int f(int x) { return x+1;}
 int decorator1(int x) { x++; return f(x);}
 ```
 no. makes things complicated.
+
+N - If class A has field `f` and it's container defined method `f` it will hide field f.
+and if someone writes `int x = obj.f` where obj is of type InterfaceX, compiler knows that `f` is a field or a function. Because this is defined in the interface definition.
+
+N - another approach for templates
+```
+int max(int x,int y) { ... }
+decltype(x) max(T x, T y) { ... } //this is confusing
+```
+
+N - A notation to paste a method from outside in current class.
+`@paste(Decoration.Cache(this.func))`
+no. it is confusing.
+
+N - Is there an advantage in specifying a method which does not need anything from `this`? or any field from this?
+
+\* - What can be done at the syntax leve to increase performance?
+we can make all calls, static? meaning at compile time we know exactly which method should be called.
+for expose, stress that compiler will add appropriate methods for delegation. 
+another proposal: compiler can handle primitives more efficiently. 
+
+\* - we can define fields as meta-methods referring to the internal storage of the class.
+`int x; x=1` becomes `this.__internal_storage.setBytes(4, 1);`
+so, there will be no fields for compiler. each class is an internal storage (x bytes of memory) + a set of methods.
+so read x, will be translated to a function: `__read_field_x` and writing to `__write_field_x`.
+of course these functions can (and should) be inlined.
+
+Y - Remove: Methods can assign values to their inputs, but it won't affect passed data.
+
+Y - there are two ways to provide read-only field:
+`f :: this.x;`
+`int f :: this.get_f` and only define get_f with int output.
+:: for fn can be used for: delegate to another fn, fixed const (like PI), return a field.
+third one is not necessary, lets do it using normal function writing.
+return consts like PI, same as above. actually all 3 cases can be done via normal fn writing.
+but for field, it's not possible without :: operator. 
+fn delegation needs ::
+constant is much simpler with ::
+why do we need :: for fields? 
+`int x :: this.func;` //myObj.x will call func to get value.
+`int func() { return ...; }`
+the only difference is when we want to write value for the field.
+`myOBj.x = 10;` will call `myObj.func(10)` to write the value.
+`func :: this.x`
+`void func(int x) { this.x = x;}`
+doesn't above code achieve the same result? `int gg = myObj.func; myObj.func(11);`
+I think we can remove `::` for fields. this will remove confusions so we can return `auto` for fn :: syntax.
+
+N - it's good if we can define `int f(int x, int! y)` so I am sure that y won't be null.
+`int! x; if ( y!= null) x=y;`
+
+Y - how closure is going to be provided, now that we dont have const?
+as input-less methods? possible.
+
+? - Do we need private unnamed method? for normal instance its not needed.
+for static: field init can be done when declaration if it is simple values or reference to outside.
+
+
+? - `int f((int x, float f) input)`
+forbid above definition. it is making the code ugly and complicated.
+use type to give it a name.
+
+
