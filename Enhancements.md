@@ -2457,4 +2457,191 @@ proposal: do all in library, except for normal matching `s ~ regex`
 Y - now that we have contracts, lets use them as much as possible. 
 e.g. type checking for typename.
 
-? - We may need more `#xyz`. How can we say some field should not be serialized?
+Y - We may need more `#xyz`. How can we say some field should not be serialized?
+golang, to ignore field in serialization: add `json:"-"`
+omit empty field: `json:"omitempty"`
+other use case: I have an object, I want all methods which are tagged with "get" and "put". they have same prototype.
+golang webs use: `engine.Get("/hello", function(int x) ...);`
+but we can simply build a hash[string, fn] and populate it for routing, but definitely annotation is more readable.
+we can have a method that given an object, returns a hash(member name, metadata)
+maybe we can make `#` syntax more general.
+`#meta(x:1, y:2)` adds this metadata to the following definition.
+`#meta.json(ignore:true)`
+`#meta(json:false)`
+`#meta{json, ignore:false, name: 'dsda'}`
+we can assume when value of key is missing, it means: `key:true`
+`#invariant, #require, #ensure, #meta`
+
+Y - if we decide to have annot, maybe it's good to replace `#` with `@` to be more similar to java.
+and use `#` for cast and undef. maybe then we can also eliminate usage of `#` alone.
+
+\* - how to have multi-line string literal?
+what abour interpolation?
+maybe then the syntax can be used for regex too. no. why not use plain string? regexp does not need a lot of escaping.
+
+N - other possible annotations: `#version`, `#artifact-name`, `#obsolete`, `#conditional` (for methods, hide the method when a condition is not satisfied, so calling it won't be compiled), `#doc`
+can we replace these with keyword or convention?
+doc - can be replaced with convention `///`
+
+Y - remove invariant. it is too heavyweight at runtime.
+require/ensure.
+maybe we can remove `ensure` too because it can be done via `defer(out)`.
+also, we can simulate require with assert.
+invariant - remove
+ensure - defer
+require - assert
+version - not needed
+obsolete, conditional, ... - not really needed
+but we need `meta`. if it is the only thing, we can remove the name and only include `@`. 
+(so we will be back to the original problem: non-nullable types)
+`@{json, ignore: false}`
+`@(json, ignore: false)`
+and for typename? we will be beack to `@{Type1, Type2}` notation. or maybe `#{Type1, Type2}`
+or maybe we can simplift it more.
+`(json:true, ignore: false) int f() { return 5;}`
+`[json:true, ignore: false] int f() { return 5;}`
+`[[json:true, ignore: false]] int f() { return 5;}`
+`|<json:true, ignore: false>| int f() { return 5;}`
+we need to decide whether we want metadata to be language-bound or core library-bound.
+it's better (language will become simpler, if we delegate this to core and other modules).
+but what about pre-req?
+`@notNull(x)`  //btw, this is much more readable.
+proposal: annotations are key + value where value is a tuple.
+but if we follow above proposal, user should be able to define custom annotation keys! (gen)
+so: `@{notNull, x}` which means `@{notNull:true, x: true}`
+or we can have: `@{assert, x>0}` but then this cannot be handled in core, it should be part of language.
+proposal: annotation is of form `@custom_name{key1:value1, key2:value2, ...}`
+custom_name is whatever you want. value(i) is optional and is assumed to be true if omitted.
+we need annotations for json and other things.
+but if we add `notNull` annotation, who will enforce it? if language -> we wanted this to be part of core.
+if core -> how? user should also be able to do this.
+we can define two special annot. which will be executed before and after method execution -> No. not orth. 
+lets just ignore contracts and assume they will be handled by defer and assert. 
+
+N - I think we still need contracts. it makes code well-documented.
+Is there a way to inject code at beginning or end of a method? 
+a general and orth way.
+python decorator is one example.
+but we dont need general code. just some assertions. 
+between invariant, pre-cond and post-cons: most important is pre-cond, then post and then invariant.
+we can have some special ann keys: `@notNull(x)` but what about more complex conditions like: `x>y`
+or `x-y<4`
+maybe this: `@name{key:value, key:value,...}` there is another form which you can write code instead of key-values.
+you annotate the method with code. 
+`@require{x>0}`
+OR:
+`@check(before: x>0)`
+proposal: in ann, value of a key can be an expression which will be evaluated when method is called.
+NO. obviously we have two types of ann: meta-data and meta-code.
+they have to have 1) separate notations 2)be general
+meta-code: how can we have a general annotation for code? 
+`@@` can be used for meta-code prefix.
+meta-data: stored statically and calculated at compile time.
+meta-code: calculated at runtime when this method is called.
+meta-code -> meta-check (needs only an expression)
+`@@{x>0}`
+we can reverse this @ for meta-code and @@ for meta-data
+`@{assert(x>0)}`
+`@{x>0}` what about post-condition?
+we can thnk of meta-code same as meta-data but compiler has the job of adding them to the code before compilation.
+so `@check(x>0)` is a meta-data but also compiler will add the code to the beginning of the method body.
+can we make the syntax more clear?
+one reason against invariant is that it makes code un-readable. it adds code all over the class.
+proposal: make it part of code
+```
+int f(int x)
+require x>0;
+ensure(out) out != -1;
+{
+...
+}
+```
+this is more readable.
+or `require: exp`
+but this will make language more complex. but also, they are not required.
+```
+int f(int x)
+require x>0;
+ensure(out) out != -1;
+{
+...
+}
+```
+how does this fit with expose and anon-func?
+most contracts are: x>=0 and x should not be null. 
+first can be achieve using unsigned type. second one, I have to think of something.
+but let's not pollute the language and make everything double complex.
+for other checks, user can use assert and defer.
+
+N - maybe we can somehow force user to use `type` so complex types will be simpler.
+`List<Map<int, Collection<String>>>`
+
+Y - make assert always throw exception.
+
+N - a notation like `%%MyClass` which means intertface of MyClass (only public methods without any body).
+do we really need this? when we have `int f(MyClass mc)` we can pass any other class which conforms to `MyClass` to f.
+as long as the object has all public members of MC it's fine.
+
+N - How can I hide an exposed field?
+define the same field with same type and assign your value.
+
+N - If A has `int x` and B has `int x() { return 4;}` what happens?
+x field will not be promoted because there is a member with the same name in the container class.
+
+Y - Lets remove this part for anon-class: if anon-class has only one method, `x()` will invoke it.
+this makes code, not readable.
+
+N - ban anon-class with multiple methods and for one-method we can rely solely on `fn` template.
+no. let's keep anon-class with multiple because it will make code much more easy.
+for short-form (one method), the method name. they are anon!
+we should be able to cast `fn` class to any other class with same arguments.
+but on the other side, suppose we have a `startThread` method which expects a class having `start` method.
+no this is not good.
+when we write `Inter4 i = (x,y) -> (x+y);`
+This means what? I want a new object of type `Inter4`. This object has only one method.
+this is not needed. we are sure that the type does not have any code or fields.
+
+Y - Why we cannot have anon-class based on any class?
+because a class cannot have two methods with body and with the same name. so if class already has a method no one should be able to change it.
+but what about fields? they make no problem. so they should be allowed. 
+
+Y- Remove:  `g` can be a complex expression: `auto f(int x) :: this.g(3, x);`.
+from spec. its making things complicated.
+
+Y - can we use `::` notation for variables too? 
+`int x :: this.getx(1);` Not this one.
+or: `int x :: this.xp;`
+when reading x, this.xp() will be called. when writing `this.xp(value)` will be called.
+`myObj.x` this can invoke `myObj.xp` method or `myObj.x()` method. 
+as a result of this, name of each member (field or method) must be unique.
+does this conform with exposing? I think so.
+if there is no `this.xp(value)` variable is considered read-only.
+what is internal has a read/write field, but container has a read-only? Its fine.
+because container has decided to change the behavior.
+`auto f :: 4;` //this is a function mapped to 4. it definitely is not a field.
+`auto f :: this.g` //this can be a property or a fn redirection.
+`int f :: this.gg;` //this can be either a fn redirection (call gg when f is called), or a property.
+is above code sufficiently readable?
+let's make `()` mandatory. no. it makes code ugly, specially for fn redirect.
+to make things even more different, lets remove `auto` for fn definition.
+
+Y - what if A has `const int x` and container B has `int x`?
+the const is making things complex.
+either we have to remove it or make it explicitly clear whether it is part of the type or no.
+maybe `int% x` meaning x is not re-assignable.
+
+Y - can't we simulate const with a function returning the variable?
+`const int x` -> `int _x; int x() :: this._x;`
+the const is only saving us a few lines of code. because with const we only define the field.
+with redirect, we need to define a field and the function.
+ok. again lets remove const.
+
+
+? - annotation for non-nullable?
+how can we say some variable is not nullable?
+cases: class field, local variable, function input, function output
+maybe we can have `int` and `int&`. the second one means a variable which is actually pointing to an integer.
+how can we represent non-nullable array or non-nullable integers? `Array<int&>&`
+purpose is to force developer to do the cast before call and check for null-ref.
+
+? - So again, `$()` cannot contain assignment.
