@@ -217,26 +217,22 @@ int _x = 12;  //private
 int qq = 19;  //public
 int qw = this.qq //WRONG! there is no `this`
 
-//here data is not a real field. it is a property which redirects read/write to a method.
-int data :: this.fnc;  //reading data will call int this.fnc(), writing will call void this.fnc(int x)
-
-
 int y = MyClass.data  //WRONG: upon creation of the static instance, `MyClass` is same as `this` which is not available
 int h = 12;
 int gg;
 
 //below we simulate const!
 float PI() { return 3.14; } //calling obj.PI() is same as obj.PI because PI method does not have any input
-PI :: 3.14;  //another way to implement above
-PI :: this.get_pi_value; //another way to implement above
+auto PI :: 3.14;  //another way to implement above
+auto PI :: this.get_pi_value; //another way to implement above
 float get_pi_value() { return 3.14;}
 
 int func1(int y) { return this.x + y; }
-func2 :: this.func1;  //redirect calls to func1, methods must have same/compatible signature
+auto func2 :: this.func1;  //redirect calls to func1, methods must have same/compatible signature
 //for any more complex case, write the body.
-ff :: MyClass.function2; //assign function to a function from static instance of another class
+auto ff :: MyClass.function2; //assign function to a function from static instance of another class
 //note that you can only "assign" to a function, when declaring it.
-func3 :: this.func2;  //compiler will infer the input/output types for func3 from func2 signature
+auto func3 :: this.func2;  //compiler will infer the input/output types for func3 from func2 signature
 MyClass new() return #();  //new is not part of syntax. You can choose whatever name you want,
 this _() this.y=9;  //initialize code for static instance, implicitly return this
 
@@ -254,16 +250,14 @@ this _() this.y=9;  //initialize code for static instance, implicitly return thi
 - **Variadic functions**: `bool bar(int... values)`. values will be an array of int.
 - Method argument names or local variables cannot start with underscore. 
 - You can call a method with arg names: `myClass.myMember(x: 10, y: 12);`
-- Methods can assign values to their inputs, but it won't affect passed data.
 - `#()` allocates memory for a new instance of the current class. `#(4)` will allocate 4 bytes of memory (used for primitive data types where there is no field defined, e.g. Int).
-- `f :: g`, when g is name of a method, is a shortcut for `out f(all_inputs) { return g(all_inputs); }`. You cannot change any input/output when calling g. if `g` is name of a field or literal, then `f :: g` means `g_type f() { return g;}`. Note that no `()` or output type needs to be specified for function redirection. 
-- Using `::` notation you can simplify calling long named methods: `p :: core.io.screen.printf;`
-- Simplest constructor: `new :: #;`
+- `auto f :: g`, when g is name of a method, is a shortcut for `out f(all_inputs) { return g(all_inputs); }`. You cannot change any input/output when calling g. if `g` is name of a field or literal, then `auto f :: g` means `g_type f() { return g;}`. Note that no `()` or output type needs to be specified for function redirection. 
+- Using `::` notation you can simplify calling long named methods: `auto p :: core.io.screen.printf;`
+- Simplest constructor: `auto new :: #;`
 - Including parantheses is optional when calling a function which has no inputs. 
 - When you are assigning value to fields upon declaration, you don't have access to `this` or the static instance. So either you need to use literals or call outside methods.
 - Functions should have an output type (there is no `void`). If they don't return anything, you can use `this` as their return type which means current class. If a function is defined using `this`, compiler will automatically add `return this` to the function.
 - method-local variables which start with `_` are static (they preserve value between two calls). 
-- `::` for properties, makes field read-only if there is no appropriate method for writing value. Note that you must specify type. Also fields and methods appear on different sections of the class so they wont be confusing.
 
 ##Operators
 
@@ -302,7 +296,7 @@ this, true, false
 ###Exposure
 
 - A field starting with `__` will be promoted/exposed. 
-- An exposed field's public members will be will soft-copied. This means, if there is a member (field or method) with the same name in main class, it won't be copied (main class members always win).
+- An exposed field's public members will be soft-copied at compile-time. This means, if there is a member (field or method) with the same name in main class, it won't be copied (main class members always win).
 - If you expose two classes that have a public fields with the same name, you must define a field with that name in main class (or else there will be a compiler error). 
 - You can hide/remove an exposed method by adding same method with/without body.
 - You can rename an exposed method by removing it and adding your own method.
@@ -425,7 +419,7 @@ auto intr = Interface1
 };
 ```
 
-*Closure*: All anonymous function and classes, have a `this` which will point to a read-only (not re-assignable) set of local variables in the enclosing method (including input arguments and `this` as the container class).
+*Closure*: All anonymous function and classes, have a `this` which will point to a set of methods for each of the variables in enclosing method (including input arguments and `this` as the container class).
 
 - Anonymous classes don't have constructor, fields or static instance. Because they don't have names.
 - If anon-function does not have any input and there is only one function (in short-form), you can omit `() ->` part.
