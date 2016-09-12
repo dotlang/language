@@ -2605,7 +2605,7 @@ Y - Why we cannot have anon-class based on any class?
 because a class cannot have two methods with body and with the same name. so if class already has a method no one should be able to change it.
 but what about fields? they make no problem. so they should be allowed. 
 
-Y- Remove:  `g` can be a complex expression: `auto f(int x) :: this.g(3, x);`.
+Y - Remove:  `g` can be a complex expression: `auto f(int x) :: this.g(3, x);`.
 from spec. its making things complicated.
 
 Y - can we use `::` notation for variables too? 
@@ -2636,12 +2636,29 @@ the const is only saving us a few lines of code. because with const we only defi
 with redirect, we need to define a field and the function.
 ok. again lets remove const.
 
+Y - So again, `$()` cannot contain assignment. right.
 
-? - annotation for non-nullable?
+Y - annotation for non-nullable?
 how can we say some variable is not nullable?
 cases: class field, local variable, function input, function output
 maybe we can have `int` and `int&`. the second one means a variable which is actually pointing to an integer.
 how can we represent non-nullable array or non-nullable integers? `Array<int&>&`
 purpose is to force developer to do the cast before call and check for null-ref.
+q: how can we ensure on a compile-time level, that a call like `a.method1` does not fail.
+I think we are already tackling the problem with built-in null-object pattern.
 
-? - So again, `$()` cannot contain assignment.
+Y - `#` for instantiation, `$` for casting and undef?
+`return $;`
+`#` inside the code for casting, is a little unfamiliar for a C/C++ developer.
+
+Y - What is the difference between `$Parent` and `$child`?
+Both are null-objects. 
+`if ( x == $parent ) ...`
+`if ( x == $child ) ...`
+which one should be true? both?
+let's ban equality check with null-object, and use `defined`.
+how can we return undef then? `return nil;`
+`$int(4.4)`
+`x = nil;` will assign nil value to x. 
+`defined x` will return true if x is not defined.
+lets just remove all undef and nil notations and use `nil` and `defined`.
