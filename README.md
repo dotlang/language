@@ -185,7 +185,7 @@ You can use select to read/write from/to blocking channels.
 Denote method is implemented by runtime or external libraries.
 
 ###defined
-`if ( defined x)` is same as `if ( #ref(x) == # )`
+`if ( defined x)` is same as `if ( $ref(x) == $ )`
 
 ###typename
 for templates
@@ -236,7 +236,7 @@ func2 :: this.func1;  //redirect calls to func1, methods must have same/compatib
 ff :: MyClass.function2; //assign function to a function from static instance of another class
 //note that you can only "assign" to a function, when declaring it.
 func3 :: this.func2;  //compiler will infer the input/output types for func3 from func2 signature
-MyClass new() return $();  //new is not part of syntax. You can choose whatever name you want,
+MyClass new() return #();  //new is not part of syntax. You can choose whatever name you want,
 this _() this.y=9;  //initialize code for static instance, implicitly return this
 
 ```
@@ -254,10 +254,10 @@ this _() this.y=9;  //initialize code for static instance, implicitly return thi
 - Method argument names or local variables cannot start with underscore. 
 - You can call a method with arg names: `myClass.myMember(x: 10, y: 12);`
 - Methods can assign values to their inputs, but it won't affect passed data.
-- `$()` allocates memory for a new instance of the current class. `$(4)` will allocate 4 bytes of memory (used for primitive data types where there is no field defined, e.g. Int).
+- `#()` allocates memory for a new instance of the current class. `#(4)` will allocate 4 bytes of memory (used for primitive data types where there is no field defined, e.g. Int).
 - `f :: g`, when g is name of a method, is a shortcut for `out f(all_inputs) { return g(all_inputs); }`. You cannot change any input/output when calling g. if `g` is name of a field or literal, then `f :: g` means `g_type f() { return g;}`. Note that no `()` or output type needs to be specified for function redirection. 
 - Using `::` notation you can simplify calling long named methods: `p :: core.io.screen.printf;`
-- Simplest constructor: `new :: $;`
+- Simplest constructor: `new :: #;`
 - Including parantheses is optional when calling a function which has no inputs. 
 - When you are assigning value to fields upon declaration, you don't have access to `this` or the static instance. So either you need to use literals or call outside methods.
 - Functions should have an output type (there is no `void`). If they don't return anything, you can use `this` as their return type which means current class. If a function is defined using `this`, compiler will automatically add `return this` to the function.
@@ -277,15 +277,15 @@ Classes can override all the valid operators on them. `int` class defines operat
 
 - `=` operator, makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. If you want to clone, you need to use custom methods (e.g. `int x = int.new(y);`). You cannot override this operator.
 - `x ?? 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
-- `x == y` will call `equals` method, which by default compares field-by-field values but classes can override this. If you need to compare references, you can use `#ref(x) == #ref(y)` where `ref` is unique-id class in core. 
+- `x == y` will call `equals` method, which by default compares field-by-field values but classes can override this. If you need to compare references, you can use `$ref(x) == $ref(y)` where `ref` is unique-id class in core. 
 
 
 ##Special syntax
 - `->` for anonymous class declaration
 - `_` input place-holder for anon-func
 - `()` for defining tuple literals and function call
-- `#` for casting and undef
-- `$` instantiation
+- `$` for casting and undef
+- `#` instantiation
 - `@` for annotations
 - `:` for hash literal, loop, call by name, array slice and tuple values
 - `<>` template syntax
@@ -310,7 +310,7 @@ this, true, false
 //contained class
 fn<int> m1;  
 int method1() = this.m1;  //method1 is redirected to m1, we can even remove this and only use m1
-MyClass new(fn<int> m) return $();  //construct an instance using given value
+MyClass new(fn<int> m) return #();  //construct an instance using given value
 
 //container class
 this.__member = MyClass.new(this.implementation);  //pass my method as an implementation 
@@ -337,15 +337,15 @@ Later you can extract annotations in the form of: `List<Annotation>` where `Anno
 
 ###Hashtable
 ###Casting
-- `#myclass(my_obj)` is the casting operator and returns empty/undefined/not-initialized if myObj cannot be casted to myclass. Compiler will try 3 options for casting: first if `my_obj` conforms to `myclass` it will be casted without change in the data (means `my_obj` has all fields and methods that `myclass` has specified). second, looks for a method called `myclass` defined in `my_obj` (This method will convert `my_obj` instance to an instance of `myclass`). third, looks for reverse: a method called `ObjType` in `myclass` static instance (ObjType is type of `my_obj` and this method will crete a new instance of myclass using given `ObjType` instance). All these options will be checked at compile time.
+- `$myclass(my_obj)` is the casting operator and returns empty/undefined/not-initialized if myObj cannot be casted to myclass. Compiler will try 3 options for casting: first if `my_obj` conforms to `myclass` it will be casted without change in the data (means `my_obj` has all fields and methods that `myclass` has specified). second, looks for a method called `myclass` defined in `my_obj` (This method will convert `my_obj` instance to an instance of `myclass`). third, looks for reverse: a method called `ObjType` in `myclass` static instance (ObjType is type of `my_obj` and this method will crete a new instance of myclass using given `ObjType` instance). All these options will be checked at compile time.
 - Example: Converting MyClass to YourClass: `yclass = #YourClass(mclass);`
 1) call `mclass.YourClass` method: `yclass = mclass.YourClass();`
 2) call `YourClass.MyClass` static constructor method: `yclass = YourClass.MyClass(mclass);`
 - The only case where `<` and `,` is allowed in method name is for above purpose. 
-- `float f; int x = #int(f);` this will call `int` method on class `float` to do casting. This can be called automatically by compiler if needed. For template types (like array or hash), you should name the function according to full-name not short-name (`Array<char>` instead of `char[]`).
-- empty/undefined/not-initialized state of a variable is named "undef" state and is shown by `#MyClass()` which means casting empty to `MyClass` (MyClass is type of the variable). You can shortcut this by `#MyClass` notation. If type can be inferred you can use only `#`.
-- Value of a variable before initialization is undef which is denoted by `#` or `#MyClass` where MyClass is type of the variable. 
-- You can also return `#MyClass` when you want to indicate invalid state for a variable.
+- `float f; int x = $int(f);` this will call `int` method on class `float` to do casting. This can be called automatically by compiler if needed. For template types (like array or hash), you should name the function according to full-name not short-name (`Array<char>` instead of `char[]`).
+- empty/undefined/not-initialized state of a variable is named "undef" state and is shown by `$MyClass()` which means casting empty to `MyClass` (MyClass is type of the variable). You can shortcut this by `$MyClass` notation. If type can be inferred you can use only `$`.
+- Value of a variable before initialization is undef which is denoted by `$` or `$MyClass` where MyClass is type of the variable. 
+- You can also return `$MyClass` when you want to indicate invalid state for a variable.
 
 ###Undef
 ###Instantiation
@@ -436,7 +436,7 @@ In a class file you can use `typename` keyword, to indicate that the user of the
 ```
 typename K := int;  //K is a template type (default is int), which will be provided at compile time.
 
-typename V := float #{Type1, Type2}; //type V is float by default and must conform to Type1 and Type2
+typename V := float ${Type1, Type2}; //type V is float by default and must conform to Type1 and Type2
 
 void put(K key, V value) ...
 V get(K key) ...
