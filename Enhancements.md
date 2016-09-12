@@ -2662,3 +2662,27 @@ how can we return undef then? `return nil;`
 `x = nil;` will assign nil value to x. 
 `defined x` will return true if x is not defined.
 lets just remove all undef and nil notations and use `nil` and `defined`.
+
+Y - it doesn't mean to compare `nil`s. you have to use defined.
+
+N - Now that we don't want to support reflection, maybe we can have some `enclose` like python decorators.
+but we need to think about how it will fit with expose and anon-class.
+can't we achieve this using expose?
+```
+MyClass __x;
+new :: $;
+int f(int x) {
+    return this.__x.f(x+1);
+}
+```
+it is possible but it's better if we provide a simpler syntax.
+but we already have annotation. so this is not good for marking something or adding "data".
+it should be useful for logic and business and code.
+application: caching, 
+`f :: MyClass.decorator(this.myF);`
+```
+@MyClass.decorator1
+int f(int x) { return x+1;}
+int decorator1(int x) { x++; return f(x);}
+```
+no. makes things complicated.
