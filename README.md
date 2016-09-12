@@ -336,6 +336,7 @@ Later you can extract annotations in the form of: `List<Annotation>` where `Anno
 - `for(x:array1)` or `for(int key,string val:hash1)`.
 
 ###Hashtable
+
 ###Casting
 - `$myclass(my_obj)` is the casting operator and returns empty/undefined/not-initialized if myObj cannot be casted to myclass. Compiler will try 3 options for casting: first if `my_obj` conforms to `myclass` it will be casted without change in the data (means `my_obj` has all fields and methods that `myclass` has specified). second, looks for a method called `myclass` defined in `my_obj` (This method will convert `my_obj` instance to an instance of `myclass`). third, looks for reverse: a method called `ObjType` in `myclass` static instance (ObjType is type of `my_obj` and this method will crete a new instance of myclass using given `ObjType` instance). All these options will be checked at compile time.
 - Example: Converting MyClass to YourClass: `yclass = #YourClass(mclass);`
@@ -343,9 +344,10 @@ Later you can extract annotations in the form of: `List<Annotation>` where `Anno
 2) call `YourClass.MyClass` static constructor method: `yclass = YourClass.MyClass(mclass);`
 - The only case where `<` and `,` is allowed in method name is for above purpose. 
 - `float f; int x = $int(f);` this will call `int` method on class `float` to do casting. This can be called automatically by compiler if needed. For template types (like array or hash), you should name the function according to full-name not short-name (`Array<char>` instead of `char[]`).
-- empty/undefined/not-initialized state of a variable is named "undef" state and is shown by `$MyClass()` which means casting empty to `MyClass` (MyClass is type of the variable). You can shortcut this by `$MyClass` notation. If type can be inferred you can use only `$`.
-- Value of a variable before initialization is undef which is denoted by `$` or `$MyClass` where MyClass is type of the variable. 
-- You can also return `$MyClass` when you want to indicate invalid state for a variable.
+- empty/undefined/not-initialized state of a variable is named "undef" state and is shown by `nil`.
+- Value of a variable before initialization is undef which is denoted by `nil`.
+- You can also return `nil` when you want to indicate invalid state for a variable.
+- Calling a method or field on a `nil` object, gives you `nil`.
 
 ###Undef
 ###Instantiation
