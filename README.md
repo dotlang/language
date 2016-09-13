@@ -208,7 +208,6 @@ Each class's instances can be referenced using instance notation (`varName.membe
 - There is no inheritance. Composition is used instead.
 - If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is public.
 - The order of the contents of source code file matters: First `import` section, `type` section, fields and finally methods.
-- After creation of any instance of a class (including static instance), `_()` method will be called if it exists. You can initialize the instance in this method.
 
 ###Class members
 
@@ -234,13 +233,11 @@ auto ff :: MyClass.function2; //assign function to a function from static instan
 //note that you can only "assign" to a function, when declaring it.
 auto func3 :: this.func2;  //compiler will infer the input/output types for func3 from func2 signature
 MyClass new() return #();  //new is not part of syntax. You can choose whatever name you want,
-this _() this.y=9;  //initialize code for static instance, implicitly return this
 
 ```
 - Any class without fields is immutable from compiler's perspective (this includes primitive types). This will help runtime to optimize the code. 
 - Class members (fields, methods and types) starting with underscore are considered private and can only be accessed by methods of the same class. So `obj._x` is ok if the code is inside the class type of `obj`.
 - Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer.
-- The private unnamed method is called by runtime service when static instance of the class is created and is optional.
 - You can not have multiple methods with body with the same signature in a single class. 
 - You can define optional arguments: `int f(int x,int y=1)` the value must be a literal or undef.
 - When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`). `this` is not re-assignable variable so you cannot re-assign it.
