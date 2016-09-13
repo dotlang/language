@@ -2740,12 +2740,146 @@ N - it's good if we can define `int f(int x, int! y)` so I am sure that y won't 
 Y - how closure is going to be provided, now that we dont have const?
 as input-less methods? possible.
 
-? - Do we need private unnamed method? for normal instance its not needed.
+Y - Do we need private unnamed method? for normal instance its not needed.
 for static: field init can be done when declaration if it is simple values or reference to outside.
+static instance should not rely much on "state". If it does, its better to be normal instance.
+lets remove this method.
 
-
-? - `int f((int x, float f) input)`
+N - `int f((int x, float f) input)`
 forbid above definition. it is making the code ugly and complicated.
-use type to give it a name.
+use type to give it a name. forbid != gen
 
 
+N - Implicitly calling methods on `nil` is dangerous. Assume what happens if we have:
+```
+MyClass mc = getData();
+mc.save();
+result["data"] = mc;
+result["price"] = calculate_price(mc);
+return result;
+```
+maybe we can add a check like `assert` to make sure something is not null.
+```
+int x = getData();
+if ( x == nil ) throw "ERROR";
+x.some_method();
+//instead:
+int x = getData();
+validate x;  //assert defined x;
+x.some_method();
+```
+or we can add shortcut for assert: `@`
+but it is used for annotations.
+`&defined x`
+
+N - Let other classes have ability to act like `int`. Define storage, allocated using `$(32)` read and write.
+no. this makes things much more complex because we will need to add lots of other concepts and methods.
+
+N - What happens with this code? -> assignment, does nothing.
+```
+MyData x = nil;
+x.var = 12;
+```
+I think we should force all instance variables as private.
+or we can just throw exception if fields are accessed.
+because if we force private vars and define `set_var_value(int x)` it will still have the same effct from outside view.
+if we choose to make fields private, then maybe we should devise another notation for public methods.
+how can we make it natural that classes cannot have public fields?
+maybe:
+```
+int private_method(MyClass this,...){}
+int public_method(MyClass this_public,...){}
+```
+proposal: all things to be private will be inside a `private` block. all others are public.
+the ideas against using public fields is overwhelming. we can still define public function returning them using `auto f :: this.private_field;`
+but we should not change the default simplest app notation. we should be as similar to java and C as possible.
+```
+int main() { return 0;}
+```
+by any means, this must be an acceptable class in our language.
+question is: How can we make it natural and un-surprising that all fields and some methods are private while some other methods are public?
+proposal: `public` keyword. `public int f(int x){}`
+but dev will ask, what if I write: `public int x = 12;`
+for methods, it will simply make method public and if you don't it will be private.
+`int this.x = 12; int this.private_method(int x) {}`
+the difference shoulbd be explicit and easily readable.
+proposal: let's remove concept of fields. we will only have a private storage and tags.
+no one should be concerned about internal fields and storage of the class except itself only.
+maybe something similar to golang.
+how can I make above changes and keep the language orthogonal.
+`int f(int x, float f) {{ ... }}`
+proposal: everything is private (field and methods). 
+```
+private { anything here is private because block name starts with underscore }
+private { other privates }
+
+//anything outside blocks is public
+int f(int x) { return x+this.field1; }
+```
+OR
+```
+//all are private
+int field1;
+
+public int f(int x) { return x+this.field1; }
+```
+you can only define public methods. you cannot define public fields.
+if you define a field, as public, it will automatically create getter/setter for it. you can easily override them.
+`public int field1;` -> class will have `int field1()` and `this field1(int value)` for get/set value.
+so we can have field and methods with the same name? if they have different access level? `x = this.field1` should this call `int field1()` method or retrieve value of `field1` field?
+1-> we want to ban public fields. problem: naming will be a burden to always type underscore. 
+let's accept the burden and say, private start with _ and others are public.
+problem: methods are all fine, private fields are all fine. what about public fields?
+`int x;` we don't want to ban this notation but we want to ban public fields.
+so this notation must mean something else.
+property?
+If we allow public fields, it will cause problem with `nil` reference and also it is not advised anywhere.
+but the language should be simple. this means minimum rules and regulations. minimum exceptions.
+so let's see how can we enable developer to define fields and also have `nil`.
+proposal: if field is public, it will automatically be a property. `mc.field(10)` for set, `int x = mc.field()` for get.
+mapping to a private field with the same name prefixed with underscore. `_field`
+but this is not beautiful. 
+`int field :: this._field;`
+whenever we have to decide between keeping language simple and consistent vs. forcing the developer to obey according to best practices of software design and OOP, let's choose a simple language. developer will be responsible for the other things.
+so fields can be either public or private. same for methods.
+`nil` object, does nothing. so calling methods returns null. reading fields returns null. settings values does nothing.
+
+N - can a tuple be null? -> yes it can.
+`(int x, float y) xx = nil; xx.x=6;`
+if we agree to hide instance variables, then tuple will not be anything similar to a class.
+it then should be considered a collection of normal variables.
+it cannot be nil but it's components can be. and they must be all public.
+still it can be nil. so that we keep gen and orth.
+
+N - if we decide to private all fields, how does this affect expose?
+
+N - how interface is going to be implemented? if we decide to make all fields private.
+
+? - provide easy mechanism to define property fields.
+`::` is used for function redirection.
+its better to have another notation for properties.
+what is property? is it a field or method?
+property is field + getter method + setter method.
+where field is private. `_field`, getter: `int filed()` setter `this field(int value)`
+`int _field :> field;`  //field name is _field and two methods named `field` for set and get are generated by compiler unless developer overrides them.
+can the field be public? it should be allowed!
+can the property methods be private? it should be allowed.
+the only limitation is that we shouldn't have field with same name as method.
+`int _field :> _accessor;` defines `int _accessor()` and `this _accessor(int)`. of course developer can override them.
+can we merge these two methods? `int _accessor(int value=nil)` calling without input will return value of private field. calling with value will set value. but it's better if setter returns `this`. lets not merge them. so we can chain multiple calls to multiple setters. 
+`int field :> accessor` public field, public accessors
+`int field :> _accessor` public field, private accessors
+what about notation?
+`int field => accessor;`
+`int field := accessor;`
+`int field >> accessor;` good.
+`int field !! accessor;`
+`int field ~ accessor;`
+`int field {accessor};`
+`int field [accessor];`
+
+
+? - remove `throw` and solely rely on assert.
+`throw x` == `assert false:x;`
+`assert condition:x` == `if (!condition) throw x`
+we have redundancy.
