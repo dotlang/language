@@ -339,7 +339,7 @@ Later you can extract annotations in the form of: `List<Annotation>` where `Anno
 - empty/undefined/not-initialized state of a variable is named "undef" state and is shown by `nil`.
 - Value of a variable before initialization is undef which is denoted by `nil`.
 - You can also return `nil` when you want to indicate invalid state for a variable.
-- Calling a method or field on a `nil` object, gives you `nil`.
+- Calling a method or field on a `nil` object, gives you `nil`. Settings field value for `nil` object does nothing.
 
 ###Undef
 ###Instantiation
@@ -367,6 +367,7 @@ int x = f((x:1, f:1.1)); //calling above function
 ```
 
 Tuples are automatically converted to classes by compiler. So they are basically classes but only have a fields section (without any assignment) with all-public fields and no methods. 
+- Note that you can assign `nil` to a tuple.
 
 ###Anonymous classes `->`
 
