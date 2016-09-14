@@ -2870,7 +2870,7 @@ can we merge these two methods? `int _accessor(int value=nil)` calling without i
 `int field :> accessor` public field, public accessors
 `int field :> _accessor` public field, private accessors
 what about notation?
-`int field => accessor;`
+`int field => accessor;` good.but similar to import.
 `int field := accessor;`
 `int field >> accessor;` good.
 `int field !! accessor;`
@@ -2878,8 +2878,120 @@ what about notation?
 `int field {accessor};`
 `int field [accessor];`
 
-
 ? - remove `throw` and solely rely on assert.
 `throw x` == `assert false:x;`
 `assert condition:x` == `if (!condition) throw x`
 we have redundancy.
+
+? - replace assert with a shorter keyword.
+`check, test`
+
+N - support for decorator at compile and runtime.
+decorator at compile time -> compose the object
+delegated to AOP.
+
+? - support for AOP?
+applications of aop: logging, validation, caching, permission check, transaction, monitoring, timing, error handling, 
+`onEntry, onExit, onSuccess, onException` methods of a custom aspect in PostSharp. this aspect handles call of a method.
+`onInvoke` replaces method with custom code.
+`onGetValue` builder for a field or property
+can be used for caching?
+it can be applied to a method, property or all methods.
+design must be readable, easy to remember and different enough to be noticed easily.
+and flexible.
+AOP should be supported only at compile time. runtime can be achieved via defining appropriate class or anon-class.
+It can be implemented via code injection by compiler at compile time.
+Also we have to make it explicitly clear that AOP will be part of the method. so even if the method is promoted onto a container class in future, it will still hold it's AOP. Remember, no one should be able to change class behaviour without it's permission.
+and ordering of them and how they combine, must be explicit and clear.
+AOP can be decorator and/or proxy design pattern.
+with AOP We can implement DI too. Write a custom code for `get` of a property.
+1. it should be applied to methods. get/set for properties are methods too.
+2. types: before, after, succeed, exception, around (we can remove succeed and exception in favor of after).
+3. they should be applicable to one method or the whole class.
+we should be able to define a logging method inside the class (or outside), ane call it before each method call.
+before, after, around
+pre, post, around
+entry, exit, invoke
+```
+//aspect code must be accessible to call: static instance, local field, local method, ...
+%before{MyClass.afterHandler}
+%before{assert defined x}
+int f(int x) { return x+1; }
+```
+why not use convention instead of configuration?
+define appropriate methods somewhere (other class or even same class).
+then attach that instance as the aspect-processor
+```
+%aspect(this)  //run before and then before_f, method before calling f, same for after and around
+int f(int x) { return x+1;}
+```
+maybe we can automate this. so by default `%aspect(this)` is applied to the class.
+we can say: `auto result = $(this);` so `this` will be aspect-processor of the instance. 
+but we want it to be more explicit: a keyword on top of the class:
+`aspect this;` -> any instance of this class will have aspect processor set to this.
+methods will eb automatically called upon corresponding conditions.
+how can we send parameters to the aspect instance?
+can data be shared between multiple aspects?
+we can filter specific methods of the aspect-proecssor using casting to specific interfaces.
+in class level, we should be able to say aspect should apply to the whole class or only public members.
+`aspect{this}` `aspect{@OnlyBefore(this)}`
+(we cal replace aspect keyword with weave)
+`weave{this}` use `this` per all instance of this class. before running each method, call `before` of that class. 
+same for after and around. 
+`weave{MyClass.new(10)}` creates a new aspect-processor per instance of the current class.
+how can we prevent infinite loop and circular reference? calling `this.before` before calling `this.before` before calling ... ?
+one solution: mark aspect methods with a syntax which denote they won't be affected by any other aspect.
+proposal2: don't permit setting aspect to `this`.
+but still if aspect on MyClass is set to an instance of MyClass this will happen.
+proposal: don't let using weave on variables of type of the current class. this is better and simpler.
+`weave{OtherClass}`  //before calling any method of the current class call `OtherClass.before` method. same for after and around. this is so simple that we can easily add other methods too.
+`weave{OtherClass.new}`  //you can pass literals or static things to the method call.
+`weave{expression};`
+you can define weave for the whole class or a single method.
+`weave{otherClass.getHandler}`
+how can we make it explicit that weave it part of code?
+```
+weave {OtherClass}
+weave {MyClass}
+weave {@OnlyAfter(ThirdClass)}
+weave {@OnlyAround(Builder)}
+int f(int x) {
+    return x+1;
+}
+```
+1. how to exclude whole-class-weave from a specific method?
+2. how to apply a weave to only public methods? all methods?
+
+`not weave {OtherClass}` do not weave this specific method
+`weave {OtherClass}` 
+lets only support single-element weave. it will be simpler and most of the time we really don't want to weave ALL elements (e.g. validation, transaction, timing, ... they are all normally applied to some methods).
+so we won't need `not` notation too. 
+`weave {Class1}`
+what if we want to have the same aspect for specific methods of the class?
+solution: define it as a private variable. and `weave {this.var1}` for all related methods.
+note that, type of `this.var1` cannot be same as the current class because it will cause infinite loop.
+
+? - now that we only support method-level weaving, we can use `this` or var of same type because it is only applied to a specific method. we can even support function for weave.
+`weave {obj1}` weave calls into obj1 methods
+`weave {@OnlyAfter(this.func1)}` a single function will be executed after the current method is finished.
+this will extend meaning of casting. you can cast class A to class B even if method names are not the same.
+
+? - multiple weaves are handled from inner-most to outer-most.
+first inner-most is applied, on top of which next one. and outer-most is applied on top of all other aspects.
+
+? - support for weave on fields. with read/write methods? -> no support for fields.
+`int x;`
+`weave {MClass} int x;`
+this is totally different than previous one because there is no code for `int x`.
+Let's limit weave to methods. if you want it for a variable, define it as a property using `>>`. 
+`weave {MClass} int x >> property1;` weave the static instance into calls to setter and getter of x.
+what if developer writes his own implementation? 
+solution1: still apply to custom impl methods -> code is not readable.
+solution2: force dev to explicitly declare weavers. does not make sense and is ambiguous. what if he defined a different weave? which one will be used? both? this is source of ambiguity. 
+we LET developer to define weaves but it will not override weave defined upon prop decl.
+a better solution: do not let dev to declare weave on prop. if you need weave, declare your impl of getter/setter and weave there. so: weave is not supported on fields. only methods which are implemented. even for auto-implemented getter/setter you cannot weave.
+
+? - casting notation ignores method name when output is a class with just one method and input is `fn` type.
+
+N - built-in DI
+maybe it should not be part of the language.
