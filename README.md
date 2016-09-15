@@ -164,7 +164,7 @@ import core.st => cst;  //alias import
 
 ###auto
 ###invoke
-We have `invoke` and `select` keywords. You can use `future<int> result = invoke obj.method1();` to execute `obj.method1` in another thread and the result will be available through future class (defined in core).
+We have `invoke` and `select` keywords. You can use `%future(int) result = invoke obj.method1();` to execute `obj.method1` in another thread and the result will be available through future class (defined in core).
 
 Also `select` evaluates a set of expressions and executes corresponding code block for the one which evaluates to true:
 ```
@@ -222,16 +222,16 @@ int gg;
 
 //below we simulate const!
 float PI() { return 3.14; } //calling obj.PI() is same as obj.PI because PI method does not have any input
-auto PI :: 3.14;  //another way to implement above
-auto PI :: this.get_pi_value; //another way to implement above
+PI :: 3.14;  //another way to implement above
+PI :: this.get_pi_value; //another way to implement above
 float get_pi_value() { return 3.14;}
 
 int func1(int y) { return this.x + y; }
-auto func2 :: this.func1;  //redirect calls to func1, methods must have same/compatible signature
+func2 :: this.func1;  //redirect calls to func1, methods must have same/compatible signature
 //for any more complex case, write the body.
-auto ff :: MyClass.function2; //assign function to a function from static instance of another class
+ff :: MyClass.function2; //assign function to a function from static instance of another class
 //note that you can only "assign" to a function, when declaring it.
-auto func3 :: this.func2;  //compiler will infer the input/output types for func3 from func2 signature
+func3 :: this.func2;  //compiler will infer the input/output types for func3 from func2 signature
 MyClass new() return #();  //new is not part of syntax. You can choose whatever name you want,
 
 ```
@@ -248,7 +248,7 @@ MyClass new() return #();  //new is not part of syntax. You can choose whatever 
 - Method argument names or local variables cannot start with underscore. 
 - You can call a method with arg names: `myClass.myMember(x: 10, y: 12);`
 - `#()` allocates memory for a new instance of the current class. `#(4)` will allocate 4 bytes of memory (used for primitive data types where there is no field defined, e.g. Int).
-- `auto f :: g`, when g is name of a method, is a shortcut for `out f(all_inputs) { return g(all_inputs); }`. You cannot change any input/output when calling g. if `g` is name of a field or literal, then `auto f :: g` means `g_type f() { return g;}`. Note that no `()` or output type needs to be specified for function redirection. 
+- `f :: g`, when g is name of a method, is a shortcut for `out f(all_inputs) { return g(all_inputs); }`. You cannot change any input/output when calling g. if `g` is name of a field or literal, then `f :: g` means `g_type f() { return g;}`. Note that no `()` or output type needs to be specified for function redirection. You can use this notation when output of function is only a expression (`return expression`). `f(int x) :: x+1;`. When using `::` you should not specify output type because it will be inferred by compiler.
 - Using `::` notation you can simplify calling long named methods: `auto p :: core.io.screen.printf;`
 - Simplest constructor: `auto new :: #;`
 - Including parantheses is optional when calling a function which has no inputs. 
@@ -270,7 +270,9 @@ Classes can override all the valid operators on them. `int` class defines operat
 - `=` operator, makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. If you want to clone, you need to use custom methods (e.g. `int x = int.new(y);`). You cannot override this operator.
 - `x ?? 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
 - `x == y` will call `equals` method, which by default compares field-by-field values but classes can override this. If you need to compare references, you can use `$ref(x) == $ref(y)` where `ref` is unique-id class in core. 
-
+- `&x` is a short-cut for `assert defined x;` which can be used to ensure x is not `nil`.
+- `~x` creates a clone of x. so you can write `auto y = ~x` and y will point to a copy of x.
+- `^x` returns unique ref-id of the object. so you can write `if(^x == ^y)` and be sure references will be compared.
 
 ##Special syntax
 - `->` for anonymous class declaration
@@ -280,9 +282,10 @@ Classes can override all the valid operators on them. `int` class defines operat
 - `#` instantiation
 - `@` for annotations
 - `:` for hash literal, loop, call by name, array slice and tuple values
-- `<>` template syntax
+- `%` template syntax
 - `:=` type alias and typename
 - `::` function and field redirection
+- `&` assert defined variable.
 - `out`: representing function output in defer
 - `exc`: representing current exception in defer
 - `??` undef check
@@ -300,9 +303,9 @@ this, true, false
 - A container class can provide implementation for methods of contained class if it is allowed:
 ```
 //contained class
-fn<int> m1;  
+%fn(int) m1;  
 int method1() = this.m1;  //method1 is redirected to m1, we can even remove this and only use m1
-MyClass new(fn<int> m) return #();  //construct an instance using given value
+MyClass new(%fn(int) m) return #();  //construct an instance using given value
 
 //container class
 this.__member = MyClass.new(this.implementation);  //pass my method as an implementation 
@@ -422,7 +425,7 @@ Long-form:
 int g = 11;
 auto X = {
     MyClass __x;
-    auto new :: #;
+    new :: #;
     
     int method1() { return 5;}  //hiding promoted method of MyClass
     //we don't have access to static instance here because class does not have a name
@@ -454,10 +457,10 @@ V get(K key) ...
 This is how collections and ... will be implemented in core.
 
 Note that `typename` section must come before fields section.
-For each tempalte class like `Stack`, there is a base interface class `Stack` which is equal to the class definition minus everything related to typenames (declaration, usage, ...) which is created by the compiler. According to definition, all template class instances, conform to this base interface. This means `Stack` is the base interface for `Stack<int>, Stack<float>` and all other stacks and if you need to write a method accepting any stack you can use it: `void getStack(Stack s)`. 
-Note that `Stack` is not the same as `Stack<>` which has type set to it's default.
-- When creating instances of template class you can explicitly speciy type name: `Stack<T=int, V=float>`
-- `Stack<>` means the stack class with all default values of typenames.
+For each tempalte class like `Stack`, there is a base interface class `Stack` which is equal to the class definition minus everything related to typenames (declaration, usage, ...) which is created by the compiler. According to definition, all template class instances, conform to this base interface. This means `Stack` is the base interface for `%Stack(int), %Stack(float)` and all other stacks and if you need to write a method accepting any stack you can use it: `void getStack(Stack s)`. 
+Note that `Stack` is not the same as `%Stack` which has type set to it's default.
+- When creating instances of template class you can explicitly speciy type name: `%Stack(T:int, V:float)`
+- `%Stack` means the stack class with all default values of typenames.
 - `Stack` means stack class without any code related to typename. (non-template version of the class)
 
 ###Optional arguments
@@ -521,4 +524,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 ##Misc
 
 - Compiler will decide which methods should be inlined.
-- `!x` is a short-cut for `assert defined x;` which can be used to ensure x is not `nil`.
+
