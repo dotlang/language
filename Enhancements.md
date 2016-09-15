@@ -3175,9 +3175,22 @@ auto x_instance = X.new
 this is more gen and orth and elegant. 
 what about closure? inside this class we have a `this` which has some methods returning closure variables.
 
-? - make expose notation more explicit.
+? - make expose notation more explicit. defining a variable like others is not elegant.
+```
+int x = 12;
+int y = 19;
+auto FF :: x+1;
+expose MyClass;  //exposed var can be either public or private.
+expose MyClass _mm;
+```
 
 ? - change `<>` notation for template. `TT<MM>.method` is not beautiful.
+D: `TFoo!(int)`
+Scala: `val stack = new Stack[Int]`
+Rust: `struct Point<T>`
+`%TFoo(int)`
+`&TFoo(int)`
+
 
 ? - Haskell like syntax to define operators: include the operator name and let user define his own operators like `:><`
 
