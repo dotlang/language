@@ -96,7 +96,8 @@ CaseStmt = (IdentifierList | 'else') ':' Block
 AssertStmt = 'assert' condition [',' expression] ';'
 ```
 - Assert makes sure the given `condition` is satisfied. 
-- If condition is not satisfied, it will run `throw expression` statement.
+- If condition is not satisfied, it will run throw `expression` exception.
+- There is no `throw` keyword and this is the only way to cause expression.
 
 ###for, break, continue
 ```
@@ -340,8 +341,19 @@ Later you can extract annotations in the form of: `List<Annotation>` where `Anno
 - Value of a variable before initialization is undef which is denoted by `nil`.
 - You can also return `nil` when you want to indicate invalid state for a variable.
 - Calling a method or field on a `nil` object, gives you `nil`. Settings field value for `nil` object does nothing.
+- When input of cast is `fn` type and output is a class with just-one name, runtime will handle the name change.
 
 ###Undef
+###Aspects
+You can prefix a method, with a set of `weave` keywords each with an expression which specifies a set of methods to be called before/after/around/... of the current method.
+```
+weave {obj1} int f(int x) { return x;} //function members of obj1 named before, after, around, ... will be called if they are defined
+weave {@OnlyAfter(obj1)} int f(} { return 5;} //obj1 is cast to OnlyAfter interface. so only it's after method will be called.
+weave {this.obj1} int f() { return 5;} //the weave code is result of evaluation of the expression. so in this case this.obj1 will be re-used for all call
+weave {MyClass.new} int f() { return 5;} //create a new instance per each call
+```
+- you can combine weaves and they will be applied from outer-most to inner-most
+
 ###Instantiation
 ###Tuples
 Functions can only return one value but that one value can be a tuple (anonymous class with only fields and no method) containing multiple values. Note that field names are required and should be mentioned or inferable.
@@ -419,10 +431,10 @@ auto intr = Interface1
 
 *Closure*: All anonymous function and classes, have a `this` which will point to a set of methods for each of the variables in enclosing method (including input arguments and `this` as the container class).
 
-- Anonymous classes don't have constructor, fields or static instance. Because they don't have names.
+- Anonymous classes don't have constructor or static instance. Because they don't have names. They don't have constructor because they only have one instance.
 - If anon-function does not have any input and there is only one function (in short-form), you can omit `() ->` part.
 - Note that if the type contains methods with bodies, you cannot define anon-class (short or long form) based on it.
-- Anon-class can contain fields.
+- Anon-class can contain fields.?
 
 
 ###Templates
