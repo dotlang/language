@@ -2775,7 +2775,7 @@ but it is used for annotations.
 N - Let other classes have ability to act like `int`. Define storage, allocated using `$(32)` read and write.
 no. this makes things much more complex because we will need to add lots of other concepts and methods.
 
-N - What happens with this code? -> assignment, does nothing.
+N - What happens with this code?-> assignment, does nothing.
 ```
 MyData x = nil;
 x.var = 12;
@@ -2844,7 +2844,7 @@ whenever we have to decide between keeping language simple and consistent vs. fo
 so fields can be either public or private. same for methods.
 `nil` object, does nothing. so calling methods returns null. reading fields returns null. settings values does nothing.
 
-N - can a tuple be null? -> yes it can.
+N - can a tuple be null?  -> yes it can.
 `(int x, float y) xx = nil; xx.x=6;`
 if we agree to hide instance variables, then tuple will not be anything similar to a class.
 it then should be considered a collection of normal variables.
@@ -2991,7 +2991,7 @@ this will extend meaning of casting. you can cast class A to class B even if met
 Y - multiple weaves are handled from inner-most to outer-most.
 first inner-most is applied, on top of which next one. and outer-most is applied on top of all other aspects.
 
-N - support for weave on fields. with read/write methods? -> no support for fields.
+N - support for weave on fields. with read/write methods?  -> no support for fields.
 `int x;`
 `weave {MClass} int x;`
 this is totally different than previous one because there is no code for `int x`.
@@ -3175,7 +3175,18 @@ auto x_instance = X.new
 this is more gen and orth and elegant. 
 what about closure? inside this class we have a `this` which has some methods returning closure variables.
 
-? - make expose notation more explicit. defining a variable like others is not elegant.
+Y - change `<>` notation for template. `TT<MM>.method` is not beautiful.
+D: `TFoo!(int)`
+Scala: `val stack = new Stack[Int]`
+Rust: `struct Point<T>`
+`%TFoo(int)`
+`&TFoo(int)` not good,
+`^TFoo(int)`
+`TFoo::int` not good
+
+Y - make `auto` optional in defining function with `::` notation.
+
+N - make expose notation more explicit. defining a variable like others is not elegant.
 ```
 int x = 12;
 int y = 19;
@@ -3183,15 +3194,54 @@ auto FF :: x+1;
 expose MyClass;  //exposed var can be either public or private.
 expose MyClass _mm;
 ```
+this is a definition which has the potential to add fields and methods to the current class. how can we make it more explicit and elegant? 
 
-? - change `<>` notation for template. `TT<MM>.method` is not beautiful.
-D: `TFoo!(int)`
-Scala: `val stack = new Stack[Int]`
-Rust: `struct Point<T>`
-`%TFoo(int)`
-`&TFoo(int)`
+N - Haskell like syntax to define operators: include the operator name and let user define his own operators like `:><`
+how to set precedence and associativity of the new operator then?
 
+N - Again: Immutability, how to enforce? How to help developer write it? how to check at compile time?
+can we have immutability by convention?
+like `assert defined x` we can have `assert frozen x` or shortcut `~x`.
+it has to be variable (object) based, not class based.
+or it can be class based. we can have MutHash and ImmutHash classes.
 
-? - Haskell like syntax to define operators: include the operator name and let user define his own operators like `:><`
+Y - `!x` means not x. is not readable with it's meaning.
+`/x`
+`^x`
+`&x` this is good.
 
-? - Again: Immutability, how to enforce? How to help developer write it? how to check at compile time?
+N - Syntax for freezing an object?
+`x.freeze()` we should be able to un-freeze the object.
+we need 3 things: 1) freeze object, 2)un-freeze object, 3) check if object is frozen
+`~x`, `~~x`, `?~x`
+`x = ~y`
+`if ~?x` if x is frozen
+
+N - make use of `^x` notation too.
+we can use it as a short-cut for common code pieces.
+maybe we can let user define `~` and `^` for it's classes.
+
+Y - operator to clone/duplicate object -> `y = ~x`
+
+Y - operator to get ref-id of object to compare. instead of `$ref(x)`
+`y = ^x`
+
+N - How can we disable static instance of a class?
+we only want a ctor. That's all. 
+proposal1: `assert this != MyClass;` on all methods.
+
+N - can we use keywords instead of operators. because keywords are memorized easier.
+@ -> annotation, no.
+# -> instantiation.
+$ -> casting. no
+% -> template. no.
+^ -> get ref-id
+& -> no. is a shortcut itself.
+Alternative for `#`
+`new :: alloc`?
+
+N - can we make `this` required and have static/instance methods in a class?
+ctor -> don't add this input.
+utils -> don't add this input.
+no. it makes expose and shadowing methods complex. what would be meaning of this then?
+this is against gen
