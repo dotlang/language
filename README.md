@@ -64,8 +64,7 @@ In the above examples `core.sys, core.net, core.net.http, core.net.tcp` are all 
 - **Adressing**: Each type, field or method can be address in the format of `A.B.(...).D` where `A`, `B` and other parts are each either name of a package, class or field. The last part `D` is name of the field or method or type which is being addressed.
 
 ##Keywords
-Electronc has a small set of basic keywords: `if, else, switch, assert, for, break, continue, return, throw, defer, type, import, auto, import, select, native, defined, typename`.
-`require, ensure, invariant`
+Electronc has a small set of basic keywords: `if, else, switch, assert, for, break, continue, return, defer, type, import, auto, import, select, native, defined, typename`.
 
 
 
@@ -96,7 +95,7 @@ CaseStmt = (IdentifierList | 'else') ':' Block
 AssertStmt = 'assert' condition [',' expression] ';'
 ```
 - Assert makes sure the given `condition` is satisfied. 
-- If condition is not satisfied, it will run throw `expression` exception.
+- If condition is not satisfied, it will throw `expression` exception.
 - There is no `throw` keyword and this is the only way to cause expression.
 
 ###for, break, continue
@@ -116,7 +115,7 @@ ContinueStmt = 'continue' [Number] ';'
 ###return
 ###throw
 - It is advised to return error code in case of an error and use exceptions in really exceptional cases.
-- You can use `throw X` to create exception and return from current method.
+- You can use `assert false, X` to create exception and return from current method.
 - You can use `defer` keyword (same as what golang has) for code that must be executed upon exitting current method.
 - If defer has an input named `out`, it will be mapped to the function output.
 - If defer has an input named `exc`, it will be mapped to the current exception. If there is no exception, defer won't be executed. If there are multiple defers with `exc` all of them will be executed.
@@ -124,7 +123,7 @@ ContinueStmt = 'continue' [Number] ';'
 
 ```
 //inside function
-throw "Error!";  //throw exception and exit
+assert false, "Error!";  //throw exception and exit
 //outside: catching error
 defer(exc) { ... }
 defer(out, exc) { ... }
@@ -353,6 +352,7 @@ weave {this.obj1} int f() { return 5;} //the weave code is result of evaluation 
 weave {MyClass.new} int f() { return 5;} //create a new instance per each call
 ```
 - you can combine weaves and they will be applied from outer-most to inner-most
+- Weave expression is evaluated and checked for appropriate functions by compiler. So you can include any expression including assertions. These will be run before function run: `weave {assert x>0}`
 
 ###Instantiation
 ###Tuples
@@ -384,8 +384,9 @@ Tuples are automatically converted to classes by compiler. So they are basically
 ###Anonymous classes `->`
 
 You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface specifying one or more empty functions. If the interface has only one method, the definition can be in short form and it is basically a function pointer. There is a general purpose template class `fn` which is used by compiler to set type of anon-class literals if type is to be inferred.
-Note that when writing anon-class, we are creating a new class and instantiate it at the same time. We just mention interface/type name so the structure of the newly created class is specified.
+Note that when writing anon-class, we are creating a new class on the fly, and for short-form instantiate it at the same time. You can use short-form if class has only one method and no fields. Otherwise you should use long-form. 
 
+Short-form:
 ```
 //short form, when interface has only one method
 Interface1 intr = (int x, int y) -> x+y;  //specifying type for input is optional
@@ -413,28 +414,30 @@ auto xp = (int x, int y) -> x+y;  //again compiler will assign appropriate fn in
 //for example for above case type of xp will be fn<int, int, int>
 //if returning multiple values, it will be an anonymous class
 auto xp = (int x, int y) -> return (a:1, b:3); //type of xp will be fn<(int, int), int, int>
+```
 
-//long form, full implementation of empty methods of a class
-auto intr = Interface1 
-{
-    int function1(int x,int y) 
-    {
-        return x+y;
-    }
+Long-form:
+```
+//long form, we can expose a variable which will construct public methods of the anon-class
+int g = 11;
+auto X = {
+    MyClass __x;
+    auto new :: #;
     
-    int functio2(int x)
-    {
-        return x+1;
-    }
-};
+    int method1() { return 5;}  //hiding promoted method of MyClass
+    //we don't have access to static instance here because class does not have a name
+    //only this. this.g (or this.g()) has a value of 11.
+};  //X will be the static instance of the defined class
+auto x_instance = X.new
 ```
 
 *Closure*: All anonymous function and classes, have a `this` which will point to a set of methods for each of the variables in enclosing method (including input arguments and `this` as the container class).
 
-- Anonymous classes don't have constructor or static instance. Because they don't have names. They don't have constructor because they only have one instance.
+- Anonymous classes don't have static instance. Because they don't have names. 
 - If anon-function does not have any input and there is only one function (in short-form), you can omit `() ->` part.
 - Note that if the type contains methods with bodies, you cannot define anon-class (short or long form) based on it.
-- Anon-class can contain fields.?
+- Anon-class can contain fields.
+- By using anon-class you can mock another class and hide/change one or more of it's methods.
 
 
 ###Templates
@@ -518,3 +521,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 ##Misc
 
 - Compiler will decide which methods should be inlined.
+- `!x` is a short-cut for `assert defined x;` which can be used to ensure x is not `nil`.
