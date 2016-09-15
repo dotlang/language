@@ -431,7 +431,7 @@ auto X = {
 auto x_instance = X.new
 ```
 
-*Closure*: All anonymous function and classes, have a `this` which will point to a set of methods for each of the variables in enclosing method (including input arguments and `this` as the container class).
+*Closure*: All anonymous function and classes, have a `this.__closure` which will point to a set of methods for each of the variables in enclosing method (including input arguments and `this` as the container class). These methods will be promoted if possible (no method with the same name is defined).
 
 - Anonymous classes don't have static instance. Because they don't have names. 
 - If anon-function does not have any input and there is only one function (in short-form), you can omit `() ->` part.
