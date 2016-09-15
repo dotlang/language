@@ -2855,7 +2855,7 @@ N - if we decide to private all fields, how does this affect expose?
 
 N - how interface is going to be implemented? if we decide to make all fields private.
 
-? - provide easy mechanism to define property fields.
+N - provide easy mechanism to define property fields.
 `::` is used for function redirection.
 its better to have another notation for properties.
 what is property? is it a field or method?
@@ -2889,12 +2889,12 @@ or like C#:
 `int x { get {return value;} set{x=value;}}`
 we can achieve lazy loading with a no-input function. 
 
-? - remove `throw` and solely rely on assert.
+Y - remove `throw` and solely rely on assert.
 `throw x` == `assert false:x;`
 `assert condition:x` == `if (!condition) throw x`
 we have redundancy.
 
-? - replace assert with a shorter keyword.
+N - replace assert with a shorter keyword.
 `check, test`
 but assert is more well-known.
 
@@ -2902,7 +2902,7 @@ N - support for decorator at compile and runtime.
 decorator at compile time -> compose the object
 delegated to AOP.
 
-? - support for AOP?
+Y - support for AOP?
 applications of aop: logging, validation, caching, permission check, transaction, monitoring, timing, error handling, 
 `onEntry, onExit, onSuccess, onException` methods of a custom aspect in PostSharp. this aspect handles call of a method.
 `onInvoke` replaces method with custom code.
@@ -2983,15 +2983,15 @@ what if we want to have the same aspect for specific methods of the class?
 solution: define it as a private variable. and `weave {this.var1}` for all related methods.
 note that, type of `this.var1` cannot be same as the current class because it will cause infinite loop.
 
-? - now that we only support method-level weaving, we can use `this` or var of same type because it is only applied to a specific method. we can even support function for weave.
+Y - now that we only support method-level weaving, we can use `this` or var of same type because it is only applied to a specific method. we can even support function for weave.
 `weave {obj1}` weave calls into obj1 methods
 `weave {@OnlyAfter(this.func1)}` a single function will be executed after the current method is finished.
 this will extend meaning of casting. you can cast class A to class B even if method names are not the same.
 
-? - multiple weaves are handled from inner-most to outer-most.
+Y - multiple weaves are handled from inner-most to outer-most.
 first inner-most is applied, on top of which next one. and outer-most is applied on top of all other aspects.
 
-? - support for weave on fields. with read/write methods? -> no support for fields.
+N - support for weave on fields. with read/write methods? -> no support for fields.
 `int x;`
 `weave {MClass} int x;`
 this is totally different than previous one because there is no code for `int x`.
@@ -3008,9 +3008,144 @@ you can mock class A by composing it. you can disable any Aspect by overriding t
 you can test aspect separately because its a separate method
 you cannot and should not be able to test method without aspect
 
-? - casting notation ignores method name when output is a class with just one method and input is `fn` type.
+Y - casting notation ignores method name when output is a class with just one method and input is `fn` type.
 
 N - built-in DI
 maybe it should not be part of the language.
 
+N - Let's remove static instance! its a special instance but we have to be general. and it stops us from having pure functions which is good for concurrency.
+and makes debug and testing hard because after all, its some kind of global variable. 
+we only need two things from static instance: 1) ctor 2) util methods like min/max
+for ctor, we can act like golang. There is no ctor. use can only create an instance, and call methods on it.
+for min/max: instance methods have input to an instance of the struct, static methods don't have it. 
+but we need some namespace mechanism so names won't be clashed. `min` vs `Math.min`
+If we prefix all method (static and instance) calls with class name it can become ugly, because class name can get too long.
+so after this point there is no "STATIC" and "INSTANCE" methods. there is only one type of method: method. that's all.
+`import Math; Math.min(1, 3); Math.max(2, 9);` 
+ok you can use `type` to choose a shorter name. `type M := Math; x = M.max(1,20);`
+but `M` is not a type! maybe it's better to change type keyword too. For example `alias`.
+`alias M := Math; M.max(1,20);`
+q: if we change type to alias, how are we going to implement enum?
+to create instance: `Math mm = $(Math);`
+`Math mm = new Math;`
+`Math mm = Math.create(1, 2, 19);` //calling a method to create a new instance
+q: how does this affect weaving? it doesn't.
+q: this will remove `this` as return type.
+q: this will remove static method-local variables.
+q: how to implement singleton?  don't!
+q: what about expose? it doesn't have anything to do with static.
+promoted methods, need to have appropriate type which may not be easy to find.
+suppose we have `int add(int x, int y, MyClass this, MyClass that)` in class A which is now exposed into class B.
+how can we promote add method?
+we have to rule that first argument type must be of current type, if its instance method.
+if we expose __MyClass all instance methods are duplicated in parent with `this` type udpated and redirecting to exposed field: `int method1(Parent this, int x) :: this.__MyClass.method1(this.__MyClass, x);`
+q: casting? it is a mechanism to filter methods. so when 
+q: weaving? `wave {this.obj1} int f(MyClass this) { return 5;}`
+q: calling normal methods? `int f(MyClass this); myClass.f()`
+maybe we should add separate notation to access tuple field vs. calling instance methods.
+q: interface? an interface is
+`this := { int tt; }`
+`int f() { return 5} //static => int yy = MyClass.f();`
+`int this.f(int r) { return r+this.x} //instance => int ff = myObj.f(66);`
+I prefer to have a simple and clean method name. without prefix or suffix.
+`int f(this, int r) { return r+this.x} //instance => int ff = myObj.f(66);`
+proposal1: files that their name starts with something special, contain only static methods. 
+proposal2: if file has struct section, all methods are instance. else all methods are static.
+let's treat static like instance:`auto m = $(Math); m.max(1, 20);` but this is ugly.
+`Math.max` assumes Math is a static class (file does not have struct).
+q: how can we implement abstract factory, factory method and other design patterns using this?
+all this questions arise because we want to limit developer. it causes difficulty for us and developer.
+why not let him free to do whatever he likes to do?
+can user write pure functions with original state? yes. just don't use external state.
+this applies for static instance and public/private fields.
+
+N - if we remove notation of member function, what happens to static instances?
+maybe, if there is no field in the class definition, then all of it's methods are static by nature.
+```
+struct {}
+int max(int x,int y) {..}
+MyClass = {int x, float f};
+int max(Mylass mc) { return mc.x;}
+```
+but we don't want to loose public/private encapsulation. 
+so each source file can contains a set of fields + methods. 
+methods that have `this` input, are instance (have access to an instance of fields)
+methods that don't have, they dont have access. but they can create a new instance of struct.
+public functions are just normal other functions. so `int f(MyClass mc)` can be called via `f(x)` or `x.f()`.
+no. there should not be two ways to do this. but having a general function like this is really useful. we can send `f` as a fp and call it via: `fp.apply(myInstance, ...);`
+if everyone can call `$()` then it doesn't mean to have static method just to create an instance of a class.
+so in a file we have a tuple + methods. those methods that have their first parameter `this` have access to fields inside the tuple. those with name prefixed with `_` can only be called by methods inside the same file.
+file: tuple + public members + private members + public static + private static.
+static means `this` is not an input. 
+how can we call them?
+`MyClass.public_function(myClass, 1, 2);`
+`MyClass.static_public(1,2,3);`
+how can we make it natural that dev cannot write `obj.field1` or `obj.field3=11`.
+
+
+N - if we force all fields to be private, then the data will be the same between all classes which implement a specific interface.
+```
+int calculate(Intr1 ii) { ...}
+```
+
+N - can we have a new function type? and have function literals?
+`12` is int literal, `{x++}` is fn litearl. no. function literal needs input. its not that simple.
+anon-function is good.
+
+N - good ideas from Haskell: 
+1)define a function body for a specific parameter value:
+fn [] = []
+fn arrayt = ...
+2)create function by calling another function with incomplete input
+add a b = a + b
+foo = add 10
+foo 5 //result will be 15
+`x = (x) -> fn(5, x);` 
+3)create new function by combining two other functions.
+using chain operator .
+foo = (4*) . (10+) 
+`f2 = (x) -> fn(g(4,x), 5, x);` 
+4) head :: [a] -> a 
+a is a type variable. it can be of any type.
+fst :: (a, b) -> a  
+(==) :: (Eq a) => a -> a -> Bool 
+5) ==, +, ... are all functions and you can define your own operators like //
+you can invoke these functions using infix notation
+
+N - define tuple with private fields, and functions starting with _ have access to them.
+what if all fields are private?
+
+? - some ideas that are good to be added to the language but (some of them) will break gen and orth:
+no static instance -> rejected
+no public fields -> rejected
+immutability
+non-nullable data types
+
+? - Like perl mock where we can override a method. no one can change behavior of a class but they can easily expose the class instance and hide some of it's methods. we cannot define this using anon-class because this will require having a field.
+This can be achieved with anon-class based on a template class, but can anon-class have fields?
+to have fields, they have to have contructors. then we need call their ctor. which will need a new syntax.
+```
+//MyClass has some_method method
+TT x = TT<MyClass>.new {
+    int some_method() { return 0; } //override exposed variable behavior
+};
+```
+we can call ctor upon declaration. but this syntax is messy! what is `new` needs inputs?
+we don't need to expose! yes we do. let's assume this: anonmous class is exposing an instance of it's type. That's why we have all methods ready.
+`MyClass mc = MyClass { };`  right side of `=` defines a class without name, which exposese `__MyClass` private variable.
+question is: how is it instantiated? if it is an interface (no fields), it's fine we can ignore this. but according to gen we have to support EVERY class here. in Java they write `x = new MyClass() { methods }`.
+we can write `auto x = MyClass.new(1, 2, 9) { methods };` result will be a class exposing an instance of `MyClass` created using call to new method.
+by this way we can easily create proxy classes.
+for shortcut syntax, the class type is pre-specified and does not have any fields. so compiler can easily handle that.
+`auto x = (a) -> a+1;`
+
+
+? - change `<>` notation for template. `TT<MM>.method` is not beautiful.
+
 ? - replace `::` notation with `=` like scala.
+but it will be confused with fields.
+`int x = 12;`
+`int func = 12;`
+
+
+
