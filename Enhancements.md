@@ -3115,13 +3115,22 @@ you can invoke these functions using infix notation
 N - define tuple with private fields, and functions starting with _ have access to them.
 what if all fields are private?
 
-? - some ideas that are good to be added to the language but (some of them) will break gen and orth:
+N - replace `::` notation with `=` like scala.
+but it will be confused with fields.
+`int x = 12;`
+`int func = 12;`
+
+Y - weave evaluates the expresion so you can put asserts there!
+
+Y - Now if we don't want to support non-nullable data types, lets define `!x` as shortcut for `assert defined x`
+
+N - some ideas that are good to be added to the language but (some of them) will break gen and orth:
 no static instance -> rejected
 no public fields -> rejected
 immutability
-non-nullable data types
+non-nullable data types -> `!` operator
 
-? - Like perl mock where we can override a method. no one can change behavior of a class but they can easily expose the class instance and hide some of it's methods. we cannot define this using anon-class because this will require having a field.
+Y - Like perl mock where we can override a method. no one can change behavior of a class but they can easily expose the class instance and hide some of it's methods. we cannot define this using anon-class because this will require having a field.
 This can be achieved with anon-class based on a template class, but can anon-class have fields?
 to have fields, they have to have contructors. then we need call their ctor. which will need a new syntax.
 ```
@@ -3139,13 +3148,37 @@ by this way we can easily create proxy classes.
 for shortcut syntax, the class type is pre-specified and does not have any fields. so compiler can easily handle that.
 `auto x = (a) -> a+1;`
 
+Y - Current notation for anon-class is not beautiful.
+we want to create a new instance of a class which does not have a body yet!
+and we want it to have member variables (so there must be a ctor).
+we should not limit this to one, if we want to permit it. so anon class can contain any number of members.
+so it will basically be a normal class!
+but what does it mean to define `auto x = Interface1 { method1... }`
+means x is an object of type `Interface1` and we want it to have these methods too?
+this definition is collection of some methods (long-form), so why not define multiple short-form anon-methods?
+`auto x = {method1:(x) -> x+1, method2: (y) -> y+2} ` ?
+then how can we mock an object? we want to define an anon-class which exposes variable of type MyClass, and overrides one or more of it's methods. 
+Let's break it into two parts: 1. define var 2. add methods
+but it will make things more complex.
+```
+int g = 11;
+auto X = {
+    MyClass __x;
+    auto new :: #;
+    
+    int method1() { return 5;}  //hiding promoted method of MyClass
+    //we don't have access to static instance here because class does not have a name
+    //only this. this.g (or this.g()) has a value of 11.
+};  //X will be the static instance of the defined class
+auto x_instance = X.new
+```
+this is more gen and orth and elegant. 
+what about closure? inside this class we have a `this` which has some methods returning closure variables.
+
+? - make expose notation more explicit.
 
 ? - change `<>` notation for template. `TT<MM>.method` is not beautiful.
 
-? - replace `::` notation with `=` like scala.
-but it will be confused with fields.
-`int x = 12;`
-`int func = 12;`
+? - Haskell like syntax to define operators: include the operator name and let user define his own operators like `:><`
 
-
-
+? - Again: Immutability, how to enforce? How to help developer write it? how to check at compile time?
