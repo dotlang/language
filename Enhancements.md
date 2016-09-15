@@ -2877,6 +2877,17 @@ what about notation?
 `int field ~ accessor;`
 `int field {accessor};`
 `int field [accessor];`
+but if we deinfe above `int x >> px;` and implement getter and setter, what will be the purpose of `>>` notation?
+if we have `int >> px; int px() { return this.x;} void px(int x) { this.x = x;}` then `>> px;` part is not needed.
+we will have redundancy and code will not be readable.
+proposal1: compiler error. means, you CANNOT define both >> and relevant methods.
+so, if you want compiler to write getter/setter for you, just add `int x >> dsa` but if you want to implement it yourself, don't add >> and write methods.
+but the whole advantage of property is when you write some code for it (lazy loading, validation, ...)
+can we achieve this using aop?
+`weave {abcd} int x;`
+or like C#:
+`int x { get {return value;} set{x=value;}}`
+we can achieve lazy loading with a no-input function. 
 
 ? - remove `throw` and solely rely on assert.
 `throw x` == `assert false:x;`
@@ -2885,6 +2896,7 @@ we have redundancy.
 
 ? - replace assert with a shorter keyword.
 `check, test`
+but assert is more well-known.
 
 N - support for decorator at compile and runtime.
 decorator at compile time -> compose the object
@@ -2990,8 +3002,15 @@ solution1: still apply to custom impl methods -> code is not readable.
 solution2: force dev to explicitly declare weavers. does not make sense and is ambiguous. what if he defined a different weave? which one will be used? both? this is source of ambiguity. 
 we LET developer to define weaves but it will not override weave defined upon prop decl.
 a better solution: do not let dev to declare weave on prop. if you need weave, declare your impl of getter/setter and weave there. so: weave is not supported on fields. only methods which are implemented. even for auto-implemented getter/setter you cannot weave.
+>> AOP and mocking
+you can mock class A by composing it. you can disable any Aspect by overriding the method.
+>> AOP and testing
+you can test aspect separately because its a separate method
+you cannot and should not be able to test method without aspect
 
 ? - casting notation ignores method name when output is a class with just one method and input is `fn` type.
 
 N - built-in DI
 maybe it should not be part of the language.
+
+? - replace `::` notation with `=` like scala.
