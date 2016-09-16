@@ -185,7 +185,7 @@ You can use select to read/write from/to blocking channels.
 Denote method is implemented by runtime or external libraries.
 
 ###defined
-`if ( defined x)` returns true if x is nil.
+`if ( defined x)` returns true if x is default instance.
 
 
 ###typename
@@ -228,16 +228,18 @@ float get_pi_value() { return 3.14;}
 
 int func1(int y) { return this.x + y; }
 func2 :: this.func1;  //redirect calls to func1, methods must have same/compatible signature
+:: this.func5;  //same as above but left side of :: has the same name as right side
 //for any more complex case, write the body.
 ff :: MyClass.function2; //assign function to a function from static instance of another class
 //note that you can only "assign" to a function, when declaring it.
 func3 :: this.func2;  //compiler will infer the input/output types for func3 from func2 signature
-MyClass new() return #();  //new is not part of syntax. You can choose whatever name you want,
+this new() return alloc();  //new is not part of syntax. You can choose whatever name you want,
 
 ```
 - Any class without fields is immutable from compiler's perspective (this includes primitive types). This will help runtime to optimize the code. 
 - Class members (fields, methods and types) starting with underscore are considered private and can only be accessed by methods of the same class. So `obj._x` is ok if the code is inside the class type of `obj`.
-- Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer.
+- Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer. Ctor returns `this` which basically of the same type as the current class. The only difference is that you can call it on the default instance: `MyClass mc = $MyClass.my_ctor(10, 20)`. You cannot use `this` inside ctor because they may be called on the default instance.
+- If class does not have a ctor, compiler will generate a default no-input ctor, named `new`. You can call it by `auto x = $MyClass.new`.
 - You can not have multiple methods with body with the same signature in a single class. 
 - You can define optional arguments: `int f(int x,int y=1)` the value must be a literal or undef.
 - When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`). `this` is not re-assignable variable so you cannot re-assign it.
@@ -247,14 +249,20 @@ MyClass new() return #();  //new is not part of syntax. You can choose whatever 
 - **Variadic functions**: `bool bar(int... values)`. values will be an array of int.
 - Method argument names or local variables cannot start with underscore. 
 - You can call a method with arg names: `myClass.myMember(x: 10, y: 12);`
-- `#()` allocates memory for a new instance of the current class. `#(4)` will allocate 4 bytes of memory (used for primitive data types where there is no field defined, e.g. Int).
+- `alloc{};` allocates memory for a new instance of the current class. `alloc{4};` will allocate 4 bytes of memory (used for primitive data types where there is no field defined, e.g. Int).
 - `f :: g`, when g is name of a method, is a shortcut for `out f(all_inputs) { return g(all_inputs); }`. You cannot change any input/output when calling g. if `g` is name of a field or literal, then `f :: g` means `g_type f() { return g;}`. Note that no `()` or output type needs to be specified for function redirection. You can use this notation when output of function is only a expression (`return expression`). `f(int x) :: x+1;`. When using `::` you should not specify output type because it will be inferred by compiler.
-- Using `::` notation you can simplify calling long named methods: `auto p :: core.io.screen.printf;`
-- Simplest constructor: `auto new :: #;`
+- Using `::` notation you can simplify calling long named methods: `p :: core.io.screen.printf;`
+- If name of our function is same as right side of `::` we can ignore it: `:: core.io.screen.printf` defined printf method in the current class.
+- Simplest constructor: `new :: alloc{};`
+- You can define ctor methods on the default instance or on normal instances.
+- You can define public or private ctors.
 - Including parantheses is optional when calling a function which has no inputs. 
 - When you are assigning value to fields upon declaration, you don't have access to `this` or the static instance. So either you need to use literals or call outside methods.
 - Functions should have an output type (there is no `void`). If they don't return anything, you can use `this` as their return type which means current class. If a function is defined using `this`, compiler will automatically add `return this` to the function.
 - method-local variables which start with `_` are static (they preserve value between two calls). 
+- We can have `INum create(INum a, INum b) { if(x) return a.new() else return return b.new();}`
+and call it: `auto x = create($ComplexNumber, $NormalNumber);`
+
 
 ##Operators
 
@@ -269,9 +277,9 @@ Classes can override all the valid operators on them. `int` class defines operat
 
 - `=` operator, makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. If you want to clone, you need to use custom methods (e.g. `int x = int.new(y);`). You cannot override this operator.
 - `x ?? 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
-- `x == y` will call `equals` method, which by default compares field-by-field values but classes can override this. If you need to compare references, you can use `$ref(x) == $ref(y)` where `ref` is unique-id class in core. 
-- `&x` is a short-cut for `assert defined x;` which can be used to ensure x is not `nil`.
-- `~x` creates a clone of x. so you can write `auto y = ~x` and y will point to a copy of x.
+- `x == y` will call `equals` method, which by default compares field-by-field values but classes can override this. 
+- `&x` is a short-cut for `assert defined x;` which can be used to ensure x is not default instance.
+- `~x` creates a shallow clone of x. so you can write `auto y = ~x` and y will point to a copy of x.
 - `^x` returns unique ref-id of the object. so you can write `if(^x == ^y)` and be sure references will be compared.
 
 ##Special syntax
@@ -279,7 +287,7 @@ Classes can override all the valid operators on them. `int` class defines operat
 - `_` input place-holder for anon-func
 - `()` for defining tuple literals and function call
 - `$` for casting and undef
-- `#` instantiation
+- `alloc` instantiation
 - `@` for annotations
 - `:` for hash literal, loop, call by name, array slice and tuple values
 - `%` template syntax
@@ -296,7 +304,7 @@ this, true, false
 ###Exposure
 
 - A field starting with `__` will be promoted/exposed. 
-- An exposed field's public members will be soft-copied at compile-time. This means, if there is a member (field or method) with the same name in main class, it won't be copied (main class members always win).
+- An exposed field's public members will be soft-copied at compile-time (includng ctors). This means, if there is a member (field or method) with the same name in main class, it won't be copied (main class members always win).
 - If you expose two classes that have a public fields with the same name, you must define a field with that name in main class (or else there will be a compiler error). 
 - You can hide/remove an exposed method by adding same method with/without body.
 - You can rename an exposed method by removing it and adding your own method.
@@ -334,18 +342,18 @@ Later you can extract annotations in the form of: `List<Annotation>` where `Anno
 
 ###Casting
 - `$myclass(my_obj)` is the casting operator and returns empty/undefined/not-initialized if myObj cannot be casted to myclass. Compiler will try 3 options for casting: first if `my_obj` conforms to `myclass` it will be casted without change in the data (means `my_obj` has all fields and methods that `myclass` has specified). second, looks for a method called `myclass` defined in `my_obj` (This method will convert `my_obj` instance to an instance of `myclass`). third, looks for reverse: a method called `ObjType` in `myclass` static instance (ObjType is type of `my_obj` and this method will crete a new instance of myclass using given `ObjType` instance). All these options will be checked at compile time.
-- Example: Converting MyClass to YourClass: `yclass = #YourClass(mclass);`
+- Example: Converting MyClass to YourClass: `yclass = $YourClass(mclass);`
 1) call `mclass.YourClass` method: `yclass = mclass.YourClass();`
 2) call `YourClass.MyClass` static constructor method: `yclass = YourClass.MyClass(mclass);`
 - The only case where `<` and `,` is allowed in method name is for above purpose. 
 - `float f; int x = $int(f);` this will call `int` method on class `float` to do casting. This can be called automatically by compiler if needed. For template types (like array or hash), you should name the function according to full-name not short-name (`Array<char>` instead of `char[]`).
-- empty/undefined/not-initialized state of a variable is named "undef" state and is shown by `nil`.
-- Value of a variable before initialization is undef which is denoted by `nil`.
-- You can also return `nil` when you want to indicate invalid state for a variable.
-- Calling a method or field on a `nil` object, gives you `nil`. Settings field value for `nil` object does nothing.
+- empty/undefined/not-initialized state of a variable is named "default" state and is shown by `$MyClass` which is a shortcut for casting nothing to MyClass: `$MyClass()`.
+- Value of a variable before initialization is default.
+- You can also return `$MyClass` when you want to indicate invalid state for a variable.
+- Calling a method or field on a default object, returns default instance of the output type (except for ctors). Settings field value for default object does nothing.
 - When input of cast is `fn` type and output is a class with just-one name, runtime will handle the name change.
 
-###Undef
+###Default instance
 ###Aspects
 You can prefix a method, with a set of `weave` keywords each with an expression which specifies a set of methods to be called before/after/around/... of the current method.
 ```
@@ -356,6 +364,7 @@ weave {MyClass.new} int f() { return 5;} //create a new instance per each call
 ```
 - you can combine weaves and they will be applied from outer-most to inner-most
 - Weave expression is evaluated and checked for appropriate functions by compiler. So you can include any expression including assertions. These will be run before function run: `weave {assert x>0}`
+- For example you can write a weave to retry method call 3 times in case of exception.
 
 ###Instantiation
 ###Tuples
@@ -382,7 +391,7 @@ int x = f((x:1, f:1.1)); //calling above function
 ```
 
 Tuples are automatically converted to classes by compiler. So they are basically classes but only have a fields section (without any assignment) with all-public fields and no methods. 
-- Note that you can assign `nil` to a tuple.
+- Note that you can assign default to a tuple.
 
 ###Anonymous classes `->`
 
@@ -430,8 +439,8 @@ auto X = {
     int method1() { return 5;}  //hiding promoted method of MyClass
     //we don't have access to static instance here because class does not have a name
     //only this. this.g (or this.g()) has a value of 11.
+    this new() { return alloc; }
 };  //X will be the static instance of the defined class
-auto x_instance = X.new
 ```
 
 *Closure*: All anonymous function and classes, have a `this.__closure` which will point to a set of methods for each of the variables in enclosing method (including input arguments and `this` as the container class). These methods will be promoted if possible (no method with the same name is defined).
@@ -441,6 +450,7 @@ auto x_instance = X.new
 - Note that if the type contains methods with bodies, you cannot define anon-class (short or long form) based on it.
 - Anon-class can contain fields.
 - By using anon-class you can mock another class and hide/change one or more of it's methods.
+- In the long form, if class needs a ctor, it must be named `new`.
 
 
 ###Templates
