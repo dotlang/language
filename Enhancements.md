@@ -3477,15 +3477,33 @@ why add this we it can easily be implemented using private field?
 
 Y - can extension methods file contain fields?no.
 
-? - how can we mock ctor?
-create a new class, expose MyClass. write your own ctor.
-but when they call `$MyClass.new` it will be sent to MyClass.
-like Perl mock a module.
-
-? - we should separate short and long form for anon. because they behave differently.
+Y - we should separate short and long form for anon. because they behave differently.
 short-form should be renamed to lambda or something like that.
 long-form -> anon-class.
 if we name them both as anon-class gen will be hurt because one form does not need instantiation the other needs.
 
-? - Shall we return `struct` to make things more tidy in the source code file?
+\* - maybe later in core we add some helpers for mocking.
+
+N - how can we mock ctor?
+create a new class, expose MyClass. write your own ctor.
+but when they call `$MyClass.new` it will be sent to MyClass.
+like Perl mock a module.
+don't! just pass an instance.
+
+Y - Shall we return `struct` to make things more tidy in the source code file?
+
+Y - using extension methods can make code confusing. adding new methods to an interface.
+then cast won't work!
+just consider `.x.e` continuation of the original file without access to private fields.
+this shouldn't cause a problem.
+
+Y - having two extensions is not good. its confusing.
+why not name it same as original file?
+`MyClass.e` can contain the original class or extension methods.
+difference? the original class file contains `struct` section. 
+what if ext file has struct too? methods will have access to internal struct + publics of the other struct.
+and dev is responsible for name clash. 
+
+
+
 
