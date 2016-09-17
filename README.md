@@ -211,10 +211,11 @@ Writing body for methods is optional (but of course if a body-less method is cal
 
 ```
 //you can define class fields only in struct section
+//note that all class fields are accessible only by class methods.
 struct {
 int _x = 12;  //private
 int qq = 19;  //public
-int qw = this.qq //WRONG! there is no `this`
+int qw = this@qq //WRONG! there is no `this`
 
 int h = 12;
 int gg;
@@ -236,12 +237,12 @@ this new() return alloc();  //new is not part of syntax. You can choose whatever
 
 ```
 - Any class without fields is immutable from compiler's perspective (this includes primitive types). This will help runtime to optimize the code. 
-- Class members (fields, methods and types) starting with underscore are considered private and can only be accessed by methods of the same class. So `obj._x` is ok if the code is inside the class type of `obj`.
+- Class members (methods and types) starting with underscore are considered private and can only be accessed by methods of the same class. So `obj._x` is ok if the code is inside the class type of `obj`.
 - Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer. Ctor returns `this` which basically of the same type as the current class. The only difference is that you can call it on the default instance: `MyClass mc = $MyClass.my_ctor(10, 20)`. You cannot use `this` inside ctor because they may be called on the default instance.
 - If class does not have a ctor, compiler will generate a default no-input ctor, named `new`. You can call it by `auto x = $MyClass.new`.
 - You can not have multiple methods with body with the same signature in a single class. 
 - You can define optional arguments: `int f(int x,int y=1)` the value must be a literal or undef.
-- When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this.x = 12` instead of `x = 12`). `this` is not re-assignable variable so you cannot re-assign it.
+- When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this@x = 12` instead of `x = 12`). `this` is not re-assignable variable.
 - When a variable is in undefined state and we call one of it's type's methods, the method will be called normally with empty `this`. If we try to read it's fields, it will crash.
 - If a method has no body, you can still call it and it will return undef. You can also call methods on an undef variable and as long as methods don't need `this` fields, it's fine.
 - `int f(int x) return x+1;` braces can be eliminated when body is a single statement.
@@ -260,6 +261,7 @@ this new() return alloc();  //new is not part of syntax. You can choose whatever
 - Functions should have an output type (there is no `void`). If they don't return anything, you can use `this` as their return type which means current class. If a function is defined using `this`, compiler will automatically add `return this` to the function.
 - We can have `INum create(INum a, INum b) { if(x) return a.new() else return return b.new();}`
 and call it: `auto x = create($ComplexNumber, $NormalNumber);`
+- All class fields are private. They don't need a prefix.
 
 
 ##Operators
@@ -281,12 +283,13 @@ Classes can override all the valid operators on them. `int` class defines operat
 - `^x` returns unique ref-id of the object. so you can write `if(^x == ^y)` and be sure references will be compared.
 
 ##Special syntax
+- `@` for field access
 - `->` for lambda expression
 - `_` input place-holder for anon-func
 - `()` for defining tuple literals and function call
 - `$` for casting and undef
 - `alloc` instantiation
-- `@` for annotations
+- `[[ ]]` for annotations
 - `:` for hash literal, loop, call by name, array slice and tuple values
 - `%` template syntax
 - `:=` type alias and typename
@@ -310,11 +313,11 @@ this, true, false
 ```
 //contained class
 %fn(int) m1;  
-int method1() = this.m1;  //method1 is redirected to m1, we can even remove this and only use m1
+int method1() = this@m1;  //method1 is redirected to m1, we can even remove this and only use m1
 this new(%fn(int) m) return alloc{};  //construct an instance using given value
 
 //container class
-this.__member = MyClass.new(this.implementation);  //pass my method as an implementation 
+this@__member = MyClass.new(this.implementation);  //pass my method as an implementation 
 ```
 
 - In expose, you don't have access to private members of exposed object.
@@ -323,12 +326,11 @@ this.__member = MyClass.new(this.implementation);  //pass my method as an implem
 
 ###Annotations
 You can annotate a class, field or method with this syntax:
-`@custom_name{key1:value1, key2:value2, ...}`
+`[[custom_name{key1:value1, key2:value2, ...}]]`
 custom_name is whatever you want. value(i) is optional and is assumed to be true if omitted.
 for example:
-`@json{ignore} int x;`
-Later you can extract annotations in the form of: `List<Annotation>` where `Annotation` is a tuple of `(name:string, hash_args)`.
-
+`[[json{ignore}]] int x;`
+Later you can extract annotations for a member in the form of: `List<Annotation>` where `Annotation` is a tuple of `(name:string, hash_args)`.
 
 ###Array and slice
 
@@ -357,7 +359,7 @@ You can prefix a method, with a set of `weave` keywords each with an expression 
 ```
 #weave {obj1} int f(int x) { return x;} //function members of obj1 named before, after, around, ... will be called if they are defined
 #weave {@OnlyAfter(obj1)} int f(} { return 5;} //obj1 is cast to OnlyAfter interface. so only it's after method will be called.
-#weave {this.obj1} int f() { return 5;} //the weave code is result of evaluation of the expression. so in this case this.obj1 will be re-used for all call
+#weave {this@obj1} int f() { return 5;} //the weave code is result of evaluation of the expression. so in this case this@obj1 will be re-used for all call
 #weave {MyClass.new} int f() { return 5;} //create a new instance per each call
 ```
 - you can combine weaves and they will be applied from outer-most to inner-most
@@ -388,9 +390,10 @@ int f((int x, float f) input) ... //passing tuple to function
 int x = f((x:1, f:1.1)); //calling above function
 ```
 
-Tuples are automatically converted to classes by compiler. So they are basically classes but only have a struct section (without any assignment) with all-public fields and no methods. 
+Tuples are just like an array but with a limited number of variables with different types. They are not real classes. 
 - You cannot assign default instance for a tuple because they don't have names (using Type gives them alias but not name).
 - You can have a tuple with all of it's fields being default instance.
+- The notation to access tuple members is `tuple[member]` so for above example, we can write: `int age = x[age];`
 
 ###Lambda expression
 
@@ -462,6 +465,7 @@ auto Y = X.mynew();
 - Each file has access to it's own private members + public members of the other files (whic it has imported).
 - You can even define ctor in extension methods.
 - Note that using this feature can be dangerous as developer can modify an interface and afterwards, all casting will be broken to that interface.
+- You cannot define fields or ctor in extension methods file.
 
 ###Templates
 In a class file you can use `typename` keyword, to indicate that the user of the class has to provide type names at compile time:
