@@ -205,18 +205,20 @@ Writing body for methods is optional (but of course if a body-less method is cal
 *Notes:*
 - There is no inheritance. Composition is used instead.
 - If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is public.
-- The order of the contents of source code file matters: First `import` section, `type` section, fields and finally methods.
+- The order of the contents of source code file matters: First `import` section, `type` section, `struct` and finally methods.
 
 ###Class members
 
 ```
+//you can define class fields only in struct section
+struct {
 int _x = 12;  //private
 int qq = 19;  //public
 int qw = this.qq //WRONG! there is no `this`
 
 int h = 12;
 int gg;
-
+}
 //below we simulate const!
 float PI() { return 3.14; } //calling obj.PI() is same as obj.PI because PI method does not have any input
 PI :: 3.14;  //another way to implement above
@@ -279,7 +281,7 @@ Classes can override all the valid operators on them. `int` class defines operat
 - `^x` returns unique ref-id of the object. so you can write `if(^x == ^y)` and be sure references will be compared.
 
 ##Special syntax
-- `->` for anonymous class declaration
+- `->` for lambda expression
 - `_` input place-holder for anon-func
 - `()` for defining tuple literals and function call
 - `$` for casting and undef
@@ -386,18 +388,15 @@ int f((int x, float f) input) ... //passing tuple to function
 int x = f((x:1, f:1.1)); //calling above function
 ```
 
-Tuples are automatically converted to classes by compiler. So they are basically classes but only have a fields section (without any assignment) with all-public fields and no methods. 
+Tuples are automatically converted to classes by compiler. So they are basically classes but only have a struct section (without any assignment) with all-public fields and no methods. 
 - You cannot assign default instance for a tuple because they don't have names (using Type gives them alias but not name).
 - You can have a tuple with all of it's fields being default instance.
 
-###Anonymous classes `->`
+###Lambda expression
 
-You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface specifying one or more empty functions. If the interface has only one method, the definition can be in short form and it is basically a function pointer. There is a general purpose template class `fn` which is used by compiler to set type of anon-class literals if type is to be inferred.
-Note that when writing anon-class, we are creating a new class on the fly, and for short-form instantiate it at the same time. You can use short-form if class has only one method and no fields. Otherwise you should use long-form. 
+Lambda expression provides a short-cut to define an object with only one method, which possibly returns an expression. You can specify a type (A class with only one method) for Lambda expression which will be used to infer type of input/output of the expression.
 
-Short-form:
 ```
-//short form, when interface has only one method
 Interface1 intr = (int x, int y) -> x+y;  //specifying type for input is optional
 auto ab = (int x) -> x+y; //type will be fn<int, int>
 Interface2 ac = _+1;  //Interface2 has only one method which has only one input. for the input we use place-holder
@@ -424,8 +423,14 @@ auto xp = (int x, int y) -> x+y;  //again compiler will assign appropriate fn in
 //if returning multiple values, it will be an anonymous class
 auto xp = (int x, int y) -> return (a:1, b:3); //type of xp will be fn<(int, int), int, int>
 ```
+- Note that you can use `object.method` notation as an object with only one method pointing to the implementation.
 
-Long-form: Result of a long-form definition, is the nil instance of the anonymous-class. You can call defined ctors (or default if there is not any), to create concrete instances.
+###Anonymous class
+
+You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface specifying one or more empty functions. If the interface has only one method, the definition can be in short form and it is basically a function pointer. There is a general purpose template class `fn` which is used by compiler to set type of anon-class literals if type is to be inferred.
+Note that when writing anon-class, we are creating a new class on the fly, and for short-form instantiate it at the same time. 
+
+Result of a this definition, is the default instance of the anonymous-class. You can call defined ctors (or default if there is not any), to create concrete instances.
 ```
 //long form, we can expose a variable which will construct public methods of the anon-class
 int g = 11;
@@ -451,10 +456,12 @@ auto Y = X.mynew();
 - In the long form, if class needs a ctor, it must be named `new`.
 
 ###Extension methods
-- Members of MyClass class are defined in `MyClass.e` file
-- Extension methods of MyClass are defined in `MyClass.x.e` file. There can be multiple files in different directories. When you import those packages, all extension methods will become member of MyClass class.
-- Note that extension methods dont have access to private variables.
+- Members of MyClass class are defined in `MyClass.e` file.
+- There can be more than `MyClass.e` file in list of imported packages. Each of them can have their own sutrct + methods.
+- When using `MyClass` in the code, compiler will merge all of them into one class.
+- Each file has access to it's own private members + public members of the other files (whic it has imported).
 - You can even define ctor in extension methods.
+- Note that using this feature can be dangerous as developer can modify an interface and afterwards, all casting will be broken to that interface.
 
 ###Templates
 In a class file you can use `typename` keyword, to indicate that the user of the class has to provide type names at compile time:
@@ -469,7 +476,7 @@ V get(K key) ...
 ```
 This is how collections and ... will be implemented in core.
 
-Note that `typename` section must come before fields section.
+Note that `typename` section must come before struct section.
 For each tempalte class like `Stack`, there is a base interface class `Stack` which is equal to the class definition minus everything related to typenames (declaration, usage, ...) which is created by the compiler. According to definition, all template class instances, conform to this base interface. This means `Stack` is the base interface for `%Stack(int), %Stack(float)` and all other stacks and if you need to write a method accepting any stack you can use it: `void getStack(Stack s)`. 
 Note that `Stack` is not the same as `%Stack` which has type set to it's default.
 - When creating instances of template class you can explicitly speciy type name: `%Stack(T:int, V:float)`
