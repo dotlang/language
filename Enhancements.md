@@ -3504,6 +3504,94 @@ difference? the original class file contains `struct` section.
 what if ext file has struct too? methods will have access to internal struct + publics of the other struct.
 and dev is responsible for name clash. 
 
+N - what if we expose x which is exposing y. Y has some empty methods but they are no longer empty according to x. they have a redirection code to y.
+maybe we need some mechanism for interface inheritance and another for class composing.
+```
+///X.e
+int f();
 
+//Y.e
+X __x;
+//so we will have this written by compiler: 
+int f() { return __x.f(); }
+
+//Z.e
+Y __y;
+//so we will have:
+int f() { return __y.f();}
+//but we want to implement X interface here
+int f() { return 11; }
+//above is ok, it will stop promoting X's f method.
+```
+we should not be exposing an interface to implement it's methods. just implement them! 
+although exposing does not make any trouble.
+
+Y - Can we force classes to define all fields as private?
+then shall we prefix them all with `_`?
+for methods this is good I think. but we can just state that fields are not public.
+so if we expose MyClass, it's fields won't be promoted. only public methods.
+
+Y - shall we have different syntax for field access vs. method access?
+especially if fields get private by default.
+`this#field1` good.
+`this!field1`
+`this>field1`
+`[this field1]`
+`this[field1]`
+maybe we should use something else, not this.
+`struct.field1` anyway using dot notation is not good.
+it's better if its a single char without needing shift key.
+`this/field1`
+`struct.field1`
+no it will be confusing.
+`this_field1` no.
+why not use something instead of this and keep dot?
+`this@field1` - then what about annotations? 
+we can use c# mode: `[title(key=value,...)]`
+or C++: `[[title(key=value, key=value,...]]` - this one is more clear. 
+
+note that `this!field1!field2` is not allowed.
+what about tuple?
+we are accessing fields.
+`type myt := (int x, float f);myt m; m.x=11;`
+
+N - we can have: `this@cache[t]@field1` but its fine.
+
+N - Need to better think about what a tuple is.
+do we really need it?
+how is it created? what is it's ctor?
+can it compose something?
+`type myt := (int x, float f);myt m; m.x=11;`
+what is value of `m` after definition? can we even use `m` anywhere?
+
+Y - shall we use `[]` notation for tuple, instead of `@`?
+`type myt := (int x, float f);myt m; m[x]=11;`
+this somehow indicates it is not a class. but something like a hash-table.
+
+N - can we compose something without promoting? just as an indication that we want to implement X in our class but dont need auto-definitions made by the compiler.
+
+Y - What happens to ctor if we have two MyClass.e files both having private fields?
+maybe we can ban defining ctor in extension methods.
+
+? - immutability by default?
+http://www.yegor256.com/2014/11/20/seven-virtues-of-good-object.html
+
+? - we can remove struct because we simply enforce ordering of fields in the class. let's decrease indentations.
+
+? - in the current pure OOP method, we may need to define a lot of classes.
+e.g. Printer, NoNullPrinter, ...
+shall we use keyword `class`? if so, maybe we can go like golang, and it will make adding extension methods much more clearer?
+so instead of class, we use struct.
+```
+struct MyClass { int x;}
+int MyClass.f(int t) { return t+this@x; }
+//in another file
+import MyClass;
+int MyClass.g(int y) { return y+this@x+this.f(10); }
+```
+what about interface? `interface x { method definitions; }`
+we can have interface inheritance without complex syntax of composing: `interface A:x, y, z { methods }`
+what about :: notation?
+ctor: `this MyClass.new(int t) { return alloc{}; }`
 
 
