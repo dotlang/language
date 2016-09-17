@@ -3475,10 +3475,17 @@ N - can these ctor use static field? shall we keep static fields?
 `int this._x`
 why add this we it can easily be implemented using private field?
 
+Y - can extension methods file contain fields?no.
+
 ? - how can we mock ctor?
 create a new class, expose MyClass. write your own ctor.
 but when they call `$MyClass.new` it will be sent to MyClass.
 like Perl mock a module.
 
+? - we should separate short and long form for anon. because they behave differently.
+short-form should be renamed to lambda or something like that.
+long-form -> anon-class.
+if we name them both as anon-class gen will be hurt because one form does not need instantiation the other needs.
 
+? - Shall we return `struct` to make things more tidy in the source code file?
 
