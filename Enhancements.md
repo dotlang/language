@@ -3410,11 +3410,20 @@ yes.
 
 Y - now that we have ref operator, let set default behavior of `==` to compare data.
 
+Y - better name for `nil` instance.
+default instance - good
+empty instance
 
+Y - For :: if name of f and g is the same, let dev omit f name. 
 
+Y - `#` notation is really ugly. lets find a keyword for this.
+`this new() { auto result = #; result.x=12; return result;}`
+`alloc`  - good, for now
+`new`
+`birth`
+`construct`
 
-
-? - extension method. how to handle utility classes like abs/min/max?
+Y - extension method. how to handle utility classes like abs/min/max?
 for abs, we can add it to int. or have extension methods like C#. so we can extend these types with their new responsibility insted of adding new util class.
 how can we write an extension method in a simple and readable and elegant manner?
 `int f(auto this, int x) { return x+this.y}`  //in MyClass file
@@ -3436,32 +3445,7 @@ Maybe we have multiple extension method files, but they cannot reside in the sam
 somehow this is like partial classes in C#. we are putting implementation of MyClass into multiple files.
 MyClass.e methods have access to private members. others have only access to public members.
 
-
-? - can these ctor use static field? shall we keep static fields?
-
-? - can we assign default for a tuple?
-
-Y - better name for `nil` instance.
-default instance - good
-empty instance
-
-Y - For :: if name of f and g is the same, let dev omit f name. 
-
-? - `#` notation is really ugly. lets find a keyword for this.
-`this new() { auto result = #; result.x=12; return result;}`
-`alloc`  - good, for now
-`new`
-`birth`
-`construct`
-
-? - replace weave with `#weave`
-
-
-? - how can we mock ctor?
-create a new class, expose MyClass. write your own ctor.
-but when they call `$MyClass.new` it will be sent to MyClass.
-
-? - how does new ctor affect anon-class?
+Y - how does new ctor affect anon-class?
 it cannot have nil instance. because it does not have a name. `$MyClass`?
 for the short-form, there is no field so we can say compiler handles everything behind the scene.
 `auto f = (x) -> (x+1);` - f is an instance of a class which has only this method. no ctor, no nil instance.
@@ -3469,10 +3453,32 @@ for the short-form, there is no field so we can say compiler handles everything 
 proposal1: by default anon-class should have a `this new()` ctor to be called by compiler.
 proposal2: we can assume `f` is the nil instance and call methods on it. so `auto g = f.myctor(11)`. but this makes the code longer.
 proposal1 is better. if there is no `new` method, default ctor will be created and called.
+proposal2 is more general. dev needs to write one more line but we remove restrictor for name of ctor in anon-class.
 
-
-? - can we write extension methods as ctor?
+Y - can we write extension methods as ctor?
 should be possible. we are trying hard to make ctor just a normal method. 
 the only difference is output type which is some kind of marker for developer (this is a ctor!) and for compiler (this can be called on nil instance).
+
+Y - can we assign default for a tuple? ans: no. should not be possible.
+`auto x = (age:12, days:31); `
+`(int x, float f) func1() { return (1, 2.3); }`
+`type myt := (int x, float f);`
+`myt func1(){ return (x: 1, f: 1.1); }`
+should be possible to have gen. but how? if tuple has no name, its not possible.
+`myt x;` what is value of x? it is a tuple containing two fields both of which are default instance.
+tuples dont need ctor and dont have a name. 
+
+Y - replace weave with `#weave`
+
+N - can these ctor use static field? shall we keep static fields?
+`int _x;`
+`int this._x`
+why add this we it can easily be implemented using private field?
+
+? - how can we mock ctor?
+create a new class, expose MyClass. write your own ctor.
+but when they call `$MyClass.new` it will be sent to MyClass.
+like Perl mock a module.
+
 
 
