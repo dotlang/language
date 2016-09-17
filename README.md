@@ -64,7 +64,7 @@ In the above examples `core.sys, core.net, core.net.http, core.net.tcp` are all 
 - **Adressing**: Each type, field or method can be address in the format of `A.B.(...).D` where `A`, `B` and other parts are each either name of a package, class or field. The last part `D` is name of the field or method or type which is being addressed.
 
 ##Keywords
-Electronc has a small set of basic keywords: `if, else, switch, assert, for, break, continue, return, defer, type, import, auto, import, select, native, defined, typename`.
+Electronc has a small set of basic keywords: `if, else, switch, assert, for, break, continue, return, defer, type, import, auto, import, select, native, defined, typename, alloc`.
 
 
 
@@ -128,7 +128,7 @@ assert false, "Error!";  //throw exception and exit
 defer(exc) { ... }
 defer(out, exc) { ... }
 
-defer(out) { if ( out != #int() ) out++; }  //manipulate function output
+defer(out) { if ( out != $int ) out++; }  //manipulate function output
 defer(out) assert out>0;  //post-condition check
 ```
 
@@ -202,8 +202,6 @@ for templates
 Each source code file represents one class and has two important parts: part where fields are defined, and method definition.
 Writing body for methods is optional (but of course if a body-less method is called, nothing will happen and an empty response will be received). Classes with no method body are same as interfaces (or abstract class with all methods marked as virtual) in other languages but in Electron we don't have the concept of interface.
 
-Each class's instances can be referenced using instance notation (`varName.memberName`), or you can use static notation (`ClassName.memberName`) which will refer to the special instance of the class (static instance). There is an static instance for every class which will be created by compiler upon first usage in the code and is not re-assignable.  
-
 *Notes:*
 - There is no inheritance. Composition is used instead.
 - If a class name (name of the file containing the class body) starts with underscore, means that it is private (only accessible by other classes in the same package). If not, it is public.
@@ -216,7 +214,6 @@ int _x = 12;  //private
 int qq = 19;  //public
 int qw = this.qq //WRONG! there is no `this`
 
-int y = MyClass.data  //WRONG: upon creation of the static instance, `MyClass` is same as `this` which is not available
 int h = 12;
 int gg;
 
@@ -230,7 +227,7 @@ int func1(int y) { return this.x + y; }
 func2 :: this.func1;  //redirect calls to func1, methods must have same/compatible signature
 :: this.func5;  //same as above but left side of :: has the same name as right side
 //for any more complex case, write the body.
-ff :: MyClass.function2; //assign function to a function from static instance of another class
+ff :: this.function2; //redirect to another function
 //note that you can only "assign" to a function, when declaring it.
 func3 :: this.func2;  //compiler will infer the input/output types for func3 from func2 signature
 this new() return alloc();  //new is not part of syntax. You can choose whatever name you want,
@@ -257,9 +254,8 @@ this new() return alloc();  //new is not part of syntax. You can choose whatever
 - You can define ctor methods on the default instance or on normal instances.
 - You can define public or private ctors.
 - Including parantheses is optional when calling a function which has no inputs. 
-- When you are assigning value to fields upon declaration, you don't have access to `this` or the static instance. So either you need to use literals or call outside methods.
+- When you are assigning value to fields upon declaration, you don't have access to `this`. So either you need to use literals or call outside methods.
 - Functions should have an output type (there is no `void`). If they don't return anything, you can use `this` as their return type which means current class. If a function is defined using `this`, compiler will automatically add `return this` to the function.
-- method-local variables which start with `_` are static (they preserve value between two calls). 
 - We can have `INum create(INum a, INum b) { if(x) return a.new() else return return b.new();}`
 and call it: `auto x = create($ComplexNumber, $NormalNumber);`
 
@@ -313,7 +309,7 @@ this, true, false
 //contained class
 %fn(int) m1;  
 int method1() = this.m1;  //method1 is redirected to m1, we can even remove this and only use m1
-MyClass new(%fn(int) m) return #();  //construct an instance using given value
+this new(%fn(int) m) return alloc{};  //construct an instance using given value
 
 //container class
 this.__member = MyClass.new(this.implementation);  //pass my method as an implementation 
@@ -357,13 +353,13 @@ Later you can extract annotations in the form of: `List<Annotation>` where `Anno
 ###Aspects
 You can prefix a method, with a set of `weave` keywords each with an expression which specifies a set of methods to be called before/after/around/... of the current method.
 ```
-weave {obj1} int f(int x) { return x;} //function members of obj1 named before, after, around, ... will be called if they are defined
-weave {@OnlyAfter(obj1)} int f(} { return 5;} //obj1 is cast to OnlyAfter interface. so only it's after method will be called.
-weave {this.obj1} int f() { return 5;} //the weave code is result of evaluation of the expression. so in this case this.obj1 will be re-used for all call
-weave {MyClass.new} int f() { return 5;} //create a new instance per each call
+#weave {obj1} int f(int x) { return x;} //function members of obj1 named before, after, around, ... will be called if they are defined
+#weave {@OnlyAfter(obj1)} int f(} { return 5;} //obj1 is cast to OnlyAfter interface. so only it's after method will be called.
+#weave {this.obj1} int f() { return 5;} //the weave code is result of evaluation of the expression. so in this case this.obj1 will be re-used for all call
+#weave {MyClass.new} int f() { return 5;} //create a new instance per each call
 ```
 - you can combine weaves and they will be applied from outer-most to inner-most
-- Weave expression is evaluated and checked for appropriate functions by compiler. So you can include any expression including assertions. These will be run before function run: `weave {assert x>0}`
+- Weave expression is evaluated and checked for appropriate functions by compiler. So you can include any expression including assertions. These will be run before function run: `#weave {assert x>0}`
 - For example you can write a weave to retry method call 3 times in case of exception.
 
 ###Instantiation
@@ -391,7 +387,8 @@ int x = f((x:1, f:1.1)); //calling above function
 ```
 
 Tuples are automatically converted to classes by compiler. So they are basically classes but only have a fields section (without any assignment) with all-public fields and no methods. 
-- Note that you can assign default to a tuple.
+- You cannot assign default instance for a tuple because they don't have names (using Type gives them alias but not name).
+- You can have a tuple with all of it's fields being default instance.
 
 ###Anonymous classes `->`
 
@@ -428,30 +425,36 @@ auto xp = (int x, int y) -> x+y;  //again compiler will assign appropriate fn in
 auto xp = (int x, int y) -> return (a:1, b:3); //type of xp will be fn<(int, int), int, int>
 ```
 
-Long-form:
+Long-form: Result of a long-form definition, is the nil instance of the anonymous-class. You can call defined ctors (or default if there is not any), to create concrete instances.
 ```
 //long form, we can expose a variable which will construct public methods of the anon-class
 int g = 11;
 auto X = {
     MyClass __x;
-    new :: #;
+    mynew :: alloc{};
     
     int method1() { return 5;}  //hiding promoted method of MyClass
-    //we don't have access to static instance here because class does not have a name
+    //class does not have a name
     //only this. this.g (or this.g()) has a value of 11.
-    this new() { return alloc; }
-};  //X will be the static instance of the defined class
+    this mynew2() { return alloc{}; }
+};  //X will be the default instance of the defined class
+//note that calling methods on X gives you default instance of X without any affect, because X is a default instance.
+auto Y = X.mynew();
 ```
 
 *Closure*: All anonymous function and classes, have a `this.__closure` which will point to a set of methods for each of the variables in enclosing method (including input arguments and `this` as the container class). These methods will be promoted if possible (no method with the same name is defined).
 
-- Anonymous classes don't have static instance. Because they don't have names. 
 - If anon-function does not have any input and there is only one function (in short-form), you can omit `() ->` part.
 - Note that if the type contains methods with bodies, you cannot define anon-class (short or long form) based on it.
 - Anon-class can contain fields.
 - By using anon-class you can mock another class and hide/change one or more of it's methods.
 - In the long form, if class needs a ctor, it must be named `new`.
 
+###Extension methods
+- Members of MyClass class are defined in `MyClass.e` file
+- Extension methods of MyClass are defined in `MyClass.x.e` file. There can be multiple files in different directories. When you import those packages, all extension methods will become member of MyClass class.
+- Note that extension methods dont have access to private variables.
+- You can even define ctor in extension methods.
 
 ###Templates
 In a class file you can use `typename` keyword, to indicate that the user of the class has to provide type names at compile time:
