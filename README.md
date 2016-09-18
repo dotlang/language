@@ -64,7 +64,7 @@ In the above examples `core.sys, core.net, core.net.http, core.net.tcp` are all 
 - **Adressing**: Each type, field or method can be address in the format of `A.B.(...).D` where `A`, `B` and other parts are each either name of a package, class or field. The last part `D` is name of the field or method or type which is being addressed.
 
 ##Keywords
-Electronc has a small set of basic keywords: `if, else, switch, assert, for, break, continue, return, defer, type, import, auto, import, select, native, defined, typename, alloc`.
+Electronc has a small set of basic keywords: `if, else, switch, assert, for, break, continue, return, defer, type, import, auto, select, native, defined, typename, alloc`.
 
 
 
@@ -215,7 +215,8 @@ Writing body for methods is optional (but of course if a body-less method is cal
 struct {
 int _x = 12;  //private
 int qq = 19;  //public
-int qw = this@qq //WRONG! there is no `this`
+int qw = this[qq] //WRONG! there is no `this`
+const int x; //this is not re-assignable. after object is created using alloc.
 
 int h = 12;
 int gg;
@@ -236,13 +237,13 @@ func3 :: this.func2;  //compiler will infer the input/output types for func3 fro
 this new() return alloc();  //new is not part of syntax. You can choose whatever name you want,
 
 ```
-- Any class without fields is immutable from compiler's perspective (this includes primitive types). This will help runtime to optimize the code. 
+- Any class without fields is immutable from compiler's perspective (this includes primitive types). This will help runtime to optimize the code. Also if all fields are const, and their type is immutable, then class is immutable.
 - Class members (methods and types) starting with underscore are considered private and can only be accessed by methods of the same class. So `obj._x` is ok if the code is inside the class type of `obj`.
 - Here we have `new` method as the constructor (it is without braces because it has only one statement), but the name is up to the developer. Ctor returns `this` which basically of the same type as the current class. The only difference is that you can call it on the default instance: `MyClass mc = $MyClass.my_ctor(10, 20)`. You cannot use `this` inside ctor because they may be called on the default instance.
 - If class does not have a ctor, compiler will generate a default no-input ctor, named `new`. You can call it by `auto x = $MyClass.new`.
 - You can not have multiple methods with body with the same signature in a single class. 
 - You can define optional arguments: `int f(int x,int y=1)` the value must be a literal or undef.
-- When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this@x = 12` instead of `x = 12`). `this` is not re-assignable variable.
+- When accessing local class fields and methods in a simple class, using `this` is mandatory (e.g. `this[x] = 12` instead of `x = 12`). `this` is not re-assignable variable.
 - When a variable is in undefined state and we call one of it's type's methods, the method will be called normally with empty `this`. If we try to read it's fields, it will crash.
 - If a method has no body, you can still call it and it will return undef. You can also call methods on an undef variable and as long as methods don't need `this` fields, it's fine.
 - `int f(int x) return x+1;` braces can be eliminated when body is a single statement.
@@ -262,6 +263,8 @@ this new() return alloc();  //new is not part of syntax. You can choose whatever
 - We can have `INum create(INum a, INum b) { if(x) return a.new() else return return b.new();}`
 and call it: `auto x = create($ComplexNumber, $NormalNumber);`
 - All class fields are private. They don't need a prefix.
+- You can assign value to fields in alloc: `alloc{x:11, y:12}`. This is the last place where you can set value for const fields.
+- 
 
 
 ##Operators
@@ -283,13 +286,13 @@ Classes can override all the valid operators on them. `int` class defines operat
 - `^x` returns unique ref-id of the object. so you can write `if(^x == ^y)` and be sure references will be compared.
 
 ##Special syntax
-- `@` for field access
 - `->` for lambda expression
 - `_` input place-holder for anon-func
 - `()` for defining tuple literals and function call
-- `$` for casting and undef
+- `$` for casting and default instance
 - `alloc` instantiation
-- `[[ ]]` for annotations
+- `@` for annotations
+- `[]` for field access
 - `:` for hash literal, loop, call by name, array slice and tuple values
 - `%` template syntax
 - `:=` type alias and typename
@@ -313,7 +316,7 @@ this, true, false
 ```
 //contained class
 %fn(int) m1;  
-int method1() = this@m1;  //method1 is redirected to m1, we can even remove this and only use m1
+int method1() :: this@m1;  //method1 is redirected to m1, we can even remove this and only use m1
 this new(%fn(int) m) return alloc{};  //construct an instance using given value
 
 //container class
@@ -323,14 +326,14 @@ this@__member = MyClass.new(this.implementation);  //pass my method as an implem
 - In expose, you don't have access to private members of exposed object.
 - When exposing a variable, class is responsible for initialization and instantiation of the variable. Compiler just generates code to re-direct calls.
 
-
 ###Annotations
 You can annotate a class, field or method with this syntax:
-`[[custom_name{key1:value1, key2:value2, ...}]]`
+`@custom_name{key1:value1, key2:value2, ...}`
 custom_name is whatever you want. value(i) is optional and is assumed to be true if omitted.
 for example:
-`[[json{ignore}]] int x;`
+`@json{ignore} int x;`
 Later you can extract annotations for a member in the form of: `List<Annotation>` where `Annotation` is a tuple of `(name:string, hash_args)`.
+- Methods will be added to core to fetch annotations for a class, method or field.
 
 ###Array and slice
 
@@ -358,8 +361,8 @@ Later you can extract annotations for a member in the form of: `List<Annotation>
 You can prefix a method, with a set of `weave` keywords each with an expression which specifies a set of methods to be called before/after/around/... of the current method.
 ```
 #weave {obj1} int f(int x) { return x;} //function members of obj1 named before, after, around, ... will be called if they are defined
-#weave {@OnlyAfter(obj1)} int f(} { return 5;} //obj1 is cast to OnlyAfter interface. so only it's after method will be called.
-#weave {this@obj1} int f() { return 5;} //the weave code is result of evaluation of the expression. so in this case this@obj1 will be re-used for all call
+#weave {$OnlyAfter(obj1)} int f(} { return 5;} //obj1 is cast to OnlyAfter interface. so only it's after method will be called.
+#weave {this[obj1]} int f() { return 5;} //the weave code is result of evaluation of the expression. so in this case this[obj1] will be re-used for all call
 #weave {MyClass.new} int f() { return 5;} //create a new instance per each call
 ```
 - you can combine weaves and they will be applied from outer-most to inner-most
@@ -367,33 +370,11 @@ You can prefix a method, with a set of `weave` keywords each with an expression 
 - For example you can write a weave to retry method call 3 times in case of exception.
 
 ###Instantiation
-###Tuples
-Functions can only return one value but that one value can be a tuple (anonymous class with only fields and no method) containing multiple values. Note that field names are required and should be mentioned or inferable.
-The only special thing that compiler does here is to handle literals. Also compiler automatically creates them for you when you call a function or return something:
-
-```
-type myt := (int x, float f);  //defining tuple, field names are required
-myt func1(){ return (x: 1, f: 1.1); }  //return tuple literal
-myt func1(){ return (1, 1.1); }    //tuple literal with implicit field names
-(int x, float f) func1() { return (x:1, f:2.3); }
-(int x, float f) func1() { return (1, 2.3); }
-x,y = func1();  //unpack tuple
-
-(int x) func3() { return (1); }  //even with one value
-(int x) func3() { return (x:1); }  //even with one value
-x = func3();
-
-auto x = (age:12, days:31);  //tuple literal, here field name is needed
-auto x = (1, 2); //WRONG! we need field names
-int f(myt input) ... //you can pass tuple to a function
-int f((int x, float f) input) ... //passing tuple to function
-int x = f((x:1, f:1.1)); //calling above function
-```
-
-Tuples are just like an array but with a limited number of variables with different types. They are not real classes. 
-- You cannot assign default instance for a tuple because they don't have names (using Type gives them alias but not name).
-- You can have a tuple with all of it's fields being default instance.
-- The notation to access tuple members is `tuple[member]` so for above example, we can write: `int age = x[age];`
+###Return multiple values
+Functions can return multiple values: 
+`(int a, float f) f() { return 1, 3.1;}`
+calling those functions: `iv, fv = f();`
+that's all we have for multiple-return.
 
 ###Lambda expression
 
@@ -427,36 +408,9 @@ auto xp = (int x, int y) -> x+y;  //again compiler will assign appropriate fn in
 auto xp = (int x, int y) -> return (a:1, b:3); //type of xp will be fn<(int, int), int, int>
 ```
 - Note that you can use `object.method` notation as an object with only one method pointing to the implementation.
-
-###Anonymous class
-
-You can define anonymous classes which can act like a function pointer. Each anonymous class must have a parent interface specifying one or more empty functions. If the interface has only one method, the definition can be in short form and it is basically a function pointer. There is a general purpose template class `fn` which is used by compiler to set type of anon-class literals if type is to be inferred.
-Note that when writing anon-class, we are creating a new class on the fly, and for short-form instantiate it at the same time. 
-
-Result of a this definition, is the default instance of the anonymous-class. You can call defined ctors (or default if there is not any), to create concrete instances.
-```
-//long form, we can expose a variable which will construct public methods of the anon-class
-int g = 11;
-auto X = {
-    MyClass __x;
-    mynew :: alloc{};
-    
-    int method1() { return 5;}  //hiding promoted method of MyClass
-    //class does not have a name
-    //only this. this.g (or this.g()) has a value of 11.
-    this mynew2() { return alloc{}; }
-};  //X will be the default instance of the defined class
-//note that calling methods on X gives you default instance of X without any affect, because X is a default instance.
-auto Y = X.mynew();
-```
-
 *Closure*: All anonymous function and classes, have a `this.__closure` which will point to a set of methods for each of the variables in enclosing method (including input arguments and `this` as the container class). These methods will be promoted if possible (no method with the same name is defined).
 
 - If anon-function does not have any input and there is only one function (in short-form), you can omit `() ->` part.
-- Note that if the type contains methods with bodies, you cannot define anon-class (short or long form) based on it.
-- Anon-class can contain fields.
-- By using anon-class you can mock another class and hide/change one or more of it's methods.
-- In the long form, if class needs a ctor, it must be named `new`.
 
 ###Extension methods
 - Members of MyClass class are defined in `MyClass.e` file.
@@ -481,9 +435,9 @@ V get(K key) ...
 This is how collections and ... will be implemented in core.
 
 Note that `typename` section must come before struct section.
-For each tempalte class like `Stack`, there is a base interface class `Stack` which is equal to the class definition minus everything related to typenames (declaration, usage, ...) which is created by the compiler. According to definition, all template class instances, conform to this base interface. This means `Stack` is the base interface for `%Stack(int), %Stack(float)` and all other stacks and if you need to write a method accepting any stack you can use it: `void getStack(Stack s)`. 
-Note that `Stack` is not the same as `%Stack` which has type set to it's default.
-- When creating instances of template class you can explicitly speciy type name: `%Stack(T:int, V:float)`
+For each tempalte class like `Stack`, there is a base interface class `Stack` which is equal to the class definition minus everything related to typenames (declaration, usage, ...) which is created by the compiler. According to definition, all template class instances, conform to this base interface. This means `Stack` is the base interface for `Stack<int>, Stack<float>` and all other stacks and if you need to write a method accepting any stack you can use it: `void getStack(Stack s)`. 
+Note that `Stack` is not the same as `Stack<>` which has type set to it's default.
+- When creating instances of template class you can explicitly speciy type name: `Stack<T:int, V:float>`
 - `%Stack` means the stack class with all default values of typenames.
 - `Stack` means stack class without any code related to typename. (non-template version of the class)
 
