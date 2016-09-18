@@ -3573,12 +3573,182 @@ N - can we compose something without promoting? just as an indication that we wa
 Y - What happens to ctor if we have two MyClass.e files both having private fields?
 maybe we can ban defining ctor in extension methods.
 
-? - immutability by default?
+Y - immutability by default?
 http://www.yegor256.com/2014/11/20/seven-virtues-of-good-object.html
+ok. let's return const.
 
-? - we can remove struct because we simply enforce ordering of fields in the class. let's decrease indentations.
+Y - make field access syntax the same for class and tuple.
+`t[field]` vs `this@field`
+the first one is more intuitive but similar to hash. but it's fine. better than strange `@` notation.
 
-? - in the current pure OOP method, we may need to define a lot of classes.
+N - we can remove struct because we simply enforce ordering of fields in the class. let's decrease indentations.
+
+Y - maybe we should return `<>` for template and remove `%`. it is more intuitive and having two prefixes to refer to default instance of a template seems awkward: `$%Stack(int)` vs `$Stack<int>`
+
+Y - can we just ignore tuple concept and act like golang?
+functions can return multiple values: 
+`(int a, float f) f() { return 1, 3.1;}`
+calling those functions: `iv, fv = f();`
+that's all we have for multiple-return.
+
+Y - pre-requirement for MCSF: why do we need anon-class?
+go doesn't have it. c# doesn't. only java.
+if the syntax to define a class becomes cheap, dev can just define a normal class.
+also we can use a set of lambda.
+con: they are hard to test.
+con: they make syntax clumsy.
+I think we can remove them. they were only added to java to support some kind of closure but now we have lambda.
+
+N - can we restore `this` notation to indicate method returns this?
+then what happans to ctor?
+
+N - how should we address default instance of a template?
+`$%Stack(int)`?
+
+
+? - how shall we define an interface in the new form?
+define a struct with possibly no fields.
+`type Comparer := struct;`
+
+? - how to define a method like compare or copy without adding a new struct?
+e.g. `int [MyClass this].compare(Stack<T> s1, Stack<U> s2) { ... }`
+can we define template methods? in addition to template structs?
+`int [Stack<T> this].push(T data)...`
+`int [Stack<T> this].compare(Stack<T> s1)...`  //compare with current class
+`myClass.compare(s1, s2);`
+if there are multiple types involved, write a specialized class.
+if single type and same as current type? like above.
+
+? - define a shortcut to define methods on a struct, if struct type can be inferred.
+`int [Stack<T> this].compare(Stack<T> s1)...`
+
+? - what about const?
+`type x := struct { const int x;}` x should get a value upon alloc call.
+
+? - prohibit value assignment in struct definition. we just define list of fields, components of the struct.
+
+? - what about primitives like int?
+`type int := struct(4);`
+
+define a set of methods on that struct type.
+
+? - we have struct (collection of fields), interface (collection of method definitions), enum (collection of values).
+`type MyClass := struct { int x; }`
+`type myInt := interface { methods }`
+`type xxe := enum { values }`
+`type xwe := int ()` for enum.
+we can ignore interface and just use struct. so interface and class will be similar.
+`int [MyInterface].f(int x);`
+for each type (enum, struct,) we can define a set of methods.
+interface can have fields too. 
+what about exposing?
+
+
+? - adding receiver is a little bit un-natural.
+`int (MyClass this) f()...`
+instead of a normal function that everybody knows just like java, c#, go, c, perl, python:
+`int f(MyClass this, int x) ...`
+another thing: we write `MyClass mc = ...; mc.method1()`
+but the owner of the `method1` is not myclass. it is a free-form function.
+myclass is just a struct with some fields to none of which we have access!
+`struct MyClass {...}`
+what if we write: `method1(mc, 1, 2);`? seems to procedural.
+receiver type says, this struct is what will sit on left-side of the dot when calling this method.
+can we come up with another syntax which is as explicit as receiver method but more intuitive?
+first of all, there is not a specific explicit grouping of methods which can be applied on a struct and there shouldn't be. so we can have extension methods or methods in other files.
+so there is no indentation.
+`int f(int x)`
+`int (MyClass this) f(int x)`
+`int MyClass.f(int x)`
+(btw we can simply ban defining a function without receiver type. its like defining a function without output type).
+`int (MyClass this).f(int x)` this seems better. it is more similar to the actual method call.
+also by definition makes defining orphan methods meaningless.
+`int {MyClass this}.f(int x)`
+`int [MyClass this].f(int x)`  adv of this: makes receiver definition completely different from normal inputs.
+also needs `[` which is a single key letter, does not need shift.
+`int MyClass this.f(int x)`  this is confusing
+
+? - Do we still have a base class for all template instances like `Stack`?
+we have methods that are not bound to a type like T:
+`int [Stack<T> this].push(T data)...`
+`int [Stack this].clear()...`  this does not need type T, so if we write a method like `f(Stack ss)` we can call clear method on ss. but not push and pop. right?
+`struct Stack<T> {...}`
+is not intuitive.
+what if I want to write a general method acting on any stack?
+assume this is on class MyClass:
+`int [MyClass this].func(Stack<T> ss) { ...}`
+or I want to write a function to compare two stacks.
+either template-enable your class with S and T, or use some common interface.
+`int [MyClass this].compare(Stack<T> a, Stack<S> b) {...}`
+
+? - now that all fields are private, maybe we can replace `__` with `_`?
+but `_` means private. all fields of a struct are private and only accessible to the methods of it.
+`this[field1]`
+maybe we can define a prefix for fields which will be exposed. e.g. `$`
+or `%`. it was used for template but now we are using `<>` notation so `%` is not used anywhere else.
+
+? - what about exposing an interface? it's meaningless unless we want to explicitly indicate that we are conforming to that interface. UNLESS interface has some fields. but again, expose just exposes public methods. so it's meaningless.
+
+? - now that all fields are private, expose won't cause a name clash for fields. we should only handle conflict for methods.
+
+? - note that we still cannot override empty methods of the exposed type. unless, the exposed type provides some methods to set some function pointers.
+
+? - what about defer(out) when function has multiple outputs?
+`(int a, float f) f() { return 1, 3.1;}`
+for above function: `defer(a,f) ...`
+
+
+? - if we define a private method on MyClass, can it be accessed from another file's method which is based on MC?
+what is the scope of private? is it shared between all functions receiving MC?
+or current source code file?
+
+? - pre-req for MCSF: how can we bind a method to a class?
+suppose we have a class name and want to bind a method to it.
+`struct A {int x;}`
+`int A.f() { return 5;}`  //this is implicit not explicit
+`int f(A this) { return 5;}` this is explicit but notation is not explicitly bound to A struct
+`int (A this) f { reutrn 5;}` this is explicit about this and binding but what if we add another receiver?
+`int (A this, B that) f() ... ` ? are we going to BAN this?
+`int f[A this]() { return 5;}`
+gen: binding is optional
+gen: this name is optional. you can have any other name
+`int (A this) f (int x, int y) { return x+y+this[xx];}`
+//f below is defined on MyClass, but has no access to this. returns a this.
+`this (MyClass) f(int x) { return alloc{}; }`
+`this [MyClass].f(int x) { return alloc{}; }`
+can they define: `int (MyClass) f(int x) {}` should be allowed. this is a real code of the class but does not need access to this. 
+`int (Stack<T,U> this) pop() { ...}`
+
+? - how to define class/interface/enum/template?
+
+`struct MyClass { fields}`
+`interface ABCD { methods }`
+`enum AB { values }`
+`template a(T,U,V) { fields + typenames }`  //or maybe struct
+`struct Stack<T> { ... }`
+`struct Stack<T: Comparable> { ... }`
+`struct Stack<Comparable T, Disposable U> { ... }`
+
+? - template: we dont need default and multiple interfaces.
+`struct Stack<T: Parent>`
+we can remove typename.
+
+? - how to define members of template?
+`int (Stack<T> this) push(T value) { ...} `
+`int (Stack this) push(T value) { ...} `  //if we remove <T> is is implied?
+and we won't have `Stack<>`. 
+specialization is easy: `int (Stack<int> this) push...`
+now that we don't have Stack<> and Stack as parent of all, we can write `int [Stack this].ff` and ignore type declaration for each fucntion. it is not explicit but typing `<T>` for each function is a pain.
+shall we update struct accordingly?
+
+? - having extension methods have access to class fields is a form of gen.
+also those methods won't be called by anyone except the dev or people who trust him.
+if code gets compiled without any metadata or documentation, field access will be meaningless. because what would be variable names? also compiler won't know what to do with `this[field1]` does the class even have this field?
+we can have `_` for private private fields and other cal be accessed by ext methods. 
+but this will be confusing.
+
+? - MCSF (Multiple class in single file)
+in the current pure OOP method, we may need to define a lot of classes.
 e.g. Printer, NoNullPrinter, ...
 shall we use keyword `class`? if so, maybe we can go like golang, and it will make adding extension methods much more clearer?
 so instead of class, we use struct.
@@ -3589,9 +3759,23 @@ int MyClass.f(int t) { return t+this@x; }
 import MyClass;
 int MyClass.g(int y) { return y+this@x+this.f(10); }
 ```
-what about interface? `interface x { method definitions; }`
+what about interface? `interface x { method definitions; }`. what if we want to add empty members to a class? question is: what are they for? why do we need abstract class? to be inherited by another class? this is not allowed! so we simply cannot define empty methods. of course we can have the syntax sugar to return nil for empty methods.
 we can have interface inheritance without complex syntax of composing: `interface A:x, y, z { methods }`
 what about :: notation?
 ctor: `this MyClass.new(int t) { return alloc{}; }`
-
-
+what about methods that don't have struct name prefix? OR instead of prefix we can add it as first argument.
+`int f(MyClass this, int t)`
+this will help creating small classes.
+other languages give access to private variables somehow, so why not give it to extension methods straight away?
+maybe defining interface as a class was not a good idea.
+what happens to anon-class and lambda? lambda is ok. anon-class: `auto x = { fields and methods; }; auto y = x.new();`
+here we can make use of interface. `auto x = Interface1 { methods };` but this contradicts with the way we define other classes. remember: gen and orth.
+what about function pointer? lambda.
+what about template? maybe using `struct<T,U> {...}`. By this way, specialization of template becomes easier. 
+I may need to re-visit and re-design most of concepts.
+but honestly, in action defining 10 files each having 10 lines for 10 classes is a pain.
+in Java we have one file per class. but in C# and golang there is no such limit.
+then where should we place type and typename definitions?
+what about enum?
+what if a method is not bound to a type? like golang? this is gen I think. we should allow them.
+how to define ctor?
