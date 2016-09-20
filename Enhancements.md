@@ -3653,8 +3653,29 @@ what are the things that absolutely are useful? abstraction, code re-use,
 `int func(MyClass this, int x)...`
 are they the same? if they are, which one is better? How should I decide which one to use? -> confusion != simplicity
 if they are different, what is the difference. they seem similar and we expect them to be the same -> law of least surprise.
+If they are different: suppose that we have a function to send a message. what should be the prefix structure?
+the message structure? the recipient? the sender? which one should be put first? everyone can have it's own idea and each setting will result in a different code.
+calling a function by parameter name will solve the order issue completely.
+`int f(struct1 s, struct2 t, struct3 u)...`
+`int g = f(u: u1, t: t1, s:s1);`
+so we don't even care which one comes first.
+
+? - calling functions by name makes code more readable. what about forcing to call by name?
 
 ? - to achieve immutability and performance, we may provide some syntax to create a new object/record based on another one. which will be processed by compiler to generate efficient code.
+`file f = ...; file f2 = clone(f, name='aa');`
+or `file f2 = f.name='aa';`
+`f = f.name='11'` f will be pointing to a new structure
+`f = new struct{name='g'}; g=f; f=f.name=11;`
+what is value of `g.name` is must be 'g'.
+f.name is '11'.
+if we implement struct fields as pointers behind the scene, this can be achieved.
+`f = f.name='11'` will create a new f point all of it's fields to existing values of previous f, update name pointer.
+or: we can implement runtime inheritance.
+`g = f.name='11'` g will be a dynamic dispatch for it's fields.
+all of g's fields will be redirected to f fields, except name.
+in memory we have this for f and g and other data: 
+`ptr memoryAddress; ptr parentRecord; ptr exclusiveFields;` something like this.
 
 ? - having things like `executefile('dsadsad')` in the code is just confusing. where is this function defined?
 `time.sleep(5)` what does 5 mean? do I need to look at documentation for each method call?
@@ -3843,3 +3864,138 @@ then where should we place type and typename definitions?
 what about enum?
 what if a method is not bound to a type? like golang? this is gen I think. we should allow them.
 how to define ctor?
+
+? - expression problem: we want to be able to extend program easily 
+extend: adding new objects (for a shape system, adding triangle)
+extend: adding new operation (calculate permieter for every shape)
+easily: adding one new object or operation does not need modification of 1000 files
+if we have Shape -> Rectangle, Circle, Oval, Square all having area function
+extend1: adding `Triangle`
+extend2: calculate `perimeter`
+in OOP extend1 is easy: add a new class and inherit from shape
+in FP extend2 is easy: add a new function and in it, for each type, define formula for perimeter calculation
+both reverse is hard. adding perimeter function in OOP means updating all those classes
+adding Triangle data in FP means updating all functions that are working with shapes
+one solution is to act like OOP but only for data, not behavior. so structs can inherit from each other and functions work on structs. if a function works on Shape, we can send a Rectangle struct to it.  
+addin Triangle: means a new struct inheriting from shape struct (struct = data only) + new function for area of triangle
+adding perimeter: a new function (or multiple functions per shape type)
+```
+struct Shape { string name; }
+struct Square: Shape { int side; }
+struct Circle: Shape { int radius; }
+function area(Square s) = s.side**2;
+function area(Circle c) = c.radius**2 * 3.14;
+//adding triangle:
+struct Triangle:Shape { int side1, side2; }
+function area(Triangle t) = return t.side1*t.side2*0.5; 
+//adding perimeter - assume we don't have original source code for others
+function perimeter(Square s) = s.side*4;
+function perimeter(Circle c) = 2*3.14*c.radius;
+//general function
+function getName(Shape s) = s.name;
+note that we can call getName with a shape or circle or square or ...
+```
+Let's call this structure inheritance or structure oriented programming.
+you can hide a method in a child struct: if parent struct hash `clear` method, just define: `int clear(child c);` as an empty function.
+you can override a method in a child struct and call parent struct's method in the code by `function(@parent(child))`
+(casting).
+note that if struct A includes struct B, calling a function which is defined on both A and B with `cast(Ainstance to B)` will call B version. now if that function calls another similar function, the chain will continue with B version functions.
+
+? - with struct inheritance, do we need interfaces?
+I think we only need structs. When we expect a set of operations to be available (e.g. Comparable interface including methods for comparing data), we provide a struct and call required methods on that struct.
+
+? - maybe we can use namespace or module to group functions.
+so in the code instead of writing `produce_data` we write `db_structure.produce_data`.
+and the prefix is not part of function name. it is module/namespace name.
+so where should we define structs? in a namespace?
+
+? - basically we want to have OOP and FP.
+FP exclusive features:
+- first-class, pure and higher-order functions
+- immutable data types, no re-assignment: if you see `x=???` you are sure it is the same value even at the end of function. so there is no `=` operator.
+- lexical closure
+
+? - how can we implement a stack in a immutable and struct-inherit system?
+what is advantage of immutability?
+
+? - how to implement array or hashmap?
+we can replace array with a hash-map with int key.
+
+? - what if we pass Circle to `int f(Shape s)` and f calls `Area(s)`?
+which one will be called: `int Area(Shape s);` or `int Area(Circle c)`?
+the second should be called. the function call is resolved according to the real type of the data. unless data is casted.
+we can model abstract calss like this. 
+abstract class = data -> struct, full methods -> functions, empty methods -> nothing?
+concrete class = data -> struct inherit from abstract class data, methods -> implementation of empty methods of abstract data.
+for empty methods we can just add an empty function so indicate what should be implemented for concrete classes:
+abstract shapre class: `int area(Shape s);` is an empty function.
+interface: a set of empty functions working on a data strcuture. 
+data structure can be even empty.
+so if in Circle we want to call `f(Shape)` if we call it like `f(@Shape(x))` and f calls `g(Shape)` and we have `g(Circle)` the g(shape) will be called. but if we call it like `f(x)` where x is of type circle, g(circle) will be called.
+
+? - can we have mixin/trait/role in struc-oriented?
+
+? - now inverse to the initial 'everything is an object' we have 'nothing is an object' :-)
+
+? - if function has only one input, providing parameter name when calling it is not meaningful.
+
+? - we can say fields starting with `_` are internal fields of struct. and functions that define that struct as `this` have access to those fields. but what if function needs access to internal fields of two structs?
+if function input starts with `_` function has access to internal fields of that argument.
+
+? - how can we implement strategy pattern in struct-oriented?
+strategy? function pointer can helpful. but what if strategy has a state or multiple methods?
+null? clojure has nil.
+facade? define `struct s1: s_old` and define all methods you need on s1.
+16 of 23 design patterns are not needed in lisp or dylan: http://www.norvig.com/design-patterns/img010.gif
+
+? - to organize functions:
+we can define a flat file hierarchy each file representing a module. and prefix module name to function and structs.
+`prefix.element_name` - prefix cannot map to a directory because then finding definition of element will be hard.
+we need to have an easy mechanism to find definition of a function.
+haske as import: `import Mod as Foo`
+clojure has require: `user=> (require '(clojure.java io))`
+we can separate files that contain structures and function files.
+we can force a flat folder (a folder like lib which contains ALL modules) and use underscore to separate name part if needed. or a one-level hierarchy: `lib` contains a set of files and folders. and there is no more folders.
+in a module, we can export only some functions.
+if we have a prefix like `module1.function1` then how can we add a new function without having access to the module?
+
+? - we can add a notation to specify mutable data types. when these are used in a struct or used in a function, it means function is not pure.
+
+? - now with this new approach, do we need generics? if yes, how should they be implemented?
+I think we need it.
+
+? - can we use golang's expose here too?
+```
+struct A {int x;}
+strut B { A; int y;}
+B.A.x = 11;
+```
+functions that operate on A can accept a B too, because B can be easily casted to A.
+also B.x will be mapped to B.A.x
+so we should be able to define custom delgations too:
+```
+struct B{ A a;
+int g :: a.xgg;}
+```
+
+? - think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
+
+? - we should be able to add new operations for data types that are defined in external libraries.
+
+? - exception handling is like a complex goto. shall we keep it?
+https://news.ycombinator.com/item?id=2599012
+http://c2.com/cgi/wiki?ExpressionProblem
+https://www.quora.com/Why-do-some-people-recommend-not-using-exception-handling-in-C++
+https://blog.jooq.org/2013/04/28/rare-uses-of-a-controlflowexception/
+http://c2.com/cgi/wiki?DontUseExceptionsForFlowControl
+
+? - if we have struct A which inherits from B and call function `f(x)` where x is A and we have two f functions for A and B, which one should be called? what about the case where inside f we call `g(x)`?
+if the function is only implemented for A, then there is only that choice.
+
+
+? - what if we want to write a function to calculate intersection of objects.
+f(obj1, obj2) - we have circle, square and rectanble.
+we want f(rectangle, square) also handle (square, rectanble) case too.
+this is doable with named arguments? `f(square arg1, rect arg2)`
+no.
+we can define `f(square, rect) :: f(rect, square)` or we can call it in correct order
