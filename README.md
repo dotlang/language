@@ -28,6 +28,7 @@ There has been a lot of effort to make sure there are as few exceptions as possi
 2. **Powerful**: It should enable (a team of) developers to organize, develop, test, maintain and operate a large and complex software project, with relative ease.
 3. **Fast**: Performance of the final output should be high. Much better than dynamic languages and something like Java.
 
+
 Achieving all of above goals at the same time is something impossible so there will definitely be trade-offs and exceptions.
 The underlying rules of design of this language are 
 [Principle of least astonishment](https://en.wikipedia.org/wiki/Principle_of_least_astonishment), 
@@ -40,7 +41,7 @@ only one class (fields + methods). In Electron, class can be analogous to class 
 ### Core principles
 
 Almost everything is an object, even basic data types and everything is passed by value, but everything is a reference.
-Every class has a special, default instance, which is created by the compiler. This instance can be used to create other instances of the class.
+Every class has a special, default instance, which is created by the compiler. This instance can be used to create other instances of the class (constructor can be invoked on this instance and other instances of the class).
 At very few cases compiler does something for the developer automatically. Most of the time, developer should do the job manually.
 Code is organized into packages. Each package is represented by a directory in the file-system. Packages have a hierarchical structure:
 
@@ -61,12 +62,10 @@ In the above examples `core.sys, core.net, core.net.http, core.net.tcp` are all 
 - You can separate number using undescore: `1_000_000`
 - Compiler will handle object literals and create corresponding objects (for field and variable assignment, default argument value, enum values, tuple initialization, ...).
 - `true` is a shortcut for `bool.true`, same for `false`.
-- **Adressing**: Each type, field or method can be address in the format of `A.B.(...).D` where `A`, `B` and other parts are each either name of a package, class or field. The last part `D` is name of the field or method or type which is being addressed.
+- **Adressing**: Methods are called using `object.method_name` notation. Fields of a class are only accessible in class's methods and are addressed using `this[field_name]` notation.
 
 ##Keywords
-Electronc has a small set of basic keywords: `if, else, switch, assert, for, break, continue, return, defer, type, import, auto, select, native, defined, typename, alloc`.
-
-
+Electronc has a small set of basic keywords: `if, else, switch, assert, for, break, continue, return, defer, type, import, auto, select, native, defined, alloc, const`.
 
 ###if, else
 ```
@@ -92,7 +91,7 @@ CaseStmt = (IdentifierList | 'else') ':' Block
 
 ###assert
 ```
-AssertStmt = 'assert' condition [',' expression] ';'
+AssertStmt = 'assert' condition [':' expression] ';'
 ```
 - Assert makes sure the given `condition` is satisfied. 
 - If condition is not satisfied, it will throw `expression` exception.
@@ -133,8 +132,14 @@ defer(out) assert out>0;  //post-condition check
 ```
 
 ###defer
+- If function has multiple outputs, you can name them in `defer`:
+`(int a, float f) f() { return 1, 3.1;}`
+`defer(a,f) ...`
+
 ###type
-You can use `type` to define type alias:
+You can use `type` to define new type. 
+You can also use it to define a type alias.
+
 ```
 type point := int[];
 type x := int;
@@ -142,15 +147,15 @@ x a;  //=int a;
 ```
 To use a type from outside the defining class:
 ```
-MyClass.point pt = (1, 10);
+MyClass.point pt = {1, 10};
 //you can alias it again
 type mypt := MyClass.point;
-mypt xx = (1, 2);
+mypt xx = {1, 2};
 ```
 
 You can use type alias to narrow valid values for a type (like enum):
 ```
-type DoW := int (SAT=0, SUN=1, ...);
+type DoW := enum {SAT=0, SUN=1, ...};
 ```
 
 ###import
@@ -288,12 +293,11 @@ Classes can override all the valid operators on them. `int` class defines operat
 ##Special syntax
 - `->` for lambda expression
 - `_` input place-holder for anon-func
-- `()` for defining tuple literals and function call
 - `$` for casting and default instance
 - `alloc` instantiation
 - `@` for annotations
 - `[]` for field access
-- `:` for hash literal, loop, call by name, array slice and tuple values
+- `:` for hash literal, loop, call by name, array slice 
 - `%` template syntax
 - `:=` type alias and typename
 - `::` function and field redirection
@@ -307,23 +311,22 @@ this, true, false
 
 ###Exposure
 
-- A field starting with `__` will be promoted/exposed. 
-- An exposed field's public members will be soft-copied at compile-time (includng ctors). This means, if there is a member (field or method) with the same name in main class, it won't be copied (main class members always win).
-- If you expose two classes that have a public fields with the same name, you must define a field with that name in main class (or else there will be a compiler error). 
+- A field starting with `%` will be promoted/exposed. 
+- An exposed field's public methods will be soft-copied at compile-time (includng ctors). This means, if there is a method with the same name in main class, it won't be copied (main class members always win).
 - You can hide/remove an exposed method by adding same method with/without body.
 - You can rename an exposed method by removing it and adding your own method.
-- A container class can provide implementation for methods of contained class if it is allowed:
+- A container class can indirectly provide implementation for methods of contained class if it is allowed:
 ```
 //contained class
-%fn(int) m1;  
-int method1() :: this@m1;  //method1 is redirected to m1, we can even remove this and only use m1
-this new(%fn(int) m) return alloc{};  //construct an instance using given value
+fn<int> m1;  //m1 field points to a function returning an int 
+method1 :: this[m1];  //method1 is redirected to m1, we can even remove this and only use m1
+this new(fn<int> m) return alloc{m1: m};  //construct an instance using given value
 
 //container class
-this@__member = MyClass.new(this.implementation);  //pass my method as an implementation 
+this[%member] = MyClass.new(this.implementation);  //pass my method as an implementation 
 ```
 
-- In expose, you don't have access to private members of exposed object.
+- In expose, you don't have access to private methods of exposed object.
 - When exposing a variable, class is responsible for initialization and instantiation of the variable. Compiler just generates code to re-direct calls.
 
 ###Annotations
@@ -425,9 +428,9 @@ auto xp = (int x, int y) -> return (a:1, b:3); //type of xp will be fn<(int, int
 In a class file you can use `typename` keyword, to indicate that the user of the class has to provide type names at compile time:
 
 ```
-typename K := int;  //K is a template type (default is int), which will be provided at compile time.
+typename K := int;  //K is a template type (and should conform to int), which will be provided at compile time.
 
-typename V := float ${Type1, Type2}; //type V is float by default and must conform to Type1 and Type2
+typename V := Comparer; //type V should conform to Comparer
 
 void put(K key, V value) ...
 V get(K key) ...
