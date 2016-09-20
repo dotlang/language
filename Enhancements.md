@@ -3605,6 +3605,89 @@ then what happans to ctor?
 N - how should we address default instance of a template?
 `$%Stack(int)`?
 
+Y - what about const?
+`type x := struct { const int x;}` x should get a value upon alloc call.
+
+Y - now that all fields are private, maybe we can replace `__` with `_`?
+but `_` means private. all fields of a struct are private and only accessible to the methods of it.
+`this[field1]`
+maybe we can define a prefix for fields which will be exposed. e.g. `$`
+or `%`. it was used for template but now we are using `<>` notation so `%` is not used anywhere else.
+
+Y - now that all fields are private, expose won't cause a name clash for fields. we should only handle conflict for methods.
+
+N - note that we still cannot override empty methods of the exposed type. unless, the exposed type provides some methods to set some function pointers.
+
+Y - what about defer(out) when function has multiple outputs?
+`(int a, float f) f() { return 1, 3.1;}`
+for above function: `defer(a,f) ...`
+
+Y - template: we dont need default and multiple interfaces for type-checking.
+`struct Stack<T: Parent>`
+we can remove typename.
+
+? - gen similar syntax for array and hash.
+
+? - if we can define class-less functions, we can convert most of operators to functions.
+like ref/copy/dup/...
+
+? - when we say struct fields are public they are public forever for all.
+but when we say they are private: to whom? who can access? what about other files?
+if we define struct as immutable, then making them public will have less risk.
+also we can do the same for functions. convention to have them private. 
+and at most, give some warnings if they are used outside.
+
+? - if we have classless func, we can define `range` and `map` to have `for` statement. no need to have a separate loop keyword.
+
+? - consistency is simple. 
+order enforcing is not simple.
+`int (int x).negative() { }`
+its bettern to have 100 simple elements than 10 complex.
+in FP we have data and function. and possibly interface.
+in OOP we have data, function, interface, class.
+things should look similar.
+what are the things that absolutely are useful? abstraction, code re-use, 
+
+? - With the receiver notation there will always be a confusion about difference between these:
+`int (MyClass this).func(int x) ...`
+`int func(MyClass this, int x)...`
+are they the same? if they are, which one is better? How should I decide which one to use? -> confusion != simplicity
+if they are different, what is the difference. they seem similar and we expect them to be the same -> law of least surprise.
+
+? - to achieve immutability and performance, we may provide some syntax to create a new object/record based on another one. which will be processed by compiler to generate efficient code.
+
+? - having things like `executefile('dsadsad')` in the code is just confusing. where is this function defined?
+`time.sleep(5)` what does 5 mean? do I need to look at documentation for each method call?
+
+? - FP and OOP can be orthogonal. so employ both of them.
+like Scala or F#
+
+? - If I have a bound function to MyRecord, can I call it without an instance of myrecord?
+`int f(Rec r, int x)`
+`int (Rec r).f(int x)` two methods to define a function. this is not good.
+
+
+? - if a function expects FirstClass, and we send SecondClass (where SecondClass inherits from FirstClass), it is polymorphism.
+SecondClass has some extra fields and associated functions. we really don't (and can't) call those extra because we expect a FirstClass. Also, from a data point of view, SecondClass has a field named "FirstClass". so why not send "obj.FirstClass" field to the function and it can also call corresponding functions too. because it has a first-class data structure. 
+encapsulation is primarily used to hide implementation details. we can simulate them with `_` fields. 
+
+? - what is the difference between:
+`int f(MyClass mc, int x)...` -> f(mc, 10);
+`int (MyClass mc).f(int x)...` -> mc.f(10);
+
+? - can we define 'receiver-less' functions?
+e.g. filter/map/reduce/
+
+? - proposal: treat predix of the function name, just like a variable. so it can even take a default value!
+`int (MyClass mc).func(int x) {}`
+`int (MyClass mc=$MyClass).func(int x) {}`
+`int (MyClass mc // $MyClass).func(int x) {}`
+
+? - the golang syntax to define methods is more explicit: `int [MyClass this].compare(Stack<T> a, Stack<S> b) {...}`
+one class per-file is simpler and does not need to define `this`.
+you can define `type A := int;` and define methods on A. `this` will be an integer in the code.
+this is not achieved by implicit receiver.
+simplicity -> dealing with functions instead of objects and classes.
 
 ? - how shall we define an interface in the new form?
 define a struct with possibly no fields.
@@ -3621,9 +3704,7 @@ if single type and same as current type? like above.
 
 ? - define a shortcut to define methods on a struct, if struct type can be inferred.
 `int [Stack<T> this].compare(Stack<T> s1)...`
-
-? - what about const?
-`type x := struct { const int x;}` x should get a value upon alloc call.
+`int [Stack<T> this].push(T item)...`
 
 ? - prohibit value assignment in struct definition. we just define list of fields, components of the struct.
 
@@ -3681,21 +3762,8 @@ or I want to write a function to compare two stacks.
 either template-enable your class with S and T, or use some common interface.
 `int [MyClass this].compare(Stack<T> a, Stack<S> b) {...}`
 
-? - now that all fields are private, maybe we can replace `__` with `_`?
-but `_` means private. all fields of a struct are private and only accessible to the methods of it.
-`this[field1]`
-maybe we can define a prefix for fields which will be exposed. e.g. `$`
-or `%`. it was used for template but now we are using `<>` notation so `%` is not used anywhere else.
 
 ? - what about exposing an interface? it's meaningless unless we want to explicitly indicate that we are conforming to that interface. UNLESS interface has some fields. but again, expose just exposes public methods. so it's meaningless.
-
-? - now that all fields are private, expose won't cause a name clash for fields. we should only handle conflict for methods.
-
-? - note that we still cannot override empty methods of the exposed type. unless, the exposed type provides some methods to set some function pointers.
-
-? - what about defer(out) when function has multiple outputs?
-`(int a, float f) f() { return 1, 3.1;}`
-for above function: `defer(a,f) ...`
 
 
 ? - if we define a private method on MyClass, can it be accessed from another file's method which is based on MC?
@@ -3720,7 +3788,6 @@ can they define: `int (MyClass) f(int x) {}` should be allowed. this is a real c
 `int (Stack<T,U> this) pop() { ...}`
 
 ? - how to define class/interface/enum/template?
-
 `struct MyClass { fields}`
 `interface ABCD { methods }`
 `enum AB { values }`
@@ -3729,9 +3796,6 @@ can they define: `int (MyClass) f(int x) {}` should be allowed. this is a real c
 `struct Stack<T: Comparable> { ... }`
 `struct Stack<Comparable T, Disposable U> { ... }`
 
-? - template: we dont need default and multiple interfaces.
-`struct Stack<T: Parent>`
-we can remove typename.
 
 ? - how to define members of template?
 `int (Stack<T> this) push(T value) { ...} `
