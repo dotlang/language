@@ -4036,7 +4036,60 @@ maybe we can simulate interface with a super-function which can dispatch to othe
 get-super-struct returns a struct which will affect dynamic dispatch at the runtime to redirect calls to f1 function.
 and super-struct can inherit from normal-struct and we have two f1 functions for normal and super struct.
 we can cast return of get-super-struct to a normal-struct so caller won't notice extra fields in super-struct but when he makes a call, it will be redirected to functions that accept super-struct.
-to add a new functio we can simply implement if accepting super-struct. 
+to add a new functio we can simply implement it accepting super-struct. 
 `normal-struct create() { return super-struct; } f(super-struct ss){} f(normal-struct ss){}`
 we have polymorphism, inheritance (super inherits from normal), encapsulation (super fields are hidden from outside). and we have kind of abstrction because outside just needs to call f function. and f can call other module-private functions.
+note that create returns a super-struct but outer world thinks it is normal struct. as a result, there must be a function accepting a normal-struct too. or else, it will become to messy and compiler won't be able to check anything before runtime.
+so normal-struct contains public fields and super-struct contains private+public fields.
 
+? - how can we solve expression problem while maintaining a module name prefix when calling functions?
+when we specify module name, we are telling which function we want to be called but we should not decide about this.
+we should write `prepare_data(data1)` and runtime will chose between 10 `prepare_data` functions from 10 different locations in the source code, which one is appropriate.
+this is like OOP where we write:
+```
+ICar car = make_car(10, "A", ...);
+car.deploy(10); 
+```
+we don't know which deploy will be called? the one in "ToyotaCar" or "BMWCar".
+but pro os OOP is that when I type `car.` IDE or some other tool can give me "possible options" as a set of method calls that can be made on the car. but in FP, I have no clue.
+```
+car = make_car(...);  //can return car struc or bmw_car or toyota_car
+deploy(car);  //before typing deploy, what are my options when calling a function?
+```
+how can an IDE help me when I want to write `deploy` method when it doesn't know what am I going to pass to the function? basically I can write name of any function at the beginning of that line.
+what if we change the call syntax the other way around? `(car).deploy`?
+this will call deploy function on the car struct but the advantage of this is that as soon as I finish `(car)` and type the dot, IDE can easily list all methods which:
+1. accept a single argument
+2. that single argument is of type `car`
+or `(car)deploy;`
+`(car)->deploy`
+`car deploy` - the last work is function name
+`10 20 multiply`
+`10,20.multiply`
+`(10 20).multiply`
+`{10, 20}.multiply`
+`car.deploy` - this is really like OOP!
+we can have `int f(int x, int y)` and write `10.f` which will give a function getting int returning int. 
+`(car)<-deploy`  do action 'deploy' on `(car)`
+
+
+? - what if struct A inherits from B and C and we have this call: `A x = get(); f(x)`
+but we have three f functions for B and C and A?
+`struct A: B,C {int a;}`
+`int f(A a) {}`
+`int f(B b) {}`
+`int f(C c) {}`
+if get() returns an instance of B then f(B) will be called. C -> f(c)
+if it returns an instance of A and there is no f(A) then there will be a problem.
+if there if f(B) but not f(C), f(A) and we call f(x) where x is of type A then f(B) will be called. 
+when there is a call `f(x)` and real type of x is A, runtime will call `f(A)` function. if there is not such a function, parents of x will be investigated. if there is a `f(T)` where T is a parent of A, it will be called. no call will be made if there is ambiguity (no call candidate or more than one candidate).
+
+? - int/float/... all are special structs. so you can have functions working on int. and call them like:
+`int x = 12; f(x)`
+
+? - can we have mixin here?
+a mechanism to define a number of functions for our new type?
+just implement the new type from A where mixin functions are defined for it.
+if you want to override, add function with same name on your type.
+
+? - clojure has `:pre` and `:post` for assertion for functions.
