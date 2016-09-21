@@ -4071,7 +4071,65 @@ or `(car)deploy;`
 `car.deploy` - this is really like OOP!
 we can have `int f(int x, int y)` and write `10.f` which will give a function getting int returning int. 
 `(car)<-deploy`  do action 'deploy' on `(car)`
+so we should change function definition accordingly.
+`(int x, int y) deploy: int {}`
+how can we compose functions then?
+`((car).deploy,10).prepare` - the prefix paren is confusing
+`car>deploy, 10>prepare` prepare gets output of car.deploy and 10
+how can we get output of the function?
+`int x = car.deploy`?
+`int x = car>deploy;`
+`int x = #car>deploy, 10>prepare#`
+`int x = car>deploy, 10>prepare, 20>finalize` does prepare get two inputs and output goes to finalize or prepare gets one input and its output + deploy output go to finalize?
+`int x = ((car).deploy, (10).prepare), 20).finalize;`
+function definition: 
+`int (car c, int x, int y).finalize {  ... }`
+`def(scala, python)/fn (rust)/func (golang) int (car c, int x, int y).finalize {  ... }`
+I think func is more descriptive. now that we are putting more effort on function, we should have a dedicated keyword.
+`func (c: car, x: int, y: int).finalize -> int {  ... }`  //this is more similar to call by arg name
+`func [c: car, x: int, y: int, int].finalize {  ... }`  //[] is cheaper than ()
 
+`func int [car c, int x, int y].finalize {...}`
+`func int [int a, int b].calculate {...}`
+`int x = [c1, 10, 20].finalize;`
+`int z = [[c1, 10, 20].finalize, 11].calculate;`  //typing this expression does not need pressing shift-key
+what if we don't know exact signature of the function? we have a struct X and want to prepare_data for it. but there are other arguments. how can I invoke IDE's info for functions defined based on X? 
+provide option to put arguments before or after function name! 
+`func int [car c, int x, int y].finalize {...}`
+call: `int x = [c1, 10].finalize[20];`
+or we can simply write `[c1, 10].` and IDE will show us functions that accept at least two arguments of these types.
+so let's remove optional ordering.
+`func int [car c, int x, int y].finalize {...}`
+but if we call `[c1,10].finalize` result will be a function, which takes an input y and outputs an int.
+`[20].[c1,10].finalize` - seems weird!
+`[y:20].[c:c1, x:10].finalize` - but dev does not know the name of arguments, in general.
+what if I write `finalize(`? IDE will show me 200 functions. but it should provide me with some search/filter option.
+let's not pollute the syntax.
+`func finalize[c: car, x: int, y: int, int] { ... }`
+`auto tt = finalize[c1, 10];` tt is a function getting an int returning int
+`auto r = tt[20];` r is int
+lets focus on correct, gen, orth syntax. IDE should handle all helps for dev.
+defining anon-func:
+`auto qq = func (c: car, x: int, y: int, int) {  ... }; int qq_result = qq(car1, 10, 20);  //we asume there is no other function named qq. if there is, priority will be with local anon-funcs; also you cannot define a variable with the same name as a function`
+when we say `(int:x)f` x input can be anything producing int. so it can be a function too.
+in anon-func we know input and output? maybe not.
+`auto xx = int [int x, int y] { x+y }`
+`int t = (10,20).xx;` syntax is similar to normal function call and it should be.
+note that if there is already another xx function in the scope, it will be hidden.
+defining a function which has input/output of type function?
+syntax should be as readable as possible. `name:type -> output_type` is better.
+`func sort(x: int[], comparer: func(int,int -> bool) -> func(int, bool)) { bool b = comparer(10, 20); }`
+`auto x = func(a:int, b:int -> int) { return a+b; }`
+`auto x = map({$1+1}, array);` //input for map is func (int -> int), $1 refers to the first argument, map is also a function. what is definition of map? `func map<T>(f: func(T -> T), arr: T[] -> T[])`
+`auto x = func( -> int) { return 10; }`  //verbose syntax
+`int y = x();`
+`auto x = func( int, int -> int) { return $1 + $2; }` 
+when we assign anon-f to a variable, we should specify input and output?
+`type comparer := func(int, int -> int);`
+`comparer rr = { $1+$2};` when type of anon-func is implied, you can omit input and output an use $1, $2...
+`comparer rr = func (int, int -> int) { $1+$2};`  //but if you specify func keyword, you have to write input output types. still input name is optional and you can use $ notation
+`comparer rr = func (int x, int y -> int) { x+$2};`  
+we have to decide between `(int x)` and `(x:int)` notation.
 
 ? - what if struct A inherits from B and C and we have this call: `A x = get(); f(x)`
 but we have three f functions for B and C and A?
@@ -4093,3 +4151,15 @@ just implement the new type from A where mixin functions are defined for it.
 if you want to override, add function with same name on your type.
 
 ? - clojure has `:pre` and `:post` for assertion for functions.
+
+? - for immutability we need a notation to indicate a field is immutable.
+also functions need to indicate they won't change an input.
+what about arrays? an immutable array of int vs an array of immutable ints?
+`int f(const int[] array)`
+`int f(array<const int> array)`
+`int f(const array<int> array)`
+or like dlang:
+`int f(const int[] arr)`  arr is a const array of normal int
+`int f(const(int)[] arr)`  arr is a normal array of const ints
+`int f(const const(int)[] arr)` arr is a const array of const ints
+obviously, if all fields of a struct are marked as const, you don't need to specify const before typename. 
