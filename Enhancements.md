@@ -3992,6 +3992,7 @@ http://c2.com/cgi/wiki?DontUseExceptionsForFlowControl
 ? - if we have struct A which inherits from B and call function `f(x)` where x is A and we have two f functions for A and B, which one should be called? what about the case where inside f we call `g(x)`?
 if the function is only implemented for A, then there is only that choice.
 
+? - suppose we have a message structure with AMessage and BMessage children. when we receive data from network/db/any external source it is a message but can be mapped to A or B message. just write `f(AMessage)` and `f(BMessage)` and call `f(deserialize(message1)`. Runtime will automatically call appropriate function.
 
 ? - what if we want to write a function to calculate intersection of objects.
 f(obj1, obj2) - we have circle, square and rectanble.
@@ -3999,3 +4000,43 @@ we want f(rectangle, square) also handle (square, rectanble) case too.
 this is doable with named arguments? `f(square arg1, rect arg2)`
 no.
 we can define `f(square, rect) :: f(rect, square)` or we can call it in correct order
+
+? - 
+principles of OOP are: abstraction, polymorphism, encapsulation, inheritance (this last one is not necessary)
+so refined principles: abstraction (hiding details) and polymorphism (multiple implementation under same name)
+principles of FP: first-class functions (send a function with int output instead of a number), pure functions, immutability, lexical closure
+OOP pro: 
+cons of OOP: many small classes and methods are possible, 
+FP pro: functions are composable
+con of FP: a lot of functions which is hard to track
+
+? - what about building objects at runtime:
+`attach(myStruct, f1, f2, f3)` will give you an object.
+this object has myStruct as private data fields.
+f1, f2, f3 all expect input of type myStruct which is already provided.
+`attach(myStruct, f1(myStruct), f2(myStruct), f3(myStruct))`
+`result = create { f1(x,y) => ff1(x, myStruct, y), f2(z, t) => ff2(z, t, myStruct) }`
+from outside, myStruct is hidden, it will only have f1 and f2 functions.
+`Interface1 result = create_interface<Interface1> { f1(x,y) => ff1(x,10,y), f2(z,t) => ff2(z,t,t,11) }`
+we have a definition for interface1.
+`int func1(Interface1 ii) { return ii.f1(1,2);}`
+above can provide abstraction + encapsulation.
+we can define an interface using a set of functions? but how to group them?
+interface has no state or fields -> so we can simply group some functions. state is in function inputs.
+but advantage is that we can have a hidden storage for data which provides encapsulation.
+these internal functions can be hidden and un-accessible from outside. the only way to access them is through the given interface. the creator can even copose them. but do we really need an interface for that?
+`func public_func = x,y -> private-func(1, x, y)`
+a function which creates an interface can be the gateway to a module.
+suppose reading a complex file. this modules can encapsulate all the logic and only expose required functions.
+but how can we extend this?  how can we provide this for another file type? ans: by implementing same interface in another module which is implemented for another file type.
+how can we add a new function to this interface? when there are for example 10 modules implementing it?
+e.g. a function to calculate CRC of the file, which needs to be added for all file types? maybe if interface is like a hash-table, we can simply add a new entry. But it should have full access to file structure. visitor pattern can solve this. we should see how it can be fit in the current system.
+maybe we can simulate interface with a super-function which can dispatch to other functions.
+`struct super-struct {}; function f1(super-struct ...) {}; function get_super_struct() { return super-struct{10} }`
+get-super-struct returns a struct which will affect dynamic dispatch at the runtime to redirect calls to f1 function.
+and super-struct can inherit from normal-struct and we have two f1 functions for normal and super struct.
+we can cast return of get-super-struct to a normal-struct so caller won't notice extra fields in super-struct but when he makes a call, it will be redirected to functions that accept super-struct.
+to add a new functio we can simply implement if accepting super-struct. 
+`normal-struct create() { return super-struct; } f(super-struct ss){} f(normal-struct ss){}`
+we have polymorphism, inheritance (super inherits from normal), encapsulation (super fields are hidden from outside). and we have kind of abstrction because outside just needs to call f function. and f can call other module-private functions.
+
