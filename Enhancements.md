@@ -4371,7 +4371,7 @@ Y - pre and post
 \* - how to define primitives?
 `type int := struct(4);`
 
-? - what does it mean if a field of struct starts with _?
+Y - what does it mean if a field of struct starts with _?
 can this apply to anon-fields?
 ```
 type x := struct {
@@ -4385,6 +4385,8 @@ if it starts with `_` it is not promoted, but still castable to that type.
 we can say, any struct type which is defined inside a struct, means inheritance, so they can be cast. 
 what about promotion? if it doesn't have a name, it will be promoted.
 no. this can have un-wanted side-effects. we have to explicitly specify parent structs.
+
+Y - Let's remove fields redirection. and function redirection.
 
 ? - do we need aspects? 
 how can we model `around` aspect?
