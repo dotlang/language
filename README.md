@@ -112,7 +112,6 @@ ContinueStmt = 'continue' [Number] ';'
 - It is advised to return error code in case of an error and use exceptions in really exceptional cases.
 - You can use `assert false, X` to create exception and return from current method.
 - You can use `defer` keyword (same as what golang has) for code that must be executed upon exitting current method.
-- If defer has an input named `out`, it will be mapped to the function output.
 - If defer has an input named `exc`, it will be mapped to the current exception. If there is no exception, defer won't be executed. If there are multiple defers with `exc` all of them will be executed.
 - You can check output of a function in defer (`defer(out) out>0`) to do a post-condition check.
 
@@ -121,21 +120,14 @@ ContinueStmt = 'continue' [Number] ';'
 assert false, "Error!";  //throw exception and exit
 //outside: catching error
 defer(exc) { ... }
-defer(out, exc) { ... }
-
-defer(out) { if ( out != $int ) out++; }  //manipulate function output
-defer(out) assert out>0;  //post-condition check
 ```
 
 ###defer
-- If function has multiple outputs, you can name them in `defer`:
-`(int a, float f) f() { return 1, 3.1;}`
-`defer(a,f) ...`
 
 ###struct
 You use this statement to define a new data structure:
 ```
-struct Car {
+type Car := struct {
   color: int;
   age: int;
 }
@@ -173,7 +165,6 @@ You can import a module using this statement:
 import core.st.Socket;  //functions, types and structs inside core/st/Socket.e file are imported
 ```
 
-###auto
 ###invoke
 We have `invoke` and `select` keywords. You can use `future<int> result = invoke function1();` to execute `function1` in another thread and the result will be available through future class (defined in core).
 
@@ -200,14 +191,6 @@ Denote fnuction is implemented by runtime or external libraries.
 `if ( defined x)` returns true if x is not `nil`.
 
 
-###typename
-for templates
-
-```
-//T parameter must be a child of ParentStruct struct
-struct <T:ParentStruct> {...}
-```
-
 ##Primitives
 - **Integer data types**: `char`, `short`, `int`, `long`
 - **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
@@ -224,13 +207,13 @@ Source file contains a number of definitions for struct, type and functions.
 
 ###Structs
 ```
-struct A { x: int; }  //you cannot assign value in struct
-struct B { A; y: int; } //B inherits from A, you can use b.x or b.A.x to refer to x field
-struct C;   //empty struct
-struct D { y: int = 9; } //setting default value
-struct E { y: const int; } //y is immutable, you can only set its value upon creation
-struct G { F; z: const int := F.y; }  //z is a reference to F.y
-struct Stack<T> { } //generic structure
+type A := struct { x: int; }  //you cannot assign value in struct
+type B := struct { A; y: int; } //B inherits from A, you can use b.x or b.A.x to refer to x field
+type C := struct;   //empty struct
+type C := struct { y: int = 9; } //setting default value
+type C := struct { y: const int; } //y is immutable, you can only set its value upon creation
+type C := struct { F; z: const int := F.y; }  //z is a reference to F.y
+type Stack<T> := struct { } //generic structure
 ```
 
 To create a new struct instance:
@@ -239,53 +222,64 @@ var test : A{x: 10};
 var test2 : A{};  //{} is mandatory
 var test2 : Stack<int>{};
 ```
+- If all fields of a struct are const, it is immutable.
 
 ###Functions
 
 ```
 func my_func1(x: int, y: int) -> float { return x/y; }
 func my_func2(x: int, y: int = 11 ) -> float { return x/y; }  //you can set default value
-func my_func3(x: int, y: int) -> x/y;
+func my_func3(x: int, y: int) -> x/y;  //you can omit {} if its a single expression
 func my_func4(x: int, y: const int) -> x/y;  //function will not change value of y
 func my_func5 -> my_func3;  //function redirection
-func _my_func6(x: int, y: int) -> x/y {};  //this function won't be accessible outside the module
+func _my_func6(x: int, y: int) -> x/y;  //this function won't be accessible outside the module
 func my_func7(x: int, y: int) {} //functions returng nothing, so -> is optional
 func my_func7() -> int { return 10;} //fn has no input but () is mandatory
 func push<T>(T data, Stack<T> stack) {...}
+func my_func8() -> (int, int) { return (10,20);} //function can return multiple values
+(x,y) = my_func8();  //but there is no tuple
 
  //below function receives an array + a function and returns a function
 func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
+
+func map<T>(f: func(T) -> T, arr: T[]) -> T[];  //map function
+new_array = map<int>({$$+1}, my_array);
 ```
+- Everything is passed by reference.
+- When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`
+
+###Variables
+Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part.
+By default everything is mutable unless it's type has `const`.
+
+```
+var x:int;
+var t = 12;
+var y : const int = 19;
+var t: const = 12;  //imply type from 12 and make it const
+```
+- You cannot pass a variable of type `const int` to a function which expects `int`. 
+- You can send `const int` or `int` to a function which expects `const int`.
 
 ##Operators
 
-- Conditional: `and or not == != >= <= ??`
+- Conditional: `and or not == != >= <=`
 - Bitwise: `~ & | ^ << >>`
 - Math: `+ - * % ++ -- **`
 The bitwise and math operators can be combined with `=` to do the calculation and assignment in one statement.
 
 
-- `=` operator, makes a variable refer to the same object as another variable (this is provided by runtime because classes cannot re-assign `this`). So when you write `int x = y` by default x will point to the same data as y. If you want to clone, you need to use custom methods (e.g. `int x = int.new(y);`). You cannot override this operator.
-- `x ?? 5` will evaluate to 5 if x is in undef, else will be evaluated to x.
+- `=` operator, makes a variable refer to the same object as another variable.
 - `x == y` will call `equals` functions is existing, by default compares field-by-field values.
-- `&x` is a short-cut for `assert defined x;` which can be used to ensure x is not default instance.
-- `~x` creates a shallow clone of x. so you can write `auto y = ~x` and y will point to a copy of x.
 
 ##Special syntax
-- `->` for lambda expression
-- `_` input place-holder for anon-func
-- `$` for casting and default instance
-- `alloc` instantiation
-- `@` for annotations
-- `[]` for field access
-- `:` for hash literal, loop, call by name, array slice 
-- `%` template syntax
-- `:=` type alias and typename
-- `::` function and field redirection
-- `&` assert defined variable.
-- `out`: representing function output in defer
-- `exc`: representing current exception in defer
-- `??` undef check
+- `~x` makes a copy of x
+- `#` for annotations on fields and structs
+- `:` for hash, call by name, array slice, loop
+- `<>` template syntax
+- `$$` only input in lambda
+- `@` casting
+- `:=` type alias and field redirection
 
 ###Special variables
 `true`, `false`
@@ -296,11 +290,11 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 
 ###Annotations
 You can annotate a struct or field with this syntax:
-`@custom_name{key1:value1, key2:value2, ...}`
+`#custom_name{key1:value1, key2:value2, ...}`
 custom_name is whatever you want. `value(i)` is optional and is assumed to be `true` if omitted.
 for example:
-`x: int @json{ignore};`
-`x: const int @json{ignore};`
+`x: int #json{ignore};`
+`x: const int #json{ignore};`
 
 - `core` provides functions to extract annotations.
 
@@ -318,8 +312,8 @@ for example:
 - 
 
 ###Casting
-- `$MyStruct(my_obj)` will try to cast `my_obj` instance to `MyStruct` type. This is only possible if MyObj (type of `my_obj`) composes an anonymous field of type `MyStruct`.
-- `float f; int x = $int(f);` this version is used for casting primitives.
+- `@MyStruct(my_obj)` will try to cast `my_obj` instance to `MyStruct` type. This is only possible if MyObj (type of `my_obj`) composes an anonymous field of type `MyStruct`.
+- `float f; int x = @int(f);` this version is used for casting primitives.
 - empty/undefined/not-initialized state of a variable is named "default" state and is shown by `nil`.
 - Value of a variable before initialization is `nil`.
 - You can also return `nil` when you want to indicate invalid state for a variable.
@@ -337,14 +331,6 @@ You can prefix a method, with a set of `weave` keywords each with an expression 
 - Weave expression is evaluated and checked for appropriate functions by compiler. So you can include any expression including assertions. These will be run before function run: `#weave {assert x>0}`
 - For example you can write a weave to retry method call 3 times in case of exception.
 
-###Instantiation
-###Return multiple values
-Functions can return multiple values: 
-`(int a, float f) f() { return 1, 3.1;}`
-calling those functions: `(iv, fv) = f();`
-that's all we have for multiple-return.
-There is no tuple type so you cannot write: `auto x = f()`
-
 ###Lambda expression
 
 You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too.
@@ -359,13 +345,11 @@ auto rr = func { x + y };` //WRONG! - input is not specified
 auto rr = func (x: int, y:int) -> { x + y };  //when you use auto, you must specify input type and name.
 ```
 
-###Optional arguments
+
 
 ##Best practice
 ###Naming
-- **Naming rules**: Advised but not mandatory: `some_method_name`, `someVariableName`, `MyClass`, `MyPackage`.
-- constructor is called `new` in core classes.
-- For primitive classes, name starts with lowercase to denote they are primitive and have no fields.
+- **Naming rules**: Advised but not mandatory: `some_method_name`, `someVariableName`, `MyStruct`, `my_package_or_module`.
 
 ##Examples
 ###Empty application
