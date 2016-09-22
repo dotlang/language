@@ -4366,15 +4366,31 @@ vs.
 `new_array = map {$$+1} my_array;`
 will this decrease readability?
 
-? - pre and post
-
-? - do we need aspects?
+Y - pre and post
 
 \* - how to define primitives?
 `type int := struct(4);`
 
 ? - what does it mean if a field of struct starts with _?
 can this apply to anon-fields?
+```
+type x := struct {
+    a: int;
+    b: int;
+    a:: A;  //this will be promoted
+    _b:: const B #json{ignore};  //this will not be promoted
+};
+```
+if it starts with `_` it is not promoted, but still castable to that type.
+we can say, any struct type which is defined inside a struct, means inheritance, so they can be cast. 
+what about promotion? if it doesn't have a name, it will be promoted.
+no. this can have un-wanted side-effects. we have to explicitly specify parent structs.
+
+? - do we need aspects? 
+how can we model `around` aspect?
+we need to have functions that accept other functions which are of any type.
+this can be modelled by a general-purpose function type. which does not accept anything and output is same as function output.
+`type ptr<T> := func () -> T;`
 
 ? - exception handling is like a complex goto. shall we keep it?
 https://news.ycombinator.com/item?id=2599012
@@ -4385,6 +4401,5 @@ http://c2.com/cgi/wiki?DontUseExceptionsForFlowControl
 Later
 
 ? - what about throw and defer? assert?
-
 
 ? - think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
