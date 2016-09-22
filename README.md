@@ -207,13 +207,13 @@ Source file contains a number of definitions for struct, type and functions.
 
 ###Structs
 ```
-type A := struct { x: int; }  //you cannot assign value in struct
-type B := struct { A; y: int; } //B inherits from A, you can use b.x or b.A.x to refer to x field
+type A := struct { x: int; };  //you cannot assign value in struct
+type B := struct { A; y: int; }; //B inherits from A, you can use b.x or b.A.x to refer to x field
 type C := struct;   //empty struct
-type C := struct { y: int = 9; } //setting default value
-type C := struct { y: const int; } //y is immutable, you can only set its value upon creation
-type C := struct { F; z: const int := F.y; }  //z is a reference to F.y
-type Stack<T> := struct { } //generic structure
+type C := struct { y: int = 9; }; //setting default value
+type C := struct { y: const int; }; //y is immutable, you can only set its value upon creation
+type C := struct { F; z: const int := F.y; };  //z is a reference to F.y
+type Stack<T> := struct { }; //generic structure
 ```
 
 To create a new struct instance:
@@ -275,7 +275,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 ##Special syntax
 - `~x` makes a copy of x
 - `#` for annotations on fields and structs
-- `:` for hash, call by name, array slice, loop
+- `:` for hash, call by name, array slice, loop, aspect
 - `<>` template syntax
 - `$$` only input in lambda
 - `@` casting
@@ -286,7 +286,17 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 
 ###Composition
 
-- If struct contains a field without a name, it is promoted. This means that instances of that struct will be castable to type of promoted field, and all fields inside promoted field's type will be copied to container struct.
+- If struct contains a field defined using `::` the struct will be castable to those fields. If field variable name starts with `_` it's internal data won't be promoted. But if it does not start with `_` they will be promoted to the container struct. 
+
+```
+type x := struct {
+    a: int;
+    b: int;
+    a:: A;  //this will be promoted
+    _b:: const B #json{ignore};  //this will not be promoted
+};
+```
+- You can cast instances of `x` to `A` and `B`. Fields of `A` will be added to `x` too.
 
 ###Annotations
 You can annotate a struct or field with this syntax:
@@ -320,7 +330,22 @@ for example:
 
 ###Undef instance
 ###Aspects
-You can prefix a method, with a set of `weave` keywords each with an expression which specifies a set of methods to be called before/after/around/... of the current method.
+You can prefix a fucntion, with a set of aspects as pre-condition and post-condition.
+
+```
+//before will be called before entering function body, same for after
+//around will be called instead of this function. it will have a function pointer of type `func()` which accepts nothing and returns output of the real call. around handler can invoke this pointer to do the real call. 
+func make_data(x:int, y:int) -> float 
+: before (assert x>0)
+: after ( assert out!=4)
+: after (assert defined(out))
+: around (other_func)
+{
+...
+}
+```
+
+with a set of `weave` keywords each with an expression which specifies a set of methods to be called before/after/around/... of the current method.
 ```
 #weave {obj1} int f(int x) { return x;} //function members of obj1 named before, after, around, ... will be called if they are defined
 #weave {$OnlyAfter(obj1)} int f(} { return 5;} //obj1 is cast to OnlyAfter interface. so only it's after method will be called.
