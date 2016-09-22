@@ -3920,6 +3920,7 @@ what is advantage of immutability?
 
 ? - how to implement array or hashmap?
 we can replace array with a hash-map with int key.
+doable in native code.
 
 ? - what if we pass Circle to `int f(Shape s)` and f calls `Area(s)`?
 which one will be called: `int Area(Shape s);` or `int Area(Circle c)`?
@@ -3978,8 +3979,6 @@ struct B{ A a;
 int g :: a.xgg;}
 ```
 
-? - think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
-
 ? - we should be able to add new operations for data types that are defined in external libraries.
 
 ? - exception handling is like a complex goto. shall we keep it?
@@ -3988,6 +3987,7 @@ http://c2.com/cgi/wiki?ExpressionProblem
 https://www.quora.com/Why-do-some-people-recommend-not-using-exception-handling-in-C++
 https://blog.jooq.org/2013/04/28/rare-uses-of-a-controlflowexception/
 http://c2.com/cgi/wiki?DontUseExceptionsForFlowControl
+Later
 
 ? - if we have struct A which inherits from B and call function `f(x)` where x is A and we have two f functions for A and B, which one should be called? what about the case where inside f we call `g(x)`?
 if the function is only implemented for A, then there is only that choice.
@@ -3999,7 +3999,8 @@ f(obj1, obj2) - we have circle, square and rectanble.
 we want f(rectangle, square) also handle (square, rectanble) case too.
 this is doable with named arguments? `f(square arg1, rect arg2)`
 no.
-we can define `f(square, rect) :: f(rect, square)` or we can call it in correct order
+we can define `f(square, rect) :: f(rect, square)` or we can call it in correct order.
+this is not a major problem.
 
 ? - 
 principles of OOP are: abstraction, polymorphism, encapsulation, inheritance (this last one is not necessary)
@@ -4008,7 +4009,12 @@ principles of FP: first-class functions (send a function with int output instead
 OOP pro: 
 cons of OOP: many small classes and methods are possible, 
 FP pro: functions are composable
-con of FP: a lot of functions which is hard to track
+con of FP: a lot of functions which is hard to track.
+we have abstraction by struct casting and polymorphism by defining a function for different types in a hierarchy.
+
+? - can we define a function f on A and state it cannot be re-written for children?
+why? if they decide they want to, they should be able to do that. 
+in the child implementation, they can explicitly request calling A's f by casting.
 
 ? - what about building objects at runtime:
 `attach(myStruct, f1, f2, f3)` will give you an object.
@@ -4056,7 +4062,8 @@ but pro os OOP is that when I type `car.` IDE or some other tool can give me "po
 car = make_car(...);  //can return car struc or bmw_car or toyota_car
 deploy(car);  //before typing deploy, what are my options when calling a function?
 ```
-how can an IDE help me when I want to write `deploy` method when it doesn't know what am I going to pass to the function? basically I can write name of any function at the beginning of that line.
+
+? - how can an IDE help me when I want to write `deploy` method when it doesn't know what am I going to pass to the function? basically I can write name of any function at the beginning of that line.
 what if we change the call syntax the other way around? `(car).deploy`?
 this will call deploy function on the car struct but the advantage of this is that as soon as I finish `(car)` and type the dot, IDE can easily list all methods which:
 1. accept a single argument
@@ -4117,19 +4124,104 @@ in anon-func we know input and output? maybe not.
 `int t = (10,20).xx;` syntax is similar to normal function call and it should be.
 note that if there is already another xx function in the scope, it will be hidden.
 defining a function which has input/output of type function?
-syntax should be as readable as possible. `name:type -> output_type` is better.
+this syntax is weird where we put arguments first
+
+? - syntax should be as readable as possible. `func fname (name:type) -> output_type` is better.
 `func sort(x: int[], comparer: func(int,int -> bool) -> func(int, bool)) { bool b = comparer(10, 20); }`
 `auto x = func(a:int, b:int -> int) { return a+b; }`
-`auto x = map({$1+1}, array);` //input for map is func (int -> int), $1 refers to the first argument, map is also a function. what is definition of map? `func map<T>(f: func(T -> T), arr: T[] -> T[])`
+`auto x = map({$1+1}, array);` //input for map is func (int -> int), $1 refers to the first argument, map is also a 
 `auto x = func( -> int) { return 10; }`  //verbose syntax
 `int y = x();`
 `auto x = func( int, int -> int) { return $1 + $2; }` 
 when we assign anon-f to a variable, we should specify input and output?
 `type comparer := func(int, int -> int);`
 `comparer rr = { $1+$2};` when type of anon-func is implied, you can omit input and output an use $1, $2...
-`comparer rr = func (int, int -> int) { $1+$2};`  //but if you specify func keyword, you have to write input output types. still input name is optional and you can use $ notation
-`comparer rr = func (int x, int y -> int) { x+$2};`  
-we have to decide between `(int x)` and `(x:int)` notation.
+`comparer rr = func (int, int -> int) { $1+$2};`  //but if you specify func keyword, you have to write input output types. still input name is optional and you can use $ notation fucntion.
+`comparer rr = func (int x, int y -> int) { x + $2};`  //you can always use $i notation.  
+
+? - what is definition of map? 
+`func map<T>(f: func(T) -> T, arr: T[]) -> T[];`
+usage:
+`new_array = map({$$+1}, my_array);`
+or `new_array = map<int>({$$+1}, my_array);`
+type T can be inferred from inputs.
+`void push<T>(T data, Stack<T> stack) { ... }`
+
+? - like perl, can we declare paren optionsl? or even comma?
+`new_array = map({$$+1}, my_array);`
+vs.
+`new_array = map {$$+1}, my_array;`
+vs.
+`new_array = map {$$+1} my_array;`
+will this decrease readability?
+
+? - how to prevent function name collission? 
+I want to define a temporary function in this file, how can I be sure its name is uniqe?
+function names starting with `_` are not exported. they can only be called internally.
+
+? - ban $1 because it is not readable. 
+if anon-func has only one input, we can use a notation like `$_` or `_` or `$$`.
+
+? - you can only define an expression for anon-func. if it is more complex, just define a normal function for it. 
+output is not specified for lambda because it is inferred from expression type.
+normal function: `func sort(x: int[], comparer: func(int,int) -> bool) -> func(int -> bool) { bool b = comparer(10, 20); }`
+`adder rr = func { x + y };` input/output is inferred by type (adder) so you can omit them
+`adder rr = { x + y };`  //the only case where you can ignore func is where type is specified or inferrable (e.g. in map)
+`adder rr = func (x: int, y: int) -> { x + y };` output is inferred, input name is given
+`auto rr = func { x + y };` wrong - input is not specified
+`auto rr = func (x: int, y:int) -> { x + y };`  //when you use auto, you must specify input type. input name is optional.
+`auto chained = func(x: int) -> { rr(x, 10) }`  chained will add 10 to the x input
+
+? - in anon-func can we omit `{}` because it is expression.
+`auto chained = func(x: int) -> rr(x, 10)`
+`adder rr = x + y;` but how can we know this is not a statement? func should be required.
+
+? - it is more readable to write: `data.action1(1, 2).action2(3, 4).action3(5)` rather than:
+`action3(5, action2(3, 4, action1(data, 1, 2)));`
+haskell has . for composition of functions.
+we can write: `action1(data).action2($_, 3, 4).action3(5, $_)` where `$_` specified the place of item before dot in the input arguments.
+`f(x,y)` can be written as `x.f($_, y)` or `y.f(x, $_)`
+if f has only one input, we can ignore `$_`.
+so: `data.action1().action2(3, 4, $_).action3($_, 5);`
+`f.g` where f is a variable and g is a function, means calling g with f as input.
+OR
+`action3($_, 5).action2(3, 4, $_). action1(data)`
+where `f.g` means run g and feed the result into f.
+so instead of `f(x,y)` we can write `f(x,$_).y` or `f($_, y).x`
+which notation is better?
+suppose we want to rever sort even numbers.
+`reverse.sort.even(num_array)` - math like
+`even(num_array).reverse.sort` - OOP like
+math like is better, I think.
+`f.g.h(1)` means `f(g(h(1)))`
+so dot operator can be used to chain method call? and fetch struct member?
+it's not good to have two tasks for an operator. 
+we should define another one:
+`action3($_, 5) <- action2(3, 4, $_) <- action1(data)`
+`reverse($_, 5) <- sort(3, 4, $_) <- evens(data)`
+and if a function has just one input, we can omit `($_)`
+`auto final_result = reverse <- sort <- even(data)`
+this is an anon-func for function composition
+`auto final_result = func (x: int[]) -> reverse <- sort <- even(x)`
+`auto res = final_result(array1);`
+`->` and `<-` together are cluttered. maybe we can replace one of them with another symbol.
+`auto final_result = func (x: int[]) -> reverse << sort << even(x);`
+`auto final_result = func (x: int[]) -> reverse($_, 5) << sort(3, 4, $_) << evens(x);`
+we are not following the goal to make program as compressed and short as possible. 
+so we make some things required that can be inferred by the compiler but indicating them in the source code makes the code more readable and self-documented.
+
+? - we have to decide between `(int x)` (used in C, Java and C#) and `(x:int)` (Rust, Go) notation.
+the normal variable assignment will be like C: `int x = 12` so it's better if we have same syntax in func definition.
+which one is more readable? 
+`func sort(x: int[], comparer: func(int,int -> bool) -> func(int -> bool)) { bool b = comparer(10, 20); }`
+`func sort(int[] x, func(int,int -> bool): comparer -> func(int -> bool)) { bool b = comparer(10, 20); }`
+SO: Most of the time you need to find names of references/mathods fast (visually), not types.
+SO: Pascal syntax is context-free, C syntax is context-sensitive.
+so `x: int` is better.
+
+? - when output type is not specified, it is void. now that we don't have a class, return this does not make sense.
+`func set(x: int) {}` 
+does not have output, just input
 
 ? - what if struct A inherits from B and C and we have this call: `A x = get(); f(x)`
 but we have three f functions for B and C and A?
@@ -4139,7 +4231,6 @@ but we have three f functions for B and C and A?
 `int f(C c) {}`
 if get() returns an instance of B then f(B) will be called. C -> f(c)
 if it returns an instance of A and there is no f(A) then there will be a problem.
-if there if f(B) but not f(C), f(A) and we call f(x) where x is of type A then f(B) will be called. 
 when there is a call `f(x)` and real type of x is A, runtime will call `f(A)` function. if there is not such a function, parents of x will be investigated. if there is a `f(T)` where T is a parent of A, it will be called. no call will be made if there is ambiguity (no call candidate or more than one candidate).
 
 ? - int/float/... all are special structs. so you can have functions working on int. and call them like:
@@ -4151,6 +4242,15 @@ just implement the new type from A where mixin functions are defined for it.
 if you want to override, add function with same name on your type.
 
 ? - clojure has `:pre` and `:post` for assertion for functions.
+we can have them too.
+```
+func sort(x: int[], comparer: func(int,int -> bool) -> func(int, bool)) 
+:pre(x>0)
+:post(out != 4)
+{ 
+    bool b = comparer(10, 20); 
+}
+```
 
 ? - for immutability we need a notation to indicate a field is immutable.
 also functions need to indicate they won't change an input.
@@ -4163,3 +4263,30 @@ or like dlang:
 `int f(const(int)[] arr)`  arr is a normal array of const ints
 `int f(const const(int)[] arr)` arr is a const array of const ints
 obviously, if all fields of a struct are marked as const, you don't need to specify const before typename. 
+or we can have `m` alternative for each primitive type: `int` is mutable, `mint` is not.
+what about structs?
+`func f(x: int, y:int) -> float { ... }`
+lets default to mutable data. and define immutables with `&` or `!` or `$`?
+`func f(x: &int, y:int) -> &float { ... }`
+`func f(x: &int[], y:int[&]) -> &float { ... }`  //x is an immutable array containing imm ints, y is a mutable array containing immutable numbers.
+
+? - can a function return multiple values?
+in haskel, scala and rust it can. 
+`func f(x: int, y:int) -> (float, double) { return (1, 9); }`
+`(x,y) = f(1, 20);`
+shall we support this?
+`auto t = f(1, 10);` if yes, how addressing should be done? `t[0]`? `t._0` like scala, `t.0` like rust?
+now that we have structs, why add a tuple data-type? dev can easily define a struct.
+
+
+? - think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
+
+? - how to create a new struct? what about templates?
+`struct A { x: int; }`
+`var r : A{ x: 10}` or `r : A{ x: 10}`
+`var r : Stack<int>{};`
+
+? - but if `struct A {int x;} struct B:A{}` then with access to a variable of type B, we have access to `x` too!
+unless we provide access only to fields explicitly defined inside the struct. or:
+`struct B { A; }` then we cannot write `B.x`? we should be able to do that.
+so, we have access to the whole hierarchy but calling a function is dispatched based on the real type of variable.
