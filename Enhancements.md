@@ -4318,6 +4318,12 @@ let's default to pass by reference. so `int` means pass by reference and mutable
 what about passing structs by reference and primitives by value?
 so for values, it is immutable or at least doesn't matter.
 but in functional, we put more importance on the data. so we should be capable to support different options and features about them.
+`int[] arr`
+`const int[] arr`
+`int[const] arr`
+`const int[const] arr`
+lets keep immutable and remove notation of pass by value.
+eveything is passed by reference. if you want to preserve func change it's value use immutability features.
 
 ? - can we use function output like a value in an expression?
 `effective_start(contract).plus_time_interval('3d');`
@@ -4325,3 +4331,23 @@ but in functional, we put more importance on the data. so we should be capable t
 ? - what about putting function name first?
 `f: func(x: int, y:int) -> float { ... }`
 its not beautiful and its confusing.
+
+? - what about enums?
+
+? - what about operators?
+
+? - what about throw and defer? assert?
+
+? - how to have defer with a function that returns multiple items?
+
+? - do we need alias for import?
+
+? - what should be behavior of `=`?
+
+? - do we still need all undefined/defined and & operators?
+
+? - review special syntax section
+
+? - do we need aspects?
+
+? - can we replace auto with var?
