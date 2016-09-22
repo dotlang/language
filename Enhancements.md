@@ -4192,7 +4192,7 @@ which notation is better?
 suppose we want to rever sort even numbers.
 `reverse.sort.even(num_array)` - math like
 `even(num_array).reverse.sort` - OOP like
-math like is better, I think.
+math like is better, I think. but OOP like is more similar to machine, it is more imperative.
 `f.g.h(1)` means `f(g(h(1)))`
 so dot operator can be used to chain method call? and fetch struct member?
 it's not good to have two tasks for an operator. 
@@ -4209,6 +4209,12 @@ this is an anon-func for function composition
 `auto final_result = func (x: int[]) -> reverse($_, 5) << sort(3, 4, $_) << evens(x);`
 we are not following the goal to make program as compressed and short as possible. 
 so we make some things required that can be inferred by the compiler but indicating them in the source code makes the code more readable and self-documented.
+OOP like it will be (preferred):
+`evens(data) >> sort(3, 4, $_) >> reverse($_, 5);`
+any idea for an alternative for >> which doesnt conflict with shift operator?
+`evens(data) |> sort(3, 4, $_) |> save |> reverse($_, 5);`
+`evens(data) => sort(3, 4, $_) => save => reverse($_, 5);`
+`=>` is good. for hash we will use `key:value`
 
 ? - we have to decide between `(int x)` (used in C, Java and C#) and `(x:int)` (Rust, Go) notation.
 the normal variable assignment will be like C: `int x = 12` so it's better if we have same syntax in func definition.
@@ -4290,3 +4296,32 @@ now that we have structs, why add a tuple data-type? dev can easily define a str
 unless we provide access only to fields explicitly defined inside the struct. or:
 `struct B { A; }` then we cannot write `B.x`? we should be able to do that.
 so, we have access to the whole hierarchy but calling a function is dispatched based on the real type of variable.
+
+? - function redirection
+`func f(x: int, y:int) -> other_g(x,y);`
+`func f -> other_g;`
+
+? - if function has one statement, we can remove {} and return.
+`func f(x: int, y:int) -> x/y;`
+
+? - call by value of ref? 
+when data is immutable, it doesn't matter. 
+`func f(x: &int, y:int) -> &float { ... }`
+x cannot be changed.
+but y can be. so, is it passed by value or reference?
+we can use `int` for passing by value. `&int` for pass by reference (int pointer).
+and `%int` for passing by reference but immutable. 
+but adding `%` everywhere we work with struct is difficult.
+let's default to pass by reference. so `int` means pass by reference and mutable.
+`&int` means pass by reference and immutable.
+`%int` means pass by value. `%A` means value of struct is passed by value.
+what about passing structs by reference and primitives by value?
+so for values, it is immutable or at least doesn't matter.
+but in functional, we put more importance on the data. so we should be capable to support different options and features about them.
+
+? - can we use function output like a value in an expression?
+`effective_start(contract).plus_time_interval('3d');`
+
+? - what about putting function name first?
+`f: func(x: int, y:int) -> float { ... }`
+its not beautiful and its confusing.
