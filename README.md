@@ -212,7 +212,7 @@ type B := struct { A; y: int; }; //B inherits from A, you can use b.x or b.A.x t
 type C := struct;   //empty struct
 type C := struct { y: int = 9; }; //setting default value
 type C := struct { y: const int; }; //y is immutable, you can only set its value upon creation
-type C := struct { F; z: const int := F.y; };  //z is a reference to F.y
+type C := struct { F; z: const int; };  //z is a reference to F.y
 type Stack<T> := struct { }; //generic structure
 ```
 
@@ -231,7 +231,6 @@ func my_func1(x: int, y: int) -> float { return x/y; }
 func my_func2(x: int, y: int = 11 ) -> float { return x/y; }  //you can set default value
 func my_func3(x: int, y: int) -> x/y;  //you can omit {} if its a single expression
 func my_func4(x: int, y: const int) -> x/y;  //function will not change value of y
-func my_func5 -> my_func3;  //function redirection
 func _my_func6(x: int, y: int) -> x/y;  //this function won't be accessible outside the module
 func my_func7(x: int, y: int) {} //functions returng nothing, so -> is optional
 func my_func7() -> int { return 10;} //fn has no input but () is mandatory
@@ -279,7 +278,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `<>` template syntax
 - `$$` only input in lambda
 - `@` casting
-- `:=` type alias and field redirection
+- `:=` type alias
 
 ###Special variables
 `true`, `false`
