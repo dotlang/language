@@ -3626,20 +3626,20 @@ Y - template: we dont need default and multiple interfaces for type-checking.
 `struct Stack<T: Parent>`
 we can remove typename.
 
-? - gen similar syntax for array and hash.
+N - gen similar syntax for array and hash.
 
-? - if we can define class-less functions, we can convert most of operators to functions.
+Y - if we can define class-less functions, we can convert most of operators to functions.
 like ref/copy/dup/...
 
-? - when we say struct fields are public they are public forever for all.
+Y - when we say struct fields are public they are public forever for all.
 but when we say they are private: to whom? who can access? what about other files?
 if we define struct as immutable, then making them public will have less risk.
 also we can do the same for functions. convention to have them private. 
 and at most, give some warnings if they are used outside.
 
-? - if we have classless func, we can define `range` and `map` to have `for` statement. no need to have a separate loop keyword.
+Y - if we have classless func, we can define `range` and `map` to have `for` statement. no need to have a separate loop keyword.
 
-? - consistency is simple. 
+Y - consistency is simple. 
 order enforcing is not simple.
 `int (int x).negative() { }`
 its bettern to have 100 simple elements than 10 complex.
@@ -3648,7 +3648,7 @@ in OOP we have data, function, interface, class.
 things should look similar.
 what are the things that absolutely are useful? abstraction, code re-use, 
 
-? - With the receiver notation there will always be a confusion about difference between these:
+N - With the receiver notation there will always be a confusion about difference between these:
 `int (MyClass this).func(int x) ...`
 `int func(MyClass this, int x)...`
 are they the same? if they are, which one is better? How should I decide which one to use? -> confusion != simplicity
@@ -3660,9 +3660,10 @@ calling a function by parameter name will solve the order issue completely.
 `int g = f(u: u1, t: t1, s:s1);`
 so we don't even care which one comes first.
 
-? - calling functions by name makes code more readable. what about forcing to call by name?
+N - calling functions by name makes code more readable. what about forcing to call by name?
+(about argument passing)
 
-? - to achieve immutability and performance, we may provide some syntax to create a new object/record based on another one. which will be processed by compiler to generate efficient code.
+N - to achieve immutability and performance, we may provide some syntax to create a new object/record based on another one. which will be processed by compiler to generate efficient code.
 `file f = ...; file f2 = clone(f, name='aa');`
 or `file f2 = f.name='aa';`
 `f = f.name='11'` f will be pointing to a new structure
@@ -3677,44 +3678,43 @@ all of g's fields will be redirected to f fields, except name.
 in memory we have this for f and g and other data: 
 `ptr memoryAddress; ptr parentRecord; ptr exclusiveFields;` something like this.
 
-? - having things like `executefile('dsadsad')` in the code is just confusing. where is this function defined?
+N - having things like `executefile('dsadsad')` in the code is just confusing. where is this function defined?
 `time.sleep(5)` what does 5 mean? do I need to look at documentation for each method call?
 
-? - FP and OOP can be orthogonal. so employ both of them.
+Y - FP and OOP can be orthogonal. so employ both of them.
 like Scala or F#
 
-? - If I have a bound function to MyRecord, can I call it without an instance of myrecord?
+N - If I have a bound function to MyRecord, can I call it without an instance of myrecord?
 `int f(Rec r, int x)`
 `int (Rec r).f(int x)` two methods to define a function. this is not good.
 
-
-? - if a function expects FirstClass, and we send SecondClass (where SecondClass inherits from FirstClass), it is polymorphism.
+Y - if a function expects FirstClass, and we send SecondClass (where SecondClass inherits from FirstClass), it is polymorphism.
 SecondClass has some extra fields and associated functions. we really don't (and can't) call those extra because we expect a FirstClass. Also, from a data point of view, SecondClass has a field named "FirstClass". so why not send "obj.FirstClass" field to the function and it can also call corresponding functions too. because it has a first-class data structure. 
 encapsulation is primarily used to hide implementation details. we can simulate them with `_` fields. 
 
-? - what is the difference between:
+N - what is the difference between:
 `int f(MyClass mc, int x)...` -> f(mc, 10);
 `int (MyClass mc).f(int x)...` -> mc.f(10);
 
-? - can we define 'receiver-less' functions?
+Y - can we define 'receiver-less' functions?
 e.g. filter/map/reduce/
 
-? - proposal: treat predix of the function name, just like a variable. so it can even take a default value!
+N - proposal: treat predix of the function name, just like a variable. so it can even take a default value!
 `int (MyClass mc).func(int x) {}`
 `int (MyClass mc=$MyClass).func(int x) {}`
 `int (MyClass mc // $MyClass).func(int x) {}`
 
-? - the golang syntax to define methods is more explicit: `int [MyClass this].compare(Stack<T> a, Stack<S> b) {...}`
+N - the golang syntax to define methods is more explicit: `int [MyClass this].compare(Stack<T> a, Stack<S> b) {...}`
 one class per-file is simpler and does not need to define `this`.
 you can define `type A := int;` and define methods on A. `this` will be an integer in the code.
 this is not achieved by implicit receiver.
 simplicity -> dealing with functions instead of objects and classes.
 
-? - how shall we define an interface in the new form?
+Y - how shall we define an interface in the new form?
 define a struct with possibly no fields.
 `type Comparer := struct;`
 
-? - how to define a method like compare or copy without adding a new struct?
+N - how to define a method like compare or copy without adding a new struct?
 e.g. `int [MyClass this].compare(Stack<T> s1, Stack<U> s2) { ... }`
 can we define template methods? in addition to template structs?
 `int [Stack<T> this].push(T data)...`
@@ -3723,18 +3723,18 @@ can we define template methods? in addition to template structs?
 if there are multiple types involved, write a specialized class.
 if single type and same as current type? like above.
 
-? - define a shortcut to define methods on a struct, if struct type can be inferred.
+N - define a shortcut to define methods on a struct, if struct type can be inferred.
 `int [Stack<T> this].compare(Stack<T> s1)...`
 `int [Stack<T> this].push(T item)...`
 
-? - prohibit value assignment in struct definition. we just define list of fields, components of the struct.
+N - prohibit value assignment in struct definition. we just define list of fields, components of the struct.
 
-? - what about primitives like int?
+N - what about primitives like int?
 `type int := struct(4);`
 
 define a set of methods on that struct type.
 
-? - we have struct (collection of fields), interface (collection of method definitions), enum (collection of values).
+N - we have struct (collection of fields), interface (collection of method definitions), enum (collection of values).
 `type MyClass := struct { int x; }`
 `type myInt := interface { methods }`
 `type xxe := enum { values }`
@@ -3745,8 +3745,7 @@ for each type (enum, struct,) we can define a set of methods.
 interface can have fields too. 
 what about exposing?
 
-
-? - adding receiver is a little bit un-natural.
+Y - adding receiver is a little bit un-natural.
 `int (MyClass this) f()...`
 instead of a normal function that everybody knows just like java, c#, go, c, perl, python:
 `int f(MyClass this, int x) ...`
@@ -3770,7 +3769,7 @@ also by definition makes defining orphan methods meaningless.
 also needs `[` which is a single key letter, does not need shift.
 `int MyClass this.f(int x)`  this is confusing
 
-? - Do we still have a base class for all template instances like `Stack`?
+N - Do we still have a base class for all template instances like `Stack`?
 we have methods that are not bound to a type like T:
 `int [Stack<T> this].push(T data)...`
 `int [Stack this].clear()...`  this does not need type T, so if we write a method like `f(Stack ss)` we can call clear method on ss. but not push and pop. right?
@@ -3783,15 +3782,13 @@ or I want to write a function to compare two stacks.
 either template-enable your class with S and T, or use some common interface.
 `int [MyClass this].compare(Stack<T> a, Stack<S> b) {...}`
 
+Y - what about exposing an interface? it's meaningless unless we want to explicitly indicate that we are conforming to that interface. UNLESS interface has some fields. but again, expose just exposes public methods. so it's meaningless.
 
-? - what about exposing an interface? it's meaningless unless we want to explicitly indicate that we are conforming to that interface. UNLESS interface has some fields. but again, expose just exposes public methods. so it's meaningless.
-
-
-? - if we define a private method on MyClass, can it be accessed from another file's method which is based on MC?
+N - if we define a private method on MyClass, can it be accessed from another file's method which is based on MC?
 what is the scope of private? is it shared between all functions receiving MC?
 or current source code file?
 
-? - pre-req for MCSF: how can we bind a method to a class?
+N - pre-req for MCSF: how can we bind a method to a class?
 suppose we have a class name and want to bind a method to it.
 `struct A {int x;}`
 `int A.f() { return 5;}`  //this is implicit not explicit
@@ -3808,7 +3805,7 @@ gen: this name is optional. you can have any other name
 can they define: `int (MyClass) f(int x) {}` should be allowed. this is a real code of the class but does not need access to this. 
 `int (Stack<T,U> this) pop() { ...}`
 
-? - how to define class/interface/enum/template?
+N - how to define class/interface/enum/template?
 `struct MyClass { fields}`
 `interface ABCD { methods }`
 `enum AB { values }`
@@ -3817,8 +3814,7 @@ can they define: `int (MyClass) f(int x) {}` should be allowed. this is a real c
 `struct Stack<T: Comparable> { ... }`
 `struct Stack<Comparable T, Disposable U> { ... }`
 
-
-? - how to define members of template?
+N - how to define members of template?
 `int (Stack<T> this) push(T value) { ...} `
 `int (Stack this) push(T value) { ...} `  //if we remove <T> is is implied?
 and we won't have `Stack<>`. 
@@ -3826,13 +3822,13 @@ specialization is easy: `int (Stack<int> this) push...`
 now that we don't have Stack<> and Stack as parent of all, we can write `int [Stack this].ff` and ignore type declaration for each fucntion. it is not explicit but typing `<T>` for each function is a pain.
 shall we update struct accordingly?
 
-? - having extension methods have access to class fields is a form of gen.
+N - having extension methods have access to class fields is a form of gen.
 also those methods won't be called by anyone except the dev or people who trust him.
 if code gets compiled without any metadata or documentation, field access will be meaningless. because what would be variable names? also compiler won't know what to do with `this[field1]` does the class even have this field?
 we can have `_` for private private fields and other cal be accessed by ext methods. 
 but this will be confusing.
 
-? - MCSF (Multiple class in single file)
+Y - MCSF (Multiple class in single file)
 in the current pure OOP method, we may need to define a lot of classes.
 e.g. Printer, NoNullPrinter, ...
 shall we use keyword `class`? if so, maybe we can go like golang, and it will make adding extension methods much more clearer?
@@ -3865,7 +3861,7 @@ what about enum?
 what if a method is not bound to a type? like golang? this is gen I think. we should allow them.
 how to define ctor?
 
-? - expression problem: we want to be able to extend program easily 
+Y - expression problem: we want to be able to extend program easily 
 extend: adding new objects (for a shape system, adding triangle)
 extend: adding new operation (calculate permieter for every shape)
 easily: adding one new object or operation does not need modification of 1000 files
@@ -3901,28 +3897,28 @@ you can override a method in a child struct and call parent struct's method in t
 (casting).
 note that if struct A includes struct B, calling a function which is defined on both A and B with `cast(Ainstance to B)` will call B version. now if that function calls another similar function, the chain will continue with B version functions.
 
-? - with struct inheritance, do we need interfaces?
+Y - with struct inheritance, do we need interfaces?
 I think we only need structs. When we expect a set of operations to be available (e.g. Comparable interface including methods for comparing data), we provide a struct and call required methods on that struct.
 
-? - maybe we can use namespace or module to group functions.
+N - maybe we can use namespace or module to group functions.
 so in the code instead of writing `produce_data` we write `db_structure.produce_data`.
 and the prefix is not part of function name. it is module/namespace name.
 so where should we define structs? in a namespace?
 
-? - basically we want to have OOP and FP.
+Y - basically we want to have OOP and FP.
 FP exclusive features:
 - first-class, pure and higher-order functions
 - immutable data types, no re-assignment: if you see `x=???` you are sure it is the same value even at the end of function. so there is no `=` operator.
 - lexical closure
 
-? - how can we implement a stack in a immutable and struct-inherit system?
+N - how can we implement a stack in a immutable and struct-inherit system?
 what is advantage of immutability?
 
-? - how to implement array or hashmap?
+N - how to implement array or hashmap?
 we can replace array with a hash-map with int key.
 doable in native code.
 
-? - what if we pass Circle to `int f(Shape s)` and f calls `Area(s)`?
+Y - what if we pass Circle to `int f(Shape s)` and f calls `Area(s)`?
 which one will be called: `int Area(Shape s);` or `int Area(Circle c)`?
 the second should be called. the function call is resolved according to the real type of the data. unless data is casted.
 we can model abstract calss like this. 
@@ -3934,22 +3930,22 @@ interface: a set of empty functions working on a data strcuture.
 data structure can be even empty.
 so if in Circle we want to call `f(Shape)` if we call it like `f(@Shape(x))` and f calls `g(Shape)` and we have `g(Circle)` the g(shape) will be called. but if we call it like `f(x)` where x is of type circle, g(circle) will be called.
 
-? - can we have mixin/trait/role in struc-oriented?
+N - can we have mixin/trait/role in struc-oriented?
 
-? - now inverse to the initial 'everything is an object' we have 'nothing is an object' :-)
+N - now inverse to the initial 'everything is an object' we have 'nothing is an object' :-)
 
-? - if function has only one input, providing parameter name when calling it is not meaningful.
+Y - if function has only one input, providing parameter name when calling it is not meaningful.
 
-? - we can say fields starting with `_` are internal fields of struct. and functions that define that struct as `this` have access to those fields. but what if function needs access to internal fields of two structs?
+Y - we can say fields starting with `_` are internal fields of struct. and functions that define that struct as `this` have access to those fields. but what if function needs access to internal fields of two structs?
 if function input starts with `_` function has access to internal fields of that argument.
 
-? - how can we implement strategy pattern in struct-oriented?
+N - how can we implement strategy pattern in struct-oriented?
 strategy? function pointer can helpful. but what if strategy has a state or multiple methods?
 null? clojure has nil.
 facade? define `struct s1: s_old` and define all methods you need on s1.
 16 of 23 design patterns are not needed in lisp or dylan: http://www.norvig.com/design-patterns/img010.gif
 
-? - to organize functions:
+N - to organize functions:
 we can define a flat file hierarchy each file representing a module. and prefix module name to function and structs.
 `prefix.element_name` - prefix cannot map to a directory because then finding definition of element will be hard.
 we need to have an easy mechanism to find definition of a function.
@@ -3960,12 +3956,12 @@ we can force a flat folder (a folder like lib which contains ALL modules) and us
 in a module, we can export only some functions.
 if we have a prefix like `module1.function1` then how can we add a new function without having access to the module?
 
-? - we can add a notation to specify mutable data types. when these are used in a struct or used in a function, it means function is not pure.
+Y - we can add a notation to specify mutable data types. when these are used in a struct or used in a function, it means function is not pure.
 
-? - now with this new approach, do we need generics? if yes, how should they be implemented?
+Y - now with this new approach, do we need generics? if yes, how should they be implemented?
 I think we need it.
 
-? - can we use golang's expose here too?
+Y - can we use golang's expose here too?
 ```
 struct A {int x;}
 strut B { A; int y;}
@@ -3979,22 +3975,14 @@ struct B{ A a;
 int g :: a.xgg;}
 ```
 
-? - we should be able to add new operations for data types that are defined in external libraries.
+Y - we should be able to add new operations for data types that are defined in external libraries.
 
-? - exception handling is like a complex goto. shall we keep it?
-https://news.ycombinator.com/item?id=2599012
-http://c2.com/cgi/wiki?ExpressionProblem
-https://www.quora.com/Why-do-some-people-recommend-not-using-exception-handling-in-C++
-https://blog.jooq.org/2013/04/28/rare-uses-of-a-controlflowexception/
-http://c2.com/cgi/wiki?DontUseExceptionsForFlowControl
-Later
-
-? - if we have struct A which inherits from B and call function `f(x)` where x is A and we have two f functions for A and B, which one should be called? what about the case where inside f we call `g(x)`?
+Y - if we have struct A which inherits from B and call function `f(x)` where x is A and we have two f functions for A and B, which one should be called? what about the case where inside f we call `g(x)`?
 if the function is only implemented for A, then there is only that choice.
 
-? - suppose we have a message structure with AMessage and BMessage children. when we receive data from network/db/any external source it is a message but can be mapped to A or B message. just write `f(AMessage)` and `f(BMessage)` and call `f(deserialize(message1)`. Runtime will automatically call appropriate function.
+N - suppose we have a message structure with AMessage and BMessage children. when we receive data from network/db/any external source it is a message but can be mapped to A or B message. just write `f(AMessage)` and `f(BMessage)` and call `f(deserialize(message1)`. Runtime will automatically call appropriate function.
 
-? - what if we want to write a function to calculate intersection of objects.
+N - what if we want to write a function to calculate intersection of objects.
 f(obj1, obj2) - we have circle, square and rectanble.
 we want f(rectangle, square) also handle (square, rectanble) case too.
 this is doable with named arguments? `f(square arg1, rect arg2)`
@@ -4002,7 +3990,7 @@ no.
 we can define `f(square, rect) :: f(rect, square)` or we can call it in correct order.
 this is not a major problem.
 
-? - 
+Y - 
 principles of OOP are: abstraction, polymorphism, encapsulation, inheritance (this last one is not necessary)
 so refined principles: abstraction (hiding details) and polymorphism (multiple implementation under same name)
 principles of FP: first-class functions (send a function with int output instead of a number), pure functions, immutability, lexical closure
@@ -4012,11 +4000,11 @@ FP pro: functions are composable
 con of FP: a lot of functions which is hard to track.
 we have abstraction by struct casting and polymorphism by defining a function for different types in a hierarchy.
 
-? - can we define a function f on A and state it cannot be re-written for children?
+N - can we define a function f on A and state it cannot be re-written for children?
 why? if they decide they want to, they should be able to do that. 
 in the child implementation, they can explicitly request calling A's f by casting.
 
-? - what about building objects at runtime:
+N - what about building objects at runtime:
 `attach(myStruct, f1, f2, f3)` will give you an object.
 this object has myStruct as private data fields.
 f1, f2, f3 all expect input of type myStruct which is already provided.
@@ -4048,7 +4036,7 @@ we have polymorphism, inheritance (super inherits from normal), encapsulation (s
 note that create returns a super-struct but outer world thinks it is normal struct. as a result, there must be a function accepting a normal-struct too. or else, it will become to messy and compiler won't be able to check anything before runtime.
 so normal-struct contains public fields and super-struct contains private+public fields.
 
-? - how can we solve expression problem while maintaining a module name prefix when calling functions?
+N - how can we solve expression problem while maintaining a module name prefix when calling functions?
 when we specify module name, we are telling which function we want to be called but we should not decide about this.
 we should write `prepare_data(data1)` and runtime will chose between 10 `prepare_data` functions from 10 different locations in the source code, which one is appropriate.
 this is like OOP where we write:
@@ -4063,7 +4051,7 @@ car = make_car(...);  //can return car struc or bmw_car or toyota_car
 deploy(car);  //before typing deploy, what are my options when calling a function?
 ```
 
-? - how can an IDE help me when I want to write `deploy` method when it doesn't know what am I going to pass to the function? basically I can write name of any function at the beginning of that line.
+N - how can an IDE help me when I want to write `deploy` method when it doesn't know what am I going to pass to the function? basically I can write name of any function at the beginning of that line.
 what if we change the call syntax the other way around? `(car).deploy`?
 this will call deploy function on the car struct but the advantage of this is that as soon as I finish `(car)` and type the dot, IDE can easily list all methods which:
 1. accept a single argument
@@ -4126,7 +4114,7 @@ note that if there is already another xx function in the scope, it will be hidde
 defining a function which has input/output of type function?
 this syntax is weird where we put arguments first
 
-? - syntax should be as readable as possible. `func fname (name:type) -> output_type` is better.
+Y - syntax should be as readable as possible. `func fname (name:type) -> output_type` is better.
 `func sort(x: int[], comparer: func(int,int -> bool) -> func(int, bool)) { bool b = comparer(10, 20); }`
 `auto x = func(a:int, b:int -> int) { return a+b; }`
 `auto x = map({$1+1}, array);` //input for map is func (int -> int), $1 refers to the first argument, map is also a 
@@ -4139,7 +4127,7 @@ when we assign anon-f to a variable, we should specify input and output?
 `comparer rr = func (int, int -> int) { $1+$2};`  //but if you specify func keyword, you have to write input output types. still input name is optional and you can use $ notation fucntion.
 `comparer rr = func (int x, int y -> int) { x + $2};`  //you can always use $i notation.  
 
-? - what is definition of map? 
+Y - what is definition of map? 
 `func map<T>(f: func(T) -> T, arr: T[]) -> T[];`
 usage:
 `new_array = map({$$+1}, my_array);`
@@ -4147,22 +4135,14 @@ or `new_array = map<int>({$$+1}, my_array);`
 type T can be inferred from inputs.
 `void push<T>(T data, Stack<T> stack) { ... }`
 
-? - like perl, can we declare paren optionsl? or even comma?
-`new_array = map({$$+1}, my_array);`
-vs.
-`new_array = map {$$+1}, my_array;`
-vs.
-`new_array = map {$$+1} my_array;`
-will this decrease readability?
-
-? - how to prevent function name collission? 
+Y - how to prevent function name collission? 
 I want to define a temporary function in this file, how can I be sure its name is uniqe?
 function names starting with `_` are not exported. they can only be called internally.
 
-? - ban $1 because it is not readable. 
+Y - ban $1 because it is not readable. 
 if anon-func has only one input, we can use a notation like `$_` or `_` or `$$`.
 
-? - you can only define an expression for anon-func. if it is more complex, just define a normal function for it. 
+Y - you can only define an expression for anon-func. if it is more complex, just define a normal function for it. 
 output is not specified for lambda because it is inferred from expression type.
 normal function: `func sort(x: int[], comparer: func(int,int) -> bool) -> func(int -> bool) { bool b = comparer(10, 20); }`
 `adder rr = func { x + y };` input/output is inferred by type (adder) so you can omit them
@@ -4172,11 +4152,11 @@ normal function: `func sort(x: int[], comparer: func(int,int) -> bool) -> func(i
 `auto rr = func (x: int, y:int) -> { x + y };`  //when you use auto, you must specify input type. input name is optional.
 `auto chained = func(x: int) -> { rr(x, 10) }`  chained will add 10 to the x input
 
-? - in anon-func can we omit `{}` because it is expression.
+N - in anon-func can we omit `{}` because it is expression.
 `auto chained = func(x: int) -> rr(x, 10)`
 `adder rr = x + y;` but how can we know this is not a statement? func should be required.
 
-? - it is more readable to write: `data.action1(1, 2).action2(3, 4).action3(5)` rather than:
+N - it is more readable to write: `data.action1(1, 2).action2(3, 4).action3(5)` rather than:
 `action3(5, action2(3, 4, action1(data, 1, 2)));`
 haskell has . for composition of functions.
 we can write: `action1(data).action2($_, 3, 4).action3(5, $_)` where `$_` specified the place of item before dot in the input arguments.
@@ -4216,7 +4196,7 @@ any idea for an alternative for >> which doesnt conflict with shift operator?
 `evens(data) => sort(3, 4, $_) => save => reverse($_, 5);`
 `=>` is good. for hash we will use `key:value`
 
-? - we have to decide between `(int x)` (used in C, Java and C#) and `(x:int)` (Rust, Go) notation.
+Y - we have to decide between `(int x)` (used in C, Java and C#) and `(x:int)` (Rust, Go) notation.
 the normal variable assignment will be like C: `int x = 12` so it's better if we have same syntax in func definition.
 which one is more readable? 
 `func sort(x: int[], comparer: func(int,int -> bool) -> func(int -> bool)) { bool b = comparer(10, 20); }`
@@ -4225,11 +4205,11 @@ SO: Most of the time you need to find names of references/mathods fast (visually
 SO: Pascal syntax is context-free, C syntax is context-sensitive.
 so `x: int` is better.
 
-? - when output type is not specified, it is void. now that we don't have a class, return this does not make sense.
+Y - when output type is not specified, it is void. now that we don't have a class, return this does not make sense.
 `func set(x: int) {}` 
 does not have output, just input
 
-? - what if struct A inherits from B and C and we have this call: `A x = get(); f(x)`
+Y - what if struct A inherits from B and C and we have this call: `A x = get(); f(x)`
 but we have three f functions for B and C and A?
 `struct A: B,C {int a;}`
 `int f(A a) {}`
@@ -4239,15 +4219,15 @@ if get() returns an instance of B then f(B) will be called. C -> f(c)
 if it returns an instance of A and there is no f(A) then there will be a problem.
 when there is a call `f(x)` and real type of x is A, runtime will call `f(A)` function. if there is not such a function, parents of x will be investigated. if there is a `f(T)` where T is a parent of A, it will be called. no call will be made if there is ambiguity (no call candidate or more than one candidate).
 
-? - int/float/... all are special structs. so you can have functions working on int. and call them like:
+Y - int/float/... all are special structs. so you can have functions working on int. and call them like:
 `int x = 12; f(x)`
 
-? - can we have mixin here?
+N - can we have mixin here?
 a mechanism to define a number of functions for our new type?
 just implement the new type from A where mixin functions are defined for it.
 if you want to override, add function with same name on your type.
 
-? - clojure has `:pre` and `:post` for assertion for functions.
+N - clojure has `:pre` and `:post` for assertion for functions.
 we can have them too.
 ```
 func sort(x: int[], comparer: func(int,int -> bool) -> func(int, bool)) 
@@ -4258,7 +4238,7 @@ func sort(x: int[], comparer: func(int,int -> bool) -> func(int, bool))
 }
 ```
 
-? - for immutability we need a notation to indicate a field is immutable.
+Y - for immutability we need a notation to indicate a field is immutable.
 also functions need to indicate they won't change an input.
 what about arrays? an immutable array of int vs an array of immutable ints?
 `int f(const int[] array)`
@@ -4275,8 +4255,9 @@ what about structs?
 lets default to mutable data. and define immutables with `&` or `!` or `$`?
 `func f(x: &int, y:int) -> &float { ... }`
 `func f(x: &int[], y:int[&]) -> &float { ... }`  //x is an immutable array containing imm ints, y is a mutable array containing immutable numbers.
+using const keyword is better and more readable.
 
-? - can a function return multiple values?
+Y - can a function return multiple values?
 in haskel, scala and rust it can. 
 `func f(x: int, y:int) -> (float, double) { return (1, 9); }`
 `(x,y) = f(1, 20);`
@@ -4284,27 +4265,24 @@ shall we support this?
 `auto t = f(1, 10);` if yes, how addressing should be done? `t[0]`? `t._0` like scala, `t.0` like rust?
 now that we have structs, why add a tuple data-type? dev can easily define a struct.
 
-
-? - think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
-
-? - how to create a new struct? what about templates?
+Y - how to create a new struct? what about templates?
 `struct A { x: int; }`
 `var r : A{ x: 10}` or `r : A{ x: 10}`
 `var r : Stack<int>{};`
 
-? - but if `struct A {int x;} struct B:A{}` then with access to a variable of type B, we have access to `x` too!
+N - but if `struct A {int x;} struct B:A{}` then with access to a variable of type B, we have access to `x` too!
 unless we provide access only to fields explicitly defined inside the struct. or:
 `struct B { A; }` then we cannot write `B.x`? we should be able to do that.
 so, we have access to the whole hierarchy but calling a function is dispatched based on the real type of variable.
 
-? - function redirection
+N - function redirection
 `func f(x: int, y:int) -> other_g(x,y);`
 `func f -> other_g;`
 
-? - if function has one statement, we can remove {} and return.
+Y - if function has one statement, we can remove {} and return.
 `func f(x: int, y:int) -> x/y;`
 
-? - call by value of ref? 
+N - call by value of ref? 
 when data is immutable, it doesn't matter. 
 `func f(x: &int, y:int) -> &float { ... }`
 x cannot be changed.
@@ -4325,29 +4303,88 @@ but in functional, we put more importance on the data. so we should be capable t
 lets keep immutable and remove notation of pass by value.
 eveything is passed by reference. if you want to preserve func change it's value use immutability features.
 
-? - can we use function output like a value in an expression?
+N - can we use function output like a value in an expression?
 `effective_start(contract).plus_time_interval('3d');`
+No. We don't have dot notation for call a function
 
-? - what about putting function name first?
+N - what about putting function name first?
 `f: func(x: int, y:int) -> float { ... }`
 its not beautiful and its confusing.
 
-? - what about enums?
+Y - pass by reference or value. 
+if it is const -> it doesn't matter. if argument is mutable?
+lets give dev option to control this. by default data is passed by reference.
+`func f(x:int) -> float {}`
+shall we introduce `new` and heap/stack allocation? No. don't make everything more complex.
+everything is passed by reference even primitives. If you want to prevent other func change value,
+either make sure arg is const or send a copy.
 
-? - what about operators?
+Y - what should be behavior of `=`?
+`x=y`
+= does ref assignment. x=x+1;
+`x=1;y=x;y++` makes x 2.
 
-? - what about throw and defer? assert?
+Y - operator to make a copy?
+`x=y`
+`x=$y;`
 
-? - how to have defer with a function that returns multiple items?
+Y - what if x is const and I pass it to `func f(x: int) -> int {}`
+this should not compile. you can only have `x:int` as input if you really want to change x.
+if you don't want: `x: const int`
+then user can pass int or const int.
 
-? - do we need alias for import?
+Y - what about enums?
 
-? - what should be behavior of `=`?
+Y - shall we combine struct and type?
 
-? - do we still need all undefined/defined and & operators?
+Y - do we need alias for import?
+no we don't need it.
 
-? - review special syntax section
+Y - a better syntax to clone. how to handle =?
+`x=$y` to clone.`=` does ref assignment.
+
+Y - can we replace auto with var?
+
+N - do we still need all undefined/defined and & operators?
+
+Y - review special syntax section
+
+Y - how can we know if a struct is immutable?
+if all of it's members are const.
+
+Y - how to have defer with a function that returns multiple items?
+dont provide defer for output
+
+N - what about operators?
+
+Y - shall we make `()` optional? what about comma?
+like perl, can we declare paren optionsl? or even comma?
+`new_array = map({$$+1}, my_array);`
+vs.
+`new_array = map {$$+1}, my_array;`
+vs.
+`new_array = map {$$+1} my_array;`
+will this decrease readability?
+
+? - pre and post
 
 ? - do we need aspects?
 
-? - can we replace auto with var?
+\* - how to define primitives?
+`type int := struct(4);`
+
+? - what does it mean if a field of struct starts with _?
+can this apply to anon-fields?
+
+? - exception handling is like a complex goto. shall we keep it?
+https://news.ycombinator.com/item?id=2599012
+http://c2.com/cgi/wiki?ExpressionProblem
+https://www.quora.com/Why-do-some-people-recommend-not-using-exception-handling-in-C++
+https://blog.jooq.org/2013/04/28/rare-uses-of-a-controlflowexception/
+http://c2.com/cgi/wiki?DontUseExceptionsForFlowControl
+Later
+
+? - what about throw and defer? assert?
+
+
+? - think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
