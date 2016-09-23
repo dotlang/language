@@ -222,7 +222,7 @@ Y - Can't we remove tags? Instead of specifying tag for each member, class can a
 
 Y - Instead of using `exposed` or `* -> this.memberName` we use struct members without name (like go). We don't need their name because all public operations are available through `this`. By this way we can easily override functions by adding them to the owner class. 
 
-\* - Maybe in other places where we are using convention, we can do like anonymous field and remove some part of the source code and delegate the task to the compiler.
+N - Maybe in other places where we are using convention, we can do like anonymous field and remove some part of the source code and delegate the task to the compiler.
 
 Y - In function declaration, let's remove -> notation. Although it has a little convenience but is not much readable.
 
@@ -236,7 +236,7 @@ Y - Lets standardize constructor name as `new` or `_new`. Because it will become
 
 Y - What if we need some initializations for the static instance? Only the owner of an instance knows what to do for init but static instance has only one owner which is compiler. Without static init, the code should handle this but how can it guarantee that this will happen only once? We need to add a section to `main` and each time we need a static instance, call `MyStatic.init()` in that part. Solution: Without changing anonymous block, enable init-code inside this block.
 
-\* - How to do compile time checks? Like assert or check template args? Deprecated module? For deprecated we can add assert to static init block. For template args, compilation will fails if they are not appropriate. Let's do this later.
+N - How to do compile time checks? Like assert or check template args? Deprecated module? For deprecated we can add assert to static init block. For template args, compilation will fails if they are not appropriate. Let's do this later.
 
 N - Add a variable type `void` where it can only be written to (which does nothing) but it cannot be read. Maybe this become useful. What about empty interface?
 
@@ -758,7 +758,7 @@ Y - Maybe we can remove `default` keyword.
 N - Do we need to re-define mechanism of `switch` with everything-class approach?
 `switch` calls `op_eq` or something like that behind the scene.
 
-\* - After all ambiguities are resolved, I will need to write specification where exact behavior of each statement and exceptions and notable points should be specified.
+N - After all ambiguities are resolved, I will need to write specification where exact behavior of each statement and exceptions and notable points should be specified.
 
 N - Current way to handle `int x = 12`is not good. Looking for a method with any name which accepts `int` and output is instance of the class. There may be more than one method or the only method may have completely other purpose.
 Maybe we should use casting operator to cast something to the class.   
@@ -1793,9 +1793,9 @@ explicit is better than implicit. maybe function really needs some arguments. th
 local variables? no.
 `int f(int x, int y, Stack<int>? z);`
 
-\* - `int` should be just like other classes. So we have to think of a clean/good way of representing the class source code. memory byte needed and methods which are not implemented in the source.
+N - `int` should be just like other classes. So we have to think of a clean/good way of representing the class source code. memory byte needed and methods which are not implemented in the source.
 
-\* - Are we going to support reflection?
+N - Are we going to support reflection?
 
 \* - How runtime should handle immutable types (e.g. int)? Can we treat them just like primitive non-class, and copy their value upon any method call? without allocating heap space.
 
@@ -2240,7 +2240,7 @@ Y - replace `#` with `@ref` class. this class is built-in and can be used to com
 
 \* - serialization. we reflection for this, if we want to have developer do it -> core
 
-\* - `:=` notation for function decl, can hint compiler to inline method. 
+N - `:=` notation for function decl, can hint compiler to inline method. 
 
 \* - String interpolation `result of $x is $y'. OK.
 single quote can be used for normal string. double quote for inperpolated string.
@@ -2701,12 +2701,12 @@ no. it is confusing.
 
 N - Is there an advantage in specifying a method which does not need anything from `this`? or any field from this?
 
-\* - What can be done at the syntax leve to increase performance?
+N - What can be done at the syntax leve to increase performance?
 we can make all calls, static? meaning at compile time we know exactly which method should be called.
 for expose, stress that compiler will add appropriate methods for delegation. 
 another proposal: compiler can handle primitives more efficiently. 
 
-\* - we can define fields as meta-methods referring to the internal storage of the class.
+N - we can define fields as meta-methods referring to the internal storage of the class.
 `int x; x=1` becomes `this.__internal_storage.setBytes(4, 1);`
 so, there will be no fields for compiler. each class is an internal storage (x bytes of memory) + a set of methods.
 so read x, will be translated to a function: `__read_field_x` and writing to `__write_field_x`.
