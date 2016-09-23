@@ -3651,7 +3651,7 @@ what are the things that absolutely are useful? abstraction, code re-use,
 N - With the receiver notation there will always be a confusion about difference between these:
 `int (MyClass this).func(int x) ...`
 `int func(MyClass this, int x)...`
-are they the same? if they are, which one is better? How should I decide which one to use? -> confusion != simplicity
+are they the same? if they are, which one is better? How should I decide which one to use?-> confusion != simplicity
 if they are different, what is the difference. they seem similar and we expect them to be the same -> law of least surprise.
 If they are different: suppose that we have a function to send a message. what should be the prefix structure?
 the message structure? the recipient? the sender? which one should be put first? everyone can have it's own idea and each setting will result in a different code.
@@ -4388,20 +4388,122 @@ no. this can have un-wanted side-effects. we have to explicitly specify parent s
 
 Y - Let's remove fields redirection. and function redirection.
 
-? - do we need aspects? 
+N - can we define `if` as a function?
+`if(condition) {block}`
+condition is input, block is another input. 
+
+N - do we need aspects? 
 how can we model `around` aspect?
 we need to have functions that accept other functions which are of any type.
 this can be modelled by a general-purpose function type. which does not accept anything and output is same as function output.
 `type ptr<T> := func () -> T;`
+applications of aop: logging, validation, caching, permission check, transaction, monitoring, timing, error handling, 
+except for caching all others can be done via before and after.
+maybe we can add checked types: `type XX := int {>0};`
+and then: `func f(x: XX)`
+enum is a special kind of checked-type.
+can we define a checked type based on a struct? we should be.
 
-? - exception handling is like a complex goto. shall we keep it?
+N - removed features: field and fn redirection, optional comma in fn call, function chaining.
+
+Y - can we typedef a function type? yes. and use it as type of input/output of another function.
+
+N - exception handling is like a complex goto. shall we keep it?
 https://news.ycombinator.com/item?id=2599012
-http://c2.com/cgi/wiki?ExpressionProblem
 https://www.quora.com/Why-do-some-people-recommend-not-using-exception-handling-in-C++
 https://blog.jooq.org/2013/04/28/rare-uses-of-a-controlflowexception/
 http://c2.com/cgi/wiki?DontUseExceptionsForFlowControl
-Later
+Later. No. Exceptions are necessary sometimes.
+we will keep defer (as catch and finally) and assert (as throw).
 
-? - what about throw and defer? assert?
+N - what about throw and defer? assert?
+
+N - Let's generalize what we have in enum and introduce checked types.
+`type XX := int {>0};`
+`func f(x: XX)` means x must be a positive integer.
+checked types advantage: provide enum feature, const?, pre-condition and post-condition.
+
+? - What if I import two modules and both of them have type `A`? 
+What if I import two modules and both of them have function with same name, one acting on A one on B which inherits A?
+`import core.std; import data.big;`  -> both have `struct T`
+I can use `core.std.T` and `data.big.T` but if name is too long, I will need an alias in import.
+`import core.std => ss;` -> ss.T
+`import core.std;` -> T
+what about functions? if I call `core.std.prepare_t` function by: `prepare_t(t1)` and `data.big` has `prepare_t` function acting on a specialized type?
+
+N - can we use fn redirection + some code instead of decorator and tuple?
+```
+func f(x:int) -> int :: 
+```
+i/o of f is determined by function it is redirected to.
+no. it is confusing.
+
+N - decorators: in order to have a general wrapper function like python, we can assume function input to be a tuple and output be a tuple too. so: `func f1(x: int, y:int) -> int `
+`func g(f: func(T...) -> T...) -> func(T...) -> T... { return func { var x = f(a); log(x); return x; } }`
+`func new_f = g(f1, 2, 5);`
+when we call `new_f` it will wrap around a call to `f1` and log it's output.
+we should simplify this syntax. maybe we can define `x: func` to denote that x is a function with some input and outputs.
+or maybe we can define a function-call variable type which contains function name and it's inputs.
+`func make_bold(f: func) -> func { return "<B>" + f + "/B"; }`
+`func g = logger(f1);`
+when we call g, it will do logging on f1 result. g has a syntax same as f1.
+`type fp<T, U> := func(T) -> U;`
+`func make_bold<T, U>(f: fp<T,U>, input: T) -> U { U out = f(input); return "<B>" + out + "/B"; }`
+```
+@make_bold
+func write(x: int) -> string 
+{ return "A" + x + "B"; }
+```
+maybe we can add some language constructs to eliminate tuple and all this confusion.
+but if we add tuple, we will have `defer(out)` too. 
+adding tuple will complicate everything. input can be a tuple, output too. stack of tuple ...
+when we have struct, adding tuple will add to the confusion.
+let's use function composition.
+`func write(x:int) -> string ...`
+`func write_bold(x:int) -> string { return "<b>"+write(x)+"</b>"; }`
+what about this?
+`func make_bold(f: func) -> U { U out = f(input); return "<B>" + out + "/B"; }`
+
+N - decorators for contracts
+maybe we can achieve this with function composition + lambda.
+```
+func pre_check<T, U>(f: fp<T,U>, input: T, lambda: func) -> U 
+{ assert lambda; U out = f(input); return "<B>" + out + "/B"; }
+
+@pre_check {x>0}
+func write(x: int) -> string 
+{ return "A" + x + "B"; }
+```
+NO. we cannot have decorator and tuple without making language much more complicated. let's just use assert.
+
+N - Add tuple type. So functions will be always returning one thing. and we can have decorators.
+
+N - a simpler syntax to define functions
+`func write(x: int) -> string  {...}`
+`func write { => prepare => findCustomer; }` input is fed into prepare and output of findCustomer is output of function.
+this definition is cryptic and hard to read. I have to find findCustomer to see output of the function.
+`func write(x: int) -> string  {...}`
+
+Y - chain functions
+`evens(data) => sort(3, 4, $_) => save => reverse($_, 5);`
+or if methods have only one input:
+`evens(data) => sort => save => reverse;`
+`5 => add2 => print;`
+`(1,2) => mul => print;`?
+
+Y - in composing if parent has no field, we can use `:: X` to ignore a field name.
+
+N - tidy notations
+`$$` single input in lambda
+`$_` function chaining
+`@` casting
+`#` annotation
+`~` clone
+
+\* - If we have a Car -> Toyota and Color -> Red relationship and we have:
+`func f(c: Car, r: Red) ...`
+`func f(t: Toyota, c: Color) ...`
+and user calls `f(myCar, myColor)` where myCar is of type Car, holding a Toyota and myColor is of type Color holding a Red, which method will be called?
+compiler should throw error. Because there is no `f(Car, Color)` if there is, at runtime it will be called.
 
 ? - think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
