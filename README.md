@@ -130,7 +130,7 @@ You use this statement to define a new data structure:
 type Car := struct {
   color: int;
   age: int;
-}
+};
 ```
 
 ###type
@@ -142,7 +142,7 @@ type point := int[];
 type x := int;
 x a;  //=int a;
 ```
-To use a type from outside the defining class:
+To use a type:
 ```
 point pt = {1, 10};
 //you can alias it again
@@ -152,10 +152,13 @@ mypt xx = {1, 2};
 
 You can use type alias to narrow valid values for an int-based (like enum):
 ```
-type DoW := int {SAT=0, SUN=1, ...};
+type DoW := {SAT=0, SUN=1, ...};  //any data of DoW type can only accept one of these values
 ```
 
 You can define functions based on `int` and `X` where `type X := int` and they will be different functions.
+
+Note that when using type for alias to a function, you have to specify input names too.
+`type comparer := func (x:int, y:int) -> bool;`
 
 ###import
 
@@ -274,9 +277,10 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 ##Special syntax
 - `~x` makes a copy of x
 - `#` for annotations on fields and structs
-- `:` for hash, call by name, array slice, loop, aspect
+- `:` for hash, call by name, array slice, loop
 - `<>` template syntax
 - `$$` only input in lambda
+- `$_` input place-holder in chaining
 - `@` casting
 - `:=` type alias
 
@@ -293,9 +297,10 @@ type x := struct {
     b: int;
     a:: A;  //this will be promoted
     _b:: const B #json{ignore};  //this will not be promoted
+    :: C; //this struct supports functions written for C, but C has no field, so we don't need a field name
 };
 ```
-- You can cast instances of `x` to `A` and `B`. Fields of `A` will be added to `x` too.
+- You can cast instances of `x` to `A` and `B` and `C`. Fields of `A` will be added to `x` too.
 
 ###Annotations
 You can annotate a struct or field with this syntax:
@@ -321,55 +326,40 @@ for example:
 - 
 
 ###Casting
-- `@MyStruct(my_obj)` will try to cast `my_obj` instance to `MyStruct` type. This is only possible if MyObj (type of `my_obj`) composes an anonymous field of type `MyStruct`.
+- `@MyStruct(my_obj)` will try to cast `my_obj` instance to `MyStruct` type. This is only possible if MyObj (type of `my_obj`) composes a field of type `MyStruct`.
 - `float f; int x = @int(f);` this version is used for casting primitives.
 - empty/undefined/not-initialized state of a variable is named "default" state and is shown by `nil`.
 - Value of a variable before initialization is `nil`.
 - You can also return `nil` when you want to indicate invalid state for a variable.
 
 ###Undef instance
-###Aspects
-You can prefix a fucntion, with a set of aspects as pre-condition and post-condition.
 
-```
-//before will be called before entering function body, same for after
-//around will be called instead of this function. it will have a function pointer of type `func()` which accepts nothing and returns output of the real call. around handler can invoke this pointer to do the real call. 
-func make_data(x:int, y:int) -> float 
-: before (assert x>0)
-: after ( assert out!=4)
-: after (assert defined(out))
-: around (other_func)
-{
-...
-}
-```
+###Chaining
+You can use `=>` operator to chain functions. `a => b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
+Examples:
 
-with a set of `weave` keywords each with an expression which specifies a set of methods to be called before/after/around/... of the current method.
-```
-#weave {obj1} int f(int x) { return x;} //function members of obj1 named before, after, around, ... will be called if they are defined
-#weave {$OnlyAfter(obj1)} int f(} { return 5;} //obj1 is cast to OnlyAfter interface. so only it's after method will be called.
-#weave {this[obj1]} int f() { return 5;} //the weave code is result of evaluation of the expression. so in this case this[obj1] will be re-used for all call
-#weave {MyClass.new} int f() { return 5;} //create a new instance per each call
-```
-- you can combine weaves and they will be applied from outer-most to inner-most
-- Weave expression is evaluated and checked for appropriate functions by compiler. So you can include any expression including assertions. These will be run before function run: `#weave {assert x>0}`
-- For example you can write a weave to retry method call 3 times in case of exception.
+`get_evens(data) => sort(3, 4, $_) => save => reverse($_, 5);`
+`get_evens(data) => sort => save => reverse;` //assuming sort, save and reverse have only one input
+`5 => add2 => print;`  //same as: print(add2(5))
+`(1,2) => mul => print;`  //same as: print(mul(1,2))
+`(1,2) => mul($_, 5, $_) => print;`  //same as: print(mul(1,5,2))
 
 ###Lambda expression
 
 You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too.
 
 ```
-//adder is a defined type which specified input/output for the function
-adder rr = func { x + y }; //input/output is inferred by type (adder) so you can omit them
-adder rr = { x + y };  //the only case where you can ignore func is where type is specified or inferrable (e.g. in map)
-plus_one rr = { $$ + 1 };  //when type is specified and only one input, you can use $$ to refer to the only input
-adder rr = func (x: int, y: int) -> { x + y }; //output is inferred, input name is given
+auto f1 = func(x: int, y:int) -> int { return x+y; } //the most complete definition
+auto rr = func (x: int, y:int) -> { x + y };  //return type can be inferred
 auto rr = func { x + y };` //WRONG! - input is not specified
-auto rr = func (x: int, y:int) -> { x + y };  //when you use auto, you must specify input type and name.
+
+type adder := func(x: int, y:int) -> int;
+adder rr = func(a:int, b:int) -> { a + b }; //when you have a type, you can define new names for input
+adder rr = func { x + y }; //when you have a type, you can also omit input
+adder rr = { x + y };      //and also func keyword
+adder rr = x + y;          //only if type is specified, you can omit {} too
+plus2 rr = $$ + 2;          //if type has only one input, you can $$ instead of its name
 ```
-
-
 
 ##Best practice
 ###Naming
