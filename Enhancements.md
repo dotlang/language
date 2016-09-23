@@ -4423,14 +4423,6 @@ N - Let's generalize what we have in enum and introduce checked types.
 `func f(x: XX)` means x must be a positive integer.
 checked types advantage: provide enum feature, const?, pre-condition and post-condition.
 
-? - What if I import two modules and both of them have type `A`? 
-What if I import two modules and both of them have function with same name, one acting on A one on B which inherits A?
-`import core.std; import data.big;`  -> both have `struct T`
-I can use `core.std.T` and `data.big.T` but if name is too long, I will need an alias in import.
-`import core.std => ss;` -> ss.T
-`import core.std;` -> T
-what about functions? if I call `core.std.prepare_t` function by: `prepare_t(t1)` and `data.big` has `prepare_t` function acting on a specialized type?
-
 N - can we use fn redirection + some code instead of decorator and tuple?
 ```
 func f(x:int) -> int :: 
@@ -4505,5 +4497,60 @@ N - tidy notations
 `func f(t: Toyota, c: Color) ...`
 and user calls `f(myCar, myColor)` where myCar is of type Car, holding a Toyota and myColor is of type Color holding a Red, which method will be called?
 compiler should throw error. Because there is no `f(Car, Color)` if there is, at runtime it will be called.
+
+Y - What if I import two modules and both of them have type `A`? 
+What if I import two modules and both of them have function with same name, one acting on A one on B which inherits A?
+`import core.std; import data.big;`  -> both have `struct T`
+I can use `core.std.T` and `data.big.T` but if name is too long, I will need an alias in import.
+`import core.std => ss;` -> ss.T
+`import core.std;` -> T
+what about functions? if I call `core.std.prepare_t` function by: `prepare_t(t1)` and `data.big` has `prepare_t` function acting on a specialized type?
+for function we should not have this problem because even if they have same name, their signature is different. 
+but for struct, we can use type alias: `type x := core.std.x;`
+
+Y - Don't promote. If type is casted, they already have whay they want. If it's not casted, use `a.b` notation.
+
+Y - Like python, a function which is executed when module is imported.
+
+? - now that we are functional maybe we can use some of perl features.
+`x if y`
+
+? - decorators - another try
+lets define some native, built-in functions. 
+1. `func` data type means any function.
+2. `invoke(x)` where type of x is fund or any other function, will call x.
+```
+func html<T>(id: string, f: func, i: input) -> T
+{ return func(x:int) "<div id=$id>" + invoke(f) + "</div>"; }
+
+
+@html("tt")
+func test(x:int) -> string { print "A" + x + "B"; }
+```
+
+? - if function can return two results, then we have tuples half supported.
+let's add official support for them, then define a generic function and decorator based on it.
+`var x: int = 11;`
+`var t: tuple(x: int, y: int, z: float) = (1,2, 3.1);`
+`t.x = 8;`
+`var t: tuple(x: const int, y: int, z: float);`  
+if tuple only has one field, it is same as variable, and does not need field name
+`tuple(x: int) ~ tuple(int) ~ int`
+now a function accepts a tuple and returns a tuple.
+tuple is like anonymous struct.
+`func print(x: int, y:float) -> string ...` output is `tuple(string)`
+`func print(x:int, y: float) -> (a: string, b: int) { ... }`
+
+now we need two more keywords: `func` representing any function, `tuple` representing any tuple.
+`type fp<T, U> := func(T) -> U;`
+`func make_bold<T, U>(f: fp<T,U>, input: T) -> U { U out = f(input); return "<B>" + out + "/B"; }`
+```
+@make_bold   //T is tuple(x:int) and U is tuple(string), compiler can infer them
+func get_data(x:int) -> string { return x.toString(); }
+```
+
+
+
+
 
 ? - think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
