@@ -160,6 +160,8 @@ You can define functions based on `int` and `X` where `type X := int` and they w
 Note that when using type for alias to a function, you have to specify input names too.
 `type comparer := func (x:int, y:int) -> bool;`
 
+You can also use type to resolve type ambiguity. When you import two modules which have types with the same name.
+
 ###import
 
 You can import a module using this statement:
@@ -167,6 +169,8 @@ You can import a module using this statement:
 ```
 import core.st.Socket;  //functions, types and structs inside core/st/Socket.e file are imported
 ```
+It is an error if as a result of imports, there are two exactly similar functions (same name, input and output).
+When you import a module, it's `_init` function will be called (if exists).
 
 ###invoke
 We have `invoke` and `select` keywords. You can use `future<int> result = invoke function1();` to execute `function1` in another thread and the result will be available through future class (defined in core).
@@ -289,18 +293,17 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 
 ###Composition
 
-- If struct contains a field defined using `::` the struct will be castable to those fields. If field variable name starts with `_` it's internal data won't be promoted. But if it does not start with `_` they will be promoted to the container struct. 
+- If struct contains a field defined using `::` the struct will be castable to those fields.
 
 ```
 type x := struct {
     a: int;
     b: int;
-    a:: A;  //this will be promoted
-    _b:: const B #json{ignore};  //this will not be promoted
+    a:: A;
     :: C; //this struct supports functions written for C, but C has no field, so we don't need a field name
 };
 ```
-- You can cast instances of `x` to `A` and `B` and `C`. Fields of `A` will be added to `x` too.
+- You can cast instances of `x` to `A` and `C`.
 
 ###Annotations
 You can annotate a struct or field with this syntax:
