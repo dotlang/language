@@ -62,7 +62,7 @@ Each package contains zero or more source code files, which are called modules.
 
 ##Keywords
 Electron has a small set of basic keywords: 
-`if, else, switch, assert, for, break, continue, return, defer, type, import, auto, select, native, defined, alloc, const`.
+`if, else, switch, assert, for, break, continue, return, defer, type, import, auto, select, native, defined, alloc`.
 
 ###if, else
 ```
@@ -73,6 +73,7 @@ Semantics of this keywords are same as other mainstream languages.
 - Note that condition must be a boolean expression.
 - You can use any of available operators for condition part. 
 - Also you can use a simple boolean variable (or a function with output of boolean) for condition.
+- You can also use suffix syntax for if. `Block if ( condition );`
 
 ###switch
 ```
@@ -152,7 +153,7 @@ mypt xx = {1, 2};
 
 You can use type alias to narrow valid values for an int-based (like enum):
 ```
-type DoW := {SAT=0, SUN=1, ...};  //any data of DoW type can only accept one of these values
+type DoW := enum {SAT=0, SUN=1, ...};  //any data of DoW type can only accept one of these values
 ```
 
 You can define functions based on `int` and `X` where `type X := int` and they will be different functions.
@@ -195,7 +196,7 @@ Denote fnuction is implemented by runtime or external libraries.
 `native func f1(x:int, y:int) -> float;`
 
 ###defined
-`if ( defined x)` returns true if x is not `nil`.
+`if ( defined x)` returns true if x is not initialized.
 
 
 ##Primitives
@@ -209,7 +210,7 @@ Denote fnuction is implemented by runtime or external libraries.
 Source file contains a number of definitions for struct, type and functions.
 
 *Notes:*
-- If a function name starts with underscore, means that it is private to the module. If not, it is public.
+- If a name starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
 - The order of the contents of source code file matters: First `import` section, `type` section, structs and finally functions.
 
 ###Structs
@@ -218,18 +219,16 @@ type A := struct { x: int; };  //you cannot assign value in struct
 type B := struct { A; y: int; }; //B inherits from A, you can use b.x or b.A.x to refer to x field
 type C := struct;   //empty struct
 type C := struct { y: int = 9; }; //setting default value
-type C := struct { y: const int; }; //y is immutable, you can only set its value upon creation
-type C := struct { F; z: const int; };  //z is a reference to F.y
-type Stack<T> := struct { }; //generic structure
+type Stack<T> := struct { }; //generic structure.
+type Stack<T: MyType> := struct { }; //generic structure with type constraint
 ```
 
 To create a new struct instance:
 ```
-var test : A{x: 10};
+var test : A = {x: 10};
 var test2 : A{};  //{} is mandatory
 var test2 : Stack<int>{};
 ```
-- If all fields of a struct are const, it is immutable.
 
 ###Functions
 
@@ -237,13 +236,13 @@ var test2 : Stack<int>{};
 func my_func1(x: int, y: int) -> float { return x/y; }
 func my_func2(x: int, y: int = 11 ) -> float { return x/y; }  //you can set default value
 func my_func3(x: int, y: int) -> x/y;  //you can omit {} if its a single expression
-func my_func4(x: int, y: const int) -> x/y;  //function will not change value of y
+func my_func4(x: int, y: int) -> x/y;  //function will not change value of y
 func _my_func6(x: int, y: int) -> x/y;  //this function won't be accessible outside the module
 func my_func7(x: int, y: int) {} //functions returng nothing, so -> is optional
 func my_func7() -> int { return 10;} //fn has no input but () is mandatory
-func push<T>(T data, Stack<T> stack) {...}
+func push<T>(T data, Stack<T> stack) {...}  //T is implicity specified by inputs to the function. so we don't need to specify them explicitly when calling push.
 func my_func8() -> (int, int) { return (10,20);} //function can return multiple values
-(x,y) = my_func8();  //but there is no tuple
+(x,y) = my_func8(); 
 
  //below function receives an array + a function and returns a function
 func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
@@ -251,21 +250,23 @@ func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
 func map<T>(f: func(T) -> T, arr: T[]) -> T[];  //map function
 new_array = map<int>({$$+1}, my_array);
 ```
-- Everything is passed by reference.
+- Everything is passed by reference. You can make a copy using `{}` operator: 
+`x : MyType = {x:1, y:2};`
+`y : MyType; y = x{};`
+`y : MyType; y = x{y: 5};`  //clone with modification
 - When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`
+- You can use `params` to hint compiler to create appropriate array for a variadic function: `func print(x: int, params int[] rest) {...}` - rest is a normal array which is created by compiler for each call to `print` function.
 
 ###Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part.
-By default everything is mutable unless it's type has `const`.
+By default everything is mutable..
 
 ```
 var x:int;
 var t = 12;
-var y : const int = 19;
-var t: const = 12;  //imply type from 12 and make it const
+var y : int = 19;
+var t = 12;  //imply type from 12
 ```
-- You cannot pass a variable of type `const int` to a function which expects `int`. 
-- You can send `const int` or `int` to a function which expects `const int`.
 
 ##Operators
 
@@ -273,47 +274,50 @@ var t: const = 12;  //imply type from 12 and make it const
 - Bitwise: `~ & | ^ << >>`
 - Math: `+ - * % ++ -- **`
 The bitwise and math operators can be combined with `=` to do the calculation and assignment in one statement.
+- You can define single character operators in your code. Function name must be operator name enclosed in `()`:
+`func (+)(x: int, y:int) -> int { return x+y; }`
+- If operator has two arguments, it will be infix syntax (A op B), if it has one parameter, it will be prefix (op A).
 
 
 - `=` operator, makes a variable refer to the same object as another variable.
 - `x == y` will call `equals` functions is existing, by default compares field-by-field values.
 
 ##Special syntax
-- `~x` makes a copy of x
-- `#` for annotations on fields and structs
+- `@` decorators
+- `$i` function inputs
+- `$_` input place-holder in chaining
 - `:` for hash, call by name, array slice, loop
 - `<>` template syntax
-- `$$` only input in lambda
-- `$_` input place-holder in chaining
-- `@` casting
-- `:=` type alias
+- `this` place-holder for constraints on types
+- `:=` type definition
+- `=>` chaining
+- `default(T)` value of type T when it is not initialized
 
 ###Special variables
 `true`, `false`
 
-###Composition
+###Inheritance
 
 - If struct contains a field defined using `::` the struct will be castable to those fields.
 
 ```
-type x := struct {
+type x := struct extends Parent1, Parent2, Parent3 {
     a: int;
     b: int;
-    a:: A;
-    :: C; //this struct supports functions written for C, but C has no field, so we don't need a field name
 };
 ```
-- You can cast instances of `x` to `A` and `C`.
+- You can cast instances of `x` to `Parent1/2/3`.
+- Note that any struct will implicitly inherit any other struct, if it contains a field with same name + type.
 
 ###Annotations
 You can annotate a struct or field with this syntax:
-`#custom_name{key1:value1, key2:value2, ...}`
+`meta{key1:value1, key2:value2, ...}`
 custom_name is whatever you want. `value(i)` is optional and is assumed to be `true` if omitted.
 for example:
-`x: int #json{ignore};`
-`x: const int #json{ignore};`
+`x: int meta{json:ignore};`
 
 - `core` provides functions to extract annotations.
+- You can add multiple annotations.
 
 ###Array and slice
 
@@ -329,13 +333,64 @@ for example:
 - 
 
 ###Casting
-- `@MyStruct(my_obj)` will try to cast `my_obj` instance to `MyStruct` type. This is only possible if MyObj (type of `my_obj`) composes a field of type `MyStruct`.
-- `float f; int x = @int(f);` this version is used for casting primitives.
-- empty/undefined/not-initialized state of a variable is named "default" state and is shown by `nil`.
-- Value of a variable before initialization is `nil`.
-- You can also return `nil` when you want to indicate invalid state for a variable.
+- For every struct, compiler defines a function with the same name to do conversions. You can override versions that you need.
+- `MyStruct(my_obj)` will try to cast `my_obj` instance to `MyStruct` type. This is only possible if MyObj (type of `my_obj`) composes a field of type `MyStruct`.
+- `float f; int x = int(f);` this version is used for casting primitives.
+- empty/undefined/not-initialized state of a variable is named "default" state and is shown by `default(T)`.
+- Value of a variable before initialization is `default(T)`.
+- You can also return `default(T)` when you want to indicate invalid state for a variable.
 
 ###Undef instance
+
+###Anonymous struct
+Anonymous struct (or tuple):
+`var t: struct{x: int, y: int, z: float} = {1,2, 3.1};`
+`t.x = 8;`
+`var t: struct{x: int, y: int, z: float};`
+`t = {1, 9, 1.1};`
+Definition is same as a normal struct, only fields are separated using comma.
+
+Functions can considered as a piece of code which accepts a tuple and returns a tuple. 
+`func f(x:int, y:float) -> struct{a: int, b: string;} {...}`
+
+###Constraints
+When defining non-anonymous types (everything except tuple or lambda), you can define a constraint for it.
+For functions, this is a pre-condition, for other types it is a validator when their value changes.
+
+`type x := int requires{ this > 0 };`
+`type x := int requires{ this != 3 };`
+`type x := struct { x:int, y:float; } requires(this.x != $?.y);`
+`func ff(x:int) -> string requires(x!=0) {...}`
+`type const_int := int requires{ this == default(int) };`  //you can define const int like this
+`type const<T> := T requires{ this == default(T) };`  //genral const
+You can define enum using a combination of flags and constraint with `either` function. When a type has either constraints, compiler can optimize storage automatically.
+`type DoW := struct { isSAT: bool; isSUN: bool; ... } requires(either(isSAT, isSUN,...)); ` 
+
+Also you can define union-like structures:
+`type nullable_int := struct { x: int; nil: bool; } requires(either(this.x, this.nil));`?
+`type int_or_float_union := struct { x: int; y: float; } requires(either(this.x, this.y));`?
+
+- You can define multiple requires for an entity.
+
+###Decorator
+Decorators are functions which wrap another function and receive calls to that function.
+
+```
+//general definition of a function
+type fp<T, U> := func(T) -> U;
+
+//decorator function - accepts a function and returns a function with same signature
+//returned function will wrap f function and do some other tasks during the call
+func make_bold<T, U>(f: fp<T,U>) -> fp<T,U> 
+{ return fp<T, U> { U out = f(T); return "<B>" + out + "/B"; } }
+
+@make_bold   //T is tuple(x:int) and U is tuple(string), compiler can infer them
+func get_data(x:int) -> string { return x.toString(); }
+
+//when you call get_data, the wrapped function will be called.
+```
+- You can compose decorators too.
+- You can only apply decorators to named functions (not lambdas).
 
 ###Chaining
 You can use `=>` operator to chain functions. `a => b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
@@ -361,8 +416,9 @@ adder rr = func(a:int, b:int) -> { a + b }; //when you have a type, you can defi
 adder rr = func { x + y }; //when you have a type, you can also omit input
 adder rr = { x + y };      //and also func keyword
 adder rr = x + y;          //only if type is specified, you can omit {} too
-plus2 rr = $$ + 2;          //if type has only one input, you can $$ instead of its name
+plus2 rr = $0 + 2;          //you can $0 instead of name of first input
 ```
+- You can access lambda input using `$0, $1, ...` notation too.
 
 ##Best practice
 ###Naming
