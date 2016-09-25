@@ -248,7 +248,7 @@ func my_func8() -> (int, int) { return (10,20);} //function can return multiple 
 func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
 
 func map<T>(f: func(T) -> T, arr: T[]) -> T[];  //map function
-new_array = map<int>({$$+1}, my_array);
+new_array = map<int>({$0+1}, my_array);
 ```
 - Everything is passed by reference. You can make a copy using `{}` operator: 
 `x : MyType = {x:1, y:2};`
@@ -283,12 +283,10 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `x == y` will call `equals` functions is existing, by default compares field-by-field values.
 
 ##Special syntax
-- `@` decorators
 - `$i` function inputs
 - `$_` input place-holder in chaining
 - `:` for hash, call by name, array slice, loop
 - `<>` template syntax
-- `this` place-holder for constraints on types
 - `:=` type definition
 - `=>` chaining
 - `default(T)` value of type T when it is not initialized
@@ -354,23 +352,28 @@ Functions can considered as a piece of code which accepts a tuple and returns a 
 `func f(x:int, y:float) -> struct{a: int, b: string;} {...}`
 
 ###Constraints
-When defining non-anonymous types (everything except tuple or lambda), you can define a constraint for it.
+When defining non-anonymous types (everything except anon-struct or lambda), you can define a constraint for it.
 For functions, this is a pre-condition, for other types it is a validator when their value changes.
+When defining a constraint for types, `this` means their new value and `that` means previous value. This check is called before assigning a new value to the type. So we can defined constraint for;
+1. Functions (named)
+2. Types
+3. Struct fields
 
-`type x := int requires{ this > 0 };`
-`type x := int requires{ this != 3 };`
-`type x := struct { x:int, y:float; } requires(this.x != $?.y);`
-`func ff(x:int) -> string requires(x!=0) {...}`
-`type const_int := int requires{ this == default(int) };`  //you can define const int like this
-`type const<T> := T requires{ this == default(T) };`  //genral const
+`type x := int ensure{ $1 > 0 };`
+`type x := int ensure{ $1 != 3 };`
+`type x := struct { x:int, y:float; } ensure($1.x != $?.y);`
+`func ff(x:int) -> string ensure(x!=0) {...}`
+`type const_int := int ensure{ $0 == default(int) };`  //you can define const int like this
+`type const<T> := T ensure{ $1 == default(T) };`  //genral const
 You can define enum using a combination of flags and constraint with `either` function. When a type has either constraints, compiler can optimize storage automatically.
-`type DoW := struct { isSAT: bool; isSUN: bool; ... } requires(either(isSAT, isSUN,...)); ` 
+`type DoW := struct { isSAT: bool; isSUN: bool; ... } ensure(either(isSAT, isSUN,...)); ` 
 
 Also you can define union-like structures:
-`type nullable_int := struct { x: int; nil: bool; } requires(either(this.x, this.nil));`?
-`type int_or_float_union := struct { x: int; y: float; } requires(either(this.x, this.y));`?
+`type nullable_int := struct { x: int; nil: bool; } ensure(either(this.x, this.nil));`?
+`type int_or_float_union := struct { x: int; y: float; } ensure(either(this.x, this.y));`?
 
-- You can define multiple requires for an entity.
+- You can define multiple ensure for an entity.
+- constraint on types and fields is called with old and new values. You can refer to them using `$0` and `$1` respectively.
 
 ###Decorator
 Decorators are functions which wrap another function and receive calls to that function.
@@ -384,8 +387,12 @@ type fp<T, U> := func(T) -> U;
 func make_bold<T, U>(f: fp<T,U>) -> fp<T,U> 
 { return fp<T, U> { U out = f(T); return "<B>" + out + "/B"; } }
 
-@make_bold   //T is tuple(x:int) and U is tuple(string), compiler can infer them
-func get_data(x:int) -> string { return x.toString(); }
+
+func get_data(x:int) -> string
+apply make_bold($_, 'a', 'b') //T and U are inferred by compiler
+{ 
+  return x.toString(); 
+}
 
 //when you call get_data, the wrapped function will be called.
 ```
