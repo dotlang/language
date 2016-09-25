@@ -302,6 +302,9 @@ apply make_bold($_, 'a', 'b')
 //when you call get_data, the wrapped function will be called.
 ```
 
-? - can we change requires keyword? its too long.
+Y - can we change requires keyword? its too long.
+ensure
+check
+
 
 ? - think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
