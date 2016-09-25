@@ -306,5 +306,8 @@ Y - can we change requires keyword? its too long.
 ensure
 check
 
+N - can we make templates more internal?
+like haskel?
+
 
 ? - think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
