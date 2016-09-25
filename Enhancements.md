@@ -259,4 +259,49 @@ Y - operators as functions?
 `func adder5(x:int ) -> { x+5}`?no.
 Haskell and F# have it.
 
+Y - we cannot implement const using current require syntax.
+`type const_int := int requires{ this == default(int) };` - this only ensures that new value is 0!
+we need to add a new keyword: that representing the previous value. 
+what does this mean?
+this means the new value? or previous value?
+for function we dont need this or that. but for type, we need both previous and current value.
+this can represent the value being assigned. that the previous state.
+`type const_int := int requires { that == default(int) };`
+
+Y - replace this with $> and that with $<. no this is not readable.
+also $0 and $1 is not good too.
+this/that.
+$0 means old
+$1 means new.done.
+
+Y - can we remove or change decorator to make it a keyword or non-built-in feature?
+proxy 
+facade
+around
+bundle
+like extends it has to be third person present tense.
+boxed
+wrapped
+what if there are multiple methods with that name? compiler can automatically find the fn with correct syntax.
+```
+//general definition of a function
+type fp<T, U> := func(T) -> U;
+
+//decorator function - accepts a function and returns a function with same signature
+//returned function will wrap f function and do some other tasks during the call
+func make_bold<T, U>(f: fp<T,U>) -> fp<T,U> 
+{ return fp<T, U> { U out = f(T); return "<B>" + out + "/B"; } }
+
+@make_bold   //T is tuple(x:int) and U is tuple(string), compiler can infer them
+func get_data(x:int) -> string
+apply make_bold($_, 'a', 'b')
+{ 
+  return x.toString(); 
+}
+
+//when you call get_data, the wrapped function will be called.
+```
+
+? - can we change requires keyword? its too long.
+
 ? - think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
