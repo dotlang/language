@@ -215,7 +215,7 @@ Source file contains a number of definitions for struct, type and functions.
 
 ###Structs
 ```
-type A := struct { x: int; };  //you cannot assign value in struct
+type A := struct { x: int = 19; };  //you can assign default value
 type B := struct { a: A; y: int; }; //B composes A
 type C := struct;   //empty struct
 type C := struct { y: int = 9; }; //setting default value
@@ -243,8 +243,9 @@ func my_func2(x: int, y: int = 11 ) -> float { return x/y; }  //you can set defa
 func my_func3(x: int, y: int) -> x/y;  //you can omit {} if its a single expression
 func my_func4(x: int, y: int) -> x/y;  //function will not change value of y
 func _my_func6(x: int, y: int) -> x/y;  //this function won't be accessible outside the module
-func my_func7(x: int, y: int) {} //functions returng nothing, so -> is optional
+func my_func7(x: int, y: int) {do_some_work();} //functions returng nothing, so -> is optional
 func my_func7() -> int { return 10;} //fn has no input but () is mandatory
+func my_func7() -> 10; //when function has just a return statement, there is a shortcut
 func push<T>(T data, Stack<T> stack) {...}  //T is implicity specified by inputs to the function. so we don't need to specify them explicitly when calling push.
 func my_func8() -> (int, int) { return (10,20);} //function can return multiple values
 (x,y) = my_func8(); 
@@ -278,6 +279,12 @@ var y : int = 19;
 var t = 12;  //imply type from 12
 ```
 
+You can assign a variable to a lazy calculation:
+```
+var x: int = lazy do_some_work(100);
+var x: int = lazy(do_some_work(100));
+```
+
 ##Operators
 
 - Conditional: `and or not == != >= <=`
@@ -295,6 +302,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 ##Special syntax
 - `$[i]` function inputs
 - `$_` input place-holder in chaining
+- `[]` constraints
 - `:` for hash, call by name, array slice, loop
 - `<>` template syntax
 - `:=` type definition
@@ -335,7 +343,9 @@ for example:
 `x: int meta{json:ignore};`
 
 - `core` provides functions to extract annotations.
-- You can add multiple annotations.
+- You can add multiple annotations but only a single `meta` section.
+
+`x: int[$_>0 && const($_)] meta{json:ignore} = lazy fetch(19);`
 
 ###Array and slice
 
@@ -376,7 +386,7 @@ Functions can considered as a piece of code which accepts a tuple and returns a 
 When defining non-anonymous types (everything except anon-struct or lambda), you can define a constraint for it.
 For functions, this is a pre-condition, for other types it is a validator when their value changes.
 When defining a constraint for types, `$_` means the corresponding element to which a constraint is attached. So we can defined constraint for;
-1. Functions (named)
+1. Functions
 2. Function inputs
 3. Types
 4. Struct fields
@@ -398,8 +408,8 @@ Also you can define union-like structures:
 `type nullable_int := struct { x: int; nil: bool; } [either($_.x, $_.nil)];`
 `type int_or_float_union := struct { x: int; y: float; } [either($_.x, $_.y)];`
 
-- You can define multiple constraints for an entity.
 - The special `const` function makes sure the value is not changed.
+- Constraint is not part of the type.
 
 ###Decorator
 Decorators are functions which wrap another function and receive calls to that function.
@@ -416,6 +426,7 @@ func make_bold<T, U>(f: fp<T,U>) -> fp<T,U>
 
 func get_data(x:int) -> string
 apply make_bold($_, 'a', 'b') //T and U are inferred by compiler
+apply make_italic   
 { 
   return x.toString(); 
 }
