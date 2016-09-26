@@ -347,7 +347,6 @@ there is no manager, parent to accept this lambda.
 proposal: built-in method: `mock('myMethod', <<lambda>>);`
 to do mocking in the life-time of the current function. 
 
-
 N - Like oop where we should rely on interface not implementation, we should extend from types with no fields. and rename extens to implements.
 But if everything is transparent and auto-binding, we cannot ban this.
 It needs more thinking.
@@ -463,6 +462,7 @@ con: maybe we need to stress more about the result type of fn
 con: when we use a fn as input of current function, `:` will get mixed together and code will be unreadable.
 `func map<T>(f: func(T) -> T, arr: T[]) -> T[];  //map function`
 `func map<T>(f: func(T): T, arr: T[]) -> T[];  //map function`
+`func map<T>(f: func(func(T) -> int) -> T, arr: T[]) -> T[];  //map function`
 
 N - how can we write casting code to cast type X to type Y?
 e.g. cast DoW type to int.
@@ -474,5 +474,58 @@ after any change in it's fields.
 Y - when is assert for field called?
 before any change in it's value? 
 
+N - Extend constraint to define default value.
+required -> non-nullable means has to have value
+lazy -> not needed here
+you can set default value using: `x: int = 11;` syntax.
+
+N - use namespace for functions and structs.
+how to solve expression problem?
+no we have modules.
+
+N - shortcut for const: .x
+`x: int [.$_];`
+`x: int [.$_];`
+`x: int [const $_];`
+
+N - indicate cached data
+`proto fib (|) is cached returns NonNegativeInt {*}`
+we have decorator for that.
+
+Y - syntax for function delegation
+`func a(x:int)-> x+1;`
+
+N - trigger when field value is changed?
+
+N - same syntax for func and lambda
+`a: func(x:int)->int = { return x+1;}`
+`func a(x:int)->int { return x+1;}`
+`func a(x:int)-> x+1;`
+
+N - polymorphism
+what if struct BMW has a struct Car and we have `f(BMW)` and `f(Car)` and we call: `f(myBMW.Car)`?
+f(Car) should be called. but if we call `f(myBMW)` f(BMW) will be called.
+
+Y - lazy evaluation is like build_x in Perl.
+`lazy val cheapOrders: Seq[Order] = orders.filter(_.price < 50)`
+we may define a variable lazy
+or a function which accepts an int. we can pass `f(1,2,3)` which returns an int but as a lazy. so it will be called only when that parameter is used. but this is not useful because that parameter must be used or else its redundant. but there maybe some cases like if/else where its not called.
+`int x = lazy(expression);`
+`do_work(a, x);`
+x block will be called only when it is accessed. 
+`type x := struct {count:int};`
+`func create_x() { return x{count: lazy(call_function1(10000))}}`
+`int x = lazy(expression);`
+`int x ~ expression;`
+`int x = &expression;`
+we prefer keywords and try to keep operator usage at minimum. so code will be simpler and more readable.
+
 ? - think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
+economic_events:
+```
+//assuming 
+type Event := struct { source: st
+```
+
+
 
