@@ -1,4 +1,4 @@
-#Enhancement Proposals - Part 1
+#Enhancement Proposals - Part 2
 
 Read [Part1] (https://github.com/mm-binary/electron-lang/blob/master/backup/EEP.v1.md).
 
@@ -335,8 +335,144 @@ N - easy syntax for struct which has either.
 `type DoW := struct { SAT; SUN; ... };`
 except for enums, it won't be readable.
 
-? - for primitives, we can have operator `=` overridden for them to assign them by value.
+Y - for primitives, we can have operator `=` overridden for them to assign them by value.
 
-? - Stack/heap allocation?
+N - Stack/heap allocation?
+
+N - adding some prefix to fn names as a grouping mechanism.
+
+\* - how can we mock a method? in a general way. so it won't be limited to testing. 
+we can easily define a lambda to mock a method. but how to attach it to that method?
+there is no manager, parent to accept this lambda.
+proposal: built-in method: `mock('myMethod', <<lambda>>);`
+to do mocking in the life-time of the current function. 
+
+
+N - Like oop where we should rely on interface not implementation, we should extend from types with no fields. and rename extens to implements.
+But if everything is transparent and auto-binding, we cannot ban this.
+It needs more thinking.
+we have polymorphism.
+When we have a function that takes T, we can send anything other than T as long as they have exactly same fields.
+so, if a type has no field, we can pass ANY struct instead of that.
+HOW can we indicate in a function that we need as input a variable x of type X which has method F implemented on it?
+I want to be sure if I get Y instead of X, I can call F on it. If I get Y instead, it means Y contains all required fields. so I can call F on it.
+so how can we re-use code? implement function on the parent type. we can override function for a child type anytime we want.
+do we need to explicitly indicate a type inherits from another type? No.
+if we have T1 and T2 as empty structs and function `f` is defined for T1 and T2 separately with different bodies, what should `f(x)` do if type of X is something other than T1 or T2?
+`f(a: T1)...`
+`f(a: T2)...`
+compiler error shown be thrown. there is ambiguity.
+
+N - If a type has no field, is it same as interface? what if it has a set of methods which have code? this will be same as java interface with default methods. 
+
+N - avoiding inheritance from types with fields makes instantiation of the type easier.
+yes. but if inheritance is auto-inferred then we don't need to do anything special.
+
+N - to organize function, we can name them from genearl to specific part:
+`stack_prepare_data`
+
+N - inheritance without methods? I want a Stack type which inherits from List struct. But I want my own methods on Stack. I don't want to have 100 methods defined on stack -> solution: composition.
+But if a struct inherits from a field-less type and wants just methods to implement, we can simply write them.
+interface implementation check is based on duck-typing.
+`type X; func f1(a: X, b:int) -> int...`
+`func dowork(b: X)...` function dowork expects `b` input of type X. so it expects to be able to call: `f1` and pass b.?
+question is: how do we know if data of type T1 can be passed where data of type T2 is expected?
+`func (==)(a: EqChecked, b: EqChecked) -> bool { return eq_check(a, b); }`
+`type EqChecked := struct;`
+`func eq_check(a: EqChecked, b: EqChgecked) -> bool;`
+any type that has above method implemented for itself, can be used when EqChecked type is needed.
+`type Event := struct { x:int };`
+`func eq_check(a: Event, b: Event)->bool { return a.x == b.x; }`
+`type Stack := struct; func push(s: Stack)...; func pop(s: Stack)...;`
+`type MyStack := struct {}; func push(s: MyStack)...; func pop(s: MyStack)...;`
+When Queue can be used instead of Collection? what if there are some methods on Collection which don't have anything for Queue? 
+
+N - can we simplify ensures with accepting only one value and using a built-in function called: const to make sure a value does not change?
+
+N - constraint can be used for testing too to ensure output.
+reverse, test should be used to make sure output of func is correct.
+
+Y - provide a mechanism for explicit inheritance. we cannot re-type all the fields.
+and what if those fields change?
+but normal inheritance will make instaitiaion of struct complex.
+what about compose as inheritance?
+suppose that we want to define a ordering relation. 
+```
+type Ord := struct;  //now field can come here
+func compare(a: Ord, b: Ord)->int; //compare two structs and return the bigger one
+type Stack := { x: int; y: float; ...}
+```
+What will happen if someone calls `compare` on stack? Its not a valid call.
+so polymorphism only based on fields, is not a good way.
+structs must explicitly indicate their types.
+Of course it will be possible to do casting. so if its not explicit but fields are ok, user can cast.
+we need a mechanism to state type A can be used instead of type B or C or ...
+so, Stack can NOT be used instead of type Ord. we just don't mention that in Stack definition.
+but for ComplexNumber type, we definitely mention that.
+of coutse parent types must match fields of the current type.
+`type BMWCar := struct {...}` we want to state BMWCar can be used instead of Car type.
+`type BMWCar := struct {.} extends Car;`
+`type BMWCar: Car := struct {.};`
+`type BMWCar := struct {.};`
+`type BMWCar := struct {c: Car};`  this definition 1) adds required fields to BMWCar and states bmwcar can be casted to car.
+but what if struct has two members of that type?
+`type BMWCar := struct {current_car: Car; prev_car: Car};`
+do we really need automatic and transparent casting?
+if some method needs a car, just send `bmwcar1.current_car`. 
+but sometimes we need this. e.g. when the member is an empty market type.
+```
+type Ord := struct;  //now field can come here
+func compare(a: Ord, b: Ord)->int; //compare two structs and return the bigger one
+type ComplexNumber := { x: int; y: float; x: Ord;}
+var a: ComplexNumber;
+var b: ComplexNumber;
+bool h = a>b; //this will call compare method on a and b.
+```
+if there is just one, you can ignore casting, but if you have two fields of that type you must cast explicitly.
+
+Y - better keyword for ensure -> constraint, pre/post (for type, assignment, for function, call). 
+require
+requires
+check
+contract
+expects
+invariant
+assert
+
+Y - can we have `var x: int assert(...)`?
+should be possible because we can easily define this as a new type and use it instead.
+what about function input? if we can do that, we may be able to use `assert` for function as a post-condition.
+`func f(x: int assert($[0]>1), ...)`
+also in assert on a variable we can use var name? no, because assert is called before value assignment.
+lets have this: `x: int assert(const(x));` which makes sure value of x has not changed. 
+and then we can say, assert is called AFTER method call, variable assignment, struct modification.
+so we may need to change name assert to stress it is post-condition type.
+contract
+guarantee
+or a shortcut like: $, @, !, <>, :
+`type x := int[$_>0];`
+`var x : int[$_>0];`
+`type x := struct {...} [$_.x > $_.y];`
+`func ff(x: int[$_!=0], y: int[$_>1]=1)-> bool {}`
+
+N - fn definition replace -> with : ?
+Scala: `def addInt( a:Int, b:Int ) : Int`
+`func get_data(x: int, y:int) : int { return x+y; }`
+pro: is general and orth
+con: maybe we need to stress more about the result type of fn
+con: when we use a fn as input of current function, `:` will get mixed together and code will be unreadable.
+`func map<T>(f: func(T) -> T, arr: T[]) -> T[];  //map function`
+`func map<T>(f: func(T): T, arr: T[]) -> T[];  //map function`
+
+N - how can we write casting code to cast type X to type Y?
+e.g. cast DoW type to int.
+`func int(d: Dow) ...`
+
+Y - when is assert for struct called? 
+after any change in it's fields.
+
+Y - when is assert for field called?
+before any change in it's value? 
 
 ? - think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
+
