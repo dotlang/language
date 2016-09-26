@@ -229,6 +229,11 @@ var test : A = {x: 10};
 var test2 : A{};  //{} is mandatory
 var test2 : Stack<int>{};
 ```
+- Note that if there is a multiple struct inheritance which results in function ambiguity, there will be a compiler error: 
+`func x(p: P1)->int ...`
+`func x(p: P2)->int ...`
+`type A := struct extends P1, P2;`
+`var v: A{}; var t = A.x();`
 
 ###Functions
 
@@ -279,11 +284,11 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - If operator has two arguments, it will be infix syntax (A op B), if it has one parameter, it will be prefix (op A).
 
 
-- `=` operator, makes a variable refer to the same object as another variable.
+- `=` operator, makes a variable refer to the same object as another variable, by defaut. You can override this operator for your type. It is overriden for primitives to make a copy.
 - `x == y` will call `equals` functions is existing, by default compares field-by-field values.
 
 ##Special syntax
-- `$i` function inputs
+- `$[i]` function inputs
 - `$_` input place-holder in chaining
 - `:` for hash, call by name, array slice, loop
 - `<>` template syntax
@@ -354,26 +359,26 @@ Functions can considered as a piece of code which accepts a tuple and returns a 
 ###Constraints
 When defining non-anonymous types (everything except anon-struct or lambda), you can define a constraint for it.
 For functions, this is a pre-condition, for other types it is a validator when their value changes.
-When defining a constraint for types, `this` means their new value and `that` means previous value. This check is called before assigning a new value to the type. So we can defined constraint for;
+When defining a constraint for types, `$[1]` means their new value and `$[0]` means previous value. This check is called before assigning a new value to the type. So we can defined constraint for;
 1. Functions (named)
 2. Types
 3. Struct fields
 
-`type x := int ensure{ $1 > 0 };`
-`type x := int ensure{ $1 != 3 };`
-`type x := struct { x:int, y:float; } ensure($1.x != $?.y);`
+`type x := int ensure{ $[1] > 0 };`
+`type x := int ensure{ $[1] != 3 };`
+`type x := struct { x:int, y:float; } ensure($[1].x != $?.y);`
 `func ff(x:int) -> string ensure(x!=0) {...}`
-`type const_int := int ensure{ $0 == default(int) };`  //you can define const int like this
-`type const<T> := T ensure{ $1 == default(T) };`  //genral const
+`type const_int := int ensure{ $[0] == default(int) };`  //you can define const int like this
+`type const<T> := T ensure{ $[1] == default(T) };`  //genral const
 You can define enum using a combination of flags and constraint with `either` function. When a type has either constraints, compiler can optimize storage automatically.
 `type DoW := struct { isSAT: bool; isSUN: bool; ... } ensure(either(isSAT, isSUN,...)); ` 
 
 Also you can define union-like structures:
-`type nullable_int := struct { x: int; nil: bool; } ensure(either(this.x, this.nil));`?
-`type int_or_float_union := struct { x: int; y: float; } ensure(either(this.x, this.y));`?
+`type nullable_int := struct { x: int; nil: bool; } ensure(either(this.x, this.nil));`
+`type int_or_float_union := struct { x: int; y: float; } ensure(either(this.x, this.y));`
 
 - You can define multiple ensure for an entity.
-- constraint on types and fields is called with old and new values. You can refer to them using `$0` and `$1` respectively.
+- constraint on types and fields is called with old and new values. You can refer to them using `$[0]` and `$[1]` respectively.
 
 ###Decorator
 Decorators are functions which wrap another function and receive calls to that function.
