@@ -1,5 +1,6 @@
-#Enhancement Proposals
+#Enhancement Proposals - Part 1
 
+Read [Part1] (https://github.com/mm-binary/electron-lang/blob/master/backup/EEP.v1.md).
 
 Y - decorators - another try
 lets define some native, built-in functions. 
@@ -139,7 +140,7 @@ N - can we replace struct with a better name? NO.
 
 N - can we say tempalte parameters for function are always inferred by compiler? yes
 We just need to specify type when dealing with template for structs.
-just like OOP: stack<int> s; for s.push we don't need to specify type T because it is implicit with s.
+just like OOP: `stack<int> s;` for s.push we don't need to specify type T because it is implicit with s.
 
 N - How requires is inherited?
 `type a := int requires {x>0};`
@@ -252,7 +253,7 @@ N - we cannot say: if `f` expects it's input to have function F supported, it mu
 do we need interfaces here?
 
 Y - How can we constraint a type in template?
-template stack<T> where T must be a number
+template `stack<T>` where T must be a number
 or T must conform to these methods.
 
 Y - operators as functions?
@@ -268,7 +269,7 @@ for function we dont need this or that. but for type, we need both previous and 
 this can represent the value being assigned. that the previous state.
 `type const_int := int requires { that == default(int) };`
 
-Y - replace this with $> and that with $<. no this is not readable.
+Y - replace this with $> and that with `$<`. no this is not readable.
 also $0 and $1 is not good too.
 this/that.
 $0 means old
@@ -309,5 +310,33 @@ check
 N - can we make templates more internal?
 like haskel?
 
+N - When we have `type x := struct extends Parent1, Parent2, Parent3 {` is it mandatory to re-define all methods of parents for type x? no.
+
+Y - if A inherits from P1 and P2 and these two inherit from PP and there is a method x defined on PP, it is availavle for A too. But A does not implements it. it P1 and P2 both implement this method x, when we write `aObj.x` which of these two should be called?
+`func x(p: P1)->int ...`
+`func x(p: P2)->int ...`
+`type A := struct extends P1, P2;`
+`var v: A{}; var t = A.x();`
+in Java with default methods, this behavior results in compiler error. type A must implement method x.
+
+N - easy syntax for composition function redirection
+`func x(a:Data, b:int) -> int { return a.x(b); }`
+`func x(a:Data) -> a;`
+it doesn't mean `a.x`! fn redirection is when I function x is called, it should just call function y.
+`func x(a:Data) -> y(a;`
+no it needs a lot of modifications and special syntax.
+
+Y - replace $1, $2,... with array-like syntax: `$[0]`
+so we can use slice syntax on it.
+
+N - easy syntax for struct which has either.
+`type DoW := struct { isSAT: bool; isSUN: bool; ... } ensure(either(isSAT, isSUN,...));`
+`type DoW := struct { SAT; SUN; ... };`
+`type DoW := struct { SAT; SUN; ... };`
+except for enums, it won't be readable.
+
+? - for primitives, we can have operator `=` overridden for them to assign them by value.
+
+? - Stack/heap allocation?
 
 ? - think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
