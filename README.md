@@ -216,7 +216,7 @@ Source file contains a number of definitions for struct, type and functions.
 ###Structs
 ```
 type A := struct { x: int; };  //you cannot assign value in struct
-type B := struct { A; y: int; }; //B inherits from A, you can use b.x or b.A.x to refer to x field
+type B := struct { a: A; y: int; }; //B composes A
 type C := struct;   //empty struct
 type C := struct { y: int = 9; }; //setting default value
 type Stack<T> := struct { }; //generic structure.
@@ -253,7 +253,11 @@ func my_func8() -> (int, int) { return (10,20);} //function can return multiple 
 func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
 
 func map<T>(f: func(T) -> T, arr: T[]) -> T[];  //map function
+//these calls are all the same
 new_array = map<int>({$0+1}, my_array);
+new_array = map({$0+1}, my_array);
+new_array = map {$0+1}, my_array;
+new_array = map {$0+1}, my_array;
 ```
 - Everything is passed by reference. You can make a copy using `{}` operator: 
 `x : MyType = {x:1, y:2};`
@@ -261,6 +265,7 @@ new_array = map<int>({$0+1}, my_array);
 `y : MyType; y = x{y: 5};`  //clone with modification
 - When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`
 - You can use `params` to hint compiler to create appropriate array for a variadic function: `func print(x: int, params int[] rest) {...}` - rest is a normal array which is created by compiler for each call to `print` function.
+- The `$` array contains function inputs. This is useful specially in lambda expresions.
 
 ###Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part.
@@ -299,18 +304,28 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 ###Special variables
 `true`, `false`
 
-###Inheritance
+###Inheritance and polymorphism
+- To have type C inherit type P, there must a field of type P defined in C. If there is just one field, casting will be automatically done, but if there is more than one you have to specify appropriate field.
 
-- If struct contains a field defined using `::` the struct will be castable to those fields.
+Suppose that we want to implement equality check:
+`func (==)(a: EqChecked, b: EqChecked) -> bool { return eq_check(a, b); }`
+`type EqChecked := struct;`  //So any struct that has no field, can be considered EqCheck
+`func eq_check(a: EqChecked, b: EqChgecked) -> bool;`
+Here EqCheck is some kind of interface which defines, any type can be EqCheck if it has a function named `eq_check` with appropriate signature. We can define a type which conforms to this interface:
+`type Event := struct { x:int; nothing: EqCheck; };`
+`func eq_check(a: Event, b: Event)->bool { return a.x == b.x; }`
+Do type Event can be used instead of type EqChecked if and only if, for every function defined which accepts an EqChecked input, there is a function with same signature accepting Event type. If EqChecked interface contains some fields, the Event must also have those fields too.
 
+Another example for Ord interface and complex number type:
 ```
-type x := struct extends Parent1, Parent2, Parent3 {
-    a: int;
-    b: int;
-};
+type Ord := struct; 
+func compare(a: Ord, b: Ord)->int; //compare two structs and return the bigger one
+type ComplexNumber := { x: int; y: float; tx: Ord;}
+var a: ComplexNumber;
+var b: ComplexNumber;
+bool h = a>b; //this will call compare method on a and b.
 ```
-- You can cast instances of `x` to `Parent1/2/3`.
-- Note that any struct will implicitly inherit any other struct, if it contains a field with same name + type.
+- If the struct only contains one field of type T, it will be automatically castable to type T, else you have to manually choose the right field.
 
 ###Annotations
 You can annotate a struct or field with this syntax:
@@ -342,6 +357,7 @@ for example:
 - empty/undefined/not-initialized state of a variable is named "default" state and is shown by `default(T)`.
 - Value of a variable before initialization is `default(T)`.
 - You can also return `default(T)` when you want to indicate invalid state for a variable.
+- For example, you can write `func int(d: Dow) ...` function to provide custom code to convert Day-of-Week type to int.
 
 ###Undef instance
 
@@ -359,26 +375,31 @@ Functions can considered as a piece of code which accepts a tuple and returns a 
 ###Constraints
 When defining non-anonymous types (everything except anon-struct or lambda), you can define a constraint for it.
 For functions, this is a pre-condition, for other types it is a validator when their value changes.
-When defining a constraint for types, `$[1]` means their new value and `$[0]` means previous value. This check is called before assigning a new value to the type. So we can defined constraint for;
+When defining a constraint for types, `$_` means the corresponding element to which a constraint is attached. So we can defined constraint for;
 1. Functions (named)
-2. Types
-3. Struct fields
+2. Function inputs
+3. Types
+4. Struct fields
+5. Local variables
 
-`type x := int ensure{ $[1] > 0 };`
-`type x := int ensure{ $[1] != 3 };`
-`type x := struct { x:int, y:float; } ensure($[1].x != $?.y);`
-`func ff(x:int) -> string ensure(x!=0) {...}`
-`type const_int := int ensure{ $[0] == default(int) };`  //you can define const int like this
-`type const<T> := T ensure{ $[1] == default(T) };`  //genral const
+Constrains are invoked upon any change in the corresponding entity.
+
+`type x := int[$_ > 0 ];`
+`type x := int[$_ != 3];`
+`var x : int[$_ != 3];`
+`type x := struct { x:int, y:float; } [$_.x != $_.y];`
+`func ff(x:int[$_>4]) -> string[$_!=0] {...}`
+`type const_int := int[const($_)];`  //you can define const int like this
+`type const<T> := T [const($_)];`  //genral const
 You can define enum using a combination of flags and constraint with `either` function. When a type has either constraints, compiler can optimize storage automatically.
-`type DoW := struct { isSAT: bool; isSUN: bool; ... } ensure(either(isSAT, isSUN,...)); ` 
+`type DoW := struct { isSAT: bool; isSUN: bool; ... } [either(isSAT, isSUN,...)]; ` 
 
 Also you can define union-like structures:
-`type nullable_int := struct { x: int; nil: bool; } ensure(either(this.x, this.nil));`
-`type int_or_float_union := struct { x: int; y: float; } ensure(either(this.x, this.y));`
+`type nullable_int := struct { x: int; nil: bool; } [either($_.x, $_.nil)];`
+`type int_or_float_union := struct { x: int; y: float; } [either($_.x, $_.y)];`
 
-- You can define multiple ensure for an entity.
-- constraint on types and fields is called with old and new values. You can refer to them using `$[0]` and `$[1]` respectively.
+- You can define multiple constraints for an entity.
+- The special `const` function makes sure the value is not changed.
 
 ###Decorator
 Decorators are functions which wrap another function and receive calls to that function.
@@ -426,9 +447,8 @@ auto rr = func { x + y };` //WRONG! - input is not specified
 type adder := func(x: int, y:int) -> int;
 adder rr = func(a:int, b:int) -> { a + b }; //when you have a type, you can define new names for input
 adder rr = func { x + y }; //when you have a type, you can also omit input
-adder rr = { x + y };      //and also func keyword
-adder rr = x + y;          //only if type is specified, you can omit {} too
-plus2 rr = $0 + 2;          //you can $0 instead of name of first input
+adder rr = { x + y };      //and also func keyword, but {} is mandatory
+plus2 rr = { $0 + 2 };          //you can $0 instead of name of first input
 ```
 - You can access lambda input using `$0, $1, ...` notation too.
 
