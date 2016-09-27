@@ -520,12 +520,93 @@ x block will be called only when it is accessed.
 `int x = &expression;`
 we prefer keywords and try to keep operator usage at minimum. so code will be simpler and more readable.
 
+N - constraint on function enter
+```
+func get_data(x: int, y: int[$_>0]) -> string[const $_] 
+{
+}
+```
+this will be inconsistent and make code ugly.
+lets do it in assert.
+
+N - replace `$_` with `$`?
+also in the chaining.
+but $ is used for input array. this will confuse things.
+we have `$[0]` notation too.
+`func get_data(x: int, y: int[$_>0]) -> string[const $_]`
+no lets keep it.
+
+Y - is constr part of type?
+`var x: int[const($_)] = 11;`
+`var y = x; y++;` 
+is this valid?
+if y is a copy of x, its ok.
+if y points to x, then no.
+
+Y - remove decorators?
+applications: logging, validation (we have constraint), caching (lazy), permission check, transaction, monitoring, timing (external tool), error handling.
+we have `meta` to add metadata to be used later.
+permission check: is a one line, either decorator or one line assert.
+of course developer can write a `make_bold` general function.
+decorator for 1/2 line of code is not good. and that's the case for timing, permission, logging and error handling.
+for validation and caching we already have tools in-place.
+
+N - `=` assigns by what?
+copy for primitives, ref for everything else. unless you override the operator.
+how to make a copy of a data? `y = x{};`
+and how can we duplicate a reference? `y=x` will use = operator
+`x{}` will duplicate x. so we can force assign to copy.
+but how can we force assign to reference? we really don't need that.
+if you need a reference to x, just use x. 
+
+? - using `$$` instead of `$_` for constraints.
+still for chaining, we will use `$_`.
+
+? - add a shortcut instead of either. because sometimes number of fields is high and its not good to repeat all of them.
+`[union($$)]`
+
+? - suffix syntax for if and for
+`x++ for(10);`
+
 ? - think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
 ```
-//assuming 
-type Event := struct { source: st
+//assuming we have primitives
+type DateTime := struct {
+  year: int;
+  month: int;
+  day: int;
+  hour: int;
+  minute: int;
+};
+
+type Currency := struct 
+{
+  USD: bool;
+  EUR: bool;
+  JPY: bool;
+  GBP: bool;
+} [union($$)];
+
+type Event := struct 
+{ 
+  source: string;
+  release_date: DateTime;
+  title: string;
+  currency: Currency;
+  impact: int [$$>0 and $$<5];
+};
+
+type List<T> := struct {
+  head: T;
+  tail: T;
+};
+
+func ([])(List<T> list, index: int) -> T {
+  T temp = list.head;
+  temp = temp.next for(index);
+  return temp;
+}
+
+
 ```
-
-
-
