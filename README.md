@@ -409,32 +409,7 @@ Also you can define union-like structures:
 `type int_or_float_union := struct { x: int; y: float; } [either($_.x, $_.y)];`
 
 - The special `const` function makes sure the value is not changed.
-- Constraint is not part of the type.
-
-###Decorator
-Decorators are functions which wrap another function and receive calls to that function.
-
-```
-//general definition of a function
-type fp<T, U> := func(T) -> U;
-
-//decorator function - accepts a function and returns a function with same signature
-//returned function will wrap f function and do some other tasks during the call
-func make_bold<T, U>(f: fp<T,U>) -> fp<T,U> 
-{ return fp<T, U> { U out = f(T); return "<B>" + out + "/B"; } }
-
-
-func get_data(x:int) -> string
-apply make_bold($_, 'a', 'b') //T and U are inferred by compiler
-apply make_italic   
-{ 
-  return x.toString(); 
-}
-
-//when you call get_data, the wrapped function will be called.
-```
-- You can compose decorators too.
-- You can only apply decorators to named functions (not lambdas).
+- Constraint is not part of the type. They are code attached to data. If you write `y=x` and y is a copy of x, y won't be affected by constraints defined on x.
 
 ###Chaining
 You can use `=>` operator to chain functions. `a => b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
