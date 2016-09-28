@@ -559,14 +559,62 @@ and how can we duplicate a reference? `y=x` will use = operator
 but how can we force assign to reference? we really don't need that.
 if you need a reference to x, just use x. 
 
-? - using `$$` instead of `$_` for constraints.
+Y - using `$$` instead of `$_` for constraints.
 still for chaining, we will use `$_`.
 
-? - add a shortcut instead of either. because sometimes number of fields is high and its not good to repeat all of them.
-`[union($$)]`
+N - add a shortcut instead of either. because sometimes number of fields is high and its not good to repeat all of them.
+`[union($$)]` - we add union type
 
-? - suffix syntax for if and for
+Y - suffix syntax for if and for
 `x++ for(10);`
+
+Y - rule of locality: let the developer put the code at the nearest location to where it applies.
+code for validation of a variable is best to put when variable is defined (constraints).
+we should not be writing two highly related piece of code, far from each-other.
+
+? - calculated properties for struct
+can we define properties (like OOP methods but without any input). 
+These are properties of the struct which are calculated based on other things.
+They cannot be void and they cannot have input.
+You are read-only. 
+`x: int = 1;`
+`age -> calculate_age($$);`
+`age -> lazy calculate_age($$);`
+`age -> $$.x + $$.y;`
+
+Y - same as default(T) we need undef(T) so for a linked-list of when customer is not found, we can return undef.
+
+Y - define enum data type
+```
+type DoW := enum { SAT=0, SUN=1,... };
+x: DoW = DoW.SAT;
+if ( int(x) == 0 ) ...
+```
+we want excellent support for all types. so lets define a separate keyword for enum.
+
+Y - better support for sum type. define them and check their tag and support for enum.
+Basically union is a single simple variable, but you can choose which kind. It is a combination of struct + enum, enhanced for memory.
+```
+type maybe_int := union {
+  Nothing: bool;
+  data: int;
+};
+x: maybe_int = maybe_int{data:12};
+y: maybe_int;
+y.Nothing = true;
+
+//you cannot have two flags with the same name, but same type is OK -> for enum
+type int_float := union {
+  age: int;
+  average: float;
+};
+a: int_float = int_float{age:12};
+b: int_float = int_float{average:3.14};
+
+if ( a.age? ) int x = a.age;
+if ( a.average? ) float f = a.average;
+```
+
 
 ? - think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
@@ -580,13 +628,7 @@ type DateTime := struct {
   minute: int;
 };
 
-type Currency := struct 
-{
-  USD: bool;
-  EUR: bool;
-  JPY: bool;
-  GBP: bool;
-} [union($$)];
+type Currency := enum { USD, EUR, JPY, GBP };
 
 type Event := struct 
 { 
@@ -597,16 +639,35 @@ type Event := struct
   impact: int [$$>0 and $$<5];
 };
 
-type List<T> := struct {
-  head: T;
-  tail: T;
+type Maybe<T> := union {
+  data: T;
+  isNull;
 };
 
-func ([])(List<T> list, index: int) -> T {
+type Node<T> := struct {
+  T data;
+  Maybe<Node<T>> next;
+};
+
+type List<T> := struct {
+  head: Maybe<Node<T>>;
+};
+
+func ([])(List<T> list, index: int[$$>0]) -> T {
   T temp = list.head;
   temp = temp.next for(index);
   return temp;
 }
 
+type MEL := Maybe<List<Event>>;
 
+func get_events_for_period(allEvents: List<Event>, start: Date, end: Date) -> List<Event> 
+{
+   var ff = func(d1: Date) -> bool { return d1.epoch >= start.epoch and d1.epoch <= end.epoch };
+   return allEvents => filter ff, $_;
+   
+   //OR
+   
+   return allEvents => filter {$0.epoch >= start.epoch and $0.epoch <= end.epoch}, $_;
+}
 ```
