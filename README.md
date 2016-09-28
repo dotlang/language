@@ -62,7 +62,7 @@ Each package contains zero or more source code files, which are called modules.
 
 ##Keywords
 Electron has a small set of basic keywords: 
-`if, else, switch, assert, for, break, continue, return, defer, type, import, auto, select, native, defined, alloc`.
+`if, else, switch, assert, for, break, continue, return, defer, type, import, auto, select, native, alloc`.
 
 ###if, else
 ```
@@ -85,6 +85,8 @@ CaseStmt = (IdentifierList | 'else') ':' Block
 - `else` case is executed if none of other cases match.
 - You cannot use expressions for case statements. 
 - Case identifiers should be either literals or simple identifiers (variable names).
+
+You can also use switch without input in which case, all case blocks will be evaluated and the first one which evaluates to true will be executed.
 
 ###assert
 ```
@@ -195,10 +197,6 @@ You can use select to read/write from/to blocking channels.
 Denote fnuction is implemented by runtime or external libraries.
 `native func f1(x:int, y:int) -> float;`
 
-###defined
-`if ( defined x)` returns true if x is not initialized.
-
-
 ##Primitives
 - **Integer data types**: `char`, `short`, `int`, `long`
 - **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
@@ -234,6 +232,62 @@ var test2 : Stack<int>{};
 `func x(p: P2)->int ...`
 `type A := struct extends P1, P2;`
 `var v: A{}; var t = A.x();`
+
+###Enum
+Enums are considered `int`.
+
+```
+//values are optional but if you specify, you have to set value for all
+type DoW := enum { SAT=0, SUN=1,... };
+x: DoW = DoW.SAT;
+if ( int(x) == 0 ) ...
+if ( x == DoW.SUN ) ...
+```
+
+- You can attach constraints to enums.
+
+###Union
+Unions are also known as sum types. Variables of type union can accept only one of specified types at each time. You can use `var.field?` notation to check if variable contains value for a specific field. Other operations are same as struct. 
+
+```
+type sumtype := union {
+  Nothing: bool;
+  data: int;
+  total: int;
+};
+
+x: sumtype = sumtype{data:12};  //total and Nothing will be empty/not-assigned
+assert false == x.Nothing?;
+assert false == x.total?;
+assert true == x.data;
+
+x.total = 0; //now x.data? will return false
+//upon assigning a value to any of fields of a union type, all others will become empty.
+
+type nullable_int := union { x: int; nil: bool; };`
+
+```
+- You can attach constraints to union or it's fields just like structs.
+- When you assign a value to any of fields of a union, all other fields are un-initialized automatically.
+- If you only need to check if a field is set or not, you can ignore it's type:
+```
+type Maybe_int := union {
+  data: T;
+  Nothing;  //this is considered bool, but you cannot read it's value
+};
+var x = Maybe_int{data:12};  //data is set, Nothing is not set
+var y = Maybe_int{Nothing}; //Nothing is set, data is not set
+
+if ( y.Nothing? ) //y does not have data
+if ( x.data? ) int r = x.data;
+
+//you can use switch statement to check for fields.
+switch { 
+case x.Nothing?: {...}
+case x.data?: {...}
+```
+
+
 
 ###Functions
 
@@ -308,6 +362,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `:=` type definition
 - `=>` chaining
 - `default(T)` value of type T when it is not initialized
+- `?` check for value existence in fields of union type
 
 ###Special variables
 `true`, `false`
@@ -345,7 +400,7 @@ for example:
 - `core` provides functions to extract annotations.
 - You can add multiple annotations but only a single `meta` section.
 
-`x: int[$_>0 && const($_)] meta{json:ignore} = lazy fetch(19);`
+`x: int[$$>0 && const($$)] meta{json:ignore} = lazy fetch(19);`
 
 ###Array and slice
 
@@ -358,7 +413,7 @@ for example:
 ###Hashtable
 - `var hash1: int[string] = { 'OH': 12, 'CA': 33};`.
 - `for(x:array1)` or `for(int key,string val:hash1)`.
-- 
+
 
 ###Casting
 - For every struct, compiler defines a function with the same name to do conversions. You can override versions that you need.
@@ -385,7 +440,7 @@ Functions can considered as a piece of code which accepts a tuple and returns a 
 ###Constraints
 When defining non-anonymous types (everything except anon-struct or lambda), you can define a constraint for it.
 For functions, this is a pre-condition, for other types it is a validator when their value changes.
-When defining a constraint for types, `$_` means the corresponding element to which a constraint is attached. So we can defined constraint for;
+When defining a constraint for types, `$$` means the corresponding element to which a constraint is attached. So we can defined constraint for;
 1. Functions
 2. Function inputs
 3. Types
@@ -394,19 +449,14 @@ When defining a constraint for types, `$_` means the corresponding element to wh
 
 Constrains are invoked upon any change in the corresponding entity.
 
-`type x := int[$_ > 0 ];`
-`type x := int[$_ != 3];`
+`type x := int[$$ > 0 ];`
+`type x := int[$$ != 3];`
 `var x : int[$_ != 3];`
-`type x := struct { x:int, y:float; } [$_.x != $_.y];`
+`type x := struct { x:int, y:float; } [$$.x != $$.y];`
 `func ff(x:int[$_>4]) -> string[$_!=0] {...}`
-`type const_int := int[const($_)];`  //you can define const int like this
-`type const<T> := T [const($_)];`  //genral const
-You can define enum using a combination of flags and constraint with `either` function. When a type has either constraints, compiler can optimize storage automatically.
-`type DoW := struct { isSAT: bool; isSUN: bool; ... } [either(isSAT, isSUN,...)]; ` 
+`type const_int := int[const($$)];`  //you can define const int like this
+`type const<T> := T [const($$)];`  //genral const
 
-Also you can define union-like structures:
-`type nullable_int := struct { x: int; nil: bool; } [either($_.x, $_.nil)];`
-`type int_or_float_union := struct { x: int; y: float; } [either($_.x, $_.y)];`
 
 - The special `const` function makes sure the value is not changed.
 - Constraint is not part of the type. They are code attached to data. If you write `y=x` and y is a copy of x, y won't be affected by constraints defined on x.
@@ -441,6 +491,7 @@ plus2 rr = { $0 + 2 };          //you can $0 instead of name of first input
 ##Best practice
 ###Naming
 - **Naming rules**: Advised but not mandatory: `some_method_name`, `someVariableName`, `MyStruct`, `my_package_or_module`.
+- You can suffix if and for and `x for(10)` will run x 10 times.
 
 ##Examples
 ###Empty application
@@ -495,4 +546,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 ##Misc
 
 - Compiler will decide which methods should be inlined.
-
+- Rule of locality: You should write a piece of code at the nearest location to where it applies (e.g. constraints). 
