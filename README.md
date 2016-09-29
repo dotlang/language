@@ -318,19 +318,7 @@ new_array = map {$0+1}, my_array;
 `y : MyType; y = x{y: 5};`  //clone with modification
 - When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`
 - You can use `params` to hint compiler to create appropriate array for a variadic function: `func print(x: int, params int[] rest) {...}` 
-- rest is a normal array which is created by compiler for each call to `print` function.
-- You can define typed functions. So two functions can have same signature but different type. Then you can specify expected type in other functions. For example:
-```
-type FX := func(x:int) -> int{}
-func f1(x:int) -> int { return x+1; }
-func f2(x:int) -> int : FX { return x+1}
-```
-both f1 and f2 have exactly same behavior and signagture. But you can define a function which only accepts f2 and not f1.
-```
-func g1(f: func(x:int)->int) -> int { return f(6); } //this accepts both f1 and f2
-func g2(f: FX) -> int { return f(4); }  //this only accepts f2 functions and not f1
-```
-- You can use typed functions when implementing operators. So, for example, you can write an implementation for `=>` operator which is only called for `get_client_details` function.
+- `rest` is a normal array which is created by compiler for each call to `print` function.
 
 ###Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part.
@@ -367,6 +355,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `$i` function inputs
 - `$_` input place-holder in chaining
 - `[]` constraints
+- `$` constraints
 - `:` for hash, call by name, array slice, loop
 - `<>` template syntax
 - `:=` type definition
@@ -424,7 +413,6 @@ for example:
 - `var hash1: int[string] = { 'OH': 12, 'CA': 33};`.
 - `for(x:array1)` or `for(int key,string val:hash1)`.
 
-
 ###Casting
 - For every struct, compiler defines a function with the same name to do conversions. You can override versions that you need.
 - `MyStruct(my_obj)` will try to cast `my_obj` instance to `MyStruct` type. This is only possible if MyObj (type of `my_obj`) composes a field of type `MyStruct`.
@@ -437,7 +425,7 @@ for example:
 ###Undef instance
 
 ###Anonymous struct/union
-Anonymous struct (or tuple):
+
 `var t: struct{x: int, y: int, z: float} = {1,2, 3.1};`
 `t.x = 8;`
 `var t: struct{x: int, y: int, z: float};`
@@ -446,7 +434,7 @@ Definition is same as a normal struct, only fields are separated using comma.
 
 Functions can considered as a piece of code which accepts a tuple and returns a tuple. 
 ```
-func f(x:int, y:float) -> struct{a: int, b: string;} 
+func f(x:int, y:float) -> struct{a: int, b: string} 
 {
   //returning anon-struct
   return {a:1, b:9};
@@ -463,15 +451,17 @@ func read_customer(id:int) -> union { Nothing; custmer: CustomerData }
 ```
 
 ###Constraints
-When defining non-anonymous types (everything except anon-struct or lambda), you can define a constraint for it.
+When defining types (except functions themselves), you can define a constraint for it.
 For functions, this is a pre-condition, for other types it is a validator when their value changes.
 When defining a constraint for types, `$` means the corresponding element to which a constraint is attached. So we can defined constraint for;
-1. Functions
-2. Function inputs
-3. Types
-4. Struct fields
-5. Local variables
-
+1. Functions (input, output) `func f(x:int[$>0]) -> int[$!=0] {}`
+3. Types (`type x := int[$>1];`)
+4. Struct (fields, the struct itself) (`type st := struct {x: int[$!=4]; y:int} [$.x!=$.y];`)
+5. Local variables (`x: int[$>0]`)
+6. Enum `type u := enum { SAT, SUN } [const($)];`
+7. Union `type u := union { x:int[$>0]; Nothing}`
+8. Anonymous struct and union
+ 
 Constrains are invoked upon any change in the corresponding entity.
 
 `type x := int[$ > 0 ];`
@@ -485,6 +475,8 @@ Constrains are invoked upon any change in the corresponding entity.
 
 - The special `const` function makes sure the value is not changed.
 - Constraint is not part of the type. They are code attached to data. If you write `y=x` and y is a copy of x, y won't be affected by constraints defined on x.
+- Constraints are defined on data and variables. Because of that, you cannot define a constraint on a function (but you can have it for function input and output). You can still have constraints on a lambda variable (e.g. `var adder : func[const($)];`)
+- If constraint predicate evaluates to false, an exception will be thrown.
 
 ###Chaining
 You can use `=>` operator to chain functions. `a => b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
