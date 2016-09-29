@@ -698,6 +698,40 @@ of course, f_type must match with inputs and outputs of the function.
 when we have above, we can write something like: `func (=>)(x: Maybe<T>, f: FX) -> U`
 and this code will only be called when we have `x => f` and f is defined using above notation.
 
+Y - lets allow constraint everywhere including anons and lambda.
+
+N - is there a way to define constraint for a function?
+`func f(x:int[$>0]) -> int[$<0] {}`
+no. constraint is defined on DATA. function is not data.
+
+Y - current syntax to defined tryped function is not good.
+`func f2(x:int) -> int : FX { return x+1}`
+because its like `x:int` but x is a variable, a data storage.
+`f2` is not a variable. so dev may ask, why he cannot add constraint to `: FX` part?
+when defining a lambda variable, its totally fine to write: `var ff := FX = {...}`
+`type FX := func(x:int) -> int;`
+`func f2:FX(x:int) -> int { return x+1}`
+`func f2(x:int) -> int { return x+1}`
+Let's remove typed functions. Type of a function is its signature + it's name.
+so we don't need to assign a type to a function because it already has all needed.
+BUT when we are accepting an input of type function: 
+```
+type FX := func(x:int) -> int;
+func f1(x:int) -> int { return x+1; }
+func f2(x:int) -> int { return x+1}
+
+func g1(f: func(x:int)->int) -> int { return f(6); }
+func g2(f: func(x:int)->int) -> int { return f(4); }
+```
+in above code, g1 and g2, both accept f1 and f2. what can we do to make `g2` only invoked for f2 and not f1?
+we can use the name instead of type.
+`func g2(f: f2) -> int { return f(4); }`
+so, g2 can only be called with a function named `f2`. but what if we have: `func f2(x:int)` and `func f2(x:float)`?
+we can include name in the signature.
+`func g2(f: func f2(x:int)->int) -> int { return f(4); }`
+but this does not make sense. if g2 is supposed tyo ONLY work on f2 function, why not add its code to that function?
+
+
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
 ```
