@@ -615,17 +615,6 @@ we have `add(x,y)`. `add(4,$_)` will be an anon-func which adds 4 to the input.
 `var y = calculate(4,a, $_);` ~ `var y = func(x:int) -> calculate(4,a,x);`
 `var y = calculate(3,$_,$_);` ~ `var y = func(x,y:int) -> calculate(3, x, y);`
 
-N - calculated properties for struct
-can we define properties (like OOP methods but without any input). 
-These are properties of the struct which are calculated based on other things.
-They cannot be void and they cannot have input.
-You are read-only. 
-`x: int = 1;`
-`age -> calculate_age($$);`
-`age -> lazy calculate_age($$);`
-`age -> $$.x + $$.y;`
-no this makes syntax confusing. just use a normal function.
-
 Y - anonymous union?
 what is syntax for anon-struct?
 
@@ -634,7 +623,7 @@ Y - `$` is not an array.
 we use `$0` for first argument not `$[0]`
 maybe now we can use `$` instead of `$$` for constraints.
 
-N - monad
+Y - monad
 a monad is a type which supports `>>=` opertor.
 ```
 func (>>=)(x: Maybe<T>, f: func<T,U>) -> U
@@ -704,7 +693,7 @@ N - is there a way to define constraint for a function?
 `func f(x:int[$>0]) -> int[$<0] {}`
 no. constraint is defined on DATA. function is not data.
 
-Y - current syntax to defined tryped function is not good.
+N - current syntax to defined tryped function is not good.
 `func f2(x:int) -> int : FX { return x+1}`
 because its like `x:int` but x is a variable, a data storage.
 `f2` is not a variable. so dev may ask, why he cannot add constraint to `: FX` part?
@@ -730,6 +719,103 @@ so, g2 can only be called with a function named `f2`. but what if we have: `func
 we can include name in the signature.
 `func g2(f: func f2(x:int)->int) -> int { return f(4); }`
 but this does not make sense. if g2 is supposed tyo ONLY work on f2 function, why not add its code to that function?
+
+Y - non-int enums. general enums. not too general -> union
+`type DoW := enum { SAT=0, SUN=1,... };`
+`type State := enum { ACTIVE='active', DISABLED='disabled' };`
+
+N - calculated properties for struct
+can we define properties (like OOP methods but without any input). 
+These are properties of the struct which are calculated based on other things.
+They cannot be void and they cannot have input.
+You are read-only. 
+`x: int = 1;`
+`age -> calculate_age($$);`
+`age -> lazy calculate_age($$);`
+`age -> $$.x + $$.y;`
+no this makes syntax confusing. just use a normal function.
+which one is more readable:
+`f: float = contract1.risk_markup;`
+`f: float = calculate_risk_markup(constract1);`
+second one is better and more gen/orth but we need to have a caching mechanism and its better to be transparent.
+this means I don't need to do anything special. just call `calculate_x` everytime you need the data. the function is responsible to cache the data.
+
+Y - memoization of function output
+solution 1: keyword :
+`func f(x: int) ->int { return memoize(x+1); }`  //everything will be handled by runtime if there is a return memoize
+but this is not general and orth
+solution 2: give each function a hash-map as a storage.
+`func f(x:int) -> int { var cache = this.cache; } `
+this is too general and can be mis-used.
+how/when should this cache be cleared? we should give function power to control it.
+also this should be testable. it should be possible to empty the cache or manipulate it.
+this cache cannot be inside an input data because maybe input is a simple int:
+`func calculate_fibonacci(x: int) -> long { //a lot of calculations }`
+a simple 50 integer input can cause a lot of processing. next time we want to have result of previous calculation at hand.
+its good it we can either return cached value or used it! for example to simplify further calculations.
+`if ( cache has result for n-1 ) n_1 = cache[n-1];`
+so it's better not to be a simple in-flexible.
+requirements:
+1- flexible, I should be able to fetch data for other set of inputs of my function -> just call the function with that input
+2- private: only I should have access to it
+3- ability to clear the cache
+4- testable
+what if we decorate function with something like `pure` so runtime will cache output automatically?
+1- just call function with whatever input you want
+2- anyone has access directly and it makes sense
+issue:
+maybe input is complicated and caching does not make sense
+maybe function is pure but very simple
+`func calculate_fibonacci(x: int) -> long cached { //a lot of calculations }`
+- what if I want to cache for x minutes or of size N?
+x makes no sense.
+we can define a LRU cache of size N.
+but should this be implemented in syntax level?
+there are a lot of things similar to cache which will be useful in future.
+even for caching: what is size of the cache? which arguments should be part of cache key? when/how shall cache be removed?
+we can simulate static variable with cloure. This will be a more general/consistent solution. 
+```
+func calculate_fibonacci(x: int) -> long 
+{
+   var cache: int[int];
+   return func(x: int) -> long { return cache[x] if defined cache[x]; d_calculation and save; return result }
+}
+long result = calculate_fibonacci(100);
+```
+but outer function is supposed to return `long` not a function!
+this is the corret syntax and the standard/general/consistent way to do it.
+```
+func create_func(a:int) -> func(x:int) -> long
+{
+   var cache: int[int];
+   return { return a+cache[x] if defined cache[x]; d_calculation and save; return result }
+}
+//what we now need is a static/single/const instance of the function that create_func gives us
+//problem is: in the module leve we can only have functions and types. not variables
+//what is we define an alias? like type
+func test1(x:int) -> long {some code}
+func test2(x:int) -> long :: create_func(4);
+func test2 :: create_func(4);  //full signature is optional
+func fib :: create_func;
+```
+we have `func A :: B;` where A is an identifier and B is an expression call with constant/literal inputs.
+`B` must evaluate to a function matching with `A` signature (optional). When parsing this statement, `B` will be evaluated without any context (there is no outside code to provide input to B, it should be called with literals or no input). result will be a lambda function which is assigned to name `A`.
+this simulates static attributes, is private to the function, is flexible (function can clear the cache or implement any caching policy).
+can we make this syntax shorter and remove extra function and the stress on calling once?
+```
+func fib(x:int) -> long = 
+{
+   var cache: int[int];
+   return { return a+cache[x] if defined cache[x]; d_calculation and save; return result }
+}
+```
+body of the `fib` function is determined by once calling the provided block which returns the actual function to be called.
+So, on the first call to fib, this block is executed to BUILD the function body. any call afterwards will just call the created function. This is like: `x: int = 5;`. but instead of 5 we have a function.
+
+
+N - can I write `int x :: get_data;`? No. `::` is only for functions. use `=`.
+
+N - can I write `var x :: calculate_func`. No. `::` is not for building variables, its for module functions. You can use normal `=` operator for this.
 
 
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
