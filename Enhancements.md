@@ -634,7 +634,7 @@ Y - `$` is not an array.
 we use `$0` for first argument not `$[0]`
 maybe now we can use `$` instead of `$$` for constraints.
 
-? - monad
+N - monad
 a monad is a type which supports `>>=` opertor.
 ```
 func (>>=)(x: Maybe<T>, f: func<T,U>) -> U
@@ -664,7 +664,39 @@ func (=>)(x: Maybe<T>, f: func<T,U>) -> U
 ```
 note that input of `=>` can be a single value which is anon-struct:
 `y = (a,b) => calculate;` in this case, `=>` will be called with input, anon-struct and output = output of calculate.
+Also output of => can be different from f output. For example it can have additional information about calculations.
+```
+//we can specialize => code
+type someF := func(x:int)->int;
+func (=>)(x: Maybe<T>, f: someF) -> U
+{
+  if (x.IsNull) return default(U);
+  return f(x.value);
+}
+```
 
+N - define anons in fn definition using () not {}
+
+Y - typed functions
+How can we say the `f` parameter should match with some functions which take int and return int. not all of them?
+for int: `int x = 12; type xint := int; t: xint = 11; func(x:xint) -> xint {}`
+in above code, f accepts only xint which is basically int but different type. 
+how can we do this for functions?
+we can easily use type to alias a function definition, but when I define a new function, I don't specify it's type.
+for lambda, it is ok. 
+`var ff : myLambda = func(...)`
+but for function:
+`func somef(x:int)->int {}`?
+suppose we have: `type FX := func(x:int) -> int{}`
+and `type FY := func(x:int)->int{}`
+for lambda: `var t: FX = func ;..` and `var y: FY = func` have different type but same signature.
+what about normal functions?
+maybe we can do this: `func myff(x:int) -> int {} : FX;`
+`func myff(x:int) -> int : FX {}`
+`func name(inputs) -> output : f_type {}`
+of course, f_type must match with inputs and outputs of the function.
+when we have above, we can write something like: `func (=>)(x: Maybe<T>, f: FX) -> U`
+and this code will only be called when we have `x => f` and f is defined using above notation.
 
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
@@ -720,4 +752,7 @@ func get_events_for_period(allEvents: List<Event>, start: Date, end: Date) -> Li
    
    return allEvents => filter {$0.epoch >= start.epoch and $0.epoch <= end.epoch}, $_;
 }
+
+var probability: float[$>=0 and $<=1] = 0;
+
 ```
