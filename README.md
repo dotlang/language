@@ -319,6 +319,18 @@ new_array = map {$0+1}, my_array;
 - When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`
 - You can use `params` to hint compiler to create appropriate array for a variadic function: `func print(x: int, params int[] rest) {...}` 
 - rest is a normal array which is created by compiler for each call to `print` function.
+- You can define typed functions. So two functions can have same signature but different type. Then you can specify expected type in other functions. For example:
+```
+type FX := func(x:int) -> int{}
+func f1(x:int) -> int { return x+1; }
+func f2(x:int) -> int : FX { return x+1}
+```
+both f1 and f2 have exactly same behavior and signagture. But you can define a function which only accepts f2 and not f1.
+```
+func g1(f: func(x:int)->int) -> int { return f(6); } //this accepts both f1 and f2
+func g2(f: FX) -> int { return f(4); }  //this only accepts f2 functions and not f1
+```
+- You can use typed functions when implementing operators. So, for example, you can write an implementation for `=>` operator which is only called for `get_client_details` function.
 
 ###Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part.
@@ -486,6 +498,22 @@ Examples:
 
 - You can also use `<=` for a top-to-bottom chaining, but this is a syntax sugar and compiler will convert them to `=>`.
 `print <= add2 <= 5`
+- You can customize `=>` opertor for different types. This will give you a Monad implementation. For example:
+```
+//this will be called when we have something like: `x => f`
+func (=>)(x: Maybe<int>, f: func<int,U>) -> U
+{
+  if (x.IsNull) return default(U);
+  return f(x.value);
+}
+//this will be called when we have something like: `(1,2) => f`
+func (=>)(x: int, y:int, f: func<int,int, U>) -> struct {a: int, b: U}
+{
+  if (x == 5) return {0,0};
+  return {a: 0, b: f(x, y)};
+}
+```
+- You can use monad to prepare a function input, do some logging or append extra info to the function output.
 
 ###Lambda expression
 
