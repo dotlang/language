@@ -234,16 +234,16 @@ var test2 : Stack<int>{};
 `var v: A{}; var t = A.x();`
 
 ###Enum
-Enums are considered `int`.
+Enums are considered variables with a limited set of possible values.
 
 ```
-//values are optional but if you specify, you have to set value for all
+//values are optional but if you specify, you have to set value for all - you can use any literal for the values
 type DoW := enum { SAT=0, SUN=1,... };
 x: DoW = DoW.SAT;
 if ( int(x) == 0 ) ...
 if ( x == DoW.SUN ) ...
+type State := enum { ACTIVE='active', DISABLED='disabled' };
 ```
-
 - You can attach constraints to enums.
 
 ###Union
@@ -319,6 +319,18 @@ new_array = map {$0+1}, my_array;
 - When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`
 - You can use `params` to hint compiler to create appropriate array for a variadic function: `func print(x: int, params int[] rest) {...}` 
 - `rest` is a normal array which is created by compiler for each call to `print` function.
+- You can define a named function and assign output of a code-block to it. The output will be calculated upon first call to the function.
+```
+//Instead of writing a body for fib function, we assign a code-block to it. first time fib is referenced,
+//the code block is executed and it's output is used as a body 
+func fib(x:int) -> long =
+{
+   var cache: int[int];
+   return { return a+cache[x] if defined cache[x]; d_calculation and save; return result }
+}
+```
+A call to `fib(5)` will invoke to function given by output of `create_func`. Note that right side of `::` is called only once upon first reference to `fib` function. 
+
 
 ###Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part.
@@ -336,6 +348,7 @@ You can assign a variable to a lazy calculation:
 var x: int = lazy do_some_work(100);
 var x: int = lazy(do_some_work(100));
 ```
+- This will wrap the expression inside a lambda expression, and upon first read access to `x`, it will be populated with the result of the expression.
 
 ##Operators
 
@@ -521,6 +534,7 @@ adder rr = func(a:int, b:int) -> { a + b }; //when you have a type, you can defi
 adder rr = func { x + y }; //when you have a type, you can also omit input
 adder rr = { x + y };      //and also func keyword, but {} is mandatory
 plus2 rr = { $0 + 2 };          //you can $0 instead of name of first input
+func test(x:int) -> plus2 { return { $0+ x}; }
 ```
 - You can access lambda input using `$0, $1, ...` notation too.
 - You can also use `$_` place holder to create a new lambda based on existing functions:
