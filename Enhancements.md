@@ -572,16 +572,6 @@ Y - rule of locality: let the developer put the code at the nearest location to 
 code for validation of a variable is best to put when variable is defined (constraints).
 we should not be writing two highly related piece of code, far from each-other.
 
-? - calculated properties for struct
-can we define properties (like OOP methods but without any input). 
-These are properties of the struct which are calculated based on other things.
-They cannot be void and they cannot have input.
-You are read-only. 
-`x: int = 1;`
-`age -> calculate_age($$);`
-`age -> lazy calculate_age($$);`
-`age -> $$.x + $$.y;`
-
 Y - same as default(T) we need undef(T) so for a linked-list of when customer is not found, we can return undef.
 
 Y - define enum data type
@@ -615,8 +605,68 @@ if ( a.age? ) int x = a.age;
 if ( a.average? ) float f = a.average;
 ```
 
+Y - add reverse chain operator `<=`
+`finalize_operation(1,9,4, $_) <= get_customers <= (1,9)`
+sometimes top-bottom makes more sense. but this is only a syntax sugar. compiler will convert them to `=>`.
 
-? - think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
+Y - can we generalize `$_` notation?
+we have `add(x,y)`. `add(4,$_)` will be an anon-func which adds 4 to the input.
+`var t = add(4,$_);`
+`var y = calculate(4,a, $_);` ~ `var y = func(x:int) -> calculate(4,a,x);`
+`var y = calculate(3,$_,$_);` ~ `var y = func(x,y:int) -> calculate(3, x, y);`
+
+N - calculated properties for struct
+can we define properties (like OOP methods but without any input). 
+These are properties of the struct which are calculated based on other things.
+They cannot be void and they cannot have input.
+You are read-only. 
+`x: int = 1;`
+`age -> calculate_age($$);`
+`age -> lazy calculate_age($$);`
+`age -> $$.x + $$.y;`
+no this makes syntax confusing. just use a normal function.
+
+Y - anonymous union?
+what is syntax for anon-struct?
+
+Y - `$` is not an array.
+- The `$` array contains function inputs. This is useful specially in lambda expresions.
+we use `$0` for first argument not `$[0]`
+maybe now we can use `$` instead of `$$` for constraints.
+
+? - monad
+a monad is a type which supports `>>=` opertor.
+```
+func (>>=)(x: Maybe<T>, f: func<T,U>) -> U
+{
+  if (x.IsNull) return default(U);
+  return f(x.value);
+}
+```
+then if we have: `y=x >>= calculate`; if x is null, y will be null without invoking calculate function.
+if x is not null, calculate will be called.
+what if calculate has multiple inputs and one of them is x?
+`y = x >>= calculate(a,b,$_);` if x is null y will be null, else, calculate(a,b,x.value) will be called.
+in `>>=` the `calculate(a,b,$_)` is a function which accepts a single input and gives an output.
+we can even have: `y = (a,b) >>= calculate;` or `y= (a,b) >>= calculate(4, $_, $_);`
+so depending on the implementation of `>>=` for this case, it may or may not call `calculate(4,a,b);`
+can we just use `=>` operator?
+`Maybe<int> t = ???; t => div(5,$_);`
+if t is null, `=>` will return null, else will call right-hand function.
+I think this is possible. but you cannot implement both `=>` and `<=` only `=>` compiler will handle to conversion.
+```
+//a => b when a is Maybe<T> and b is a function which takes T and outputs U
+func (=>)(x: Maybe<T>, f: func<T,U>) -> U
+{
+  if (x.IsNull) return default(U);
+  return f(x.value);
+}
+```
+note that input of `=>` can be a single value which is anon-struct:
+`y = (a,b) => calculate;` in this case, `=>` will be called with input, anon-struct and output = output of calculate.
+
+
+? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
 ```
 //assuming we have primitives
