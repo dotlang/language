@@ -287,8 +287,6 @@ case x.Nothing?: {...}
 case x.data?: {...}
 ```
 
-
-
 ###Functions
 
 ```
@@ -319,8 +317,8 @@ new_array = map {$0+1}, my_array;
 `y : MyType; y = x{};`
 `y : MyType; y = x{y: 5};`  //clone with modification
 - When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`
-- You can use `params` to hint compiler to create appropriate array for a variadic function: `func print(x: int, params int[] rest) {...}` - rest is a normal array which is created by compiler for each call to `print` function.
-- The `$` array contains function inputs. This is useful specially in lambda expresions.
+- You can use `params` to hint compiler to create appropriate array for a variadic function: `func print(x: int, params int[] rest) {...}` 
+- rest is a normal array which is created by compiler for each call to `print` function.
 
 ###Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part.
@@ -354,13 +352,13 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `x == y` will call `equals` functions is existing, by default compares field-by-field values.
 
 ##Special syntax
-- `$[i]` function inputs
+- `$i` function inputs
 - `$_` input place-holder in chaining
 - `[]` constraints
 - `:` for hash, call by name, array slice, loop
 - `<>` template syntax
 - `:=` type definition
-- `=>` chaining
+- `=>,<=` chaining
 - `default(T)` value of type T when it is not initialized
 - `?` check for value existence in fields of union type
 
@@ -400,7 +398,7 @@ for example:
 - `core` provides functions to extract annotations.
 - You can add multiple annotations but only a single `meta` section.
 
-`x: int[$$>0 && const($$)] meta{json:ignore} = lazy fetch(19);`
+`x: int[$>0 && const($)] meta{json:ignore} = lazy fetch(19);`
 
 ###Array and slice
 
@@ -426,7 +424,7 @@ for example:
 
 ###Undef instance
 
-###Anonymous struct
+###Anonymous struct/union
 Anonymous struct (or tuple):
 `var t: struct{x: int, y: int, z: float} = {1,2, 3.1};`
 `t.x = 8;`
@@ -435,12 +433,27 @@ Anonymous struct (or tuple):
 Definition is same as a normal struct, only fields are separated using comma.
 
 Functions can considered as a piece of code which accepts a tuple and returns a tuple. 
-`func f(x:int, y:float) -> struct{a: int, b: string;} {...}`
+```
+func f(x:int, y:float) -> struct{a: int, b: string;} 
+{
+  //returning anon-struct
+  return {a:1, b:9};
+}
+
+func read_customer(id:int) -> union { Nothing; custmer: CustomerData }
+{
+  //no customer was found
+  return {Nothing};
+  
+  //some customer found
+  return {customer: c1};
+}
+```
 
 ###Constraints
 When defining non-anonymous types (everything except anon-struct or lambda), you can define a constraint for it.
 For functions, this is a pre-condition, for other types it is a validator when their value changes.
-When defining a constraint for types, `$$` means the corresponding element to which a constraint is attached. So we can defined constraint for;
+When defining a constraint for types, `$` means the corresponding element to which a constraint is attached. So we can defined constraint for;
 1. Functions
 2. Function inputs
 3. Types
@@ -449,13 +462,13 @@ When defining a constraint for types, `$$` means the corresponding element to wh
 
 Constrains are invoked upon any change in the corresponding entity.
 
-`type x := int[$$ > 0 ];`
-`type x := int[$$ != 3];`
-`var x : int[$_ != 3];`
-`type x := struct { x:int, y:float; } [$$.x != $$.y];`
-`func ff(x:int[$_>4]) -> string[$_!=0] {...}`
-`type const_int := int[const($$)];`  //you can define const int like this
-`type const<T> := T [const($$)];`  //genral const
+`type x := int[$ > 0 ];`
+`type x := int[$ != 3];`
+`var x : int[$ != 3];`
+`type x := struct { x:int, y:float; } [$.x != $.y];`
+`func ff(x:int[$>4]) -> string[$!=0] {...}`
+`type const_int := int[const($)];`  //you can define const int like this
+`type const<T> := T [const($)];`  //genral const
 
 
 - The special `const` function makes sure the value is not changed.
@@ -471,14 +484,17 @@ Examples:
 `(1,2) => mul => print;`  //same as: print(mul(1,2))
 `(1,2) => mul($_, 5, $_) => print;`  //same as: print(mul(1,5,2))
 
+- You can also use `<=` for a top-to-bottom chaining, but this is a syntax sugar and compiler will convert them to `=>`.
+`print <= add2 <= 5`
+
 ###Lambda expression
 
 You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too.
 
 ```
-auto f1 = func(x: int, y:int) -> int { return x+y; } //the most complete definition
-auto rr = func (x: int, y:int) -> { x + y };  //return type can be inferred
-auto rr = func { x + y };` //WRONG! - input is not specified
+var f1 = func(x: int, y:int) -> int { return x+y; } //the most complete definition
+var rr = func (x: int, y:int) -> { x + y };  //return type can be inferred
+var rr = func { x + y };` //WRONG! - input is not specified
 
 type adder := func(x: int, y:int) -> int;
 adder rr = func(a:int, b:int) -> { a + b }; //when you have a type, you can define new names for input
@@ -487,6 +503,9 @@ adder rr = { x + y };      //and also func keyword, but {} is mandatory
 plus2 rr = { $0 + 2 };          //you can $0 instead of name of first input
 ```
 - You can access lambda input using `$0, $1, ...` notation too.
+- You can also use `$_` place holder to create a new lambda based on existing functions:
+`var y = calculate(4,a, $_)` is same as `var y = func(x:int) -> calculate(4,a,x);`
+`var y = calculate(1, $_, $_)` is same as `var y = func(x:int, y:int) -> calculate(4,x,y);`
 
 ##Best practice
 ###Naming
