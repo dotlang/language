@@ -817,6 +817,83 @@ N - can I write `int x :: get_data;`? No. `::` is only for functions. use `=`.
 
 N - can I write `var x :: calculate_func`. No. `::` is not for building variables, its for module functions. You can use normal `=` operator for this.
 
+N - review the interface concept
+
+? - can we make the syntax more elegant for functions defined with closure?
+```
+func fib(x:int) -> long =
+{
+   static var cache: int[int];
+   var %cache: int[int];
+   var cache: int[int] = _get_static_data("cache");
+   var cache: int[int] = _query_function_storage<int[int]>("cache");
+   
+   return a+cache[x] if defined cache[x]; d_calculation and save; return result;
+}
+```
+maybe we can make use of default parameters. also this makes us able to test the function by passing an empty cache.
+but what if we really want a new instance on each call, as the default value?
+`func fib(x:int, cache: hash<int,int> = hash<int,int>{}) -> long { return a+cache[x] if defined cache[x]; }`
+`func fib(x:int, cache: hash<int,int> := default) -> long { return a+cache[x] if defined cache[x]; }`
+this only makes sense for non-primitives. No! we can also use int or float and they will keep their values.
+`func fib(x:int := 7, cache: hash<int,int> := default) -> long { return a+cache[x] if defined cache[x]; }`
+x will be initially 7 but with any change in the function it will preserve it's value.
+but `:=` is confusing.
+`func fib(x:int := 7, cache: hash<int,int> = {}) -> long { return a+cache[x] if defined cache[x]; }`
+but this is not explicit.
+`func fib(x:int ~ 7, cache: hash<int,int> ~ hash<int,int>{}) -> long { return a+cache[x] if defined cache[x]; }`
+`func fib(x:int =~ 7, cache: hash<int,int> =~ hash<int,int>{}) -> long { return a+cache[x] if defined cache[x]; }`
+so can we use `=~` syntax inside function too? if we use above definition, we should be.
+but it will make things complicated. we should make the syntax somehow dependent on the function definition.
+`func fib(x:int =~ 7, cache: hash<int,int> =~ hash<int,int>{}) -> long { return a+cache[x] if defined cache[x]; }`
+and if we allow for static variables inside function, then static default arguments will be irrelevant. lazy devs will use static local vars.
+`func fib(x:int, cache: hash<int,int> =~ hash<int,int>{}) -> long { return a+cache[x] if defined cache[x]; }`
+but using default argument value for static purposes seems un-intuitive!
+allowing for module local variables is bad too. makes code messy and finding root of bugs hard.
+let's narrow application of this. so we won't have static variables at all. if they are evil and introduce global state and are hard to test. sugar coating static variable in a confusing syntax for default function parameter value does not solve any problem. the initial goal is to be able to cache function output. but we want to be flexible (cache n items, clear cache, ...). because of that I don't want to just add something like: `func f() -> long : cached {return 5;}`
+what if we create two functions?
+no.
+what if a function can add something private to the input struct? no. maybe input is a single integer number.
+the problem of general function output memoization is equivalent to having static variables.
+general: ability to clear cache and define cache size.
+maybe we can have general memoization without static.
+add cached keyword with n parameter. provide a runtime function to clear that cache.
+how can I test this? runtime function to disable caching.
+`func fib(x:int) -> long cached(4) { return a+cache[x] if defined cache[x]; }`
+`func fib(x:int) -> long cached(4) { return a+cache[x] if defined cache[x]; }`
+I think current solution, using closure, is the most flexible one.
+But it's making source code files confusing.
+so: without closure, module-level variables and `cached` keyword -> the solution will be default parameter value.
+`func fib(x:int, cache: hash<int,int> =~ hash<int,int>{}) -> long { return a+cache[x] if defined cache[x]; }`
+so what about having: `var x:int =~ 11;` inside the function? can we have it?
+if answer is YES, the there is no need for that in default args, if no, we don't have gen/orth.
+do: module level variable rejected, closure rejected, default arg value rejected. keyword rejected.
+the only solution: runtime functions:
+`var cache: int[int] = _query_function_storage<int[int]>("cache");`
+But this is basically same as static but more confusing.
+module-level fields: this is basically global variable.
+another solution: let caller worry about it. define it's own closure and create a lambda. use lambda whenever it needs to
+but that won't be testable too!
+lets use some method similar to module level field but limited to a function.
+`func fib(x:int) -> long  |cache: map!(int,int)| { return a+cache[x] if defined cache[x]; }`
+function fib assumes an outide closure which has a cache variable.
+yes. this is static but function-level. so what's the difference with having `static int x` inside the function?
+how can we empty the cache from outside? how can we test? how can we disable caching?
+
+
+Y - special syntax sugar for default value. 0 for int, empty for structures, ...
+`var x:int = default(int);`
+You can omit type if it can be inferred.
+`var x:int = default;`
+`var h: hash<int,int> = default;`
+`func f(h: hash<int,int> = default) {}`
+
+N - remove optional value for arguments. if they are optional, they will be null?
+if its important for caller, pass something for them. else they will be null.
+because if we define default value `5`, bad things will happen if we later change it to 6.
+this makes writing expressive code easier. lets keep it.
+
+? - using dlang notation ! for templates
 
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
