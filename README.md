@@ -217,7 +217,7 @@ type A := struct { x: int = 19; };  //you can assign default value
 type B := struct { a: A; y: int; }; //B composes A
 type C := struct;   //empty struct
 type C := struct { y: int = 9; }; //setting default value
-type Stack<T> := struct { }; //generic structure.
+type Stack!T := struct { }; //generic structure.
 type Stack<T: MyType> := struct { }; //generic structure with type constraint
 ```
 
@@ -298,14 +298,14 @@ func _my_func6(x: int, y: int) -> x/y;  //this function won't be accessible outs
 func my_func7(x: int, y: int) {do_some_work();} //functions returng nothing, so -> is optional
 func my_func7() -> int { return 10;} //fn has no input but () is mandatory
 func my_func7() -> 10; //when function has just a return statement, there is a shortcut
-func push<T>(T data, Stack<T> stack) {...}  //T is implicity specified by inputs to the function. so we don't need to specify them explicitly when calling push.
+func push!T(T data, Stack!T stack) {...}  //T is implicity specified by inputs to the function. so we don't need to specify them explicitly when calling push.
 func my_func8() -> (int, int) { return (10,20);} //function can return multiple values
 (x,y) = my_func8(); 
 
  //below function receives an array + a function and returns a function
 func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
 
-func map<T>(f: func(T) -> T, arr: T[]) -> T[];  //map function
+func map!T(f: func(T) -> T, arr: T[]) -> T[];  //map function
 //these calls are all the same
 new_array = map<int>({$0+1}, my_array);
 new_array = map({$0+1}, my_array);
@@ -319,6 +319,8 @@ new_array = map {$0+1}, my_array;
 - When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`
 - You can use `params` to hint compiler to create appropriate array for a variadic function: `func print(x: int, params int[] rest) {...}` 
 - `rest` is a normal array which is created by compiler for each call to `print` function.
+- If name of a function argument starts with a single udnerscore, it is optional. If caller does not provide a value for it, it will be undefined. You can check this with: `if ( undefined _arg)`.
+- If argument name starts with double underscore, it is optional and static. So if value is not provided, runtime will allocate a per-thread storage for the function. So with each call, if value is not passed for that argument, the same variable will be used by the function.
 
 ###Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part.
@@ -337,6 +339,11 @@ var x: int = lazy do_some_work(100);
 var x: int = lazy(do_some_work(100));
 ```
 - This will wrap the expression inside a lambda expression, and upon first read access to `x`, it will be populated with the result of the expression.
+
+##Templates
+
+- You can define a struct/function using `!(T,U,V,...)` notation which means it is a template.
+- If template has only one input, you can omit parents: `Stack!T`.
 
 ##Operators
 
@@ -472,13 +479,14 @@ Constrains are invoked upon any change in the corresponding entity.
 `type x := struct { x:int, y:float; } [$.x != $.y];`
 `func ff(x:int[$>4]) -> string[$!=0] {...}`
 `type const_int := int[const($)];`  //you can define const int like this
-`type const<T> := T [const($)];`  //genral const
+`type const!T := T [const($)];`  //genral const
 
 
 - The special `const` function makes sure the value is not changed.
 - Constraint is not part of the type. They are code attached to data. If you write `y=x` and y is a copy of x, y won't be affected by constraints defined on x.
 - Constraints are defined on data and variables. Because of that, you cannot define a constraint on a function (but you can have it for function input and output). You can still have constraints on a lambda variable (e.g. `var adder : func[const($)];`)
 - If constraint predicate evaluates to false, an exception will be thrown.
+
 
 ###Chaining
 You can use `=>` operator to chain functions. `a => b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
