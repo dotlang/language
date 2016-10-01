@@ -812,14 +812,26 @@ func fib(x:int) -> long =
 body of the `fib` function is determined by once calling the provided block which returns the actual function to be called.
 So, on the first call to fib, this block is executed to BUILD the function body. any call afterwards will just call the created function. This is like: `x: int = 5;`. but instead of 5 we have a function.
 
-
 N - can I write `int x :: get_data;`? No. `::` is only for functions. use `=`.
 
 N - can I write `var x :: calculate_func`. No. `::` is not for building variables, its for module functions. You can use normal `=` operator for this.
 
 N - review the interface concept
 
-? - can we make the syntax more elegant for functions defined with closure?
+
+Y - special syntax sugar for default value. 0 for int, empty for structures, ...
+`var x:int = default(int);`
+You can omit type if it can be inferred.
+`var x:int = default;`
+`var h: hash<int,int> = default;`
+`func f(h: hash<int,int> = default) {}`
+
+N - remove optional value for arguments. if they are optional, they will be null?
+if its important for caller, pass something for them. else they will be null.
+because if we define default value `5`, bad things will happen if we later change it to 6.
+this makes writing expressive code easier. lets keep it.
+
+Y - can we make the syntax more elegant for functions defined with closure?
 ```
 func fib(x:int) -> long =
 {
@@ -879,21 +891,25 @@ lets use some method similar to module level field but limited to a function.
 function fib assumes an outide closure which has a cache variable.
 yes. this is static but function-level. so what's the difference with having `static int x` inside the function?
 how can we empty the cache from outside? how can we test? how can we disable caching?
+what about this?
+using convention for argument name. arguments who start with underline are optional.
+and if they dont have `=` to specify their default value, they will be provided by runtime as a static data storage.
+`func fib(x:int=6, cache: hash<int,int>) -> long { return a+cache[x] if defined cache[x]; }`
+pro: we won't have default VALUE for arguments, only optional.
+pro: although it is optional but outside code can pass a value for it so its testable.
+pro: consistent with current syntax.
+con: we always have preferred using keywords. now why switch to a convention that no one is familiar with?
+pro: this makes things simpler. instead of writing keywords everywhere, we just include/omit underscore.
+pro: syntax is consistent with the rest of the language. 
+pro: function definition is just input + output, no need to include lots of keywords.
+but we want to completely remove `=4` from function definition. how to distinguish between optional and static?
+using double underscore?
+`func fib(x:int, _output: string, __cache: hash<int,int>) -> long { return a+cache[x] if defined cache[x]; }`
+parameter names that start with single underscore means they are optional.
+and we can use `defined` to check if a parameter has a value or no.
+but for NULL/nil we have union/option type. so we don't need syntax to return undef or set a variable to undef.
 
-
-Y - special syntax sugar for default value. 0 for int, empty for structures, ...
-`var x:int = default(int);`
-You can omit type if it can be inferred.
-`var x:int = default;`
-`var h: hash<int,int> = default;`
-`func f(h: hash<int,int> = default) {}`
-
-N - remove optional value for arguments. if they are optional, they will be null?
-if its important for caller, pass something for them. else they will be null.
-because if we define default value `5`, bad things will happen if we later change it to 6.
-this makes writing expressive code easier. lets keep it.
-
-? - using dlang notation ! for templates
+Y - using dlang notation ! for templates
 
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
