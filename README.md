@@ -13,7 +13,7 @@ That's why I am creating a new programming language: Electron.
 
 Electron programming language is a general purpose language based on author's experience and doing research on 
 other languages (namely Java, C\#, C, C++, Rust, Go, Scala, Objective-C, Python, Perl, Smalltalk, Ruby, Haskell, Clojure, F\#, Oberon-2). 
-I call the paradigm of this language "Data-oriented". This is a combination of Object-Oriented and Functional approach. There are no objects or classes. Only structs and functions. But most important features of OOP (encapsulation, abstraction, inheritance and polymorphism) are provided to some extent.
+I call the paradigm of this language "Data-oriented". This is a combination of Object-Oriented and Functional approach and it designed to work with data. There are no objects or classes. Only structs and functions. But most important features of OOP (encapsulation, abstraction, inheritance and polymorphism) are provided to some extent.
 
 There is a runtime system which is responsible for memory allocation and management, interaction with OS and 
 other external libraries and handling concurrency.
@@ -319,18 +319,6 @@ new_array = map {$0+1}, my_array;
 - When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`
 - You can use `params` to hint compiler to create appropriate array for a variadic function: `func print(x: int, params int[] rest) {...}` 
 - `rest` is a normal array which is created by compiler for each call to `print` function.
-- You can define a named function and assign output of a code-block to it. The output will be calculated upon first call to the function.
-```
-//Instead of writing a body for fib function, we assign a code-block to it. first time fib is referenced,
-//the code block is executed and it's output is used as a body 
-func fib(x:int) -> long =
-{
-   var cache: int[int];
-   return { return a+cache[x] if defined cache[x]; d_calculation and save; return result }
-}
-```
-A call to `fib(5)` will invoke to function given by output of `create_func`. Note that right side of `::` is called only once upon first reference to `fib` function. 
-
 
 ###Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part.
@@ -373,29 +361,29 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `<>` template syntax
 - `:=` type definition
 - `=>,<=` chaining
-- `default(T)` value of type T when it is not initialized
+- `default(T)` value of type T when it is not initialized.
 - `?` check for value existence in fields of union type
 
 ###Special variables
 `true`, `false`
 
 ###Inheritance and polymorphism
-- To have type C inherit type P, there must a field of type P defined in C. If there is just one field, casting will be automatically done, but if there is more than one you have to specify appropriate field.
+- To have type C inherit type P, there must a field of type P defined in C. If there is just one field, casting will be automatically done, but if there is more than one you have to cast manually.
 
 Suppose that we want to implement equality check:
 `func (==)(a: EqChecked, b: EqChecked) -> bool { return eq_check(a, b); }`
-`type EqChecked := struct;`  //So any struct that has no field, can be considered EqCheck
-`func eq_check(a: EqChecked, b: EqChgecked) -> bool;`
+`type EqChecked := struct;`  
+`func eq_check(a: EqChecked, b: EqChgecked) -> bool;` //by default we don't have equality check for any type
 Here EqCheck is some kind of interface which defines, any type can be EqCheck if it has a function named `eq_check` with appropriate signature. We can define a type which conforms to this interface:
-`type Event := struct { x:int; nothing: EqCheck; };`
+`type Event := struct { x:int; EqCheck; };`  //an anonymous field of type EqCheck
 `func eq_check(a: Event, b: Event)->bool { return a.x == b.x; }`
-Do type Event can be used instead of type EqChecked if and only if, for every function defined which accepts an EqChecked input, there is a function with same signature accepting Event type. If EqChecked interface contains some fields, the Event must also have those fields too.
+Do type Event can be used instead of type EqChecked if and only if, for every function defined which accepts an EqChecked input, there is a function with same signature accepting Event type. 
 
 Another example for Ord interface and complex number type:
 ```
 type Ord := struct; 
 func compare(a: Ord, b: Ord)->int; //compare two structs and return the bigger one
-type ComplexNumber := { x: int; y: float; tx: Ord;}
+type ComplexNumber := struct { x: int; y: float; Ord;}
 var a: ComplexNumber;
 var b: ComplexNumber;
 bool h = a>b; //this will call compare method on a and b.
@@ -432,6 +420,7 @@ for example:
 - `float f; int x = int(f);` this version is used for casting primitives.
 - empty/undefined/not-initialized state of a variable is named "default" state and is shown by `default(T)`.
 - Value of a variable before initialization is `default(T)`.
+- You can ignore `T` part if type can be inferred: `var x: int = default;`
 - You can also return `default(T)` when you want to indicate invalid state for a variable.
 - For example, you can write `func int(d: Dow) ...` function to provide custom code to convert Day-of-Week type to int.
 
@@ -570,6 +559,7 @@ A set of core packages will be included in the language which provide basic and 
 - Data conversion
 - Garbage collector
 - Exception handling
+- Function level storage (to simulate static method-local variables in a safe mechanism)
 
 ##Standard packages
 
