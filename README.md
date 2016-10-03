@@ -320,6 +320,8 @@ new_array = map {$0+1}, my_array;
 - You can use `params` to hint compiler to create appropriate array for a variadic function: `func print(x: int, params int[] rest) {...}` 
 - `rest` is a normal array which is created by compiler for each call to `print` function.
 - If name of a function argument starts with a single udnerscore, it is optional. If caller does not provide a value for it, it will be undefined. You can check this with: `if ( missing _arg)`.
+- You can prefix function body with `cached` so runtime will cache output per input set and handle memory usage, cache clearing and ...: `func risk_markup(c: Contract)->float cached { //a lot of calculations; return result; }`
+
 
 ###Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part.
