@@ -906,10 +906,27 @@ but we want to completely remove `=4` from function definition. how to distingui
 using double underscore?
 `func fib(x:int, _output: string, __cache: hash<int,int>) -> long { return a+cache[x] if defined cache[x]; }`
 parameter names that start with single underscore means they are optional.
-and we can use `defined` to check if a parameter has a value or no.
+and we can use `missing` to check if a parameter has a value or no.
 but for NULL/nil we have union/option type. so we don't need syntax to return undef or set a variable to undef.
 
 Y - using dlang notation ! for templates
+
+Y - `__` prefix for optional but runtime provided arguments is a but confusing. maybe we can change it.
+`func fib(x:int, _output: string, _cache: hash<int,int>) -> long { return a+cache[x] if defined cache[x]; }`
+can we implement this as a constraint? `x: int[$static]`? but then it can be used in all other places too. not a good idea.
+`func fib(x:int, _output: string, _cache: hash<int,int>) -> long { return a+cache[x] if defined cache[x]; }`
+there are 3 types of arguments:
+1- normal
+2- optional, if you don't pass a value they will be missing
+3- auto-filled, if you don't pass value, runtime will provide value
+so type 3 is not considered optional.
+`func fib(x:int, _output: string, $cache: hash<int,int>) -> long { return a+cache[x] if defined cache[x]; }`
+if argument name starts with `$`, if missing, runtime will provide value.
+but questions arise: can we declare such variable inside a function? or inside a struct?
+how caller can do it?
+`auto f = (int x)-> long { var cache:...; cache[x] = fib(x); ... }`
+then pass `f` to the other functions.
+this is better and simpler. 
 
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
@@ -967,5 +984,34 @@ func get_events_for_period(allEvents: List<Event>, start: Date, end: Date) -> Li
 }
 
 var probability: float[$>=0 and $<=1] = 0;
+
+type Contract := struct {
+  dateStart: DateTime;
+  dateExpiry: DateTime;
+  datePricing: DateTime;
+  underlying: Symbol;
+  payout: int;
+  currency: Symbol;
+  type: ContractType;
+};
+
+func calc_markup_std(c: Contract) -> float {};
+func calc_markup_new(c: Contract) -> float {};
+
+func select_markup_impl(c: Contract) -> func(c:Contract)->float 
+{
+  if ( c.type == ContractType.CALL ) return calc_markup_std;
+  return calc_markup_new;
+}
+
+func get_probability(c: Contract, _e: EngineConfig) -> float 
+{
+  var markup_calculator: func(c: Contract)->float;
+  markup_calculator = select_markup_impl(c);
+  
+  
+  
+  var risk_markup: float = markup_calculator(c);
+}
 
 ```
