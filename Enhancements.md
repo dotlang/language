@@ -928,6 +928,16 @@ how caller can do it?
 then pass `f` to the other functions.
 this is better and simpler. 
 
+Y - back to the original problem: property.
+we want to have methods calculate something for a struct. like `risk_markup` for Contract struct.
+Now :
+`func risk_markup(c: Contract)->float { //a lot of calculations; return result; }`
+how can we cache above function? so clling `risk_markup(c1)` multiple times for same c1 won't have extra overhead?
+let's add `cached` keyword. let runtime handle memory problems.
+`func risk_markup(c: Contract)->float cached { //a lot of calculations; return result; }`
+
+
+
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
 ```
