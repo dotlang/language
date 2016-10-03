@@ -34,7 +34,7 @@ The underlying rules of design of this language are
 [KISS rule] (https://en.wikipedia.org/wiki/KISS_principle) and
 [DRY rule] (https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-As a 10,000 foot view of the language, code is written in files (called modules) organized in directories (called packages). Each file represents zero or more struct definitions (data fields) plus functions. Concurrency, templates (generics), lambda expression and exception handling are supported.
+As a 10,000 foot view of the language, code is written in files (called modules) organized in directories (called packages).  There are functions and types. Each function gets one or more input (each of it's own type) and gives an output. Types include primitive data types, struct, union, enum and a general type alias. Concurrency, templates (generics), lambda expression and exception handling are supported.
 
 ### Core principles
 
@@ -319,8 +319,7 @@ new_array = map {$0+1}, my_array;
 - When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`
 - You can use `params` to hint compiler to create appropriate array for a variadic function: `func print(x: int, params int[] rest) {...}` 
 - `rest` is a normal array which is created by compiler for each call to `print` function.
-- If name of a function argument starts with a single udnerscore, it is optional. If caller does not provide a value for it, it will be undefined. You can check this with: `if ( undefined _arg)`.
-- If argument name starts with double underscore, it is optional and static. So if value is not provided, runtime will allocate a per-thread storage for the function. So with each call, if value is not passed for that argument, the same variable will be used by the function.
+- If name of a function argument starts with a single udnerscore, it is optional. If caller does not provide a value for it, it will be undefined. You can check this with: `if ( missing _arg)`.
 
 ###Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part.
@@ -540,7 +539,7 @@ func test(x:int) -> plus2 { return { $0+ x}; }
 
 ##Best practice
 ###Naming
-- **Naming rules**: Advised but not mandatory: `some_method_name`, `someVariableName`, `MyStruct`, `my_package_or_module`.
+- **Naming rules**: Advised but not mandatory: `some_function_name`, `someVariableOrFieldName`, `SomeType`, `my_package_or_module`.
 - You can suffix if and for and `x for(10)` will run x 10 times.
 
 ##Examples
