@@ -134,7 +134,11 @@ type Car := struct {
   color: int;
   age: int;
 };
+var x: Car;   //init x with all default values
+var y: Car{age:11}; //customize value
+x.age=19;   //as long as its not marked as const
 ```
+
 
 ###type
 You can use `type` to define new type based on an existing type. 
@@ -340,6 +344,7 @@ var x: int = lazy do_some_work(100);
 var x: int = lazy(do_some_work(100));
 ```
 - This will wrap the expression inside a lambda expression, and upon first read access to `x`, it will be populated with the result of the expression.
+- As soon as you declare a variable it will have some value. Even if it is a struct, it will have all fields set to default value.
 
 ##Templates
 
@@ -355,9 +360,8 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - You can define single character operators in your code. Function name must be operator name enclosed in `()`:
 `func (+)(x: int, y:int) -> int { return x+y; }`
 - If operator has two arguments, it will be infix syntax (A op B), if it has one parameter, it will be prefix (op A).
-
-
 - `=` operator, makes a variable refer to the same object as another variable, by defaut. You can override this operator for your type. It is overriden for primitives to make a copy.
+- You can clone a variable when doing assignment to be sure it will not be assign by ref.
 - `x == y` will call `equals` functions is existing, by default compares field-by-field values.
 
 ##Special syntax
@@ -369,7 +373,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `<>` template syntax
 - `:=` type definition
 - `=>,<=` chaining
-- `default(T)` value of type T when it is not initialized.
+- `default(T)` value of type T when it is not explicitly assigned a value.
 - `?` check for value existence in fields of union type
 
 ###Special variables
@@ -423,14 +427,11 @@ for example:
 - `for(x:array1)` or `for(int key,string val:hash1)`.
 
 ###Casting
-- For every struct, compiler defines a function with the same name to do conversions. You can override versions that you need.
-- `MyStruct(my_obj)` will try to cast `my_obj` instance to `MyStruct` type. This is only possible if MyObj (type of `my_obj`) composes a field of type `MyStruct`.
+- For every struct, you can define a function with the same name to do data conversions. For example `int` function can take a string and cast it to integer.
 - `float f; int x = int(f);` this version is used for casting primitives.
-- empty/undefined/not-initialized state of a variable is named "default" state and is shown by `default(T)`.
-- Value of a variable before initialization is `default(T)`.
-- You can ignore `T` part if type can be inferred: `var x: int = default;`
-- You can also return `default(T)` when you want to indicate invalid state for a variable.
 - For example, you can write `func int(d: Dow) ...` function to provide custom code to convert Day-of-Week type to int.
+- Value of a variable which is not explicitly initialized is `default(T)`.
+- You can ignore `T` part if type can be inferred: `var x: int = default;`. This can be useful in template functions.
 
 ###Undef instance
 
@@ -461,7 +462,7 @@ func read_customer(id:int) -> union { Nothing; custmer: CustomerData }
 ```
 
 ###Constraints
-When defining types (except functions themselves), you can define a constraint for it.
+When defining types (except functions themselves), you can define a constraint for it. This is a predicate which will be checked everytime state of variables of that type change.
 For functions, this is a pre-condition, for other types it is a validator when their value changes.
 When defining a constraint for types, `$` means the corresponding element to which a constraint is attached. So we can defined constraint for;
 1. Functions (input, output) `func f(x:int[$>0]) -> int[$!=0] {}`
