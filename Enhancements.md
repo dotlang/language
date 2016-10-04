@@ -936,7 +936,71 @@ how can we cache above function? so clling `risk_markup(c1)` multiple times for 
 let's add `cached` keyword. let runtime handle memory problems.
 `func risk_markup(c: Contract)->float cached { //a lot of calculations; return result; }`
 
+N - letting code re-define operators is not a good idea. makes code unreadable.
+`y=x+5` do you really know what this does?
+This is OK. Developer is responsible for that and no one can stop him choosing a bad name for a function, too.
 
+Y - declaration, assignment
+does first do the second too?
+`x: MyData; func(x);` what will func receive? null or empty MyData?
+initialization and assignment happens as soon as you declare a variable. so `x:int` makes x have value of default(int).
+same for any other variable/struct. if you want, you can later edit the fields or assign upon declaration:
+`x: MyData{a:1, b:2};`
+
+N - when struct has no field, use another keyword like interface. No. we can have interface-like struct with fields.
+
+N - can we re-define dot operator on a struct? No. it already has its own meaning.
+
+N - comparison check must be clear. we should know when we are ref comparing and when data comparing.
+
+N - what happens upon incorrect casting?
+there is no casting. if struct A want to be castable to B, it needs to define a member with that name. That's all. 
+and casting will be done automatically.
+but we have data conversion. e.g. converting string to int. can we do these using functions and remove any special notation for casting?
+There is no incorrect casting. The casting function is defined, its input and output are specified too.
+
+N - defining no-input methods like OOP? e.g. String.Trim?
+or functions that don't get any non-primitive input?
+`str1.trim();`
+`trim(str1);`
+
+? - if a function's first argument is X, we can write X.function_name.
+`func f(x:int, y:int) -> long {}`
+`func save (x:int) to (y:file) -> long {}`
+save a to ff
+`func (f: file) save (x:int) -> long {}`
+f1 save(p)
+f1 save(t)
+`func contains(l:list, x:int) -> bool {}`
+`func (l:list) contains(x:int) -> bool {}`
+if ( contains(list1, 10)) ...
+if ( list1 contains 10 ) ...
+but what if we want to compose this?
+if ( not contains(list1, 10)) ...
+if ( not list1 contains 10 ) ...
+so although infix notation makes code more readable, but
+
+? - let user only override some globally known opertors which are not limited to math.
+like `[], =, ==`. because others are only used in rare cases, make code un-readable and cause confusion about precedence, ...
+
+
+? - maybe we need to cast MyDate to empty struct and cast it back. is that possible?
+This only applies to empty struct. Any other struct has some field which MUST match with some field in the original data and so we can explicitly specify that field.
+So let's choose a name for empty struct! but we can have lots of empty structs: Object, Comparable, ...
+Each acts as a marker. in implementation we will need to explicitly save visible and actual type of each variable.
+so anyway: we will need to cast `DateTime` or `Stack` or `int` or `File` to an empty struct. 
+casting TO empty struct would be str8fwd. `var s = EmptyStruct(myFile);`
+But this is not casting! what would be input of that function which casts EVERYTHING to Object? what would be it's body?
+We can say, to cast TO object, just write assignment: `var o: Object = MyStack;`
+but what about the other way? `var s: Stack = myObject`? No. Just write `var s: Stack = Stack(myObject);`
+runtime will do it. 
+
+? - QUOTE:"since I don't really believe in EVER passing collections around outside the protection of a containing class, I'm not completely convinced that the benefit of generics outweighs the enormous cost imposed by its huge syntax addition.
+I'm not talking about just wrapping any collection in an arbitrary class with a bunch of setters and getters, I'm talking about including all the additional data and business logic needed to manipulate that collection's data.
+After that, I rarely need more than one or two casts, and to replace those two casts with the mess that is generics just doesn't seem to add up (at least with the way I code)"
+
+? - make interface/contract/protocols separate and use separate keyword and when defining struct act like Haskell: `deriving Eq` so instances of this struct can be compared for equality.
+structs that have no field are representing interface.    
 
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
