@@ -964,7 +964,7 @@ or functions that don't get any non-primitive input?
 `str1.trim();`
 `trim(str1);`
 
-? - if a function's first argument is X, we can write X.function_name.
+N - if a function's first argument is X, we can write X.function_name.
 `func f(x:int, y:int) -> long {}`
 `func save (x:int) to (y:file) -> long {}`
 save a to ff
@@ -978,13 +978,12 @@ if ( list1 contains 10 ) ...
 but what if we want to compose this?
 if ( not contains(list1, 10)) ...
 if ( not list1 contains 10 ) ...
-so although infix notation makes code more readable, but
+so although infix notation makes code more readable, but when combined with other notations, is not readable.
 
-? - let user only override some globally known opertors which are not limited to math.
+Y - let user only override some globally known opertors which are not limited to math.
 like `[], =, ==`. because others are only used in rare cases, make code un-readable and cause confusion about precedence, ...
 
-
-? - maybe we need to cast MyDate to empty struct and cast it back. is that possible?
+Y - maybe we need to cast MyDate to empty struct and cast it back. is that possible?
 This only applies to empty struct. Any other struct has some field which MUST match with some field in the original data and so we can explicitly specify that field.
 So let's choose a name for empty struct! but we can have lots of empty structs: Object, Comparable, ...
 Each acts as a marker. in implementation we will need to explicitly save visible and actual type of each variable.
@@ -994,13 +993,56 @@ But this is not casting! what would be input of that function which casts EVERYT
 We can say, to cast TO object, just write assignment: `var o: Object = MyStack;`
 but what about the other way? `var s: Stack = myObject`? No. Just write `var s: Stack = Stack(myObject);`
 runtime will do it. 
+`var o: Object = Object(myStack);`
+`var s: Stack = Stack(myObject);`
+both are ok and runtime will handle conversion as long as type matches or target type has no field.
+if none of these two are satisfied, you have to have an appropriate function.
 
-? - QUOTE:"since I don't really believe in EVER passing collections around outside the protection of a containing class, I'm not completely convinced that the benefit of generics outweighs the enormous cost imposed by its huge syntax addition.
+Y - it doesn't feel right to use `struct` for a type that does not have fields.
+lets use protocol, interface, contract.
+
+Y - make interface/contract/protocols separate and use separate keyword and when defining struct act like Haskell: `deriving Eq` so instances of this struct can be compared for equality.
+structs that have no field are representing interface.    
+we use interface, but for implementation act like Go. define appropriate members and that's all.
+
+Y - How exactly are we going to implement polymorphism? Is it really needed? Isn't it too OOP-based?
+To what types can MyStruct be casted? To all interfaces. and everything that it composes.
+
+Y - What should be syntax for template based function? Do we need to specify type arguments?
+`func adder(T a, T b) -> T { return a+b; }` //how do we know if T is a struct or a typename?
+`func adder!T(T a, T b) -> T { return a+b; }`
+`func adder!(T,S)(T a, S b) -> T { return a+b; }`
+`var t = adder(10,15);`
+`var t = adder!(int,int)(10,15);`
+`type tuple!(S,T) := struct { a: S; b:T; };`
+`var t: tuple!(int, string);`
+
+N - QUOTE:"since I don't really believe in EVER passing collections around outside the protection of a containing class, I'm not completely convinced that the benefit of generics outweighs the enormous cost imposed by its huge syntax addition.
 I'm not talking about just wrapping any collection in an arbitrary class with a bunch of setters and getters, I'm talking about including all the additional data and business logic needed to manipulate that collection's data.
 After that, I rarely need more than one or two casts, and to replace those two casts with the mess that is generics just doesn't seem to add up (at least with the way I code)"
+Macro as an alternative to templates?
+remove templates and use primitive typrs: array, hash, list to handle that.
+maybe we can even have array behave as a list too.
+`var x: int[] = {1,2,3}; x.push(5);`
+in that case we will need a good interface mechanism so we can write functions which act on interfaces.
 
-? - make interface/contract/protocols separate and use separate keyword and when defining struct act like Haskell: `deriving Eq` so instances of this struct can be compared for equality.
-structs that have no field are representing interface.    
+Y - generics & polymorphism: implementing stack as arraylist, implementing expression evaluator.
+```
+type ArrayList := int[];
+type Stack := struct { _storage: ArrayList; };
+func push(s:Stack, x:int) { s.append(x); }
+func pop(s:Stack) -> int { return s.get(); }
+func length(s:Stack) -> int { return length(s._storage); }
+
+type Collection := struct;
+func length(c: Collection) -> int;
+
+func main() -> int {
+  var c: Collection = Stack{};  //from data point of view this is ok because you can cast it
+  var x = length(c);  //there is a length function defined for collection type so its ok. at runtime, length for actual type of c will be called.
+}
+```
+
 
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
