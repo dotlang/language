@@ -138,7 +138,8 @@ var x: Car;   //init x with all default values
 var y: Car{age:11}; //customize value
 x.age=19;   //as long as its not marked as const
 ```
-
+- If struct does not have any field, it's type must be `interface`. Because it is defining an interface to interact with an struct of it's type.
+- Fields that starts with underscore are considered internal state of the struct and better not to be used. 
 
 ###type
 You can use `type` to define new type based on an existing type. 
@@ -347,9 +348,14 @@ var x: int = lazy(do_some_work(100));
 - As soon as you declare a variable it will have some value. Even if it is a struct, it will have all fields set to default value.
 
 ##Templates
-
 - You can define a struct/function using `!(T,U,V,...)` notation which means it is a template.
 - If template has only one input, you can omit parents: `Stack!T`.
+`func adder!T(T a, T b) -> T { return a+b; }` => `var x = adder(10); OR var x - adder!int(10);`
+`func adder!(T,S)(T a, S b) -> T { return a+b; }`
+`var t = adder(10,15);`
+`var t = adder!(int,int)(10,15);`  //you can optionally state types or let compiler infer them
+`type tuple!(S,T) := struct { a: S; b:T; };`
+`var t: tuple!(int, string);`
 
 ##Operators
 
@@ -357,12 +363,10 @@ var x: int = lazy(do_some_work(100));
 - Bitwise: `~ & | ^ << >>`
 - Math: `+ - * % ++ -- **`
 The bitwise and math operators can be combined with `=` to do the calculation and assignment in one statement.
-- You can define single character operators in your code. Function name must be operator name enclosed in `()`:
-`func (+)(x: int, y:int) -> int { return x+y; }`
-- If operator has two arguments, it will be infix syntax (A op B), if it has one parameter, it will be prefix (op A).
-- `=` operator, makes a variable refer to the same object as another variable, by defaut. You can override this operator for your type. It is overriden for primitives to make a copy.
+- `=` operator, makes a variable refer to the same object as another variable, by defaut. It is overriden for primitives to make a copy.
 - You can clone a variable when doing assignment to be sure it will not be assign by ref.
 - `x == y` will call `equals` functions is existing, by default compares field-by-field values.
+- You can only override these operators: `[]` (`get_index` and `set_index`), `=` (`assign`).
 
 ##Special syntax
 - `$i` function inputs
@@ -370,7 +374,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `[]` constraints
 - `$` constraints
 - `:` for hash, call by name, array slice, loop
-- `<>` template syntax
+- `!()` template syntax
 - `:=` type definition
 - `=>,<=` chaining
 - `default(T)` value of type T when it is not explicitly assigned a value.
@@ -432,6 +436,13 @@ for example:
 - For example, you can write `func int(d: Dow) ...` function to provide custom code to convert Day-of-Week type to int.
 - Value of a variable which is not explicitly initialized is `default(T)`.
 - You can ignore `T` part if type can be inferred: `var x: int = default;`. This can be useful in template functions.
+- You can cast to/from types where types are the same. If target type is interface, you must have defined all appropriate functions for your type.
+`var o: Object = Object(myStack);`
+`var s: Stack = Stack(myObject);`
+both are ok and runtime will handle conversion as long as type matches or target type has no field.
+if none of these two are satisfied, you have to have an appropriate function.
+- If function `func f(d:Date)` expects a Date and you send `MyStruct` which contains a single field of type `Date` then case will be done automatically. But if `f` calls function `g` which has two signatures: `func g(d:Date)` and `func g(m:MyStruct)` the second one will be invoked (Runtime dispathes function call according to real type of the variable).
+- If automatic casting is done based on a field which starts with underscore, a warning will be issued.
 
 ###Undef instance
 
