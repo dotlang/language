@@ -1145,13 +1145,35 @@ so we just need to eliminate `defer(x)`.
 in adder: `func adder(x,y:int)->{ assert condition1;}`
 caller: `var x = adder(5,6) # adder(1,0) # { log("error occured " + $$); exit(5); };`
 
-? - what if function has optional input and reads them without checking?'
+Y - what if function has optional input and reads them without checking?'
+`func f(x:int, _y: int) { if ( missing _y ) ... }`
+we can implement this with fn redirection.
+`func f(x: int, y: int) ...`
+`func f(x: int) -> f(x, 10);`
 
-? - can we eliminate data annotations?
+Y - can we eliminate data annotations?
+usage: json customization
+e.g. we have a Customer struct, when saving it to JSON format, we want to ignore some fields.
+but a general method for JSON needs reflection: `func to_json(x:Object)`
+so, we will need to write a custom function.
 
-? - function cannot change it's input. can we have a syntax for this?
+N - function cannot change it's input. can we have a syntax for this?
 e.g. `int x = 12; f(&x);`
 `func f(x:int&)...` where in& denoted frozen int.
+Let's do this behind the scene. There is no other good usage for this. Just makes syntax clumsy.
+
+? - try to remove/eliminate as much special syntax as possible
+ok constraints
+template
+ok input indicator `$_` and `$i`
+catch and error
+ok chaining
+ok union check for empty value
+
+? - we have `$1, $2,..` for arguments but `$0` is free. can we use it to reduce complexity of the language?
+candidates: Error, 
+
+? - do we need templates?
 
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
