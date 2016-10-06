@@ -62,7 +62,7 @@ Each package contains zero or more source code files, which are called modules.
 
 ##Keywords
 Electron has a small set of basic keywords: 
-`if, else, switch, assert, for, break, continue, return, defer, type, import, auto, select, native, alloc`.
+`if, else, switch, assert, for, break, continue, return, type, import, auto, select, native, alloc`.
 
 ###if, else
 ```
@@ -95,6 +95,16 @@ AssertStmt = 'assert' condition [':' expression] ';'
 - Assert makes sure the given `condition` is satisfied. 
 - If condition is not satisfied, it will throw `expression` exception.
 - There is no `throw` keyword and this is the only way to cause expression.
+- It is advised to return error code in case of an error and use exceptions in really exceptional cases.
+- You can use `assert false, X` to create exception and return from current method.
+- You can use `#` to define statement to be executed in case of exception. `$$` refers to the thrown exception.
+```
+//inside function adder
+assert false, "Error!";  //throw exception and exit
+//outside: catching error
+`var x = adder(5,6) # adder(1,0) # { log("error occured " + $$); exit(5); };`
+```
+- There is no `finally` in Electron. Each variable which is not part of return value of the function, will be cleaned-up upon function exit (even if there is an exception). This is done by calling `dispose` function on that type. You can also manually call this function in case you need to cleanup the resource earlier.
 
 ###for, break, continue
 ```
@@ -111,21 +121,6 @@ ContinueStmt = 'continue' [Number] ';'
 `break 2` to break outside 2 nested loops. same for `continue`.
  
 ###return
-###throw
-- It is advised to return error code in case of an error and use exceptions in really exceptional cases.
-- You can use `assert false, X` to create exception and return from current method.
-- You can use `defer` keyword (same as what golang has) for code that must be executed upon exitting current method.
-- If defer has an input named `exc`, it will be mapped to the current exception. If there is no exception, defer won't be executed. If there are multiple defers with `exc` all of them will be executed.
-- You can check output of a function in defer (`defer(out) out>0`) to do a post-condition check.
-
-```
-//inside function
-assert false, "Error!";  //throw exception and exit
-//outside: catching error
-defer(exc) { ... }
-```
-
-###defer
 
 ###struct
 You use this statement to define a new data structure:
@@ -328,6 +323,7 @@ new_array = map {$0+1}, my_array;
 - You can prefix function body with `cached` so runtime will cache output per input set and handle memory usage, cache clearing and ...: `func risk_markup(c: Contract)->float cached { //a lot of calculations; return result; }`
 - Note that cached is not part of the type of the function.
 - Functions are not allowed to change (directly or indirectly) any of their inputs. They can only change their local variables + return value.
+- You cannot ignore return value of a non-void function. This affects resource cleanup mechanism of runtime.
 
 
 ###Variables
@@ -581,7 +577,6 @@ A set of core packages will be included in the language which provide basic and 
 - Reflection
 - Data conversion
 - Garbage collector
-- Exception handling
 - Function level storage (to simulate static method-local variables in a safe mechanism)
 
 ##Standard packages
