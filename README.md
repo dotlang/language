@@ -312,7 +312,7 @@ func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
 
 func map!T(f: func(T) -> T, arr: T[]) -> T[];  //map function
 //these calls are all the same
-new_array = map<int>({$0+1}, my_array);
+new_array = map!int({$0+1}, my_array);
 new_array = map({$0+1}, my_array);
 new_array = map {$0+1}, my_array;
 new_array = map {$0+1}, my_array;
@@ -326,6 +326,8 @@ new_array = map {$0+1}, my_array;
 - `rest` is a normal array which is created by compiler for each call to `print` function.
 - If name of a function argument starts with a single udnerscore, it is optional. If caller does not provide a value for it, it will be undefined. You can check this with: `if ( missing _arg)`.
 - You can prefix function body with `cached` so runtime will cache output per input set and handle memory usage, cache clearing and ...: `func risk_markup(c: Contract)->float cached { //a lot of calculations; return result; }`
+- Note that cached is not part of the type of the function.
+- Functions are not allowed to change (directly or indirectly) any of their inputs. They can only change their local variables + return value.
 
 
 ###Variables
@@ -339,22 +341,20 @@ var y : int = 19;
 var t = 12;  //imply type from 12
 ```
 
-You can assign a variable to a lazy calculation:
-```
-var x: int = lazy do_some_work(100);
-var x: int = lazy(do_some_work(100));
-```
-- This will wrap the expression inside a lambda expression, and upon first read access to `x`, it will be populated with the result of the expression.
+A function which returns `T` is treated like a variable of type `T`. This can be used to have lazy evaluation. So if you send the function/lambda to another function, to the outside world, it is int variable. inside they carry a lambda.
+Cloning, passing, assigning to other vars does not change or evaluate the variable. But as soon as you have something like: `x=lazy_var+1` then function is being called.
 - As soon as you declare a variable it will have some value. Even if it is a struct, it will have all fields set to default value.
 
 ##Templates
 - You can define a struct/function using `!(T,U,V,...)` notation which means it is a template.
-- If template has only one input, you can omit parents: `Stack!T`.
+- If template has only one input, you can omit parents: `Stack!int`.
+Definition:
 `func adder!T(T a, T b) -> T { return a+b; }` => `var x = adder(10); OR var x - adder!int(10);`
 `func adder!(T,S)(T a, S b) -> T { return a+b; }`
+`type tuple!(S,T) := struct { a: S; b:T; };`
+Usage:
 `var t = adder(10,15);`
 `var t = adder!(int,int)(10,15);`  //you can optionally state types or let compiler infer them
-`type tuple!(S,T) := struct { a: S; b:T; };`
 `var t: tuple!(int, string);`
 
 ##Operators
@@ -384,14 +384,15 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 `true`, `false`
 
 ###Inheritance and polymorphism
-- To have type C inherit type P, there must a field of type P defined in C. If there is just one field, casting will be automatically done, but if there is more than one you have to cast manually.
+- To have type C inherit non-interface type P, there must a field of type P defined in C. If there is just one field, casting will be automatically done and you can use C instead of P. But having two fields of that type is like inheriting from a class twice and will disable runtime polymorphism for that type.
+- You can cast type C to interface type I, if all empty methods that accept `I` are also defined to accept `C`.
 
 Suppose that we want to implement equality check:
 `func (==)(a: EqChecked, b: EqChecked) -> bool { return eq_check(a, b); }`
-`type EqChecked := struct;`  
+`type EqChecked := interface;`  
 `func eq_check(a: EqChecked, b: EqChgecked) -> bool;` //by default we don't have equality check for any type
 Here EqCheck is some kind of interface which defines, any type can be EqCheck if it has a function named `eq_check` with appropriate signature. We can define a type which conforms to this interface:
-`type Event := struct { x:int; EqCheck; };`  //an anonymous field of type EqCheck
+`type Event := struct { x:int; };` 
 `func eq_check(a: Event, b: Event)->bool { return a.x == b.x; }`
 Do type Event can be used instead of type EqChecked if and only if, for every function defined which accepts an EqChecked input, there is a function with same signature accepting Event type. 
 
@@ -550,6 +551,7 @@ func test(x:int) -> plus2 { return { $0+ x}; }
 - You can also use `$_` place holder to create a new lambda based on existing functions:
 `var y = calculate(4,a, $_)` is same as `var y = func(x:int) -> calculate(4,a,x);`
 `var y = calculate(1, $_, $_)` is same as `var y = func(x:int, y:int) -> calculate(4,x,y);`
+- You can define cached lambda: `plus2 rr = cached { $0 + 2 };` or `var f1 = func(x: int, y:int)->int cached{ return x+y; }`
 
 ##Best practice
 ###Naming
