@@ -1097,10 +1097,61 @@ Another example: We define a generic array list and want to be able to cast arra
 `x: Alist!int = ...; t = AList!int(int_array);`
 this is fine I think.
 
-? - can we replace exceptions with union?
+Y - can we replace exceptions with union?
 how to handle exception in lazy block, or in lambda?
+lazy is removed.
+maybe we can also add a shortcut like perl's OR.
+and an easier syntax to indicate function will return a union. MyStruct or Error
+can we do exceptions with monad?
+because even Go has this but they say, please use it in really specific cases.
+monad needs developer to write lots of code.
+`x = get_network_page(1,3) // 5;`
+`exp // exp` means evaluate left side expression. if any exception happened, evaluete next one.
+you can combine them:
+`x = get_data(1,5) // 9;`
+but `//` is for comments. let's use another operator. For now `#`
+you can chain them:
+`x = func1(1,2) # func2(1,9) # 10;`
+if there is no `#` and we have an exception, `defer(exc)` will be executed.
+can we eliminate `defer(exc)`? 
+what if I want to return something:
+`count = get_count(x) # return 5;`
+`count = get_data(x) # t++;` -> if there is exception it will be `count = t++;`
+`get_data(x) # t++;`
+problem with exception: they add hidden control flow, they are complex, 
+how can we catch exception for a block?
+```
+{ func1; func2; func3 } # exc_handler;
+```
+we can define synthetic-block to handle exception for a block. and remove `defer(exc)`
+defer is mostly used for resource release. 
+you cannot apply `#` to the whole body of a function.
+how can we access details of the exception? maybe some runtime method. `core.get_error`
+and: `core_set_error('no file'); return;`
+by entering `#` section, the error is automatically cleared. 
+`#` kicks in if some error exists in runtime error storage. we can assume `$0` inside `#` means the error but this conflicts with function input. we can use `$$`. 
+so if we have access to the exception details, then we can eliminate `defer(exc)` notation.
+we can use keywords instead of `#` and `$$`. 
+`except/guard/trap` and `error`.
+what about normal `defer`? it's used to close file, release memory, unlock mutex, close a socket.
+we can define that code when declaring a variable.
+`var x: Socket = get_socket(1,2,3) guard;` adding guard keyword means when going out of scope of this function, call `dispose` function on the variable.
+it's not a good candidate for constraint.
+`var x: Socket; x = get_socket(1,23); x.connect...`
+where/how should we put guard keyword?
+We don't need defer. Each type which is not part of return value, will have `dispose(x)` called on it.
+so for file, we can write `dispose` function which just closes the file. and this is called even in case of an exception.
+so we just need to eliminate `defer(x)`.
+in adder: `func adder(x,y:int)->{ assert condition1;}`
+caller: `var x = adder(5,6) # adder(1,0) # { log("error occured " + $$); exit(5); };`
+
+? - what if function has optional input and reads them without checking?'
 
 ? - can we eliminate data annotations?
+
+? - function cannot change it's input. can we have a syntax for this?
+e.g. `int x = 12; f(&x);`
+`func f(x:int&)...` where in& denoted frozen int.
 
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
