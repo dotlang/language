@@ -97,12 +97,12 @@ AssertStmt = 'assert' condition [':' expression] ';'
 - There is no `throw` keyword and this is the only way to cause expression.
 - It is advised to return error code in case of an error and use exceptions in really exceptional cases.
 - You can use `assert false, X` to create exception and return from current method.
-- You can use `#` to define statement to be executed in case of exception. `$$` refers to the thrown exception.
+- You can use `#` to define statement to be executed in case of exception. `$0` refers to the thrown exception.
 ```
 //inside function adder
 assert false, "Error!";  //throw exception and exit
 //outside: catching error
-`var x = adder(5,6) # adder(1,0) # { log("error occured " + $$); exit(5); };`
+`var x = adder(5,6) # adder(1,0) # { log("error occured " + $0); exit(5); };`
 ```
 - There is no `finally` in Electron. Each variable which is not part of return value of the function, will be cleaned-up upon function exit (even if there is an exception). This is done by calling `dispose` function on that type. You can also manually call this function in case you need to cleanup the resource earlier.
 
@@ -133,8 +133,7 @@ var x: Car;   //init x with all default values
 var y: Car{age:11}; //customize value
 x.age=19;   //as long as its not marked as const
 ```
-- If struct does not have any field, it's type must be `interface`. Because it is defining an interface to interact with an struct of it's type.
-- Fields that starts with underscore are considered internal state of the struct and better not to be used. 
+- Fields that starts with underscore are considered internal state of the struct and better not to be used outside the module that defines the type. 
 
 ###type
 You can use `type` to define new type based on an existing type. 
@@ -164,6 +163,8 @@ Note that when using type for alias to a function, you have to specify input nam
 `type comparer := func (x:int, y:int) -> bool;`
 
 You can also use type to resolve type ambiguity. When you import two modules which have types with the same name.
+A type definition without any value, means an abstract/interface type which has not data, but only functions:
+`type Comparable;`
 
 ###import
 
@@ -264,8 +265,7 @@ assert true == x.data;
 x.total = 0; //now x.data? will return false
 //upon assigning a value to any of fields of a union type, all others will become empty.
 
-type nullable_int := union { x: int; nil: bool; };`
-
+type nullable_int := union { x: int; nil: bool; };
 ```
 - You can attach constraints to union or it's fields just like structs.
 - When you assign a value to any of fields of a union, all other fields are un-initialized automatically.
@@ -307,10 +307,10 @@ func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
 
 func map!T(f: func(T) -> T, arr: T[]) -> T[];  //map function
 //these calls are all the same
-new_array = map!int({$0+1}, my_array);
-new_array = map({$0+1}, my_array);
-new_array = map {$0+1}, my_array;
-new_array = map {$0+1}, my_array;
+new_array = map!int({$1+1}, my_array);
+new_array = map({$1+1}, my_array);
+new_array = map {$1+1}, my_array;
+new_array = map {$1+1}, my_array;
 ```
 - Everything is passed by reference. You can make a copy using `{}` operator: 
 `x : MyType = {x:1, y:2};`
@@ -319,10 +319,12 @@ new_array = map {$0+1}, my_array;
 - When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`
 - You can use `params` to hint compiler to create appropriate array for a variadic function: `func print(x: int, params int[] rest) {...}` 
 - `rest` is a normal array which is created by compiler for each call to `print` function.
-- If name of a function argument starts with a single udnerscore, it is optional. If caller does not provide a value for it, it will be undefined. You can check this with: `if ( missing _arg)`.
+- Optional arguments and default values are not built-in but you can simply implement them:
+`func f(x: int, y: int) ...`
+`func f(x: int) -> f(x, 10);`
 - You can prefix function body with `cached` so runtime will cache output per input set and handle memory usage, cache clearing and ...: `func risk_markup(c: Contract)->float cached { //a lot of calculations; return result; }`
 - Note that cached is not part of the type of the function.
-- Functions are not allowed to change (directly or indirectly) any of their inputs. They can only change their local variables + return value.
+- Functions are not allowed to change (directly or indirectly) any of their inputs. They can only change their local variables + return value. It's like having `[const]` for all inputs of a function.
 - You cannot ignore return value of a non-void function. This affects resource cleanup mechanism of runtime.
 
 
@@ -372,6 +374,8 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `:` for hash, call by name, array slice, loop
 - `!()` template syntax
 - `:=` type definition
+- `#` catch
+- `$0` current exception
 - `=>,<=` chaining
 - `default(T)` value of type T when it is not explicitly assigned a value.
 - `?` check for value existence in fields of union type
@@ -402,18 +406,6 @@ var b: ComplexNumber;
 bool h = a>b; //this will call compare method on a and b.
 ```
 - If the struct only contains one field of type T, it will be automatically castable to type T, else you have to manually choose the right field.
-
-###Annotations
-You can annotate a struct or field with this syntax:
-`meta{key1:value1, key2:value2, ...}`
-custom_name is whatever you want. `value(i)` is optional and is assumed to be `true` if omitted.
-for example:
-`x: int meta{json:ignore};`
-
-- `core` provides functions to extract annotations.
-- You can add multiple annotations but only a single `meta` section.
-
-`x: int[$>0 && const($)] meta{json:ignore} = lazy fetch(19);`
 
 ###Array and slice
 
@@ -477,7 +469,7 @@ When defining a constraint for types, `$` means the corresponding element to whi
 3. Types (`type x := int[$>1];`)
 4. Struct (fields, the struct itself) (`type st := struct {x: int[$!=4]; y:int} [$.x!=$.y];`)
 5. Local variables (`x: int[$>0]`)
-6. Enum `type u := enum { SAT, SUN } [const($)];`
+6. Enum `type u := enum { SAT, SUN } [const];`
 7. Union `type u := union { x:int[$>0]; Nothing}`
 8. Anonymous struct and union
  
@@ -488,13 +480,11 @@ Constrains are invoked upon any change in the corresponding entity.
 `var x : int[$ != 3];`
 `type x := struct { x:int, y:float; } [$.x != $.y];`
 `func ff(x:int[$>4]) -> string[$!=0] {...}`
-`type const_int := int[const($)];`  //you can define const int like this
-`type const!T := T [const($)];`  //genral const
-
-
+`type const_int := int[const];`  //you can define const int like this
+`type const!T := T [const];`  //genral const
 - The special `const` function makes sure the value is not changed.
 - Constraint is not part of the type. They are code attached to data. If you write `y=x` and y is a copy of x, y won't be affected by constraints defined on x.
-- Constraints are defined on data and variables. Because of that, you cannot define a constraint on a function (but you can have it for function input and output). You can still have constraints on a lambda variable (e.g. `var adder : func[const($)];`)
+- Constraints are defined on data and variables. Because of that, you cannot define a constraint on a function (but you can have it for function input and output). You can still have constraints on a lambda variable (e.g. `var adder : func[const];`)
 - If constraint predicate evaluates to false, an exception will be thrown.
 
 
@@ -540,14 +530,14 @@ type adder := func(x: int, y:int) -> int;
 adder rr = func(a:int, b:int) -> { a + b }; //when you have a type, you can define new names for input
 adder rr = func { x + y }; //when you have a type, you can also omit input
 adder rr = { x + y };      //and also func keyword, but {} is mandatory
-plus2 rr = { $0 + 2 };          //you can $0 instead of name of first input
-func test(x:int) -> plus2 { return { $0+ x}; }
+plus2 rr = { $1 + 2 };          //you can $1 instead of name of first input
+func test(x:int) -> plus2 { return { $1+ x}; }
 ```
-- You can access lambda input using `$0, $1, ...` notation too.
+- You can access lambda input using `$1, ...` notation too.
 - You can also use `$_` place holder to create a new lambda based on existing functions:
 `var y = calculate(4,a, $_)` is same as `var y = func(x:int) -> calculate(4,a,x);`
 `var y = calculate(1, $_, $_)` is same as `var y = func(x:int, y:int) -> calculate(4,x,y);`
-- You can define cached lambda: `plus2 rr = cached { $0 + 2 };` or `var f1 = func(x: int, y:int)->int cached{ return x+y; }`
+- You can define cached lambda: `plus2 rr = cached { $1 + 2 };` or `var f1 = func(x: int, y:int)->int cached{ return x+y; }`
 
 ##Best practice
 ###Naming
