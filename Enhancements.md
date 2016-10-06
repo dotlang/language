@@ -1043,6 +1043,64 @@ func main() -> int {
 }
 ```
 
+Y - cant we simulate lazy evaluation with lambda?
+`x: int = lazy y+1;`
+`x: func () -> int = { return y+1;}`
+we can also simulate with a type + custom get function:
+`type lazy_int := func()->int;`
+`func get_value(x:lazy_int) -> { return x(); }`
+`x: lazy_int = {return y+1;}`
+`int r = x;  //x is evaluated and function is called`
+`var t: lazy_int; t = x; //this does not call evaluate because types match`
+so we only need an `evaluate` or cast or calculate custom function. 
+we can call it casting.
+Is it transparent? If a function expects an int, can we send a `lazy_int` instead?
+one way is to handle it in runtime, and let user send function/lambda which returns int, instead of int. 
+other way: add operator for get_value or a getter for int of lazy_int, where lazy_int is a struct containing int + lambda.
+first solution is cleaner. we treat any function `func () -> T` same as T except it is lazy.
+so when you have `func adder(x:int, y:int) -> int` maybe x or y are functions. In the code everything is the same.
+In runtime, when variable is just being transferred, it doesn't change. but when it's value is read, function is executed.
+whet if we have `x: int = lazy_Var;`  -> this is reference assignment
+or `t: int = lazy_var{};` to clone lazy_var. 
+both are transferring, to the outside world, both are int variables. inside they carry a lambda.
+as soon as we have: `t = lazy_var+1` then we HAVE to run the function.
+cloning just clones the lazy variable with it's function pointer. no evaluation is needed.
+
+Y - can we define cached lambda? yes it should be possible.
+
+N - what are things that make learning language or reading a codebase or changing the code hard?
+I'm trying to do another round of making language simpler. Simple to learn or read or maintain.
+User should not be forced to look at 10 different places to know what does function X do.
+1. cached - I hope there was a more straightforward solution for it.
+2. exceptions
+3. Optionals. starting with `_` may ne confusing.
+4. Not having real encapsulation. So if I change something, I may need to update 100s of places.
+5. Making changes in a codebase, should not need large amount of mental effort or widespread change.
+6. Caller has to have full control over what happens. So if callee can make any change outside of return value, it will make things hard to change later.
+7. annotations
+-> try to eliminate as much as possible of these.
+
+Y - if we ban functions change value of their inputs, then pass by ref or val does not matter.
+function can simply return multiple values instead of changing a field in an input argument.
+but we can have: `x: MyStruct = input_arg; x.field1++`
+and it still changes function input.
+if we send all by copy it would be ok (and useless) to change values but it is also expensive.
+
+N - It's better if name of the cast function is not same as struct. So we can have template base casts.
+`type Stack!T = ...`
+how are we going to write a function which casts `int` to `X!T`? We cannot write a function with generic name.
+`func Stack!T...`
+but: `func cast!Stack!T(a: int)...` would be ok.
+Another example: We define a generic array list and want to be able to cast array to it.
+`type AList!T := ... + functions`
+`func AList!T(a:T[]) -> AList!T {}`
+`x: Alist!int = ...; t = AList!int(int_array);`
+this is fine I think.
+
+? - can we replace exceptions with union?
+how to handle exception in lazy block, or in lambda?
+
+? - can we eliminate data annotations?
 
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
