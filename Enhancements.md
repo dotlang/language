@@ -1162,29 +1162,106 @@ e.g. `int x = 12; f(&x);`
 `func f(x:int&)...` where in& denoted frozen int.
 Let's do this behind the scene. There is no other good usage for this. Just makes syntax clumsy.
 
-? - try to remove/eliminate as much special syntax as possible
-ok constraints
+Y - problem with auto dispose call. maybe code s not readable
+but this is C++ way (RAII).
+what about mutex? same. 
+
+N - try to remove/eliminate as much special syntax as possible
 template
-ok input indicator `$_` and `$i`
 catch and error
+ok constraints
+ok input indicator `$_` and `$i`
 ok chaining
 ok union check for empty value
 
-? - we have `$1, $2,..` for arguments but `$0` is free. can we use it to reduce complexity of the language?
+N - like Haskel, can we separate function definition and type?
+`func adder(int,int)->int;`   //everything about types
+`func adder(x,y) { return 5; }`  //everything about names and body
+`type adder := func(int,int)->int;`
+`adder(x,y) = { return x+y; }`
+`adder(x) = adder(x, 6);`
+`type adder := int -> int -> int;`
+`type comparer := int -> int -> (int -> int -> bool) -> int;`
+using `->` for both input and output makes syntax clearer. 
+instead of `func(int,int)->bool` we have `int->int->bool`. maybe we can even drop func keyword.
+`->` somehow implies order. You have to provide a before b, if we have `a->b`.
+`type adder := int,int,int;` but this doesn't imply the transformation nature of function.
+`type adder := int -> int -> int;`
+`type gen_adder!T := T -> T -> T;`
+func adder(x,y).
+what is the advantage of separating these? it's possible to have a type same as a function but function definition should be easily done in one line. makes dev confused.
+`func adder(x:int,y:int)->int { return x+y; }`
+`func adder(x:int -> y:int -> int) { return x+y; }`  //keeping output inside paren seems incorrect
+`func adder(x:int -> y:int) -> int { return x+y; }`  //keeping output outside, makes syntax similar to what we had before
+`type adder := int -> int -> int;`
+`func adder(x:int -> y:int) -> int { return x+y; }` 
+what is use of separating singature from body, if it's going to be used only once? (most of the time)
+`func adder x:int -> y:int -> int { return x+y; }` 
+no.
+
+N - if above happens (separate func signature and def), lets remove type keyword.
+`MyInt :: int[$>0];`
+`Customer :: struct {}`
+No. There should be a keyword to highlight.
+
+Y - we have `$1, $2,..` for arguments but `$0` is free. can we use it to reduce complexity of the language?
 candidates: Error, 
 
-? - do we need templates?
+N - do we need templates? yes.
+what happens if we ignore all templates and just use `Object` everywhere?
+possible problems:
+monad: `func (=>)(x:Maybe!int, f: func(int)->int)`
+operator overloading
+map/filter definition
+list processing
+collections like stack/queue/...
+algorithms
+I think we need them. In FP we care much more about data and it's structure. so we need to have appropriate faciilities too.
+
+Y - what about deeper hierarchy? If Customer has Person field and Person has Picture field, can we call picture-related functions on a customer? It's only one level.
+
+Y - shall we prohibit re-writing already implemented methods for parent types?
+suppoer we have Persona with `dump` method. Customer contains Person. calling `dump(customer1)` will call it on Person.
+but we may need to have a more specific dump for a customer. Solution is to use interface. Include appropriate interface and write your methods for customer.
+
+Y - polymorphism should be like Go. child can hide methods written for parent.
+
+N - do we need catch and error? maybe we can add a more consistent error handling.
+`var x = adder(5,6) # adder(1,0) # { log("error occured " + $0); exit(5); };`
+
+Y - including constraint in function definition makes code clumsy. Can we make it better?
+pro: constraint is where it matters.
+con: hardly ever we have a constraint which is only used once. so better to define a type for it.
+
+N - we can implement code of `=>` operator to have monad.
+so if function accepts `int` and we have `maybe!int` we can call it transparently.
+but what if argument is not alone?
+`maybe5 => adder(5, $_)` this is ok and works.
+`(5, maybe4) => adder` what about this?
+our `=>` implementation is something like this: `func (=>)(x: Maybe!int, f: func(int) -> U) -> U`
+so?
+we can write it like this:
+`maybe4 => (5,$_) => adder;` but we will loose f function then.
+shall we add a new operator? or make it less transparent by forcing user to call a method?
+even if we force user to write a method for this, its signature will be the same.
+`func bind(x: Maybe!int, f: func(int) -> U) -> U`
+
+Y - Why do we need a special `_init` method in a module?
+`import core.st.Socket;`
+`import core::st::Socket;`
+
+? - now that dot is solely to be used for struct, lets change package addressing.
 
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
 ```
 //assuming we have primitives
 type DateTime := struct {
-  year: int;
-  month: int;
-  day: int;
-  hour: int;
-  minute: int;
+  year: int[$>1900];
+  month: int [0<$<13];
+  day: int [0<$<31];
+  hour: int [0=<$<24];
+  minute: int [0=<$<60];
 };
 
 type Currency := enum { USD, EUR, JPY, GBP };
@@ -1195,39 +1272,41 @@ type Event := struct
   release_date: DateTime;
   title: string;
   currency: Currency;
-  impact: int [$$>0 and $$<5];
+  impact: int [$>0 and $<5];
 };
 
-type Maybe<T> := union {
+type Maybe!T := union {
   data: T;
-  isNull;
+  None;
 };
 
-type Node<T> := struct {
-  T data;
-  Maybe<Node<T>> next;
+type Node!T := struct {
+  data: T;
+  next: Maybe!Node!T;
 };
 
-type List<T> := struct {
-  head: Maybe<Node<T>>;
+type List!T := struct {
+  head: Maybe!Node!T;
 };
 
-func ([])(List<T> list, index: int[$$>0]) -> T {
-  T temp = list.head;
-  temp = temp.next for(index);
+type PositiveInt := int [$>0];
+
+func get_data!T(list: List!T, index: PositiveInt) -> T {
+  var temp = list.head;
+  temp = temp.next for(index) # log("index out of bounds!");
   return temp;
 }
 
-type MEL := Maybe<List<Event>>;
+type MEL := Maybe!List!Event;
 
-func get_events_for_period(allEvents: List<Event>, start: Date, end: Date) -> List<Event> 
+func get_events_for_period(allEvents: List!Event, start: Date, end: Date) -> List<Event> 
 {
    var ff = func(d1: Date) -> bool { return d1.epoch >= start.epoch and d1.epoch <= end.epoch };
    return allEvents => filter ff, $_;
    
    //OR
    
-   return allEvents => filter {$0.epoch >= start.epoch and $0.epoch <= end.epoch}, $_;
+   return allEvents => filter {$1.epoch >= start.epoch and $1.epoch <= end.epoch}, $_;
 }
 
 var probability: float[$>=0 and $<=1] = 0;
