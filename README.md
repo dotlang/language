@@ -163,18 +163,19 @@ Note that when using type for alias to a function, you have to specify input nam
 `type comparer := func (x:int, y:int) -> bool;`
 
 You can also use type to resolve type ambiguity. When you import two modules which have types with the same name.
-A type definition without any value, means an abstract/interface type which has not data, but only functions:
-`type Comparable;`
+A type definition as interface, means an abstract/interface type which has not data, but only functions:
+`type Comparable := interface;`
 
 ###import
 
-You can import a module using this statement:
+You can import a module using below statement:
 
 ```
-import core.st.Socket;  //functions, types and structs inside core/st/Socket.e file are imported
+import core::st::Socket;  //functions and types inside core/st/Socket.e file are imported
 ```
-It is an error if as a result of imports, there are two exactly similar functions (same name, input and output).
-When you import a module, it's `_init` function will be called (if exists).
+It is an error if as a result of imports, there are two exactly similar functions (same name, input and output). In this case, none of functions will be available for call. You can though call them using full syntax: `core::st::Socket::connect`.
+
+
 
 ###invoke
 We have `invoke` and `select` keywords. You can use `future<int> result = invoke function1();` to execute `function1` in another thread and the result will be available through future class (defined in core).
@@ -312,7 +313,7 @@ new_array = map({$1+1}, my_array);
 new_array = map {$1+1}, my_array;
 new_array = map {$1+1}, my_array;
 ```
-- Everything is passed by reference. You can make a copy using `{}` operator: 
+- Everything is passed by reference but the callee cannot change any of its input arguments. You can make a copy using `{}` operator: 
 `x : MyType = {x:1, y:2};`
 `y : MyType; y = x{};`
 `y : MyType; y = x{y: 5};`  //clone with modification
@@ -330,7 +331,11 @@ new_array = map {$1+1}, my_array;
 
 ###Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part.
-By default everything is mutable..
+Reasons for including type at the end:
+- Due to type inference, type is optional and better not to be first part of the definition.
+- More consistent with function declaration.
+- Even C has `auto x = int{4}` declaration
+- More readable and parseable
 
 ```
 var x:int;
@@ -364,7 +369,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `=` operator, makes a variable refer to the same object as another variable, by defaut. It is overriden for primitives to make a copy.
 - You can clone a variable when doing assignment to be sure it will not be assign by ref.
 - `x == y` will call `equals` functions is existing, by default compares field-by-field values.
-- You can only override these operators: `[]` (`get_index` and `set_index`), `=` (`assign`).
+- You can only override these operators: `[]` (`get_data` and `set_data`), `=` (`assign`), `==` (`equals`), `=>` (`bind`).
 
 ##Special syntax
 - `$i` function inputs
@@ -380,16 +385,20 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `default(T)` value of type T when it is not explicitly assigned a value.
 - `?` check for value existence in fields of union type
 
+Types of types: `struct`, `union`, `interface`, `enum`, `primitives`.
+
 ###Special variables
 `true`, `false`
 
 ###Inheritance and polymorphism
-- To have type C inherit non-interface type P, there must a field of type P defined in C. If there is just one field, casting will be automatically done and you can use C instead of P. But having two fields of that type is like inheriting from a class twice and will disable runtime polymorphism for that type.
+- If Child(C) wants to inherit from Parent(P), it must contain only one field of type P. In that case, all method calls on C, will be redirected to P, if there is appropriate implementation and C has not shadowed them.
 - You can cast type C to interface type I, if all empty methods that accept `I` are also defined to accept `C`.
+- To implement interface I, just add appropriate methods.
+- If C has a field of type P and you call `f(p:Parent)` with C, it will be cast to P, then if `f` calls a method which has both implementations for C and P, the P version will be called. In other words, there is no virtual methods. If that method has no implementation for P but has for C, then C version will be called.
 
 Suppose that we want to implement equality check:
-`func (==)(a: EqChecked, b: EqChecked) -> bool { return eq_check(a, b); }`
 `type EqChecked := interface;`  
+`func (==)(a: EqChecked, b: EqChecked) -> bool { return eq_check(a, b); }`
 `func eq_check(a: EqChecked, b: EqChgecked) -> bool;` //by default we don't have equality check for any type
 Here EqCheck is some kind of interface which defines, any type can be EqCheck if it has a function named `eq_check` with appropriate signature. We can define a type which conforms to this interface:
 `type Event := struct { x:int; };` 
@@ -398,7 +407,7 @@ Do type Event can be used instead of type EqChecked if and only if, for every fu
 
 Another example for Ord interface and complex number type:
 ```
-type Ord := struct; 
+type Ord := interface; 
 func compare(a: Ord, b: Ord)->int; //compare two structs and return the bigger one
 type ComplexNumber := struct { x: int; y: float; Ord;}
 var a: ComplexNumber;
@@ -433,8 +442,6 @@ if none of these two are satisfied, you have to have an appropriate function.
 - If function `func f(d:Date)` expects a Date and you send `MyStruct` which contains a single field of type `Date` then case will be done automatically. But if `f` calls function `g` which has two signatures: `func g(d:Date)` and `func g(m:MyStruct)` the second one will be invoked (Runtime dispathes function call according to real type of the variable).
 - If automatic casting is done based on a field which starts with underscore, a warning will be issued.
 
-###Undef instance
-
 ###Anonymous struct/union
 
 `var t: struct{x: int, y: int, z: float} = {1,2, 3.1};`
@@ -465,13 +472,12 @@ func read_customer(id:int) -> union { Nothing; custmer: CustomerData }
 When defining types (except functions themselves), you can define a constraint for it. This is a predicate which will be checked everytime state of variables of that type change.
 For functions, this is a pre-condition, for other types it is a validator when their value changes.
 When defining a constraint for types, `$` means the corresponding element to which a constraint is attached. So we can defined constraint for;
-1. Functions (input, output) `func f(x:int[$>0]) -> int[$!=0] {}`
-3. Types (`type x := int[$>1];`)
-4. Struct (fields, the struct itself) (`type st := struct {x: int[$!=4]; y:int} [$.x!=$.y];`)
-5. Local variables (`x: int[$>0]`)
-6. Enum `type u := enum { SAT, SUN } [const];`
-7. Union `type u := union { x:int[$>0]; Nothing}`
-8. Anonymous struct and union
+1. Types (`type x := int[$>1];`)
+2. Struct (fields, the struct itself) (`type st := struct {x: int[$!=4]; y:int} [$.x!=$.y];`)
+3. Local variables (`x: int[$>0]`)
+4. Enum `type u := enum { SAT, SUN } [const];`
+5. Union `type u := union { x:int[$>0]; Nothing}`
+6. Anonymous struct and union
  
 Constrains are invoked upon any change in the corresponding entity.
 
@@ -479,13 +485,13 @@ Constrains are invoked upon any change in the corresponding entity.
 `type x := int[$ != 3];`
 `var x : int[$ != 3];`
 `type x := struct { x:int, y:float; } [$.x != $.y];`
-`func ff(x:int[$>4]) -> string[$!=0] {...}`
 `type const_int := int[const];`  //you can define const int like this
 `type const!T := T [const];`  //genral const
 - The special `const` function makes sure the value is not changed.
-- Constraint is not part of the type. They are code attached to data. If you write `y=x` and y is a copy of x, y won't be affected by constraints defined on x.
+- Constraint is not part of the type. They are small pieces of code attached to data. If you write `y=x` and y is a copy of x, y won't be affected by constraints defined on x.
 - Constraints are defined on data and variables. Because of that, you cannot define a constraint on a function (but you can have it for function input and output). You can still have constraints on a lambda variable (e.g. `var adder : func[const];`)
 - If constraint predicate evaluates to false, an exception will be thrown.
+- You cannot define constraints in function definition. Reason is, it makes code un-readable.
 
 
 ###Chaining
@@ -503,9 +509,9 @@ Examples:
 - You can customize `=>` opertor for different types. This will give you a Monad implementation. For example:
 ```
 //this will be called when we have something like: `x => f`
-func (=>)(x: Maybe<int>, f: func<int,U>) -> U
+func (=>)(x: Maybe!int, f: func(int) -> U) -> U
 {
-  if (x.IsNull) return default(U);
+  if (x.Null?) return default(U);
   return f(x.value);
 }
 //this will be called when we have something like: `(1,2) => f`
@@ -527,10 +533,10 @@ var rr = func (x: int, y:int) -> { x + y };  //return type can be inferred
 var rr = func { x + y };` //WRONG! - input is not specified
 
 type adder := func(x: int, y:int) -> int;
-adder rr = func(a:int, b:int) -> { a + b }; //when you have a type, you can define new names for input
-adder rr = func { x + y }; //when you have a type, you can also omit input
-adder rr = { x + y };      //and also func keyword, but {} is mandatory
-plus2 rr = { $1 + 2 };          //you can $1 instead of name of first input
+var rr: adder = func(a:int, b:int) -> { a + b }; //when you have a type, you can define new names for input
+var rr: adder = func { x + y }; //when you have a type, you can also omit input
+var adder = { x + y };      //and also func keyword, but {} is mandatory
+var rr = { $1 + 2 };          //you can $1 instead of name of first input
 func test(x:int) -> plus2 { return { $1+ x}; }
 ```
 - You can access lambda input using `$1, ...` notation too.
