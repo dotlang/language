@@ -373,15 +373,12 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 ##Special syntax
 - `$i` function inputs
 - `$_` input place-holder in chaining
-- `[]` constraints
-- `$` constraints
 - `:` for hash, call by name, array slice, loop
 - `!()` template syntax
 - `:=` type definition
 - `#` catch
 - `$0` current exception
 - `=>,<=` chaining
-- `default(T)` value of type T when it is not explicitly assigned a value.
 - `?` check for value existence in fields of union type
 
 Types of types: `struct`, `union`, `enum`, `primitives`.
