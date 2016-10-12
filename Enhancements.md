@@ -1250,7 +1250,138 @@ Y - Why do we need a special `_init` method in a module?
 `import core.st.Socket;`
 `import core::st::Socket;`
 
-? - now that dot is solely to be used for struct, lets change package addressing.
+Y - now that dot is solely to be used for struct, lets change package addressing. changed to `::`
+
+N - Let's let functions decide which parameters to receive by ref and which by value.
+notation to specify input type is reference.
+notation to send reference of something to a function. maybe we can ignore this. but better to have it so its explicit.
+`func adder(x:int, y:int) -> int { return x+y;} a=adder(b,c);`
+`func adder(x:int&, y:int&) -> int { return x+y;} a=adder(&b,&c);`
+then we can define `&` variables which are references to other variables.
+`var x: int&; x = &u;x++` will update value of u.
+`var x: MyStruct& = MyStruct{a:11};`
+`var x: MyStruct = MyStruct{a:11};`
+then what about a function pointer?
+`func adder(x:int, y:int, converter: func(int)->int ) -> int { return converter(x)+converter(y);} a=adder(b,c);`
+this I think, is added complexity, new notations, making function signature more confusing. 
+Let's have the rule of pass by reference + cannot change arg values.
+
+N - when debugging, we may want to call a function without import. like use data::dumoer
+
+Y - if its possible to call function directly using namespace, what happens to polymorphism?
+maybe we really don't need polymorphism.
+maybe function pointers are the solution for problems like expression evaluation.
+each node of the tree will contains a fp for processing.
+expression evaluation is basically strategy design pattern.
+hence we may not need the dynamic interface behavior we had. just some static interfaces.
+but when we write `type x := struct {...interface X;}` doesn't it somehow mix data and code?
+so how can we print value for a given data?
+suppose we have `x:Object` input, now `print(x)`. what does this do?
+if type of X is Customer, if there is print for Customer, it will be called, else it's external type will be used.
+each variable has two types: external/static type which is specified in the code
+and internal/runtime type which is provided at runtime
+Of course if struct A contains B and there are functions for B, we can call them via `myObjectA.Bfield` but this is explicit method dispatch.
+having polymorphism even with interfaces, will bring up problem of method dispatch.
+if we have interface Comparable and structs Int and Decimal.
+`f(x: Comparable)`
+`f(x: Decimal)`
+`f(x: Int)`
+when we call f with a variable of type Comparable, at runtime it can be redirected to any of these.
+Haskell and Clojure both ban function overloading because of the way they handle method dispatch.
+if we support it, we will have multi-dispatch and not two-dispatch.
+`f(x:Comparable, y: Square)`
+`f(x:Decimal, y: Shape)`
+if we call f with a decimal and square, which of the above methods should be called? we had this issue before.
+so, each variable of type T can either represent a data of type T or I1 or I2 or ...
+where Ii is an interface where type T satisfies.
+all types can inherit from one or more interfaces.
+but if we do this at the time of defining data, it is mixing functionality with data. 
+Let's do it implicitly. for interface, we can explicitly extend another interface.
+but for other types, just define appropriate methods. 
+`type I := interface; func f(x:I)`
+`type A := struct; func f(x:A)` so A implements interface I.
+if we cann f function with a variable of type I, at runtime f(A) will be called if actual type is A and we have appropriate function. else general f will be called.
+I think the definition of an interface should be bound. We cannot let everyone define anything anywhere and add it to interface. This makes large codebase maintenance confusing.
+```
+type Comparable := interface {
+  func do_compare(????
+```
+can't we just remove interface?
+then how can we do these?
+- Sorting a mixed set of objects
+- Adaptive collision algorithms
+- Painting algorithms
+- Personnel management systems
+- Event handling
+maybe we can do this through template specialization.
+we can have:
+`func add!T(a:T, b:T) -> {}`
+then:
+`func add!int(a:int, b:int) -> { return a+b;}`
+as a result, add is a simple single-method interface that has an implementation for integer.
+then, if we call `add(x,y)` and x,y are int, then add!int will be called. else add!T will be called.
+- sorting a mixed set of objects.
+`func compare!T(a:T, b:T)...` if you want, implement compare for your type. 
+but we cannot have mixed objects. either `List!T` or `T[]`.
+- adaptive collission: we can have sphere, asteroid, shuttle and enemy. to check collission:
+`func collides!(T,U)(originator:T, target:U)`
+how can we keep a single list for all elements of the game? all spheres, shuttles, ...?
+we can define `Obj` as something like `void*`.
+or to make it more specialized, we can define a dummy/market type. and tag all of our types with that type.
+and then `Dummy[]` array can contain any type which is tagged with Dummy.
+- Painting algorithm: func paint!T, func paint!Circle, ...
+now problem is a way to treat all subtypes same. so we can have an array/list/collection of shapes. each element of which can be square, circle, ... .
+we can define parent type and have types inherit from parent. but again we will have dispatch ambiguity problem.
+`func check!(Circle, Shape)`
+`func check!(Shape, Circle)`
+then check(Circle, Circle)?
+can't we have simple inheritance in structs?
+`type Object := struct;`
+`type Circle := struct : Object {}`
+`type Square := struct : Object {}`
+`func paint!T(o:T) {}`
+`func paint!Object(o:Object){}`
+`func paint!Circle...`
+`func paint!Square...`
+`Object[] o = {Circle{}, Square{}};`
+this gives us same result as interface, but does not add a new keyword and it's own complexity. but builds upon existing tools.
+and is simpler and less confusing.
+so we have two separate concepts: template specialization, struct inheritance
+
+Y - we should ban calling functions directly using module name prefix.
+
+Y - Simplify template method specialization.
+`func compare!T(a:T, b:T) -> bool ...`
+`func compare!int -> a>b;`
+`func compare!int -> $1>$2;`
+
+Y - if parent has a constraint and child has too. when value of child changes, validation logic for all of them should be called.
+
+Y - same as cast and constraint, we can define casting logic using template.
+
+Y - Let user define custom type checkers to be used in constraints.
+What about having them implicitly defined, just like disposable?
+`func validate!T(old: T, new:T) -> void`
+implement this for types that you want to be checked. No need to make code dirty writing code inside`[]` and using `$`.
+`type MyInt := int;`
+`func validate!MyInt(old: MyInt, new: MyInt) -> { assert new > 12;}`
+pro: use can do other things like logging too, can re-use existing code, more flexible, we are using existing tools, code will be much cleaner `x:myint` instead of `x:int[$>1 and $<12 and $ != 8]`
+con: it can be confusing to find validation logic, needs much coding
+If we force dev to mark validatable type, it is bad because DRY!
+I can define month type using this: `type DateTime := struct { month: int [$<12]; }`
+but with validate: `type DateTime := struct { month: mmonth; } type mmonth := int; func validate!mmonth -> assert $1>12;`
+we can simplify above with ability to define type inside field definition:
+`type DateTime := struct { month: mmonth := int; } func validate!mmonth -> assert $1>12;`
+but this is confusing. can we use mmonth outside? where? are there limits? apparently mmonth type is defined INSIDE a struct, so shouldn't be accessible outside it but its not consistent.
+Let's not send previous value because it makes runtime system much more complex.
+you can easily implement validation for the whole struct which eliminates need to define a new type.
+`type DateTime := struct { month: mmonth; } func validate!DateTime -> assert $1.month>12;`
+what happens to `const`?
+do we really need it? now that functions cannot modify their input, almost everything is const.
+the only possible modification is withing the owner of the data, which should be ok.
+we can easily extend `validate` method to other types too: `pre_validate` and `validate`.
+but this is not necessary. 
+
 
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
