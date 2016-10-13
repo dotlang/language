@@ -420,6 +420,8 @@ Then `var x: Shape = create(y);` static type of `x` is Shape because it's output
 `var c: Circle = Circle{...};`
 `paint(c)`
 The call to `paint` can be dispatched to both `Oval` and `Shape` implementations. So there will be a runtime error.
+The solution is to either cast `c` to make method call without ambiguity, or implement a method for `Circle` type:
+`func paint!Circle -> paint!Oval;`
 
 ###Array and slice
 - `var x: int[] = {1, 2, 3};`
