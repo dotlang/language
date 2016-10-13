@@ -413,6 +413,13 @@ Then we can define an array of objects and in an `O(n2)` loop, check for colliss
 `func create(x:type)->Shape { if ( type == 1 ) return Circle{} else return Square{}`
 Then `var x: Shape = create(y);` static type of `x` is Shape because it's output of `create` but it's dynamic type can be either `Circle` or `Square`.
 - Note that if A inherits from B, upon changes in variables of type A, constraints for both child and parent type will be called.
+- If there is ambiguity in method dispath, a runtime error will be thrown. For example:
+`type Circle := struct extends Oval, Shape;`
+`func paint!Oval`
+`func paint!Shape`
+`var c: Circle = Circle{...};`
+`paint(c)`
+The call to `paint` can be dispatched to both `Oval` and `Shape` implementations. So there will be a runtime error.
 
 ###Array and slice
 - `var x: int[] = {1, 2, 3};`
