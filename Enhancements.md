@@ -1382,6 +1382,17 @@ the only possible modification is withing the owner of the data, which should be
 we can easily extend `validate` method to other types too: `pre_validate` and `validate`.
 but this is not necessary. 
 
+Y - A mechanism to limit template argument.
+`paint!T` is not correct. we want to be a child of `Shape`.
+`paint!(T: Shape)(obj:T)`
+we can use same constraint that we have for function inputs.
+
+Y - for inheritance its better to have `+` -> extends
+`type Circle := Shape + struct { ... }`
+rather than: `type Circle := struct: Shape { ... }`
+its more readable.
+but this is not addition. maybe target type does not have any field. we are also appending the type.
+`type Circle := struct { ... } extends Shape, Obj1, Obj2;`
 
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
