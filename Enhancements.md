@@ -1407,6 +1407,13 @@ what should happen when we write `paint(c)`?
 - what if runtime/compiler needs to infer which one to call? It cannot. 
 obviously there should be a runtime error, if this call is made.
 
+N - easier notation to define func with nullable return.
+`func find_customer(x:id) -> Maybe!Customer `
+
+? - type matching for union to be used if type is unique.
+`if (mm.Data?) ...`
+`match(myVar: int = mm) ...
+
 
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
