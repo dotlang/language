@@ -5,6 +5,7 @@ September 4, 2016
 ##History
 - **Version 0.1**: Sep 4, 2016 - Initial document created after more than 9 months of research, comparison and thinking.
 - **Version 0.2**: Sep 22, 2016 - Leaning towards Functional Programming.
+- **Version 0.3**: Oct 13, 2016 - Added clarifications for inheritance, polymorphism and templates
 
 ##Introduction
 After having worked with a lot of different languages (C#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -358,6 +359,9 @@ Usage:
 `func adder!float(x:float)...`
 When specializing a template, you can omit input/output part because they can be inferred from original signature. But in this case, you must use `$i` notation to refer to inputs.
 `func adder!float -> {return 1+$1;}`
+- You can define parent type of a template parameter using same notation we use for variable declaration:
+`func paint!(T: Shape)(obj:T)`
+
 
 ##Operators
 
@@ -389,14 +393,15 @@ Types of types: `struct`, `union`, `enum`, `primitives`.
 ###Inheritance and polymorphism
 - Struct, union and enum can inherit from same type. This will cause all members of the parent move to the child type. In case of name clash, there will be a compiler error.
 `type Shape := struct;`
-`type Circle := struct : Shape {}`
-`type Square := struct : Shape {}`
+`type Circle := struct {...} extends Shape;`
+`type Square := struct {...} extends Shape;`
+`type Polygon := struct extends Shape;`
 - You can define template functions on types and specialize them for special subtypes. This gives polymorphism behavior.
 `func paint!T(o:T) {}`  //you can even omit this definition if you want to disable `paint` for types which don't inherit from Object
 `func paint!Object(o:Object){}`
 `func paint!Circle...`
 `func paint!Square...`
-- We can keep a list of shapes in an array/collection of type Shape: `Shape[] o = {Circle{}, Square{}};`
+- We can keep a list of shapes in an array/collection of type Shape: `var o: Shape[] = {Circle{}, Square{}};`
 - You can iterate over shapes in `o` array defined above, and call `paint` on them. With each call, appropriate `paint` method will be called.
 - Example: Equality check: `func equals!T(a:T, b:T)...` and specialize for types that you want to accept `==` operator: `func equals!Customer(a:Customer, b: Customer)...`
 - Example: sorting a mix of objects: `func compare!T(a:T, b:T)` and `func compare!Record(a: Record, b:Record)`;
@@ -408,9 +413,7 @@ Then we can define an array of objects and in an `O(n2)` loop, check for colliss
 Then `x = create(y);` visible type of `x` is Shape because it's output of `create` but it's runtime/actual type can be either `Circle` or `Square`.
 - Note that if A inherits from B, upon changes in variables of type A, constraints for both child and parent type will be called.
 
-
 ###Array and slice
-
 - `var x: int[] = {1, 2, 3};`
 - `var y: int[3]; y[0] = 11;`
 - `var t: int[n];`
