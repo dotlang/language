@@ -37,6 +37,8 @@ The underlying rules of design of this language are
 
 As a 10,000 foot view of the language, code is written in files (called modules) organized in directories (called packages).  There are functions and types. Each function gets one or more input (each of it's own type) and gives an output. Types include primitive data types, struct, union, enum and a general type alias. Concurrency, templates (generics), lambda expression and exception handling are supported.
 
+In summary, Electron is C language + Garabage collector + templates + first-order functions + advanced unions + module system + inheritance and polymorphism + simple and powerful standard library + immutability + built-in data validation + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + limited operator overloading + built-in concurrency + built-in memoization + sane defaults - ambiguity in type declaration - pointers - macros - header files.
+
 ### Core principles
 
 There are three main entities: Primitive data types (`int`, `float`, ...), complex data structures and functions.
@@ -362,7 +364,6 @@ When specializing a template, you can omit input/output part because they can be
 - You can define parent type of a template parameter using same notation we use for variable declaration:
 `func paint!(T: Shape)(obj:T)`
 
-
 ##Operators
 
 - Conditional: `and or not == != >= <=`
@@ -407,10 +408,10 @@ Types of types: `struct`, `union`, `enum`, `primitives`.
 - Example: sorting a mix of objects: `func compare!T(a:T, b:T)` and `func compare!Record(a: Record, b:Record)`;
 - Example: Collission checking: `func check!(S,T)(a:S, b:T)...` and `func check!(Asteroid, Earth)(a: Asteroid, b: Earth)...` 
 Then we can define an array of objects and in an `O(n2)` loop, check for collissions.
-- So when there is a call `f(a,b,c)` compiler will look for a function f with three input arguments. If there are multiple functions, the template type will be checked against actual type of `a,b,c`. Then if no match found, visible type will be used.
-- Visible type, is the static type of the variable which can be seen in the source code. Actual type, is it's type at runtime. For example:
+- So when there is a call `f(a,b,c)` compiler will look for a function `f` with three input arguments. If there are multiple functions, the template type will be checked against actual type of `a,b,c`. Then if no match found, visible type will be used.
+- Visible type (or static type), is the type of the variable which can be seen in the source code. Actual type or dynamic type, is it's type at runtime. For example:
 `func create(x:type)->Shape { if ( type == 1 ) return Circle{} else return Square{}`
-Then `x = create(y);` visible type of `x` is Shape because it's output of `create` but it's runtime/actual type can be either `Circle` or `Square`.
+Then `var x: Shape = create(y);` static type of `x` is Shape because it's output of `create` but it's dynamic type can be either `Circle` or `Square`.
 - Note that if A inherits from B, upon changes in variables of type A, constraints for both child and parent type will be called.
 
 ###Array and slice
