@@ -1394,6 +1394,20 @@ its more readable.
 but this is not addition. maybe target type does not have any field. we are also appending the type.
 `type Circle := struct { ... } extends Shape, Obj1, Obj2;`
 
+Y - multiple inheritance. what if `Circle` is inheriting from `Shape` and `Oval` and we have `f` method for all of them
+and we call `f` for a circle object?
+if there is f(Circle) then definitely it will be called.
+but what if there is no such method?
+`type Circle := struct extends Oval, Shape;`
+`func paint!Oval`
+`func paint!Shape`
+`var c: Circle = Circle{...};`
+what should happen when we write `paint(c)`?
+- we can explicitly call appropriate method by casting: `paint(cast!Oval(c));` or `paint(cast!Shape(c))`
+- what if runtime/compiler needs to infer which one to call? It cannot. 
+obviously there should be a runtime error, if this call is made.
+
+
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
 ```
