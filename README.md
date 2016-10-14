@@ -373,7 +373,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `=` operator, makes a variable refer to the same object as another variable, by defaut. It is overriden for primitives to make a copy.
 - You can clone a variable when doing assignment to be sure it will not be assign by ref.
 - `x == y` will call `equals` functions is existing, by default compares field-by-field values.
-- You can only override these operators: `[]` (`get_data` and `set_data`), `=` (`assign`), `==` (`equals`), `=>` (`bind`).
+- You can only override these operators: `==` (`equals`), `=>` (`bind`).
 
 ##Special syntax
 - `$i` function inputs
@@ -468,14 +468,13 @@ func read_customer(id:int) -> union { Nothing; custmer: CustomerData }
 }
 ```
 
-###Constraints
-When defining types (except functions themselves), you can define a constraint for it. This is a predicate function which will be checked everytime state of variables of that type changes. This function makes sure the data is in consistent and valida state, or else throws an exception.
-To implement validation constraints for your types, you must specialize `updated` function:
-`func updated!T(new:T) -> void`
-- Example: DateTime
-`type DateTime := struct { month: mmonth; } type mmonth := int; func updated!mmonth -> assert $1>12;`
-- This can be done for types, structs, struct fields, enum and union.
-- Constraints are defined on data and variables. Because of that, you cannot define a constraint on a function (but you can have it for function's input and output). 
+###Observers
+When defining types, you can define an observer function for the type or some of it's parts. This is a function which will be notified everytime state of the bound variable changes. You can makes sure the data is in consistent and valid state, or inform a set of observers or anything.
+`m: int [validate_month]` 
+Above definition means, each update to the value of `m` will call `validate_month` function with the new value.
+`type x := struct { month: int [validate_month] } [validate_data_func];`
+Above means in addition to `validate_month`, we have another observer bound to the `x` type which will be called when value of any fields inside that type is changed or when the variable is re-assigned.
+- This can be done for all types.
 
 ###Chaining
 You can use `=>` operator to chain functions. `a => b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
