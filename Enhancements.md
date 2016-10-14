@@ -1454,6 +1454,53 @@ N - type matching for union to be used if type is unique.
 `if (mm.Data?) ...`
 `match(myVar: int = mm) ...`
 
+Y - as function cannot change it's arguments, `[]` and `=` operators cannot be implemented easily.
+
+Y - it's painful to define new types each time I want to have validation/observation.
+dispose is something which is common for all variables of the same type.
+but validation logic may just match to some integers and not all of them.
+alternatives:
+- inline code: what we had before `x: int[$>0]`
+- property/setter: `x: int [aset]`
+- code-base: `setter(x, { assert $1 > 0; })`
+code-base can be used for variables too but thats not a big plus.
+it's better to have observer logic as near to type definition as possible but at the same time, not pullote the type definition.
+`m: int [validate_month]`
+`func validate_month(month: value) -> bool {}`
+pro: you can use `int` type for month.
+con: you have to mention function name.
+what if we use convention here?
+`type x := struct { month: int };`
+`func validate_x_month(x: month) {}`
+`func validate_x(x: month) {}`
+can we have template specialization with part of a type and not a type?
+`func validate!T(x:T) {}`
+`func validate!x.month(x: int) {}`
+no this is so confusing.
+but `validate_x_month` name is too casual and ambiguous.
+`m: int [validate_month]`
+`type x := struct { month: int [validate_month] } [validate_data_func];`
+basically this is what we had before, but clearer as there is not need to write inline code.
+and we can force to have this only in type definition and not function/local variable definition.
+so when defining `type A :=` in the right side you can use `[A]` notation for the whole type or it's parts to define a function to be called after the value of variables of that type are changed.
+can we write `$_` in this part? `month: int [validate_month($_,1,2)]`. No. it makes everything more consuding.
+can we extend this notation to before/after?
+can we extend it to getter/setter?
+`m: int -[validate_month_before] +[validate_month_after]`
+can we just eliminate all these special case notations and use already available tools?
+define a struct, mark the field private, so outside code should not modify it (if they do, there will be warning).
+then in your local module, handle the update and call appropriate methdos to validate/broadcast/... .
+con: the user code must call function to change the data. but we want to have first-class data. we don't want to put function in front of the data in a mandatory and enforcing way. it owner of the type wants some special case handling of data, this should be transparent from outside world. 
+so outside just writes: `var d : DateTime; d.month=11;` and behind the scene, the validation should be called.
+summary of findings:
+- we don't want to add validation per-type. because it is paintful to define new type for each new validation logic.
+- it's better to have logic definition as near to type definition as possible.
+- it's better not to add any new notation or syntax or keyword.
+- it's preferred if we can have this everywhere (for local variables, function input, ...)
+current option: `m: int [validate_month]` mentioning function name to be called after any change.
+option 2: define inline new type: `m: month := int` and have `func updated!month`
+option 2 con: there will at some point be a clash of type names. and they are hidden in other types definition.
+
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
 ```
