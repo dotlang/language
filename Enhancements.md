@@ -1410,10 +1410,49 @@ obviously there should be a runtime error, if this call is made.
 N - easier notation to define func with nullable return.
 `func find_customer(x:id) -> Maybe!Customer `
 
-? - type matching for union to be used if type is unique.
-`if (mm.Data?) ...`
-`match(myVar: int = mm) ...
+N - extend the `validate` notation. 
+- a code to be called when value of the data element is changed (per type/per instance)
+- like AOP: a piece of code to be called before/after change in a variable or all variables of a specific type.
+`var x: MyData; on_change x, { assert $1>1; };`
+`var x: MyData; x.change_handler { assert $1>1; };`
 
+Y - ability to have events, publish, broadcast, subscribe in the code.
+its best if we can do this using already available tools.
+we can easily do this via a struct which contains data + list!handler.
+the only thing is to prevent outside from changing value of the data. they have to call a special function to do the update.
+OR: we can have `validate` method for the data so that each time it's value is updated, in the validate, we call all subcribers.
+but then, validate will not be a good name. we should rename it. also we want to be called AFTER value is updated.
+but validate wants to be called BEFORE value is updated. so we need to mechanisms:
+`before_update` and `after_update`
+or `updating!T`, `updated!T`.
+can we simplify this? maybe use `before_update` only and return calls to be made after update.
+or: wrap around the whole update process. so: `update!T` is responsible to update T, type. 
+it can ignore the update, validate and throw exception, update and call something, update to some other value, ...
+but how can this be implemented for complex data types?
+`update!Customer(new_value: Customer)`? 
+what is signature of the function? I/O?
+how should the function update the actual variable?
+how should it ignore update?
+changing the update process is dangerous because it is adding hidden side effects.
+Let's not do it. when there is `x=10` in the code, either x should be come 10 or some exception should be thrown.
+this can be applied both on simeple and complex data types. so it's not possible to have both prev and new values.
+either we have: `after_update` and a reference to the variable.
+or `before_update` and ? we cannot have two values.
+so the only possible time to call is after update is being done. we call this method to validate and verify and broadcast things and ... .
+`after_update!T`
+`on_update!T`
+function name should be a verb if they are changing internal state or noun if they are returning something.
+`validate!int`
+`updated!int`
+what about vairables? define custom type form them.
+this is same as dispose. we make things implicit by using a convention and defining appropriate functions.
+but problem is, what to do with corrupt value? either throw exception or exit.
+but if exception is caught? then we have a var with corrup data. but that should be fine because code has set that value and code has caught the exception.
+how can we inform a set of subscribers that some value is changed? use already available tools.
+
+N - type matching for union to be used if type is unique.
+`if (mm.Data?) ...`
+`match(myVar: int = mm) ...`
 
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
