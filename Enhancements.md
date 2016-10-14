@@ -1501,6 +1501,21 @@ current option: `m: int [validate_month]` mentioning function name to be called 
 option 2: define inline new type: `m: month := int` and have `func updated!month`
 option 2 con: there will at some point be a clash of type names. and they are hidden in other types definition.
 
+N - in perl we can assign a string to an object of type DateTime and it will automatically handle conversion.
+here we have `cast` method. It's good enough.
+
+Y - we can have built-in lists using same notation as array.
+every array can be extended by calling `push`. 
+if you want to define a list from beginning, dont specify size.
+if you specify a size, it will be a mixed list.
+`var x: int[3]`  //hybrid list
+`var x: int[]`  //pure list
+`var x: int[3] = {1,2,3}` //hybrid
+`var x: int[] = {1,2,3}` //pure
+`add_element(x, 10);`
+
+
+
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
 ```
