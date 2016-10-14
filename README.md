@@ -470,10 +470,10 @@ func read_customer(id:int) -> union { Nothing; custmer: CustomerData }
 
 ###Constraints
 When defining types (except functions themselves), you can define a constraint for it. This is a predicate function which will be checked everytime state of variables of that type changes. This function makes sure the data is in consistent and valida state, or else throws an exception.
-To implement validation constraints for your types, you must specialize `validate` function:
-`func validate!T(new:T) -> void`
+To implement validation constraints for your types, you must specialize `updated` function:
+`func updated!T(new:T) -> void`
 - Example: DateTime
-`type DateTime := struct { month: mmonth; } type mmonth := int; func validate!mmonth -> assert $1>12;`
+`type DateTime := struct { month: mmonth; } type mmonth := int; func updated!mmonth -> assert $1>12;`
 - This can be done for types, structs, struct fields, enum and union.
 - Constraints are defined on data and variables. Because of that, you cannot define a constraint on a function (but you can have it for function's input and output). 
 
