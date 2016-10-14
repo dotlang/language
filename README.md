@@ -429,6 +429,15 @@ The solution is to either cast `c` to make method call without ambiguity, or imp
 - `var t: int[n];`
 - `var x: int[2,2];`. 
 - We have slicing for arrays `x[start:step:end]` with support for negative index.
+- we have built-in lists using same notation as array.
+- every array can be extended by just adding elements to it (it will be a hybrid, array+list). 
+- if you want to define a list from beginning, dont specify size.
+- if you specify a size, it will be a mixed list (can be extended to become a list).
+`var x: int[3]`  //hybrid list
+`var x: int[]`  //pure list
+`var x: int[3] = {1,2,3}` //hybrid
+`var x: int[] = {1,2,3}` //pure
+`add_element(x, 10);`
 
 ###Hashtable
 - `var hash1: int[string] = { 'OH': 12, 'CA': 33};`.
