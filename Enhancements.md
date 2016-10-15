@@ -1514,6 +1514,8 @@ if you specify a size, it will be a mixed list.
 `var x: int[] = {1,2,3}` //pure
 `add_element(x, 10);`
 
+? - property-like members in struct
+`type x := struct DateTime { d:day; s: String -> { d + y + m }; };`
 
 
 ? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
