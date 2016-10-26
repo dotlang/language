@@ -1628,3 +1628,6 @@ func get_probability(c: Contract, _e: EngineConfig) -> float
 ```
 
 ? - some more thinking about template syntax for fn definition and call and specialization, and how it is used to implement dynamic method dispatch at runtime.
+
+? - plan: bootstrap in a C compiler, then for next versions, write the compiler in Electron language itself.
+We have to determine what should be included in the boostratepped version.
