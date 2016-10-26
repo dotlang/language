@@ -164,6 +164,9 @@ You can define functions based on `int` and `X` where `type X := int` and they w
 
 Note that when using type for alias to a function, you have to specify input names too.
 `type comparer := func (x:int, y:int) -> bool;`
+- Struct fields can represent a lambda (like properties).
+`type DateTime := struct { d,m,y:day; summation: int -> { d + y + m }; };`
+
 
 ###import
 
