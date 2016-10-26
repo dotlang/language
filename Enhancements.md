@@ -1514,11 +1514,29 @@ if you specify a size, it will be a mixed list.
 `var x: int[] = {1,2,3}` //pure
 `add_element(x, 10);`
 
-? - property-like members in struct
+Y - property-like members in struct
+`type x := struct DateTime { d:day; s: String -> { d + y + m }; };`
 `type x := struct DateTime { d:day; s: String -> { d + y + m }; };`
 
+N - Treat `if` as a function which accepts a range and a lambda
+same for `for`.
+`if ( x>0 ) { ... } `
+no. this makes language more complicated.
 
-? - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
+\* - For core - function to return hash representing a struct, used for serialization, and what about deser?
+`string[object] result = serialize(myObj);`
+
+N - now that function cannot modify input, how can we implement stack push or pop? (maybe we can return a lambda which is supposed to to the modification, and caller has to invoke it)?
+solution1: let developer decide whether some variable will be immutable or mutable. so if type is mutable, function can modify the input.
+immutability will make testing harder. but makes developer's life easier. Because he doesn't need to write lots of code and use shortcuts to do some ordinary task. if we have mutability, caching decision will become harder and more complicated.
+`var y = x{item1=10, item2=x.item2+10, ...}`
+how am I going to add something to a list?
+`ls = ls.add(x);`
+`var ls: list!Customer`
+
+\* - Runtime - use concept of c++ smart ptr to eliminate GC
+
+N - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
 ```
 //assuming we have primitives
@@ -1575,7 +1593,8 @@ func get_events_for_period(allEvents: List!Event, start: Date, end: Date) -> Lis
    return allEvents => filter {$1.epoch >= start.epoch and $1.epoch <= end.epoch}, $_;
 }
 
-var probability: float[$>=0 and $<=1] = 0;
+type probability: float [validate_prob];
+var prob: probability = 0;
 
 type Contract := struct {
   dateStart: DateTime;
@@ -1607,3 +1626,5 @@ func get_probability(c: Contract, _e: EngineConfig) -> float
 }
 
 ```
+
+? - some more thinking about template syntax for fn definition and call and specialization, and how it is used to implement dynamic method dispatch at runtime.
