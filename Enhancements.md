@@ -1631,3 +1631,4 @@ func get_probability(c: Contract, _e: EngineConfig) -> float
 
 ? - plan: bootstrap in a C compiler, then for next versions, write the compiler in Electron language itself.
 We have to determine what should be included in the boostratepped version.
+Easier: write the whole compiler in C. Should prepare a complete list of features, their importance and assign them to compiler versions.
