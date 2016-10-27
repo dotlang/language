@@ -1627,8 +1627,101 @@ func get_probability(c: Contract, _e: EngineConfig) -> float
 
 ```
 
-? - some more thinking about template syntax for fn definition and call and specialization, and how it is used to implement dynamic method dispatch at runtime.
+Y - some more thinking about template syntax for fn definition and call and specialization, and how it is used to implement dynamic method dispatch at runtime and inheritance and polymorphism.
+when defining a template function, type variable is mandatory for the original function.
+for every other specialization, its not needed.
+here paint function is based on the shape type it is working on. not the color.
+`func paint!(T:Shape)(o: T, c: Color)...`
+`func paint(o: T, c: Color)`
+`func paint(o: Circle, c: Color)`
+`func paint(o: Square, c: Color)`
+paint can only be called with polymorphic input of type Shape. Meaning instead of a Shape we can pass any data type inheriting from shape.
+this is wrong becasuse original paint function has only one template arg. 
+`func paint(o: Square, c: SolidColor)`
+`type Shape := struct { name: string; }`
+`type Circle := struct extends Shape;`
+`type Square := struct extends Shape;`
+`type Color := struct {};`
+`type SolidColor := struct extends Color;`
+if original definition of paint, says `func paint!(T:Shape)(o: T, c: Color)`
+if we call paint with a Circle and there is no `func paint(o: Circle, c: Color)` then above function will be called.
+now assume we have:
+`func paint(o: Square, c: Color)`
+`func paint(o: Square, c: SolidColor)`
+then it is considered invalid and there will be a compiler error. why? because `paint` function has a single polymorphic input which is named `T` as the first argument.
+if we have:
+`func paint(t: Shape, c: SolidColr)`
+`func paint(c: Circle, l: Color)`
+then what does calling paint with a circle and solidcolor mean? There is ambiguity and that's why we need to base the dispatch on the template argument: T. So according to this definition, first paint function is invalid because we cannot have two paint functions with same input type for their first argument. 
+so `func paint(T:Shape)(t: T, c: Color)` means you can define as many `paint` functions as you want with different sub-types of Shape, but they all must have `c: Color` as their second input argument.
+you cannot overload based on color or it's sub-types. 
+if you want, you have to modify paint function:
+`func paint(T: Shape, C: Color) (t: T, c: C) -> ...`
+then you can define:
+`func paint(t: Circle, c: Color)...`
+`func paint(t: Shape, c: SolidColor)...`
+then calling paint with a circle and a solid-color. what happens? we will still have the same problem. Although this time it is more explicitly stated. Developer has explicitly specified that paint should be dispatched based on shapre/color combination.
+anyway `paint(myShape, myColor)` or `paint(myCirlc,e mySolidColor)` happens.
+If we have `paint(m: Shape, c: Color)` or `paint(m: Circle, e: SolidColor)` then everything is fine.
+we need to specify rules of dispatch. 
+rule 1 - dispatch is based on runtime type of inputs. so if function to be called has n inputs (i1,...,in) with runtime types (t11,...,tmn) and there are m candidate functions with the same name and input count (f1,...,fm).
+we have to decide which of `fi` functions to call.
+call is made with n variables `v1,...,vn` so if function name is `myFunction`, we have:
+`myFunction(t1,...,tn)` where `ti` is runtime type of `ith` parameter.
+and we have:
+`f1(t11,t12,...,t1n)`
+`f2(t21,t22,...,t2n)`
+`...`
+`fm(tm1,tm2,...,tmn)`
+which `fi` should be called? 
+1. single match: if we have only one candidate function (based on name/number of inputs), then there is a match.
+2. dynamic match: if we have a function with all types matching runtime type of variables, there is a mtch. Note that in this case, primitive types have same static and dynamic type.
+3. static match: we reserve the worst case for call which is determined at compile time: the function that matches static types. 
+Note that this binding is for an explicit function call. when we assign a variable to a value and value is a function, the actual function to be used, is determined at compile time according to static type. so `var x = paint` where type of x is `func(Circle, Color)` will find a paint function body with matching input. you cannot have x of type `func(Shape, Color)` and assign a value to it and expect it to do dynamic dispatch when called at runtime. there is a work-around which involves assigning a lambda to the variable which calls the function by name and passes inputs. in that case, invocation will include a dynamic dispatch.
+in C++ with same settings as shape, color, solidcolor, circle, calling with null, null gives:
+`call of overloaded 'paint(NULL, NULL)' is ambiguous`
+in C++ dispatch is based on the static type. so when you call a function with a variable of type `Shape` but holding a `Circle` it is calling `paint(Shape)` not `paint(Circle)`. I think it only uses runtime type for dispatching when polymorphic class is involved.
+our requirement is definitely multiple dispatch.
+so based on above resolution rules, do we still need to use templates and specialization?
+remember applications of polymorphism: shape collission, expression parsing, sorting objects, painting shapes.
+if we eliminate need for template, still developer can play with template + polymorphism.
+if we eliminate template, how will resolution work? based on all inputs? yes. it can be based on all inputs.
+if we use template for dispatch, then non-template parameters will be dispatched according to their static type.
+but forcing developer to use templates for polymorphism makes code more complex. what if we just use all parameters for dispatching according to above rules?
+What if type `Circle` has more than one parent? e.g. `Shape` and `Oval`.
+`type Shape := struct;`
+`type Oval := struct;`
+`type Circle := struct extends Shape, Oval;`
+The problems that we try to solve (sort, collission, parsing, paint) all need single inheritance. calculate intersection needs multiple dispatch.
+but we also have interfaces in the same way we define struct. we should be able to inherit from any number of interfaces. so if we want to enforce single inheritance, we need to add a separate keyword for interface and implementing them. or make it transparent. anyway, I think this is against gen and orth to force developer to inherit from only one struct. he should be able to inherit a struct from any number of structs and so on. so (theoretically) for each struct we have a tree hierarchy (or maybe a graph).
+
+Y - remove properties. let language be as consistent as possible.
+
+N - Now that polymorphism is more specified, do we need template methods?
+yes.
+`void push(int[] stack, int data)`
+`void push(float[] stak, float data)`...
+
+N - can we add `reference` type so functions can modify inputs if they are of reference type?
+`func add(x: int&, y: int&) -> { x = x+y; y++; }`
+`add(&i,&j);`
+pro: by default function input is immutable. so developer will use that default unless there is a real need.
+like implementing a push to stack.
+con: this makes language more complex and GC/runtime more complex.
+how can we assign these?
+`var x: int& = &y;`?
+`var x: int& = 10;`?
+isn't it possible without using this new type?
+`func add(x: int, y:int) -> struct{x: int, y:int} { return {x: x+y, y:y++}; }`
+yes that's possible.
+
+N - can we use a different notation to define struct/union/enum? using anon-struct in function definition makes code un-readable.
+
+? - the notation of customization of `=>` for different types is not simple. what if I have a call to `f` with `Option<int>` which doesn't use `=>`? There should be a unified mechanism not one which relies only on `=>`.
 
 ? - plan: bootstrap in a C compiler, then for next versions, write the compiler in Electron language itself.
 We have to determine what should be included in the boostratepped version.
 Easier: write the whole compiler in C. Should prepare a complete list of features, their importance and assign them to compiler versions.
+decisions that have to be made: 
+VM or native code or transcompiler? 
+LLVM/libJit/None? if VM, bytecode format? 
