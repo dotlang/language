@@ -481,7 +481,7 @@ func read_customer(id:int) -> union { Nothing; custmer: CustomerData }
 }
 ```
 
-###Observers
+###Observers/Validation
 When defining types, you can define an observer function for the type or some of it's parts. This is a function which will be notified everytime state of the bound variable changes. You can makes sure the data is in consistent and valid state, or inform a set of observers or anything.
 `m: int [validate_month]` 
 Above definition means, each update to the value of `m` will call `validate_month` function with the new value.
@@ -492,31 +492,13 @@ Above means in addition to `validate_month`, we have another observer bound to t
 ###Chaining
 You can use `=>` operator to chain functions. `a => b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
 Examples:
-
 `get_evens(data) => sort(3, 4, $_) => save => reverse($_, 5);`
 `get_evens(data) => sort => save => reverse;` //assuming sort, save and reverse have only one input
 `5 => add2 => print;`  //same as: print(add2(5))
 `(1,2) => mul => print;`  //same as: print(mul(1,2))
 `(1,2) => mul($_, 5, $_) => print;`  //same as: print(mul(1,5,2))
-
 - You can also use `<=` for a top-to-bottom chaining, but this is a syntax sugar and compiler will convert them to `=>`.
 `print <= add2 <= 5`
-- You can customize `=>` opertor for different types. This will give you a Monad implementation. For example:
-```
-//this will be called when we have something like: `x => f`
-func (=>)(x: Maybe!int, f: func(int) -> U) -> U
-{
-  if (x.Null?) return default(U);
-  return f(x.value);
-}
-//this will be called when we have something like: `(1,2) => f`
-func (=>)(x: int, y:int, f: func<int,int, U>) -> struct {a: int, b: U}
-{
-  if (x == 5) return {0,0};
-  return {a: 0, b: f(x, y)};
-}
-```
-- You can use monad to prepare a function input, do some logging or append extra info to the function output.
 
 ###Lambda expression
 
