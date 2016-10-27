@@ -24,9 +24,9 @@ if [[ ${1:0:1} = x* ]]; then
     target=${1:1}
     for i in `seq 1 $target`;
     do
-        ./out/electron ./tests/ex$i.c &> /dev/null
+        ./out/electron ./test/ex$i.c &> /dev/null
         actual=$?
-        expected=$(head -n 1 tests/ex$i.c | cut -c5-)
+        expected=$(head -n 1 test/ex$i.c | cut -c5-)
         echo -n "$i >> ";
         if [ "$actual" = "$expected" ]; then echo "SUCCESS!"; else echo "FAIL! Got $actual but $expected was expected."; fi
     done
@@ -41,15 +41,15 @@ echo
 echo "**************************** Input file:";
 echo
 
-cat -n ./tests/ex$1.c
+cat -n ./test/ex$1.c
 
 echo
 echo "**************************** Output:";
 echo
 
-./out/electron ./tests/ex$1.c
+./out/electron ./test/ex$1.c
 actual=$?
-expected=$(head -n 1 tests/ex$1.c | cut -c5-)
+expected=$(head -n 1 test/ex$1.c | cut -c5-)
 
 echo
 echo "**************************** Result:";
