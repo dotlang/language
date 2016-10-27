@@ -1767,3 +1767,4 @@ Easier: write the whole compiler in C. Should prepare a complete list of feature
 decisions that have to be made: 
 VM or native code or transcompiler? 
 LLVM/libJit/None? if VM, bytecode format? 
+as this is a hobby project, why not start from scratch?
