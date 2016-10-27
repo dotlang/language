@@ -1768,3 +1768,12 @@ decisions that have to be made:
 VM or native code or transcompiler? 
 LLVM/libJit/None? if VM, bytecode format? 
 as this is a hobby project, why not start from scratch?
+currently, I will generate assembly (or pseudo-assembly) code which will be compiled to native code using another library like libyasm or `as` by end-user. 
+so compiler will lex and parse source code, generate AST, then convert AST to assembly. 
+then `as` or some other tool, will compile and generate executable.
+reason for AST is for optimization. maybe we want to inline or optimize some code.
+so we will keep AST in memory and when processing is finished will translate it to assembly.
+1. lex and parse -> AST
+2. process and optimize AST -> AST
+3. translate AST -> assembly
+4. compiler assembly -> executable
