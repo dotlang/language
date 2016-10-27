@@ -1716,8 +1716,50 @@ isn't it possible without using this new type?
 yes that's possible.
 
 N - can we use a different notation to define struct/union/enum? using anon-struct in function definition makes code un-readable.
+`type x := struct [a: int, b: int, c:int];` then what happens to validation function name?
 
-? - the notation of customization of `=>` for different types is not simple. what if I have a call to `f` with `Option<int>` which doesn't use `=>`? There should be a unified mechanism not one which relies only on `=>`.
+N - Use C notation for function input:
+`func adder(int x, int y) -> int { return x+y;}`
+this is more like C, C# and Java.
+and for variable definition:
+`int x = 12;`
+`auto x = dsadsaD();`
+I think having explicit `var` keyword is better.
+
+Y - lets remove `=>` customization.
+the notation of customization of `=>` for different types is not simple. what if I have a call to `f` with `Option<int>` which doesn't use `=>`? There should be a unified mechanism not one which relies only on `=>`.
+`func (=>)(x: Maybe!int, f: func(int) -> U) -> U
+{
+  if (x.Null?) return default(U);
+  return f(x.value);
+}`
+invoke is used when function is called. no matter we use `=>` or normal call.
+`func invoke(x: Maybe!int, string s, f: func(int, string) -> U) -> U
+{
+  if (x.Null?) return default(U);
+  return f(x.value, s);
+}`
+`func invoke/bind(x: Maybe!int, string s, f: func(int, string) -> U) -> U
+{
+  if (x.Null?) return default(U);
+  return f(x.value, s);
+}`
+what is application of monad? why do we need to provide it in a transparent manner?
+if there is a call to `f` which accepts int, transparent monad will convert a call to it with `maybe!int` with a null if input is empty or cast appropriately.
+examples of monads: logging monad, pre-condition, post-condition, ...
+we need a piece of code to be executed whenever a function is invoked.
+we should be able to filter by: function input, output, name, 
+actually this piece of code will be responsible to make the call and return the value. so it has authority to discard the call if it needs to.
+one good candidate is convention. but what if we want to have it for all functions with any name which have `int` input?
+`func adder`
+`func invoke_adder` 
+`x = adder(1,2)` this will call `invoke_adder`.
+`func invoke(f: func(int)->U, maybe!int m)` this will be called when a function is called which has single input of type `int` and any output.
+`func _invoke(f: func(T)->U) -> U ...` this will be called when any of the functions in current module is called.
+applications we are looking for: logging, validation, conversion of maybe!int,
+all must be transparent, but this also means less readable code which is not good.
+what if dev is required to explicitly call these? then it will be a normal function and no support in runtime/syntax is needed. because if there comes a problem or bug, we need to scan the whole files to find those `invoke*` methods. that's why constraints also must be explicitly stated in type definition.
+so we don't need this in syntax level. 
 
 ? - plan: bootstrap in a C compiler, then for next versions, write the compiler in Electron language itself.
 We have to determine what should be included in the boostratepped version.
