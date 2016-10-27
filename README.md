@@ -164,9 +164,6 @@ You can define functions based on `int` and `X` where `type X := int` and they w
 
 Note that when using type for alias to a function, you have to specify input names too.
 `type comparer := func (x:int, y:int) -> bool;`
-- Struct fields can represent a lambda (like properties).
-`type DateTime := struct { d,m,y:day; summation: int -> { d + y + m }; };`
-
 
 ###import
 
@@ -400,31 +397,35 @@ Types of types: `struct`, `union`, `enum`, `primitives`.
 `type Circle := struct {...} extends Shape;`
 `type Square := struct {...} extends Shape;`
 `type Polygon := struct extends Shape;`
-- You can define template functions on types and specialize them for special subtypes. This gives polymorphism behavior.
-`func paint!T(o:T) {}`  //you can even omit this definition if you want to disable `paint` for types which don't inherit from Object
-`func paint!Object(o:Object){}`
-`func paint!Circle...`
-`func paint!Square...`
+- You can define functions on types and specialize them for special subtypes. This gives polymorphic behavior.
+`func paint(o:Shape) {}`  //you can even omit this definition if you want to disable `paint` for types which don't inherit from Object
+`func paint(o:Object){}`
+`func paint(o:Circle)...`
+`func paint(o:Square)...`
 - We can keep a list of shapes in an array/collection of type Shape: `var o: Shape[] = {Circle{}, Square{}};`
-- You can iterate over shapes in `o` array defined above, and call `paint` on them. With each call, appropriate `paint` method will be called.
-- Example: Equality check: `func equals!T(a:T, b:T)...` and specialize for types that you want to accept `==` operator: `func equals!Customer(a:Customer, b: Customer)...`
-- Example: sorting a mix of objects: `func compare!T(a:T, b:T)` and `func compare!Record(a: Record, b:Record)`;
-- Example: Collission checking: `func check!(S,T)(a:S, b:T)...` and `func check!(Asteroid, Earth)(a: Asteroid, b: Earth)...` 
-Then we can define an array of objects and in an `O(n2)` loop, check for collissions.
-- So when there is a call `f(a,b,c)` compiler will look for a function `f` with three input arguments. If there are multiple functions, the template type will be checked against actual type of `a,b,c`. Then if no match found, visible type will be used.
+- You can iterate over shapes in `o` array defined above, and call `paint` on them. With each call, appropriate `paint` method will be called (this appropriate method is identified using 3 dispatch rules explained below).
+- Example: Equality check: `func equals(a:object, b:object)...` and specialize for types that you want to accept `==` operator: `func equals(a:Customer, b: Customer)...`
+- Example: sorting a mix of objects: `func compare(a:object, b:object)` and `func compare(a: Record, b:Record)`;
+- Example: Collission checking: `func check(a:S, b:T)...` and `func check(a: Asteroid, b: Earth)...` 
+Then we can define an array of objects and in a loop, check for collissions.
+- So when there is a call `f(a,b,c)` compiler will look for a function `f` with three input arguments. If there are multiple functions, below 3 rules will be used.
 - Visible type (or static type), is the type of the variable which can be seen in the source code. Actual type or dynamic type, is it's type at runtime. For example:
 `func create(x:type)->Shape { if ( type == 1 ) return Circle{} else return Square{}`
 Then `var x: Shape = create(y);` static type of `x` is Shape because it's output of `create` but it's dynamic type can be either `Circle` or `Square`.
 - Note that if A inherits from B, upon changes in variables of type A, constraints for both child and parent type will be called.
-- If there is ambiguity in method dispath, a runtime error will be thrown. For example:
-`type Circle := struct extends Oval, Shape;`
-`func paint!Oval`
-`func paint!Shape`
-`var c: Circle = Circle{...};`
-`paint(c)`
-The call to `paint` can be dispatched to both `Oval` and `Shape` implementations. So there will be a runtime error.
-The solution is to either cast `c` to make method call without ambiguity, or implement a method for `Circle` type:
-`func paint!Circle -> paint!Oval;`
+- Multiple dispatch: When a function like `paint` is called which has a number of implementations, the exact function that needs to be called will be determined using below rules:
+1. single match: if we have only one candidate function (based on name/number of inputs), then there is a match.
+2. dynamic match: if we have a function with all types matching runtime type of variables, there is a mtch. Note that in this case, primitive types have same static and dynamic type.
+3. static match: we reserve the worst case for call which is determined at compile time: the function that matches static types. 
+Note that this binding is for an explicit function call. when we assign a variable to a value and value is a function, the actual function to be used, is determined at compile time according to static type. so `var x = paint` where type of x is `func(Circle, Color)` will find a paint function body with matching input. you cannot have x of type `func(Shape, Color)` and assign a value to it and expect it to do dynamic dispatch when called at runtime. there is a work-around which involves assigning a lambda to the variable which calls the function by name and passes inputs. in that case, invocation will include a dynamic dispatch.
+So if we have this:
+`func paint(o: Square, c: SolidColor)`
+`type Shape := struct { name: string; }`
+`type Circle := struct extends Shape;`
+`type Square := struct extends Shape;`
+`type Color := struct {};`
+`type SolidColor := struct extends Color;`
+a call to paint function with some inputs, will use above 3 rules to dispatch.
 
 ###Array and slice
 - `var x: int[] = {1, 2, 3};`
