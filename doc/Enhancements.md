@@ -1761,7 +1761,7 @@ all must be transparent, but this also means less readable code which is not goo
 what if dev is required to explicitly call these? then it will be a normal function and no support in runtime/syntax is needed. because if there comes a problem or bug, we need to scan the whole files to find those `invoke*` methods. that's why constraints also must be explicitly stated in type definition.
 so we don't need this in syntax level. 
 
-? - plan: bootstrap in a C compiler, then for next versions, write the compiler in Electron language itself.
+N - plan: bootstrap in a C compiler, then for next versions, write the compiler in Electron language itself.
 We have to determine what should be included in the boostratepped version.
 Easier: write the whole compiler in C. Should prepare a complete list of features, their importance and assign them to compiler versions.
 decisions that have to be made: 
@@ -1777,3 +1777,11 @@ so we will keep AST in memory and when processing is finished will translate it 
 2. process and optimize AST -> AST
 3. translate AST -> assembly
 4. compiler assembly -> executable
+
+? - Is having multiple functions with same name a good thing? Doesn't it cause confusion?
+`func draw(x: Shape)`
+`func draw(x: Circle)`
+`var t: func(x: Shape) = draw;` 
+`t(myCircle)` does this call draw(shape) or draw(circle)?
+I think it's fine. Let's just act just like C. When you bind value to a variable, the exact type that you specify is used.
+But this is not C. we can assume that `t=draw` will match any function named draw which has a signature conforming to t type. 
