@@ -1,12 +1,13 @@
 ## Electron Programming Language Reference
-Version 0.1  
-September 4, 2016
+Version 0.5
+November 13, 2016
 
 ##History
 - **Version 0.1**: Sep 4, 2016 - Initial document created after more than 9 months of research, comparison and thinking.
 - **Version 0.2**: Sep 22, 2016 - Leaning towards Functional Programming.
 - **Version 0.3**: Oct 13, 2016 - Added clarifications for inheritance, polymorphism and templates
 - **Version 0.4**: Oct 27, 2016 - Removed some less needed features (monad), defined rules for multiple dispatch.
+- **Version 0.5**: Nov 13, 2016 - Some cleanup and better organization
 
 ##Introduction
 After having worked with a lot of different languages (C#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -38,7 +39,7 @@ The underlying rules of design of this language are
 
 As a 10,000 foot view of the language, code is written in files (called modules) organized in directories (called packages).  There are functions and types. Each function gets one or more input (each of it's own type) and gives an output. Types include primitive data types, struct, union, enum and a general type alias. Concurrency, templates (generics), lambda expression and exception handling are supported.
 
-In summary, Electron is C language + Garabage collector + templates + first-order functions + advanced unions + module system + inheritance and polymorphism + simple and powerful standard library + immutability + built-in data validation + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + limited operator overloading + built-in concurrency + built-in memoization + sane defaults - ambiguity in type declaration - pointers - macros - header files.
+In summary, Electron is C language + Garabage collector + templates (generic programming) + first-order functions + advanced unions + module system + inheritance and polymorphism + simple and powerful standard library + immutability + built-in data validation + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + built-in concurrency + built-in memoization + sane defaults - ambiguity in type declaration - pointers - macros - header files.
 
 ### Core principles
 
@@ -53,7 +54,7 @@ core
 |-----|-----tcp  
 
 
-In the above examples `core.sys, core.net, core.net.http, core.net.tcp` are all packages.
+In the above examples `core::sys, core::net, core::net::http, core::net::tcp` are all packages.
 Each package contains zero or more source code files, which are called modules.
 
 ##Lexical Syntax
@@ -62,11 +63,11 @@ Each package contains zero or more source code files, which are called modules.
 - **Comments**: C like comments are used (`//` for single line and `/* */` for multi-line). `///` before function or field or first line of the file is special comment to be processed by automated tools. 
 - **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0b0101011101` binary number, `192.121d` double, `1234l` long. Also `true`, `false` are literals.
 - You can separate number digits using undescore: `1_000_000`.
-- **Adressing**: Functions are called using `function_name(input1, input2, input3)` notation. Fields of a struct are addressed using `struct_name.field_name` notation.
+- **Adressing**: Functions are called using `function_name(input1, input2, input3)` notation. Fields of a struct are addressed using `struct_name.field_name` notation. Modules are addressed using `::` notation.
 
 ##Keywords
-Electron has a small set of basic keywords: 
-`if, else, switch, assert, for, break, continue, return, type, import, auto, select, native, alloc`.
+Electron has a small set of reserved keywords: 
+`if, else, switch, assert, for, break, continue, return, type, import, var, func, invoke, select, native, struct`.
 
 ###if, else
 ```
@@ -77,7 +78,7 @@ Semantics of this keywords are same as other mainstream languages.
 - Note that condition must be a boolean expression.
 - You can use any of available operators for condition part. 
 - Also you can use a simple boolean variable (or a function with output of boolean) for condition.
-- You can also use suffix syntax for if. `Block if ( condition );`
+- You can also use suffix syntax for if: `Block if ( condition );`
 
 ###switch
 ```
@@ -98,10 +99,10 @@ AssertStmt = 'assert' condition [':' expression] ';'
 ```
 - Assert makes sure the given `condition` is satisfied. 
 - If condition is not satisfied, it will throw `expression` exception.
-- There is no `throw` keyword and this is the only way to cause expression.
+- There is no `throw` keyword and this is the only way to cause exception.
 - It is advised to return error code in case of an error and use exceptions in really exceptional cases.
 - You can use `assert false, X` to create exception and return from current method.
-- You can use `#` to define statement to be executed in case of exception. `$0` refers to the thrown exception.
+- You can use `#` as a suffix to define statement to be executed in case of exception. `$0` refers to the thrown exception.
 ```
 //inside function adder
 assert false, "Error!";  //throw exception and exit
@@ -194,8 +195,8 @@ You can use select to read/write from/to blocking channels.
 ###select
 
 ###native
-Denote fnuction is implemented by runtime or external libraries.
-`native func f1(x:int, y:int) -> float;`
+Denote function is implemented by runtime or external libraries.
+`native func file_open(path: string) -> File;`
 
 ##Primitives
 - **Integer data types**: `char`, `short`, `int`, `long`
@@ -217,7 +218,7 @@ type A := struct { x: int = 19; };  //you can assign default value
 type B := struct { a: A; y: int; }; //B composes A
 type C := struct;   //empty struct
 type C := struct { y: int = 9; }; //setting default value
-type Stack!T := struct { }; //generic structure.
+type Stack!T := struct { head: T; }; //generic structure.
 type Stack<T: MyType> := struct { }; //generic structure with type constraint
 ```
 
@@ -309,9 +310,8 @@ func map!T(f: func(T) -> T, arr: T[]) -> T[];  //map function
 new_array = map!int({$1+1}, my_array);
 new_array = map({$1+1}, my_array);
 new_array = map {$1+1}, my_array;
-new_array = map {$1+1}, my_array;
 ```
-- Everything is passed by reference but the callee cannot change any of its input arguments. You can make a copy using `{}` operator: 
+- Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability). You can make a copy using `{}` operator: 
 `x : MyType = {x:1, y:2};`
 `y : MyType; y = x{};`
 `y : MyType; y = x{y: 5};`  //clone with modification
@@ -323,12 +323,11 @@ new_array = map {$1+1}, my_array;
 `func f(x: int) -> f(x, 10);`
 - You can prefix function body with `cached` so runtime will cache output per input set and handle memory usage, cache clearing and ...: `func risk_markup(c: Contract)->float cached { //a lot of calculations; return result; }`
 - Note that cached is not part of the type of the function.
-- Functions are not allowed to change (directly or indirectly) any of their inputs. They can only change their local variables + return value. It's like having `[const]` for all inputs of a function.
-- You cannot ignore return value of a non-void function. This affects resource cleanup mechanism of runtime.
-
+- Functions are not allowed to change (directly or indirectly) any of their inputs. They can only change their local variables + return value.
+- You cannot ignore return value of a non-void function. This affects resource cleanup mechanism at runtime.
 
 ###Variables
-Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part.
+Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
 Reasons for including type at the end:
 - Due to type inference, type is optional and better not to be first part of the definition.
 - More consistent with function declaration.
@@ -387,7 +386,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `=>,<=` chaining
 - `?` check for value existence in fields of union type
 
-Types of types: `struct`, `union`, `enum`, `primitives`.
+Kinds of types: `struct`, `union`, `enum`, `primitives`.
 
 ###Special variables
 `true`, `false`
