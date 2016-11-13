@@ -409,16 +409,15 @@ Kinds of types: `struct`, `union`, `enum`, `primitives`.
 - Example: sorting a mix of objects: `func compare(a:object, b:object)` and `func compare(a: Record, b:Record)`;
 - Example: Collission checking: `func check(a:S, b:T)...` and `func check(a: Asteroid, b: Earth)...` 
 Then we can define an array of objects and in a loop, check for collissions.
-- So when there is a call `f(a,b,c)` compiler will look for a function `f` with three input arguments. If there are multiple functions, below 3 rules will be used.
 - Visible type (or static type), is the type of the variable which can be seen in the source code. Actual type or dynamic type, is it's type at runtime. For example:
-`func create(x:type)->Shape { if ( type == 1 ) return Circle{} else return Square{}`
+`func create(x:type)->Shape { if ( type == 1 ) return Circle{}; else return Square{}; }`
 Then `var x: Shape = create(y);` static type of `x` is Shape because it's output of `create` but it's dynamic type can be either `Circle` or `Square`.
 - Note that if A inherits from B, upon changes in variables of type A, constraints for both child and parent type will be called.
-- Multiple dispatch: When a function like `paint` is called which has a number of implementations, the exact function that needs to be called will be determined using below rules:
+- When there is a function call `f(a,b,c)` compiler will look for a function `f` with three input arguments. If there are multiple function candidates, below 3 rules will be used:
 1. single match: if we have only one candidate function (based on name/number of inputs), then there is a match.
 2. dynamic match: if we have a function with all types matching runtime type of variables, there is a mtch. Note that in this case, primitive types have same static and dynamic type.
 3. static match: we reserve the worst case for call which is determined at compile time: the function that matches static types. 
-Note that this binding is for an explicit function call. when we assign a variable to a value and value is a function, the actual function to be used, is determined at compile time according to static type. so `var x = paint` where type of x is `func(Circle, Color)` will find a paint function body with matching input. you cannot have x of type `func(Shape, Color)` and assign a value to it and expect it to do dynamic dispatch when called at runtime. there is a work-around which involves assigning a lambda to the variable which calls the function by name and passes inputs. in that case, invocation will include a dynamic dispatch.
+Note that this binding is for an explicit function call. when we assign function to a variable, the actual function to be used, is determined at compile time according to static type. so `var x = paint` where type of x is `func(Circle, Color)` will find a paint function body with matching input. you cannot have x of type `func(Shape, Color)` and assign a value to it and expect it to do dynamic dispatch when called at runtime. There is a work-around which involves assigning a lambda to the variable which calls the function by name and passes inputs. in that case, invocation will include a dynamic dispatch.
 So if we have this:
 `func paint(o: Square, c: SolidColor)`
 `type Shape := struct { name: string; }`
@@ -451,17 +450,17 @@ a call to paint function with some inputs, will use above 3 rules to dispatch.
 ###Casting
 - There is a general function `func cast!(S,T)(source:S)->T` which is called to cast from `S` to `T`. You can specializa this function for your purposes (e.g `func cast!(BigInt, int)`).
 - Casting of type to their parents is automatically provided. `var x: Parent = cast(childData);`
-- For example, you can write `func cast!(Dow,int)(d: Dow)->int ...` function to provide custom code to convert Day-of-Week type to int.
+- For example, you can write `func cast!(DoW,int)(d: DoW)->int ...` function to provide custom code to convert Day-of-Week type to int.
 - Value of a variable which is not explicitly initialized is given by a call to default function: `func default!T()->T`.
 - You can also specialize this function for your types.
 - You can ignore `T` part if type can be inferred: `var x: int = default;`. This can be useful in template functions.
 
 ###Anonymous struct/union
 
-`var t: struct{x: int, y: int, z: float} = {1,2, 3.1};`
-`t.x = 8;`
-`var t: struct{x: int, y: int, z: float};`
-`t = {1, 9, 1.1};`
+`var t: struct{x: int, y: int, z: float} = {1,2, 3.1};`  
+`t.x = 8;`  
+`var t: struct{x: int, y: int, z: float};`  
+`t = {1, 9, 1.1};`  
 Definition is same as a normal struct, only fields are separated using comma.
 
 Functions can considered as a piece of code which accepts a tuple and returns a tuple. 
@@ -493,11 +492,13 @@ Above means in addition to `validate_month`, we have another observer bound to t
 ###Chaining
 You can use `=>` operator to chain functions. `a => b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
 Examples:
-`get_evens(data) => sort(3, 4, $_) => save => reverse($_, 5);`
-`get_evens(data) => sort => save => reverse;` //assuming sort, save and reverse have only one input
-`5 => add2 => print;`  //same as: print(add2(5))
-`(1,2) => mul => print;`  //same as: print(mul(1,2))
-`(1,2) => mul($_, 5, $_) => print;`  //same as: print(mul(1,5,2))
+```
+get_evens(data) => sort(3, 4, $_) => save => reverse($_, 5);
+get_evens(data) => sort => save => reverse; //assuming sort, save and reverse have only one input
+5 => add2 => print;  //same as: print(add2(5))
+(1,2) => mul => print;  //same as: print(mul(1,2))
+(1,2) => mul($_, 5, $_) => print;  //same as: print(mul(1,5,2))
+```
 - You can also use `<=` for a top-to-bottom chaining, but this is a syntax sugar and compiler will convert them to `=>`.
 `print <= add2 <= 5`
 
