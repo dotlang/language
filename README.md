@@ -1,6 +1,6 @@
 ## Electron Programming Language Reference
-Version 0.5
-November 13, 2016
+Version 0.5 
+November 13, 2016 
 
 ##History
 - **Version 0.1**: Sep 4, 2016 - Initial document created after more than 9 months of research, comparison and thinking.
