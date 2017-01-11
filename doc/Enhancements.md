@@ -1795,3 +1795,5 @@ so if a function returns a function or accepts a function, the signature will be
 
 
 ? - do we need explicit interface declaration? Like Number, Comparable, ...
+
+? - replace `$0` with some other thing like `$$` because its confusing.
