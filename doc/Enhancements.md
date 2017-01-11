@@ -1785,3 +1785,13 @@ so we will keep AST in memory and when processing is finished will translate it 
 `t(myCircle)` does this call draw(shape) or draw(circle)?
 I think it's fine. Let's just act just like C. When you bind value to a variable, the exact type that you specify is used.
 But this is not C. we can assume that `t=draw` will match any function named draw which has a signature conforming to t type. 
+
+? - Cant we replace generics with polymorphic types?
+usages of generic: collections, `option<int>`, ...
+we can also define tempalte-based data structure and functions
+
+? - `func(x:int, y:int -> int)` instead of `func(x:int, y:int) -> int`
+so if a function returns a function or accepts a function, the signature will be easier to read
+
+
+? - do we need explicit interface declaration? Like Number, Comparable, ...
