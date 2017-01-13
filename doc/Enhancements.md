@@ -1797,3 +1797,12 @@ so if a function returns a function or accepts a function, the signature will be
 ? - do we need explicit interface declaration? Like Number, Comparable, ...
 
 ? - replace `$0` with some other thing like `$$` because its confusing.
+we can assign function name to `$0`
+
+? - ability to define function on one (or more?) inputs. like go.
+based on the semantics developer should be allowed to specify argumetns which come "before" function name.
+(s: string).split(c: char) -> ...
+
+? - lets permit change of input if its not explicitly marked as immutable
+if we do this, we can no longer test functions easily. but still same input will cause same output.
+marking immutable: local vars, function inputs, struct members.
