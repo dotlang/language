@@ -103,12 +103,12 @@ AssertStmt = 'assert' condition [':' expression] ';'
 - There is no `throw` keyword and this is the only way to cause exception.
 - It is advised to return error code in case of an error and use exceptions in really exceptional cases.
 - You can use `assert false, X` to create exception and return from current method.
-- You can use `#` as a suffix to define statement to be executed in case of exception. `$0` refers to the thrown exception.
+- You can use `#` as a suffix to define statement to be executed in case of exception. `$!` refers to the thrown exception.
 ```
 //inside function adder
 assert false, "Error!";  //throw exception and exit
 //outside: catching error
-`var x = adder(5,6) # adder(1,0) # { log("error occured " + $0); exit(5); };`
+`var x = adder(5,6) # adder(1,0) # { log("error occured " + $!); exit(5); };`
 ```
 - There is no `finally` in Electron. Each variable which is not part of return value of the function, will be cleaned-up upon function exit (even if there is an exception). This is done by calling `dispose` function on that type. You can also manually call this function in case you need to cleanup the resource earlier.
 
@@ -148,14 +148,14 @@ You can also use it to define a type alias.
 ```
 type point := int[];
 type x := int;
-x a;  //=int a;
+var a: x;  //=var a: int;
 ```
 To use a type:
 ```
-point pt = {1, 10};
+var pt: point = {1, 10};
 //you can alias it again
 type mypt := point;
-mypt xx = {1, 2};
+var xx: mypt = {1, 2};
 ```
 
 You can use type alias to narrow valid values for an int-based (like enum):
@@ -233,7 +233,7 @@ var test2 : Stack<int>{};
 `func x(p: P1)->int ...`
 `func x(p: P2)->int ...`
 `type A := struct extends P1, P2;`
-`var v: A{}; var t = A.x();`
+`var v: A{}; var t = x(A); //compiler error`
 
 ###Enum
 Enums are considered variables with a limited set of possible values.
@@ -294,9 +294,6 @@ case x.data?: {...}
 func my_func1(x: int, y: int) -> float { return x/y; }
 func my_func2(x: int, y: int = 11 ) -> float { return x/y; }  //you can set default value
 func my_func3(x: int, y: int) -> x/y;  //you can omit {} if its a single expression
-func my_func4(x: int, y: int) -> x/y;  //function will not change value of y
-func _my_func6(x: int, y: int) -> x/y;  //this function won't be accessible outside the module
-func my_func7(x: int, y: int) {do_some_work();} //functions returng nothing, so -> is optional
 func my_func7() -> int { return 10;} //fn has no input but () is mandatory
 func my_func7() -> 10; //when function has just a return statement, there is a shortcut
 func push!T(T data, Stack!T stack) {...}  //T is implicity specified by inputs to the function. so we don't need to specify them explicitly when calling push.
