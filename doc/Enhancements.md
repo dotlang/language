@@ -1778,31 +1778,35 @@ so we will keep AST in memory and when processing is finished will translate it 
 3. translate AST -> assembly
 4. compiler assembly -> executable
 
-? - Is having multiple functions with same name a good thing? Doesn't it cause confusion?
+N - Is having multiple functions with same name a good thing? Doesn't it cause confusion?
 `func draw(x: Shape)`
 `func draw(x: Circle)`
 `var t: func(x: Shape) = draw;` 
 `t(myCircle)` does this call draw(shape) or draw(circle)?
 I think it's fine. Let's just act just like C. When you bind value to a variable, the exact type that you specify is used.
 But this is not C. we can assume that `t=draw` will match any function named draw which has a signature conforming to t type. 
+In other words, dynamic dispatch does not work with function pointers.
 
-? - Cant we replace generics with polymorphic types?
+N - Cant we replace generics with polymorphic types?
 usages of generic: collections, `option<int>`, ...
 we can also define tempalte-based data structure and functions
 
-? - `func(x:int, y:int -> int)` instead of `func(x:int, y:int) -> int`
-so if a function returns a function or accepts a function, the signature will be easier to read
+Y - replace `$0` with some other thing like `$$` because its confusing.
+we can assign function name to `$0`. `$!` for exception
 
-
-? - do we need explicit interface declaration? Like Number, Comparable, ...
-
-? - replace `$0` with some other thing like `$$` because its confusing.
-we can assign function name to `$0`
-
-? - ability to define function on one (or more?) inputs. like go.
+N - ability to define function on one (or more?) inputs. like go.
 based on the semantics developer should be allowed to specify argumetns which come "before" function name.
 (s: string).split(c: char) -> ...
+It will make things confusing.
 
-? - lets permit change of input if its not explicitly marked as immutable
+N - lets permit change of input if its not explicitly marked as immutable
 if we do this, we can no longer test functions easily. but still same input will cause same output.
 marking immutable: local vars, function inputs, struct members.
+immutability makes things complicated specially when combined with array or generics.
+
+N - `func(x:int, y:int -> int)` instead of `func(x:int, y:int) -> int`
+so if a function returns a function or accepts a function, the signature will be easier to read
+
+N - do we need explicit interface declaration? Like Number, Comparable, ...
+But we can define it as a normal type + a set of functions on it.
+
