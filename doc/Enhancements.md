@@ -1810,3 +1810,7 @@ so if a function returns a function or accepts a function, the signature will be
 N - do we need explicit interface declaration? Like Number, Comparable, ...
 But we can define it as a normal type + a set of functions on it.
 
+? - use array mode `$[0]` instead of special variables `$1`
+
+N - have eveything implemented as library even and/if/for/...
+this is not an academic language. it must be practical.
