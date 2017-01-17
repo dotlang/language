@@ -1815,7 +1815,7 @@ Y - use array mode `$[0]` instead of special variables `$1`
 N - have eveything implemented as library even and/if/for/...
 this is not an academic language. it must be practical.
 
-? - what are language's constraints? Can we reduce them?
+N - what are language's constraints? Can we reduce them?
 We have to make the language manual as small as possible.
 
 N - Can we make exceptions easier?
@@ -1842,7 +1842,110 @@ func toString!T(t: T) {}
 func getHashCode!T(t: T) {}
 ```
 currently I see no need for an `object` global parent.
+ 
+Y - what if struct has an integer and we call a method which accepts int and struct type.
+there should be a way to emphasize our intention of composing them to inherit their implementations.
+maybe by adding appropriate cast methods.
+`func cast!(Circle, Shape)(c: Circle)->Shape { return c.shape13; }`
+So if there is ambiguity, compiler will throw error unless there is a cast function.
 
-? - any easier or more robust solution instead of `cached`?
+N - any easier or more robust solution instead of `cached`?
+1. each function has a private static storage.
+the function takes an implicit input provided by runtime. like in `$[-1]`
+As of now, its removed from spec. Later we will add it back if we find a good solution.
+
+N - for memoization we can use default value for input arguments
+but what would be the syntax?
+`func draw(x:Shape, cache ~= Map{}) -> {...}`
+Then if we have this `~=` new notation, we should be able to use it inside function too (orth). then there is no need for the default arg value because we can have this inside function. Then we won't have a pure function -> this last one is ok I think.
+Maybe we can use normal `=` notation and mention that default arg values are generated only once by the runtime. so if it's a primitive, it's ok but if it's a struct, then all function instances will share the same cache -> not good for multi-thread.
+also if we cannot modify function input, then we cannot add anything to this cache.
+you "can" return different output with same input if there is some kind of static data in the function.
+so any kind of static data is bad. even in the function inputs or through runtime helpers.
+this is not really essential part of lang design at this step. so we will cover it laster.
 
 ? - let's enable functions to change their inputs.
+Its very good if function is pure but let the developer decide about this.
+`func calc(x: Person) { //cannot change x }`
+`func calc(var x: Person) { //can change x}`
+It this compatible with `$[0]` notation? by default these are not mutable unless there is a function signature for current code which states they are. so `$[0]` is just a pointer to the inputs. If they are marked as mutable, then they are.
+What about local variables? What about struct members?
+Struct members cannot dictate whether they are mutable or not. the user does this.
+local variables are marked with `var` so they are mutable.
+how does this change the way we call the function?
+`func calc(var x: Person)...`
+`var x: Person{name:'mahdi';}; calc(x)` or `calc(var x)` or `calc(&x)`?
+`calc(x)` is not good because we have to stress the fact that `x` WILL be changed after call to calc.
+`&x` is similar to C notaton but is it orthogonal? can I use this notation in other places?
+having ability to return multiple values, why we cannot just return the changed value?
+`func calc(x: Person) -> Person { return y; }`
+actually we return multiple items using anon struct.
+if immutability is so good, why not enforce it even upon var creation?
+but everything immutable is not practical in some cases. We should have room for mutability for make it explicit.
+e.g. data structures, sort, ... they all need mutability
+or we can define some mutable local variables, but they will be immutable outside when returned or sent to other functions.
+how about this?
+```
+var x: int = 12;
+var y: int = x+1;  //y is assigned a value upon creation
+var z: int = { //a block of code which can change value of z };`
+```
+we have a special variable like `$@` which is 'mutable' and represents the output which will be assigned to the variable.
+in this way, it is only allowed to change value of local variable and only once and in a specific location (upon declaration). so how can this be used to implement quick-sort?
+```
+func quick_sort(x: int[]) -> int[] {
+  var result: int[] = {
+    int pivot = x[mid];
+    int i=0;
+    int j = n-1;
+    while ( i <= j ) {
+      while ( x[i] < pivot ) { $@[i] = x[i]; i++; }
+      while ( x[j] > pivot ) { $@[j] = x[j]; j--; }
+      $@[i] = x[j];
+      $@[j] = x[i];
+      i++;
+      j--;
+    }
+  };
+  retrn result;
+}
+```
+one way is to do this in native functions (sort, ...) but its not orth.
+can we nest two of these into each-other? probably no. because if so, we cannot reuse `$@`. we can just use return statement. but it must be explicit in the code. 
+```
+func quick_sort(x: int[]) -> int[] {
+  var result: int[] = {
+    result[0] = 11;
+    result[1] = 12;
+  };
+  return result;
+}
+```
+the block on the right side of `=` is called mutable block and it's local variables are mutable. it has read-only access to data outside. 
+to work with the original variable we have three options: special syntax like `$@`, use same name `result` or return something.
+`$@` cannot be nested.
+`result` is not readable. `var result = { result = 12; }`!
+maybe return.
+`var result: struct{name: string, age: float} <- { return x; };`
+```
+func quick_sort(x: int[]) -> int[] {
+  var result: int[] <- {
+    int pivot = x[mid];
+    int i=0;
+    int j = n-1;
+    while ( i <= j ) {
+      while ( x[i] < pivot ) { $@[i] = x[i]; i++; }
+      while ( x[j] > pivot ) { $@[j] = x[j]; j--; }
+      $@[i] = x[j];
+      $@[j] = x[i];
+      i++;
+      j--;
+    }
+  };
+  retrn result;
+}
+```
+by using result statement, we can nest this block. and it is readable.
+so everything everywhere is immutable unless inside mutable block which is used upon variable declaration and `<-` notation inside which all local variables are mutable.
+
+? - custom operators?
