@@ -103,12 +103,11 @@ AssertStmt = 'assert' condition [':' expression] ';'
 - There is no `throw` keyword and this is the only way to cause exception.
 - It is advised to return error code in case of an error and use exceptions in really exceptional cases.
 - You can use `assert false, X` to create exception and return from current method.
-- You can use `#` as a suffix to define statement to be executed in case of exception. `$!` refers to the thrown exception.
 ```
 //inside function adder
 assert false, "Error!";  //throw exception and exit
 //outside: catching error
-`var x = adder(5,6) # adder(1,0) # { log("error occured " + $!); exit(5); };`
+`var x = adder(5,6); var x: object = get_exception(); if ( x.value? ) {...};`
 ```
 - There is no `finally` in Electron. Each variable which is not part of return value of the function, will be cleaned-up upon function exit (even if there is an exception). This is done by calling `dispose` function on that type. You can also manually call this function in case you need to cleanup the resource earlier.
 
@@ -203,7 +202,7 @@ Denote function is implemented by runtime or external libraries.
 - **Integer data types**: `char`, `short`, `int`, `long`
 - **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
 - **Floating point data types**: `float`, `double`
-- **Others**: `bool`
+- **Others**: `bool`, `object`
 
 ##Source file
 
@@ -212,6 +211,7 @@ Source file contains a number of definitions for struct, type and functions.
 *Notes:*
 - If a name starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
 - The order of the contents of source code file matters: First `import` section, `type` section, structs and finally functions.
+- `object` is the parent of all types. Everything is an `object` (primitives, structs, unions, function pointers, ...).
 
 ###Structs
 ```
@@ -389,8 +389,6 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `:` for hash, call by name, array slice, loop
 - `!()` template syntax
 - `:=` type definition
-- `#` catch
-- `$!` current exception
 - `=>,<=` chaining
 - `?` check for value existence in fields of union type
 - `x{}` instantiation
