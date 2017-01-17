@@ -1864,7 +1864,7 @@ you "can" return different output with same input if there is some kind of stati
 so any kind of static data is bad. even in the function inputs or through runtime helpers.
 this is not really essential part of lang design at this step. so we will cover it laster.
 
-? - let's enable functions to change their inputs.
+N - let's enable functions to change their inputs.
 Its very good if function is pure but let the developer decide about this.
 `func calc(x: Person) { //cannot change x }`
 `func calc(var x: Person) { //can change x}`
@@ -1948,4 +1948,7 @@ func quick_sort(x: int[]) -> int[] {
 by using result statement, we can nest this block. and it is readable.
 so everything everywhere is immutable unless inside mutable block which is used upon variable declaration and `<-` notation inside which all local variables are mutable.
 
-? - custom operators?
+Y - custom operators?
+like `>`, `=`, `+`, ... .
+we can map these to function names. so if there is something like `add` for type T, then `a+b` will call it.
+same for `[]`. `x[10]` will call `op_index(x, 10)`.
