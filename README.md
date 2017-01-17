@@ -232,7 +232,7 @@ var test2 : Stack<int>{};
 - Note that if there is a multiple struct inheritance which results in function ambiguity, there will be a compiler error: 
 `func x(p: P1)->int ...`
 `func x(p: P2)->int ...`
-`type A := struct extends P1, P2;`
+`type A := struct{ x:P1; y:P2;}`
 `var v: A{}; var t = x(A); //compiler error`
 
 ###Enum
@@ -305,9 +305,9 @@ func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
 
 func map!T(f: func(T) -> T, arr: T[]) -> T[];  //map function
 //these calls are all the same
-new_array = map!int({$1+1}, my_array);
-new_array = map({$1+1}, my_array);
-new_array = map {$1+1}, my_array;
+new_array = map!int({$[0]+1}, my_array);
+new_array = map({$[0]+1}, my_array);
+new_array = map {$[0]+1}, my_array;
 ```
 - Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability). You can make a copy using `{}` operator: 
 `x : MyType = {x:1, y:2};`
@@ -358,7 +358,7 @@ Usage:
 `func adder!int(x:int)...`
 `func adder!float(x:float)...`
 When specializing a template, you can omit input/output part because they can be inferred from original signature. But in this case, you must use `$i` notation to refer to inputs.
-`func adder!float -> {return 1+$1;}`
+`func adder!float -> {return 1+$[0];}`
 - You can define parent type of a template parameter using same notation we use for variable declaration:
 `func paint!(T: Shape)(obj:T)`
 
@@ -374,15 +374,16 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - You can only override these operators: `==` (`equals`), `=>` (`bind`).
 
 ##Special syntax
-- `$i` function inputs
-- `$_` input place-holder in chaining
+- `$[i]` function inputs
+- `$_` input place-holder
 - `:` for hash, call by name, array slice, loop
 - `!()` template syntax
 - `:=` type definition
 - `#` catch
-- `$0` current exception
+- `$!` current exception
 - `=>,<=` chaining
 - `?` check for value existence in fields of union type
+- `x{}` instantiation
 
 Kinds of types: `struct`, `union`, `enum`, `primitives`.
 
@@ -390,11 +391,11 @@ Kinds of types: `struct`, `union`, `enum`, `primitives`.
 `true`, `false`
 
 ###Inheritance and polymorphism
-- Struct, union and enum can inherit from same type. This will cause all members of the parent move to the child type. In case of name clash, there will be a compiler error.
+- Structs can inherit from other structs by composing a variable of that type. 
 `type Shape := struct;`
-`type Circle := struct {...} extends Shape;`
-`type Square := struct {...} extends Shape;`
-`type Polygon := struct extends Shape;`
+`type Circle := struct {x:Shape...}`
+`type Square := struct {x: Shape...}`
+`type Polygon := struct {x: Shape;}`
 - You can define functions on types and specialize them for special subtypes. This gives polymorphic behavior.
 `func paint(o:Shape) {}`  //you can even omit this definition if you want to disable `paint` for types which don't inherit from Object
 `func paint(o:Object){}`
@@ -406,6 +407,7 @@ Kinds of types: `struct`, `union`, `enum`, `primitives`.
 - Example: sorting a mix of objects: `func compare(a:object, b:object)` and `func compare(a: Record, b:Record)`;
 - Example: Collission checking: `func check(a:S, b:T)...` and `func check(a: Asteroid, b: Earth)...` 
 Then we can define an array of objects and in a loop, check for collissions.
+- Union can be automatically and transparently casted to the type of it's member which has assigned value.
 - Visible type (or static type), is the type of the variable which can be seen in the source code. Actual type or dynamic type, is it's type at runtime. For example:
 `func create(x:type)->Shape { if ( type == 1 ) return Circle{}; else return Square{}; }`
 Then `var x: Shape = create(y);` static type of `x` is Shape because it's output of `create` but it's dynamic type can be either `Circle` or `Square`.
@@ -418,10 +420,10 @@ Note that this binding is for an explicit function call. when we assign function
 So if we have this:
 `func paint(o: Square, c: SolidColor)`
 `type Shape := struct { name: string; }`
-`type Circle := struct extends Shape;`
-`type Square := struct extends Shape;`
+`type Circle := struct {x: Shape;}`
+`type Square := struct {x:Shape;}`
 `type Color := struct {};`
-`type SolidColor := struct extends Color;`
+`type SolidColor := struct {x:Color;}`
 a call to paint function with some inputs, will use above 3 rules to dispatch.
 
 ###Array and slice
@@ -512,14 +514,14 @@ type adder := func(x: int, y:int) -> int;
 var rr: adder = func(a:int, b:int) -> { a + b }; //when you have a type, you can define new names for input
 var rr: adder = func { x + y }; //when you have a type, you can also omit input
 var adder = { x + y };      //and also func keyword, but {} is mandatory
-var rr = { $1 + 2 };          //you can $1 instead of name of first input
-func test(x:int) -> plus2 { return { $1+ x}; }
+var rr = { $[0] + 2 };          //you can $[0] instead of name of first input
+func test(x:int) -> plus2 { return { $[0]+ x}; }
 ```
-- You can access lambda input using `$1, ...` notation too.
+- You can access lambda input using `$[0], ...` notation too.
 - You can also use `$_` place holder to create a new lambda based on existing functions:
 `var y = calculate(4,a, $_)` is same as `var y = func(x:int) -> calculate(4,a,x);`
 `var y = calculate(1, $_, $_)` is same as `var y = func(x:int, y:int) -> calculate(4,x,y);`
-- You can define cached lambda: `plus2 rr = cached { $1 + 2 };` or `var f1 = func(x: int, y:int)->int cached{ return x+y; }`
+- You can define cached lambda: `plus2 rr = cached { $[0]+ 2 };` or `var f1 = func(x: int, y:int)->int cached{ return x+y; }`
 
 ##Best practice
 ###Naming
