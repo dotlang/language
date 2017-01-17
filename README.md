@@ -313,17 +313,6 @@ new_array = map {$[0]+1}, my_array;
 `x : MyType = {x:1, y:2};`
 `y : MyType; y = x{};`
 `y : MyType; y = x{y: 5};`  //clone with modification
-- Generally everything is immutable unless inside a mutable block denoted by `<-`. Inside mutable block, local variables are mutable:
-```
-func quick_sort(x: int[]) -> int[] {
-  var result: int[] <- {
-    int[] data = ...;
-    data[0]=data[1]+data[2];
-    return data;
-  };
-  retrn result;
-}
-```
 - When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`
 - You can use `params` to hint compiler to create appropriate array for a variadic function: `func print(x: int, params int[] rest) {...}` 
 - `rest` is a normal array which is created by compiler for each call to `print` function.
@@ -392,7 +381,6 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `=>,<=` chaining
 - `?` check for value existence in fields of union type
 - `x{}` instantiation
-- `<-` mutable block
 
 Kinds of types: `struct`, `union`, `enum`, `primitives`.
 
@@ -577,6 +565,7 @@ There will be another set of packages built on top of core which provide common 
 - Encryption
 - Math
 - Bitwise operators (and, or, shift, xor, ...)
+- Methods to help work with natively mutable data structures and algorithms (sort, tree, ...)
 - ...
 
 ##Package Manager
