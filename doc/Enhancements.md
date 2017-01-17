@@ -1952,3 +1952,35 @@ Y - custom operators?
 like `>`, `=`, `+`, ... .
 we can map these to function names. so if there is something like `add` for type T, then `a+b` will call it.
 same for `[]`. `x[10]` will call `op_index(x, 10)`.
+
+Y - for interoperability, common functions and other use cases we need the root type.
+we can name this `object` or `struct{}`. but what if it is a union or enum?
+`type`?
+object is not good because we dont claim to be OO.
+but object is intuitive.
+`object`
+`var x: object`
+also we can use some runtime lib functions to get real type of an object.
+
+Y - maybe we can remove notation for the current exception `$!` and catch `#`.
+`call_f(); (exc) { print exc; exit(5); }`
+`{ ... code block } (exc) { print exc; exit(5); }`
+`{ ... code block } except(x) { print x; exit(5); }`
+but we must stress that only one except block is valid. so somehow it should be bound to the closing `}`. or semicolon.
+`{ ... code block } if($!) { print $!; exit(5); }`
+Either we should specify type of exception or add the object type.
+`{ ... code block } except(x:int) { print x; } except(y:object) { print y; }`
+`{ ... code block } except(x:int) { print x; } except(y:object) { print y; }`
+`{ ... code block } var x: int = recover(); print x;`
+`var y: object; { ... code block } catch(var x:int) { print x; } catch(y) { print y; }`
+to be more consistent and orth, we can have `get_exception!T` which can be called for different types of exceptions.
+`{ ... code block } var x: Maybe!int = get_exception(); if ( x.value?) { ... } `
+this elimintates `#` and `$!` notation and is consistent with other syntax definitions.
+only problem: biolerplate. 
+`if ( get_exception!object().value? ) ...`
+its ok I think. If we don't want biolerplate either we have to introduce macro or use shortcut symbols. both are not good.
+
+Y - shall we replace `$x` notation with some keywords?
+done for exceptions. we now only have `$[0], $[1], ...` and `$_` which seems reasonable.
+
+? - maybe `<-` notation is not a good thing. it is like a shortcut to avoid language features.
