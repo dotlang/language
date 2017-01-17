@@ -1810,7 +1810,39 @@ so if a function returns a function or accepts a function, the signature will be
 N - do we need explicit interface declaration? Like Number, Comparable, ...
 But we can define it as a normal type + a set of functions on it.
 
-? - use array mode `$[0]` instead of special variables `$1`
+Y - use array mode `$[0]` instead of special variables `$1`
 
 N - have eveything implemented as library even and/if/for/...
 this is not an academic language. it must be practical.
+
+? - what are language's constraints? Can we reduce them?
+We have to make the language manual as small as possible.
+
+N - Can we make exceptions easier?
+
+N - do we need to explicitly state we are overring a method or extending a type?
+
+Y - what if we replace inheritance with composition?
+If so, what should be done for interface inheritance?
+What should be the name of the composed field? 
+```
+type Shape := struct {}
+type Circle := struct {
+  s: Shape;
+};
+func area(x: Shape) {}
+var c : Circle;
+area(c);  //we can cast c to Shape
+```
+what about object parent? do we need it?
+What's use of object? Providing some basic methods like equals and hash.
+we can implement this with template methods.
+```
+func toString!T(t: T) {}
+func getHashCode!T(t: T) {}
+```
+currently I see no need for an `object` global parent.
+
+? - any easier or more robust solution instead of `cached`?
+
+? - let's enable functions to change their inputs.
