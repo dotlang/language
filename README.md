@@ -380,7 +380,8 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `=` operator, makes a variable refer to the same object as another variable, by defaut. It is overriden for primitives to make a copy.
 - You can clone a variable when doing assignment to be sure it will not be assign by ref.
 - `x == y` will call `equals` functions is existing, by default compares field-by-field values.
-- You can only override these operators: `==` (`equals`), `=>` (`bind`).
+- You can only override these operators: `==` (`equals`), `=>` (`bind`) + some others by writing your custom functions.
+- For example, `x[10]` will call `op_index(x, 10)`.
 
 ##Special syntax
 - `$[i]` function inputs
