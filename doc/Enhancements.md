@@ -1983,4 +1983,5 @@ its ok I think. If we don't want biolerplate either we have to introduce macro o
 Y - shall we replace `$x` notation with some keywords?
 done for exceptions. we now only have `$[0], $[1], ...` and `$_` which seems reasonable.
 
-? - maybe `<-` notation is not a good thing. it is like a shortcut to avoid language features.
+Y - maybe `<-` notation is not a good thing. it is like a shortcut to bypass language features.
+let's remove this notation and provide enough library functions to cover 90% of use cases for mutability (sort, data structures, ...).
