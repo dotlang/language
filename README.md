@@ -313,14 +313,23 @@ new_array = map {$[0]+1}, my_array;
 `x : MyType = {x:1, y:2};`
 `y : MyType; y = x{};`
 `y : MyType; y = x{y: 5};`  //clone with modification
+- Generally everything is immutable unless inside a mutable block denoted by `<-`. Inside mutable block, local variables are mutable:
+```
+func quick_sort(x: int[]) -> int[] {
+  var result: int[] <- {
+    int[] data = ...;
+    data[0]=data[1]+data[2];
+    return data;
+  };
+  retrn result;
+}
+```
 - When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`
 - You can use `params` to hint compiler to create appropriate array for a variadic function: `func print(x: int, params int[] rest) {...}` 
 - `rest` is a normal array which is created by compiler for each call to `print` function.
 - Optional arguments and default values are not built-in but you can simply implement them:
 `func f(x: int, y: int) ...`
 `func f(x: int) -> f(x, 10);`
-- You can prefix function body with `cached` so runtime will cache output per input set and handle memory usage, cache clearing and ...: `func risk_markup(c: Contract)->float cached { //a lot of calculations; return result; }`
-- Note that cached is not part of the type of the function.
 - Functions are not allowed to change (directly or indirectly) any of their inputs. They can only change their local variables + return value.
 - You cannot ignore return value of a non-void function. This affects resource cleanup mechanism at runtime.
 
@@ -384,6 +393,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `=>,<=` chaining
 - `?` check for value existence in fields of union type
 - `x{}` instantiation
+- `<-` mutable block
 
 Kinds of types: `struct`, `union`, `enum`, `primitives`.
 
@@ -403,6 +413,7 @@ Kinds of types: `struct`, `union`, `enum`, `primitives`.
 `func paint(o:Square)...`
 - We can keep a list of shapes in an array/collection of type Shape: `var o: Shape[] = {Circle{}, Square{}};`
 - You can iterate over shapes in `o` array defined above, and call `paint` on them. With each call, appropriate `paint` method will be called (this appropriate method is identified using 3 dispatch rules explained below).
+- If there is any kind of ambiguity in the code (e.g. struct A contains B and an int field and a function is called with A which can accept either B or int), compiler will throw an error unless there is appropriate cast function (e.g. `func cast!(A,int)...`).
 - Example: Equality check: `func equals(a:object, b:object)...` and specialize for types that you want to accept `==` operator: `func equals(a:Customer, b: Customer)...`
 - Example: sorting a mix of objects: `func compare(a:object, b:object)` and `func compare(a: Record, b:Record)`;
 - Example: Collission checking: `func check(a:S, b:T)...` and `func check(a: Asteroid, b: Earth)...` 
@@ -467,7 +478,7 @@ Functions can considered as a piece of code which accepts a tuple and returns a 
 func f(x:int, y:float) -> struct{a: int, b: string} 
 {
   //returning anon-struct
-  return {a:1, b:9};
+  return {a:1, b:9}; //or return {1, 9}
 }
 
 func read_customer(id:int) -> union { Nothing; custmer: CustomerData }
@@ -521,7 +532,6 @@ func test(x:int) -> plus2 { return { $[0]+ x}; }
 - You can also use `$_` place holder to create a new lambda based on existing functions:
 `var y = calculate(4,a, $_)` is same as `var y = func(x:int) -> calculate(4,a,x);`
 `var y = calculate(1, $_, $_)` is same as `var y = func(x:int, y:int) -> calculate(4,x,y);`
-- You can define cached lambda: `plus2 rr = cached { $[0]+ 2 };` or `var f1 = func(x: int, y:int)->int cached{ return x+y; }`
 
 ##Best practice
 ###Naming
