@@ -1,7 +1,7 @@
 # Electron Programming Language Reference
-Version 0.5 
+Version 0.6 
 
-November 13, 2016 
+January 18, 2017
 
 ##History
 - **Version 0.1**: Sep 4, 2016 - Initial document created after more than 9 months of research, comparison and thinking.
@@ -9,6 +9,7 @@ November 13, 2016
 - **Version 0.3**: Oct 13, 2016 - Added clarifications for inheritance, polymorphism and templates
 - **Version 0.4**: Oct 27, 2016 - Removed some less needed features (monad), defined rules for multiple dispatch.
 - **Version 0.5**: Nov 13, 2016 - Some cleanup and better organization
+- **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
 
 ##Introduction
 After having worked with a lot of different languages (C#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
