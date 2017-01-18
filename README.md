@@ -10,6 +10,7 @@ January 18, 2017
 - **Version 0.4**: Oct 27, 2016 - Removed some less needed features (monad), defined rules for multiple dispatch.
 - **Version 0.5**: Nov 13, 2016 - Some cleanup and better organization
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
+- **Version 0.7**:              - Introducing optional immutability, fully qualified type name
 
 ##Introduction
 ##Code organization
@@ -154,14 +155,17 @@ ContinueStmt = 'continue' [Number] ';'
 You use this statement to define a new data structure:
 ```
 type Car := struct {
-  color: int;
-  age: int;
+  var color: int;  //this is mutable field
+  val age: int;  //this cannot be changed and must get value upon instantiation
 };
 var x: Car;   //init x with all default values
 var y: Car{age:11}; //customize value
 x.age=19;   //as long as its not marked as const
 ```
 - Fields that starts with underscore are considered internal state of the struct and better not to be used outside the module that defines the type. 
+- for array, elements are same as the array variable itself. if array is mutable, it's elements are too.
+- If you need anything more specialized, define a struct with appropriate type and mutability indicator.
+- Same for hash. hash keys are immutable but values are same as hash itself.
 
 ###type
 You can use `type` to define new type based on an existing type. 
@@ -310,7 +314,7 @@ case x.data?: {...}
 
 ```
 func my_func1(x: int, y: int) -> float { return x/y; }
-func my_func1(var x: int, y: int) -> float { x++; return x/y; }
+func my_func1(var x: int, y: int) -> float { x++; return x/y; }  //get a reference to original x so I can change the value
 func my_func2(x: int, y: int = 11 ) -> float { return x/y; }  //you can set default value
 func my_func3(x: int, y: int) -> x/y;  //you can omit {} if its a single expression
 func my_func7() -> int { return 10;} //fn has no input but () is mandatory
