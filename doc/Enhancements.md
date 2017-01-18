@@ -2018,3 +2018,47 @@ Y - what if two functions with same name exist in two packages we want to import
 import the first one normally. and then get a function pointer to the second function.
 `import core/pack1;`  //import entire file
 `func myFunc(x:int) -> /core/pack2/myFunction;`   
+
+N - can we enhance the language to support automatic and transparent parallelization?
+
+Y - add `val` so variables declared with val cannot be re-assigned.
+`val x: int[] = {1,1,1}; //ok`
+`x=[1,2,3]; //wrong`
+every data is either function input or local variable.
+function inputs: cannot be changed or re-assigned.
+local variables: `var` can be re-assigned but `val` cannot.
+immutable means cannot be changed but its ok to re-assign:
+`var x:int = 12; x = 13;`
+now, shall we add `val` keyword used to define local variables which cannot be re-assigned?
+this can be used to define constants.
+for inside a struct, items cannot be re-assigned because this means mutability of the parent data structure.
+`val x: int = 19; x= 11; //error`
+`var x: int = 11; x = 12; //ok`
+in this case, `var` will define mutable data because of the name. This is similar to Scala.
+In any case, function input is immutable. struct members are immutable (unless the struct itself is mutable).
+we are not using immutability advantages, only we are allowing the developer to have a choice between mutable and immutable.
+so types can be mutable or immutable based on the instantiation in the code (use var or val).
+local variables can be declared using var or val.
+function inputs: they are all immutable?
+`func add(x:int, y:int) -> {x++; return x+y;} //error! inputs are val by default`
+`func add(val x:int, val y:int) -> {x++; return x+y;}`
+`func add(var x:int, val y:int) -> {x++; return x+y;} //ok, you can change x because it is var note than you cannot add with a val as first argument`
+`func add(var x:int[], val y:int) -> {x[0]++; return x+y;} //ok`
+Note that when a function input does not have modifies, its `val` by default.
+If function expects `var` you must send a var but if it expects `val` you can send either var or val.
+`var hash1: int[string]`.
+
+N - Original comments about invoke:
+We have `invoke` and `select` keywords. You can use `future<int> result = invoke function1();` to execute `function1` in another thread and the result will be available through future class (defined in core).
+Also `select` evaluates a set of expressions and executes corresponding code block for the one which evaluates to true:
+```
+select
+{
+    read(rch1): { a = peek(rch1);}
+    read(rch2): { b=peek(rch2);}
+    tryWrite(wch1, x): {}
+    tryWrite(wch2, y): {}
+    true: {}  //default branch
+}
+```
+You can use select to read/write from/to blocking channels.
