@@ -12,6 +12,28 @@ January 18, 2017
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
 
 ##Introduction
+##Code organization
+##Structure of source code file
+##Variable
+##Struct
+##Union
+##Enum
+##Functions
+##Lambdas
+##Templates
+##Polymorphism
+##Keywords
+##Miscellaneous
+###Special Syntax
+###Validation
+###Operators
+###Casting
+###Best practice
+
+
+
+
+##Introduction
 After having worked with a lot of different languages (C#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
 
 That's why I am creating a new programming language: Electron. 
@@ -170,12 +192,23 @@ Note that when using type for alias to a function, you have to specify input nam
 
 ###import
 
-You can import a module using below statement:
+You can import a source code file using below statement. Note that import, will add symbols (functions and types) inside that source code to the current symbol table:
 
 ```
-import core`st::Socket;  //functions and types inside core/st/Socket.e file are imported
+import /core/st/Socket;  //functions and types inside core/st/Socket.e file are imported and available for call/use
+import /core/st/*;       //import source files under st dir
+import /core/st/**;      //import everything recursively
+import /core/st/Socket/;  //if you add slash at the end, it means import symbols using fully qualified name. This is used for refering to the functions using fully qualified names.
 ```
 It is an error if as a result of imports, there are two exactly similar functions (same name, input and output). In this case, none of conflicting functions will be available for call. 
+The paths in import statement are relative to the runtime path specified for libraries.
+In case of conflicting function names, you can get a function point to another function in another module without importing it.
+`func myFunc(x:int) -> /core/pack2/myFunction;`
+So when `myFunc` is called, it will call another function with name `myFunction` located in `/core/pack2` source file.
+Note that you must have imported the module before.
+Also you can call a function or refer to a type with fully qualified name:
+`var x: int = /core/pack2/myFunction(10, 20);`
+`var t: /core/pack2/myStruct;`
 
 ###invoke
 We have `invoke` and `select` keywords. You can use `future<int> result = invoke function1();` to execute `function1` in another thread and the result will be available through future class (defined in core).
@@ -306,9 +339,9 @@ func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
 
 func map!T(f: func(T) -> T, arr: T[]) -> T[];  //map function
 //these calls are all the same
-new_array = map!int({$[0]+1}, my_array);
-new_array = map({$[0]+1}, my_array);
-new_array = map {$[0]+1}, my_array;
+new_array = map!int({$0+1}, my_array);
+new_array = map({$0+1}, my_array);
+new_array = map {$0+1}, my_array;
 ```
 - Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability). You can make a copy using `{}` operator: 
 `x : MyType = {x:1, y:2};`
@@ -357,7 +390,7 @@ Usage:
 `func adder!int(x:int)...`
 `func adder!float(x:float)...`
 When specializing a template, you can omit input/output part because they can be inferred from original signature. But in this case, you must use `$i` notation to refer to inputs.
-`func adder!float -> {return 1+$[0];}`
+`func adder!float -> {return 1+$0;}`
 - You can define parent type of a template parameter using same notation we use for variable declaration:
 `func paint!(T: Shape)(obj:T)`
 
@@ -374,7 +407,8 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - For example, `x[10]` will call `op_index(x, 10)`.
 
 ##Special syntax
-- `$[i]` function inputs
+- `$i` function inputs
+- `$` first input of the function (`$0`)
 - `$_` input place-holder
 - `:` for hash, call by name, array slice, loop
 - `!()` template syntax
@@ -424,6 +458,8 @@ So if we have this:
 `type Color := struct {};`
 `type SolidColor := struct {x:Color;}`
 a call to paint function with some inputs, will use above 3 rules to dispatch.
+- suppose we have `Base` struct and `Derived` structs. Two methods `add` and `addAll` are implemented for both of them.
+if `addAll(Derived)` calls `addAdd(Base)` which in turn calls `add(Base)` then a call to `addAll(Derived)` will NOT call `add(Derived)` but will call `add(Base)`. When `addAll(Base)` is called, it has a reference to `Base` not a `Derived`. 
 
 ###Array and slice
 - `var x: int[] = {1, 2, 3};`
@@ -480,12 +516,12 @@ func read_customer(id:int) -> union { Nothing; custmer: CustomerData }
 ```
 
 ###Observers/Validation
-When defining types, you can define an observer function for the type or some of it's parts. This is a function which will be notified everytime state of the bound variable changes. You can makes sure the data is in consistent and valid state, or inform a set of observers or anything.
-`m: int [validate_month]` 
-Above definition means, each update to the value of `m` will call `validate_month` function with the new value.
-`type x := struct { month: int [validate_month] } [validate_data_func];`
-Above means in addition to `validate_month`, we have another observer bound to the `x` type which will be called when value of any fields inside that type is changed or when the variable is re-assigned.
-- This can be done for all types.
+When defining types, you can define an observer function for the type or some of it's parts. This is a block which will be executed/evaluated everytime state of the bound variable changes. You can makes sure the data is in consistent and valid state.
+`var m: int with {validate_month};`
+Expression will be called with `$` pointing to the new value. If the expression evaluates to false, a runtime exception will be thrown.
+`var x: int with {$[0]>10} with {$[0]<100} with { check_value($[0]) };`
+`type x := struct { x: int; y:int; } with { $[0].x < $[0].y };`
+- This can be done for all types and variables.
 
 ###Chaining
 You can use `=>` operator to chain functions. `a => b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
@@ -513,10 +549,10 @@ type adder := func(x: int, y:int) -> int;
 var rr: adder = func(a:int, b:int) -> { a + b }; //when you have a type, you can define new names for input
 var rr: adder = func { x + y }; //when you have a type, you can also omit input
 var adder = { x + y };      //and also func keyword, but {} is mandatory
-var rr = { $[0] + 2 };          //you can $[0] instead of name of first input
-func test(x:int) -> plus2 { return { $[0]+ x}; }
+var rr = { $0 + 2 };          //you can $0 or $ alone instead of name of first input
+func test(x:int) -> plus2 { return { $0+ x}; }
 ```
-- You can access lambda input using `$[0], ...` notation too.
+- You can access lambda input using `$0, ...` notation too.
 - You can also use `$_` place holder to create a new lambda based on existing functions:
 `var y = calculate(4,a, $_)` is same as `var y = func(x:int) -> calculate(4,a,x);`
 `var y = calculate(1, $_, $_)` is same as `var y = func(x:int, y:int) -> calculate(4,x,y);`
