@@ -1985,3 +1985,36 @@ done for exceptions. we now only have `$[0], $[1], ...` and `$_` which seems rea
 
 Y - maybe `<-` notation is not a good thing. it is like a shortcut to bypass language features.
 let's remove this notation and provide enough library functions to cover 90% of use cases for mutability (sort, data structures, ...).
+
+Y - as a shortcut, we can use `$` to refer to `$[0]`. so validators can be more expressive. 
+So `$` won't mean an array of function inputs.
+
+Y - use keyword for validation.
+`var x: int[$[0]>10]`
+`var x: int with {$[0]>10}`
+`var x: int with {$[0]>10} with {$[0]<100} with { check_value($[0]) };`
+`type x := struct { x: int; y:int; } with { $[0].x < $[0].y };`
+but we state that everything is immutable. so values don't change. But if I have an integer variable, its value will change some of the time.
+`var x: int with { $[0] > 0 }; x= 11; x = x+10; x=x-100;`
+so validator is compatible with immutability.
+
+Y - suppose we have `Base` struct and `Derived` structs. Two methods `add` and `addAll` are implemented for both of them.
+if `addAll(Derived)` calls `addAdd(Base)` which in turn calls `add(Base)` then a call to `addAll(Derived)` will NOT call `add(Derived)` but will call `add(Base)`. When `addAll(Base)` is called, it has a reference to `Base` not a `Derived`. 
+
+Y - shall we change the syntax for import to stress we are importing files?
+`import core::st::Socket;`
+`import /core/st/Socket;`
+`import core:st:Socket;`
+`import core>st>Socket;`
+
+Y - what about a package? what defines a package? 
+a package is a directory which contains a set of source files and other directories.
+this dir can be named `network` located inside `package` directory.
+then we can use this package and all of it's functions by using: `import package::network::;`
+`import package/network/**;` to import everything recursively
+`import package/network/*;` to import source files under network dir
+
+Y - what if two functions with same name exist in two packages we want to import?
+import the first one normally. and then get a function pointer to the second function.
+`import core/pack1;`  //import entire file
+`func myFunc(x:int) -> /core/pack2/myFunction;`   
