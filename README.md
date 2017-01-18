@@ -91,7 +91,7 @@ Each package contains zero or more source code files, which are called modules.
 
 ##Keywords
 Electron has a small set of reserved keywords: 
-`if, else, switch, assert, for, break, continue, return, type, import, var, func, invoke, select, native, struct`.
+`if, else, switch, assert, for, break, continue, return, type, import, var, val, func, invoke, select, native, struct`.
 
 ###if, else
 ```
@@ -210,23 +210,7 @@ Also you can call a function or refer to a type with fully qualified name:
 `var x: int = /core/pack2/myFunction(10, 20);`
 `var t: /core/pack2/myStruct;`
 
-###invoke
-We have `invoke` and `select` keywords. You can use `future<int> result = invoke function1();` to execute `function1` in another thread and the result will be available through future class (defined in core).
 
-Also `select` evaluates a set of expressions and executes corresponding code block for the one which evaluates to true:
-```
-select
-{
-    read(rch1): { a = peek(rch1);}
-    read(rch2): { b=peek(rch2);}
-    tryWrite(wch1, x): {}
-    tryWrite(wch2, y): {}
-    true: {}  //default branch
-}
-```
-You can use select to read/write from/to blocking channels.
-
-###select
 
 ###native
 Denote function is implemented by runtime or external libraries.
@@ -326,6 +310,7 @@ case x.data?: {...}
 
 ```
 func my_func1(x: int, y: int) -> float { return x/y; }
+func my_func1(var x: int, y: int) -> float { x++; return x/y; }
 func my_func2(x: int, y: int = 11 ) -> float { return x/y; }  //you can set default value
 func my_func3(x: int, y: int) -> x/y;  //you can omit {} if its a single expression
 func my_func7() -> int { return 10;} //fn has no input but () is mandatory
@@ -353,8 +338,10 @@ new_array = map {$0+1}, my_array;
 - Optional arguments and default values are not built-in but you can simply implement them:
 `func f(x: int, y: int) ...`
 `func f(x: int) -> f(x, 10);`
-- Functions are not allowed to change (directly or indirectly) any of their inputs. They can only change their local variables + return value.
+- Functions are not allowed to change (directly or indirectly) any of their inputs unless it is maked with `var` meaning it is a mutable reference.
 - You cannot ignore return value of a non-void function. This affects resource cleanup mechanism at runtime.
+- Note that when a function input does not have modifies, its `val` by default.
+If function expects `var` you must send a var but if it expects `val` you can send either var or val.
 
 ###Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
@@ -374,6 +361,10 @@ var t = 12;  //imply type from 12
 A function which returns `T` is treated like a variable of type `T`. This can be used to have lazy evaluation. So if you send the function/lambda to another function, to the outside world, it is int variable. inside they carry a lambda.
 Cloning, passing, assigning to other vars does not change or evaluate the variable. But as soon as you have something like: `x=lazy_var+1` then function is being called.
 - As soon as you declare a variable it will have some value. Even if it is a struct, it will have all fields set to default value.
+- You can define local variables using `var` or `val` keyword. First one makes it mutable and `val` makes it immutable.
+`val x: int = 19; x= 11; //error`
+`var x: int = 11; x = 12; //ok`
+- Struct members are not marked with any of these. Because their mutability depends on mutability of their contains data structure. If the struct is instantiated using `var` keyword they will be mutable too.
 
 ##Templates
 - You can define a struct/function using `!(T,U,V,...)` notation which means it is a template.
