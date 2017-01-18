@@ -2062,3 +2062,17 @@ select
 }
 ```
 You can use select to read/write from/to blocking channels.
+
+? - If we have an immutable array, what is type of array elements? Are they also immutable?
+What about hashmap? and other data structures?
+can we define struc elements as val or var?
+`type x := struct { var a: int; val y: int;};`
+Anything defined with `val` must be assigned upon instantiation of the type.
+`var t: x{a:10};` here you can change t to anything else or change it's `a` but you cannot change it's `y`.
+Let's say, for array, elements are same as the array variable itself. if array is mutable, it's elements are too.
+`val x: int[3] = [1,2,3]; //you cannot change x or x[0] or x[1]...`
+`var y: int[3] = [1,2,3]; //you can change y and it's elements.`
+If you need anything more specialized, define a struct with appropriate type and mutability indicator.
+Same for hash. hash keys are immutable but values are same as hash itself.
+But doesn't this make thing more complicated. Now we have 3 types: auto (based on the container), val and var.
+Let's make indicator required for struct.
