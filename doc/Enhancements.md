@@ -47,7 +47,7 @@ then what happens to `=`? for primitives, duplicates, for others ref assignment.
 
 N - how can we convert between const and others?-> answer: clone
 `const int x = 12; int y = x; //y can be changed but not x. they are separate`
-if it is a strct, we need to clone it.
+if it is a struct, we need to clone it.
 or we can define normal type and reference type. normal type acts like primitives, they are copied.
 like `int` in C.
 reference type is like `int&` in C.
@@ -2063,7 +2063,11 @@ select
 ```
 You can use select to read/write from/to blocking channels.
 
-? - If we have an immutable array, what is type of array elements? Are they also immutable?
+N - What about this code?
+`val x : Customer{...}; var y = x;`
+It is invalid.
+
+N - If we have an immutable array, what is type of array elements? Are they also immutable?
 What about hashmap? and other data structures?
 can we define struc elements as val or var?
 `type x := struct { var a: int; val y: int;};`
@@ -2076,3 +2080,41 @@ If you need anything more specialized, define a struct with appropriate type and
 Same for hash. hash keys are immutable but values are same as hash itself.
 But doesn't this make thing more complicated. Now we have 3 types: auto (based on the container), val and var.
 Let's make indicator required for struct.
+So the rule of mutability same as the container, only applied to array and hash.
+Scala has mutable and immutable hashmap. Maybe we should have too or maybe `var/val` can achieve that.
+How can we have an immutable array with mutable items?
+`val x:int[]`
+`type s := struct { var x: int}; val arr: s[];` //here arr is immutable but it's elements are not.
+`func add_days(dt: Date, days: int) -> Date { val d: Date; ... ; return d; }`
+`var date1 = add_days(my_dt, 10);` //is this code ok? the function is returning an immutable variable but its assigned to a mutable variable.
+in scala you can assign return value of a function (which is returning a val), to a var and change it.
+data that we want to control being immutable/mutable:
+1 - local variables (can be array or hash)
+2 - function inputs
+3 - function output
+4 - types (struct members)
+I think the way scala is handling this is not consistent and orth.
+If we are looking to have const/non-const data types, shall we also add reference types?
+`var x : int& = &y; //x points to y`
+no. We assume everything is passed by reference. If it is const, you cannot modify it in any way.
+Shall we incorporate mutability as a special syntax? Instead of adding `val/var` everywhere, add a prefix/suffix to the type.
+`var x: int;`
+`var x: ^int;`
+`var x: int~;`
+`var x: int[];`
+`var x: array!int;`
+`var x: int[string];`
+`var x: hash!(int, string);`
+can this be done in a more logical and orth way?
+like `var x:int; x.freeze();`
+or `type mut_int := int with { false };`
+Why do we need const? It is like static typing. Enforces some basic rules to the code which reduces probability of error.
+Go: Everything is mutable, if you need imm, just mark fields as private.
+Maybe we can provide immutability with a template type.
+`var x: mut!int;`
+`var x: imm!int;`
+`var x: const!int;`
+its too much code. It should be simple and short.
+Let's have imm by default. So everything is immutable unless its type has a specific predix/suffix. 
+We can achieve some mutability with imm types (clone and return). And adding mut to the language makes it more complex.
+
