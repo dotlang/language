@@ -155,17 +155,14 @@ ContinueStmt = 'continue' [Number] ';'
 You use this statement to define a new data structure:
 ```
 type Car := struct {
-  var color: int;  //this is mutable field
-  val age: int;  //this cannot be changed and must get value upon instantiation
+  color: int; 
+  age: int; 
 };
 var x: Car;   //init x with all default values
 var y: Car{age:11}; //customize value
-x.age=19;   //as long as its not marked as const
+x.age=19;  //invalid. x is immutable, you cannot change it's value. 
 ```
 - Fields that starts with underscore are considered internal state of the struct and better not to be used outside the module that defines the type. 
-- for array, elements are same as the array variable itself. if array is mutable, it's elements are too.
-- If you need anything more specialized, define a struct with appropriate type and mutability indicator.
-- Same for hash. hash keys are immutable but values are same as hash itself.
 
 ###type
 You can use `type` to define new type based on an existing type. 
@@ -344,8 +341,6 @@ new_array = map {$0+1}, my_array;
 `func f(x: int) -> f(x, 10);`
 - Functions are not allowed to change (directly or indirectly) any of their inputs unless it is maked with `var` meaning it is a mutable reference.
 - You cannot ignore return value of a non-void function. This affects resource cleanup mechanism at runtime.
-- Note that when a function input does not have modifies, its `val` by default.
-If function expects `var` you must send a var but if it expects `val` you can send either var or val.
 
 ###Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
@@ -365,9 +360,8 @@ var t = 12;  //imply type from 12
 A function which returns `T` is treated like a variable of type `T`. This can be used to have lazy evaluation. So if you send the function/lambda to another function, to the outside world, it is int variable. inside they carry a lambda.
 Cloning, passing, assigning to other vars does not change or evaluate the variable. But as soon as you have something like: `x=lazy_var+1` then function is being called.
 - As soon as you declare a variable it will have some value. Even if it is a struct, it will have all fields set to default value.
-- You can define local variables using `var` or `val` keyword. First one makes it mutable and `val` makes it immutable.
-`val x: int = 19; x= 11; //error`
-`var x: int = 11; x = 12; //ok`
+- You can define local variables using `var` keyword.
+`var x: int = 19; x= 11; //ok - can re-assign`
 - Struct members are not marked with any of these. Because their mutability depends on mutability of their contains data structure. If the struct is instantiated using `var` keyword they will be mutable too.
 
 ##Templates
