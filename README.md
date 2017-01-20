@@ -10,7 +10,7 @@ January 18, 2017
 - **Version 0.4**: Oct 27, 2016 - Removed some less needed features (monad), defined rules for multiple dispatch.
 - **Version 0.5**: Nov 13, 2016 - Some cleanup and better organization
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
-- **Version 0.7**:              - Introducing optional immutability, fully qualified type name
+- **Version 0.7**:              - Introducing fully qualified type name
 
 ##Introduction
 ##Code organization
@@ -230,7 +230,7 @@ Source file contains a number of definitions for struct, type and functions.
 *Notes:*
 - If a name starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
 - The order of the contents of source code file matters: First `import` section, `type` section, structs and finally functions.
-- `object` is the parent of all types. Everything is an `object` (primitives, structs, unions, function pointers, ...).
+- `object` is the parent of all types. Everything is an `object` (primitives, structs, unions, function pointers, ...). It can be something like an empty struct.
 
 ###Structs
 ```
@@ -389,9 +389,8 @@ When specializing a template, you can omit input/output part because they can be
 - Bitwise: `~ & | ^ << >>`
 - Math: `+ - * % ++ -- **`
 The bitwise and math operators can be combined with `=` to do the calculation and assignment in one statement.
-- `=` operator, makes a variable refer to the same object as another variable, by defaut. It is overriden for primitives to make a copy.
-- You can clone a variable when doing assignment to be sure it will not be assign by ref.
-- `x == y` will call `equals` functions is existing, by default compares field-by-field values.
+- `=` operator, makes a variable refer to the same object as another variable. If you need a copy, you have to clone the variable. 
+- `x == y` will call `equals` functions is existing, by default compares field-by-field values. But you can o
 - You can only override these operators: `==` (`equals`), `=>` (`bind`) + some others by writing your custom functions.
 - For example, `x[10]` will call `op_index(x, 10)`.
 
@@ -404,7 +403,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `:=` type definition
 - `=>,<=` chaining
 - `?` check for value existence in fields of union type
-- `x{}` instantiation
+- `x{}` instantiation/cloning
 
 Kinds of types: `struct`, `union`, `enum`, `primitives`.
 
