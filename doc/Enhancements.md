@@ -2118,3 +2118,61 @@ its too much code. It should be simple and short.
 Let's have imm by default. So everything is immutable unless its type has a specific predix/suffix. 
 We can achieve some mutability with imm types (clone and return). And adding mut to the language makes it more complex.
 
+N - shall we use a notation instead of `var` because really, it's not a variable anymore.
+`var x: int = 12;`
+no explicit and keyword-based is better.
+but this is wrong to use `var` keyword. 
+Use `val`.
+what if we allow for both but only for local variables? for types -> same as parent, for function input: val.
+`val x: int[3] = [1,2,3];`
+`var x: int[3] = [1,2,3];`
+var means item can be re-assigned and it's state/elements can be changed.
+val means only re-assign.
+if we cannot send a `var` to other functions for modification by reference, then it won't be much useful.
+`def`, `my`, `auto`, `set`, `let`, `val`
+Start variable name with `$` like Perl?
+`#x: int = 12; x = 11;`
+lets keep var. they are variable because they can be re-assigned.
+
+N - a more programmatic definition for const
+`func f(x: int {const($)}) -> ...`
+not useful.
+
+Y - object can be thought of as an empty struct.
+
+? - we can add pointer type.
+`var x: int*` or `var x: int&`
+same as C and these types can be considered mutable.
+`var x: int[]&; //x is a pointer to an array`
+`var x: int[&]; //x is a normal array containing pointers`
+but we already have this built-in. Because everything is a reference.
+`var x: customer{name='aa'}; var y=x;` then y and x are pointing to the same thing.
+or `var y = x{}; //clone x so y and x point to different things`
+
+? - maybe we can eliminate polymorphism.
+`type Shape := struct;`
+`type Circle := struct {x:Shape...}`
+`type Square := struct {x: Shape...}`
+`func paint(o:Shape) {}`
+`func paint(o:Circle)...`
+`func paint(o:Square)...`
+Why do we need paint for shape?
+Clojure has protocol similar to interface. Then when defining a new type, it can be used to define API.
+but we still need inheritance to have code re-use.
+```
+type drawable := protocol {
+   draw(this) -> long;
+   stats(this, int[]) -> string;
+};
+
+
+```
+
+
+? - we need to explicitly define which contained elements in a struct are to be inherited and used in polymorphic situations. Else there can be unwanted consequences.
+`type x: struct { a: int; }`
+x can be used as an integer without us wanting that. If we call a method that accepts an integer with an x instance, compiler won't complain.
+
+
+
+
