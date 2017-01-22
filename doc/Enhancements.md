@@ -2140,7 +2140,7 @@ not useful.
 
 Y - object can be thought of as an empty struct.
 
-? - we can add pointer type.
+N - we can add pointer type.
 `var x: int*` or `var x: int&`
 same as C and these types can be considered mutable.
 `var x: int[]&; //x is a pointer to an array`
@@ -2157,6 +2157,8 @@ or `var y = x{}; //clone x so y and x point to different things`
 `func paint(o:Circle)...`
 `func paint(o:Square)...`
 Why do we need paint for shape?
+
+N - protocol
 Clojure has protocol similar to interface. Then when defining a new type, it can be used to define API.
 but we still need inheritance to have code re-use.
 ```
@@ -2164,8 +2166,6 @@ type drawable := protocol {
    draw(this) -> long;
    stats(this, int[]) -> string;
 };
-
-
 ```
 
 
@@ -2173,6 +2173,7 @@ type drawable := protocol {
 `type x: struct { a: int; }`
 x can be used as an integer without us wanting that. If we call a method that accepts an integer with an x instance, compiler won't complain.
 
-
+? - some idea for organizing: refer to everything inside a module (file) using module name prefix.
+you can alias when doing import or import local so you don't need prefix.
 
 
