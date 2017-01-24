@@ -2149,15 +2149,6 @@ but we already have this built-in. Because everything is a reference.
 `var x: customer{name='aa'}; var y=x;` then y and x are pointing to the same thing.
 or `var y = x{}; //clone x so y and x point to different things`
 
-? - maybe we can eliminate polymorphism.
-`type Shape := struct;`
-`type Circle := struct {x:Shape...}`
-`type Square := struct {x: Shape...}`
-`func paint(o:Shape) {}`
-`func paint(o:Circle)...`
-`func paint(o:Square)...`
-Why do we need paint for shape?
-
 N - protocol
 Clojure has protocol similar to interface. Then when defining a new type, it can be used to define API.
 but we still need inheritance to have code re-use.
@@ -2167,13 +2158,36 @@ type drawable := protocol {
    stats(this, int[]) -> string;
 };
 ```
+we can have this with an empty struct.
 
+? - maybe we can eliminate polymorphism.
+`type Shape := struct;`
+`type Circle := struct {x:Shape...}`
+`type Square := struct {x: Shape...}`
+`func paint(o:Shape) {}`
+`func paint(o:Circle)...`
+`func paint(o:Square)...`
+Why do we need paint for shape?
+Even if we do, at compile time, compiler can merge all `paint` functions into a single function which checks for input type.
 
 ? - we need to explicitly define which contained elements in a struct are to be inherited and used in polymorphic situations. Else there can be unwanted consequences.
 `type x: struct { a: int; }`
 x can be used as an integer without us wanting that. If we call a method that accepts an integer with an x instance, compiler won't complain.
+one solution: unnamed field.
 
 ? - some idea for organizing: refer to everything inside a module (file) using module name prefix.
 you can alias when doing import or import local so you don't need prefix.
+but then we will loose transparent method dispatching.
 
+? - How we want to solve fragile base class problem? 
+If base class has inc1 and inc2 and derived class overrides inc1 calling inc2.
+and later in base, inc2 calls inc1, it will cause infinite loop.
+```
+type Parent = struct {x: int};
+func inc1(p: Parent) -> inc2(p);
+func inc2(p: Parent) -> Parent { return Parent{p.x+1} };
 
+type Child = struct { p: Parent; };
+func inc2(c: Child) -> inc1(c);
+```
+golang does not have this issue because you cannot override a method which is written for the contained variable. When struct A contains B, calling a method on B, will have an instance of B not A.
