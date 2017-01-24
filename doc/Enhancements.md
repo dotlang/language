@@ -2218,3 +2218,5 @@ there is not much advantage there. a warning message is enough.
 N - if we get a hash representing a type `var h: object[string]` and we call `to_string` for data inside the hash, will it call appropriate methods?
 It should. The code that creates that hash, stores actual types into the output (it does not cast).
 But when we call a function on a contained type, runtime will cast the data.
+
+\* - Add native parallelism and communication tools.
