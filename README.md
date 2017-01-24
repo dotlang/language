@@ -421,6 +421,11 @@ Kinds of types: `struct`, `union`, `enum`, `primitives`.
 `func paint(o:Object){}`
 `func paint(o:Circle)...`
 `func paint(o:Square)...`
+- To have full polymorphism at runtime, you have to write cast functions too.
+```
+type Square := struct { shape: Shape; size: int };
+func cast!(Square, Shape)(s:Square) -> $.shape;  //normal code
+```
 - We can keep a list of shapes in an array/collection of type Shape: `var o: Shape[] = {Circle{}, Square{}};`
 - You can iterate over shapes in `o` array defined above, and call `paint` on them. With each call, appropriate `paint` method will be called (this appropriate method is identified using 3 dispatch rules explained below).
 - If there is any kind of ambiguity in the code (e.g. struct A contains B and an int field and a function is called with A which can accept either B or int), compiler will throw an error unless there is appropriate cast function (e.g. `func cast!(A,int)...`).
