@@ -64,7 +64,7 @@ The underlying rules of design of this language are
 
 As a 10,000 foot view of the language, code is written in files (called modules) organized in directories (called packages).  There are functions and types. Each function gets one or more input (each of it's own type) and gives an output. Types include primitive data types, struct, union, enum and a general type alias. Concurrency, templates (generics), lambda expression and exception handling are supported.
 
-In summary, Electron is C language + Garabage collector + templates (generic programming) + first-order functions + advanced unions + module system + inheritance and polymorphism + simple and powerful standard library + immutability + built-in data validation + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + built-in concurrency + built-in memoization + sane defaults - ambiguity in type declaration - pointers - macros - header files.
+In summary, Electron is C language + Garabage collector + templates (generic programming) + first-class functions + advanced unions + module system + composition and powerful polymorphism + operator customization + simple and powerful standard library + immutability + built-in data validation + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + built-in concurrency + built-in memoization + sane defaults - ambiguity in type declaration - pointers - macros - header files.
 
 ### Core principles
 
@@ -509,12 +509,12 @@ func read_customer(id:int) -> union { Nothing; custmer: CustomerData }
 }
 ```
 
-###Observers/Validation
+###Validation
 When defining types, you can define an observer function for the type or some of it's parts. This is a block which will be executed/evaluated everytime state of the bound variable changes. You can makes sure the data is in consistent and valid state.
 `var m: int with {validate_month};`
 Expression will be called with `$` pointing to the new value. If the expression evaluates to false, a runtime exception will be thrown.
-`var x: int with {$[0]>10} with {$[0]<100} with { check_value($[0]) };`
-`type x := struct { x: int; y:int; } with { $[0].x < $[0].y };`
+`var x: int with {$>10} with {$<100} with { check_value($) };`
+`type x := struct { x: int; y:int; } with { $.x < $.y };`
 - This can be done for all types and variables.
 
 ###Chaining
