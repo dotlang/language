@@ -426,6 +426,7 @@ Kinds of types: `struct`, `union`, `enum`, `primitives`.
 type Square := struct { shape: Shape; size: int };
 func cast!(Square, Shape)(s:Square) -> $.shape;  //normal code
 ```
+- Note than when a function for contained type is called, it will have an instance of the contained type. So further calls to other functions, will be dispatched to those who work with the contained type, not the container type.
 - We can keep a list of shapes in an array/collection of type Shape: `var o: Shape[] = {Circle{}, Square{}};`
 - You can iterate over shapes in `o` array defined above, and call `paint` on them. With each call, appropriate `paint` method will be called (this appropriate method is identified using 3 dispatch rules explained below).
 - If there is any kind of ambiguity in the code (e.g. struct A contains B and an int field and a function is called with A which can accept either B or int), compiler will throw an error unless there is appropriate cast function (e.g. `func cast!(A,int)...`).
