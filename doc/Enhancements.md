@@ -221,7 +221,7 @@ N - list type
 `x:int; y: [int];`? y is a list of int.
 no. lets use core tempalte types.
 
-\* - using % to fetch annotations?
+N - using % to fetch annotations?
 `%x` returns a hash of annotations on the data.
 its type: `hash<string, hash<string, object>>`
 
@@ -489,7 +489,7 @@ N - shortcut for const: .x
 `x: int [const $_];`
 
 N - indicate cached data
-`proto fib (|) is cached returns NonNegativeInt {*}`
+`proto fib (|) is cached returns NonNegativeInt {}`
 we have decorator for that.
 
 Y - syntax for function delegation
@@ -2214,3 +2214,7 @@ So if a class wants polymorphism, he has to define appropriate cast functions.
 
 N - enforced private methods just like enforced imm.
 there is not much advantage there. a warning message is enough.
+
+N - if we get a hash representing a type `var h: object[string]` and we call `to_string` for data inside the hash, will it call appropriate methods?
+It should. The code that creates that hash, stores actual types into the output (it does not cast).
+But when we call a function on a contained type, runtime will cast the data.
