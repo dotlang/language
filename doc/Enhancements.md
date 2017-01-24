@@ -2160,7 +2160,7 @@ type drawable := protocol {
 ```
 we can have this with an empty struct.
 
-? - maybe we can eliminate polymorphism.
+N - maybe we can eliminate polymorphism.
 `type Shape := struct;`
 `type Circle := struct {x:Shape...}`
 `type Square := struct {x: Shape...}`
@@ -2169,17 +2169,13 @@ we can have this with an empty struct.
 `func paint(o:Square)...`
 Why do we need paint for shape?
 Even if we do, at compile time, compiler can merge all `paint` functions into a single function which checks for input type.
+Anyway, from the coding perspective, nothing changes and at runtime we will still need multiple dispatch.
 
-? - we need to explicitly define which contained elements in a struct are to be inherited and used in polymorphic situations. Else there can be unwanted consequences.
-`type x: struct { a: int; }`
-x can be used as an integer without us wanting that. If we call a method that accepts an integer with an x instance, compiler won't complain.
-one solution: unnamed field.
-
-? - some idea for organizing: refer to everything inside a module (file) using module name prefix.
+N - some idea for organizing: refer to everything inside a module (file) using module name prefix.
 you can alias when doing import or import local so you don't need prefix.
 but then we will loose transparent method dispatching.
 
-? - How we want to solve fragile base class problem? 
+N - How we want to solve fragile base class problem? 
 If base class has inc1 and inc2 and derived class overrides inc1 calling inc2.
 and later in base, inc2 calls inc1, it will cause infinite loop.
 ```
@@ -2191,3 +2187,30 @@ type Child = struct { p: Parent; };
 func inc2(c: Child) -> inc1(c);
 ```
 golang does not have this issue because you cannot override a method which is written for the contained variable. When struct A contains B, calling a method on B, will have an instance of B not A.
+So on the first call, when you pass an instance of A and we have a function for B, A is cast into B, and after that, the function will have a B, not an A.
+
+Y - we need to explicitly define which contained elements in a struct are to be inherited and used in polymorphic situations. Else there can be unwanted consequences.
+`type x: struct { a: int; }`
+x can be used as an integer without us wanting that. If we call a method that accepts an integer with an x instance, compiler won't complain.
+one solution: unnamed field.
+one solution: syntax sugar for casting
+```
+type Square := struct { shape: Shape; size: int };
+func cast!(Square, Shape)(s:Square) -> s.shape;  //normal code
+
+type Square := struct { 
+  shape: Shape; 
+  size: int;
+  //functions that take a single input named this, poninting to the parent type
+  func cast!Shape -> this.shape;
+  //No this is too big exception
+};
+
+func cast!(Square, Shape) -> $.shape;
+```
+for inheritance, we need a cast function.
+for interface, nothing is needed. just implement those methods.
+So if a class wants polymorphism, he has to define appropriate cast functions.
+
+N - enforced private methods just like enforced imm.
+there is not much advantage there. a warning message is enough.
