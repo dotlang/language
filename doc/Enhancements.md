@@ -2348,6 +2348,16 @@ And developer can write a function to get numerical values for each value.
 Y - A method to define constants:
 `func PI -> 3.1415;`
 
-? - How can we use `::` notation with array and hash?
+Y - How can we use `::` notation with array and hash?
 for example type of x should be same as elements of array or key or value of a hash?
+`x :: y` means same type
+what if `y` is an array and I want to refer to type of elements of `y`?
+```
+var x: int;
+var y: int[3] = [1, 2, 3];
+var same = x :: y[];  //y[] means type of elements of y array
+var z: int[string];
+var same2 = x :: z[];   //z[] means type of values inside z hashtable
+var same3 = x :: [z]    //z[] means type of keys of z hashtable
 
+```
