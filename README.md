@@ -10,7 +10,7 @@ January 18, 2017
 - **Version 0.4**: Oct 27, 2016 - Removed some less needed features (monad), defined rules for multiple dispatch.
 - **Version 0.5**: Nov 13, 2016 - Some cleanup and better organization
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
-- **Version 0.7**:              - Introducing fully qualified type name
+- **Version 0.7**:              - Fully qualified type name, more consistent templates, `::` operator and `any` keyword
 
 ##Introduction
 ##Code organization
@@ -379,7 +379,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - You can only override these operators: `==` (`equals`), `=>` (`bind`) + some others by writing your custom functions.
 - For example, `x[10]` will call `op_index(x, 10)`.
 - `x :: y` returns true if `x` can be cast to type of `y`. `y` can be either a variable or name of a type.
-`func add(x: any, y: any) with { x :: y } ...`
+`func add(x: any, y: any) with { x :: y } ...`. For array `a[]` means type of elements of the array. For hash `h[]` means type of values inside hashtable, and `[h]` means type of keys of the hashtable.
 
 ##Special syntax
 - `$i` function inputs
