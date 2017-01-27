@@ -79,7 +79,7 @@ core
 |-----|-----tcp  
 
 
-In the above examples `core::sys, core::net, core::net::http, core::net::tcp` are all packages.
+In the above examples `core/sys, core/net, core/net/http, core/net/tcp` are all packages.
 Each package contains zero or more source code files, which are called modules.
 
 ##Lexical Syntax
@@ -88,7 +88,7 @@ Each package contains zero or more source code files, which are called modules.
 - **Comments**: C like comments are used (`//` for single line and `/* */` for multi-line). `///` before function or field or first line of the file is special comment to be processed by automated tools. 
 - **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0b0101011101` binary number, `192.121d` double, `1234l` long. Also `true`, `false` are literals.
 - You can separate number digits using undescore: `1_000_000`.
-- **Adressing**: Functions are called using `function_name(input1, input2, input3)` notation. Fields of a struct are addressed using `struct_name.field_name` notation. Modules are addressed using `::` notation.
+- **Adressing**: Functions are called using `function_name(input1, input2, input3)` notation. Fields of a struct are addressed using `struct_name.field_name` notation. Modules are addressed using `/` notation.
 
 ##Keywords
 Electron has a small set of reserved keywords: 
@@ -131,7 +131,7 @@ AssertStmt = 'assert' condition [':' expression] ';'
 //inside function adder
 assert false, "Error!";  //throw exception and exit
 //outside: catching error
-`var x = adder(5,6); var x: object = get_exception(); if ( x.value? ) {...};`
+`var x = adder(5,6); var x: any = get_exception(); if ( x.value? ) {...};`
 ```
 - There is no `finally` in Electron. Each variable which is not part of return value of the function, will be cleaned-up upon function exit (even if there is an exception). This is done by calling `dispose` function on that type. You can also manually call this function in case you need to cleanup the resource earlier.
 
@@ -155,8 +155,8 @@ ContinueStmt = 'continue' [Number] ';'
 You use this statement to define a new data structure:
 ```
 type Car := struct {
-  color: int; 
-  age: int; 
+  color: int, 
+  age: int,
 };
 var x: Car;   //init x with all default values
 var y: Car{age:11}; //customize value
@@ -221,7 +221,7 @@ Denote function is implemented by runtime or external libraries.
 - **Integer data types**: `char`, `short`, `int`, `long`
 - **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
 - **Floating point data types**: `float`, `double`
-- **Others**: `bool`, `object`
+- **Others**: `bool`, `any`
 
 ##Source file
 
@@ -230,51 +230,37 @@ Source file contains a number of definitions for struct, type and functions.
 *Notes:*
 - If a name starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
 - The order of the contents of source code file matters: First `import` section, `type` section, structs and finally functions.
-- `object` is the parent of all types. Everything is an `object` (primitives, structs, unions, function pointers, ...). It can be something like an empty struct.
+- `any` denotes any type. Everything can be used for `any` type (primitives, structs, unions, function pointers, ...). It can be something like an empty struct.
+- Immutability: All variables are immutable but can be re-assigned.
+- You can simulate constant values using functions: `func PI -> 3.1415;`
 
 ###Structs
 ```
 type A := struct { x: int = 19; };  //you can assign default value
-type B := struct { a: A; y: int; }; //B composes A
+type B := struct { a: A, y: int; }; //B composes A
 type C := struct;   //empty struct
 type C := struct { y: int = 9; }; //setting default value
-type Stack!T := struct { head: T; }; //generic structure.
-type Stack<T: MyType> := struct { }; //generic structure with type constraint
 ```
 
 To create a new struct instance:
 ```
 var test : A = {x: 10};
 var test2 : A{};  //{} is mandatory
-var test2 : Stack<int>{};
 ```
 - Note that if there is a multiple struct inheritance which results in function ambiguity, there will be a compiler error: 
 `func x(p: P1)->int ...`
 `func x(p: P2)->int ...`
-`type A := struct{ x:P1; y:P2;}`
+`type A := struct{ x:P1, y:P2;}`
 `var v: A{}; var t = x(A); //compiler error`
-
-###Enum
-Enums are considered variables with a limited set of possible values.
-
-```
-//values are optional but if you specify, you have to set value for all - you can use any literal for the values
-type DoW := enum { SAT=0, SUN=1,... };
-x: DoW = DoW.SAT;
-if ( int(x) == 0 ) ...
-if ( x == DoW.SUN ) ...
-type State := enum { ACTIVE='active', DISABLED='disabled' };
-```
-- You can attach constraints to enums.
 
 ###Union
 Unions are also known as sum types. Variables of type union can accept only one of specified types at each time. You can use `var.field?` notation to check if variable contains value for a specific field. Other operations are same as struct. 
 
 ```
 type sumtype := union {
-  Nothing: bool;
-  data: int;
-  total: int;
+  Nothing: bool,
+  data: int,
+  total: int
 };
 
 x: sumtype = sumtype{data:12};  //total and Nothing will be empty/not-assigned
@@ -292,8 +278,8 @@ type nullable_int := union { x: int; nil: bool; };
 - If you only need to check if a field is set or not, you can ignore it's type:
 ```
 type Maybe_int := union {
-  data: T;
-  Nothing;  //this is considered bool, but you cannot read it's value
+  data: T,
+  Nothing  //this is considered bool, but you cannot read it's value
 };
 var x = Maybe_int{data:12};  //data is set, Nothing is not set
 var y = Maybe_int{Nothing}; //Nothing is set, data is not set
@@ -302,9 +288,18 @@ if ( y.Nothing? ) //y does not have data
 if ( x.data? ) int r = x.data;
 
 //you can use switch statement to check for fields.
-switch { 
-case x.Nothing?: {...}
-case x.data?: {...}
+switch x { 
+case Nothing: {...}
+case data: {...}
+```
+- You can simulate enum using unions:
+```
+type DoW := union {
+  SAT,
+  SUN,
+  MON,
+  ...
+};
 ```
 
 ###Functions
@@ -316,16 +311,15 @@ func my_func2(x: int, y: int = 11 ) -> float { return x/y; }  //you can set defa
 func my_func3(x: int, y: int) -> x/y;  //you can omit {} if its a single expression
 func my_func7() -> int { return 10;} //fn has no input but () is mandatory
 func my_func7() -> 10; //when function has just a return statement, there is a shortcut
-func push!T(T data, Stack!T stack) {...}  //T is implicity specified by inputs to the function. so we don't need to specify them explicitly when calling push.
 func my_func8() -> (int, int) { return (10,20);} //function can return multiple values
 (x,y) = my_func8(); 
 
  //below function receives an array + a function and returns a function
 func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
 
-func map!T(f: func(T) -> T, arr: T[]) -> T[];  //map function
+func map(f: func(T) -> T, arr: T[]) -> T[];  //map function
 //these calls are all the same
-new_array = map!int({$0+1}, my_array);
+new_array = map({$0+1}, my_array);
 new_array = map({$0+1}, my_array);
 new_array = map {$0+1}, my_array;
 ```
@@ -365,23 +359,14 @@ Cloning, passing, assigning to other vars does not change or evaluate the variab
 - Struct members are not marked with any of these. Because their mutability depends on mutability of their contains data structure. If the struct is instantiated using `var` keyword they will be mutable too.
 
 ##Templates
-- You can define a struct/function using `!(T,U,V,...)` notation which means it is a template.
-- If template has only one input, you can omit parents: `Stack!int`.
-Definition:
-`func adder!T(T a, T b) -> T { return a+b; }` => `var x = adder(10); OR var x - adder!int(10);`
-`func adder!(T,S)(T a, S b) -> T { return a+b; }`
-`type tuple!(S,T) := struct { a: S; b:T; };`
-Usage:
-`var t = adder(10,15);`
-`var t = adder!(int,int)(10,15);`  //you can optionally state types or let compiler infer them
-`var t: tuple!(int, string);`
-- You can specializa a template.
-`func adder!int(x:int)...`
-`func adder!float(x:float)...`
-When specializing a template, you can omit input/output part because they can be inferred from original signature. But in this case, you must use `$i` notation to refer to inputs.
-`func adder!float -> {return 1+$0;}`
-- You can define parent type of a template parameter using same notation we use for variable declaration:
-`func paint!(T: Shape)(obj:T)`
+- You can use `with` keyword with types and functions to enforce template constraints. 
+- You can specialize a generic functions and runtime will choose the most specific candidate.
+```
+type Stack := struct { x: any[]; };
+type IntStack := Stack with { $.x :: int };
+func pop(s: Stack) -> any { ... } with { $ :: s.x }
+func push(x: any, s: Stack) with { x :: s.x[] }) -> ...
+```
 
 ##Operators
 
@@ -393,13 +378,15 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `x == y` will call `equals` functions is existing, by default compares field-by-field values. But you can o
 - You can only override these operators: `==` (`equals`), `=>` (`bind`) + some others by writing your custom functions.
 - For example, `x[10]` will call `op_index(x, 10)`.
+- `x :: y` returns true if `x` can be cast to type of `y`. `y` can be either a variable or name of a type.
+`func add(x: any, y: any) with { x :: y } ...`
 
 ##Special syntax
 - `$i` function inputs
 - `$` first input of the function (`$0`)
 - `$_` input place-holder
 - `:` for hash, call by name, array slice, loop
-- `!()` template syntax
+- `::` type check
 - `:=` type definition
 - `=>,<=` chaining
 - `?` check for value existence in fields of union type
@@ -417,21 +404,21 @@ Kinds of types: `struct`, `union`, `enum`, `primitives`.
 `type Square := struct {x: Shape...}`
 `type Polygon := struct {x: Shape;}`
 - You can define functions on types and specialize them for special subtypes. This gives polymorphic behavior.
-`func paint(o:Shape) {}`  //you can even omit this definition if you want to disable `paint` for types which don't inherit from Object
-`func paint(o:Object){}`
+`func paint(o:Shape) {}`  //you can even omit this definition if you want to disable `paint` for types which don't inherit from anything.
+`func paint(o:any){}`
 `func paint(o:Circle)...`
 `func paint(o:Square)...`
 - To have full polymorphism at runtime, you have to write cast functions too.
 ```
 type Square := struct { shape: Shape; size: int };
-func cast!(Square, Shape)(s:Square) -> $.shape;  //normal code
+func cast(s:Square) -> $.shape;  //normal code
 ```
 - Note than when a function for contained type is called, it will have an instance of the contained type. So further calls to other functions, will be dispatched to those who work with the contained type, not the container type.
 - We can keep a list of shapes in an array/collection of type Shape: `var o: Shape[] = {Circle{}, Square{}};`
 - You can iterate over shapes in `o` array defined above, and call `paint` on them. With each call, appropriate `paint` method will be called (this appropriate method is identified using 3 dispatch rules explained below).
-- If there is any kind of ambiguity in the code (e.g. struct A contains B and an int field and a function is called with A which can accept either B or int), compiler will throw an error unless there is appropriate cast function (e.g. `func cast!(A,int)...`).
-- Example: Equality check: `func equals(a:object, b:object)...` and specialize for types that you want to accept `==` operator: `func equals(a:Customer, b: Customer)...`
-- Example: sorting a mix of objects: `func compare(a:object, b:object)` and `func compare(a: Record, b:Record)`;
+- If there is any kind of ambiguity in the code (e.g. struct A contains B and an int field and a function is called with A which can accept either B or int), compiler will throw an error unless there is appropriate cast function (e.g. `func cast()->int...`).
+- Example: Equality check: `func equals(a:any, b:any)...` and specialize for types that you want to accept `==` operator: `func equals(a:Customer, b: Customer)...`
+- Example: sorting a mix of objects: `func compare(a:any, b:any)` and `func compare(a: Record, b:Record)`;
 - Example: Collission checking: `func check(a:S, b:T)...` and `func check(a: Asteroid, b: Earth)...` 
 Then we can define an array of objects and in a loop, check for collissions.
 - Union can be automatically and transparently casted to the type of it's member which has assigned value.
@@ -476,9 +463,9 @@ if `addAll(Derived)` calls `addAdd(Base)` which in turn calls `add(Base)` then a
 - `for(x:array1)` or `for(int key,string val:hash1)`.
 
 ###Casting
-- There is a general function `func cast!(S,T)(source:S)->T` which is called to cast from `S` to `T`. You can specializa this function for your purposes (e.g `func cast!(BigInt, int)`).
+- There is a general function `func cast(source:any)->any` which is called to cast from `any` to `any`. You can specializa this function for your purposes (e.g `func cast(x:BigInt) -> int`).
 - Casting of type to their parents is automatically provided. `var x: Parent = cast(childData);`
-- For example, you can write `func cast!(DoW,int)(d: DoW)->int ...` function to provide custom code to convert Day-of-Week type to int.
+- For example, you can write `func cast(d: DoW)->int ...` function to provide custom code to convert Day-of-Week type to int.
 - Value of a variable which is not explicitly initialized is given by a call to default function: `func default!T()->T`.
 - You can also specialize this function for your types.
 - You can ignore `T` part if type can be inferred: `var x: int = default;`. This can be useful in template functions.
@@ -510,12 +497,16 @@ func read_customer(id:int) -> union { Nothing; custmer: CustomerData }
 ```
 
 ###Validation
-When defining types, you can define an observer function for the type or some of it's parts. This is a block which will be executed/evaluated everytime state of the bound variable changes. You can makes sure the data is in consistent and valid state.
+When defining types or functions, you can define validation code/function. This is a block which will be executed/evaluated everytime state of the bound variable changes or function is executed. You can makes sure the data (or function intput/output) is in consistent and valid state.
 `var m: int with {validate_month};`
 Expression will be called with `$` pointing to the new value. If the expression evaluates to false, a runtime exception will be thrown.
 `var x: int with {$>10} with {$<100} with { check_value($) };`
 `type x := struct { x: int; y:int; } with { $.x < $.y };`
 - This can be done for all types and variables.
+- Example for functions:
+`func AA(x: int) with { pre_check } -> int { ... } with { post_check }`
+In post_check section, you can refer to the function output using `$` or `$0` notation.
+
 
 ###Chaining
 You can use `=>` operator to chain functions. `a => b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
