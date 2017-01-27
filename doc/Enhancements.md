@@ -2220,3 +2220,134 @@ It should. The code that creates that hash, stores actual types into the output 
 But when we call a function on a contained type, runtime will cast the data.
 
 \* - Add native parallelism and communication tools.
+
+Y - pre requirement for built-in templates: `with` for function as pre and post conditions:
+`func AA(x: int) with {pre_check} -> int { ... } with { post_check}`
+One solution: we can define two `with` blocks for function. pre and post.
+`func pop(s: Stack) with { pre_conditions on inputs} -> object { ... } 
+with { post_conditions }`
+pre-condition has access to function inputs only.
+post-condition has access to function output (`$`) and inputs (by their name).
+
+Y - maybe add a shortcut for type checking:
+`y :: long` equals to `typeof(y) == typeof(long)`
+to decrease boilerplate code.
+It returns true if `y` is long or can be casted to long.
+
+Y - everything is immutable even local vars. right?
+
+Y - replace word `object` with something else like `any`.
+
+Y - How can we eliminate templates?
+usages:
+collections like stack/queue/...
+algorithms (sort, search, ...)
+operator overloading
+map/filter definition
+
+```
+type Stack := struct { x: object[]; };
+func push(x: object, s: Stack) -> ...
+func pop(s: Stack) -> object {...}
+
+type StackInt := Stack!int;
+//specialization
+fun pop(s: Stack) -> int ...;
+```
+or instead of object, we can use convention (what if a function takes 10 inputs of object and stack?).
+```
+type Stack := struct { x: T[]; };
+func push(x: T, s: Stack) -> ...
+func pop(s: Stack) -> T {...}
+
+var x: Stack!int{};
+
+```
+or to be more consistent:
+```
+type T := object;
+type Stack := struct { x: T[]; };
+func push(x: T, s: Stack) -> ...
+func pop(s: Stack) -> T {...}
+
+var x: Stack[T=>int]{};
+```
+we can add a general rule for all instantiations to filter some type. Meaning replace some type with a more specific type.
+So if a struct has a member of type `Person` we can define a new type based on that struct but replace `Person` with `Man` type. So in all references to that type, read and write to that member will be type checked to be of type `Man`.
+So as a result, if type uses `object` it means it can accept all types.
+
+```
+type T := object;
+type Stack := struct { x: T[]; };
+func push(x: T, s: Stack) -> ...
+func pop(s: Stack) -> T {...}
+
+//like validation code but for read/write filter. This cannot be only code, we also need notation
+//because we want to pass this type over to other places. but we can name it accordingly and do not rely on 
+//a new notation. Suppose that we have a function which expects a Stack of strings. What should be the type of input?
+func ff(x: Stack) ...  //no
+func ff(x: StackString) ...  //yes, and StackString defines those codes for type checking
+```
+so we can define types just like before BUT same as the way we add `with` code, we can add type checking code.
+```
+type Stack := struct { x: object[]; };
+//maybe we can even re-use validation logic
+type IntStack := Stack with { typeof(x) == typeof(int) };
+//OR if you like messy code
+func push(x: int, s: Stack with { typeof(x) == typeof(int) }) -> ...
+```
+what about algorithms? e.g. quick_sort function. we can just use object and specialize if we need.
+```
+func quick_sort(x: object[]) -> object[] { ...};
+func quick_sort_int(x: int[]) -> int[] { return quick_sort(x); }
+```
+map and filter can be considered built-in notations if need be.
+same for operator overloading. Any of these can be specialized by writing functions with correct name and specialized types.
+```
+func map(x: object[], pred: func(object)->object) -> object[] with { typeof(pred) == typeof(func(typeof(x))->typeof(x)) }
+...;
+```
+This means we need to add `with` to function too, to do some pre-requisite checks, which will be executed before function starts.
+can we make checks compile time? 
+I prefer not adding a new notation for compile time vs runtime checks. Compiler will execute `typeof` checks at compile time. Others will be at runtime.
+`... with X` means X will be checked when the function is called or when the data is changed.
+or maybe it's better to define it like this: it is called before function execution or creation of the item (all data are immutable, so we don't change but create).
+For example what about `List<Dictionary<String, Long>>` in Electron?
+`type CustomHash := Hash with { typeof(x) == typeof(string) } with { typeof(y) == typeof(long) };`
+`var x := List with { typeof(x) == typeof(CustomHash) };`
+question: how do we know types used in `with`? is it `x` or `key` or `type1`? We have to see the code or doc.
+How do we implement a linked list? Its difficult with everything being immutable.
+```
+func add(ll: LinkedList, i: item) -> LinkedList with { $.x :: i } with { ll.x :: i } { ... }
+var x := LinkedList with { $.Item :: int };
+x = add(x, 10); //ok
+x = add(x, "AAA"); //compiler error
+```
+`with` in the definition of `add` function above is confusing. It is for the function or for the output?
+`func AA(x: int) -> int { ... }`
+Pop code:
+`func pop(s: Stack) -> object { ... } with { s.Item :: output }`
+How can we use output type to specify conditions? Maybe we need a new notation?
+But `with` for function is supposed to be executed 'before' function starts. So we shouldn't have access to output.
+
+Y - in struct definition use comma instead of semicolo, like anon struct. will be more consistent.
+
+Y - can we remove enum or replace it with union?
+`type DoW := enum { SAT=0, SUN=1,... };`
+`type DoW := int with { $ == 1 or $ == 2 or ... };`
+enum is not consistent with other concepts that we have. `with` is not good here because options can be too much.
+```
+type DoW := union {
+  SAT,
+  SUN,
+  MON
+};
+```
+And developer can write a function to get numerical values for each value.
+
+Y - A method to define constants:
+`func PI -> 3.1415;`
+
+? - How can we use `::` notation with array and hash?
+for example type of x should be same as elements of array or key or value of a hash?
+
