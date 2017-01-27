@@ -232,7 +232,7 @@ Source file contains a number of definitions for struct, type and functions.
 - The order of the contents of source code file matters: First `import` section, `type` section, structs and finally functions.
 - `any` denotes any type. Everything can be used for `any` type (primitives, structs, unions, function pointers, ...). It can be something like an empty struct.
 - Immutability: All variables are immutable but can be re-assigned.
-- You can simulate constant values using functions: `func PI -> 3.1415;`
+- You can simulate constant values using functions: `func PI -> 3.1415;`. Compiler/runtime will take care of optimizations.
 
 ###Structs
 ```
@@ -392,7 +392,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `?` check for value existence in fields of union type
 - `x{}` instantiation/cloning
 
-Kinds of types: `struct`, `union`, `enum`, `primitives`.
+Kinds of types: `struct`, `union`, `primitives`.
 
 ###Special variables
 `true`, `false`
