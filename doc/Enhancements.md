@@ -1073,7 +1073,7 @@ I'm trying to do another round of making language simpler. Simple to learn or re
 User should not be forced to look at 10 different places to know what does function X do.
 1. cached - I hope there was a more straightforward solution for it.
 2. exceptions
-3. Optionals. starting with `_` may ne confusing.
+3. Optionals. starting with `_` may be confusing.
 4. Not having real encapsulation. So if I change something, I may need to update 100s of places.
 5. Making changes in a codebase, should not need large amount of mental effort or widespread change.
 6. Caller has to have full control over what happens. So if callee can make any change outside of return value, it will make things hard to change later.
