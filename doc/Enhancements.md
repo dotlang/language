@@ -228,6 +228,8 @@ its type: `hash<string, hash<string, object>>`
 \* - define something like seq in F# to have a generator function to be used in loops.
 `for (x: seq(1..10))`
 
+\* - Add regex operators for search and replace.
+
 Y - vairadic functions?
 `func print(x: int, params int[] rest) {...}`
 params is just a hint to the compiler to create appropriate array
@@ -2361,3 +2363,90 @@ var same2 = x :: z[];   //z[] means type of values inside z hashtable
 var same3 = x :: [z]    //z[] means type of keys of z hashtable
 
 ```
+
+? - can we simulate union (and enum) with struct + with?
+Does immutability of variables make this earier/different?
+Maybe using `with` + some special function is better, more consistent and more general that defining a new type.
+We will only have one type: struct. which can be customized to do a lot of things all powered by validation.
+`type DoW := struct { isSAT: bool, isSUN: bool, ... } with { union($) };`
+Another shortcut we can add: users can eliminate type if it is bool.
+`type DoW := struct { SAT, SUN, ... } with { union($) };`
+To have custom values, easily write a cast method to cast this type to int.
+`func cast(x: DoW) -> int { if ( x.SAT ) return 10l ... }`
+Then if we use this method, do we still need `?` notation?
+`type Optional := struct { Empty, value: any } with { Empty xor value };`
+`type OptionalInt := Optional with { value :: int };`
+Problem is: Union works with value being set or unset. But we don't have anything like `unset` value.
+Advantage of unset is to save storage. We don't care about that. So let's assume everything is set. So how are we going to know which value is represented in the union? For example optional union?
+`type Optional := struct { Empty, HasValue, value: any } with { union($.Empty, $.HasValue) };`
+`union($)` means only one of boolean members of `$` can be true.
+`type Optional := struct { Empty, HasValue, value: any } with { union($.Empty, $.HasValue) };`
+so to make things easy to understand we have to either keep union type or add `undef` literal.
+with `empty`:
+`type Optional := struct { Nothing, value: any } with { Nothing or empty(value) };`
+I think using `empty` is better but shall we add a literal or add functions for checking?
+Literal makes more sense. `if ( x == empty )`
+candidates: `empty`, `nil`, `null`, `none`, `nothing`.
+`none` is better. So each variable has a value of `none` when it is not assigned a value.
+By using this, we have optional built-in!
+`type Optional := struct { Error: string, value: any } with { union($.Error, $.value) };`
+`union` means only one of members can be non-none.
+What about enum?
+`type DoW := struct { SAT, SUN, ... } with { single_true($) };`
+can we make `single_true` or `union` notation more consistent and intuitive?
+`type DoW := struct { SAT, SUN, ... } with { xor($) };`
+`type Optional := struct { Error: string, value: any } with { union($.Error, $.value) };`
+But a lot of exceptions can happen in the code when it is working on a variable, expecting it to have some value but it is none! Like NPE or all problems with null values!
+Is there a third option?
+Goal: we want to support union types. But we don't want to add a new `union` keyword or introduce new `none` literal. 
+solution 1: special function (only one field can be initialized upon instantiation of this struct).
+`type Optional := struct { Nothing, value: any } with { union(value) };`
+it is a bit inconsistent, but lets us escape from problems of `none` and `union` keyword.
+but we also need a way to check which field is assigned a value. 
+other solution: exactly like C, make storages overlap, so dev needs to add some boolean flags to determine which variable is assigned.
+```
+type Optionsl := struct {
+  flag: struct { NothingIsSet, ValueIsSet } with { xor($) },
+  data: struct { Nothing, Value: any} with { union($) }
+};
+```
+It's not a good notation to define a struct and specify its low level storage requirements with `with`.
+maybe we can do this via `::` operator.
+```
+var x: any = 12;
+if ( x :: int ) ...
+if ( x :: string ) ...
+x = "12";
+...
+```
+so the check will be type-based not name based.
+or maybe we can define a `static type` version of any?
+`type MaybeInt := any with { $ :: int or $ :: bool } with { $ :: int or $ == true };`
+`var x: MaybeInt = 12; if ( x :: int ) ... `
+Can we make it simpler? Like defining a label for value of the variable? Something like enum.
+`var x := any with { $ :: int or $ :: NONE };`
+`x=12; x=NONE;`  This is not good. Makes code un-readable.
+`type MaybeInt := struct { value: any, hasValue: bool }`
+What is we have special syntax for literal labels?
+`var x := any with { $ :: int or $ == @NONE };`
+`type DoW := any with { $ == @SAT or $ == @SUN or ... };`
+`type DoW := any with { $ in [@SAT, @SUN, ...] };`
+`var x: DoW = $SAT;`
+we assign custom literals to possible values of a variable.
+what is the type of a variable which is holding a custom literal?
+Custom literals are bound to types. You cannot use them freely.
+`var x = @SAT; //WRONG`
+`var x : DoW = @SAT;`
+So:
+1) To define enums, define a variable and use `with` to specify it's possible values using custom literals
+2) To define union, define a variable of type `any` and use `with` define it's possible types (and possibly custom literals)
+`type bool := any with { $ in [true, false] };`
+
+
+
+? - What happens if we refer to an un-initialized any variable?
+
+? - For struct, if type is not specified, it is boolean.
+
+? - with clause can be considered as a constructor.
+
