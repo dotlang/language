@@ -181,9 +181,9 @@ type mypt := point;
 var xx: mypt = {1, 2};
 ```
 
-You can use type alias to narrow valid values for an int-based (like enum):
+You can use struct with boolean fields and `xor` constraint to simulate enum:
 ```
-type DoW := enum {SAT=0, SUN=1, ...};  //any data of DoW type can only accept one of these values
+type DoW := struct { SAT, SUN, ... } with { xor($) };
 ```
 
 You can define functions based on `int` and `X` where `type X := int` and they will be different functions.
@@ -253,54 +253,16 @@ var test2 : A{};  //{} is mandatory
 `type A := struct{ x:P1, y:P2;}`
 `var v: A{}; var t = x(A); //compiler error`
 
-###Union
-Unions are also known as sum types. Variables of type union can accept only one of specified types at each time. You can use `var.field?` notation to check if variable contains value for a specific field. Other operations are same as struct. 
+###Union with struct
+To define a union data type, you can define a variable of type `any` and add optional bool fields (if needed).
+`type MaybeInt := struct { value: int, hasValue: bool }`
+`var g: MaybeInt{hasValue: false};`
+`var h: MaybeInt{value:12};`
+`if ( g.hasValue )`
+Another example:
+`type IntOrBool := any with { $ :: int or $ :: bool };`
+`type OptionalInt := any with { $ :: int or $ :: bool } with { $ :: int or $ == true };`
 
-```
-type sumtype := union {
-  Nothing: bool,
-  data: int,
-  total: int
-};
-
-x: sumtype = sumtype{data:12};  //total and Nothing will be empty/not-assigned
-assert false == x.Nothing?;
-assert false == x.total?;
-assert true == x.data;
-
-x.total = 0; //now x.data? will return false
-//upon assigning a value to any of fields of a union type, all others will become empty.
-
-type nullable_int := union { x: int; nil: bool; };
-```
-- You can attach constraints to union or it's fields just like structs.
-- When you assign a value to any of fields of a union, all other fields are un-initialized automatically.
-- If you only need to check if a field is set or not, you can ignore it's type:
-```
-type Maybe_int := union {
-  data: T,
-  Nothing  //this is considered bool, but you cannot read it's value
-};
-var x = Maybe_int{data:12};  //data is set, Nothing is not set
-var y = Maybe_int{Nothing}; //Nothing is set, data is not set
-
-if ( y.Nothing? ) //y does not have data
-if ( x.data? ) int r = x.data;
-
-//you can use switch statement to check for fields.
-switch x { 
-case Nothing: {...}
-case data: {...}
-```
-- You can simulate enum using unions:
-```
-type DoW := union {
-  SAT,
-  SUN,
-  MON,
-  ...
-};
-```
 
 ###Functions
 
@@ -389,10 +351,9 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `::` type check
 - `:=` type definition
 - `=>,<=` chaining
-- `?` check for value existence in fields of union type
 - `x{}` instantiation/cloning
 
-Kinds of types: `struct`, `union`, `primitives`.
+Kinds of types: `struct`, `primitives`.
 
 ###Special variables
 `true`, `false`
@@ -421,7 +382,6 @@ func cast(s:Square) -> $.shape;  //normal code
 - Example: sorting a mix of objects: `func compare(a:any, b:any)` and `func compare(a: Record, b:Record)`;
 - Example: Collission checking: `func check(a:S, b:T)...` and `func check(a: Asteroid, b: Earth)...` 
 Then we can define an array of objects and in a loop, check for collissions.
-- Union can be automatically and transparently casted to the type of it's member which has assigned value.
 - Visible type (or static type), is the type of the variable which can be seen in the source code. Actual type or dynamic type, is it's type at runtime. For example:
 `func create(x:type)->Shape { if ( type == 1 ) return Circle{}; else return Square{}; }`
 Then `var x: Shape = create(y);` static type of `x` is Shape because it's output of `create` but it's dynamic type can be either `Circle` or `Square`.
@@ -470,7 +430,7 @@ if `addAll(Derived)` calls `addAdd(Base)` which in turn calls `add(Base)` then a
 - You can also specialize this function for your types.
 - You can ignore `T` part if type can be inferred: `var x: int = default;`. This can be useful in template functions.
 
-###Anonymous struct/union
+###Anonymous struct
 
 `var t: struct{x: int, y: int, z: float} = {1,2, 3.1};`  
 `t.x = 8;`  
@@ -486,7 +446,7 @@ func f(x:int, y:float) -> struct{a: int, b: string}
   return {a:1, b:9}; //or return {1, 9}
 }
 
-func read_customer(id:int) -> union { Nothing; custmer: CustomerData }
+func read_customer(id:int) -> struct { Nothing; custmer: CustomerData }
 {
   //no customer was found
   return {Nothing};
