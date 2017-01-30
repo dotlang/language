@@ -2364,7 +2364,7 @@ var same3 = x :: [z]    //z[] means type of keys of z hashtable
 
 ```
 
-? - can we simulate union (and enum) with struct + with?
+Y - can we simulate union (and enum) with struct + with?
 Does immutability of variables make this earier/different?
 Maybe using `with` + some special function is better, more consistent and more general that defining a new type.
 We will only have one type: struct. which can be customized to do a lot of things all powered by validation.
@@ -2441,8 +2441,43 @@ So:
 1) To define enums, define a variable and use `with` to specify it's possible values using custom literals
 2) To define union, define a variable of type `any` and use `with` define it's possible types (and possibly custom literals)
 `type bool := any with { $ in [true, false] };`
+So what does this mean:
+`type person := struct { name... } with { $ == @AA };`
+This means any variable of type `person` can only have value of `@AA` regardless of elements of the struct. Syntactically it's ok although does not make sense.
+But this syntax is confusing. Most of the time, we want to keep the original data AND have custom literals.
+`type person := struct { name... } with { $ :: ? or $ == @AA };`
+`type person := struct { name... } with { $ == @AA };`
+The nature of custom literals is not consistent with `with` clause. We have to add a new notation.
+```
+type OptInt := struct { value: any, none: bool };
+```
+So let's do this: Instead of adding the new thing (custom literals), we use bool fields.
+we can add a new notation that `x = y` can also mean `x.y = true;`.
+or we can use `@` here: `x=@y; => x.y = true;` so `@` notation is used to set a flag. but what abt imm?
+`var x : Dow{@SAT}` means `var x : Dow{SAT: true;}`.
+So we still need `with` to enforce enum valid types. 
+About union:
+`type MaybeInt := struct { value: any, hasValue: bool }`
+`var g: MaybeInt{@hasValue};`
+`if ( g.hasValue )`
+But technically we can have a MaybeInt which has a value and `hasValue` is set to false. 
+But that is responsibility of the developer, I think.
+`var h: MaybeInt{value:12, hasValue: false};`
+we can set default value for hasValue to false. So dev has to set it explicitly when he needs it.
+so:
+1) To define enum, define a struct with appropriate bool fields and `with` clause to enforce only one of them can be true.
+2) To define union, define a struct with any field + bool flags for possible values.
+We can use `@` notations as a shortcut for bool fields:
+```
+var x: Dow{@SAT};
+if ( x.SAT ) ...
+```
+But eliminting it does not harm syntax.
+Maybe we can add a special function which enforces dev to set value only for one field. So when he is instantiating, he can set value only for one field.
 
+? - Make syntax for enum and union easier.
 
+? - instead of `cast` function why not having a function with the same name of the target type?
 
 ? - What happens if we refer to an un-initialized any variable?
 
