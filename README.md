@@ -181,9 +181,15 @@ type mypt := point;
 var xx: mypt = {1, 2};
 ```
 
-You can use struct with boolean fields and `xor` constraint to simulate enum:
+You can define an enum based on another type with type restriction and constants:
 ```
-type DoW := struct { SAT, SUN, ... } with { xor($) };
+type DoW := int with { $ :: DoW } //force values for this type to be only DoW type, not int;
+const SAT : DoW = 1; 
+const SUN : DoW = 2;
+...
+var g: DoW = SAT;
+g = SUN;
+g = 1; //wrong!
 ```
 
 You can define functions based on `int` and `X` where `type X := int` and they will be different functions.
