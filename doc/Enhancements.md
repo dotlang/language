@@ -2475,7 +2475,81 @@ if ( x.SAT ) ...
 But eliminting it does not harm syntax.
 Maybe we can add a special function which enforces dev to set value only for one field. So when he is instantiating, he can set value only for one field.
 
-? - Make syntax for enum and union easier.
+Y - Make syntax for enum and union easier.
+```
+type DoW := struct { SAT, SUN, ... } with { xor($) };
+var x: DoW{SAT};
+if ( x.SAT) ...
+var y = x{SUN}; //error -> both SAT and SUN are set to true
+```
+union:
+`type IntOrBool := any with { $ :: int or $ :: bool };`
+xor is not correct for enum. If three fields are set, it will return true.
+`type DoW := struct { SAT, SUN, ... } with { xor($) };`
+We can use `$.*` as a notation to represent elements inside a struct. 
+In this case, using a vararg method we can easily enforce enum criteria:
+`type DoW := struct { SAT, SUN, ... } with { single_true($.*) };`
+or we can have a built-in function which given a struct, returns an array of `any` variables: `internal($)`
+`type DoW := struct { SAT, SUN, ... } with { single_true(internal($)) };`
+Then we can define a shortcut for this:
+`type DoW := struct { SAT, SUN, ... } with { enum($) };`
+This `internals` can also be used for serialization.
+can we have a mechanism to see if some field of a struct is "set"? If so we can easily define a struct with this condition.
+Like:
+`type IntOrBool := struct { x:int, y: bool } with single_set($);`
+But this will only be good good for union. For enum, we need to enforce a single field is "true".
+`type IntOrBool := struct { x:int, y: bool } with single_set($);`
+NO! Checking if a field is set, is really a special case.
+We try everything to avoid null or nil or nullable types. 
+Question: How can we define dow enum?
+`type DoW := struct { SAT, SUN, ... } with { enum($) };`
+This should be general. What if we want to have at most two fields to true?
+`type DoW := struct { SAT, SUN, ... } with { 1 == count {$ == true}, $.*) };`
+`$.*` is an array of items inside `$`. Or we can say it is a hash where key is field name and value is value.
+Can we do the same for all variables? `var x = Person{...}; x.*`
+So we can introduce a new notation `A.*` where A is any non-primitive variable.
+`A.*` for a primitive will give you the variable itself (a single-element array).
+`A.*` for a struct, will give you an array filled with values inside the data structure.
+Advantage: We can implement general filterings like what we need for enum.
+What about union?
+`type IntOrBool := any with { $ :: int or $ :: bool };`
+We really don't need anything special for union type. There is no need for enhancement or shortcut. Its fine.
+Somehow it feels wrong to add this feature only for the sake of enum. For serialization, we can simply use functions.
+Problem is: if we add a magical function like `enum`, can we call it elsewhere?
+`type DoW := struct { SAT, SUN, ... } with { 1 == count {$ == true}, $.*) };`
+What if we define a function which returns number of fields in a struct which are equal to `x`: like `eq_count`
+`type DoW := struct { SAT, SUN, ... } with { 1 == eq_count($, true) };`
+Problem: This is not general! What if we need to filter by elements which are positive? Or any other filtering?
+This is not general and is not flexible.
+How can we make this as flexible as needed but without adding any new exception or new notation?
+1) `$.*` notation
+2) a function like `members($)` which returns array of fields inside struct
+3) A new notation to define it based on `int`
+```
+type DoW := int with { $ == 1 or $ == 2 or ... };`
+```
+We should have a mechanism to define constants.
+but I don't want to add a new keyword. only `func` and `type`.
+What if we use the const keyword?
+```
+type DoW := int with { $ :: DoW } //force values for this type to be only DoW type, not int;
+const SAT : DoW = 1; 
+const SUN : DoW = 2;
+...
+var g: DoW = SAT;
+g = SUN;
+g = 1; //wrong!
+```
+Advantage: we can have string enums or of any other type.
+Advantage: It's more intuitive.
+Advantage: No need for special syntax
+
+
+? - Shortcut for with:
+`with { some_func($) }` can be written as: `with some_func;`
+
+
+
 
 ? - instead of `cast` function why not having a function with the same name of the target type?
 
