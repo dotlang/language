@@ -2544,18 +2544,20 @@ Advantage: we can have string enums or of any other type.
 Advantage: It's more intuitive.
 Advantage: No need for special syntax
 
-
-? - Shortcut for with:
+Y - Shortcut for with:
 `with { some_func($) }` can be written as: `with some_func;`
 
+N - with clause can be considered as a constructor.
 
+Y - What happens if we refer to an un-initialized any variable?
+They "must" be initialized.
 
+N - For struct, if type is not specified, it is boolean.
 
 ? - instead of `cast` function why not having a function with the same name of the target type?
+But naming convention for types is `CapitalLetter` but for functions it is `name1_name2`.
 
-? - What happens if we refer to an un-initialized any variable?
 
-? - For struct, if type is not specified, it is boolean.
 
-? - with clause can be considered as a constructor.
+
 
