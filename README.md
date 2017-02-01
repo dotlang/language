@@ -10,7 +10,7 @@ January 18, 2017
 - **Version 0.4**: Oct 27, 2016 - Removed some less needed features (monad), defined rules for multiple dispatch.
 - **Version 0.5**: Nov 13, 2016 - Some cleanup and better organization
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
-- **Version 0.7**:              - Fully qualified type name, more consistent templates, `::` operator and `any` keyword
+- **Version 0.7**:              - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unify enum and union
 
 ##Introduction
 ##Code organization
@@ -236,7 +236,7 @@ Source file contains a number of definitions for struct, type and functions.
 *Notes:*
 - If a name starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
 - The order of the contents of source code file matters: First `import` section, `type` section, structs and finally functions.
-- `any` denotes any type. Everything can be used for `any` type (primitives, structs, unions, function pointers, ...). It can be something like an empty struct.
+- `any` denotes any type. Everything can be used for `any` type (primitives, structs, unions, function pointers, ...). It can be something like an empty struct. You have to initialize variables of type `any`.
 - Immutability: All variables are immutable but can be re-assigned.
 - You can simulate constant values using functions: `func PI -> 3.1415;`. Compiler/runtime will take care of optimizations.
 
@@ -463,8 +463,9 @@ func read_customer(id:int) -> struct { Nothing; custmer: CustomerData }
 ```
 
 ###Validation
-When defining types or functions, you can define validation code/function. This is a block which will be executed/evaluated everytime state of the bound variable changes or function is executed. You can makes sure the data (or function intput/output) is in consistent and valid state.
+When defining types or functions, you can define validation code/function. This is a block which will be executed/evaluated everytime variable gets a new value or function is executed. You can makes sure the data (or function intput/output) is in consistent and valid state.
 `var m: int with {validate_month};`
+`var m: int with validate_month; //same as above`
 Expression will be called with `$` pointing to the new value. If the expression evaluates to false, a runtime exception will be thrown.
 `var x: int with {$>10} with {$<100} with { check_value($) };`
 `type x := struct { x: int; y:int; } with { $.x < $.y };`
