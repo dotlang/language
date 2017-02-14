@@ -41,7 +41,7 @@ That's why I am creating a new programming language: Electron.
 
 Electron programming language is a general purpose language based on author's experience and doing research on 
 other languages (namely Java, C\#, C, C++, Rust, Go, Scala, Objective-C, Python, Perl, Smalltalk, Ruby, Haskell, Clojure, F\#, Oberon-2). 
-I call the paradigm of this language "Data-oriented". This is a combination of Object-Oriented and Functional approach and it designed to work with data. There are no objects or classes. Only structs and functions. But most important features of OOP (encapsulation, abstraction, inheritance and polymorphism) are provided to some extent.
+I call the paradigm of this language "Data-oriented". This is a combination of Object-Oriented and Functional approach and it is designed to work with data. There are no objects or classes. Only structs and functions. But most important features of OOP (encapsulation, abstraction, inheritance and polymorphism) are provided to some extent.
 
 There is a runtime system which is responsible for memory allocation and management, interaction with OS and 
 other external libraries and handling concurrency.
@@ -131,7 +131,7 @@ AssertStmt = 'assert' condition [':' expression] ';'
 //inside function adder
 assert false, "Error!";  //throw exception and exit
 //outside: catching error
-`var x = adder(5,6); var x: any = get_exception(); if ( x.value? ) {...};`
+`var x = adder(5,6); var x: Exception = get_exception(); if ( x.has_value ) {...};`
 ```
 - There is no `finally` in Electron. Each variable which is not part of return value of the function, will be cleaned-up upon function exit (even if there is an exception). This is done by calling `dispose` function on that type. You can also manually call this function in case you need to cleanup the resource earlier.
 
@@ -170,7 +170,7 @@ You can also use it to define a type alias.
 
 ```
 type point := int[];
-type x := int;
+type x := int;  //x will be an alias for int type
 var a: x;  //=var a: int;
 ```
 To use a type:
@@ -220,7 +220,7 @@ Also you can call a function or refer to a type with fully qualified name:
 
 
 ###native
-Denote function is implemented by runtime or external libraries.
+Denotes function is implemented by runtime or external libraries.
 `native func file_open(path: string) -> File;`
 
 ##Primitives
