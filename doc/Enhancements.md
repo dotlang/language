@@ -2,6 +2,34 @@
 
 Read [Part1] (https://github.com/mm-binary/electron-lang/blob/master/backup/EEP.v1.md).
 
+\* - how can we mock a function for testing?
+`mock func1, func (x: int) -> string { return "AA" };`
+at least, this can easily be done with built-in functions.
+so lets not pollute syntax with it.
+
+\* - Some shortcuts can be very useful like:
+`x = y if defined y` becomes `x = y if defined;`
+
+\* - define something like seq in F# to have a generator function to be used in loops.
+`for (x: seq(1..10))`
+
+\* - Add regex operators for search and replace.
+
+\* - how can we mock a method? in a general way. so it won't be limited to testing. 
+we can easily define a lambda to mock a method. but how to attach it to that method?
+there is no manager, parent to accept this lambda.
+proposal: built-in method: `mock('myMethod', <<lambda>>);`
+to do mocking in the life-time of the current function. 
+
+\* - For core - function to return hash representing a struct, used for serialization, and what about deser?
+`string[object] result = serialize(myObj);`
+
+\* - Runtime - use concept of c++ smart ptr to eliminate GC
+
+\* - Add native parallelism and communication tools.
+
+
+
 Y - decorators - another try
 lets define some native, built-in functions. 
 1. `func` data type means any function.
@@ -33,11 +61,6 @@ now we need two more keywords: `func` representing any function, `tuple` represe
 @make_bold   //T is tuple(x:int) and U is tuple(string), compiler can infer them
 func get_data(x:int) -> string { return x.toString(); }
 ```
-
-\* - how can we mock a function for testing?
-`mock func1, func (x: int) -> string { return "AA" };`
-at least, this can easily be done with built-in functions.
-so lets not pollute syntax with it.
 
 Y - now that we are functional maybe we can use some of perl features.
 `x if y`
@@ -113,9 +136,6 @@ but first version is more readable. and if get_data returns a tuple?
 anyway, I think, if fn returns a tuple, it is still one thing.
 so `(1, $)` when $_ is output of a function which returns (1,2).
 means -> `(1,1,2)`?
-
-\* - Some shortcuts can be very useful like:
-`x = y if defined y` becomes `x = y if defined;`
 
 Y - replace tuple with struct without name.
 
@@ -224,11 +244,6 @@ no. lets use core tempalte types.
 N - using % to fetch annotations?
 `%x` returns a hash of annotations on the data.
 its type: `hash<string, hash<string, object>>`
-
-\* - define something like seq in F# to have a generator function to be used in loops.
-`for (x: seq(1..10))`
-
-\* - Add regex operators for search and replace.
 
 Y - vairadic functions?
 `func print(x: int, params int[] rest) {...}`
@@ -342,12 +357,6 @@ Y - for primitives, we can have operator `=` overridden for them to assign them 
 N - Stack/heap allocation?
 
 N - adding some prefix to fn names as a grouping mechanism.
-
-\* - how can we mock a method? in a general way. so it won't be limited to testing. 
-we can easily define a lambda to mock a method. but how to attach it to that method?
-there is no manager, parent to accept this lambda.
-proposal: built-in method: `mock('myMethod', <<lambda>>);`
-to do mocking in the life-time of the current function. 
 
 N - Like oop where we should rely on interface not implementation, we should extend from types with no fields. and rename extens to implements.
 But if everything is transparent and auto-binding, we cannot ban this.
@@ -1525,9 +1534,6 @@ same for `for`.
 `if ( x>0 ) { ... } `
 no. this makes language more complicated.
 
-\* - For core - function to return hash representing a struct, used for serialization, and what about deser?
-`string[object] result = serialize(myObj);`
-
 N - now that function cannot modify input, how can we implement stack push or pop? (maybe we can return a lambda which is supposed to to the modification, and caller has to invoke it)?
 solution1: let developer decide whether some variable will be immutable or mutable. so if type is mutable, function can modify the input.
 immutability will make testing harder. but makes developer's life easier. Because he doesn't need to write lots of code and use shortcuts to do some ordinary task. if we have mutability, caching decision will become harder and more complicated.
@@ -1535,8 +1541,6 @@ immutability will make testing harder. but makes developer's life easier. Becaus
 how am I going to add something to a list?
 `ls = ls.add(x);`
 `var ls: list!Customer`
-
-\* - Runtime - use concept of c++ smart ptr to eliminate GC
 
 N - TEST: think about how to implement a pricing engine/vol-surface/economic events and contract object in new approach.
 economic_events:
@@ -2221,8 +2225,6 @@ N - if we get a hash representing a type `var h: object[string]` and we call `to
 It should. The code that creates that hash, stores actual types into the output (it does not cast).
 But when we call a function on a contained type, runtime will cast the data.
 
-\* - Add native parallelism and communication tools.
-
 Y - pre requirement for built-in templates: `with` for function as pre and post conditions:
 `func AA(x: int) with {pre_check} -> int { ... } with { post_check}`
 One solution: we can define two `with` blocks for function. pre and post.
@@ -2554,7 +2556,7 @@ They "must" be initialized.
 
 N - For struct, if type is not specified, it is boolean.
 
-? - instead of `cast` function why not having a function with the same name of the target type?
+N - instead of `cast` function why not having a function with the same name of the target type?
 But naming convention for types is `CapitalLetter` but for functions it is `name1_name2`.
 
 
