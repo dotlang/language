@@ -1,7 +1,7 @@
 # Electron Programming Language Reference
-Version 0.6 
+Version 0.7 
 
-January 18, 2017
+Feb 19, 2017
 
 ##History
 - **Version 0.1**: Sep 4, 2016 - Initial document created after more than 9 months of research, comparison and thinking.
@@ -10,7 +10,7 @@ January 18, 2017
 - **Version 0.4**: Oct 27, 2016 - Removed some less needed features (monad), defined rules for multiple dispatch.
 - **Version 0.5**: Nov 13, 2016 - Some cleanup and better organization
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
-- **Version 0.7**: Feb 14, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
+- **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 
 ##Introduction
 ##Code organization
