@@ -10,7 +10,7 @@ January 18, 2017
 - **Version 0.4**: Oct 27, 2016 - Removed some less needed features (monad), defined rules for multiple dispatch.
 - **Version 0.5**: Nov 13, 2016 - Some cleanup and better organization
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
-- **Version 0.7**:              - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unify enum and union
+- **Version 0.7**: Feb 14, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 
 ##Introduction
 ##Code organization
@@ -202,6 +202,7 @@ Note that when using type for alias to a function, you have to specify input nam
 You can import a source code file using below statement. Note that import, will add symbols (functions and types) inside that source code to the current symbol table:
 
 ```
+//Starting a path with slash means its absolute path (relative to include path). Otherwise it is relative to the current file
 import /core/st/Socket;  //functions and types inside core/st/Socket.e file are imported and available for call/use
 import /core/st/*;       //import source files under st dir
 import /core/st/**;      //import everything recursively
@@ -216,8 +217,6 @@ Note that you must have imported the module before.
 Also you can call a function or refer to a type with fully qualified name:
 `var x: int = /core/pack2/myFunction(10, 20);`
 `var t: /core/pack2/myStruct;`
-
-
 
 ###native
 Denotes function is implemented by runtime or external libraries.
@@ -242,16 +241,16 @@ Source file contains a number of definitions for struct, type and functions.
 
 ###Structs
 ```
-type A := struct { x: int = 19; };  //you can assign default value
-type B := struct { a: A, y: int; }; //B composes A
+type A := struct { x: int = 19 };  //you can assign default value
+type B := struct { a: A, y: int }; //B composes A
 type C := struct;   //empty struct
-type C := struct { y: int = 9; }; //setting default value
+type C := struct { y: int = 9 }; //setting default value
 ```
 
 To create a new struct instance:
 ```
 var test : A = {x: 10};
-var test2 : A{};  //{} is mandatory
+var test2 : A{};  //{} is mandatory. Type name is mandatory unless it can be implied
 ```
 - Note that if there is a multiple struct inheritance which results in function ambiguity, there will be a compiler error: 
 `func x(p: P1)->int ...`
