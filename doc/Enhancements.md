@@ -2560,6 +2560,3 @@ N - instead of `cast` function why not having a function with the same name of t
 But naming convention for types is `CapitalLetter` but for functions it is `name1_name2`.
 
 
-
-
-
