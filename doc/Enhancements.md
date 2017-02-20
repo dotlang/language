@@ -2559,4 +2559,4 @@ N - For struct, if type is not specified, it is boolean.
 N - instead of `cast` function why not having a function with the same name of the target type?
 But naming convention for types is `CapitalLetter` but for functions it is `name1_name2`.
 
-
+? - About exceptions. If function A has a failed assert, what is the mechanism to run? How/where will runtime search for `get_exception` calls?
