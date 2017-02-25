@@ -2560,3 +2560,5 @@ N - instead of `cast` function why not having a function with the same name of t
 But naming convention for types is `CapitalLetter` but for functions it is `name1_name2`.
 
 ? - About exceptions. If function A has a failed assert, what is the mechanism to run? How/where will runtime search for `get_exception` calls?
+What if there is no exception? What will this return?
+Maybe we need to add another function `has_exception`.
