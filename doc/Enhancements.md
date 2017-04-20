@@ -2601,7 +2601,7 @@ Then can we use // or `#` for another purpose?
 To prevent mistakes where user puts two statements and compiler reads the second as a comment,
 ';' must be either first character of the file or it must follow whitespace.
 
-Y - add concept of protocol. maybe we can use `assert` for this.
+N - add concept of protocol. maybe we can use `assert` for this.
 ```
 ;there must be a paint function defined according to below signature for any type which can be casted to Shape
 type Shape := struct {...} assert @paint($_, int, int) 
@@ -2611,3 +2611,60 @@ func Square -> $.shape;  //normal code
 can we use @ notation in other places?
 `if (@paint(int, float)) ...` Seems ok.
 Can we use this notation for static checks? E.g. check for consts?
+
+N - Replace assert keyword with `@`
+Then for function checking, we can use '%' or ?
+No. assert is explicit which is a good thing.
+
+N - can we simplify protocol definition?
+`type Shape := struct {...} assert @paint($_, int, int)`
+and possibly remove @ notation?
+maybe we shouldn't be using assert. Assert is supposed to do runtime check for data.
+This is not for data and it not supposed to be at runtime.
+`type Shape := struct {...} has paint($_, int, int)`
+In this way we will remove @ notation and its usage in other places.
+`type Shape := struct {...} supports paint($_, int, int), delete($_)`
+
+Y - Can we simplify casting?
+`func Square#Shape -> $.shape`
+`type Shape := struct {...} -> Shape $.shape, -> int { return $.x + 5 }`
+
+N - Can we make runtime type checking more flexible and robust?
+`func pop(s: Stack) -> any { ... } assert { $ :: s.x }`
+It is better to have consistent definition for :: so both parameters must be values?
+To get unique type identifier: `id(x)` as a core function will return a number representing type of x.
+`type_id(x) == type_id(y)` is the same as `x :: y`? No. Maybe they have different types but can be casted.
+`x -> y`
+This can be represented as a cast-only function look-up.
+`exists(id(x), id(y)) ;there exists a cast function for x which outputs y type`
+`if ( x -> type_id(y) )` if you can cast x to y
+`if ( x -> int)` or `if ( x -> type_id(y) )`
+but `->` is already used for function definition. I prefer not to reuse it here but would like to have a notation which implies direction.
+`if ( x.(int) )`
+`if ( x =? y )`
+
+N - Why do we need `supports` keyword? Can't we just implement those methods normally and override them in children?
+```
+type Base := struct {}
+type Derived := struct {base: Base} -> Base $.base
+...
+var x:Base = get_data();  //runtime type of x is Derived
+;calling method m on x where we have implementations for Base and Derived should call Derived impl.
+```
+remove supports keyword.
+
+Y - The syntax for defining custom cast is not consistent and intuitive.
+`type Square := struct {...} -> Shape $.shape, -> int { return $.x + 5 }`
+`type Square := struct {...} as Shape = $.shape, as int = { return $.x + 5 }`
+
+? - Does implicit casting work well with current method dispatch?
+we have f(Shape,B,C). and x:Square can be casted to Shape.
+now a call to f(x,y:B, z:) will try to find f(Shape, B, C) first, if runtime type of x is Shape.
+But if x is a Square, it will look for f(Square, B, C) first. 
+
+? - use `::` in function definition to impact method dispatch.
+```
+func draw(c: Canvas, s: Shape) -> ...
+func draw(c :: Canvas, s: Shape) -> ... ;can accept a Canvas or any type that can be casted to Canvas + A shape
+```
+But this is already provided by lang spec. f(A,B) can accept inputs whose type is derived from A or B.
