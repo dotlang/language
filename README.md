@@ -11,7 +11,7 @@ Feb 19, 2017
 - **Version 0.5**: Nov 13, 2016 - Some cleanup and better organization
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
-- Clarifications for exception, unify type checking with pre/post condition
+- **Version 0.8**: ??? ??, 2017 - Clarifications for exception, unify type checking with pre/post condition
 
 ##Introduction
 ##Code organization
@@ -186,7 +186,7 @@ var xx: mypt = {1, 2};
 
 You can define an enum based on another type with type restriction and constants:
 ```
-type DoW := int with { $ :: DoW } //force values for this type to be only DoW type, not int;
+type DoW := int assert { $ :: DoW } //force values for this type to be only DoW type, not int;
 const SAT : DoW = 1; 
 const SUN : DoW = 2;
 ...
@@ -199,12 +199,6 @@ You can define functions based on `int` and `X` where `type X := int` and they w
 
 Note that when using type for alias to a function, you have to specify input names too.
 `type comparer := func (x:int, y:int) -> bool;`
-- You can use `assert` to define a protocol for a type. This defines set of methods that have to be defined for that type or types that can be casted to this type.
-`type Shape := struct {...} assert @paint($_, int, int) ;here $_ denoted the subject type`
-- So if you define a cast function to cast type X to Shape, you have to define method paint according to above signature.
-- You can use `@` notation in other places too. This does a static check to find a function: 
-`if (@paint(int, float)) ...`
-
 
 ###import
 
@@ -273,8 +267,8 @@ To define a union data type, you can define a variable of type `any` and add opt
 `var h: MaybeInt{value:12};`
 `if ( g.hasValue )`
 Another example:
-`type IntOrBool := any with { $ :: int or $ :: bool };`
-`type OptionalInt := any with { $ :: int or $ :: bool } with { $ :: int or $ == true };`
+`type IntOrBool := any assert { $ :: int or $ :: bool };`
+`type OptionalInt := any assert { $ :: int or $ :: bool } assert { $ :: int or $ == true };`
 
 
 ###Functions
@@ -358,7 +352,6 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `$i` function inputs
 - `$` first input of the function (`$0`)
 - `$_` input place-holder
-- `@` static check for function existence
 - `:` for hash, call by name, array slice, loop
 - `::` runtime type check
 - `:=` type definition
@@ -384,8 +377,10 @@ Kinds of types: `struct`, `primitives`.
 - To have polymorphism at runtime, you also have to write cast functions:
 ```
 type Square := struct { shape: Shape, size: int };
-func Square#Shape -> $.shape ;special syntax to define casting functions
+; here we provide implicit cast from Square to Shape and int
+type Square := struct {...} as Shape = $.shape, as int = { return $.size + 5 }
 ```
+- When writing cast code, you are wrigin mini functions which have no name, their input type is implied and input name is not needed. You just specify output type and the body of the function.
 - Note than when a function for contained/derived type is called, it will have an instance of the contained/derived type. So further calls to other functions, will be dispatched to those who work with the contained type, not the container/base type.
 - We can keep a list of shapes in an array/collection of type Shape: `var o: Shape[] = {Circle{}, Square{}};`
 - You can iterate over shapes in `o` array defined above, and call `paint` on them. With each call, appropriate `paint` method will be called (this appropriate method is identified using 3 dispatch rules explained below).
@@ -400,7 +395,7 @@ Then `var x: Shape = create(y);` static type of `x` is Shape because it's output
 - Note that if A inherits from B, upon changes in variables of type A, constraints for both child and parent type will be called.
 - When there is a function call `f(a,b,c)` compiler will look for a function `f` with three input arguments. If there are multiple function candidates, below 3 rules will be used:
 1. single match: if we have only one candidate function (based on name/number of inputs), then there is a match.
-2. dynamic match: if we have a function with all types matching runtime type of variables, there is a mtch. Note that in this case, primitive types have same static and dynamic type.
+2. dynamic match: if we have a function with all types matching runtime type of variables, there is a match. Note that in this case, primitive types have same static and dynamic type.
 3. static match: we reserve the worst case for call which is determined at compile time: the function that matches static types. 
 Note that this binding is for an explicit function call. when we assign function to a variable, the actual function to be used, is determined at compile time according to static type. so `var x = paint` where type of x is `func(Circle, Color)` will find a paint function body with matching input. you cannot have x of type `func(Shape, Color)` and assign a value to it and expect it to do dynamic dispatch when called at runtime. There is a work-around which involves assigning a lambda to the variable which calls the function by name and passes inputs. in that case, invocation will include a dynamic dispatch.
 So if we have this:
