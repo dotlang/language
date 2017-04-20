@@ -569,3 +569,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 
 - Compiler will decide which methods should be inlined.
 - Rule of locality: You should write a piece of code at the nearest location to where it applies (e.g. constraints). 
+
