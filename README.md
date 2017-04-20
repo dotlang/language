@@ -11,6 +11,7 @@ Feb 19, 2017
 - **Version 0.5**: Nov 13, 2016 - Some cleanup and better organization
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
+- Clarifications for exception, unify type checking with pre/post condition
 
 ##Introduction
 ##Code organization
@@ -84,10 +85,11 @@ Each package contains zero or more source code files, which are called modules. 
 ##Lexical Syntax
 - **Encoding**: Source code files are encoded in UTF-8 format.
 - **Whitespace**: Any instance of space(' '), tab(`\t`), newline(`\r` and `\n`) are whitespace and will be ignored.
-- **Comments**: C like comments are used (`//` for single line and `/* */` for multi-line). `///` before function or field or first line of the file is special comment to be processed by automated tools. 
+- **Comments**: `;` is used to denote comment. It must be either first character of the line or follow a whitespace.
 - **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0b0101011101` binary number, `192.121d` double, `1234l` long. Also `true`, `false` are literals.
 - You can separate number digits using undescore: `1_000_000`.
 - **Adressing**: Functions are called using `function_name(input1, input2, input3)` notation. Fields of a struct are addressed using `struct_name.field_name` notation. Modules are addressed using `/` notation.
+- Each statement must be in a separate line and must not end with semicolon.
 
 ##Keywords
 Electron has a small set of reserved keywords: 
@@ -103,7 +105,7 @@ Semantics of this keywords are same as other mainstream languages.
 - Note that condition must be a boolean expression.
 - You can use any of available operators for condition part. 
 - Also you can use a simple boolean variable (or a function with output of boolean) for condition.
-- You can also use suffix syntax for if: `Block if ( condition );`
+- You can also use suffix syntax for if: `Block if ( condition )`
 
 ###switch
 ```
@@ -120,7 +122,7 @@ You can also use switch without input in which case, all case blocks will be eva
 
 ###assert
 ```
-AssertStmt = 'assert' condition [':' expression] ';'
+AssertStmt = 'assert' condition [':' expression]
 ```
 - Assert makes sure the given `condition` is satisfied. 
 - If condition is not satisfied, it will throw `expression` exception.
@@ -129,9 +131,9 @@ AssertStmt = 'assert' condition [':' expression] ';'
 - You can use `assert false, X` to create exception and return from current method.
 ```
 //inside function adder
-assert false, "Error!";  //throw exception and exit
+assert false, "Error!"  //throw exception and exit
 //outside: catching error
-func ... var x = adder(5,6); ... } assert { var x: Exception = get_exception(); if ( x.has_value ) ... }
+func ... var x = adder(5,6) ... } assert { var x: Exception = get_exception() if ( x.has_value ) ... }
 ```
 - There is no `finally` in Electron. Each variable which is not part of return value of the function, will be cleaned-up upon function exit (even if there is an exception). This is done by calling `dispose` function on that type. You can also manually call this function in case you need to cleanup the resource earlier. 
 - You can do custom cleanup or exception catching in post-conditions defined using assert keyword.
@@ -197,6 +199,12 @@ You can define functions based on `int` and `X` where `type X := int` and they w
 
 Note that when using type for alias to a function, you have to specify input names too.
 `type comparer := func (x:int, y:int) -> bool;`
+- You can use `assert` to define a protocol for a type. This defines set of methods that have to be defined for that type or types that can be casted to this type.
+`type Shape := struct {...} assert @paint($_, int, int) ;here $_ denoted the subject type`
+- So if you define a cast function to cast type X to Shape, you have to define method paint according to above signature.
+- You can use `@` notation in other places too. This does a static check to find a function: 
+`if (@paint(int, float)) ...`
+
 
 ###import
 
@@ -238,7 +246,6 @@ Source file contains a number of definitions for struct, type and functions.
 - The order of the contents of source code file matters: First `import` section, `type` section, structs and finally functions.
 - `any` denotes any type. Everything can be used for `any` type (primitives, structs, unions, function pointers, ...). It can be something like an empty struct. You have to initialize variables of type `any`.
 - Immutability: All variables are immutable but can be re-assigned.
-- You can simulate constant values using functions: `func PI -> 3.1415;`. Compiler/runtime will take care of optimizations.
 
 ###Structs
 ```
@@ -351,8 +358,9 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `$i` function inputs
 - `$` first input of the function (`$0`)
 - `$_` input place-holder
+- `@` static check for function existence
 - `:` for hash, call by name, array slice, loop
-- `::` type check
+- `::` runtime type check
 - `:=` type definition
 - `=>,<=` chaining
 - `x{}` instantiation/cloning
@@ -367,28 +375,28 @@ Kinds of types: `struct`, `primitives`.
 `type Shape := struct;`
 `type Circle := struct {x:Shape...}`
 `type Square := struct {x: Shape...}`
-`type Polygon := struct {x: Shape;}`
+`type Polygon := struct {x: Shape...}`
 - You can define functions on types and specialize them for special subtypes. This gives polymorphic behavior.
-`func paint(o:Shape) {}`  //you can even omit this definition if you want to disable `paint` for types which don't inherit from anything.
+`func paint(o:Shape) {}`  
 `func paint(o:any){}`
 `func paint(o:Circle)...`
 `func paint(o:Square)...`
-- To have full polymorphism at runtime, you have to write cast functions too.
+- To have polymorphism at runtime, you also have to write cast functions:
 ```
-type Square := struct { shape: Shape; size: int };
-func cast(s:Square) -> $.shape;  //normal code
+type Square := struct { shape: Shape, size: int };
+func Square#Shape -> $.shape ;special syntax to define casting functions
 ```
-- Note than when a function for contained type is called, it will have an instance of the contained type. So further calls to other functions, will be dispatched to those who work with the contained type, not the container type.
+- Note than when a function for contained/derived type is called, it will have an instance of the contained/derived type. So further calls to other functions, will be dispatched to those who work with the contained type, not the container/base type.
 - We can keep a list of shapes in an array/collection of type Shape: `var o: Shape[] = {Circle{}, Square{}};`
 - You can iterate over shapes in `o` array defined above, and call `paint` on them. With each call, appropriate `paint` method will be called (this appropriate method is identified using 3 dispatch rules explained below).
-- If there is any kind of ambiguity in the code (e.g. struct A contains B and an int field and a function is called with A which can accept either B or int), compiler will throw an error unless there is appropriate cast function (e.g. `func cast()->int...`).
+- If there is any kind of ambiguity in the code (e.g. struct A contains B and an int field and a function is called with A which can accept either B or int), compiler will throw an error unless there is appropriate cast function.
 - Example: Equality check: `func equals(a:any, b:any)...` and specialize for types that you want to accept `==` operator: `func equals(a:Customer, b: Customer)...`
 - Example: sorting a mix of objects: `func compare(a:any, b:any)` and `func compare(a: Record, b:Record)`;
 - Example: Collission checking: `func check(a:S, b:T)...` and `func check(a: Asteroid, b: Earth)...` 
 Then we can define an array of objects and in a loop, check for collissions.
 - Visible type (or static type), is the type of the variable which can be seen in the source code. Actual type or dynamic type, is it's type at runtime. For example:
 `func create(x:type)->Shape { if ( type == 1 ) return Circle{}; else return Square{}; }`
-Then `var x: Shape = create(y);` static type of `x` is Shape because it's output of `create` but it's dynamic type can be either `Circle` or `Square`.
+Then `var x: Shape = create(y);` static type of `x` is Shape because it's output of `create` but it's dynamic type can be either `Circle` or `Square`. Note that we assume proper definition of casting for types `Square` and `Circle` to `Shape`.
 - Note that if A inherits from B, upon changes in variables of type A, constraints for both child and parent type will be called.
 - When there is a function call `f(a,b,c)` compiler will look for a function `f` with three input arguments. If there are multiple function candidates, below 3 rules will be used:
 1. single match: if we have only one candidate function (based on name/number of inputs), then there is a match.
@@ -427,12 +435,7 @@ if `addAll(Derived)` calls `addAdd(Base)` which in turn calls `add(Base)` then a
 - `for(x:array1)` or `for(int key,string val:hash1)`.
 
 ###Casting
-- There is a general function `func cast(source:any)->any` which is called to cast from `any` to `any`. You can specializa this function for your purposes (e.g `func cast(x:BigInt) -> int`).
-- Casting of type to their parents is automatically provided. `var x: Parent = cast(childData);`
-- For example, you can write `func cast(d: DoW)->int ...` function to provide custom code to convert Day-of-Week type to int.
-- Value of a variable which is not explicitly initialized is given by a call to default function: `func default!T()->T`.
-- You can also specialize this function for your types.
-- You can ignore `T` part if type can be inferred: `var x: int = default;`. This can be useful in template functions.
+- For example, you can write `func Dow#int ...` function to provide custom code to convert Day-of-Week type to int.
 
 ###Anonymous struct
 
@@ -471,7 +474,6 @@ Expression will be called with `$` pointing to the new value. If the expression 
 - Example for functions:
 `func AA(x: int) assert { pre_check } -> int { ... } assert { post_check }`
 In post_check section, you can refer to the function output using `$` or `$0` notation.
-
 
 ###Chaining
 You can use `=>` operator to chain functions. `a => b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
