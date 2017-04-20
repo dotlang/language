@@ -91,7 +91,8 @@ Each package contains zero or more source code files, which are called modules. 
 
 ##Keywords
 Electron has a small set of reserved keywords: 
-`if, else, switch, assert, for, break, continue, return, type, import, var, val, func, invoke, select, native, struct`.
+`if, else, switch, 
+, for, break, continue, return, type, import, var, val, func, invoke, select, native, struct`.
 
 ###if, else
 ```
@@ -130,9 +131,10 @@ AssertStmt = 'assert' condition [':' expression] ';'
 //inside function adder
 assert false, "Error!";  //throw exception and exit
 //outside: catching error
-`var x = adder(5,6); var x: Exception = get_exception(); if ( x.has_value ) {...};`
+func ... var x = adder(5,6); ... } assert { var x: Exception = get_exception(); if ( x.has_value ) ... }
 ```
-- There is no `finally` in Electron. Each variable which is not part of return value of the function, will be cleaned-up upon function exit (even if there is an exception). This is done by calling `dispose` function on that type. You can also manually call this function in case you need to cleanup the resource earlier.
+- There is no `finally` in Electron. Each variable which is not part of return value of the function, will be cleaned-up upon function exit (even if there is an exception). This is done by calling `dispose` function on that type. You can also manually call this function in case you need to cleanup the resource earlier. 
+- You can do custom cleanup or exception catching in post-conditions defined using assert keyword.
 
 ###for, break, continue
 ```
@@ -272,7 +274,6 @@ Another example:
 
 ```
 func my_func1(x: int, y: int) -> float { return x/y; }
-func my_func1(var x: int, y: int) -> float { x++; return x/y; }  //get a reference to original x so I can change the value
 func my_func2(x: int, y: int = 11 ) -> float { return x/y; }  //you can set default value
 func my_func3(x: int, y: int) -> x/y;  //you can omit {} if its a single expression
 func my_func7() -> int { return 10;} //fn has no input but () is mandatory
@@ -294,12 +295,12 @@ new_array = map {$0+1}, my_array;
 `y : MyType; y = x{};`
 `y : MyType; y = x{y: 5};`  //clone with modification
 - When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`
-- You can use `params` to hint compiler to create appropriate array for a variadic function: `func print(x: int, params int[] rest) {...}` 
+- You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
 - `rest` is a normal array which is created by compiler for each call to `print` function.
 - Optional arguments and default values are not built-in but you can simply implement them:
 `func f(x: int, y: int) ...`
 `func f(x: int) -> f(x, 10);`
-- Functions are not allowed to change (directly or indirectly) any of their inputs unless it is maked with `var` meaning it is a mutable reference.
+- Functions are not allowed to change (directly or indirectly) any of their inputs.
 - You cannot ignore return value of a non-void function. This affects resource cleanup mechanism at runtime.
 
 ###Variables
@@ -322,16 +323,15 @@ Cloning, passing, assigning to other vars does not change or evaluate the variab
 - As soon as you declare a variable it will have some value. Even if it is a struct, it will have all fields set to default value.
 - You can define local variables using `var` keyword.
 `var x: int = 19; x= 11; //ok - can re-assign`
-- Struct members are not marked with any of these. Because their mutability depends on mutability of their contains data structure. If the struct is instantiated using `var` keyword they will be mutable too.
 
 ##Templates
-- You can use `with` keyword with types and functions to enforce template constraints. 
+- You can use `assert` keyword with types and functions to enforce template constraints. 
 - You can specialize a generic functions and runtime will choose the most specific candidate.
 ```
 type Stack := struct { x: any[]; };
-type IntStack := Stack with { $.x :: int };
-func pop(s: Stack) -> any { ... } with { $ :: s.x }
-func push(x: any, s: Stack) with { x :: s.x[] }) -> ...
+type IntStack := Stack assert { $.x :: int };
+func pop(s: Stack) -> any { ... } assert { $ :: s.x }
+func push(x: any, s: Stack) assert { x :: s.x[] }) -> ...
 ```
 
 ##Operators
@@ -345,7 +345,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - You can only override these operators: `==` (`equals`), `=>` (`bind`) + some others by writing your custom functions.
 - For example, `x[10]` will call `op_index(x, 10)`.
 - `x :: y` returns true if `x` can be cast to type of `y`. `y` can be either a variable or name of a type.
-`func add(x: any, y: any) with { x :: y } ...`. For array `a[]` means type of elements of the array. For hash `h[]` means type of values inside hashtable, and `[h]` means type of keys of the hashtable.
+`func add(x: any, y: any) assert { x :: y } ...`. For array `a[]` means type of elements of the array. For hash `h[]` means type of values inside hashtable, and `[h]` means type of keys of the hashtable.
 
 ##Special syntax
 - `$i` function inputs
@@ -462,14 +462,14 @@ func read_customer(id:int) -> struct { Nothing; custmer: CustomerData }
 
 ###Validation
 When defining types or functions, you can define validation code/function. This is a block which will be executed/evaluated everytime variable gets a new value or function is executed. You can makes sure the data (or function intput/output) is in consistent and valid state.
-`var m: int with {validate_month};`
-`var m: int with validate_month; //same as above`
+`var m: int assert {validate_month};`
+`var m: int assert validate_month; //same as above`
 Expression will be called with `$` pointing to the new value. If the expression evaluates to false, a runtime exception will be thrown.
-`var x: int with {$>10} with {$<100} with { check_value($) };`
-`type x := struct { x: int; y:int; } with { $.x < $.y };`
+`var x: int assert {$>10} assert {$<100} assert { check_value($) };`
+`type x := struct { x: int; y:int; } assert { $.x < $.y };`
 - This can be done for all types and variables.
 - Example for functions:
-`func AA(x: int) with { pre_check } -> int { ... } with { post_check }`
+`func AA(x: int) assert { pre_check } -> int { ... } assert { post_check }`
 In post_check section, you can refer to the function output using `$` or `$0` notation.
 
 
