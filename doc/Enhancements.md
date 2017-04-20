@@ -2027,7 +2027,7 @@ import the first one normally. and then get a function pointer to the second fun
 
 N - can we enhance the language to support automatic and transparent parallelization?
 
-Y - add `val` so variables declared with val cannot be re-assigned.
+N - add `val` so variables declared with val cannot be re-assigned.
 `val x: int[] = {1,1,1}; //ok`
 `x=[1,2,3]; //wrong`
 every data is either function input or local variable.
@@ -2559,6 +2559,30 @@ N - For struct, if type is not specified, it is boolean.
 N - instead of `cast` function why not having a function with the same name of the target type?
 But naming convention for types is `CapitalLetter` but for functions it is `name1_name2`.
 
-? - About exceptions. If function A has a failed assert, what is the mechanism to run? How/where will runtime search for `get_exception` calls?
-What if there is no exception? What will this return?
+===============================
+
+Y - replace with keyword with assert also use it for pre/post condition check for function.
+
+Y - Instead of variadic functions, we can define an array input. Then user will send an array literal with any number of input he wants.
+
+Y - About exceptions. If function A has a failed assert, what is the mechanism to run? How/where will runtime search for `get_exception` calls?
+What if there is no exception? What will this (`get_exception`) return?
 Maybe we need to add another function `has_exception`.
+Maybe we can add a mechanism like `dispose` but for a function. This can also cover the case where function needs custom cleanups. This code will be called after function exit (normally or because of assert failure).
+```
+func adder(x: int, y:int) -> int 
+{
+  var g = call_method();
+  return x+y;
+} 
+assert { if ( $ > 0 or has_exception() ) ... }
+```
+We can re-use assert for post-condition, cleanup and exception handling.
+
+N - In order to simplify variadic function, we can assume `$` is an array.
+
+Y - variadic function: accept an array as last input
+
+? - we dont need semicolon at the end of line. You cannot put multiple statements in one line.
+
+? - the new template system: how does it affect polymorphism and casting?
