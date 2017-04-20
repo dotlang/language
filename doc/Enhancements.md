@@ -2583,6 +2583,31 @@ N - In order to simplify variadic function, we can assume `$` is an array.
 
 Y - variadic function: accept an array as last input
 
-? - we dont need semicolon at the end of line. You cannot put multiple statements in one line.
+N - the new template system: how does it affect polymorphism and casting? No effect.
 
-? - the new template system: how does it affect polymorphism and casting?
+Y - as casting is important for polym. too, maybe we should simplify its syntax.
+`func cast(s:Square) -> $.shape;  //normal code`
+`func Square#Shape -> $.shape ;special syntax to define casting functions`
+But target can be implied from output type. But it's better to explicitly indicate that.
+`func cast(Square) -> $.shape`
+Another approach: define casting logic upon defining data. But this is mixing data and behavior which we dont want.
+
+N - does `x :: int` use static type of x or dynamic type? Should use dynamic because for static it is decidable from source code.
+
+Y - we dont need semicolon at the end of line. You cannot put multiple statements in one line.
+Then maybe we can make use of semicolon somewhere!
+Maybe for comments! then user "can" mis-use and put semicolon at the end of the line
+Then can we use // or `#` for another purpose?
+To prevent mistakes where user puts two statements and compiler reads the second as a comment,
+';' must be either first character of the file or it must follow whitespace.
+
+Y - add concept of protocol. maybe we can use `assert` for this.
+```
+;there must be a paint function defined according to below signature for any type which can be casted to Shape
+type Shape := struct {...} assert @paint($_, int, int) 
+type Circle := struct {x:Shape...}
+func Square -> $.shape;  //normal code
+```
+can we use @ notation in other places?
+`if (@paint(int, float)) ...` Seems ok.
+Can we use this notation for static checks? E.g. check for consts?
