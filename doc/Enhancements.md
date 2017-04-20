@@ -2657,14 +2657,23 @@ Y - The syntax for defining custom cast is not consistent and intuitive.
 `type Square := struct {...} -> Shape $.shape, -> int { return $.x + 5 }`
 `type Square := struct {...} as Shape = $.shape, as int = { return $.x + 5 }`
 
-? - Does implicit casting work well with current method dispatch?
+N - Does implicit casting work well with current method dispatch?
 we have f(Shape,B,C). and x:Square can be casted to Shape.
 now a call to f(x,y:B, z:) will try to find f(Shape, B, C) first, if runtime type of x is Shape.
 But if x is a Square, it will look for f(Square, B, C) first. 
+Seems there is no conflict here.
+
+N - Like Haskel ability to define a function for literal input.
+
+N - Adding sum types?
+`type Result  := struct { OK: int | Failed:int}`
+`type Result  := struct { OK: int | Failed:int, response: string}`
+We already have any with assert.
 
 ? - use `::` in function definition to impact method dispatch.
 ```
-func draw(c: Canvas, s: Shape) -> ...
+func draw(c: Canvas, s: Shape) -> ... at runtime this function will be called for inputs of dynamic type Canvas and Shape or static type of Canvas and Shape. 
 func draw(c :: Canvas, s: Shape) -> ... ;can accept a Canvas or any type that can be casted to Canvas + A shape
 ```
-But this is already provided by lang spec. f(A,B) can accept inputs whose type is derived from A or B.
+This can make runtime method resolution more powerful and robust. 
+But this will make coding confusing. This should be handled automatically behind the scene.
