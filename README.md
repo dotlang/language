@@ -121,6 +121,7 @@ CaseStmt = (IdentifierList | 'else') ':' Block
 You can also use switch without input in which case, all case blocks will be evaluated and the first one which evaluates to true will be executed.
 
 ###assert
+
 ```
 AssertStmt = 'assert' condition [':' expression]
 ```
@@ -128,7 +129,7 @@ AssertStmt = 'assert' condition [':' expression]
 - If condition is not satisfied, it will throw `expression` exception.
 - There is no `throw` keyword and this is the only way to cause exception.
 - It is advised to return error code in case of an error and use exceptions in really exceptional cases.
-- You can use `assert false, X` to create exception and return from current method.
+- You can use `assert false, X` to create exception and return from current method immediately.
 ```
 //inside function adder
 assert false, "Error!"  //throw exception and exit
@@ -136,7 +137,7 @@ assert false, "Error!"  //throw exception and exit
 func ... var x = adder(5,6) ... } assert { var x: Exception = get_exception() if ( x.has_value ) ... }
 ```
 - There is no `finally` in Electron. Each variable which is not part of return value of the function, will be cleaned-up upon function exit (even if there is an exception). This is done by calling `dispose` function on that type. You can also manually call this function in case you need to cleanup the resource earlier. 
-- You can do custom cleanup or exception catching in post-conditions defined using assert keyword.
+- You can do custom cleanup or exception catching in post-conditions defined using assert keyword. This needs to be done after function body (post-condition) and in that block you can make a call to `get_exception` to check if there has been an exception.
 
 ###for, break, continue
 ```
@@ -186,7 +187,7 @@ var xx: mypt = {1, 2};
 
 You can define an enum based on another type with type restriction and constants:
 ```
-type DoW := int assert { $ :: DoW } //force values for this type to be only DoW type, not int;
+type DoW := int where { $ :: DoW } //force values for this type to be only DoW type, not int;
 const SAT : DoW = 1; 
 const SUN : DoW = 2;
 ...
@@ -267,8 +268,8 @@ To define a union data type, you can define a variable of type `any` and add opt
 `var h: MaybeInt{value:12};`
 `if ( g.hasValue )`
 Another example:
-`type IntOrBool := any assert { $ :: int or $ :: bool };`
-`type OptionalInt := any assert { $ :: int or $ :: bool } assert { $ :: int or $ == true };`
+`type IntOrBool := any where { $ :: int or $ :: bool };`
+`type OptionalInt := any where { $ :: int or $ :: bool } where { $ :: int or $ == true };`
 
 
 ###Functions
@@ -326,13 +327,13 @@ Cloning, passing, assigning to other vars does not change or evaluate the variab
 `var x: int = 19; x= 11; //ok - can re-assign`
 
 ##Templates
-- You can use `assert` keyword with types and functions to enforce template constraints. 
+- You can use `where` keyword with types and functions to enforce template constraints. 
 - You can specialize a generic functions and runtime will choose the most specific candidate.
 ```
 type Stack := struct { x: any[]; };
-type IntStack := Stack assert { $.x :: int };
-func pop(s: Stack) -> any { ... } assert { $ :: s.x }
-func push(x: any, s: Stack) assert { x :: s.x[] }) -> ...
+type IntStack := Stack where { $.x :: int };
+func pop(s: Stack) -> any { ... } where { $ :: s.x }
+func push(x: any, s: Stack) where { x :: s.x[] }) -> ...
 ```
 
 ##Operators
@@ -460,11 +461,11 @@ func read_customer(id:int) -> struct { Nothing; custmer: CustomerData }
 
 ###Validation
 When defining types or functions, you can define validation code/function. This is a block which will be executed/evaluated everytime variable gets a new value or function is executed. You can makes sure the data (or function intput/output) is in consistent and valid state.
-`var m: int assert {validate_month};`
-`var m: int assert validate_month; //same as above`
+`var m: int where {validate_month};`
+`var m: int where validate_month; //same as above`
 Expression will be called with `$` pointing to the new value. If the expression evaluates to false, a runtime exception will be thrown.
-`var x: int assert {$>10} assert {$<100} assert { check_value($) };`
-`type x := struct { x: int; y:int; } assert { $.x < $.y };`
+`var x: int where {$>10} where {$<100} where { check_value($) };`
+`type x := struct { x: int; y:int; } where { $.x < $.y };`
 - This can be done for all types and variables.
 - Example for functions:
 `func AA(x: int) assert { pre_check } -> int { ... } assert { post_check }`
