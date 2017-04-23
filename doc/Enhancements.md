@@ -2670,10 +2670,18 @@ N - Adding sum types?
 `type Result  := struct { OK: int | Failed:int, response: string}`
 We already have any with assert.
 
-? - use `::` in function definition to impact method dispatch.
+N - use `::` in function definition to impact method dispatch.
 ```
 func draw(c: Canvas, s: Shape) -> ... at runtime this function will be called for inputs of dynamic type Canvas and Shape or static type of Canvas and Shape. 
 func draw(c :: Canvas, s: Shape) -> ... ;can accept a Canvas or any type that can be casted to Canvas + A shape
 ```
 This can make runtime method resolution more powerful and robust. 
 But this will make coding confusing. This should be handled automatically behind the scene.
+
+Y - using assert for everything is not very good. Can we add another keyword? 
+usages of assert: making sure something holds, function pre-condition and post-condition, data type checking.
+`func AA(x: int) assert { pre_check } -> int { ... } assert { post_check }`
+maybe we should use something else for data type checking. `+`? no. a word is better.
+`bind`, `with`, *`where`, `filter`
+`var m: int assert {validate_month};`
+
