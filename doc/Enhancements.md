@@ -2685,3 +2685,6 @@ maybe we should use something else for data type checking. `+`? no. a word is be
 `bind`, `with`, *`where`, `filter`
 `var m: int assert {validate_month};`
 
+? - to enhance caching, if function output is void, we dont cache it or functions that call it (because probably it is having some side effects).
+
+? - we should be able to define const inside a function.
