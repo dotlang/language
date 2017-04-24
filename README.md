@@ -3,7 +3,7 @@ Version 0.7
 
 Feb 19, 2017
 
-##History
+## History
 - **Version 0.1**: Sep 4, 2016 - Initial document created after more than 9 months of research, comparison and thinking.
 - **Version 0.2**: Sep 22, 2016 - Leaning towards Functional Programming.
 - **Version 0.3**: Oct 13, 2016 - Added clarifications for inheritance, polymorphism and templates
@@ -35,7 +35,7 @@ Feb 19, 2017
 
 
 
-##Introduction
+## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
 
 That's why I am creating a new programming language: Electron. 
@@ -44,11 +44,6 @@ Electron programming language is a general purpose language based on author's ex
 other languages (namely Java, C\#, C, C++, Rust, Go, Scala, Objective-C, Python, Perl, Smalltalk, Ruby, Swift, Haskell, Clojure, F\# and Oberon-2). 
 I call the paradigm of this language "Data-oriented". This is a combination of Object-Oriented and Functional approach and it is designed to work with data. There are no objects or classes. Only data structs and functions. But most important features of OOP (encapsulation, abstraction, inheritance and polymorphism) are provided to some extent.
 
-There is a runtime system which is responsible for memory allocation and management, interaction with OS and 
-other external libraries and handling concurrency.
-Also there is a `core` library which is used to implement some basic, low-level features which can not be 
-simply implemented using pure Electron language.
-The `std` library is a layer above runtime and `core` which contains some general-purpose and common functions.
 
 Three main goals are pursued in the design of this language:
 
@@ -64,7 +59,13 @@ The underlying rules of design of this language are
 
 As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  There are functions and types. Each function gets one or more input (each of it's own type) and gives an output. Types include primitive data types, struct, union, enum and a general type alias. Concurrency, templates (generics), lambda expression and exception handling are supported.
 
-In summary, Electron is C language + Garabage collector + templates (generic programming) + first-class functions + advanced unions + module system + composition and powerful polymorphism + operator customization + simple and powerful standard library + immutability + built-in data validation + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + built-in concurrency + built-in memoization + sane defaults - ambiguities - pointers - macros - header files.
+In summary, Electron is C language + Garabage collector + templates (generic programming) + first-class functions + advanced unions + module system + composition and powerful polymorphism + operator customization + simple and powerful standard library + immutability + built-in data validation + contracts + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + built-in concurrency + built-in memoization + sane defaults - ambiguities - pointers - macros - header files.
+
+There is a runtime system which is responsible for memory allocation and management, interaction with OS and 
+other external libraries and handling concurrency.
+Also there is a `core` library which is used to implement some basic, low-level features which can not be 
+simply implemented using pure Electron language.
+The `std` library is a layer above runtime and `core` which contains some general-purpose and common functions and data structures.
 
 ### Code organization
 
@@ -80,16 +81,26 @@ core
 
 
 In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages.
-Each package contains zero or more source code files, which are called modules. Modules contain data and function definitions.
+Each package contains zero or more source code files, which are called modules. Modules contain data structure definitions and function definitions. Each module can reference other modules to call their functions or use their data structures.
 
-##Lexical Syntax
+## Structure of source code file
+
+Each source code file contains 3 sections: import, struct and function.
+Import section is used to reference other modules that are being used in this module.
+Struct section is used to define data structures and constants.
+Function section is used to define function bodies.
+
 - **Encoding**: Source code files are encoded in UTF-8 format.
 - **Whitespace**: Any instance of space(' '), tab(`\t`), newline(`\r` and `\n`) are whitespace and will be ignored.
 - **Comments**: `;` is used to denote comment. It must be either first character of the line or follow a whitespace.
 - **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0b0101011101` binary number, `192.121d` double, `1234l` long. Also `true`, `false` are literals.
 - You can separate number digits using undescore: `1_000_000`.
-- **Adressing**: Functions are called using `function_name(input1, input2, input3)` notation. Fields of a struct are addressed using `struct_name.field_name` notation. Modules are addressed using `/` notation.
+- **Adressing**: Functions are called using `function_name(input1, input2, input3)` notation. Fields of a struct are addressed using `struct_name.field_name` notation. Modules are addressed using `/` notation (e.g. `/code/st/net/create_socket`).
 - Each statement must be in a separate line and must not end with semicolon.
+
+## Variables
+
+
 
 ##Keywords
 Electron has a small set of reserved keywords: 
@@ -270,7 +281,7 @@ To define a union data type, you can define a variable of type `any` and add opt
 Another example:
 `type IntOrBool := any where { $ :: int or $ :: bool };`
 `type OptionalInt := any where { $ :: int or $ :: bool } where { $ :: int or $ == true };`
-
+`var g: OptionalInt = some_func(); if ( g :: bool and bool(g) ) ...`
 
 ###Functions
 
