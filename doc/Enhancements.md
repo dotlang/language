@@ -2687,4 +2687,80 @@ maybe we should use something else for data type checking. `+`? no. a word is be
 
 ? - to enhance caching, if function output is void, we dont cache it or functions that call it (because probably it is having some side effects).
 
-? - we should be able to define const inside a function.
+? - we should be able to define const inside a function. yes
+
+? - we have only basic data types and define others based on basics: Number, String, ...
+`type int := Number where { bits = 16 }`
+
+? - simplify the language even more! what can we move to external libraries?
+Optimize for debugging and maintenance
+
+? - Maybe[Int] can we force programmer to deal with missing value cases?
+`type OptionalInt := any where { $ :: int or $ :: void }`
+void means variable has no data. It can be used as a label to denote it is not an integer.
+`type OptionalInt := any where { $ :: int or $ :: void }`
+`var t: OptionalInt = 12`
+`var r: OptionalInt = void`
+so `void` is both a data type and a literal. `void` variables can only have the only value which is `void`.
+When we define a type, we are specifying possible values for it. This can be done either by redirecting to other types (`type age := int`) or by specifying literal values. `type level := 1 | 2 | 3`).
+This literal value can be a number or string or a label or any valid literal (e.g a data structure).
+`type level := 'Hello' | 'World';` - level is a string type 
+`type level := Hello | World` - level is a new type which can be either Hello or World
+`type level := Hello | 'Hello' | 1 | 6 | world | 'world' `
+`var t: level = Hello`
+`var t: level = 1`
+`var t: level = 'world'`
+`type DoW := SAT | SUN | ...`
+`type Dow := 1 | 2 | 3 | 4 | 5`
+`MaybeInt := int | None`
+This is like union in C but cleaner:
+`type Address := string | int`
+`type Address := struct { x: int, y: int | string }`
+But other languages continue to pattern matching so compiler can detect and prevent errors.
+For example to calculate depth of a tree in Haskell:
+```
+data Tree = Empty
+          | Leaf Int
+          | Node Tree Tree
+depth :: Tree -> Int
+depth Empty = 0
+depth (Leaf n) = 1
+depth (Node l r) = 1 + max (depth l) (depth r)
+```
+One option is to define function based on the real internal type:
+`type Tree := Empty | int | struct { node: int, left: Tree, right: Tree}`
+`func depth(x: Empty) -> 0`
+`func depth(x: int) -> 1`
+`func depth(x: struct{node:int,...} ) -> 1+depth(x.left)`
+Shall we make label/values distinct from other keywords? for example prefixing with `#`?
+This will make code more readable. 
+
+ 
+
+? - How do you define a tree?
+`type Tree := any where { $ :: NonEmptyTree or $ :: void }`
+maybe we can eliminate any (because it is too general here) and also `::`.
+`type Tree := NonEmptyTree | void`
+`type Tree := struct { root: Node, left: Tree, right: Tree} | void`
+`type Tree := struct { root: Node, left: Tree, right: Tree} | Empty`
+`var r: Tree = Empty`
+`if ( r :: Empty ) ... `
+Here Empty is a type not a value. We are defining a type (Tree).
+`type A := B | C` means variables of type A can have values of type B or type C.
+Each type can be primitive, struct or label. Valid values for a label must be defined elsewhere.
+`type bool := true | false`
+
+? - set default value for data types?
+`type OptionalInt := any where { $ :: int or $ :: void } default = void`
+This will help developer provide sane defaults to the data type
+So general format for define data type will be:
+`type x := int where {...} as A={...} as B=... as C=... default=...`
+
+? - programmer may make a mistake and change order of values when initing a type. 
+e.g. `type pt := struct {x: int, y:int} ... var g = pt{1,4}` 
+should be replaced with: `var g = pt{x:1, y:4}`
+what about function call?
+`func log(day:int, month:int)...log(1, 9)`
+instead: `log(day:1, month:9)`
+
+? - Drop c-like for loop? `for(x=0;x<100;x++)`
