@@ -310,7 +310,7 @@ new_array = map {$0+1}, my_array;
 - Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability). You can make a copy using `()` operator: 
 `x : MyType = {x:1, y:2};`
 `y : MyType; y = x{};`
-`y : MyType; y = x{y: 5};`  //clone with modification
+`y : MyType; y = x(y: 5);`  //clone with modification
 - When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`
 - You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
 - `rest` is a normal array which is created by compiler for each call to `print` function.
