@@ -11,7 +11,7 @@ Feb 19, 2017
 - **Version 0.5**: Nov 13, 2016 - Some cleanup and better organization
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
-- **Version 0.8**: ??? ??, 2017 - Clarifications for exception, unify type checking with pre/post condition
+- **Version 0.8**: ??? ??, 2017 - Clarifications for exception, unify type checking with pre/post condition, Adding `where` keyword
 
 ##Introduction
 ##Code organization
