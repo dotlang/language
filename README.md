@@ -11,7 +11,7 @@ Feb 19, 2017
 - **Version 0.5**: Nov 13, 2016 - Some cleanup and better organization
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
-- **Version 0.8**: ??? ??, 2017 - Clarifications for exception, unify type checking with pre/post condition, Adding `where` keyword, Sum types, New notation for hash-table and changes in defining struct
+- **Version 0.8**: ??? ??, 2017 - Clarifications for exception, unify type checking with pre/post condition, Adding `where` keyword, Sum types, New notation for hash-table and changes in defining struct, removed `const` due to adding sum types
 
 ##Introduction
 ##Code organization
@@ -85,9 +85,9 @@ Each package contains zero or more source code files, which are called modules. 
 
 ## Structure of source code file
 
-Each source code file contains 3 sections: import, struct and function.
+Each source code file contains 3 sections: import, types and function.
 Import section is used to reference other modules that are being used in this module.
-Struct section is used to define data structures and constants.
+Type section is used to define data types.
 Function section is used to define function bodies.
 
 - **Encoding**: Source code files are encoded in UTF-8 format.
@@ -151,17 +151,18 @@ func ... var x = adder(5,6) ... } assert { var x: Exception = get_exception() if
 - There is no `finally` in Electron. Each variable which is not part of return value of the function, will be cleaned-up upon function exit (even if there is an exception). This is done by calling `dispose` function on that type. You can also manually call this function in case you need to cleanup the resource earlier. 
 - You can do custom cleanup or exception catching in post-conditions defined using assert keyword. This needs to be done after function body (post-condition) and in that block you can make a call to `get_exception` to check if there has been an exception.
 
-###for, break, continue
+###loop, break, continue
 ```
-ForStmt = 'for' ( Condition ) Block
-ForStmt = 'for' ([Init ';'] Condition ';' Update) Block
-ForStmt = 'for' (var ':' Identifier) Block
-ForStmt = 'for' (var1, var2 ':' Identifier) Block
+LoopStms = 'loop' ( Condition ) Block
+LoopStms = 'loop' (number | variable) Block
+LoopStms = 'loop' (var in Identifier) Block
 BreakStmt = 'break' [Number] ';'
 ContinueStmt = 'continue' [Number] ';'
 ```
-- `for` statement is used for running a block of code multiple times.
+- `loop` statement is used for running a block of code multiple times.
 - First case: Run the block while the condition is met.
+- Second case: Loop a specific number of times
+- Third case: Iterate over elements of an array or keys of a hash.
 
 `break 2` to break outside 2 nested loops. same for `continue`.
  
@@ -197,15 +198,9 @@ type mypt := point;
 var xx: mypt = {1, 2};
 ```
 
-You can define an enum based on another type with type restriction and constants:
+You can define an enum using sum types.
 ```
-type DoW := int where { $ :: DoW } //force values for this type to be only DoW type, not int;
-const SAT : DoW = 1; 
-const SUN : DoW = 2;
-...
-var g: DoW = SAT;
-g = SUN;
-g = 1; //wrong!
+type DoW := SAT | SUN | ...
 ```
 
 You can define functions based on `int` and `X` where `type X := int` and they will be different functions.
@@ -239,6 +234,7 @@ Denotes function is implemented by runtime or external libraries.
 `native func file_open(path: string) -> File;`
 
 ##Primitives
+There are only three primitive data types: `any`, `number` and `string`. All others are defined based on these two plus some restrictions on size and accuracy.
 - **Integer data types**: `char`, `short`, `int`, `long`
 - **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
 - **Floating point data types**: `float`, `double`
@@ -260,7 +256,7 @@ type A :=  (x: int = 19) ;you can assign default value
 type B := (a: A, y: int) ;B composes A
 type C := ()             ;empty struct
 type C := (y: int = 9)   ;setting default value
-type D := (int, string)  ; unnamed fields. You can access them like an array
+type D := (int, string)=(9,"G")  ; unnamed fields. You can access them like an array. Also we can set default value.
 ```
 
 To create a new struct instance:
@@ -311,7 +307,7 @@ new_array = map({$0+1}, my_array);
 new_array = map({$0+1}, my_array);
 new_array = map {$0+1}, my_array;
 ```
-- Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability). You can make a copy using `{}` operator: 
+- Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability). You can make a copy using `()` operator: 
 `x : MyType = {x:1, y:2};`
 `y : MyType; y = x{};`
 `y : MyType; y = x{y: 5};`  //clone with modification
@@ -323,6 +319,23 @@ new_array = map {$0+1}, my_array;
 `func f(x: int) -> f(x, 10);`
 - Functions are not allowed to change (directly or indirectly) any of their inputs.
 - You cannot ignore return value of a non-void function. This affects resource cleanup mechanism at runtime.
+Functions can considered as a piece of code which accepts a tuple and returns a tuple. 
+```
+func f(x:int, y:float) -> (a: int, b: string)
+{
+  //returning anon-struct
+  return (a:1, b:9) ;or return (1, 9)
+}
+
+func read_customer(id:int) -> Nothing | CustomerData
+{
+  ;no customer was found
+  return Nothing
+  
+  ;some customer found
+  return c1
+}
+```
 
 ###Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
@@ -344,18 +357,20 @@ Cloning, passing, assigning to other vars does not change or evaluate the variab
 - As soon as you declare a variable it will have some value. Even if it is a struct, it will have all fields set to default value.
 - You can define local variables using `var` keyword.
 `var x: int = 19; x= 11; //ok - can re-assign`
+- You can define consts using functions: `func PI -> 3.14`
+- You can define local const variables using: `var x: float = 3.14 where { false }`
 
-##Templates
+## Templates
 - You can use `where` keyword with types and functions to enforce template constraints. 
 - You can specialize a generic functions and runtime will choose the most specific candidate.
 ```
-type Stack := struct { x: any[]; };
+type Stack := (x: any[])
 type IntStack := Stack where { $.x :: int };
 func pop(s: Stack) -> any { ... } where { $ :: s.x }
 func push(x: any, s: Stack) where { x :: s.x[] }) -> ...
 ```
 
-##Operators
+## Operators
 
 - Conditional: `and or not == != >= <=`
 - Bitwise: `~ & | ^ << >>`
@@ -367,7 +382,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `x :: y` returns true if `x` can be cast to type of `y`. `y` can be either a variable or name of a type.
 - `func add(x: any, y: any) assert { x :: y } ...`. For array `a[]` means type of elements of the array. For hash `h[]` means type of values inside hashtable, and `[h]` means type of keys of the hashtable.
 
-##Special syntax
+## Special syntax
 - `$i` function inputs
 - `$` first input of the function (`$0`)
 - `$_` input place-holder
@@ -378,13 +393,10 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `x()` instantiation/cloning
 - `|` sum types
 
-Kinds of types: `struct`, `primitives`.
-
-###Special variables
-`true`, `false`
+Kinds of types: `primitives`, `product` and `sum`
 
 ###Inheritance and polymorphism
-- Structs can inherit from other structs by composing a variable of that type. 
+- Tuples can inherit from other structs by composing a variable of that type. 
 `type Shape := struct;`
 `type Circle := struct {x:Shape...}`
 `type Square := struct {x: Shape...}`
@@ -430,7 +442,8 @@ a call to paint function with some inputs, will use above 3 rules to dispatch.
 if `addAll(Derived)` calls `addAdd(Base)` which in turn calls `add(Base)` then a call to `addAll(Derived)` will NOT call `add(Derived)` but will call `add(Base)`. When `addAll(Base)` is called, it has a reference to `Base` not a `Derived`. 
 
 ###Array and slice
-- `var x: int[] = {1, 2, 3};`
+- Array literals are specified using brackets: `[1, 2, 3]`
+- `var x: int[] = [1, 2, 3];`
 - `var y: int[3]; y[0] = 11;`
 - `var t: int[n];`
 - `var x: int[2,2];`. 
@@ -441,42 +454,21 @@ if `addAll(Derived)` calls `addAdd(Base)` which in turn calls `add(Base)` then a
 - if you specify a size, it will be a mixed list (can be extended to become a list).
 `var x: int[3]`  //hybrid list
 `var x: int[]`  //pure list
-`var x: int[3] = {1,2,3}` //hybrid
-`var x: int[] = {1,2,3}` //pure
+`var x: int[3] = [1,2,3]` //hybrid
+`var x: int[] = [1,2,3]` //pure
 `add_element(x, 10);`
 
-###Hashtable
-- `var hash1: int[string] = { 'OH': 12, 'CA': 33};`.
-- `for(x:array1)` or `for(int key,string val:hash1)`.
+###Hashtable and Array
+- `(A % B)` is ued to define hash type. Left of `%` is type of key and on the right side is type of value.
+- `var hash1: (string % int) = { 'OH': 12, 'CA': 33};`.
+- `loop(x in array1)` or `loop(key in hash1)`.
+- `var num = hash1["A"]`
+- `hash1["B"] = 19`
+- `var pop: (string, int)[]` - dynamic array of tuples
+- `var pop: string[4]` - static array of string
+- `var big_hash: (int, int % string, int)` 
+- `big_hash[3,4] = ("A", 5)`
 
-###Casting
-- For example, you can write `func Dow#int ...` function to provide custom code to convert Day-of-Week type to int.
-
-###Anonymous struct
-
-`var t: struct{x: int, y: int, z: float} = {1,2, 3.1};`  
-`t.x = 8;`  
-`var t: struct{x: int, y: int, z: float};`  
-`t = {1, 9, 1.1};`  
-Definition is same as a normal struct, only fields are separated using comma.
-
-Functions can considered as a piece of code which accepts a tuple and returns a tuple. 
-```
-func f(x:int, y:float) -> struct{a: int, b: string} 
-{
-  //returning anon-struct
-  return {a:1, b:9}; //or return {1, 9}
-}
-
-func read_customer(id:int) -> struct { Nothing; custmer: CustomerData }
-{
-  //no customer was found
-  return {Nothing};
-  
-  //some customer found
-  return {customer: c1};
-}
-```
 
 ###Validation
 When defining types or functions, you can define validation code/function. This is a block which will be executed/evaluated everytime variable gets a new value or function is executed. You can makes sure the data (or function intput/output) is in consistent and valid state.
@@ -487,7 +479,7 @@ Expression will be called with `$` pointing to the new value. If the expression 
 `type x := struct { x: int; y:int; } where { $.x < $.y };`
 - This can be done for all types and variables.
 - Example for functions:
-`func AA(x: int) assert { pre_check } -> int { ... } assert { post_check }`
+`func AA(x: int) where { pre_check } -> int { ... } where { post_check }`
 In post_check section, you can refer to the function output using `$` or `$0` notation.
 
 ###Chaining
