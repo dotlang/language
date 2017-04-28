@@ -2703,7 +2703,7 @@ N - to enhance caching, if function output is void, we dont cache it or function
 
 N - we should be able to define const inside a function. No we may not need const.
 
-? - Maybe[Int] can we force programmer to deal with missing value cases?
+Y - Maybe[Int] can we force programmer to deal with missing value cases?
 `type OptionalInt := any where { $ :: int or $ :: void }`
 void means variable has no data. It can be used as a label to denote it is not an integer.
 `type OptionalInt := any where { $ :: int or $ :: void }`
@@ -2797,33 +2797,30 @@ var i = switch(dow1) {
 We can also drop the struct name. So anonymous struct will not be a different thing.
 `type Point := { x: int, y: int}`
 `type Tree := { Empty | int | NormalTree }`
-or maybe we can even drop braces?
+or maybe we can even drop braces? yes.
 
-? - in sum type, can we map symbolic values to other values?
+N - in sum type, can we map symbolic values to other values?
 `type Dow := { SAT=1 | SUN=5 | ... }`
 No this is complex. Add a cast function to cast it to int and define whatever custom number you need.
 
-? - simplify the language even more! what can we move to external libraries?
-Optimize for debugging and maintenance.
-
-? - we permit operator customization for types but they have to be defined at the place of definition of the type.
+Y - we permit operator customization for types but they have to be defined at the place of definition of the type.
 Advantage: they make code more readable because seeing `x==y` and knowing type of x, we can easily verify operator code.
 Disadvantage: Makes code reading more difficult. 
 It's better to eliminate op cust except the ones that are really needed: equality check.
 But this one can also be eliminated. Equality means same binary representation. If you need for reference equality use core functions: `if ( ref(x) == ref(y)) ` else `if ( x == y) ` will always check all data inside x and y to be the same.
 So: we don't permit any kind of operator customization.
 
-? - dont use const.
+Y - dont use const.
 to define a const: `func PI -> 3.14` or `var x: float = 3.14 where { false }`
 First one can be used in module level and second one in function level.
 
-? - we have only basic data types and define others based on basics: Number, String, ...
+Y - we have only basic data types and define others based on basics: Number, String, ...
 `type int := Number where { bits = 16 }`
 So primitive data types will include number, string,
 Not bool -> can be defined using sum types.
 Maybe bit - to define binary and blob data. But bit can also be defined using sum types.
 
-? - set default value for data types?
+Y - set default value for data types?
 `type OptionalInt := any where { $ :: int or $ :: void } default = void`
 This will help developer provide sane defaults to the data type
 So general format for define data type will be:
@@ -2833,27 +2830,29 @@ or maybe we can even make it simpler:
 `type Pt := {x: int=5, y: int=0}`
 To prevent confusion with casting, we must define default value first, then casting functions.
 
-? - programmer may make a mistake and change order of values when initing a type. 
+N - programmer may make a mistake and change order of values when initing a type. 
 e.g. `type pt := struct {x: int, y:int} ... var g = pt{1,4}` 
 should be replaced with: `var g = pt{x:1, y:4}`
 what about function call?
 `func log(day:int, month:int)...log(1, 9)`
 instead: `log(day:1, month:9)`
+This will add a lot of overhead. It is optional.
 
-? - Drop c-like for loop? `for(x=0;x<100;x++)`
+Y - Drop c-like for loop? `for(x=0;x<100;x++)`
 `loop(10)` means repeat 10 times
 `loop(var i in x)` iterate over an array or keys of a hash, dont need to specify type of i as it can be inferred
-`loop(var s in x[])`  iterate over values of hash
+`loop(var i in [x])` loop over keys inside the hashtable - not useful
+`loop(var s in x[])`  iterate over values of hash - not useful
 `loop(var x in range(0, 100, 2))` - 0, 2, 4, 8, ...
 what about while?
 `loop(x<0)`
 `loop(x)` repeat x times
 So the structure is: `loop(num)` or `loop(var)` or `loop(condition)` or `loop(var x in y)`
 
-? - If we add sum types, maybe we don't need the struct keyword at all.
+Y - If we add sum types, maybe we don't need the struct keyword at all.
 `type pt := { x:int, y:int}`
 
-? - can we simplify type system more? For array and hash.
+Y - can we simplify type system more? For array and hash.
 `type x := {x:int, y:int}`
 `type array := {int^10}` is an array of 10 integers `array.0` will return the first item.
 hashtable is actually an array of tuples (product type). so it is combination of sum and product type.
@@ -2930,7 +2929,46 @@ We also should review the notation to specify hash key/values with `::`.
 `var pop: (string % int, string) -- var size = pop."uk".0 -- pop."us" = (100, "A")`
 `var pop: (string, int % int, string) -- var size = pop.(0,"uk").0 -- pop.(5, "us") = (100, "A")`
 This seems reasonable.
+so:
+`var hash: (string, int % int, int, int)` to define a hashtable
+`var pop: (string, int)^@` to define a dynamic array
+`var pop: string^4` to define a static array - `pop.0 = 11, t=pop.1`
+Can we use the C-like notation to address array and hash?
+`pop[0] = 11; t=pop[1];`
+`hash["A", 5] = (5, 1)`
+It is more intuitive for people who already know C-like languages.
+What about arrays definition?
+`var pop: (string, int)[]` - dynamic array of tuples
+`var pop: string[4]` - static array of string
+Seems ok.
+`if ( my_array :: int[] )`
+`if ( my_array :: [] )` if it is an array
+`if ( my_array :: (int, string)[] )`
+`if ( my_hash :: (string % int) )`
+`if ( my_hash[] :: int)` check type of values
+`if ( [my_hash] :: string)` check type of key
+
+Y - paren or braces for type definition? this only applies to struct and hash.
+`var hash: (string, int % int, int, int)` to define a hashtable
+`var point: (int, int)`
+`var point: (x:int, y:int)`
+`var point: {x:int, y:int}`
+I think paren is ore intuitive with the way we call a function.
+Also it can give developer ability to pass a struct when calling a function which has same fields as function input.
+`func adder(x:int, y:int) -> ... var t = (1,5); adder(t)`
+
+? - where should we put code to dispose a type?
+
+? - simplify the language even more! what can we move to external libraries?
+Optimize for debugging and maintenance.
+
+? - what is notation to clone?
+`var x: (n: int, o:int) = (1,1)`
+`y = x(o: 5);`
+This is a bit confusing. X is a variable but is treated like a function.
 
 
+? - remove all occurences of struct
 
-
+? - The notation for casting is a bit un-intuitive.
+`type Square := struct {...} as Shape = $.shape, as int = { return $.size + 5 }`
