@@ -11,7 +11,7 @@ Feb 19, 2017
 - **Version 0.5**: Nov 13, 2016 - Some cleanup and better organization
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
-- **Version 0.8**: ??? ??, 2017 - Clarifications for exception, unify type checking with pre/post condition, Adding `where` keyword
+- **Version 0.8**: ??? ??, 2017 - Clarifications for exception, unify type checking with pre/post condition, Adding `where` keyword, Sum types, New notation for hash-table and changes in defining struct
 
 ##Introduction
 ##Code organization
@@ -120,11 +120,12 @@ Semantics of this keywords are same as other mainstream languages.
 
 ###switch
 ```
-SwitchStmt = 'switch' '(' expression ')' '{' (CaseStmt)+ '}'
-CaseStmt = (IdentifierList | 'else') ':' Block
+SwitchExp = 'switch' '(' expression ')' '{' (CaseStmt)+ '}'
+CaseStmt = (IdentifierList | 'else') '->' Block
 ```
-- `switch` is similar to what we have in C language.
+- `switch` is an expression.
 - First case which is matching will be executed and others will be skipped.
+- Case match can be based on value or type (used for sum types).
 - `else` case is executed if none of other cases match.
 - You cannot use expressions for case statements. 
 - Case identifiers should be either literals or simple identifiers (variable names).
@@ -253,18 +254,23 @@ Source file contains a number of definitions for struct, type and functions.
 - `any` denotes any type. Everything can be used for `any` type (primitives, structs, unions, function pointers, ...). It can be something like an empty struct. You have to initialize variables of type `any`.
 - Immutability: All variables are immutable but can be re-assigned.
 
-###Structs
+###Tuple (Product types)
 ```
-type A := struct { x: int = 19 };  //you can assign default value
-type B := struct { a: A, y: int }; //B composes A
-type C := struct;   //empty struct
-type C := struct { y: int = 9 }; //setting default value
+type A :=  (x: int = 19) ;you can assign default value
+type B := (a: A, y: int) ;B composes A
+type C := ()             ;empty struct
+type C := (y: int = 9)   ;setting default value
+type D := (int, string)  ; unnamed fields. You can access them like an array
 ```
 
 To create a new struct instance:
 ```
-var test : A = {x: 10};
-var test2 : A{};  //{} is mandatory. Type name is mandatory unless it can be implied
+var test: A = (x: 10)
+var test2: A()
+var test3: D =(1,"A")
+var test4: C=(9)
+test3[0]=9
+test3[1]="A"
 ```
 - Note that if there is a multiple struct inheritance which results in function ambiguity, there will be a compiler error: 
 `func x(p: P1)->int ...`
@@ -272,16 +278,18 @@ var test2 : A{};  //{} is mandatory. Type name is mandatory unless it can be imp
 `type A := struct{ x:P1, y:P2;}`
 `var v: A{}; var t = x(A); //compiler error`
 
-###Union with struct
-To define a union data type, you can define a variable of type `any` and add optional bool fields (if needed).
-`type MaybeInt := struct { value: int, hasValue: bool }`
-`var g: MaybeInt{hasValue: false};`
-`var h: MaybeInt{value:12};`
-`if ( g.hasValue )`
-Another example:
-`type IntOrBool := any where { $ :: int or $ :: bool };`
-`type OptionalInt := any where { $ :: int or $ :: bool } where { $ :: int or $ == true };`
-`var g: OptionalInt = some_func(); if ( g :: bool and bool(g) ) ...`
+###Sum types
+When defining a sum type, you specify different types and labels that it can accept. Label can be any valid identifier.
+`type Tree := Empty | int | (node: int, left: Tree, right: Tree)`
+`type OptionalInt := None | int`
+To match type, you can use switch expression:
+```
+  result = switch ( my_tree ) {
+    case Empty -> 0
+    case y:int -> 1
+    case z:NormalTree -> ...
+  }
+```
 
 ###Functions
 
@@ -355,20 +363,20 @@ func push(x: any, s: Stack) where { x :: s.x[] }) -> ...
 The bitwise and math operators can be combined with `=` to do the calculation and assignment in one statement.
 - `=` operator, makes a variable refer to the same object as another variable. If you need a copy, you have to clone the variable. 
 - `x == y` will call `equals` functions is existing, by default compares field-by-field values. But you can o
-- You can only override these operators: `==` (`equals`), `=>` (`bind`) + some others by writing your custom functions.
-- For example, `x[10]` will call `op_index(x, 10)`.
+- You can not override operators. 
 - `x :: y` returns true if `x` can be cast to type of `y`. `y` can be either a variable or name of a type.
-`func add(x: any, y: any) assert { x :: y } ...`. For array `a[]` means type of elements of the array. For hash `h[]` means type of values inside hashtable, and `[h]` means type of keys of the hashtable.
+- `func add(x: any, y: any) assert { x :: y } ...`. For array `a[]` means type of elements of the array. For hash `h[]` means type of values inside hashtable, and `[h]` means type of keys of the hashtable.
 
 ##Special syntax
 - `$i` function inputs
 - `$` first input of the function (`$0`)
 - `$_` input place-holder
 - `:` for hash, call by name, array slice, loop
-- `::` runtime type check
+- `::` type check
 - `:=` type definition
 - `=>,<=` chaining
-- `x{}` instantiation/cloning
+- `x()` instantiation/cloning
+- `|` sum types
 
 Kinds of types: `struct`, `primitives`.
 
