@@ -28,6 +28,7 @@ to do mocking in the life-time of the current function.
 
 \* - Add native parallelism and communication tools.
 
+\* - Introduce caching of function output (if it is not void)
 
 
 Y - decorators - another try
@@ -2685,15 +2686,22 @@ maybe we should use something else for data type checking. `+`? no. a word is be
 `bind`, `with`, *`where`, `filter`
 `var m: int assert {validate_month};`
 
-? - to enhance caching, if function output is void, we dont cache it or functions that call it (because probably it is having some side effects).
+N - How do you define a tree?
+`type Tree := any where { $ :: NonEmptyTree or $ :: void }`
+maybe we can eliminate any (because it is too general here) and also `::`.
+`type Tree := NonEmptyTree | void`
+`type Tree := struct { root: Node, left: Tree, right: Tree} | void`
+`type Tree := struct { root: Node, left: Tree, right: Tree} | Empty`
+`var r: Tree = Empty`
+`if ( r :: Empty ) ... `
+Here Empty is a type not a value. We are defining a type (Tree).
+`type A := B | C` means variables of type A can have values of type B or type C.
+Each type can be primitive, struct or label. Valid values for a label must be defined elsewhere.
+`type bool := true | false`
 
-? - we should be able to define const inside a function. yes
+N - to enhance caching, if function output is void, we dont cache it or functions that call it (because probably it is having some side effects) -> moved to next phases
 
-? - we have only basic data types and define others based on basics: Number, String, ...
-`type int := Number where { bits = 16 }`
-
-? - simplify the language even more! what can we move to external libraries?
-Optimize for debugging and maintenance
+N - we should be able to define const inside a function. No we may not need const.
 
 ? - Maybe[Int] can we force programmer to deal with missing value cases?
 `type OptionalInt := any where { $ :: int or $ :: void }`
@@ -2734,27 +2742,96 @@ One option is to define function based on the real internal type:
 `func depth(x: struct{node:int,...} ) -> 1+depth(x.left)`
 Shall we make label/values distinct from other keywords? for example prefixing with `#`?
 This will make code more readable. 
+`type Tree := { Empty | int | { node: int, left: Tree, right: Tree}}`
+But for function definition, it does not make sense to write: `depth(x:Empty)`
+I think we should define function based on the type not literal values.
+```
+func depth(x: Tree) -> 
+{
+  var result = match(x) {
+    case Empty return 0
+    case y: int return 1
+    case z: {node:int, left: Tree, right: Tree} 
+  }
+}
+```
+But this means adding a lot of new things. Can we still use `any` with some enhancements?
+`type Tree := any where { $ :: @{Empty} or $ :: int or $ :: NormalTree }`
+`type DoW := any where { $ :: @{SAT, SUN, ...}}`
+But this is not intuitive!
+The definition of sum type is intuitive but the pattern matching is not.
+```
+func depth(x: Tree) -> 
+{
+  if ( x == Empty ) return 0
+  if ( x :: int )
+  { 
+    var y = int(x);
+    return 1;
+  }
+  
+  if ( x :: NormalTree ) 
+  {
+    var z = NormalTree(x);
+    return 1 + max(depth(x.left, x.right))
+  }
+  
+  ;or
+  ;use switch and make it an expression like defining anon function
+  result = switch ( x ) {
+    case Empty -> 0
+    case y:int -> 1
+    case z:NormalTree -> ...
+  }
+}
+```
+So we can use switch for checking value or type. And it is an expression, not statement.
+`type Tree := { Empty | int | NormalTree }`
+`type DoW := { SAT | SUN | ...}`
+```
+var i = switch(dow1) {
+  case SAT -> 0
+  case SUN -> 1
+}
+```
+We can also drop the struct name. So anonymous struct will not be a different thing.
+`type Point := { x: int, y: int}`
+`type Tree := { Empty | int | NormalTree }`
+or maybe we can even drop braces?
 
- 
+? - in sum type, can we map symbolic values to other values?
+`type Dow := { SAT=1 | SUN=5 | ... }`
+No this is complex. Add a cast function to cast it to int and define whatever custom number you need.
 
-? - How do you define a tree?
-`type Tree := any where { $ :: NonEmptyTree or $ :: void }`
-maybe we can eliminate any (because it is too general here) and also `::`.
-`type Tree := NonEmptyTree | void`
-`type Tree := struct { root: Node, left: Tree, right: Tree} | void`
-`type Tree := struct { root: Node, left: Tree, right: Tree} | Empty`
-`var r: Tree = Empty`
-`if ( r :: Empty ) ... `
-Here Empty is a type not a value. We are defining a type (Tree).
-`type A := B | C` means variables of type A can have values of type B or type C.
-Each type can be primitive, struct or label. Valid values for a label must be defined elsewhere.
-`type bool := true | false`
+? - simplify the language even more! what can we move to external libraries?
+Optimize for debugging and maintenance.
+
+? - we permit operator customization for types but they have to be defined at the place of definition of the type.
+Advantage: they make code more readable because seeing `x==y` and knowing type of x, we can easily verify operator code.
+Disadvantage: Makes code reading more difficult. 
+It's better to eliminate op cust except the ones that are really needed: equality check.
+But this one can also be eliminated. Equality means same binary representation. If you need for reference equality use core functions: `if ( ref(x) == ref(y)) ` else `if ( x == y) ` will always check all data inside x and y to be the same.
+So: we don't permit any kind of operator customization.
+
+? - dont use const.
+to define a const: `func PI -> 3.14` or `var x: float = 3.14 where { false }`
+First one can be used in module level and second one in function level.
+
+? - we have only basic data types and define others based on basics: Number, String, ...
+`type int := Number where { bits = 16 }`
+So primitive data types will include number, string,
+Not bool -> can be defined using sum types.
+Maybe bit - to define binary and blob data. But bit can also be defined using sum types.
 
 ? - set default value for data types?
 `type OptionalInt := any where { $ :: int or $ :: void } default = void`
 This will help developer provide sane defaults to the data type
 So general format for define data type will be:
 `type x := int where {...} as A={...} as B=... as C=... default=...`
+Also: `type Pt := {x: int default=5, y: int default=0}`
+or maybe we can even make it simpler:
+`type Pt := {x: int=5, y: int=0}`
+To prevent confusion with casting, we must define default value first, then casting functions.
 
 ? - programmer may make a mistake and change order of values when initing a type. 
 e.g. `type pt := struct {x: int, y:int} ... var g = pt{1,4}` 
@@ -2764,3 +2841,14 @@ what about function call?
 instead: `log(day:1, month:9)`
 
 ? - Drop c-like for loop? `for(x=0;x<100;x++)`
+`loop(10)` means repeat 10 times
+`loop(var i in x)` iterate over an array or keys of a hash, dont need to specify type of i as it can be inferred
+`loop(var s in x[])`  iterate over values of hash
+`loop(var x in range(0, 100, 2))` - 0, 2, 4, 8, ...
+what about while?
+`loop(x<0)`
+`loop(x)` repeat x times
+So the structure is: `loop(num)` or `loop(var)` or `loop(condition)` or `loop(var x in y)`
+
+? - If we add sum types, maybe we don't need the struct keyword at all.
+`type pt := { x:int, y:int}`
