@@ -2852,3 +2852,85 @@ So the structure is: `loop(num)` or `loop(var)` or `loop(condition)` or `loop(va
 
 ? - If we add sum types, maybe we don't need the struct keyword at all.
 `type pt := { x:int, y:int}`
+
+? - can we simplify type system more? For array and hash.
+`type x := {x:int, y:int}`
+`type array := {int^10}` is an array of 10 integers `array.0` will return the first item.
+hashtable is actually an array of tuples (product type). so it is combination of sum and product type.
+`type tuple := { key: string, value: int}`
+`type population = tuple^10` an array of 10 tuples.
+How to make this dynamic size? `x^`.
+How to address? for hash we want to address using key (although addressing with index does not harm).
+`type dyn_array := int^inf;` inf means infinity so it has a lot of space for data (as large as memory)
+`type dyn_array := int^;`
+`type population = {key: string, value: int}^`
+`type rec = { string, int }` this definition does not have name. So we have to refer to fields using index.
+`var s: string = rec1.0`
+`x.0` means first item inside x. If it is a struct with name, this should also be possible.
+`x.i` means i'th item.
+`type population := {string, value}^`
+`type point := {int * int}`
+`type point := int * int`
+`type point := (int, int)`
+maybe we can eliminate braces and only use paren.
+`type point := (x:int, y:int)`
+`type scores := int^10`
+`type scores := int^`
+but having a dangling ^ at the end of line is not good looking. 
+`type scores := int^@`
+`type scores := int^!`
+@ is better. We can say its a notation to represent dynamically resizable types.
+`type point := (x: int, y:int)`
+`var scores: int^@ - scores.0 = 12`
+`var scores2: (string, int, int)^@` - this is an array of struct
+`scores2.0.0 is a string`
+`var scores3: (name: string, age: int, score: float)^@`
+scores3.0.name is same as scores3.0.0 
+we can also replace numbers used for indexing or accessing fields with variables.
+`type population := (string, int)^@`
+Then what will be the difference between array of struct and hashtable? 
+Internally they are the same. only in hashtable we need indexing for fast access.
+so `population.0` will refer to the first tuple inside the population array.
+But how to say we want to address the tuple whose key is `0` not the first item?
+`population.[0]`? Then we need a mechanism to define key.
+`type population := (key:string, int)^@`
+The key is a named field with the name `key`?
+Or it can be the first item inside the tuple (note that it can also be a struct).
+`type population := (key:string, int)^@`
+Also we need to emphasis that key cannot be duplicate.
+So we need a notation to say which field is a key (so it must be unique and will be used in addressing).
+`var population: ([key]:string, int)^@ -- population["UK"] = 19; -- population.0.0 is key`
+`var pop: (string, int)^@ where { index(0) }` on each change update internal index based on first field.
+what if we use functions for set/get a hashtable?
+`var pop: (string, int)^@`
+`hash_put("uk", 5)`
+`hash_put("us", 9)`
+`hash_put("in", 19)`
+`var size = hash_get("in")`
+Basically we are using an array as a hashtable. 
+`var pop: (string, int)^@ = hash_init()` this will initialize storage and config for hashtable.
+What if `hash_put` receives an array which is not `hash_init`ed? it will throw an exception?
+What if I want to write my own function dealing with hash? 
+We are trying to have a powerful type system. Assigning such a task to a core function is not good.
+Because in user functions we will have something like this which is not efficient:
+`func process(pop: (string, int)^@ ) -> { assert is_hash(pop);}`
+This is awkward and inefficient.
+We have to have a notation for hash. Maybe something new.
+`var pop: (string: int)` - no we are already using `:` for a very different purpose.
+`var pop: (string -> int)` - confused with function
+`var pop: (string % int)` - maybe
+`var pop: (string % int)^@` - a hash is a special dynamic array after all. We have to include this in our notation.
+`var pop: (string, int)^@`
+Maybe we should not have hashtable as a built-in type. But literl hash is very useful.
+`type hash := (string, int)^@ where is_unique($, 0)`
+`var size = hash_get(hash1, "uk")`
+`function hash_get(x:(any, any)^@)->any {} where { $ :: x.[] }`???
+We also should review the notation to specify hash key/values with `::`.
+`var pop: (string % int) -- var size = pop."uk" -- pop."us" = 100`
+`var pop: (string % int, string) -- var size = pop."uk".0 -- pop."us" = (100, "A")`
+`var pop: (string, int % int, string) -- var size = pop.(0,"uk").0 -- pop.(5, "us") = (100, "A")`
+This seems reasonable.
+
+
+
+
