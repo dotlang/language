@@ -2958,15 +2958,42 @@ Also it can give developer ability to pass a struct when calling a function whic
 `func adder(x:int, y:int) -> ... var t = (1,5); adder(t)`
 
 ? - where should we put code to dispose a type?
+`dispose` function?
 
 ? - simplify the language even more! what can we move to external libraries?
 Optimize for debugging and maintenance.
+Currently the most complex features are: templates, inheritance, polymorphism and dispatching, type constraints.
 
-? - what is notation to clone?
+
+? - what is notation to clone? and instantiation?
 `var x: (n: int, o:int) = (1,1)`
 `y = x(o: 5);`
 This is a bit confusing. X is a variable but is treated like a function.
+`y = x with (o:19)` - a with b means copy a and apply b changes to it.
+`y = x with z with p with n with (o:33)` - we can chain it. 
+But this should be similar to instantiation.
+`var y = Point(x:10) with (x:9)`
+`var y = Point with (x:10) with (x:9)`
+`var x: Point = (x:10, y:12)`
+Maybe mentioning type is not necessary. If they have same fields then they are the same type.
+Even an anonymous type can be a typed variable.
+If you want type enforcement, mention the type.
+`var y = x with ()` this is a clone of x
+`var y = x` - y will point to x - so changing x will change y
+this is another source of ambiguity. `x=5;y=x;x++` this will make y, 6 which is not expected.
+Unless we change the notation of `=` to COPY data.
+or say: `=` will copy for primitive (non tuple, non sum) types.
+Cloning alone is not enough for us because cloned variable will be immutable so it will always be exactly same as the original.
+`var p1: point(x:10, y:20)`
+`var p2: p1(x: 19)` -- y will remain 20
+`var p = func_call()` type can be inferred
+`var g = (x:1, y:2)` in some cases type cannot be inferred.
+`var g: MyType = (x:10, y:20)`
+`var h = g with (x:199)`
 
+
+? - if everything is immutable, how can we have dynamic array and hashtable?
+If they are local variables, they are mutable. But function inputs are not mutable.
 
 ? - remove all occurences of struct
 
