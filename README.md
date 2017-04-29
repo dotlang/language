@@ -267,6 +267,7 @@ var test3: D =(1,"A")
 var test4: C=(9)
 test3[0]=9
 test3[1]="A"
+var t = (x:6, y:5) ;anonymous tuple
 ```
 - Note that if there is a multiple struct inheritance which results in function ambiguity, there will be a compiler error: 
 `func x(p: P1)->int ...`
