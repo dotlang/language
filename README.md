@@ -11,7 +11,7 @@ Feb 19, 2017
 - **Version 0.5**: Nov 13, 2016 - Some cleanup and better organization
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
-- **Version 0.8**: ??? ??, 2017 - Clarifications for exception, unify type checking with pre/post condition, Adding `where` keyword, Sum types, New notation for hash-table and changes in defining struct, removed `const` due to adding sum types
+- **Version 0.8**: ??? ??, 2017 - Clarifications for exception, unify type checking with pre/post condition, Adding `where` keyword, Sum types, New notation for hash-table and changes in defining struct, removed `const` due to adding sum types, reviewed inheritance notation and added explode operator.
 
 ##Introduction
 ##Code organization
@@ -256,24 +256,25 @@ type A :=  (x: int = 19) ;you can assign default value
 type B := (a: A, y: int) ;B composes A
 type C := ()             ;empty struct
 type C := (y: int = 9)   ;setting default value
-type D := (int, string)=(9,"G")  ; unnamed fields. You can access them like an array. Also we can set default value.
+type D := (int=9, string="G") ; unnamed fields. You can access them like an array. Also we can set default value.
 ```
 
-To create a new struct instance:
+To create a new struct instance you just set it's type and assign it to an appropriate tuple:
 ```
 var test: A = (x: 10)
-var test2: A()
-var test3: D =(1,"A")
+var test2: A = () ;no init 
+var test3: D = (1,"A")
 var test4: C=(9)
 test3[0]=9
 test3[1]="A"
-var t = (x:6, y:5) ;anonymous tuple
+var t = (x:6, y:5) ;anonymous and untyped tuple
 ```
 - Note that if there is a multiple struct inheritance which results in function ambiguity, there will be a compiler error: 
 `func x(p: P1)->int ...`
 `func x(p: P2)->int ...`
 `type A := struct{ x:P1, y:P2;}`
 `var v: A{}; var t = x(A); //compiler error`
+- You can access tuple fields, if all of the fields are unnamed.
 
 ###Sum types
 When defining a sum type, you specify different types and labels that it can accept. Label can be any valid identifier.
@@ -308,10 +309,9 @@ new_array = map({$0+1}, my_array);
 new_array = map({$0+1}, my_array);
 new_array = map {$0+1}, my_array;
 ```
-- Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability). You can make a copy using `()` operator: 
-`x : MyType = {x:1, y:2};`
-`y : MyType; y = x{};`
-`y : MyType; y = x(y: 5);`  //clone with modification
+- Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability).
+- You can clone the data but have to do it manually using explode operator `*`:
+`var x: Point = (*original_var)`
 - When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`
 - You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
 - `rest` is a normal array which is created by compiler for each call to `print` function.
@@ -377,7 +377,7 @@ func push(x: any, s: Stack) where { x :: s.x[] }) -> ...
 - Bitwise: `~ & | ^ << >>`
 - Math: `+ - * % ++ -- **`
 The bitwise and math operators can be combined with `=` to do the calculation and assignment in one statement.
-- `=` operator, makes a variable refer to the same object as another variable. If you need a copy, you have to clone the variable. 
+- `=` operator: copies only for number data type, makes a variable refer to the same object as another variable for any other type. If you need a copy, you have to clone the variable. 
 - `x == y` will call `equals` functions is existing, by default compares field-by-field values. But you can o
 - You can not override operators. 
 - `x :: y` returns true if `x` can be cast to type of `y`. `y` can be either a variable or name of a type.
@@ -391,37 +391,24 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `::` type check
 - `:=` type definition
 - `=>,<=` chaining
-- `x()` instantiation/cloning
 - `|` sum types
 
-Kinds of types: `primitives`, `product` and `sum`
+Kinds of types: `primitives`, `product`, `sum` and function.
 
 ###Inheritance and polymorphism
-- Tuples can inherit from other structs by composing a variable of that type. 
+- Tuples can inherit from other structs by composing a variable of that type with explode operator (*). 
 `type Shape := struct;`
-`type Circle := struct {x:Shape...}`
-`type Square := struct {x: Shape...}`
-`type Polygon := struct {x: Shape...}`
+`type Circle := struct {x:*Shape...}`
+`type Square := struct {x:*Shape...}`
+`type Polygon := struct {x:*Shape...}` 
 - You can define functions on types and specialize them for special subtypes. This gives polymorphic behavior.
 `func paint(o:Shape) {}`  
 `func paint(o:any){}`
 `func paint(o:Circle)...`
 `func paint(o:Square)...`
-- To have polymorphism at runtime, you also have to write cast functions:
-```
-type Square := struct { shape: Shape, size: int };
-; here we provide implicit cast from Square to Shape and int
-type Square := struct {...} as Shape = $.shape, as int = { return $.size + 5 }
-```
-- When writing cast code, you are wrigin mini functions which have no name, their input type is implied and input name is not needed. You just specify output type and the body of the function.
-- Note than when a function for contained/derived type is called, it will have an instance of the contained/derived type. So further calls to other functions, will be dispatched to those who work with the contained type, not the container/base type.
-- We can keep a list of shapes in an array/collection of type Shape: `var o: Shape[] = {Circle{}, Square{}};`
+- If a function (`f1`) is implemented for parent type (`Shape`), and called with an instance of child (e.g. `Circle`) it will receive an instance of `Shape` which is a field of `Circle`. If `f1` function calls another function which is written for both parent and child types, it will be called for child (the highest ranked type).
+- We can keep a list of shapes in an array/collection of type Shape: `var o: Shape[] = [Circle(), Square()];`
 - You can iterate over shapes in `o` array defined above, and call `paint` on them. With each call, appropriate `paint` method will be called (this appropriate method is identified using 3 dispatch rules explained below).
-- If there is any kind of ambiguity in the code (e.g. struct A contains B and an int field and a function is called with A which can accept either B or int), compiler will throw an error unless there is appropriate cast function.
-- Example: Equality check: `func equals(a:any, b:any)...` and specialize for types that you want to accept `==` operator: `func equals(a:Customer, b: Customer)...`
-- Example: sorting a mix of objects: `func compare(a:any, b:any)` and `func compare(a: Record, b:Record)`;
-- Example: Collission checking: `func check(a:S, b:T)...` and `func check(a: Asteroid, b: Earth)...` 
-Then we can define an array of objects and in a loop, check for collissions.
 - Visible type (or static type), is the type of the variable which can be seen in the source code. Actual type or dynamic type, is it's type at runtime. For example:
 `func create(x:type)->Shape { if ( type == 1 ) return Circle{}; else return Square{}; }`
 Then `var x: Shape = create(y);` static type of `x` is Shape because it's output of `create` but it's dynamic type can be either `Circle` or `Square`. Note that we assume proper definition of casting for types `Square` and `Circle` to `Shape`.
@@ -441,8 +428,9 @@ So if we have this:
 a call to paint function with some inputs, will use above 3 rules to dispatch.
 - suppose we have `Base` struct and `Derived` structs. Two methods `add` and `addAll` are implemented for both of them.
 if `addAll(Derived)` calls `addAdd(Base)` which in turn calls `add(Base)` then a call to `addAll(Derived)` will NOT call `add(Derived)` but will call `add(Base)`. When `addAll(Base)` is called, it has a reference to `Base` not a `Derived`. 
+- **Explore operator**: You can apply this operator to types (to define inheritance) and values. `var g: int[] = *my_three_int_tuple`. This operator can only be applied to product type (tuple) to have any effect. Otherwise it has no effect.
 
-###Array and slice
+### Array and slice
 - Array literals are specified using brackets: `[1, 2, 3]`
 - `var x: int[] = [1, 2, 3];`
 - `var y: int[3]; y[0] = 11;`
