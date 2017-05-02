@@ -30,6 +30,8 @@ to do mocking in the life-time of the current function.
 
 \* - Introduce caching of function output (if it is not void)
 
+\* - Other than manual clone, provide a `clone` in the core to help developers.
+
 
 Y - decorators - another try
 lets define some native, built-in functions. 
@@ -2957,15 +2959,7 @@ I think paren is ore intuitive with the way we call a function.
 Also it can give developer ability to pass a struct when calling a function which has same fields as function input.
 `func adder(x:int, y:int) -> ... var t = (1,5); adder(t)`
 
-? - where should we put code to dispose a type?
-`dispose` function?
-
-? - simplify the language even more! what can we move to external libraries?
-Optimize for debugging and maintenance.
-Currently the most complex features are: templates, inheritance, polymorphism and dispatching, type constraints.
-
-
-? - what is notation to clone? and instantiation?
+N - what is notation to clone? and instantiation?
 `var x: (n: int, o:int) = (1,1)`
 `y = x(o: 5);`
 This is a bit confusing. X is a variable but is treated like a function.
@@ -2982,7 +2976,7 @@ If you want type enforcement, mention the type.
 `var y = x` - y will point to x - so changing x will change y
 this is another source of ambiguity. `x=5;y=x;x++` this will make y, 6 which is not expected.
 Unless we change the notation of `=` to COPY data.
-or say: `=` will copy for primitive (non tuple, non sum) types.
+or say: `=` will copy for primitive (non tuple, non sum) types. or maybe we can say COPY happens only for number data type because it's length is pre-specified.
 Cloning alone is not enough for us because cloned variable will be immutable so it will always be exactly same as the original.
 `var p1: point(x:10, y:20)`
 `var p2: p1(x: 19)` -- y will remain 20
@@ -2990,12 +2984,198 @@ Cloning alone is not enough for us because cloned variable will be immutable so 
 `var g = (x:1, y:2)` in some cases type cannot be inferred.
 `var g: MyType = (x:10, y:20)`
 `var h = g with (x:199)`
+`var h = MyType(g)` - but what if we want to clone anonymous (type-less) tuples?
+`var g = h` this will copy the reference not the data
+`var g = dup(x)` too long, should be simpler
+`var g := h` - what about this? no. this is used to define types.
+`var g = save_data(h)`
+Maybe we can add a notation to make a copy. so: 
+`var g = @h`
+`var g = save_data(@h)` this is useless because save_data won' be able to change h.
+or we can also do this manually:
+`var g = (x:h.x, y:h.y)`
+`var g = MyType(h.x, h.y)`
+`var g = MyType(x:h.x, y:h.y)`
+Or if it is too much code, user can write `clone` function for that type. But this is a convention not a rule.
+summary in the next point.
 
+Y - assignment operator will copy only for number data type. For anything else, reference will be copied.
+There is no built-in clone operator. If you need it, write it yourself.
 
-? - if everything is immutable, how can we have dynamic array and hashtable?
+N - where should we put code to dispose a type?
+`dispose` function? yes
+
+N - if everything is immutable, how can we have dynamic array and hashtable?
 If they are local variables, they are mutable. But function inputs are not mutable.
+
+Y - The notation for casting is a bit un-intuitive.
+`type Square := struct {...} as Shape = $.shape, as int = { return $.size + 5 }`
+When we create a new `Square` we write: `var t = Square(x:10)`
+So we treat type name as a function. When we want to cast something to `int` we write: `var t:int = int(my_string)`
+So why not do this for custom types?
+Write a function with the same name as type name. This can also be used as a constructor if it's inputs are exactly matching with the type fields.
+For example to convert MyType to string, write this function: `func string(x: MyType))` and when someone writes: `var ggg = string(myType)`
+In the same way we can write: `var g = int(myVar); var t = MyCustomer(myVar)`
+Pro: Simple, consistent, extensible (You can write custom ctors)
+Con: It is hard to find casting function for a type. Maybe we need to look into a lot of modules.
+Problem: Type names and function names have different naming convention.
+Maybe we should loose this requirement.
+
+Y - simplify the language even more! what can we move to external libraries?
+Optimize for debugging and maintenance.
+Currently the most complex features are: templates, inheritance, polymorphism and dispatching, type constraints.
+Templates provide static polymorphism.
+can we replace polymorphism with union types?
+q: (If you want to remove polymorphism) How can I extend an existing type and add behavior on top of it?
+Let's keep poly. But without adding anything new. We just compose parent type. Add appropriate casting functions and that would be all. We can define functions for parent or child and at runtime, the appropriate function will be called.
+And when a function for parent, is called with an instance of the child, and that function, calls another function which has two candidates for both parent and child, which one should be called? This depends on the casting. 
+If it is a hard cast, the target, is really of destination type (Parent) so the second call will be redirected to a function for parent.
+If it is a soft cast, then the result will still carry it's real type. This type cast is more like simulating a type rather than creating a new type. So in this case, a call to another function, will use the real type.
+So hard cast string to int: result is int with type int.
+Soft cast string to int: result is int with actual type string.
+But doesn't this make it confusing? We will need a new notation.
+And this means having data variables which can have more than one type. So:
+`func do_work(x: int) -> { ...}` 
+Inside do_work I expect an integer, but it can have other types too, which show themselves when I make a function call.
+Can we model this with a data type? It will be more consistent and orth.
+Like `bound` data type which is a tuple with a number of elements of different types which are bound together. It can be used in place of any of it's child types. But how can we handle modifications? If someone changes the `int` representation, what should happen to the `string` type? Answer is: we have only one piece of data + a number of "representations". So when we change, we change the single truth. But this cannot be true all the time. Can it be?
+Example: We have string data and two functions. `first` and `second`. first is defined for int (which returns it's input), and second is defined for both int and string. If we call this: `second(first(string_var))` which version of `second` will be called?
+string -> int -> call to second.
+Providing with soft and hard cast, make it flexible for the developer. If it is a real type conversion, do hard cast. If it is for polymorphism and he wants it, do soft.
+This should be handled in the casting function so it will be more flexible. But the notation should be simple.
+As a result, this concept can be used anywhere else, not only in cast functions.
+So inside `first` both `x :: int` and `x :: string` will return true.
+so:
+`func int(s: string) -> { ... }` you cannot define both soft and hard cast for a single conversion.
+`func int(s:string) -> native_cast_int(s)` - this is a sample of hard casting
+`func int(s:string) -> { return native_cast_int(s)`???
+We want to say, when you want to cast ... (this is not restricted to casting).
+So: We want to say, create a new data item of type X but add one more implicit type to it Y and return the result.
+`return result ::: int` ?
+But this is too flexible and so it will be confusing.
+lt's limit this only to casting (a function with specific name, has only one input).
+If we use a notation inside the function body, it should be possible to use it elsewhere. but we cannot decide on what a casting function should do. 
+suppose that we defined this function, what would happen if the data changes?
+`func int(s:string) -> ... ;; var g = int(mystring);g++;` what would happen to mystring?
+we cannot permit limitless soft casting. 
+soft casting is only possible when we do not create a new variable, but only return the original input or part of it. 
+so can we make this transparent?
+`func Shape(s: Square) -> s.shape;`
+Is this going to be soft cast, all the time?
+```
+implicit func Shape(s: Square) -> s.shape;
+func draw(s: Shape) -> prepare(s)...
+func prepare(s: Shape) ...
+func prepare(s: Square) ...
+...
+var mySquare = create_square();
+draw(mySquare);
+```
+we should state if a cast function can be called implicitly. For example using `implicit` keyword.
+Soft cast can only be done with implicit casting functions.
+but maybe an implicit cast needs to be hard cast.
+we have implicit/explicit and hard/soft cast.
+explicit is always hard but implicit can be hard or soft.
+`func Shape` is explicit and hard
+`func Shape&` is implicit and hard
+`func Shape&&` is implicit and soft
+can we change the naming convention? data type names and function names be `my_data_type` and `my_func`: This is not good because it eliminates one factor of readable code.
+They say implicit type conversion is not good, so it must be explicit which means name of the function is up to the developer so we don't need to pay attention to it at this level.
+For implicit conversion, it is a special case, because it will return a member of the struct, so maybe we don't need to define a function for this. because it makes everything more complex. there are millions of possibilities in a function which we don't need. we just need `return this.memberX`. 
+```
+type Square := (s: Shape, size: int)`
+```
+The only case that I think is possible, is to use convention on the field name.
+`type Square := (_s: Shape, size: int)`
+`type Square := (_s_: Shape, size: int)`
+`type Square := (implicit s: Shape, size: int)`
+What if instead of embedding parent in child, we embed child in parent?
+Can the whole thing be replaced another way? Even if this means writing some more lines of code?
+Our goal is to have ability to re-use a pre-written code AND (?) represent a variable with multiple types.
+Let's define an interface but on data not behavior.
+So interface is a type and other types will be considered it's children if they have the same fields with the same name.
+Then a function can accept the interface type and we can pass any other type that is a child of that type.
+Can this replace polymorphim and give us code reuse?
+`type Parent := (name: string)`
+`type Child := (name: string, age: int)`
+`func getName(p: Parent) ...`
+`getName(my_child)`
+Here `my_child` is an instance of `Child` but it will be passed to `getName` as a `Parent`.
+if we have `getName(c: Child)` it will be called. Else `getName(Parent)` will be called -> code reuse
+`type Employee := (name: string)`
+`type Accountant := (name: string, age: int)`
+`type Manager := (name: string, salary: long)`
+Now an instance of Accountant or Manager can be cast to Employee easily. So we can have:
+`var g:Employee[] = [createAccountant(), createManager()]`
+`for(x in g) print(x)` appropriate print for Employee or Accountant or Manager will be called.
+any method call on Child which does not have an implementation, will be redirected to methods written for parent. But even there, if they make a method call which is implemented both for child and parent, the one for the child should be called.
+So if you write a method called `m` for Manager which has a candidate for Employee, and call `print` which is for employee, but with a manager, and inside the print, `m` is called, the one for manager will be called. 
+Now, what about the ntoation? Should we just re-write parent's fields in the child? 
+How to specify parent for a child? A new notation? A convention?
+This means expand another struct and may have other uses. We want to explode a tuple.
+`type person := (name: string, age:int)`
+`func print(name: string, age: int) ...`
+`print(my_person)` this won't work. Because print expects two inputs. BUT all of them with the same name and type are defined in person. So this is also done in python with * operator:
+`print(*my_person)` - but this is done on the data level. We want to have it on type/definition level.
+`type person := (name: string, age:int)`
+`type manager := (salary: int, p: *person)` this will cause two things: fields of person will be exploded into manager definitio and they will be accessible either directly or through `p`. AND manager will be a sub-type of person. So it can be implicily casted to person.
+Of course the `*` notation is general so it can be applied anywhere for data or types.
+`var g: int[] = *my_three_int_tuple`
+This is called unpacking in Python.
+Of course if there is a conflict as a result of applying `*` there will be compiler errors.
+So, we can have polymorphism which is easy and does not add a lot to the notation.
+And for type unpacking, the name is optional. 
+SUMMARY: 
+To define an inheritance, just include parent structure inside child strucure with unpacking on it's type. You can even remove the name. For example: `type Child := (age: int, *parent)` This means all fields of parent structure will be unpacked inside the child and the child can be dynamically casted to parent if need be.
+You can apply unpacking operator on data too: `var g: int[] = *my_three_int_tuple`
+But if we can eliminate the name, is it possible to eliminate name for other fields too? No. So it shouldn't be allowed for this case.
+
+Y - what does this mean? `type t:= (*int[])`
+or `type t:=(x: *int)`.
+`*` has no effect in this case. Same for value unpacking.
+
+Y - What is the notation to instantiate a type?
+`type Point := (x: int, y:int)`
+`var x = Point(1, 9)` or `var x = Point(x:1, y:9)`
+This is using a type like a function.
+We don't support custom ctor. If users needs one, he can add a function and call it.
+`var x: Point = (1, 9)` or `var x: Point = (x:1, y:9)`
+This is better because there is no confusion between type name and function names.
+So, we don't have a special syntax to instantiate. We just create an anonymous tuple and set the type.
+What if we want to instantiate without setting values? assign to `()`
+
+Y - How to clone? We can use explode operator.
+`var x: Point = (*original_var)`
+
+? - should we ban unnamed fields?
+
+? - review map function.
+
+? - What about generics? Do we need them?
+Applications of generics: Sort, Algorithms, Data structure.
+Algorithm: They can accept the general case type (`sort(c: Comparable[])`).
+For data structure: We provide basic structures like hash-map and array. For others: write your own code.
+For example a set: it is an array with some conditions.
+`type Set := []` -> `var g: int[Set]` - we want a notation which can be used to "customize" an array or hash but keep their original notation.
+`type Set := (`
+`var g: int[] `
+Why can't we use constraints?
+`var g: int[] where { is_set }`
+`type Set := int[]`
+`type IntSet := int[]`
+We need an array or hash with their own methods. So user cannot simply insert or remove something without calling those methods. we can show a set as a map: `var my_set: bool[string]`
+Data structures are data with special behavior. But we are keeping these two separate. Because of that, it is difficult to define advanced data structure here.
+we can use constraints.
+`type TreeNode := any`
+`type Tree := (left: Tree, right: Tree, value: any)`
+`var myTree: Tree where { $.value :: int }`
+`func addAll(x: Tree where { $.value :: int})`...
+This seems fine and simple.
+
+? - Naming convention: `myFunction`, `MyDataType`, `my_var_name`, `my_module`.
+
+? - state the way to define body-less functions. used to simulate interfaces.
 
 ? - remove all occurences of struct
 
-? - The notation for casting is a bit un-intuitive.
-`type Square := struct {...} as Shape = $.shape, as int = { return $.size + 5 }`
+? - the language should be so simple that it should be like an IR for a VM.
