@@ -3395,6 +3395,9 @@ This does not affect the `//` notation for exception handling. Even if function 
 N - can input of a function be a sum type?
 `fn add(x: int|string) -> { ... }` yes.
 
+? - can we use Traits as a replacement for inheritance and polymorphism and method dispatch?
+https://blog.rust-lang.org/2015/05/11/traits.html
+
 ? - simplify the language even more! 
 what can we move to external libraries?
 Optimize for debugging and maintenance.
