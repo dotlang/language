@@ -3147,11 +3147,24 @@ What if we want to instantiate without setting values? assign to `()`
 Y - How to clone? We can use explode operator.
 `var x: Point = (*original_var)`
 
-? - should we ban unnamed fields?
+Y - remove all occurences of struct
 
-? - review map function.
+Y - mentioning name (for inheritance) should not be possible because then `*x` will do two things.
 
-? - What about generics? Do we need them?
+Y - Naming convention: `myFunction`, `MyDataType`, `my_var_name`, `my_module`.
+
+================end of v 0.8====================
+
+Y - explode can even be used to define function input or output. Anywhere you want to define a tuple.
+Calling explode for a sum type will just paste it's contents.
+
+Y - should we ban unnamed fields? what about unnamed function inputs? No they should be allowed.
+At least we need them for function output. So tuples with unnamed fields should be allowed.
+So data types or function inputs without name should be allowed.
+
+Y - state the way to define body-less functions. used to simulate interfaces.
+
+N - What about generics? Do we need them? yes.
 Applications of generics: Sort, Algorithms, Data structure.
 Algorithm: They can accept the general case type (`sort(c: Comparable[])`).
 For data structure: We provide basic structures like hash-map and array. For others: write your own code.
@@ -3172,10 +3185,118 @@ we can use constraints.
 `func addAll(x: Tree where { $.value :: int})`...
 This seems fine and simple.
 
-? - Naming convention: `myFunction`, `MyDataType`, `my_var_name`, `my_module`.
+Y - `*` is used both for multiplication and unpacking.
+Maybe we should use `@`.
 
-? - state the way to define body-less functions. used to simulate interfaces.
+Y - review map function.
+```
+type mapInput := any
+type mapOutput := any
+func map(f: func(mapInput) -> mapOutput, arr: mapInput[]) -> mapOutput[] where { mapInput :: mapOutput }
+//these calls are all the same
+new_array = map({$+1}, my_array)
+new_array = map({$+1}, my_array)
+new_array = map {$+1}, my_array
+```
 
-? - remove all occurences of struct
+Y - What about this? `var x,y,z = *my_int_array`. Like Python
+And how can we ignore the rest of explode output?
+`var x, ??, z = (1, 6, 5, 1, 11, 21)` x will be 1 and z will be 21
+Like Go we can use `_`. This is used only for explode operator on data.
 
-? - the language should be so simple that it should be like an IR for a VM.
+Y - How explode handles the case where there is name mismatch?
+`func add(x: int, y:int) ...`
+`var h = (t:10, u:20)`
+`add(@h)` ?
+It should fail. because function states it needs inputs with that specific names (this is a contract).
+In other words: How can we make a tuple with unnamed fields?
+We want to convert `(x:10, y:20)` to `(10, 20)`.
+`var h = (t:10, u:20)`
+`var g = @h` -- wrong, right side is two variables, left side is one
+`var g,h=@h` -- correct
+`var g:(int, int) = @h` -- can we assign a named exploded tuple to an unnamed tuple?
+`var g:(int, int) = (x:10, y:20)` this should be possible.
+So, can we pass an unnamed tuple for a function input which has named? Yes. But:
+`var g: (x: int, y:int) = (t:10, h:20)` what about this?
+`@x` will not create a tuple by itself. You have to enclose it in `()`.
+We can use `x.@` to denote a list of values inside the `x` tuple.
+`var g: @point` is same as `var g: x:int, y:int` so its wrong
+`var g: (@point)` is correct.
+`var g = @mypoint` is same as `var g = x:10, y:20` so it's wrong.
+`var g, _ = @mypoint` is correct.
+So, we can compose `@` with others.
+`var g = (my_point.@)` is same as `var g = (10, 20)`
+`var g = (@my_point, z:20)`. g will be `(x:10, y:20, z:20)`
+`@my_point` will translate to `x:10, y:20`
+`my_point.@` will translate to `10, 20`
+`@MyType` will translate to `x:int, y:int`
+`MyType.@` will translate to `int, int`
+`var x = (@my_var)` will clone the variable.
+
+N - can't we use `MyData` instead of `@MyData`?
+Applications of @: clone, call function with a tuple, inheritance.
+Allowing `MyData` means having named and unnamed fields inside a tuple.
+`type x := (MyData, x:int)` here `MyData` is an unnamed field.
+
+N - Allow `*int` so tuple inherits from int.
+But this means to be an int: `type Point := int`
+
+N - review notation for lambdas.
+
+N - What do we need to support rpc? We need to call a method by name and return it's output in a general format.
+in go: `err = client.Call("Arith.Multiply", args, &reply)`
+Suppose that a Python code wants to call one of my functions. It has no way except passing method name.
+But in server side, I can register them with names:
+`rpcRegister("Update", myUpdateFunc)`
+in Python: `result = server.call("Update", 1, 8, "A")`
+Then what is the definition for `rpcRegister`?
+`func rpcRegister(name: string, f: func(input: any)->any)->...`
+We possibly store these in a map.
+Then inside the server when we want to call func:
+`var fn = map[name]`
+`var result = fn(input)`
+How do we convert an array of inputs to function input?
+`func receiveCall(name: string, inputs: any[]) -> { var fn = map[name]; return fn(?) }`
+We need to convert an array to a tuple with unnamed fields.
+`var g=[1,2,3]` we want to have (1,2,3).
+we can do this with a map: 
+`output = map (x: any, tuple: any) -> (x, tuple.@), g`
+
+Y - Also notation to access tuple values when it is unnamed.
+`var t : (int, string) = (1, "A")`
+`var number_one = t.0` dot notation makes more sense.
+
+Y - Add helper functions to detect type of variable: `type tuple := any where { is_tuple }`
+We want to have `any` but it must be a tuple or an array or ... . How?
+`::` is used to check exact type. `x :: int[]` or `y :: Point`
+But what if I want to have a tuple or an array of any type?
+`x :: any[]` will return true for any array
+`x :: (any)` will return true for any tuple
+Line 397
+`x :: []` check for any array
+`x :: ()` check for any tuple
+`x :: %` check for any hashtable
+`x :: int[]` check for array of specific type
+`x :: int%` check for hash of specific key
+`x :: %int` check for hash of specific value
+
+Y - Why notation for hashtable should be the same as notation for array?
+`var ht: int[string]`
+`var str1 = h[10]`
+`var ht: int%string`
+`var str1 = ht%"mydata"`
+
+? - simplify the language even more! what can we move to external libraries?
+Optimize for debugging and maintenance.
+Currently the most complex features are: templates, type constraints.
+
+? - the notation of hash combined with string seems not very good.
+`hash1%"B" = 19`
+
+? - All variables are immutable but can be re-assigned? What about local variables?
+
+? - how to clone an array or hash?
+
+
+
+
