@@ -157,7 +157,7 @@ var g: int|exception = func1()   ;this is valid
 ```
 - There is no `finally` in Electron. Each variable which is not part of return value of the function, will be cleaned-up upon function exit (even if there is an exception). This is done by calling `dispose` function on that type. You can also manually call this function in case you need to cleanup the resource earlier. 
 - You can do custom cleanup or exception catching in post-conditions defined using `where` keyword. This needs to be done after function body (post-condition) and in that block you can make a call to `get_exception` to check if there has been an exception.
-- `//` is used in conjunction with sum types to act as a shortcut for `switch`. In `x = A // B` if x type does not match with A then B will be evaluated to get a result of type of x. Inside `B` we can refer to result of `A` using `$` notation.
+- `//` (Type enforcement operator) is used in conjunction with sum types to act as a shortcut for `switch`. In `x = A // B` if A's type does not match with what we expect (type of `x`) then B will be evaluated to get a result of type of `x`. Inside `B` we can refer to result of `A` using `$` notation.
 - `x = A // B` is shortcut for (T is type of x):
 ```
 x = switch(A) {
@@ -165,6 +165,7 @@ x = switch(A) {
    else => B
 ```
 If there is no `x =`, then `B` will be evaulated if result of `A` is not void.
+You can chain `//`: `x = A // B // C` if A is not evaluated to the type we need, B will be evaluated and etc.
 
 ###loop, break, continue
 ```
