@@ -3188,7 +3188,7 @@ This seems fine and simple.
 Y - `*` is used both for multiplication and unpacking.
 Maybe we should use `@`.
 
-Y - review map function.
+N - review map function.
 ```
 type mapInput := any
 type mapOutput := any
@@ -3286,17 +3286,105 @@ Y - Why notation for hashtable should be the same as notation for array?
 `var ht: int%string`
 `var str1 = ht%"mydata"`
 
-? - simplify the language even more! what can we move to external libraries?
-Optimize for debugging and maintenance.
-Currently the most complex features are: templates, type constraints.
-
-? - the notation of hash combined with string seems not very good.
+Y - the notation of hash combined with string seems not very good.
 `hash1%"B" = 19`
+`hash1"B" = 19`
+Maybe we should use functions for this, instead of adding a new notation:
+`set(hash1, "B", 19)`
+`var t = get(hash1, "B")`
+But I prefer language to be expressive.
+`hash1:"B" = 19`
+`hash1?"B" = 19`
+`hash1 += "B":19`
+`hash1 += "B":19`
+`hash1."B"`
+`hash1{"B"}`
+`hash1/"B"/`
+`hash1<"B">`
+`hash1 "B" -> `
+`hash1{"B":5}` set
+`hash1{"B"}` get
+The notation to define hashmap type and it's values (read/write) and literals should be consistent and make sense. 
+definition `var hash1: string : int`
+set `hash1{"A" -> 5}`
+get `hash1{"A"}`
+literal `hash1 = {"A" -> 5}`
+Maybe we should use `=>` notation and use another symbol for chaining.
+definition `var hash1: string => int`
+literal `hash1 = {"A" => 5}`
+set `hash1{"A"} = 5`
+get `hash1{"A"}`
+we can use `:>` and `:<` for chaining.
 
-? - All variables are immutable but can be re-assigned? What about local variables?
+N - All variables are immutable but can be re-assigned? What about local variables?
+Can I pass a read/write reference to a function?
+You can pass a function reference which changes the value:
+```
+var g = [1,2,3]
+do_work(g, func(index: int, value: int) -> g[index]= value)
+;OR
+do_work(g, { g[$1]= $2 })
+```
 
-? - how to clone an array or hash?
+N - can we make use of `//` now? No.
 
+Y - how to clone an array or hash?
+`var a = [1,2,3]`
+`var b = [@a]`
+`var h = string => int = {"A"=>1, "B"=>2}`
+`var g = {@h}`
 
+Y - where is used for type constraint, pre-cond, post-cond and catch exceptions.
+It is too much. OTOH we use `assert` only to validate and throw.
+Maybe we should simplify our notation for exception handling. We now have sum type.
+Any function that has an assert or where clause or calls another such function, has potential to throw exceptions.
+`func add(x: int, y:int) -> int { ...}` this can return either an `int` or an error.
+`func add(x: int, y:int) -> int|Exception { ...}`
+`var g: int = add(5,6)` - what if this returns an Exception? 
+`assert` is underlying exception throwing mechanism (where is using this behind the scene).
+and it is shortcut for: `if (!condition) return exception` - but for clarity and generality, we don't allow code to return exception directly. instead of writing `return exception` you must write `assert false`.
+`var g: int = add(5,6) # {...}` the second block will run if function output has an exception.
+Can we make this general? If function `f` is returning `A | B | C | D` we want to have different cases for each return type.
+```
+var g = switch(f(a,b,c)) { 
+  case x:int -> x 
+  case y:exception -> ...
+}
+```
+So for every function call which is potential to exception, this can be done.
+Exception is nothing more than a tuple with useful information.
+The only rule is you cannot instantiate it directly. You must use `assert`.
+So every potential function has a `| exception` attached to it's output type, behind the scene.
+If we allow users to create instances of `exception` then we won't need anything special for exception handling and catch.
+throw exception: `return exception(1,2,3)`
+catch exception: switch and case.
+For throw, we already have `assert` as a helper, not a shortcut.
+for catching, we can define a shortcut.
+`func func1() -> int { ... }`
+`var g: int = func1() // { ... }`
+we put a code block which will either return from function or set an appropriate value for `g` of correct type.
+But how to get the exception? We remove the sum type notation because it needs a lot of exceptions.
+throw exception: `assert false`
+catch exception: `//` - if function is potential and there is no `//` after its call and throws exception, we will just jump outside.
+How to get exception?
+`var g: int = func1() // { ... }`
+1. functions
+2. global variable or symbol which is read-only.
+What if I accept the exception?
+`var g: int|exception = func1()`
+This is totally fine and will work.
+Now how can we simplify this and make language more expressive?
+We can make `//` more useful.
+`var a: int|string=func1()`
+`var b: int = a // 0`
+`//` is used in conjunction with sum types to act as a shortcut for `switch`. `x = A // B` if x type does not match with A then B will be evaluated to get a result of type of x. Inside `B` we can refer to result of `A` using `$` notation.
 
+? - show we ban `void` functions?
+
+? - notation for case in switch is same as function call. change it.
+
+? - simplify the language even more! 
+what can we move to external libraries?
+Optimize for debugging and maintenance.
+Currently the most complex features are: type constraints, hash, array.
 
