@@ -3401,4 +3401,19 @@ https://blog.rust-lang.org/2015/05/11/traits.html
 ? - simplify the language even more! 
 what can we move to external libraries?
 Optimize for debugging and maintenance.
-Currently the most complex features are: type constraints, hash, array.
+Currently the most complex features are: type constraints.
+
+? - in order to indicate type A behaves as interface I, in golang, you only need to write appropriate methods.
+can we have this here?
+
+? - I think, dynamic dispatch should happen even if we are calling a function pointer.
+```
+draw(Shape)
+draw(Circle)
+var f: func(Shape) = draw;
+f(my_circle)
+```
+This should call `draw(Circle)` even though type of `f` is `func(Shape)`.
+
+? - roadmap:
+read source file, create in-memory assembly, invoke yasm to compile to executable
