@@ -3379,12 +3379,23 @@ We can make `//` more useful.
 `var b: int = a // 0`
 `//` is used in conjunction with sum types to act as a shortcut for `switch`. `x = A // B` if x type does not match with A then B will be evaluated to get a result of type of x. Inside `B` we can refer to result of `A` using `$` notation.
 
-? - show we ban `void` functions?
+Y - notation for case in switch is same as function call. change it.
+```
+  result = switch ( my_tree ) {
+    case Empty 0
+    case y:int -> 1
+    case z:NormalTree -> ...
+  }
+```
 
-? - notation for case in switch is same as function call. change it.
+N - show we ban `void` functions?
+This does not affect the `//` notation for exception handling. Even if function does not return anything, we can write:
+`func1(1,2,3) // `?
+
+N - can input of a function be a sum type?
+`fn add(x: int|string) -> { ... }` yes.
 
 ? - simplify the language even more! 
 what can we move to external libraries?
 Optimize for debugging and maintenance.
 Currently the most complex features are: type constraints, hash, array.
-
