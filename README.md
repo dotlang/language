@@ -11,8 +11,8 @@ May 3, 2017
 - **Version 0.5**: Nov 13, 2016 - Some cleanup and better organization
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
-- **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
-- **Version 0.9**: ?? ?? ???? - Define notation for tuple without fields names, 
+- **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
+- **Version 0.9**: ?? ?? ???? - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator.
 
 ##Introduction
 ##Code organization
@@ -139,24 +139,29 @@ You can also use switch without input in which case, all case blocks will be eva
 AssertStmt = 'assert' condition [':' expression]
 ```
 - Assert makes sure the given `condition` is satisfied. 
-- If condition is not satisfied, it will throw `expression` exception.
+- If condition is not satisfied, it will throw an exception (exception is a built-in type).
+- You can return an exception directly too: `return exception(1,2,3)`
 - There is no `throw` keyword and this is the only way to cause exception.
-- It is advised to return error code in case of an error and use exceptions in really exceptional cases.
+- Output of any function is automatically updated with `| exception`.
 - You can use `assert false, X` to create exception and return from current method immediately.
 ```
-//inside function adder
-assert false, "Error!"  //throw exception and exit
-//outside: catching error
-func ... var x = adder(5,6) ... } assert { var x: Exception = get_exception() if ( x.has_value ) ... }
+;inside function adder
+assert false, "Error!"  ;throw exception and exit
+;outside: catching error
+var g: int = func1() // 5
+var h: int = func1() // return -1
+;accept and expect the exception
+var g: int|exception = func1()
 ```
 - There is no `finally` in Electron. Each variable which is not part of return value of the function, will be cleaned-up upon function exit (even if there is an exception). This is done by calling `dispose` function on that type. You can also manually call this function in case you need to cleanup the resource earlier. 
-- You can do custom cleanup or exception catching in post-conditions defined using assert keyword. This needs to be done after function body (post-condition) and in that block you can make a call to `get_exception` to check if there has been an exception.
+- You can do custom cleanup or exception catching in post-conditions defined using `where` keyword. This needs to be done after function body (post-condition) and in that block you can make a call to `get_exception` to check if there has been an exception.
+- `//` is used in conjunction with sum types to act as a shortcut for `switch`. In `x = A // B` if x type does not match with A then B will be evaluated to get a result of type of x. Inside `B` we can refer to result of `A` using `$` notation.
 
 ###loop, break, continue
 ```
 LoopStms = 'loop' ( Condition ) Block
 LoopStms = 'loop' (number | variable) Block
-LoopStms = 'loop' (var in Identifier) Block
+LoopStms = 'loop' (var : Identifier) Block
 BreakStmt = 'break' [Number] ';'
 ContinueStmt = 'continue' [Number] ';'
 ```
@@ -314,8 +319,12 @@ new_array = map({$+1}, my_array)
 new_array = map {$+1}, my_array
 ```
 - Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability).
-- You can clone the data but have to do it manually using explode operator `@`:
+- You can clone the data but have to do it manually using explode operator `@`. Note that assignment make a clone for primitives, so you need cloning only for tuple, array and hash.
 `var x: Point = (@original_var)`
+`var a = [1,2,3]`
+`var b = [@a]`
+`var h = string => int = {"A"=>1, "B"=>2}`
+`var g = {@h}`
 - When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`
 - You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
 - `rest` is a normal array which is created by compiler for each call to `print` function.
@@ -389,27 +398,29 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - You can not override operators. 
 - `x :: y` returns true if `x` can be cast to type of `y`. `y` can be either a variable or name of a type.
 - You can use general type of a variable using `::` and `any`: 
-`x :: []` check for any array
-`x :: ()` check for any tuple
-`x :: %` check for any hashtable
+`x :: any[]` or `x :: []` check for any array
+`x :: (any)` or ` x :: ()` check for any tuple
+`x :: any => any` check for any hashtable
 `x :: int[]` check for array of specific type
 `x :: y[]` check for array of variable type
-`x :: int%` x is a hashtable with int keys
-`x :: %int` x is a hashtable with int values
-`y :: x%` y is a hashtable with keys of the same type as x
-`y :: %x` y is a hashtable with values of the same type as x
+`x :: int => any` x is a hashtable with int keys
+`x :: any =>int` x is a hashtable with int values
+`y :: x => any` y is a hashtable with keys of the same type as x
+`y :: any => x` y is a hashtable with values of the same type as x
 
 ## Special syntax
 - `$i` function inputs
 - `$` first input of the function (`$0`)
 - `$_` input place-holder
-- `:` for hash, call by name, array slice, loop
+- `:` for hash literals, call by name, array slice, loop
 - `::` type check
 - `:=` type definition
-- `=>,<=` chaining
+- `:>,<:` chaining
 - `|` sum types
+- `.` access tuple fields
 - `@` explode
-- `%` hashtable
+- `=>` hashtable
+- `//` sum type handler
 
 Kinds of types: `primitives`, `product`, `sum` and function.
 
@@ -446,8 +457,7 @@ So if we have this:
 a call to paint function with some inputs, will use above 3 rules to dispatch.
 - suppose we have `Base` type and `Derived` types. Two methods `add` and `addAll` are implemented for both of them.
 if `addAll(Derived)` calls `addAdd(Base)` which in turn calls `add(Base)` then a call to `addAll(Derived)` will NOT call `add(Derived)` but will call `add(Base)`. When `addAll(Base)` is called, it has a reference to `Base` not a `Derived`. 
-- **Explode operator**: You can apply this operator to types (also used to define inheritance) or accumulated values (values of type tuple or array). If this is applied to a value of any other type, there will be compiler error. 
-
+- **Explode operator**: You can apply this operator to types (also used to define inheritance) or accumulated values (values of type tuple or array or hash). If this is applied to a value of any other type, there will be compiler error. 
 `var g: int[] = @my_three_int_tuple`. It will explode or unpack its operator and be replaced by the inner definition. Explode on data types can be used anywhere you want to define a tuple even for function input or output. 
 `func add(@point) -> ` So add function will accept according to `point` data type.
 You can use `_` notation when using explode on values, to ignore part of the output:
@@ -458,63 +468,61 @@ To have a tuple with unnamed fields based on value of another tuple, just put `@
 `my_point.@` will translate to `10, 20`
 `@Point` will translate to `x:int, y:int`
 `Point.@` will translate to `int, int`
-You can combine explode operator with other data or type definition. `var g = (@my_point, z:20)`. g will be `(x:10, y:20, z:20)`
+You can combine explode operator with other data or type definition. `var g = (@my_point, z:20)`. g will be `(x:10, y:20, z:20)`.
 
 
-### Array and slice
+### Array
 - Array literals are specified using brackets: `[1, 2, 3]`
 - `var x: int[] = [1, 2, 3];`
 - `var y: int[3]; y[0] = 11;`
 - `var t: int[n];`
 - `var x: int[2,2];`. 
+- `var pop: (string, int)[]` - dynamic array of tuples
+- `var pop: string[4]` - static array of string
 - We have slicing for arrays `x[start:step:end]` with support for negative index.
 - we have built-in lists using same notation as array.
 - every array can be extended by just adding elements to it (it will be a hybrid, array+list). 
 - if you want to define a list from beginning, dont specify size.
 - if you specify a size, it will be a mixed list (can be extended to become a list).
-`var x: int[3]`  //hybrid list
-`var x: int[]`  //pure list
-`var x: int[3] = [1,2,3]` //hybrid
-`var x: int[] = [1,2,3]` //pure
-`add_element(x, 10);`
+`var x: int[3]`  hybrid list
+`var x: int[]`  pure list
+`var x: int[3] = [1,2,3]` hybrid
+`var x: int[] = [1,2,3]` pure
+- Slice can be left side of an assignment.
 
-###Hashtable and Array
-- `var pop: (string, int)[]` - dynamic array of tuples
-- `var pop: string[4]` - static array of string
-- `A % B` is used to define hash type. Left of `%` is type of key and on the right side is type of value. If key or value have multiple elements, a tuple should be used.
-- `var hash1: string % int = { 'OH': 12, 'CA': 33};`.
+### Hashtable and Array
+- `A => B` is used to define hash type. Left of `=>` is type of key and on the right side is type of value. If key or value have multiple elements, a tuple should be used.
+- `var hash1: string => int = { 'OH' => 12, 'CA' => 33};`.
 - `loop(x : array1)` or `loop(key : hash1)`.
-- `var num = hash1%"A"`
-- `hash1%"B" = 19`
-- `var big_hash: (int, int) % (string, int) = { (1, 4): ("A", 5) }` 
-- `big_hash%(3,4) = ("A", 5)`
-
-
+- `var num = hash1{"A"}`
+- `hash1{"B"} = 19`
+- `var big_hash: (int, int) => (string, int) = { (1, 4) => ("A", 5) }` 
+- `big_hash{3,4} = ("A", 5)`
 
 ### Validation
 When defining types or functions, you can define validation code/function. This is a block which will be executed/evaluated everytime variable gets a new value or function is executed. You can makes sure the data (or function intput/output) is in consistent and valid state.
 `var m: int where {validate_month};`
-`var m: int where validate_month; //same as above`
+`var m: int where validate_month . ;same as above`
 Expression will be called with `$` pointing to the new value. If the expression evaluates to false, a runtime exception will be thrown.
 `var x: int where {$>10} where {$<100} where { check_value($) };`
 `type x := (x: int; y:int) where { $.x < $.y };`
 - This can be done for all types and variables.
 - Example for functions:
-`func AA(x: int) where { pre_check } -> int { ... } where { post_check }`
+`func AA(x: int) where { pre_check } -> int where {output_constraints} { ... } where { post_check }`
 In post_check section, you can refer to the function output using `$` or `$0` notation.
 
 ### Chaining
-You can use `=>` operator to chain functions. `a => b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
+You can use `:>` and `<:` operators to chain functions. `a :> b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
 Examples:
 ```
-get_evens(data) => sort(3, 4, $_) => save => reverse($_, 5);
-get_evens(data) => sort => save => reverse; //assuming sort, save and reverse have only one input
-5 => add2 => print;  //same as: print(add2(5))
-(1,2) => mul => print;  //same as: print(mul(1,2))
-(1,2) => mul($_, 5, $_) => print;  //same as: print(mul(1,5,2))
+get_evens(data) :> sort(3, 4, $_) :> save :> reverse($_, 5);
+get_evens(data) :> sort :> save :> reverse .   ;assuming sort, save and reverse have only one input
+5 :> add2 :> print  ;same as: print(add2(5))
+(1,2) :> mul :> print  ;same as: print(mul(1,2))
+(1,2) :> mul($_, 5, $_) :> print  ;same as: print(mul(1,5,2))
 ```
-- You can also use `<=` for a top-to-bottom chaining, but this is a syntax sugar and compiler will convert them to `=>`.
-`print <= add2 <= 5`
+- You can also use `<:` for a top-to-bottom chaining, but this is a syntax sugar and compiler will convert them to `:>`.
+`print <: add2 <: 5`
 
 ### Lambda expression
 
@@ -531,6 +539,7 @@ var rr: adder = func { x + y }   ;when you have a type, you can also omit input
 var rr: adder = { x + y }      ;and also func keyword, but {} is mandatory
 var rr:adder = { $0 + 2 }        ;you can use $0 or $ alone instead of name of first input
 func test(x:int) -> plus2 { return { $0+ x} }
+var modifier = { $1 + $2 } . ;if input/output types can be deduced, you can eliminate them
 ```
 - You can access lambda input using `$0, ...` notation too.
 - You can also use `$_` place holder to create a new lambda based on existing functions:
