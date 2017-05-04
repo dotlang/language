@@ -48,7 +48,6 @@ Electron programming language is a general purpose language based on author's ex
 other languages (namely Java, C\#, C, C++, Rust, Go, Scala, Objective-C, Python, Perl, Smalltalk, Ruby, Swift, Haskell, Clojure, F\# and Oberon-2). 
 I call the paradigm of this language "Data-oriented". This is a combination of Object-Oriented and Functional approach and it is designed to work with data. There are no objects or classes. Only data types and functions. But most important features of OOP (encapsulation, abstraction, inheritance and polymorphism) are provided to some extent.
 
-
 Three main goals are pursued in the design of this language:
 
 1. **Simple**: The code written in Electron language should be consistent, easy to learn, read, write and understand. There has been a lot of effort to make sure there are as few exceptions as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
@@ -63,7 +62,7 @@ The underlying rules of design of this language are
 
 As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  There are functions and types. Each function gets one or more input (each of it's own type) and gives an output. Types include primitive data types, tuple, sum types and a general type alias. Concurrency, templates (generics), lambda expression and exception handling are supported.
 
-In summary, Electron is C language + Garabage collector + templates (generic programming) + first-class functions + advanced unions + module system + composition and powerful polymorphism + operator customization + simple and powerful standard library + immutability + built-in data validation + contracts + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + built-in concurrency + built-in memoization + sane defaults - ambiguities - pointers - macros - header files.
+In summary, Electron is C language + Garabage collector + templates (generic programming) + first-class functions + sum data types + module system + composition and powerful polymorphism + simple and powerful standard library + immutability + built-in data validation + contracts + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + built-in concurrency + built-in memoization + sane defaults - ambiguities - pointers - macros - header files.
 
 There is a runtime system which is responsible for memory allocation and management, interaction with OS and 
 other external libraries and handling concurrency.
