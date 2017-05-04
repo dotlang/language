@@ -14,23 +14,26 @@ May 3, 2017
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: ?? ?? ???? - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator.
 
-##Introduction
-##Code organization
-##Structure of source code file
-##Variable
-##Struct
-##Union
-##Enum
-##Functions
-##Lambdas
-##Templates
-##Polymorphism
-##Keywords
+## Introduction
+## Code organization
+## Structure of source code file
+## Type System
+### Primitives
+### Array
+### Hashtable
+### Tuple
+### Sum types
+## Variable definition
+## Exception handling
+## Function
+## Lambdas
+## Templates
+## Polymorphism and inheritance
+## Operators
+## Keywords
 ##Miscellaneous
 ###Special Syntax
 ###Validation
-###Operators
-###Casting
 ###Best practice
 
 
@@ -122,7 +125,7 @@ Semantics of this keywords are same as other mainstream languages.
 ###switch
 ```
 SwitchExp = 'switch' '(' expression ')' '{' (CaseStmt)+ '}'
-CaseStmt = (IdentifierList | 'else') '->' Block
+CaseStmt = (IdentifierList | 'else') '=>' Block
 ```
 - `switch` is an expression.
 - First case which is matching will be executed and others will be skipped.
@@ -151,11 +154,18 @@ assert false, "Error!"  ;throw exception and exit
 var g: int = func1() // 5
 var h: int = func1() // return -1
 ;accept and expect the exception
-var g: int|exception = func1()
+var g: int|exception = func1()   ;this is valid
 ```
 - There is no `finally` in Electron. Each variable which is not part of return value of the function, will be cleaned-up upon function exit (even if there is an exception). This is done by calling `dispose` function on that type. You can also manually call this function in case you need to cleanup the resource earlier. 
 - You can do custom cleanup or exception catching in post-conditions defined using `where` keyword. This needs to be done after function body (post-condition) and in that block you can make a call to `get_exception` to check if there has been an exception.
 - `//` is used in conjunction with sum types to act as a shortcut for `switch`. In `x = A // B` if x type does not match with A then B will be evaluated to get a result of type of x. Inside `B` we can refer to result of `A` using `$` notation.
+- `x = A // B` is shortcut for (T is type of x):
+```
+x = switch(A) {
+   h:T => h
+   else => B
+```
+If there is no `x =`, then `B` will be evaulated if result of `A` is not void.
 
 ###loop, break, continue
 ```
@@ -174,7 +184,7 @@ ContinueStmt = 'continue' [Number] ';'
  
 ###return
 
-###tuple
+### tuple
 You use this statement to define a new product data structure:
 ```
 type Car := (
@@ -191,7 +201,7 @@ t.1 = "G"
 - Fields that starts with underscore are considered internal state of the tuple and better not to be used outside the module that defines the type. 
 - You can define a tuple with unnamed fields: `type Point := (int, int)` But fields of a tuple must be all either named or unnamed. You cannot mix them.
 
-###type
+### type
 You can use `type` to define new type based on an existing type. 
 You can also use it to define a type alias.
 
@@ -239,18 +249,18 @@ Also you can call a function or refer to a type with fully qualified name:
 `var x: int = /core/pack2/myFunction(10, 20);`
 `var t: /core/pack2/myStruct;`
 
-###native
+### native
 Denotes function is implemented by runtime or external libraries.
 `native func file_open(path: string) -> File;`
 
-##Primitives
+## Primitives
 There are only three primitive data types: `any`, `number` and `string`. All others are defined based on these two plus some restrictions on size and accuracy.
 - **Integer data types**: `char`, `short`, `int`, `long`
 - **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
 - **Floating point data types**: `float`, `double`
 - **Others**: `bool`, `any`
 
-##Source file
+## Source file
 
 Source file contains a number of definitions for types and functions.
 
@@ -283,7 +293,7 @@ var t = (x:6, y:5) ;anonymous and untyped tuple
 `func x(p: P1)->int ...`
 `func x(p: P2)->int ...`
 `type A := (x:P1, y:P2)`
-`var v: A; var t = x(A); //compiler error`
+`var v: A; var t = x(A)   ;compiler error`
 
 ### Sum types
 When defining a sum type, you specify different types and labels that it can accept. Label can be any valid identifier.
@@ -292,9 +302,9 @@ When defining a sum type, you specify different types and labels that it can acc
 To match type, you can use switch expression:
 ```
   result = switch ( my_tree ) {
-    case Empty -> 0
-    case y:int -> 1
-    case z:NormalTree -> ...
+    Empty => 0
+    var y:int => 1
+    var z:NormalTree => ...
   }
 ```
 
@@ -313,7 +323,7 @@ func my_func8() -> (int, int) { return (10,20) } ;function can return multiple v
 func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
 
 func map(f: func(mapInput) -> mapOutput, arr: mapInput[]) -> mapOutput[] where { mapInput :: mapOutput }
-//these calls are all the same
+;these calls are all the same
 new_array = map({$+1}, my_array)
 new_array = map({$+1}, my_array)
 new_array = map {$+1}, my_array
@@ -332,12 +342,11 @@ new_array = map {$+1}, my_array
 `func f(x: int, y: int) ...`
 `func f(x: int) -> f(x, 10);`
 - Functions are not allowed to change (directly or indirectly) any of their inputs.
-- You cannot ignore return value of a non-void function. This affects resource cleanup mechanism at runtime.
 Functions can considered as a piece of code which accept a tuple and returns a tuple. 
 ```
 func f(x:int, y:float) -> (a: int, b: string)
 {
-  //returning anon-tuple
+  ;returning anon-tuple
   return (a:1, b:9) ;or return (1, 9)
 }
 
@@ -354,7 +363,7 @@ func read_customer(id:int) -> Nothing | CustomerData
 `func adder(x: int, y:int)->int`
 - Function definition specifies a contract which shows input tuple and output tuple. If input tuple is named, you must pass a set of input or tuple with the exact same name or an unnamed tuple. If input is unnamed, you can pass either unnamed or named tuple.
 
-###Variables
+### Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
 Reasons for including type at the end:
 - Due to type inference, type is optional and better not to be first part of the definition.
@@ -363,17 +372,16 @@ Reasons for including type at the end:
 - More readable and parseable
 
 ```
-var x:int;
-var t = 12;
-var y : int = 19;
-var t = 12;  //imply type from 12
+var x:int
+var t = 12
+var y : int = 19
+var t = 12  ;imply type from 12
 ```
-
 A function which returns `T` is treated like a variable of type `T`. This can be used to have lazy evaluation. So if you send the function/lambda to another function, to the outside world, it is int variable. inside they carry a lambda.
 Cloning, passing, assigning to other vars does not change or evaluate the variable. But as soon as you have something like: `x=lazy_var+1` then function is being called.
 - As soon as you declare a variable it will have some value. Even if it is a tuple, it will have all fields set to default value.
 - You can define local variables using `var` keyword.
-`var x: int = 19; x= 11; //ok - can re-assign`
+`var x: int = 19; x= 11 ;ok - can re-assign`
 - You can define consts using functions: `func PI -> 3.14`
 - You can define local const variables using: `var x: float = 3.14 where { false }`
 
@@ -490,7 +498,7 @@ You can combine explode operator with other data or type definition. `var g = (@
 `var x: int[] = [1,2,3]` pure
 - Slice can be left side of an assignment.
 
-### Hashtable and Array
+### Hashtable
 - `A => B` is used to define hash type. Left of `=>` is type of key and on the right side is type of value. If key or value have multiple elements, a tuple should be used.
 - `var hash1: string => int = { 'OH' => 12, 'CA' => 33};`.
 - `loop(x : array1)` or `loop(key : hash1)`.
