@@ -3395,18 +3395,11 @@ This does not affect the `//` notation for exception handling. Even if function 
 N - can input of a function be a sum type?
 `fn add(x: int|string) -> { ... }` yes.
 
-? - can we use Traits as a replacement for inheritance and polymorphism and method dispatch?
+N - can we use Traits as a replacement for inheritance and polymorphism and method dispatch?
 https://blog.rust-lang.org/2015/05/11/traits.html
+It does not change anything. 
 
-? - simplify the language even more! 
-what can we move to external libraries?
-Optimize for debugging and maintenance.
-Currently the most complex features are: type constraints.
-
-? - in order to indicate type A behaves as interface I, in golang, you only need to write appropriate methods.
-can we have this here?
-
-? - I think, dynamic dispatch should happen even if we are calling a function pointer.
+N - I think, dynamic dispatch should happen even if we are calling a function pointer.
 ```
 draw(Shape)
 draw(Circle)
@@ -3415,5 +3408,45 @@ f(my_circle)
 ```
 This should call `draw(Circle)` even though type of `f` is `func(Shape)`.
 
-? - roadmap:
-read source file, create in-memory assembly, invoke yasm to compile to executable
+Y - enforce naming and order in the source code file or else compiler will give warnings.
+
+N - simplify the language even more! 
+what can we move to external libraries?
+Optimize for debugging and maintenance.
+Currently the most complex features are: type constraints.
+
+N - e.g. writing regex to parse and execute each line:
+`w arg+ -> invoke w with arg+`
+`x'['y']' -> get_index`
+`x'{'y'}' -> get_hash`
+This is too ambitious and keeping gen and orth while having this is difficult and make language complex.
+
+N - Can we remove `::` operator and change the way template works?
+```
+type Stack := any[];
+func push(s: Stack, i: any)...
+func pop(s: Stack) -> any ...
+```
+
+Y - in order to indicate type A behaves as interface I, in golang, you only need to write appropriate methods.
+can we have this here?
+So for example the `Comparable` type does not have any member and has only one function. If I have a `Circle` and a `Comparable` function for it, can I pass an instance of `Circle` instead of `Comparable`?
+I should be able to do that. 
+
+Y - enforcing a set of functions for a type is not straightforward.
+In Golang they use interface but it has a boundary and limit in the code.
+Here we use types and their functions can be defined anywhere. It is a good thing and bad thing.
+What if we have: 
+`type Alpha`
+`func f(x: Alpha)->float`
+`type Customer := ( ... )`
+And `f` is not implemented for `Customer`?
+And we call `f(myCustomer)`.
+This will depend on how `f` is implemented. If it has a body, it will be called. If not, compiler error.
+
+Y - Is this correct?
+`var x: Car   ;init x with all default values`
+
+
+
+
