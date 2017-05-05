@@ -12,7 +12,7 @@ May 3, 2017
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
-- **Version 0.9**: ?? ?? ???? - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance.
+- **Version 0.9**: ?? ?? ???? - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of where and moved `::` and `any` to core functions and types.
 
 ## Introduction
 ## Code organization
@@ -253,11 +253,13 @@ Denotes function is implemented by runtime or external libraries.
 `native func file_open(path: string) -> File;`
 
 ## Primitives
-There are only three primitive data types: `any`, `number` and `string`. All others are defined based on these two plus some restrictions on size and accuracy.
+There are only three primitive data types: `number` and `string`. All others are defined based on these two plus some restrictions on size and accuracy.
 - **Integer data types**: `char`, `short`, `int`, `long`
 - **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
 - **Floating point data types**: `float`, `double`
-- **Others**: `bool`, `any`
+- **Others**: `bool`
+
+You can use core functions to get type identifier of a variable: `type` or `hashKeyType` or `hashValueType`.
 
 ## Source file
 
@@ -266,7 +268,7 @@ Source file contains a number of definitions for types and functions.
 *Notes:*
 - If a name starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
 - The order of the contents of source code file matters: First `import` section, `type` section and finally functions. If the order is not met, compiler will give warnings.
-- `any` denotes any type. Everything can be used for `any` type (primitives, tuples, unions, function pointers, ...). It can be something like an empty tuple. You have to initialize variables of type `any`.
+- `any` denotes any type (It is defined in core). It is basically an empty type. Everything can be used for `any` type (primitives, tuples, unions, function pointers, ...). It can be something like an empty tuple. You have to initialize variables of type `any`.
 - Immutability: All variables are immutable but can be re-assigned.
 
 ###Tuple (Product types)
@@ -321,7 +323,10 @@ func my_func8() -> (int, int) { return (10,20) } ;function can return multiple v
  //below function receives an array + a function and returns a function
 func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
 
-func map(f: func(mapInput) -> mapOutput, arr: mapInput[]) -> mapOutput[] where { mapInput :: mapOutput }
+;We can enforce same type constraints, simply by using types. Like below. `mapTarget` is basically same as `any`.
+type mapTarget
+func map(f: func(mapTarget) -> mapTarget, arr: mapTarget[]) -> mapTarget[]
+
 ;these calls are all the same
 new_array = map({$+1}, my_array)
 new_array = map({$+1}, my_array)
@@ -385,13 +390,14 @@ Cloning, passing, assigning to other vars does not change or evaluate the variab
 - You can define local const variables using: `var x: float = 3.14 where { false }`
 
 ## Templates
-- You can use `where` keyword with types and functions to enforce template constraints. 
+- You can use empty types or types with minimum required features, to define a template.
 - You can specialize a generic functions and runtime will choose the most specific candidate.
 ```
-type Stack := (x: any[])
-type IntStack := Stack where { $.x :: int };
-func pop(s: Stack) -> any { ... } where { $ :: s.x }
-func push(x: any, s: Stack) where { x :: s.x[] }) -> ...
+type storable
+
+type Stack := storable[]
+func push(s: Stack, i: storable) ...
+func pop(s: Stack) -> storable ...
 ```
 
 ## Operators
@@ -402,24 +408,13 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `=` operator: copies only for number data type, makes a variable refer to the same object as another variable for any other type. If you need a copy, you have to clone the variable. 
 - `x == y` will call `equals` functions is existing, by default compares field-by-field values. But you can o
 - You can not override operators. 
-- `x :: y` returns true if `x` can be cast to type of `y`. `y` can be either a variable or name of a type.
-- You can use general type of a variable using `::` and `any`: 
-`x :: any[]` or `x :: []` check for any array
-`x :: (any)` or ` x :: ()` check for any tuple
-`x :: any => any` check for any hashtable
-`x :: int[]` check for array of specific type
-`x :: y[]` check for array of variable type
-`x :: int => any` x is a hashtable with int keys
-`x :: any =>int` x is a hashtable with int values
-`y :: x => any` y is a hashtable with keys of the same type as x
-`y :: any => x` y is a hashtable with values of the same type as x
+
 
 ## Special syntax
 - `$i` function inputs
 - `$` first input of the function (`$0`)
 - `$_` input place-holder
 - `:` for hash literals, call by name, array slice, loop
-- `::` type check
 - `:=` type definition
 - `:>,<:` chaining
 - `|` sum types
