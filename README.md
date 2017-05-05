@@ -12,7 +12,7 @@ May 3, 2017
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
-- **Version 0.9**: ?? ?? ???? - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input.
+- **Version 0.9**: ?? ?? ???? - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, 
 
 ## Introduction
 ## Code organization
@@ -110,20 +110,6 @@ Electron has a small set of reserved keywords:
 `if, else, match, 
 , for, break, continue, return, type, import, var, val, func, invoke, select, native`.
 
-###if, else
-- If/Else is an expression.
-
-```
-IfElse = 'if' '(' condition ')' Block ['else' (IfElse | Block)]
-Block  = Statement | '{' (Statement)* '}'
-```
-Semantics of this keywords are same as other mainstream languages.
-- Note that condition must be a boolean expression.
-- You can use any of available operators for condition part. 
-- Also you can use a simple boolean variable (or a function with output of boolean) for condition.
-- You can also use suffix syntax for if: `Block if ( condition )`
-`var max = if (x > y) x else y`
-
 ###match
 ```
 MatchExp = 'match' '(' data ')' '{' (CaseStmt)+ '}'
@@ -143,7 +129,33 @@ MatchExp = 'match' '(' data ')' '{' (CaseStmt)+ '}'
     z:NormalTree -> { return 1+z },
     any -> { -1 } ;this is default because it matches with anything
   }
+  ;You can shorten this definition in one line:
+  result = match (my_tree) 5 -> 11, 6-> 12, Empty -> 0, any -> -1
 ```
+
+###if, else
+- If/Else is a syntax sugar for match.
+
+```
+IfElse = 'if' '(' condition ')' Block ['else' (IfElse | Block)]
+Block  = Statement | '{' (Statement)* '}'
+```
+Semantics of this keywords are same as other mainstream languages.
+- Note that condition must be a boolean expression.
+- You can use any of available operators for condition part. 
+- Also you can use a simple boolean variable (or a function with output of boolean) for condition.
+- You can also use suffix syntax for if: `Block if ( condition )`
+`var max = if (x > y) x else y`
+
+```
+  if ( exp1 and exp2 ) 11 else -1
+  result = match ( exp1 and exp2 ) 
+  {
+    true -> 11,
+    any -> { -1 } 
+  }
+```
+
 
 ###assert
 
@@ -320,6 +332,7 @@ To match type, you can use match expression:
 ```
 
 ### Functions
+Functions can are a piece of code which accepts a tuple (named, unnamed or literal) and returns any type. So any feature of a tuple/types, is supported for input or output of a function.
 ```
 func my_func1(x: int, y: int) -> float { return x/y }
 func my_func1(int) -> float { return $/3 } ;you can omit input name (like an unnamed tuple)
@@ -356,7 +369,6 @@ new_array = map {$+1}, my_array
 - `rest` is a normal array which is created by compiler for each call to `print` function.
 - Functions are not allowed to change (directly or indirectly) any of their inputs.
 
-Functions can considered as a piece of code which accept a tuple and returns any type. So any feature of a tuple/types, is supported for input or output of a function.
 ```
 func f(x:int, y:float) -> (a: int, b: string)
 {
@@ -469,7 +481,7 @@ a call to paint function with some inputs, will use above 3 rules to dispatch.
 - suppose we have `Base` type and `Derived` types. Two methods `add` and `addAll` are implemented for both of them.
 if `addAll(Derived)` calls `addAdd(Base)` which in turn calls `add(Base)` then a call to `addAll(Derived)` will NOT call `add(Derived)` but will call `add(Base)`. When `addAll(Base)` is called, it has a reference to `Base` not a `Derived`. 
 - **Explode operator**: You can apply this operator to types (also used to define inheritance) or accumulated values (values of type tuple or array or hash). If this is applied to a value of any other type, there will be compiler error. 
-`var g: int[] = @my_three_int_tuple`. It will explode or unpack its operator and be replaced by the inner definition. Explode on data types can be used anywhere you want to define a tuple even for function input or output. 
+`var g: int[] = [@my_three_int_tuple]`. It will explode or unpack its operator and be replaced by the inner definition. Explode on data types can be used anywhere you want to define a tuple even for function input or output. 
 `func add(@point) -> ` So add function will accept according to `point` data type.
 You can use `_` notation when using explode on values, to ignore part of the output:
 `var x,y,_ = @my_three_ints`
