@@ -107,7 +107,7 @@ Function section is used to define function bodies.
 
 ##Keywords
 Electron has a small set of reserved keywords: 
-`if, else, switch, 
+`if, else, match, 
 , for, break, continue, return, type, import, var, val, func, invoke, select, native`.
 
 ###if, else
@@ -121,19 +121,26 @@ Semantics of this keywords are same as other mainstream languages.
 - Also you can use a simple boolean variable (or a function with output of boolean) for condition.
 - You can also use suffix syntax for if: `Block if ( condition )`
 
-###switch
+###match
 ```
-SwitchExp = 'switch' '(' expression ')' '{' (CaseStmt)+ '}'
-CaseStmt = (IdentifierList | 'else') '=>' Block
+MatchExp = 'match' '(' data ')' '{' (CaseStmt)+ '}'
 ```
-- `switch` is an expression.
+- `match` is an expression.
 - First case which is matching will be executed and others will be skipped.
 - Case match can be based on value or type (used for sum types).
-- `else` case is executed if none of other cases match.
-- You cannot use expressions for case statements. 
-- Case identifiers should be either literals or simple identifiers (variable names).
-
-You can also use switch without input in which case, all case blocks will be evaluated and the first one which evaluates to true will be executed.
+- Each match case is a implified lambda (removed `func` and parans for brevity). The first lambda that can accept the value inside match will be executed.
+```
+  result = match ( my_tree ) 
+  {
+    5 -> 11,
+    "A" -> 19,
+    local_var -> 22, ;check equality with a local variable's value
+    Empty -> 0,
+    y:int -> 1,
+    z:NormalTree -> { return 1+z },
+    any -> { -1 } ;this is default because it matches with anything
+  }
+```
 
 ###assert
 
@@ -156,12 +163,12 @@ var h: int = func1() // return -1
 var g: int|exception = func1()   ;this is valid
 ```
 - There is no `finally` in Electron. Each variable which is not part of return value of the function, will be cleaned-up upon function exit (even if there is an exception). This is done by calling `dispose` function on that type. You can also manually call this function in case you need to cleanup the resource earlier. 
-- `//` (Type enforcement operator) is used in conjunction with sum types to act as a shortcut for `switch`. In `x = A // B` if A's type does not match with what we expect (type of `x`) then B will be evaluated to get a result of type of `x`. Inside `B` we can refer to result of `A` using `$` notation.
+- `//` (Type enforcement operator) is used in conjunction with sum types to act as a shortcut for `match`. In `x = A // B` if A's type does not match with what we expect (type of `x`) then B will be evaluated to get a result of type of `x`. Inside `B` we can refer to result of `A` using `$` notation.
 - `x = A // B` is shortcut for (T is type of x):
 ```
-x = switch(A) {
-   h:T => h
-   else => B
+x = match(A) {
+   h:T -> h,
+   any -> B
 ```
 If there is no `x =`, then `B` will be evaulated if result of `A` is not void.
 You can chain `//`: `x = A // B // C` if A is not evaluated to the type we need, B will be evaluated and etc.
@@ -300,19 +307,20 @@ var t = (x:6, y:5) ;anonymous and untyped tuple
 When defining a sum type, you specify different types and labels that it can accept. Label can be any valid identifier.
 `type Tree := Empty | int | (node: int, left: Tree, right: Tree)`
 `type OptionalInt := None | int`
-To match type, you can use switch expression:
+To match type, you can use match expression:
 ```
-  result = switch ( my_tree ) {
-    Empty => 0
-    var y:int => 1
-    var z:NormalTree => ...
+  result = match ( my_tree ) {
+    Empty -> 0
+    y:int -> 1
+    z:NormalTree -> ...
   }
 ```
 
 ### Functions
-
 ```
 func my_func1(x: int, y: int) -> float { return x/y }
+func my_func1(int) -> float { return $/3 } ;you can omit input name (like an unnamed tuple)
+func my_func(5) -> { 6+1 } ;if input is a literal, any call which evaluates to that literal, will call this version
 func my_func2(x: int, y: int = 11 ) -> float { return x/y }  ;you can set default value
 func my_func3(x: int, y: int) -> x/y  ;you can omit {} if its a single expression
 func my_func7() -> int { return 10;} ;fn has no input but () is mandatory
@@ -342,11 +350,9 @@ new_array = map {$+1}, my_array
 - When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`
 - You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
 - `rest` is a normal array which is created by compiler for each call to `print` function.
-- Optional arguments and default values are not built-in but you can simply implement them:
-`func f(x: int, y: int) ...`
-`func f(x: int) -> f(x, 10);`
 - Functions are not allowed to change (directly or indirectly) any of their inputs.
-Functions can considered as a piece of code which accept a tuple and returns a tuple. 
+
+Functions can considered as a piece of code which accept a tuple and returns any type. So any feature of a tuple/types, is supported for input or output of a function.
 ```
 func f(x:int, y:float) -> (a: int, b: string)
 {
@@ -414,13 +420,13 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `$i` function inputs
 - `$` first input of the function (`$0`)
 - `$_` input place-holder
-- `:` for hash literals, call by name, array slice, loop
+- `:` tuple definition, array slice, loop
 - `:=` type definition
-- `:>,<:` chaining
+- `==>,<==` chaining
+- `=>` hash type and hash literals
 - `|` sum types
 - `.` access tuple fields
 - `@` explode
-- `=>` hashtable
 - `//` sum type handler
 
 Kinds of types: `primitives`, `product`, `sum` and function.
@@ -493,13 +499,13 @@ You can combine explode operator with other data or type definition. `var g = (@
 - Slice can be left side of an assignment.
 
 ### Hashtable
+Hashtables are sometimes called "associative arrays". So their syntax is similar to arrays:
 - `A => B` is used to define hash type. Left of `=>` is type of key and on the right side is type of value. If key or value have multiple elements, a tuple should be used.
-- `var hash1: string => int = { 'OH' => 12, 'CA' => 33};`.
-- `loop(x : array1)` or `loop(key : hash1)`.
-- `var num = hash1{"A"}`
-- `hash1{"B"} = 19`
-- `var big_hash: (int, int) => (string, int) = { (1, 4) => ("A", 5) }` 
-- `big_hash{3,4} = ("A", 5)`
+- `var hash1: string => int`
+- `hash1 = ['OH' => 12, 'CA' => 33]`
+- `hash1["B"] = 19`
+- `var big_hash: (int, int) => (string, int) = [ (1, 4) => ("A", 5) ]` 
+- `big_hash[3,4] = ("A", 5)`
 - If your code expects a hash which has `int` keys: `func f(x: int => any)...`
 
 ### Validation
@@ -515,17 +521,17 @@ Expression will be called with `$` pointing to the new value. If the expression 
 In post_check section, you can refer to the function output using `$` or `$0` notation.
 
 ### Chaining
-You can use `:>` and `<:` operators to chain functions. `a :> b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
+You can use `==>` and `<==` operators to chain functions. `a ==> b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
 Examples:
 ```
-get_evens(data) :> sort(3, 4, $_) :> save :> reverse($_, 5);
-get_evens(data) :> sort :> save :> reverse .   ;assuming sort, save and reverse have only one input
-5 :> add2 :> print  ;same as: print(add2(5))
-(1,2) :> mul :> print  ;same as: print(mul(1,2))
-(1,2) :> mul($_, 5, $_) :> print  ;same as: print(mul(1,5,2))
+get_evens(data) ==> sort(3, 4, $_) ==> save ==> reverse($_, 5);
+get_evens(data) ==> sort => save ==> reverse .   ;assuming sort, save and reverse have only one input
+5 ==> add2 ==> print  ;same as: print(add2(5))
+(1,2) ==> mul ==> print  ;same as: print(mul(1,2))
+(1,2) ==> mul($_, 5, $_) ==> print  ;same as: print(mul(1,5,2))
 ```
-- You can also use `<:` for a top-to-bottom chaining, but this is a syntax sugar and compiler will convert them to `:>`.
-`print <: add2 <: 5`
+- You can also use `<==` for a top-to-bottom chaining, but this is a syntax sugar and compiler will convert them to `==>`.
+`print <== add2 <== 5`
 
 ### Lambda expression
 
