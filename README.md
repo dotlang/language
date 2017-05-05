@@ -12,7 +12,7 @@ May 3, 2017
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
-- **Version 0.9**: ?? ?? ???? - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator.
+- **Version 0.9**: ?? ?? ???? - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance.
 
 ## Introduction
 ## Code organization
@@ -156,7 +156,6 @@ var h: int = func1() // return -1
 var g: int|exception = func1()   ;this is valid
 ```
 - There is no `finally` in Electron. Each variable which is not part of return value of the function, will be cleaned-up upon function exit (even if there is an exception). This is done by calling `dispose` function on that type. You can also manually call this function in case you need to cleanup the resource earlier. 
-- You can do custom cleanup or exception catching in post-conditions defined using `where` keyword. This needs to be done after function body (post-condition) and in that block you can make a call to `get_exception` to check if there has been an exception.
 - `//` (Type enforcement operator) is used in conjunction with sum types to act as a shortcut for `switch`. In `x = A // B` if A's type does not match with what we expect (type of `x`) then B will be evaluated to get a result of type of `x`. Inside `B` we can refer to result of `A` using `$` notation.
 - `x = A // B` is shortcut for (T is type of x):
 ```
@@ -189,9 +188,9 @@ You use this statement to define a new product data structure:
 ```
 type Car := (
   color: int, 
-  age: int,
+  age: int = 19,
 )
-var x: Car   ;init x with all default values
+var x: Car = ()   ;init x with all default values based on definition of Car
 var y: Car = (age:11) ;customize value
 var t : (int, string) = (1, "A")  ;you can have tuples with unnamed fields. They can be accessed like an array.
 var number_one = t.0
@@ -266,7 +265,7 @@ Source file contains a number of definitions for types and functions.
 
 *Notes:*
 - If a name starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
-- The order of the contents of source code file matters: First `import` section, `type` section and finally functions.
+- The order of the contents of source code file matters: First `import` section, `type` section and finally functions. If the order is not met, compiler will give warnings.
 - `any` denotes any type. Everything can be used for `any` type (primitives, tuples, unions, function pointers, ...). It can be something like an empty tuple. You have to initialize variables of type `any`.
 - Immutability: All variables are immutable but can be re-assigned.
 
@@ -359,7 +358,7 @@ func read_customer(id:int) -> Nothing | CustomerData
   return c1
 }
 ```
-- You can define a function which does not have a body. This is like an abstract method.
+- You can define a function which does not have a body. This is like an abstract method. So calling it will throw error.
 `func adder(x: int, y:int)->int`
 - Function definition specifies a contract which shows input tuple and output tuple. If input tuple is named, you must pass a set of input or tuple with the exact same name or an unnamed tuple. If input is unnamed, you can pass either unnamed or named tuple.
 
@@ -396,7 +395,6 @@ func push(x: any, s: Stack) where { x :: s.x[] }) -> ...
 ```
 
 ## Operators
-
 - Conditional: `and or not == != >= <=`
 - Bitwise: `~ & | ^ << >>`
 - Math: `+ - * % ++ -- **`
@@ -433,7 +431,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 Kinds of types: `primitives`, `product`, `sum` and function.
 
 ### Inheritance and polymorphism
-- Tuples can inherit from other tuples by composing that type with explode operator (`@`) and without a name. 
+- Tuples can inherit from other tuples by composing that type with explode operator (`@`) and without a name. This can also be achieved by duplicating their fields with same name and type in your type but using `@` is easier and more readable. 
 `type Shape := ();`
 `type Circle := (@Shape...)`
 `type Square := (@Shape...)`
@@ -443,7 +441,7 @@ Kinds of types: `primitives`, `product`, `sum` and function.
 `func paint(o:any){}`
 `func paint(o:Circle)...`
 `func paint(o:Square)...`
-- If a function (`f1`) is implemented for parent type (`Shape`), and called with an instance of child (e.g. `Circle`) it will receive an instance of `Shape` which is a field of `Circle`. If `f1` function calls another function which is written for both parent and child types, it will be called for child (the highest ranked type).
+- If a function (`f1`) is implemented for parent type (`Shape`), and called with an instance of child (e.g. `Circle`) it will receive an instance of `Shape` which is a field of `Circle`. If `f1` function calls another function which is written for both parent and child types, it will be called for child (the most specialized type).
 - We can keep a list of shapes in an array/collection of type Shape: `var o: Shape[] = [Circle(), Square()];`
 - You can iterate over shapes in `o` array defined above, and call `paint` on them. With each call, appropriate `paint` method will be called (this appropriate method is identified using 3 dispatch rules explained below).
 - Visible type (or static type), is the type of the variable which can be seen in the source code. Actual type or dynamic type, is it's type at runtime. For example:
@@ -454,7 +452,7 @@ Then `var x: Shape = create(y);` static type of `x` is Shape because it's output
 1. single match: if we have only one candidate function (based on name/number of inputs), then there is a match.
 2. dynamic match: if we have a function with all types matching runtime type of variables, there is a match. Note that in this case, primitive types have same static and dynamic type.
 3. static match: we reserve the worst case for call which is determined at compile time: the function that matches static types. 
-Note that this binding is for an explicit function call. when we assign function to a variable, the actual function to be used, is determined at compile time according to static type. so `var x = paint` where type of x is `func(Circle, Color)` will find a paint function body with matching input. you cannot have x of type `func(Shape, Color)` and assign a value to it and expect it to do dynamic dispatch when called at runtime. There is a work-around which involves assigning a lambda to the variable which calls the function by name and passes inputs. in that case, invocation will include a dynamic dispatch.
+Note that this binding is for an explicit function call. when we assign function to a variable, the actual function to be used, is determined at runtime with dynamic dispatch. so `var x = paint` where type of x is `func(Circle, Color)` will find a paint function body with matching input. you can have x of type `func(Shape, Color)` and assign a value to it and expect it to do dynamic dispatch when called at runtime. 
 So if we have this:
 `func paint(o: Square, c: SolidColor)`
 `type Shape := (name: string)`
@@ -477,7 +475,8 @@ To have a tuple with unnamed fields based on value of another tuple, just put `@
 `@Point` will translate to `x:int, y:int`
 `Point.@` will translate to `int, int`
 You can combine explode operator with other data or type definition. `var g = (@my_point, z:20)`. g will be `(x:10, y:20, z:20)`.
-
+- If a type does not have any fields (empty types), you don't need to use explode to inherit from it. It is optional. You just need to implement appropriate methods (If not, and those methods are defined empty for base type, a compiler error will be thrown). So if we have `func check(x: Alpha)` and `Alpha` type does not have any field, any other data type which implements functions written for `Alpha` can be used instead.
+- Empty types are like interfaces and are defined like `type Alpha`.
 
 ### Array
 - Array literals are specified using brackets: `[1, 2, 3]`
@@ -506,6 +505,7 @@ You can combine explode operator with other data or type definition. `var g = (@
 - `hash1{"B"} = 19`
 - `var big_hash: (int, int) => (string, int) = { (1, 4) => ("A", 5) }` 
 - `big_hash{3,4} = ("A", 5)`
+- If your code expects a hash which has `int` keys: `func f(x: int => any)...`
 
 ### Validation
 When defining types or functions, you can define validation code/function. This is a block which will be executed/evaluated everytime variable gets a new value or function is executed. You can makes sure the data (or function intput/output) is in consistent and valid state.
@@ -556,7 +556,7 @@ var modifier = { $1 + $2 } . ;if input/output types can be deduced, you can elim
 
 ## Best practice
 ### Naming
-- **Naming rules**: Advised but not mandatory: `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`.
+- **Naming rules**: Advised but not mandatory: `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings.
 - You can suffix if and for and `x loop(10)` will run x 10 times.
 
 ## Examples
