@@ -3531,6 +3531,13 @@ Also `ht{"A"}` is a bit clumsy.
 `hash1["B"] = 19`
 Let's use `=>` for hash and hash literals and use `==>` for chaining.
 
+Y - just like match, make if an expression too.
+`val max = (x: Int, y: Int) => if (x > y) x else y`
+
+N - swap `=>` and `->`? To be more like Scala? `->` is used in Swift and Haskell for function notation.
+`=>` implies some kind of assignment but `->` denotes a transformation.
+So I think current status is better.
+
 ? - If we read the language, do we know what the words mean?
 
 ? - what can be removed?
