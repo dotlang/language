@@ -111,6 +111,8 @@ Electron has a small set of reserved keywords:
 , for, break, continue, return, type, import, var, val, func, invoke, select, native`.
 
 ###if, else
+- If/Else is an expression.
+
 ```
 IfElse = 'if' '(' condition ')' Block ['else' (IfElse | Block)]
 Block  = Statement | '{' (Statement)* '}'
@@ -120,6 +122,7 @@ Semantics of this keywords are same as other mainstream languages.
 - You can use any of available operators for condition part. 
 - Also you can use a simple boolean variable (or a function with output of boolean) for condition.
 - You can also use suffix syntax for if: `Block if ( condition )`
+`var max = if (x > y) x else y`
 
 ###match
 ```
