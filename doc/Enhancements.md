@@ -15,6 +15,11 @@ so lets not pollute syntax with it.
 
 \* - Add regex operators for search and replace.
 
+\* - We can enhance import with other file systems like http:
+`import /a/b` import from local file system
+`import file/a/b` import from local file system
+`import http/github.com/adsad/dsada` import from github
+
 \* - how can we mock a method? in a general way. so it won't be limited to testing. 
 we can easily define a lambda to mock a method. but how to attach it to that method?
 there is no manager, parent to accept this lambda.
@@ -3447,6 +3452,46 @@ This will depend on how `f` is implemented. If it has a body, it will be called.
 Y - Is this correct?
 `var x: Car   ;init x with all default values`
 
+Y - We cannot check `::` at compile time all the time. 
+`func f(x:any where { $::Circle })...`
+If we send a Shape to f, compiler cannot check it's dynamic type.
+And templates which are applied at runtime are not useful (suppose getting a runtime error about sending string to an int stack).
+first of all, `::` is applicable only to `any`.
+For template, we don't really care the type of the data. We want types to match with other types.
+```
+type Stack := any[];
+func push(s: Stack, i: any) where { s :: i[] } ...
+func pop(s: Stack) -> any ...
+```
+And by the way, ` s:: i[]` is not readable at all. 
+```
+template(Stack(T)) 
+{
+  type Stack_T := T[];
+  func push(s: Stack_T, i: T) ...
+  func pop(s: Stack_T) -> T ...
+}
+```
+Why not use interface types?
+```
+type storable
 
+type Stack := storable[]
+func push(s: Stack, i: storable) ...
+func pop(s: Stack) -> storable ...
+```
+In this way, we can get rid of `where ::`.
+Maybe we can also remove `::` and `any`. 
+Or maybe we can just move `any` to core: `type any`
+So it will not be anything special. Any type (even primitives) is an `any`.
+What about `::`? It was introduced to make template implementation easy. But now, we can replace it with core functions.
+`type(x)`
+If anyone needs it they can use it. 
+What about map?
+`type mapTarget`
+`func map(f: func(mapTarget) -> mapTarget, arr: mapTarget[]) -> mapTarget[]`
+We can enforce same type constraints, simply by using types. Like above. `mapTarget` is basically same as `any`.
+`func f(x: any=>any) {...}` inside f I want to check if hash keys are int or float.
+How can I get type of keys or values of a hash? We can simply add appropriate functions to core: `typeOfHashKey`.
 
-
+? - If we really don't want to end statements with `;` then use another notation for comment.
