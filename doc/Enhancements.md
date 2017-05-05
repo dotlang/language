@@ -13,6 +13,10 @@ so lets not pollute syntax with it.
 \* - define something like seq in F# to have a generator function to be used in loops.
 `for (x: seq(1..10))`
 
+\* - In reference, try to just cover important high level topics and inside them explain details and edge cases. For example explain `enum` in Union type section.
+
+\* - If we really don't want to end statements with `;` then use another notation for comment.
+
 \* - Add regex operators for search and replace.
 
 \* - We can enhance import with other file systems like http:
@@ -3494,4 +3498,39 @@ We can enforce same type constraints, simply by using types. Like above. `mapTar
 `func f(x: any=>any) {...}` inside f I want to check if hash keys are int or float.
 How can I get type of keys or values of a hash? We can simply add appropriate functions to core: `typeOfHashKey`.
 
-? - If we really don't want to end statements with `;` then use another notation for comment.
+
+Y - can we simplify `switch` more?
+```
+  result = match ( my_tree ) 
+  {
+    5 -> 11,
+    "A" -> 19,
+    local_var -> 22, ;check equality with a local variable's value
+    Empty -> 0,
+    y:int -> 1,
+    z:NormalTree -> { return 1+z },
+    any -> { -1 } ;this is default because it matches with anything
+  }
+```
+We use match for type matching and switch for data matching.
+Each part of match is a lambda expression without `func` keyword. In match you can use any type and the lambda which matches with that type as input, will be executed.
+
+Y - What if we allow functions to specify literals as inputs too? So we can use match instead of switch.
+`func fixed(5:int) -> 9` 
+`func fixed(5) -> 9` 
+`func fixed(x:int) -> x+1` 
+So calling `fixed(5)` will give you 9 but `fixed(7)` will give you 8.
+Calling `fixed(g)` will call one of two above definitions based on the value of g.
+This will help the notation for match with fixed values, make more sense.
+
+Y - `=>` is used both for chaining and hash!
+Also `ht{"A"}` is a bit clumsy.
+`=>` notation is readable and intuitive.
+`var hash1: string => int`
+`hash1 = ['OH' => 12, 'CA' => 33]`
+`hash1["B"] = 19`
+Let's use `=>` for hash and hash literals and use `==>` for chaining.
+
+? - If we read the language, do we know what the words mean?
+
+? - what can be removed?
