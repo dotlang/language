@@ -3538,6 +3538,30 @@ N - swap `=>` and `->`? To be more like Scala? `->` is used in Swift and Haskell
 `=>` implies some kind of assignment but `->` denotes a transformation.
 So I think current status is better.
 
+Y - can we make `if` a special case of `match`?
+```
+  result = match ( my_tree ) 
+  {
+    true -> 11,
+    any -> { -1 } 
+  }
+```
+
 ? - If we read the language, do we know what the words mean?
 
 ? - what can be removed?
+
+? - can we use tuple for AND condition and sum type for OR condition and remove those operators?
+`if ( a, b, c ) then ... else ....`
+```
+match reduce(both_true, [@(a, b, c)]) {
+  true -> ...
+  any -> ...
+}
+```
+A tuple will be matched to boolean true if all of it's elements are true else it is false.
+A sum type will be casted to true if any of it's elements are true. else false.
+This is a matter of casting. We define `if` as an appropriate syntax sugar.
+`func bool(x,y)`
+`func bool(x|y)`
+
