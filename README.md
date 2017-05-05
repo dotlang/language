@@ -12,7 +12,7 @@ May 3, 2017
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
-- **Version 0.9**: ?? ?? ???? - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of where and moved `::` and `any` to core functions and types.
+- **Version 0.9**: ?? ?? ???? - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input.
 
 ## Introduction
 ## Code organization
@@ -321,6 +321,7 @@ To match type, you can use match expression:
 func my_func1(x: int, y: int) -> float { return x/y }
 func my_func1(int) -> float { return $/3 } ;you can omit input name (like an unnamed tuple)
 func my_func(5) -> { 6+1 } ;if input is a literal, any call which evaluates to that literal, will call this version
+func my_func(5:int) -> 9
 func my_func2(x: int, y: int = 11 ) -> float { return x/y }  ;you can set default value
 func my_func3(x: int, y: int) -> x/y  ;you can omit {} if its a single expression
 func my_func7() -> int { return 10;} ;fn has no input but () is mandatory
