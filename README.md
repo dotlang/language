@@ -117,10 +117,12 @@ MatchExp = 'match' '(' data ')' '{' (CaseStmt)+ '}'
 - `match` is an expression.
 - First case which is matching will be executed and others will be skipped.
 - Case match can be based on value or type (used for sum types).
-- Each match case is a implified lambda (removed `func` and parans for brevity). The first lambda that can accept the value inside match will be executed.
+- Each match case is a simplified lambda (removed `func` and parans for brevity). The first lambda that can accept the value inside match will be executed.
+- Mechanism of match is the same as a function call is dispatched to an implementation. Each candidate will be examind against match input for type and values. The first one that can be matched will be invoked.
 ```
   result = match ( my_tree ) 
   {
+    x:int, y:int=12 -> ...;this will match if input has two ints or one int (second one will default to 12)
     5 -> 11,
     "A" -> 19,
     local_var -> 22, ;check equality with a local variable's value
@@ -332,11 +334,12 @@ To match type, you can use match expression:
 ```
 
 ### Functions
-Functions can are a piece of code which accepts a tuple (named, unnamed or literal) and returns any type. So any feature of a tuple/types, is supported for input or output of a function.
+Function is a piece of code which accepts a tuple and can return a single value. So any feature of a tuple/types, is supported for input or output of a function. If you want to use a tuple instead of entries of a function, you must explode it first unless function input is the tuple itself.
 ```
 func my_func1(x: int, y: int) -> float { return x/y }
 func my_func1(int) -> float { return $/3 } ;you can omit input name (like an unnamed tuple)
-func my_func(5) -> { 6+1 } ;if input is a literal, any call which evaluates to that literal, will call this version
+func my_func(y:int, x:int) -> { 6+y+x } ;based on runtime arguments, one of implementations will be choosed
+func my_func(5, x:int) -> { 6+x } ;if input is a literal, any call which evaluates to that literal, will call this version
 func my_func(5:int) -> 9
 func my_func2(x: int, y: int = 11 ) -> float { return x/y }  ;you can set default value
 func my_func3(x: int, y: int) -> x/y  ;you can omit {} if its a single expression
@@ -350,7 +353,7 @@ func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
 
 ;We can enforce same type constraints, simply by using types. Like below. `mapTarget` is basically same as `any`.
 type mapTarget
-func map(f: func(mapTarget) -> mapTarget, arr: mapTarget[]) -> mapTarget[]
+func map(f: func(mapInput) -> mapTarget, arr: mapInput[]) -> mapTarget[]
 
 ;these calls are all the same
 new_array = map({$+1}, my_array)
@@ -358,13 +361,12 @@ new_array = map({$+1}, my_array)
 new_array = map {$+1}, my_array
 ```
 - Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability).
-- You can clone the data but have to do it manually using explode operator `@`. Note that assignment make a clone for primitives, so you need cloning only for tuple, array and hash.
+- You can clone the data but have to do it manually using explode operator `@`. Note that assignment makes a clone for primitives, so you need cloning only for tuple, array and hash.
 `var x: Point = (@original_var)`
 `var a = [1,2,3]`
 `var b = [@a]`
 `var h = string => int = {"A"=>1, "B"=>2}`
 `var g = {@h}`
-- When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`
 - You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
 - `rest` is a normal array which is created by compiler for each call to `print` function.
 - Functions are not allowed to change (directly or indirectly) any of their inputs.
@@ -388,6 +390,17 @@ func read_customer(id:int) -> Nothing | CustomerData
 - You can define a function which does not have a body. This is like an abstract method. So calling it will throw error.
 `func adder(x: int, y:int)->int`
 - Function definition specifies a contract which shows input tuple and output tuple. If input tuple is named, you must pass a set of input or tuple with the exact same name or an unnamed tuple. If input is unnamed, you can pass either unnamed or named tuple.
+```
+func f(x:int, y:int) -> ...
+func f(12, y:int) -> ... ; this will be invoked if first argument is 12
+func f(x:int, y:int=6) ... ;this will be invoked if secod argument is 6 or missing
+...
+var g = (x:10, y:12)
+f(g) ; this is not correct. f expects a tuple with x and y not a tuple with another tuple.
+f(1,9)
+f(x:1, y:9)
+f(@g)
+```
 
 ### Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
@@ -448,7 +461,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 Kinds of types: `primitives`, `product`, `sum` and function.
 
 ### Inheritance and polymorphism
-- Tuples can inherit from other tuples by composing that type with explode operator (`@`) and without a name. This can also be achieved by duplicating their fields with same name and type in your type but using `@` is easier and more readable. 
+- Tuples can inherit from other tuples by composing that type with explode operator (`@`) and without a name. Inheritance is an explicit design decision so it should be explicitly stated by using explode operator. If you don't want to inherit but will have same fields, just defined those fields without using explode operator.
 `type Shape := ();`
 `type Circle := (@Shape...)`
 `type Square := (@Shape...)`
@@ -491,7 +504,7 @@ To have a tuple with unnamed fields based on value of another tuple, just put `@
 `my_point.@` will translate to `10, 20`
 `@Point` will translate to `x:int, y:int`
 `Point.@` will translate to `int, int`
-You can combine explode operator with other data or type definition. `var g = (@my_point, z:20)`. g will be `(x:10, y:20, z:20)`.
+You can combine explode operator with other data or type definition. `var g = (@my_point, z:20)`. g will be `(x:10, y:20, z:20)`. Explode on primitives has no effect (`@int` = `int`).
 - If a type does not have any fields (empty types), you don't need to use explode to inherit from it. It is optional. You just need to implement appropriate methods (If not, and those methods are defined empty for base type, a compiler error will be thrown). So if we have `func check(x: Alpha)` and `Alpha` type does not have any field, any other data type which implements functions written for `Alpha` can be used instead.
 - Empty types are like interfaces and are defined like `type Alpha`.
 
