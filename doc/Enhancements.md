@@ -3547,11 +3547,7 @@ Y - can we make `if` a special case of `match`?
   }
 ```
 
-? - If we read the language, do we know what the words mean?
-
-? - what can be removed?
-
-? - can we use tuple for AND condition and sum type for OR condition and remove those operators?
+N - can we use tuple for AND condition and sum type for OR condition and remove those operators?
 `if ( a, b, c ) then ... else ....`
 ```
 match reduce(both_true, [@(a, b, c)]) {
@@ -3565,3 +3561,35 @@ This is a matter of casting. We define `if` as an appropriate syntax sugar.
 `func bool(x,y)`
 `func bool(x|y)`
 
+Y - for generality function we should also accept other types like sum or primitively . Not only tuple. This is complex but is the generality. But the convention is to enclose it inside paren.
+So it you want to pass a tuple as inputs, you have to explode it.
+
+Y - Also function input can include literals too. So (5,x:int) matches with (y,s) if y=5
+
+N - It does not make sense to explode a type as an array because it's data might not be of the same type.
+It makes sense because it gives us generality. 
+
+Y - When calling a function, if a single call is being made, you can omit `()`. So instead of `int x = f(1,2,3);` you can write `int x = f 1,2,3;`.
+This is mostly used for map and similar functions. But it's not good. We don't want to have exceptions and special cases.
+
+Y - If function can have multiple inputs, how can we model `map` or any function that accepts a general input?
+`func map(f: func(mapInput) -> mapTarget, arr: mapInput[]) -> mapTarget[]`
+option 1: use `any` to denote this
+But if we can make this more orth and gen is better.
+option 2: declare that function must accept a tuple. inside that tuple you can define whatever you want. And that explains why all function definition and calls must have parens.
+```
+func f(x:int, y:int) -> ...
+...
+var g = (x:10, y:12)
+f(g) ; is this correct? no
+f(1,9)
+f(x:1, y:9)
+f(@g)
+```
+
+Y - state that match operator is the same way we find function to call. 
+`match (5, x) { (5,9) -> ...`
+
+N - Any easier way for sub typing? Rather than explode. Maybe then we can remove this operator.
+Explode does two separate things now: explode and indicate subtyping.
+applications of explode: Make it easy to call a function, cloning,
