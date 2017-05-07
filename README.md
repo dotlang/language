@@ -191,6 +191,13 @@ If there is no `x =`, then `B` will be evaulated if result of `A` is not void.
 You can chain `//`: `x = A // B // C` if A is not evaluated to the type we need, B will be evaluated and etc.
 
 ###loop, break, continue
+`loop` is a function defined in core:
+`func loop(cond: int | any[] | anyHash | func(any)->bool, body: func(x:any)->loopOutput)->loopOutput`
+`loop(5) { print('hello') }`
+`loop(arr1) { print($) }`
+`loop(arr1) (x: int) -> { print(x) }`
+`break` and `continue` are handled as exceptions inside the `loop` functions.
+
 ```
 LoopStms = 'loop' ( Condition ) Block
 LoopStms = 'loop' (number | variable) Block
@@ -202,8 +209,6 @@ ContinueStmt = 'continue' [Number] ';'
 - First case: Run the block while the condition is met.
 - Second case: Loop a specific number of times
 - Third case: Iterate over elements of an array or keys of a hash.
-
-`break 2` to break outside 2 nested loops. same for `continue`.
  
 ###return
 
@@ -281,7 +286,7 @@ There are only three primitive data types: `number` and `string`. All others are
 - **Integer data types**: `char`, `short`, `int`, `long`
 - **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
 - **Floating point data types**: `float`, `double`
-- **Others**: `bool`
+- **Others**: `bool`, ``
 
 You can use core functions to get type identifier of a variable: `type` or `hashKeyType` or `hashValueType`.
 
@@ -353,12 +358,15 @@ func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
 
 ;We can enforce same type constraints, simply by using types. Like below. `mapTarget` is basically same as `any`.
 type mapTarget
-func map(f: func(mapInput) -> mapTarget, arr: mapInput[]) -> mapTarget[]
+func map(arr: mapInput[], f: func(mapInput) -> mapTarget) -> mapTarget[]
 
 ;these calls are all the same
-new_array = map({$+1}, my_array)
-new_array = map({$+1}, my_array)
-new_array = map {$+1}, my_array
+new_array = map(my_array, {$+1})
+```
+- If last input of function is a lambda, it can be put outside paren without a comma, when calling it. This useful to make code readable in cases we call `loop` or `map`.
+```
+new_array = map(my_array) {$+1} ;map will receive a tuple containing two elements: array and lambda
+new_array = map(my_array) (x:int) -> {x+1}
 ```
 - Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability).
 - You can clone the data but have to do it manually using explode operator `@`. Note that assignment makes a clone for primitives, so you need cloning only for tuple, array and hash.
@@ -449,7 +457,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `$i` function inputs
 - `$` first input of the function (`$0`)
 - `$_` input place-holder
-- `:` tuple definition, array slice, loop
+- `:` tuple definition, array slice
 - `:=` type definition
 - `==>,<==` chaining
 - `=>` hash type and hash literals
@@ -564,25 +572,25 @@ get_evens(data) ==> sort => save ==> reverse .   ;assuming sort, save and revers
 
 ### Lambda expression
 
-You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too.
-
+You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too, also  `func` keyword is not needed. This keyword is needed when defining a normal function.
 ```
-var f1 = func(x: int, y:int) -> int { return x+y } ;the most complete definition
-var rr = func (x: int, y:int) -> { x + y }  ;return type can be inferred
-var rr = func { x + y } ;WRONG! - input is not specified
+var f1 = (x: int, y:int) -> int { return x+y } ;the most complete definition
+var rr = (x: int, y:int) -> { x + y }  ;return type can be inferred
+var rr = { x + y } ;WRONG! - input is not specified
+var f1 = (x: int, y:int) -> int { return x+y } ;the most complete definition
 
-type adder := func(x: int, y:int) -> int
-var rr: adder = func(a:int, b:int) -> { a + b } ;when you have a type, you can define new names for input
+type adder := (x: int, y:int) -> int
+var rr: adder = (a:int, b:int) -> { a + b } ;when you have a type, you can define new names for input
 var rr: adder = func { x + y }   ;when you have a type, you can also omit input
 var rr: adder = { x + y }      ;and also func keyword, but {} is mandatory
 var rr:adder = { $0 + 2 }        ;you can use $0 or $ alone instead of name of first input
 func test(x:int) -> plus2 { return { $0+ x} }
-var modifier = { $1 + $2 } . ;if input/output types can be deduced, you can eliminate them
+var modifier = { $1 + $2 }  ;if input/output types can be deduced, you can eliminate them
 ```
 - You can access lambda input using `$0, ...` notation too.
 - You can also use `$_` place holder to create a new lambda based on existing functions:
-`var y = calculate(4,a, $_)` is same as `var y = func(x:int) -> calculate(4,a,x);`
-`var y = calculate(1, $_, $_)` is same as `var y = func(x:int, y:int) -> calculate(4,x,y);`
+`var y = calculate(4,a, $_)` is same as `var y = (x:int) -> calculate(4,a,x);`
+`var y = calculate(1, $_, $_)` is same as `var y = (x:int, y:int) -> calculate(4,x,y);`
 
 ## Best practice
 ### Naming
