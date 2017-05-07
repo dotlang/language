@@ -12,7 +12,7 @@ May 3, 2017
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
-- **Version 0.9**: ?? ?? ???? - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, 
+- **Version 0.9**: ?? ?? ???? - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword
 
 ## Introduction
 ## Code organization
@@ -117,7 +117,8 @@ MatchExp = 'match' '(' data ')' '{' (CaseStmt)+ '}'
 - `match` is an expression.
 - First case which is matching will be executed and others will be skipped.
 - Case match can be based on value or type (used for sum types).
-- Each match case is a simplified lambda (removed `func` and parans for brevity). The first lambda that can accept the value inside match will be executed.
+- Each match case is a similar to a lambda. The first case that can accept the value inside match will be executed.
+- A `return` inside body of a case, will return from parent function.
 - Mechanism of match is the same as a function call is dispatched to an implementation. Each candidate will be examind against match input for type and values. The first one that can be matched will be invoked.
 ```
   result = match ( my_tree ) 
