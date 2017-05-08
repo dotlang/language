@@ -3661,8 +3661,28 @@ Here: When a type has appropriate fields, it has subtyped from it automatically.
 N - Const?
 `func PI -> 3.1415`
 
-? - Change comment started?
+Y - declare that map can work on anything as long as they have support for `loop`. So its not only for arrays.
 
-? - declare that map can work on anything as long as they have support for `loop`. So its not only for arrays.
+? - Change comment starter?
 
 ? - clarify about optional values and literal inputs.
+`func add(x:int, y:int, z:int) ...`
+`func add(x:int=15, y:int, z:int) ...`
+`func add(x:int, y:int, z:int=9)...`
+call:
+`add(x,y)` will call 3rd version
+`add(15, y)` will call 3rd version
+`add(15, y, z)` where z is not 9, will call 2nd version
+in function definition giving value to a parameters, means it should be exactly equal to that value or it should be missing.
+order of match: for (a,b,c) tuple when calling function:
+Functions with that name which have 3 or more inputs will be tested.
+- Functions with exactly 3 inputs have higher priorirty than those with 3+ inputs with optional values.
+- Functions with higher input value equal to values of a, b, c have higher priority.
+So, first search for funcciont with 3 inputs then 4 input with last one optional, then 5 inputs ...
+In each case, first check functions that have all 3 pre-set, then 2 pre-set then 1-preset then no pre-set.
+If in each step, two cancidates are found, give error.
+For example:
+`func add(x:int=9, y:int)`
+`func add(x:int, y:10)`
+calling `add(9, 10)` will result in two candidates -> runtime error.
+if input is unnamed then ok. If it is named, we have an extra condition: input names must match.
