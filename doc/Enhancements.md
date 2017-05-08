@@ -3689,3 +3689,6 @@ if input is unnamed then ok. If it is named, we have an extra condition: input n
 and `(x:10, y:20)` will match `(x:int)` which is foundation of subtyping.
 
 ? - can we get rid of `any`?
+
+? - the exception to separate last arg if it is lambda, can we make it more general?
+For example, you can write tuple (a,b,c) as `a b c` if ????
