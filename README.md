@@ -267,6 +267,7 @@ func map(arr: mapInput[], f: func(mapInput) -> mapTarget) -> mapTarget[]
 ;these calls are all the same
 new_array = map(my_array, {$+1})
 ```
+- `map` can work on any type that supports loop.
 - If last input of function is a lambda, it can be put outside paren without a comma, when calling it. This useful to make code readable in cases we call `loop` or `map`.
 ```
 new_array = map(my_array) {$+1} ;map will receive a tuple containing two elements: array and lambda
