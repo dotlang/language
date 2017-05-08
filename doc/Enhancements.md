@@ -3593,3 +3593,68 @@ Y - state that match operator is the same way we find function to call.
 N - Any easier way for sub typing? Rather than explode. Maybe then we can remove this operator.
 Explode does two separate things now: explode and indicate subtyping.
 applications of explode: Make it easy to call a function, cloning,
+
+Y - can we generalize if/match/loop with tuples because they have parens?
+then maybe we can define loop/match/if as native functions.
+`if(condition) lambda`
+`match(tuple) list of lambda`
+`loop(condition) lambda`
+`loop(tuple) lambda`
+`loop(num) lambda`
+We can say, loop accepts a tuple (which can have n elements). And ANDs them all.
+Each element can use `and` and `or` operators.
+So loop and if can be modeled as a function.
+But then we will need to use comma for lambda:
+`if(condition, lambda)`
+`if(x>0, {print(x)})`
+`if x>0 {print(x)}`
+`if(x>0) { print(x)}`
+`add(5,6)`
+`add(5) 6`
+what about else?
+`if(x>0) { print(x)} else { write(x) }`
+loop can accept either a number of a lambda for it's condition.
+`type anyHash := any => any`
+`func loop(cond: int | any[] | anyHash | func(any)->bool, body: func(x:any)->loopOutput)->loopOutput`
+`loop(5) { print('hello') }`
+`loop(x>0) { print('hello') }`
+`loop(arr1) { print($) }`
+`loop(arr1, { print($) })`
+`func map(arr: mapInput[], f: func(mapInput) -> mapTarget) -> mapTarget[]`
+`x= map(arr) { $+1 }`
+`x= map(arr, { $+1 })`
+> If last input of function is a lambda, it can be put outside paren when calling it.
+What about loop for iteration? 
+Problem is: We may need to bind a variable to the iteration value.
+`loop(arr1) { print($) }` - this is not really readable
+Advantage: We can define iteration for our own type. Then people can use `loop` to iterate over anything we want. Like implementation of custom iterator.
+`loop(arr1) { print($) }`
+If you want custom name, define a more complete lambda:
+`loop(arr1) (x: int) -> { print(x) }`
+break and continue can also be handled using exceptions.
+
+N - if we want to say a function can accept anything what should be the notation?
+`func x(any)`?
+`type anyHash := any => any`
+`type anyPrimitive := int | float | string ...`
+`type anyTuple := any`
+It does not make sense to have a function that can accept any number of inputs each of them having any type.
+
+Y - Now that `->` is only used for functions, maybe we can eliminate `func` for lambdas
+
+Y - better formization of void. Maybe unit? It is a normal type which has only one value:
+`type void := void`
+And compiler helps to change `return` to `return void`
+
+N - Polymorphism in just a way to customise matching when specific functions are being called.
+Maybe it can be achieved without a special syntax.
+```
+type Shape := (...)
+type Square := (*Shape...)
+type Circle := (*Shape...)
+match Square with Shape
+```
+I think when a function needs a `Shape` it needs something that `.size` and `.x` and `.y` are applicable to.
+So this is something like duck typing in Go: When a type has appropriate functions, it has implemented an interface automatically.
+Here: When a type has appropriate fields, it has subtyped from it automatically.
+
