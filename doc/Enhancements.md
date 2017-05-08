@@ -3658,3 +3658,9 @@ I think when a function needs a `Shape` it needs something that `.size` and `.x`
 So this is something like duck typing in Go: When a type has appropriate functions, it has implemented an interface automatically.
 Here: When a type has appropriate fields, it has subtyped from it automatically.
 
+? - Const?
+`func PI -> 3.1415`
+
+? - Change comment started?
+
+? - declare that map can work on anything as long as they have support for `loop`. So its not only for arrays.
