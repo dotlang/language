@@ -84,6 +84,20 @@ Source file contains a number of definitions for types and functions.
 - `any` denotes any type (It is defined in core). It is basically an empty type. Everything can be used for `any` type (primitives, tuples, unions, function pointers, ...). It can be something like an empty tuple. You have to initialize variables of type `any`.
 - Immutability: All variables are immutable but can be re-assigned.
 
+## Language in a nutshell
+1. **Primitives**: `int`, `uint`, `string`, ...
+2. **Tuple**: `type Point := (x: int, y:int)`
+3. **Union**: `type OperationResult := Point | int | Error`
+4. **Array**: `type JobQueue := int[]`
+4. **Hashtable**: `type CountryPopulation := string => long`
+5. **Function**: `func functionName (*INPUT_TUPLE*) -> *OUTPUT_TYPE* { *BODY* }`
+6. **Variable**: `var location: Point = (x:10, y:20)`
+7. **Import**: Is used to import types and functions defined in another file: `import /code/std/Queue`
+8. **Validation**: For any custom type, function input and output: `type Age := int where { $ > 0 }`
+9. **Immutability**: Only local variables are mutable. Everything else is immutable.
+10. **Assignment**: Primitives are assigned by value, other types are assigned by reference.
+All other features (loop and considtionals, exception handling, pre and post-condition, inheritance and subtyping, polymorphism, generics ...) are achieved using above constructs.
+
 ## Type System
 ### Primitives
 There are only three primitive data types: `number` and `string`. All others are defined based on these two plus some restrictions on size and accuracy.
@@ -330,6 +344,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `=` operator: copies only for number data type, makes a variable refer to the same object as another variable for any other type. If you need a copy, you have to clone the variable. 
 - `x == y` will call `equals` functions is existing, by default compares field-by-field values. But you can o
 - You can not override operators. 
+
 ### Special Syntax
 - `$i` function inputs
 - `$` first input of the function (`$0`)
