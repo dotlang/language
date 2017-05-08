@@ -12,32 +12,8 @@ May 3, 2017
 - **Version 0.6**: Jan 18, 2017 - Cleanup, introduce object type and changed exception handling mechanism.
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
-- **Version 0.9**: ?? ?? ???? - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword
-
-## Introduction
-## Code organization
-## Structure of source code file
-## Type System
-### Primitives
-### Array
-### Hashtable
-### Tuple
-### Sum types
-## Variable definition
-## Exception handling
-## Function
-## Lambdas
-## Templates
-## Polymorphism and inheritance
-## Operators
-## Keywords
-##Miscellaneous
-###Special Syntax
-###Validation
-###Best practice
-
-
-
+- **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
+- **Version 0.95**: ??? ?? ???? - Re-organize and complete the document
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -86,7 +62,7 @@ core
 In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages.
 Each package contains zero or more source code files, which are called modules. Modules contain data structure definitions and function definitions. Each module can reference other modules to call their functions or use their data structures.
 
-## Structure of source code file
+### Structure of source code file
 
 Each source code file contains 3 sections: import, types and function.
 Import section is used to reference other modules that are being used in this module.
@@ -100,12 +76,288 @@ Function section is used to define function bodies.
 - You can separate number digits using undescore: `1_000_000`.
 - **Adressing**: Functions are called using `function_name(input1, input2, input3)` notation. Fields of a tuple are addressed using `tuple_name.field_name` notation. Modules are addressed using `/` notation (e.g. `/code/st/net/create_socket`).
 - Each statement must be in a separate line and must not end with semicolon.
+Source file contains a number of definitions for types and functions.
 
-## Variables
+*Notes:*
+- If a name starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
+- The order of the contents of source code file matters: First `import` section, `type` section and finally functions. If the order is not met, compiler will give warnings.
+- `any` denotes any type (It is defined in core). It is basically an empty type. Everything can be used for `any` type (primitives, tuples, unions, function pointers, ...). It can be something like an empty tuple. You have to initialize variables of type `any`.
+- Immutability: All variables are immutable but can be re-assigned.
 
+## Type System
+### Primitives
+There are only three primitive data types: `number` and `string`. All others are defined based on these two plus some restrictions on size and accuracy.
+- **Integer data types**: `char`, `short`, `int`, `long`
+- **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
+- **Floating point data types**: `float`, `double`
+- **Others**: `bool`, `void`
 
+You can use core functions to get type identifier of a variable: `type` or `hashKeyType` or `hashValueType`.
+`bool` and `void` are special types with only two and one possible values. `void` is used when a function returns nothing, so compile will change `return` to `return void`.
 
-##Keywords
+### Array
+- Array literals are specified using brackets: `[1, 2, 3]`
+- `var x: int[] = [1, 2, 3];`
+- `var y: int[3]; y[0] = 11;`
+- `var t: int[n];`
+- `var x: int[2,2];`. 
+- `var pop: (string, int)[]` - dynamic array of tuples
+- `var pop: string[4]` - static array of string
+- We have slicing for arrays `x[start:step:end]` with support for negative index.
+- we have built-in lists using same notation as array.
+- every array can be extended by just adding elements to it (it will be a hybrid, array+list). 
+- if you want to define a list from beginning, dont specify size.
+- if you specify a size, it will be a mixed list (can be extended to become a list).
+`var x: int[3]`  hybrid list
+`var x: int[]`  pure list
+`var x: int[3] = [1,2,3]` hybrid
+`var x: int[] = [1,2,3]` pure
+- Slice can be left side of an assignment.
+
+### Hashtable
+Hashtables are sometimes called "associative arrays". So their syntax is similar to arrays:
+- `A => B` is used to define hash type. Left of `=>` is type of key and on the right side is type of value. If key or value have multiple elements, a tuple should be used.
+- `var hash1: string => int`
+- `hash1 = ['OH' => 12, 'CA' => 33]`
+- `hash1["B"] = 19`
+- `var big_hash: (int, int) => (string, int) = [ (1, 4) => ("A", 5) ]` 
+- `big_hash[3,4] = ("A", 5)`
+- If your code expects a hash which has `int` keys: `func f(x: int => any)...`
+
+### Tuple
+
+You use this statement to define a new product data structure:
+```
+type Car := (
+  color: int, 
+  age: int = 19,
+)
+var x: Car = ()   ;init x with all default values based on definition of Car
+var y: Car = (age:11) ;customize value
+var t : (int, string) = (1, "A")  ;you can have tuples with unnamed fields. They can be accessed like an array.
+var number_one = t.0
+t.1 = "G"
+```
+- Function input and output can be any type. Even a tuple or a tuple with unnamed fields.
+- Fields that starts with underscore are considered internal state of the tuple and better not to be used outside the module that defines the type. 
+- You can define a tuple with unnamed fields: `type Point := (int, int)` But fields of a tuple must be all either named or unnamed. You cannot mix them.
+###Tuple (Product types)
+```
+type A :=  (x: int = 19) ;you can assign default value
+type B := (a: A, y: int) ;B composes A
+type C := ()             ;empty tuple
+type C := (y: int = 9)   ;setting default value
+type D := (int=9, string="G") ; unnamed fields. You can access them like an array. Also we can set default value.
+```
+
+To create a new tuple instance you just set it's type and assign it to an appropriate tuple:
+```
+var test: A = (x: 10)
+var test2: A = () ;no init 
+var test3: D = (1,"A")
+var test4: C=(9)
+test3[0]=9
+test3[1]="A"
+var t = (x:6, y:5) ;anonymous and untyped tuple
+```
+- Note that if there is a multiple tuple inheritance which results in function ambiguity, there will be a compiler error: 
+`func x(p: P1)->int ...`
+`func x(p: P2)->int ...`
+`type A := (x:P1, y:P2)`
+`var v: A; var t = x(A)   ;compiler error`
+
+### Union or Sum types
+When defining a sum type, you specify different types and labels that it can accept. Label can be any valid identifier.
+`type Tree := Empty | int | (node: int, left: Tree, right: Tree)`
+`type OptionalInt := None | int`
+To match type, you can use match expression:
+```
+  result = match ( my_tree ) {
+    Empty -> 0
+    y:int -> 1
+    z:NormalTree -> ...
+  }
+```
+
+### Custom Types
+You can use `type` to define new type based on an existing type. 
+You can also use it to define a type alias.
+
+```
+type point := int[]
+type x := int    ;x will be an alias for int type
+var a: x  ;=var a: int;
+```
+To use a type:
+```
+var pt: point = (1, 10);
+//you can alias it again
+type mypt := point;
+var xx: mypt = (1, 2);
+```
+
+You can define an enum using sum types.
+```
+type DoW := SAT | SUN | ...
+```
+
+You can define functions based on `int` and `X` where `type X := int` and they will be different functions.
+
+Note that when using type for alias to a function, you have to specify input names too.
+`type comparer := func (x:int, y:int) -> bool;`
+
+### Variables
+Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
+Reasons for including type at the end:
+- Due to type inference, type is optional and better not to be first part of the definition.
+- More consistent with function declaration.
+- Even C has `auto x = int{4}` declaration
+- More readable and parseable
+
+```
+var x:int
+var t = 12
+var y : int = 19
+var t = 12  ;imply type from 12
+```
+A function which returns `T` is treated like a variable of type `T`. This can be used to have lazy evaluation. So if you send the function/lambda to another function, to the outside world, it is int variable. inside they carry a lambda.
+Cloning, passing, assigning to other vars does not change or evaluate the variable. But as soon as you have something like: `x=lazy_var+1` then function is being called.
+- As soon as you declare a variable it will have some value. Even if it is a tuple, it will have all fields set to default value.
+- You can define local variables using `var` keyword.
+`var x: int = 19; x= 11 ;ok - can re-assign`
+- You can define consts using functions: `func PI -> 3.14`
+- You can define local const variables using: `var x: float = 3.14 where { false }`
+
+## Functions
+Function is a piece of code which accepts a tuple and can return a single value. So any feature of a tuple/types, is supported for input or output of a function. If you want to use a tuple instead of entries of a function, you must explode it first unless function input is the tuple itself.
+```
+func my_func1(x: int, y: int) -> float { return x/y }
+func my_func1(int) -> float { return $/3 } ;you can omit input name (like an unnamed tuple)
+func my_func(y:int, x:int) -> { 6+y+x } ;based on runtime arguments, one of implementations will be choosed
+func my_func(5, x:int) -> { 6+x } ;if input is a literal, any call which evaluates to that literal, will call this version
+func my_func(5:int) -> 9
+func my_func2(x: int, y: int = 11 ) -> float { return x/y }  ;you can set default value
+func my_func3(x: int, y: int) -> x/y  ;you can omit {} if its a single expression
+func my_func7() -> int { return 10;} ;fn has no input but () is mandatory
+func my_func7() -> 10  ;when function has just a return statement, there is a shortcut
+func my_func8() -> (int, int) { return (10,20) } ;function can return multiple values
+(x,y) = my_func8()
+
+ //below function receives an array + a function and returns a function
+func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
+
+;We can enforce same type constraints, simply by using types. Like below. `mapTarget` is basically same as `any`.
+type mapTarget
+func map(arr: mapInput[], f: func(mapInput) -> mapTarget) -> mapTarget[]
+
+;these calls are all the same
+new_array = map(my_array, {$+1})
+```
+- If last input of function is a lambda, it can be put outside paren without a comma, when calling it. This useful to make code readable in cases we call `loop` or `map`.
+```
+new_array = map(my_array) {$+1} ;map will receive a tuple containing two elements: array and lambda
+new_array = map(my_array) (x:int) -> {x+1}
+```
+- Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability).
+- You can clone the data but have to do it manually using explode operator `@`. Note that assignment makes a clone for primitives, so you need cloning only for tuple, array and hash.
+`var x: Point = (@original_var)`
+`var a = [1,2,3]`
+`var b = [@a]`
+`var h = string => int = {"A"=>1, "B"=>2}`
+`var g = {@h}`
+- You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
+- `rest` is a normal array which is created by compiler for each call to `print` function.
+- Functions are not allowed to change (directly or indirectly) any of their inputs.
+
+```
+func f(x:int, y:float) -> (a: int, b: string)
+{
+  ;returning anon-tuple
+  return (a:1, b:9) ;or return (1, 9)
+}
+
+func read_customer(id:int) -> Nothing | CustomerData
+{
+  ;no customer was found
+  return Nothing
+  
+  ;some customer found
+  return c1
+}
+```
+- You can define a function which does not have a body. This is like an abstract method. So calling it will throw error.
+`func adder(x: int, y:int)->int`
+- Function definition specifies a contract which shows input tuple and output tuple. If input tuple is named, you must pass a set of input or tuple with the exact same name or an unnamed tuple. If input is unnamed, you can pass either unnamed or named tuple.
+```
+func f(x:int, y:int) -> ...
+func f(12, y:int) -> ... ; this will be invoked if first argument is 12
+func f(x:int, y:int=6) ... ;this will be invoked if secod argument is 6 or missing
+...
+var g = (x:10, y:12)
+f(g) ; this is not correct. f expects a tuple with x and y not a tuple with another tuple.
+f(1,9)
+f(x:1, y:9)
+f(@g)
+```
+
+### Lambda expression
+
+You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too, also  `func` keyword is not needed. This keyword is needed when defining a normal function.
+```
+var f1 = (x: int, y:int) -> int { return x+y } ;the most complete definition
+var rr = (x: int, y:int) -> { x + y }  ;return type can be inferred
+var rr = { x + y } ;WRONG! - input is not specified
+var f1 = (x: int, y:int) -> int { return x+y } ;the most complete definition
+
+type adder := (x: int, y:int) -> int
+var rr: adder = (a:int, b:int) -> { a + b } ;when you have a type, you can define new names for input
+var rr: adder = func { x + y }   ;when you have a type, you can also omit input
+var rr: adder = { x + y }      ;and also func keyword, but {} is mandatory
+var rr:adder = { $0 + 2 }        ;you can use $0 or $ alone instead of name of first input
+func test(x:int) -> plus2 { return { $0+ x} }
+var modifier = { $1 + $2 }  ;if input/output types can be deduced, you can eliminate them
+```
+- You can access lambda input using `$0, ...` notation too.
+- You can also use `$_` place holder to create a new lambda based on existing functions:
+`var y = calculate(4,a, $_)` is same as `var y = (x:int) -> calculate(4,a,x);`
+`var y = calculate(1, $_, $_)` is same as `var y = (x:int, y:int) -> calculate(4,x,y);`
+
+## Operators
+- Conditional: `and or not == != >= <=`
+- Bitwise: `~ & | ^ << >>`
+- Math: `+ - * % ++ -- **`
+The bitwise and math operators can be combined with `=` to do the calculation and assignment in one statement.
+- `=` operator: copies only for number data type, makes a variable refer to the same object as another variable for any other type. If you need a copy, you have to clone the variable. 
+- `x == y` will call `equals` functions is existing, by default compares field-by-field values. But you can o
+- You can not override operators. 
+### Special Syntax
+- `$i` function inputs
+- `$` first input of the function (`$0`)
+- `$_` input place-holder
+- `:` tuple definition, array slice
+- `:=` type definition
+- `==>,<==` chaining
+- `=>` hash type and hash literals
+- `|` sum types
+- `.` access tuple fields
+- `@` explode
+- `//` sum type handler
+
+### Chaining
+You can use `==>` and `<==` operators to chain functions. `a ==> b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
+Examples:
+```
+get_evens(data) ==> sort(3, 4, $_) ==> save ==> reverse($_, 5);
+get_evens(data) ==> sort => save ==> reverse .   ;assuming sort, save and reverse have only one input
+5 ==> add2 ==> print  ;same as: print(add2(5))
+(1,2) ==> mul ==> print  ;same as: print(mul(1,2))
+(1,2) ==> mul($_, 5, $_) ==> print  ;same as: print(mul(1,5,2))
+```
+- You can also use `<==` for a top-to-bottom chaining, but this is a syntax sugar and compiler will convert them to `==>`.
+`print <== add2 <== 5`
+
+## Keywords
+
 Electron has a small set of reserved keywords: 
 `if, else, match, 
 , for, break, continue, return, type, import, var, val, func, invoke, select, native`.
@@ -211,53 +463,7 @@ ContinueStmt = 'continue' [Number] ';'
 - Second case: Loop a specific number of times
 - Third case: Iterate over elements of an array or keys of a hash.
  
-###return
-
-### tuple
-You use this statement to define a new product data structure:
-```
-type Car := (
-  color: int, 
-  age: int = 19,
-)
-var x: Car = ()   ;init x with all default values based on definition of Car
-var y: Car = (age:11) ;customize value
-var t : (int, string) = (1, "A")  ;you can have tuples with unnamed fields. They can be accessed like an array.
-var number_one = t.0
-t.1 = "G"
-```
-- Function input and output can be any type. Even a tuple or a tuple with unnamed fields.
-- Fields that starts with underscore are considered internal state of the tuple and better not to be used outside the module that defines the type. 
-- You can define a tuple with unnamed fields: `type Point := (int, int)` But fields of a tuple must be all either named or unnamed. You cannot mix them.
-
-### type
-You can use `type` to define new type based on an existing type. 
-You can also use it to define a type alias.
-
-```
-type point := int[]
-type x := int    ;x will be an alias for int type
-var a: x  ;=var a: int;
-```
-To use a type:
-```
-var pt: point = (1, 10);
-//you can alias it again
-type mypt := point;
-var xx: mypt = (1, 2);
-```
-
-You can define an enum using sum types.
-```
-type DoW := SAT | SUN | ...
-```
-
-You can define functions based on `int` and `X` where `type X := int` and they will be different functions.
-
-Note that when using type for alias to a function, you have to specify input names too.
-`type comparer := func (x:int, y:int) -> bool;`
-
-###import
+ ###import
 
 You can import a source code file using below statement. Note that import, will add symbols (functions and types) inside that source code to the current symbol table:
 
@@ -282,195 +488,22 @@ Also you can call a function or refer to a type with fully qualified name:
 Denotes function is implemented by runtime or external libraries.
 `native func file_open(path: string) -> File;`
 
-## Primitives
-There are only three primitive data types: `number` and `string`. All others are defined based on these two plus some restrictions on size and accuracy.
-- **Integer data types**: `char`, `short`, `int`, `long`
-- **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
-- **Floating point data types**: `float`, `double`
-- **Others**: `bool`, ``
+## Miscellaneous
+### Validation
+When defining types or functions, you can define validation code/function. This is a block which will be executed/evaluated everytime variable gets a new value or function is executed. You can makes sure the data (or function intput/output) is in consistent and valid state.
+`var m: int where {validate_month};`
+`var m: int where validate_month . ;same as above`
+Expression will be called with `$` pointing to the new value. If the expression evaluates to false, a runtime exception will be thrown.
+`var x: int where {$>10} where {$<100} where { check_value($) };`
+`type x := (x: int; y:int) where { $.x < $.y };`
+- This can be done for all types and variables.
+- Example for functions:
+`func AA(x: int) where { pre_check } -> int where {output_constraints} { ... } where { post_check }`
+In post_check section, you can refer to the function output using `$` or `$0` notation.
 
-You can use core functions to get type identifier of a variable: `type` or `hashKeyType` or `hashValueType`.
-
-## Source file
-
-Source file contains a number of definitions for types and functions.
-
-*Notes:*
-- If a name starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
-- The order of the contents of source code file matters: First `import` section, `type` section and finally functions. If the order is not met, compiler will give warnings.
-- `any` denotes any type (It is defined in core). It is basically an empty type. Everything can be used for `any` type (primitives, tuples, unions, function pointers, ...). It can be something like an empty tuple. You have to initialize variables of type `any`.
-- Immutability: All variables are immutable but can be re-assigned.
-
-###Tuple (Product types)
-```
-type A :=  (x: int = 19) ;you can assign default value
-type B := (a: A, y: int) ;B composes A
-type C := ()             ;empty tuple
-type C := (y: int = 9)   ;setting default value
-type D := (int=9, string="G") ; unnamed fields. You can access them like an array. Also we can set default value.
-```
-
-To create a new tuple instance you just set it's type and assign it to an appropriate tuple:
-```
-var test: A = (x: 10)
-var test2: A = () ;no init 
-var test3: D = (1,"A")
-var test4: C=(9)
-test3[0]=9
-test3[1]="A"
-var t = (x:6, y:5) ;anonymous and untyped tuple
-```
-- Note that if there is a multiple tuple inheritance which results in function ambiguity, there will be a compiler error: 
-`func x(p: P1)->int ...`
-`func x(p: P2)->int ...`
-`type A := (x:P1, y:P2)`
-`var v: A; var t = x(A)   ;compiler error`
-
-### Sum types
-When defining a sum type, you specify different types and labels that it can accept. Label can be any valid identifier.
-`type Tree := Empty | int | (node: int, left: Tree, right: Tree)`
-`type OptionalInt := None | int`
-To match type, you can use match expression:
-```
-  result = match ( my_tree ) {
-    Empty -> 0
-    y:int -> 1
-    z:NormalTree -> ...
-  }
-```
-
-### Functions
-Function is a piece of code which accepts a tuple and can return a single value. So any feature of a tuple/types, is supported for input or output of a function. If you want to use a tuple instead of entries of a function, you must explode it first unless function input is the tuple itself.
-```
-func my_func1(x: int, y: int) -> float { return x/y }
-func my_func1(int) -> float { return $/3 } ;you can omit input name (like an unnamed tuple)
-func my_func(y:int, x:int) -> { 6+y+x } ;based on runtime arguments, one of implementations will be choosed
-func my_func(5, x:int) -> { 6+x } ;if input is a literal, any call which evaluates to that literal, will call this version
-func my_func(5:int) -> 9
-func my_func2(x: int, y: int = 11 ) -> float { return x/y }  ;you can set default value
-func my_func3(x: int, y: int) -> x/y  ;you can omit {} if its a single expression
-func my_func7() -> int { return 10;} ;fn has no input but () is mandatory
-func my_func7() -> 10  ;when function has just a return statement, there is a shortcut
-func my_func8() -> (int, int) { return (10,20) } ;function can return multiple values
-(x,y) = my_func8()
-
- //below function receives an array + a function and returns a function
-func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
-
-;We can enforce same type constraints, simply by using types. Like below. `mapTarget` is basically same as `any`.
-type mapTarget
-func map(arr: mapInput[], f: func(mapInput) -> mapTarget) -> mapTarget[]
-
-;these calls are all the same
-new_array = map(my_array, {$+1})
-```
-- If last input of function is a lambda, it can be put outside paren without a comma, when calling it. This useful to make code readable in cases we call `loop` or `map`.
-```
-new_array = map(my_array) {$+1} ;map will receive a tuple containing two elements: array and lambda
-new_array = map(my_array) (x:int) -> {x+1}
-```
-- Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability).
-- You can clone the data but have to do it manually using explode operator `@`. Note that assignment makes a clone for primitives, so you need cloning only for tuple, array and hash.
-`var x: Point = (@original_var)`
-`var a = [1,2,3]`
-`var b = [@a]`
-`var h = string => int = {"A"=>1, "B"=>2}`
-`var g = {@h}`
-- You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
-- `rest` is a normal array which is created by compiler for each call to `print` function.
-- Functions are not allowed to change (directly or indirectly) any of their inputs.
-
-```
-func f(x:int, y:float) -> (a: int, b: string)
-{
-  ;returning anon-tuple
-  return (a:1, b:9) ;or return (1, 9)
-}
-
-func read_customer(id:int) -> Nothing | CustomerData
-{
-  ;no customer was found
-  return Nothing
-  
-  ;some customer found
-  return c1
-}
-```
-- You can define a function which does not have a body. This is like an abstract method. So calling it will throw error.
-`func adder(x: int, y:int)->int`
-- Function definition specifies a contract which shows input tuple and output tuple. If input tuple is named, you must pass a set of input or tuple with the exact same name or an unnamed tuple. If input is unnamed, you can pass either unnamed or named tuple.
-```
-func f(x:int, y:int) -> ...
-func f(12, y:int) -> ... ; this will be invoked if first argument is 12
-func f(x:int, y:int=6) ... ;this will be invoked if secod argument is 6 or missing
-...
-var g = (x:10, y:12)
-f(g) ; this is not correct. f expects a tuple with x and y not a tuple with another tuple.
-f(1,9)
-f(x:1, y:9)
-f(@g)
-```
-
-### Variables
-Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
-Reasons for including type at the end:
-- Due to type inference, type is optional and better not to be first part of the definition.
-- More consistent with function declaration.
-- Even C has `auto x = int{4}` declaration
-- More readable and parseable
-
-```
-var x:int
-var t = 12
-var y : int = 19
-var t = 12  ;imply type from 12
-```
-A function which returns `T` is treated like a variable of type `T`. This can be used to have lazy evaluation. So if you send the function/lambda to another function, to the outside world, it is int variable. inside they carry a lambda.
-Cloning, passing, assigning to other vars does not change or evaluate the variable. But as soon as you have something like: `x=lazy_var+1` then function is being called.
-- As soon as you declare a variable it will have some value. Even if it is a tuple, it will have all fields set to default value.
-- You can define local variables using `var` keyword.
-`var x: int = 19; x= 11 ;ok - can re-assign`
-- You can define consts using functions: `func PI -> 3.14`
-- You can define local const variables using: `var x: float = 3.14 where { false }`
-
-## Templates
-- You can use empty types or types with minimum required features, to define a template.
-- You can specialize a generic functions and runtime will choose the most specific candidate.
-```
-type storable
-
-type Stack := storable[]
-func push(s: Stack, i: storable) ...
-func pop(s: Stack) -> storable ...
-```
-
-## Operators
-- Conditional: `and or not == != >= <=`
-- Bitwise: `~ & | ^ << >>`
-- Math: `+ - * % ++ -- **`
-The bitwise and math operators can be combined with `=` to do the calculation and assignment in one statement.
-- `=` operator: copies only for number data type, makes a variable refer to the same object as another variable for any other type. If you need a copy, you have to clone the variable. 
-- `x == y` will call `equals` functions is existing, by default compares field-by-field values. But you can o
-- You can not override operators. 
-
-
-## Special syntax
-- `$i` function inputs
-- `$` first input of the function (`$0`)
-- `$_` input place-holder
-- `:` tuple definition, array slice
-- `:=` type definition
-- `==>,<==` chaining
-- `=>` hash type and hash literals
-- `|` sum types
-- `.` access tuple fields
-- `@` explode
-- `//` sum type handler
-
-Kinds of types: `primitives`, `product`, `sum` and function.
-
-### Inheritance and polymorphism
-- Tuples can inherit from other tuples by composing that type with explode operator (`@`) and without a name. Inheritance is an explicit design decision so it should be explicitly stated by using explode operator. If you don't want to inherit but will have same fields, just defined those fields without using explode operator.
+### Exception Handling
+### Inheritance and Polymorphism
+- Tuples can inherit from other tuples by having their fields (Manually adding them or with explode operator (`@`). This is similar to "Duck typing" in other languages but with data. So A can be trated like B if for every fields in B, I can write `A.field`. This allows developer to write subtypes for types he doesn't have access to. 
 `type Shape := ();`
 `type Circle := (@Shape...)`
 `type Square := (@Shape...)`
@@ -517,83 +550,17 @@ You can combine explode operator with other data or type definition. `var g = (@
 - If a type does not have any fields (empty types), you don't need to use explode to inherit from it. It is optional. You just need to implement appropriate methods (If not, and those methods are defined empty for base type, a compiler error will be thrown). So if we have `func check(x: Alpha)` and `Alpha` type does not have any field, any other data type which implements functions written for `Alpha` can be used instead.
 - Empty types are like interfaces and are defined like `type Alpha`.
 
-### Array
-- Array literals are specified using brackets: `[1, 2, 3]`
-- `var x: int[] = [1, 2, 3];`
-- `var y: int[3]; y[0] = 11;`
-- `var t: int[n];`
-- `var x: int[2,2];`. 
-- `var pop: (string, int)[]` - dynamic array of tuples
-- `var pop: string[4]` - static array of string
-- We have slicing for arrays `x[start:step:end]` with support for negative index.
-- we have built-in lists using same notation as array.
-- every array can be extended by just adding elements to it (it will be a hybrid, array+list). 
-- if you want to define a list from beginning, dont specify size.
-- if you specify a size, it will be a mixed list (can be extended to become a list).
-`var x: int[3]`  hybrid list
-`var x: int[]`  pure list
-`var x: int[3] = [1,2,3]` hybrid
-`var x: int[] = [1,2,3]` pure
-- Slice can be left side of an assignment.
-
-### Hashtable
-Hashtables are sometimes called "associative arrays". So their syntax is similar to arrays:
-- `A => B` is used to define hash type. Left of `=>` is type of key and on the right side is type of value. If key or value have multiple elements, a tuple should be used.
-- `var hash1: string => int`
-- `hash1 = ['OH' => 12, 'CA' => 33]`
-- `hash1["B"] = 19`
-- `var big_hash: (int, int) => (string, int) = [ (1, 4) => ("A", 5) ]` 
-- `big_hash[3,4] = ("A", 5)`
-- If your code expects a hash which has `int` keys: `func f(x: int => any)...`
-
-### Validation
-When defining types or functions, you can define validation code/function. This is a block which will be executed/evaluated everytime variable gets a new value or function is executed. You can makes sure the data (or function intput/output) is in consistent and valid state.
-`var m: int where {validate_month};`
-`var m: int where validate_month . ;same as above`
-Expression will be called with `$` pointing to the new value. If the expression evaluates to false, a runtime exception will be thrown.
-`var x: int where {$>10} where {$<100} where { check_value($) };`
-`type x := (x: int; y:int) where { $.x < $.y };`
-- This can be done for all types and variables.
-- Example for functions:
-`func AA(x: int) where { pre_check } -> int where {output_constraints} { ... } where { post_check }`
-In post_check section, you can refer to the function output using `$` or `$0` notation.
-
-### Chaining
-You can use `==>` and `<==` operators to chain functions. `a ==> b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
-Examples:
+### Templates
+- You can use empty types or types with minimum required features, to define a template.
+- You can specialize a generic functions and runtime will choose the most specific candidate.
 ```
-get_evens(data) ==> sort(3, 4, $_) ==> save ==> reverse($_, 5);
-get_evens(data) ==> sort => save ==> reverse .   ;assuming sort, save and reverse have only one input
-5 ==> add2 ==> print  ;same as: print(add2(5))
-(1,2) ==> mul ==> print  ;same as: print(mul(1,2))
-(1,2) ==> mul($_, 5, $_) ==> print  ;same as: print(mul(1,5,2))
+type storable
+
+type Stack := storable[]
+func push(s: Stack, i: storable) ...
+func pop(s: Stack) -> storable ...
 ```
-- You can also use `<==` for a top-to-bottom chaining, but this is a syntax sugar and compiler will convert them to `==>`.
-`print <== add2 <== 5`
-
-### Lambda expression
-
-You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too, also  `func` keyword is not needed. This keyword is needed when defining a normal function.
-```
-var f1 = (x: int, y:int) -> int { return x+y } ;the most complete definition
-var rr = (x: int, y:int) -> { x + y }  ;return type can be inferred
-var rr = { x + y } ;WRONG! - input is not specified
-var f1 = (x: int, y:int) -> int { return x+y } ;the most complete definition
-
-type adder := (x: int, y:int) -> int
-var rr: adder = (a:int, b:int) -> { a + b } ;when you have a type, you can define new names for input
-var rr: adder = func { x + y }   ;when you have a type, you can also omit input
-var rr: adder = { x + y }      ;and also func keyword, but {} is mandatory
-var rr:adder = { $0 + 2 }        ;you can use $0 or $ alone instead of name of first input
-func test(x:int) -> plus2 { return { $0+ x} }
-var modifier = { $1 + $2 }  ;if input/output types can be deduced, you can eliminate them
-```
-- You can access lambda input using `$0, ...` notation too.
-- You can also use `$_` place holder to create a new lambda based on existing functions:
-`var y = calculate(4,a, $_)` is same as `var y = (x:int) -> calculate(4,a,x);`
-`var y = calculate(1, $_, $_)` is same as `var y = (x:int, y:int) -> calculate(4,x,y);`
-
-## Best practice
+### Best practice
 ### Naming
 - **Naming rules**: Advised but not mandatory: `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings.
 - You can suffix if and for and `x loop(10)` will run x 10 times.
@@ -615,7 +582,7 @@ This is a functrion, called `main` which returns `0` (very similar to C/C++ exce
 ### Graph class
 ### Expression parser
 
-## Core packages
+## Core package
 
 A set of core packages will be included in the language which provide basic and low-level functionality (This part may be written in C):
 
@@ -625,7 +592,7 @@ A set of core packages will be included in the language which provide basic and 
 - Garbage collector
 - Function level storage (to simulate static method-local variables in a safe mechanism)
 
-##Standard packages
+## Standard package
 
 There will be another set of packages built on top of core which provide common utilities. This will be much larger and more complex than core, so it will be independent of the core and language (This part will be written in Electron). Here is a list of some of classes in this package collection:
 
@@ -641,7 +608,7 @@ There will be another set of packages built on top of core which provide common 
 - Methods to help work with natively mutable data structures and algorithms (sort, tree, ...)
 - ...
 
-##Package Manager
+## Package Manager
 
 The package manager is a separate utility which helps you package, publish, install and deploy packages (Like `maven` or `dub`).
 Suppose someone downloads the source code for a project written in Electron which has some dependencies. How is he going to compile/run the project? There should be an easy and transparent for fetching dependencies at runtime and defining them at the time of development.
@@ -650,9 +617,3 @@ Perl has a `MakeFile.PL` where you specify metadata about your package, requirem
 Python uses same approach with a `setup.py` file containing similar data like Perl.
 Java without maven has a packaging but not a dependency management system. For dep, you create a `pom.xml` file and describe requirements + their version. 
 C# has dll method which is contains byte-code of the source package. DLL has a version metadata but no dep management. For dep it has NuGet.
-
-##Misc
-
-- Compiler will decide which methods should be inlined.
-- Rule of locality: You should write a piece of code at the nearest location to where it applies (e.g. constraints). 
-
