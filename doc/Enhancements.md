@@ -3686,5 +3686,6 @@ For example:
 `func add(x:int, y:10)`
 calling `add(9, 10)` will result in two candidates -> runtime error.
 if input is unnamed then ok. If it is named, we have an extra condition: input names must match.
+and `(x:10, y:20)` will match `(x:int)` which is foundation of subtyping.
 
 ? - can we get rid of `any`?
