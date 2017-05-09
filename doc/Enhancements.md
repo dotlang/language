@@ -3855,7 +3855,7 @@ func loop(x: int, lambda) -> {
 }
 ```
 
-? - What if there is conflicts because of type constraints when calling a function?
+Y - What if there is conflicts because of type constraints when calling a function?
 `func add(x: int where { $>=0 })...`
 `func add(x: int where { $<0})...`
 What happens if I call `add(10)`? Compiler/runtime error or just call appropriate function?
@@ -3863,4 +3863,55 @@ If we want to evaluate all those checks, they might have some unwanted side effe
 The correct behavior is to check them too.
 But maybe we should just remove them and only allow `where` for function pre and post condition.
 Currently `where` is used for type constraint and making local variables constant.
+Maybe we can even remove it altogether. The main benefit was for templates which is achieve using types.
+we can say a call will make to `add` which has an input matching with arg. so `add(10)` will result in error.
+Because `10` is not of type `int where { $>0}` or `<0`.
+How do we know if arg is of same type we expect on the other side?
+`var g: int where { $>10}`
+`func add(x:int where { $>10})...`
+`add(g)` - how do we know if g and x have same type?
+There is no easy way in general case. Of course if notation and symbols are different they are not the same.
+But what about above cast?
+```
+type A := int where { $>0}
+type B := int where {$>0}
+```
+Practically these are two different types. But compiler can detect that they are the same (because they have the same AST).
+One option: Force use functions in where clause. It will be more readable and checking for similarity will be easier.
+Of course developer can manually cast type before calling function.
+So in this case: `type X := Y where Z where Q where P`
+`Z, Q, P` are three functions.
+But you can write your custom code if you are defining a type. This applies to function definition.
+`type X := Y where { $>0}`
+The part for where does not need to be a lambda. It can be an expression.
+Like `if`.
+`type Age := int where ($>0)=10`
+But when you are writing a function signature, it's better to use ready built types or use ready functions instead of writing custom pieces of code.
+`func add(x:int where ($>0))`
+But in what condition this function gets called?
+This is becoming too confusing.
+shall we remove `where` altogether?
+applications:
+- pre-condition
+- post-condition
+- constraint
+the first two cases are not really necessary.
+The last one?
+a constraint is like an object (data + validation logic).
+Or maybe just like `dispose` we should have a `validate` function.
+In Haskell this is called "smart constructor".
+So let's add this rule: Constraints can only be used when defining a type. They cannot be used in a function or lambda definition.
+Also we remove pre and post conditions.
+
+N - using `type(x)` to cast will not match with naming.
+Better. It will make the code more readable.
+
+Y - Maybe we should replace `dispose` with something like `defer`.
+Because `dispose` can be hidden away and makes code reading hard.
+In dispose we may need to change the structure (e.g. update a flag).
+I think `defer` is more flexible. We can still have `dispose` functions which are called in `defer`.
+
+Y - State that to cast types you can use `TypeName(var)` notation.
+This works on compatible types (long, int, ...)
+For example to cast from int to `int where {$>10}`
 
