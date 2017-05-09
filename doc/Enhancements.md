@@ -2,45 +2,45 @@
 
 Read [Part1] (https://github.com/mm-binary/electron-lang/blob/master/backup/EEP.v1.md).
 
-\* - how can we mock a function for testing?
-`mock func1, func (x: int) -> string { return "AA" };`
-at least, this can easily be done with built-in functions.
-so lets not pollute syntax with it.
-
-\* - Some shortcuts can be very useful like:
-`x = y if defined y` becomes `x = y if defined;`
-
-\* - define something like seq in F# to have a generator function to be used in loops.
-`for (x: seq(1..10))`
-
-\* - In reference, try to just cover important high level topics and inside them explain details and edge cases. For example explain `enum` in Union type section.
-
-\* - If we really don't want to end statements with `;` then use another notation for comment.
-
-\* - Add regex operators for search and replace.
-
-\* - We can enhance import with other file systems like http:
-`import /a/b` import from local file system
-`import file/a/b` import from local file system
-`import http/github.com/adsad/dsada` import from github
-
-\* - how can we mock a method? in a general way. so it won't be limited to testing. 
-we can easily define a lambda to mock a method. but how to attach it to that method?
-there is no manager, parent to accept this lambda.
-proposal: built-in method: `mock('myMethod', <<lambda>>);`
-to do mocking in the life-time of the current function. 
-
-\* - For core - function to return hash representing a struct, used for serialization, and what about deser?
-`string[object] result = serialize(myObj);`
-
 \* - Runtime - use concept of c++ smart ptr to eliminate GC
 
 \* - Add native parallelism and communication tools.
 
 \* - Introduce caching of function output (if it is not void)
+Maybe this can be done automatically by runtime.
 
-\* - Other than manual clone, provide a `clone` in the core to help developers.
+N - If we really don't want to end statements with `;` then use another notation for comment.
 
+Y - In reference, try to just cover important high level topics and inside them explain details and edge cases. For example explain `enum` in Union type section.
+
+Y - We can enhance import with other file systems like http:
+`import /a/b` import from local file system
+`import file/a/b` import from local file system
+`import http/github.com/adsad/dsada` import from github
+
+N - how can we mock a method? in a general way. so it won't be limited to testing. 
+we can easily define a lambda to mock a method. but how to attach it to that method?
+there is no manager, parent to accept this lambda.
+proposal: built-in method: `mock('myMethod', <<lambda>>);`
+to do mocking in the life-time of the current function. 
+This should only be used for testing.
+Y - Add regex operators for search and replace.
+
+N - define something like seq in F# to have a generator function to be used in loops.
+`for (x: seq(1..10))`
+
+Y - how can we mock a function for testing?
+`mock func1, func (x: int) -> string { return "AA" };`
+at least, this can easily be done with built-in functions.
+so lets not pollute syntax with it.
+
+N - Some shortcuts can be very useful like:
+`x = y if defined y` becomes `x = y if defined;`
+
+N - For core - function to return hash representing a struct, used for serialization, and what about deser?
+`string[object] result = serialize(myObj);`
+
+N - Other than manual clone, provide a `clone` in the core to help developers.
 
 Y - decorators - another try
 lets define some native, built-in functions. 
@@ -3663,9 +3663,9 @@ N - Const?
 
 Y - declare that map can work on anything as long as they have support for `loop`. So its not only for arrays.
 
-? - Change comment starter?
+N - can we get rid of `any`? It's not anything special. Just a definition in core.
 
-? - clarify about optional values and literal inputs.
+Y - clarify about optional values and literal inputs.
 `func add(x:int, y:int, z:int) ...`
 `func add(x:int=15, y:int, z:int) ...`
 `func add(x:int, y:int, z:int=9)...`
@@ -3688,7 +3688,169 @@ calling `add(9, 10)` will result in two candidates -> runtime error.
 if input is unnamed then ok. If it is named, we have an extra condition: input names must match.
 and `(x:10, y:20)` will match `(x:int)` which is foundation of subtyping.
 
-? - can we get rid of `any`?
+Y - the exception to separate last arg if it is lambda, can we make it more general?
+For example, you can write tuple `(a,b,c)` as `a b c` if ????
+`var x: Point = 1 2`
+Of course this is acceptable only if there is no conflict.
+`func add(x:int, y:int)`
+`add 5 6`
+Like Perl function call.
+But this will make code "un-readable".
+`map(my_array, { $ + 1 })`
+`loop({x>0}, { x++})` this is not expressive and is not readable.
+`loop {x>0} {x++}`
+We can add a compiler trick here:
+Types of loop: int, iteratable, lambda - then body is a lambda.
+`loop(5) { lambda}`
+`loop(array) { lambda }`
+`loop({lambda}) {lamda}`
+To make third case cleaner we can add compiler syntax sugar `while`:
+`while (X) { lambda }` means `loop({X}) { lambda }`
+But I don't like to add new words to remember.
+`loop({x<100}, {x++})`
+```
+match ( { cond } ) {
+true -> { lambda },
+false -> { return }
+}
+```
+But how to signal a `repeat`?
+`loop` cannot be a normal function. It must be native and built-in. But it can be overriden for specific types and the override code can use the internal one.
+Maybe we should stop supporting loop with condition. And make `loop` like `if/else` a compiler syntax sugar which maps to match. But how to signal a repeat?
+Another solution: Like Haskell, use recursive functions and available map/fold/reduce/... functions.
+`loop(5) f()` -> `(x:int) -> { if ( x == 0 ) return; f(); $$(x-1)}`
+`for(int x=0;x<100;x++)` 
+we have 3 types of loops: counted `loop(10)`, predicated `while(cond) f()` and iteration `for(x: array) ...`
+The third one can be easily done via map and other functions:
+`for(x:array) f()` -> `map(x) f()`
+the first one is a special case of the second one:
+`loop(10)` -> `while(x<10) { f();x++; }`
+The second one is the main one.
+`while(cond) f()`
+maybe we can use match or add cmatch for continuous match.
+`match (tuple ) { a -> code, b-> code }`
+we can have `loop` keyword to repeat a block infinitely. then finish the loop using break.
+`loop match(tuple) { ... break ... }`
+its not readable.
+infinite loop: a function which calls itself.
+`match ( true ) { true -> code }` this is infinite loop if it is continuous.
+`loop ( pred ) { 
+  true -> { f() },
+  false -> break
+}`
+`loop match ( pred ) { 
+  true -> { f() },
+  false -> break
+}`
+Why not `loop` primitive which is not based on any other thing?
+`loop(count) ...`
+`loop(pred) ...`
+`loop(x:array) ...`
+`loop(t: hash) ...`
+what if we want to have a custom iterator over an object? 
+we need loop to be a function. but how are we going to implement it? one way is to have just a `forever`-like keyword and exceptions. continue -> return, break -> throw exception.
+```
+func loop(x: int, lambda) -> { 
+  var i: int = x
+  match { 
+    lambda
+    x--
+    if ( x == 0 ) return exception
+  } {
+    exception -> return,
+    any -> repeat ;or we can say, if there is no match, it will be executed again
+  }
+}
+func loop(pred: lambda, body: lambda) -> {
+  match (
+  x = match (pred) {
+    false -> false,
+    true -> body, true
+  }
+  ) {
+    false -> return
+  }
+}
+```
+- maybe we should make match syntax more readable
+- if condition is not satisfied then repeat is a bit implicit and not readable. we should add a keyword for that.
+so inside match we can have `return` which returns from current function.
+`repeat` to re-evaluate match.
+```
+func loop(x: int, lambda) -> { 
+  var i: int = x
+  match (x)
+  {
+    0 -> return,
+    any --> { x--; body; } ;maybe we can say --> means run and repeat
+  }
+}
 
-? - the exception to separate last arg if it is lambda, can we make it more general?
-For example, you can write tuple (a,b,c) as `a b c` if ????
+func loop(pred: lambda, body: lambda) -> {
+  match (pred) 
+  {
+    true --> body
+  }
+}
+
+func loop(a: array, body: lambda) -> {
+  var iterator = getIterator(a)
+  match (has_next(iterator)) 
+  {
+    true --> body(get(iterator))
+  }
+}
+```
+
+Y - How can we make match a real expression?
+How can we signal from inside the body, a vaue? with return?
+Then how to really return from parent method?
+```
+  result = match ( x ) 
+  {
+    1 -> { body },
+    2 -> { body },
+  }
+  ;You can shorten this definition in one line:
+  result = match (my_tree) 5 -> 11, 6-> 12, Empty -> 0, any -> -1
+```
+break -> return inside case body
+continue -> return inside case body but with a repeat
+result of a match expression is the data in the last return executed.
+
+N - can we use `-->` notation for function definition too? NO! it does not make any sense.
+
+Y - having multiple statements in a single line can make code readable sometimes.
+so we need something like `;` but gen. if we always need it then we should need it for blocks too.
+can we use `==>`?
+`doThis ==> doThat`
+This should be possible.
+
+N - Change comment starter? 
+We don't need semicolon to separate statements. We have chain operator.
+
+Y - can we have a more beautiful notation for chaining?
+`x ==> f`
+a two character notation.
+`get_evens(data) >> sort(3, 4, $_) >> save >> reverse($_, 5)`
+We can also use bash pipe: `|` but this is left to right chain. 
+we can also have an operator for "chain if successfull"
+
+Y - How can we put multiple statements in one line?
+chaining is not good because its not designed for this.
+`|`?
+`&`?
+`x++ & body`
+
+Y - result of a match is the only return statement that we have or `none`
+What if it is a loop?
+```
+func loop(x: int, lambda) -> { 
+  var i: int = x
+  return match (x)
+  {
+    0 -> return,
+    any --> { x-- & body } 
+  }
+}
+```
