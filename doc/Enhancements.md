@@ -3854,3 +3854,13 @@ func loop(x: int, lambda) -> {
   }
 }
 ```
+
+? - What if there is conflicts because of type constraints when calling a function?
+`func add(x: int where { $>=0 })...`
+`func add(x: int where { $<0})...`
+What happens if I call `add(10)`? Compiler/runtime error or just call appropriate function?
+If we want to evaluate all those checks, they might have some unwanted side effects.
+The correct behavior is to check them too.
+But maybe we should just remove them and only allow `where` for function pre and post condition.
+Currently `where` is used for type constraint and making local variables constant.
+
