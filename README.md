@@ -13,7 +13,7 @@ May 3, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: ??? ?? ???? - Re-organize and complete the document
+- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -77,6 +77,7 @@ Function section is used to define function bodies.
 - **Adressing**: Functions are called using `function_name(input1, input2, input3)` notation. Fields of a tuple are addressed using `tuple_name.field_name` notation. Modules are addressed using `/` notation (e.g. `/code/st/net/create_socket`).
 - Each statement must be in a separate line and must not end with semicolon.
 Source file contains a number of definitions for types and functions.
+- You can put multiple statements in the same line using `&`: `x++ & run & process`
 
 *Notes:*
 - If a name starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
@@ -104,10 +105,11 @@ There are only three primitive data types: `number` and `string`. All others are
 - **Integer data types**: `char`, `short`, `int`, `long`
 - **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
 - **Floating point data types**: `float`, `double`
-- **Others**: `bool`, `void`
+- **Others**: `bool`, `none`, `any`
 
 You can use core functions to get type identifier of a variable: `type` or `hashKeyType` or `hashValueType`.
-`bool` and `void` are special types with only two and one possible values. `void` is used when a function returns nothing, so compile will change `return` to `return void`.
+`bool` and `none` are special types with only two and one possible values. `none` is used when a function returns nothing, so compile will change `return` to `return none`.
+Some types are pre-defined in core but are not part of the syntax: `none`, `any`, `bool`.
 
 ### Array
 - Array literals are specified using brackets: `[1, 2, 3]`
@@ -152,7 +154,7 @@ var t : (int, string) = (1, "A")  ;you can have tuples with unnamed fields. They
 var number_one = t.0
 t.1 = "G"
 ```
-- Function input and output can be any type. Even a tuple or a tuple with unnamed fields.
+- Function output can be any type. Even a tuple or a tuple with unnamed fields.
 - Fields that starts with underscore are considered internal state of the tuple and better not to be used outside the module that defines the type. 
 - You can define a tuple with unnamed fields: `type Point := (int, int)` But fields of a tuple must be all either named or unnamed. You cannot mix them.
 ###Tuple (Product types)
@@ -193,6 +195,11 @@ To match type, you can use match expression:
   }
 ```
 
+You can define an enum using sum types.
+```
+type DoW := SAT | SUN | ...
+```
+
 ### Custom Types
 You can use `type` to define new type based on an existing type. 
 You can also use it to define a type alias.
@@ -210,10 +217,6 @@ type mypt := point;
 var xx: mypt = (1, 2);
 ```
 
-You can define an enum using sum types.
-```
-type DoW := SAT | SUN | ...
-```
 
 You can define functions based on `int` and `X` where `type X := int` and they will be different functions.
 
@@ -278,12 +281,11 @@ new_array = map(my_array) (x:int) -> {x+1}
 `var x: Point = (@original_var)`
 `var a = [1,2,3]`
 `var b = [@a]`
-`var h = string => int = {"A"=>1, "B"=>2}`
-`var g = {@h}`
+`var h = string => int = ["A"=>1, "B"=>2]`
+`var g = [@h]`
 - You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
 - `rest` is a normal array which is created by compiler for each call to `print` function.
 - Functions are not allowed to change (directly or indirectly) any of their inputs.
-
 ```
 func f(x:int, y:float) -> (a: int, b: string)
 {
@@ -315,6 +317,31 @@ f(x:1, y:9)
 f(@g)
 ```
 
+### Matching
+`func add(x:int, y:int, z:int) ...`
+`func add(x:int=15, y:int, z:int) ...`
+`func add(x:int, y:int, z:int=9)...`
+call:
+`add(x,y)` will call 3rd version
+`add(15, y)` will call 3rd version
+`add(15, y, z)` where z is not 9, will call 2nd version
+in function definition giving value to a parameters, means it should be exactly equal to that value or it should be missing.
+order of match: for (a,b,c) tuple when calling function:
+Functions with that name which have 3 or more inputs will be tested.
+- Functions with exactly 3 inputs have higher priorirty than those with 3+ inputs with optional values.
+- Functions with higher input value equal to values of a, b, c have higher priority.
+So, first search for funcciont with 3 inputs then 4 input with last one optional, then 5 inputs ...
+In each case, first check functions that have all 3 pre-set, then 2 pre-set then 1-preset then no pre-set.
+If in each step, two cancidates are found, give error.
+For example:
+`func add(x:int=9, y:int)`
+`func add(x:int, y:10)`
+calling `add(9, 10)` will result in two candidates -> runtime error.
+if input is unnamed then ok. If it is named, we have an extra condition: input names must match.
+and `(a:15, x:10, y:20)` will match `(x:int)` which is foundation of subtyping.
+
+Each function call will be dispatched to the implementation with highest priority according to matching rules. 
+
 ### Lambda expression
 
 You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too, also  `func` keyword is not needed. This keyword is needed when defining a normal function.
@@ -339,12 +366,14 @@ var modifier = { $1 + $2 }  ;if input/output types can be deduced, you can elimi
 
 ## Operators
 - Conditional: `and or not == != >= <=`
-- Bitwise: `~ & | ^ << >>`
 - Math: `+ - * % ++ -- **`
 The bitwise and math operators can be combined with `=` to do the calculation and assignment in one statement.
 - `=` operator: copies only for number data type, makes a variable refer to the same object as another variable for any other type. If you need a copy, you have to clone the variable. 
 - `x == y` will call `equals` functions is existing, by default compares field-by-field values. But you can o
 - You can not override operators. 
+- We don't have operators for bitwise operations. They are covered in core. 
+- An expression which is combination of multiple statements with `&` will result in evaluation of the last one.
+`var g = x=6 & y=7` will make g equal to 7.
 
 ### Special Syntax
 - `$i` function inputs
@@ -352,25 +381,27 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `$_` input place-holder
 - `:` tuple definition, array slice
 - `:=` type definition
-- `==>,<==` chaining
+- `>>,<<` chaining
 - `=>` hash type and hash literals
 - `|` sum types
 - `.` access tuple fields
 - `@` explode
 - `//` sum type handler
+- `->>` repeat match
+- `&` continue execution
 
 ### Chaining
-You can use `==>` and `<==` operators to chain functions. `a ==> b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
+You can use `>>` and `<<` operators to chain functions. `a >> b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
 Examples:
 ```
-get_evens(data) ==> sort(3, 4, $_) ==> save ==> reverse($_, 5);
-get_evens(data) ==> sort => save ==> reverse .   ;assuming sort, save and reverse have only one input
-5 ==> add2 ==> print  ;same as: print(add2(5))
-(1,2) ==> mul ==> print  ;same as: print(mul(1,2))
-(1,2) ==> mul($_, 5, $_) ==> print  ;same as: print(mul(1,5,2))
+get_evens(data) >> sort(3, 4, $_) ==> save >> reverse($_, 5);
+get_evens(data) >> sort >> save >> reverse .   ;assuming sort, save and reverse have only one input
+5 >> add2 >> print  ;same as: print(add2(5))
+(1,2) >> mul >> print  ;same as: print(mul(1,2))
+(1,2) >> mul($_, 5, $_) >> print  ;same as: print(mul(1,5,2))
 ```
-- You can also use `<==` for a top-to-bottom chaining, but this is a syntax sugar and compiler will convert them to `==>`.
-`print <== add2 <== 5`
+- You can also use `<<` for a top-to-bottom chaining, but this is a syntax sugar and compiler will convert them to `>>`.
+`print << add2 << 5`
 
 ## Keywords
 
@@ -380,14 +411,15 @@ Electron has a small set of reserved keywords:
 
 ###match
 ```
-MatchExp = 'match' '(' data ')' '{' (CaseStmt)+ '}'
+MatchExp = 'match' '(' tuple ')' '{' (CaseStmt)+ '}'
 ```
 - `match` is an expression.
 - First case which is matching will be executed and others will be skipped.
 - Case match can be based on value or type (used for sum types).
-- Each match case is a similar to a lambda. The first case that can accept the value inside match will be executed.
-- A `return` inside body of a case, will return from parent function.
+- Each match case is a lambda without parentheses for input. The first case that can accept the value inside match will be executed.
+- A case which has `->>` will re-trigger match execution after it is finished. In this case, result of match will be the output of last execution.
 - Mechanism of match is the same as a function call is dispatched to an implementation. Each candidate will be examind against match input for type and values. The first one that can be matched will be invoked.
+- Result of a match expression is the data in the last return executed (or `none` if none).
 ```
   result = match ( my_tree ) 
   {
@@ -460,25 +492,43 @@ If there is no `x =`, then `B` will be evaulated if result of `A` is not void.
 You can chain `//`: `x = A // B // C` if A is not evaluated to the type we need, B will be evaluated and etc.
 
 ###loop, break, continue
-`loop` is a function defined in core:
+`loop` is a function defined in core. It uses `match` with `->>` to repeat evaluation of a condition.
 `func loop(cond: int | any[] | anyHash | func(any)->bool, body: func(x:any)->loopOutput)->loopOutput`
 `loop(5) { print('hello') }`
 `loop(arr1) { print($) }`
 `loop(arr1) (x: int) -> { print(x) }`
 `break` and `continue` are handled as exceptions inside the `loop` functions.
+- We have 3 types of loops: numeric (repeat `n` times), predicated (repeat while true) or iteartion.
+- For iteration loop, you can also use `map` and other similar functions.
+```
+func loop(x: int, lambda) -> { 
+  var i: int = x
+  match (x)
+  {
+    0 -> return,
+    any --> { x-- & body } 
+  }
+}
 
+func loop(pred: lambda, body: lambda) -> {
+  match (pred) 
+  {
+    true ->> body
+  }
+}
+
+func loop(a: array, body: lambda) -> {
+  var iterator = getIterator(a)
+  match (has_next(iterator)) 
+  {
+    true --> body(get(iterator))
+  }
+}
 ```
-LoopStms = 'loop' ( Condition ) Block
-LoopStms = 'loop' (number | variable) Block
-LoopStms = 'loop' (var : Identifier) Block
-BreakStmt = 'break' [Number] ';'
-ContinueStmt = 'continue' [Number] ';'
-```
-- `loop` statement is used for running a block of code multiple times.
-- First case: Run the block while the condition is met.
-- Second case: Loop a specific number of times
-- Third case: Iterate over elements of an array or keys of a hash.
- 
+- To break a loop execution from normal case body -> return statement
+- To break a loop execution from repeating case body -> return exception
+- To continue a loop -> return inside case body which is repeating
+
  ###import
 
 You can import a source code file using below statement. Note that import, will add symbols (functions and types) inside that source code to the current symbol table:
@@ -499,6 +549,10 @@ Note that you must have imported the module before.
 Also you can call a function or refer to a type with fully qualified name:
 `var x: int = /core/pack2/myFunction(10, 20);`
 `var t: /core/pack2/myStruct;`
+- By default, `import` works on local file system but you can work on other types too:
+`import /a/b` import from local file system
+`import file/a/b` import from local file system
+`import http/github.com/adsad/dsada` import from github
 
 ### native
 Denotes function is implemented by runtime or external libraries.
@@ -607,6 +661,9 @@ A set of core packages will be included in the language which provide basic and 
 - Data conversion
 - Garbage collector
 - Function level storage (to simulate static method-local variables in a safe mechanism)
+- Serialization and Deserialization
+- Mocking a function
+- RegEx operators and functions
 
 ## Standard package
 
