@@ -13,7 +13,7 @@ May 3, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document
+- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -97,7 +97,7 @@ Source file contains a number of definitions for types and functions.
 8. **Validation**: For any custom type, function input and output: `type Age := int where { $ > 0 }`
 9. **Immutability**: Only local variables are mutable. Everything else is immutable.
 10. **Assignment**: Primitives are assigned by value, other types are assigned by reference.
-All other features (loop and considtionals, exception handling, pre and post-condition, inheritance and subtyping, polymorphism, generics ...) are achieved using above constructs.
+All other features (loop and considtionals, exception handling, validation, inheritance and subtyping, polymorphism, generics ...) are achieved using above constructs.
 
 ## Type System
 ### Primitives
@@ -216,12 +216,11 @@ var pt: point = (1, 10);
 type mypt := point;
 var xx: mypt = (1, 2);
 ```
-
-
 You can define functions based on `int` and `X` where `type X := int` and they will be different functions.
 
 Note that when using type for alias to a function, you have to specify input names too.
 `type comparer := func (x:int, y:int) -> bool;`
+If types are compatible (e.g. long and int) you can cast them using: `TypeName(x)` notation.
 
 ### Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
@@ -230,7 +229,6 @@ Reasons for including type at the end:
 - More consistent with function declaration.
 - Even C has `auto x = int{4}` declaration
 - More readable and parseable
-
 ```
 var x:int
 var t = 12
@@ -341,10 +339,7 @@ if input is unnamed then ok. If it is named, we have an extra condition: input n
 and `(a:15, x:10, y:20)` will match `(x:int)` which is foundation of subtyping.
 
 Each function call will be dispatched to the implementation with highest priority according to matching rules. 
-Note that when matching, constraints on inputs are not checked. They will only be checked when the function is being called.
-`func add(x: int where { $>0 })...`
-`func add(x: int where { $<0})...`
-???
+- If function input is not constrained but the argument is, it won't cause a problem. But the other way around, will need casting.
 
 ### Lambda expression
 
@@ -484,7 +479,7 @@ var h: int = func1() // return -1
 ;accept and expect the exception
 var g: int|exception = func1()   ;this is valid
 ```
-- There is no `finally` in Electron. Each variable which is not part of return value of the function, will be cleaned-up upon function exit (even if there is an exception). This is done by calling `dispose` function on that type. You can also manually call this function in case you need to cleanup the resource earlier. 
+- You can use `defer BLOCK` to tell the runtime to run a block of code after exiting from the function. You can use `$` to refer to function output in that block.
 - `//` (Type enforcement operator) is used in conjunction with sum types to act as a shortcut for `match`. In `x = A // B` if A's type does not match with what we expect (type of `x`) then B will be evaluated to get a result of type of `x`. Inside `B` we can refer to result of `A` using `$` notation.
 - `x = A // B` is shortcut for (T is type of x):
 ```
@@ -572,8 +567,8 @@ Expression will be called with `$` pointing to the new value. If the expression 
 `type x := (x: int, y:int) where { $.x < $.y };`
 - This can be done for all types and variables.
 - Example for functions:
-`func AA(x: int) where { pre_check } -> int where {output_constraints} { ... } where { post_check }`
-In post_check section, you can refer to the function output using `$` or `$0` notation.
+`func AA(x: int) -> int { ... }`
+- You are not allowed to use `where` in function or lambda definition. It's only allowed in variable or type declaration.
 
 ### Exception Handling
 ### Inheritance and Polymorphism
