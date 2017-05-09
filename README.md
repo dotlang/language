@@ -341,6 +341,10 @@ if input is unnamed then ok. If it is named, we have an extra condition: input n
 and `(a:15, x:10, y:20)` will match `(x:int)` which is foundation of subtyping.
 
 Each function call will be dispatched to the implementation with highest priority according to matching rules. 
+Note that when matching, constraints on inputs are not checked. They will only be checked when the function is being called.
+`func add(x: int where { $>0 })...`
+`func add(x: int where { $<0})...`
+???
 
 ### Lambda expression
 
@@ -506,7 +510,7 @@ func loop(x: int, lambda) -> {
   match (x)
   {
     0 -> return,
-    any --> { x-- & body } 
+    any ->> { x-- & body } 
   }
 }
 
@@ -521,7 +525,7 @@ func loop(a: array, body: lambda) -> {
   var iterator = getIterator(a)
   match (has_next(iterator)) 
   {
-    true --> body(get(iterator))
+    true ->> body(get(iterator))
   }
 }
 ```
@@ -565,7 +569,7 @@ When defining types or functions, you can define validation code/function. This 
 `var m: int where validate_month . ;same as above`
 Expression will be called with `$` pointing to the new value. If the expression evaluates to false, a runtime exception will be thrown.
 `var x: int where {$>10} where {$<100} where { check_value($) };`
-`type x := (x: int; y:int) where { $.x < $.y };`
+`type x := (x: int, y:int) where { $.x < $.y };`
 - This can be done for all types and variables.
 - Example for functions:
 `func AA(x: int) where { pre_check } -> int where {output_constraints} { ... } where { post_check }`
