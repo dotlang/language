@@ -13,7 +13,7 @@ May 3, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword
+- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -94,7 +94,7 @@ Source file contains a number of definitions for types and functions.
 5. **Function**: `func functionName (*INPUT_TUPLE*) -> *OUTPUT_TYPE* { *BODY* }`
 6. **Variable**: `var location: Point = (x:10, y:20)`
 7. **Import**: Is used to import types and functions defined in another file: `import /code/std/Queue`
-8. **Validation**: For any custom type, function input and output: `type Age := int where { $ > 0 }`
+8. **Validation**: For any custom type: `type Age := int where { $ > 0 }`
 9. **Immutability**: Only local variables are mutable. Everything else is immutable.
 10. **Assignment**: Primitives are assigned by value, other types are assigned by reference.
 All other features (loop and considtionals, exception handling, validation, inheritance and subtyping, polymorphism, generics ...) are achieved using above constructs.
@@ -146,10 +146,11 @@ You use this statement to define a new product data structure:
 ```
 type Car := (
   color: int, 
-  age: int = 19,
+  age: int = 19, ;setting default value
 )
 var x: Car = ()   ;init x with all default values based on definition of Car
-var y: Car = (age:11) ;customize value
+var y: Car = (age=11) ;customize value
+var z = Car(age=121) ;when we want to write a literal we can also specify its type with casting notation
 var t : (int, string) = (1, "A")  ;you can have tuples with unnamed fields. They can be accessed like an array.
 var number_one = t.0
 t.1 = "G"
@@ -168,13 +169,13 @@ type D := (int=9, string="G") ; unnamed fields. You can access them like an arra
 
 To create a new tuple instance you just set it's type and assign it to an appropriate tuple:
 ```
-var test: A = (x: 10)
+var test: A = (x= 10)
 var test2: A = () ;no init 
 var test3: D = (1,"A")
 var test4: C=(9)
 test3[0]=9
 test3[1]="A"
-var t = (x:6, y:5) ;anonymous and untyped tuple
+var t = (x=6, y=5) ;anonymous and untyped tuple
 ```
 - Note that if there is a multiple tuple inheritance which results in function ambiguity, there will be a compiler error: 
 `func x(p: P1)->int ...`
@@ -212,7 +213,7 @@ var a: x  ;=var a: int;
 To use a type:
 ```
 var pt: point = (1, 10);
-//you can alias it again
+;you can alias it again
 type mypt := point;
 var xx: mypt = (1, 2);
 ```
@@ -220,7 +221,8 @@ You can define functions based on `int` and `X` where `type X := int` and they w
 
 Note that when using type for alias to a function, you have to specify input names too.
 `type comparer := func (x:int, y:int) -> bool;`
-If types are compatible (e.g. long and int) you can cast them using: `TypeName(x)` notation.
+If types are compatible (e.g. long and int) you can cast them using: `TypeName(x)` notation. Note that this notation can also be used to specify type of a literal when we can't or don't want to do it using normal notation:
+For example in return statement `return Circle(radius:1)`.
 
 ### Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
@@ -231,11 +233,10 @@ Reasons for including type at the end:
 - More readable and parseable
 ```
 var x:int
-var t = 12
 var y : int = 19
 var t = 12  ;imply type from 12
 ```
-A function which returns `T` is treated like a variable of type `T`. This can be used to have lazy evaluation. So if you send the function/lambda to another function, to the outside world, it is int variable. inside they carry a lambda.
+A function which has no input and returns `T` is treated like a variable of type `T`. This can be used to have lazy evaluation. So if you send the function/lambda to another function, to the outside world, it is int variable. inside they carry a lambda.
 Cloning, passing, assigning to other vars does not change or evaluate the variable. But as soon as you have something like: `x=lazy_var+1` then function is being called.
 - As soon as you declare a variable it will have some value. Even if it is a tuple, it will have all fields set to default value.
 - You can define local variables using `var` keyword.
@@ -258,7 +259,7 @@ func my_func7() -> 10  ;when function has just a return statement, there is a sh
 func my_func8() -> (int, int) { return (10,20) } ;function can return multiple values
 (x,y) = my_func8()
 
- //below function receives an array + a function and returns a function
+ ;below function receives an array + a function and returns a function
 func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
 
 ;We can enforce same type constraints, simply by using types. Like below. `mapTarget` is basically same as `any`.
@@ -277,6 +278,7 @@ new_array = map(my_array) (x:int) -> {x+1}
 - Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability).
 - You can clone the data but have to do it manually using explode operator `@`. Note that assignment makes a clone for primitives, so you need cloning only for tuple, array and hash.
 `var x: Point = (@original_var)`
+`var x: Point = (@original_var, x=19)` clone and modify in-place
 `var a = [1,2,3]`
 `var b = [@a]`
 `var h = string => int = ["A"=>1, "B"=>2]`
@@ -288,7 +290,7 @@ new_array = map(my_array) (x:int) -> {x+1}
 func f(x:int, y:float) -> (a: int, b: string)
 {
   ;returning anon-tuple
-  return (a:1, b:9) ;or return (1, 9)
+  return (a=1, b=9) ;or return (1, 9)
 }
 
 func read_customer(id:int) -> Nothing | CustomerData
@@ -302,16 +304,17 @@ func read_customer(id:int) -> Nothing | CustomerData
 ```
 - You can define a function which does not have a body. This is like an abstract method. So calling it will throw error.
 `func adder(x: int, y:int)->int`
+- Normally you define general functions as abstract, and speciaize it for specific types in other functions with the same signature.
 - Function definition specifies a contract which shows input tuple and output tuple. If input tuple is named, you must pass a set of input or tuple with the exact same name or an unnamed tuple. If input is unnamed, you can pass either unnamed or named tuple.
 ```
 func f(x:int, y:int) -> ...
 func f(12, y:int) -> ... ; this will be invoked if first argument is 12
 func f(x:int, y:int=6) ... ;this will be invoked if secod argument is 6 or missing
 ...
-var g = (x:10, y:12)
+var g = (x=10, y=12)
 f(g) ; this is not correct. f expects a tuple with x and y not a tuple with another tuple.
 f(1,9)
-f(x:1, y:9)
+f(x=1, y=9)
 f(@g)
 ```
 
@@ -336,7 +339,12 @@ For example:
 `func add(x:int, y:10)`
 calling `add(9, 10)` will result in two candidates -> runtime error.
 if input is unnamed then ok. If it is named, we have an extra condition: input names must match.
-and `(a:15, x:10, y:20)` will match `(x:int)` which is foundation of subtyping.
+and `(a=15, x=10, y=20)` will match `(x:int)` which is foundation of subtyping.
+With named inputs, you can ignore first or middle arguments: 
+```
+func add(x:int=10, y:int)...
+add(y=19)
+```
 
 Each function call will be dispatched to the implementation with highest priority according to matching rules. 
 - If function input is not constrained but the argument is, it won't cause a problem. But the other way around, will need casting.
@@ -371,23 +379,25 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `x == y` will call `equals` functions is existing, by default compares field-by-field values. But you can o
 - You can not override operators. 
 - We don't have operators for bitwise operations. They are covered in core. 
-- An expression which is combination of multiple statements with `&` will result in evaluation of the last one.
+- `a & b` is a shortcut for `x=a y=b if (y == none ) return x else return y`
+- An expression which is combination of multiple statements with `&` will result in evaluation of the last non-none one.
 `var g = x=6 & y=7` will make g equal to 7.
+
 
 ### Special Syntax
 - `$i` function inputs
 - `$` first input of the function (`$0`)
 - `$_` input place-holder
-- `:` tuple definition, array slice
-- `:=` type definition
+- `:` tuple declaration, array slice
+- `:=` custom type definition
 - `>>,<<` chaining
 - `=>` hash type and hash literals
 - `|` sum types
 - `.` access tuple fields
 - `@` explode
-- `//` sum type handler
-- `->>` repeat match
+- `//` catch exceptions
 - `&` continue execution
+- `[]` hash and array literals
 
 ### Chaining
 You can use `>>` and `<<` operators to chain functions. `a >> b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
@@ -406,7 +416,7 @@ get_evens(data) >> sort >> save >> reverse .   ;assuming sort, save and reverse 
 
 Electron has a small set of reserved keywords: 
 `if, else, match, 
-, for, break, continue, return, type, import, var, val, func, invoke, select, native`.
+, for, break, continue, return, type, import, var, func, invoke, select, native`.
 
 ###match
 ```
@@ -416,7 +426,6 @@ MatchExp = 'match' '(' tuple ')' '{' (CaseStmt)+ '}'
 - First case which is matching will be executed and others will be skipped.
 - Case match can be based on value or type (used for sum types).
 - Each match case is a lambda without parentheses for input. The first case that can accept the value inside match will be executed.
-- A case which has `->>` will re-trigger match execution after it is finished. In this case, result of match will be the output of last execution.
 - Mechanism of match is the same as a function call is dispatched to an implementation. Each candidate will be examind against match input for type and values. The first one that can be matched will be invoked.
 - Result of a match expression is the data in the last return executed (or `none` if none).
 ```
@@ -465,7 +474,7 @@ Semantics of this keywords are same as other mainstream languages.
 AssertStmt = 'assert' condition [':' expression]
 ```
 - Assert makes sure the given `condition` is satisfied. 
-- If condition is not satisfied, it will throw an exception (exception is a built-in type).
+- If condition is not satisfied, it will throw an exception (exception is a built-in type). This will exit current function and outer functions, until it is expected.
 - You can return an exception directly too: `return exception(1,2,3)`
 - There is no `throw` keyword and this is the only way to cause exception.
 - Output of any function is automatically updated with `| exception`.
@@ -475,23 +484,15 @@ AssertStmt = 'assert' condition [':' expression]
 assert false, "Error!"  ;throw exception and exit
 ;outside: catching error
 var g: int = func1() // 5
-var h: int = func1() // return -1
+var h: int = func1() // { return -1 }
 ;accept and expect the exception
 var g: int|exception = func1()   ;this is valid
 ```
 - You can use `defer BLOCK` to tell the runtime to run a block of code after exiting from the function. You can use `$` to refer to function output in that block.
-- `//` (Type enforcement operator) is used in conjunction with sum types to act as a shortcut for `match`. In `x = A // B` if A's type does not match with what we expect (type of `x`) then B will be evaluated to get a result of type of `x`. Inside `B` we can refer to result of `A` using `$` notation.
-- `x = A // B` is shortcut for (T is type of x):
-```
-x = match(A) {
-   h:T -> h,
-   any -> B
-```
-If there is no `x =`, then `B` will be evaulated if result of `A` is not void.
-You can chain `//`: `x = A // B // C` if A is not evaluated to the type we need, B will be evaluated and etc.
+- `//` is used to catch exceptions. In `A // B` if A evaluates to an exception, then B (A lambda without input specification and arrow operator) will be evaluated. Inside `B` we can refer to result of `A` using `$` notation. Note that A can be a block of code.
 
 ###loop, break, continue
-`loop` is a function defined in core. It uses `match` with `->>` to repeat evaluation of a condition.
+`loop` is a function defined in core. It uses `map` native function.
 `func loop(cond: int | any[] | anyHash | func(any)->bool, body: func(x:any)->loopOutput)->loopOutput`
 `loop(5) { print('hello') }`
 `loop(arr1) { print($) }`
@@ -500,33 +501,38 @@ You can chain `//`: `x = A // B // C` if A is not evaluated to the type we need,
 - We have 3 types of loops: numeric (repeat `n` times), predicated (repeat while true) or iteartion.
 - For iteration loop, you can also use `map` and other similar functions.
 ```
+;general iterator type definition
+type iteratorType;
+func hasNext(x: iteratorType) -> bool;
+func next(x: iteartorType) -> any
+
+;example of an iterator for array
+func getIterator(x: any[]) -> iteartorType {
+  var result: ArrayIteartor = (array:x, index:0)
+  return result
+}
+func hasNext(i: ArrayIterator) -> i.index < length(i.array)
+func next(i: ArrayIteartor) -> (i.array[i.index], (array:x, index:i.index+1))
+
+native map(x: iteartorType, lambda)
+
 func loop(x: int, lambda) -> { 
-  var i: int = x
-  match (x)
-  {
-    0 -> return,
-    any ->> { x-- & body } 
-  }
+  var iteartor = createIterator(x)
+  map(iteartor, body)
 }
 
 func loop(pred: lambda, body: lambda) -> {
-  match (pred) 
-  {
-    true ->> body
-  }
+  var iterator = createIteartor(pred)
+  map(iteartor, body)
 }
 
 func loop(a: array, body: lambda) -> {
   var iterator = getIterator(a)
-  match (has_next(iterator)) 
-  {
-    true ->> body(get(iterator))
-  }
+  map(iterator, body)
 }
 ```
-- To break a loop execution from normal case body -> return statement
-- To break a loop execution from repeating case body -> return exception
-- To continue a loop -> return inside case body which is repeating
+- To break a loop execution from body -> return exception
+- To continue a loop -> return inside case body lambda.
 
  ###import
 
@@ -559,15 +565,11 @@ Denotes function is implemented by runtime or external libraries.
 
 ## Miscellaneous
 ### Validation
-When defining types or functions, you can define validation code/function. This is a block which will be executed/evaluated everytime variable gets a new value or function is executed. You can makes sure the data (or function intput/output) is in consistent and valid state.
-`var m: int where {validate_month};`
-`var m: int where validate_month . ;same as above`
+When defining a custom type, you can define validation code/function. This is a block which will be executed/evaluated everytime variable gets a new value or function is executed. You can makes sure the data is in consistent and valid state.
+`type m := int where {validate_month};`
+`type m := int where validate_month . ;same as above`
 Expression will be called with `$` pointing to the new value. If the expression evaluates to false, a runtime exception will be thrown.
-`var x: int where {$>10} where {$<100} where { check_value($) };`
 `type x := (x: int, y:int) where { $.x < $.y };`
-- This can be done for all types and variables.
-- Example for functions:
-`func AA(x: int) -> int { ... }`
 - You are not allowed to use `where` in function or lambda definition. It's only allowed in variable or type declaration.
 
 ### Exception Handling
