@@ -3915,3 +3915,142 @@ Y - State that to cast types you can use `TypeName(var)` notation.
 This works on compatible types (long, int, ...)
 For example to cast from int to `int where {$>10}`
 
+N - About constraints, forbidding them in function definition harms generality of the language.
+`type Age := int where { $>0 }`
+`func add(x: int) ->`
+What comes after `x:` is a type and should be treated exactly the same as what comes after `:=` in type definition.
+Basically this is only a constructor. It does not make sense to define constructor when we are defining a function.
+But the notation permits us to do so. So maybe we should change the notation.
+Maybe type constructor should simply be a normal function. But how to force outside world to use it?
+By naming convention? It should get called behind the scene to make code readable and clean. And it is a validator
+`type Age := int`
+`func Age(x: Age) -> Age`
+Ok. `x:int` vs `type a := int` are different. So let's just disallow where in function definition.
+Basically, validation is only possible in `type` statement.
+
+N - If there is anything that can be conveniently done in core or std or by user remove it from syntax.
+what do we have in lang up to now? (except normal things like math operators and logical operators)
+```
+10 keywords: func, var, match, type, return, import, native, assert, where, defer
+2 C-like operators: [], ., 
+14 operators: |, :, >>, <<, ->, =>, @, //, &, :, :=, $_, $x
+```
+can we simplify `import`? I don't think so.
+```
+type x := int | string
+var t: int
+f(x,y) >> g
+func add(x:int, y:int) -> ...
+type point := (x:int, @other)
+print(data) & fetch & process
+t = get_data() // 0
+```
+
+N - with mutablity we have, how can we have an iterator?
+just return a new iterator along with the data in next function.
+
+Y - I think we can achieve loops with map without using `->>` in a match:
+```
+;general iterator type definition
+type iteratorType;
+func getIterator(x: any) -> iteratorType
+func hasNext(x: iteratorType) -> bool
+func next(x: iteartorType) -> any
+
+;example of an iterator for array
+type ArrayIteartor := iteratorType
+func getIterator(x: any[]) -> iteartorType {
+  var result: ArrayIteartor = (array:x, index:0)
+  return result
+}
+func hasNext(i: ArrayIterator) -> i.index < length(i.array)
+func next(i: ArrayIteartor) -> (i.array[i.index], (array:x, index:i.index+1))
+
+native map(x: iteartorType, lambda)
+
+func loop(x: int, lambda) -> { 
+  var iteartor = createIterator(x)
+  map(iteartor, body)
+}
+
+func loop(pred: lambda, body: lambda) -> {
+  var iterator = createIteartor(pred)
+  map(iteartor, body)
+}
+
+func loop(a: array, body: lambda) -> {
+  var iterator = getIterator(a)
+  map(iterator, body)
+}
+```
+
+Y - How to catch exceptions for a block of code?
+```
+{
+  var t = do_work1()
+  var y = do_work2()
+} // {}
+```
+Maybe we should specialize `//` to work only for exceptions.
+`A // B` will run A, it it evaluates to `exception` will run `B` lambda with input as the exception.
+using `$` notation in `//` to refer to exception is a bit inconvenient and not gen.
+
+Y - when defining a tuple type: `(name: type)`
+when setting value `(name: value)`
+Aren't we re-using `:` for different purposes?
+`:` in `A:B` should mean label A is of type B. Nothing more and nothing else.
+```
+type Point := (x: int, y:int)
+var p: Point = (x=12, y=11)
+func add(p:Point, x:int) ...
+var t = add(p=myPoint, x=7)
+```
+Python uses this notation and Scala. But C# uses `:` notation. This I think is because C# uses `type name` notation.
+Scala: `printName(firstName="Alvin", lastName="Alexander")`
+Python: `info(spacing=15, object=odbchelper)`
+```
+type Point := (int x, int y)
+Point p = (x:12, y:11)
+func add(Point p, int x) ...
+var t = add(p:myPoint, x:7)
+```
+
+Y - There should be a mechanism to specify type of a literal.
+e.g. when function output is Shape and I want to return a Circle without variable allocation.
+Maybe `return var x:Circle = (...)` simplified into: `return Circle(...)`
+This could also mean casting, but it's ok because we are casting something to it's own type.
+
+Y - there should be a way to indicate unchanged fields when cloning.
+`var x: Point = (@original_var)`
+`var x: Point = (@original_var, x=19)` -> `(x=12, y=19, x=19)` -> `(y=19, x=19)`
+
+N - can we replace sum types with inheritance?
+```
+type OptionalInt
+type None := Optional
+```
+Not readable.
+
+N - what do we have in lang up to now? (except normal things like math operators and logical operators)
+```
+10 keywords: func, var, match, type, return, import, native, assert, where, defer
+2 C-like operators: [], ., 
+14 operators: |, :, >>, <<, ->, =>, @, //, &, :, :=, $_, $x
+```
+
+Y - can we make `//` notation more intuitive?
+`var t = do_work() // { log & 5 }`
+we really don't need `&`. But how can we achieve above? using lambda?
+`var t = do_work() // { log_error($) & 5 }`
+what is the other usage for &?
+on the right side of `&` it is a lambda. so it's input can be the exception `$`.
+and it's result is evaluation of the block.
+`var t = do_work() // { 
+  log_error($) 
+  return 5 
+}`
+we want to make code more readable. but by introducing `&` we should make it general. so people can use it elsewhere.
+`a & b` is a shortcut for `x=a, y=b, if (b == none ) return a else return b`
+about intuitive:
+`var t = do_work() // 5`
+No.
