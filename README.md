@@ -1,7 +1,7 @@
 # Electron Programming Language Reference
-Version 0.8
+Version 0.9
 
-May 3, 2017
+May 8, 2017
 
 ## History
 - **Version 0.1**: Sep 4, 2016 - Initial document created after more than 9 months of research, comparison and thinking.
@@ -308,7 +308,8 @@ func read_customer(id:int) -> Nothing | CustomerData
 - Function definition specifies a contract which shows input tuple and output tuple. If input tuple is named, you must pass a set of input or tuple with the exact same name or an unnamed tuple. If input is unnamed, you can pass either unnamed or named tuple.
 ```
 func f(x:int, y:int) -> ...
-func f(12, y:int) -> ... ; this will be invoked if first argument is 12
+;note that even when you have a literal for an input, you must specify name and type.
+func f(t:int =12, y:int) -> ... ; this will be invoked if first argument is 12
 func f(x:int, y:int=6) ... ;this will be invoked if secod argument is 6 or missing
 ...
 var g = (x=10, y=12)
@@ -646,7 +647,7 @@ func main() ->
 ```
 or even simper: `func main() -> 0`
 
-This is a functrion, called `main` which returns `0` (very similar to C/C++ except `main` function has no input).
+This is a function, called `main` which returns `0` (very similar to C/C++ except `main` function has no input).
 
 ### Hello world
 ### Quick sort
