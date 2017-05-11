@@ -653,6 +653,29 @@ This is a function, called `main` which returns `0` (very similar to C/C++ excep
 ### Quick sort
 ### Graph class
 ### Expression parser
+We want to write a function which accepts a string like "2+4/3" and returns result (2)
+```
+type Expression := int | (op: char, left: Expression, right: Expression)
+func eval(input: string) -> float 
+{
+  var exp: Expression = parse(input)
+  return innerEval(exp);
+}
+func innerEval(exp: Expression) -> float 
+{
+  return match (exp)
+  {
+    x:int -> x,
+    (op: char, left: Expression, right: Expression) -> match (op) 
+    {
+      '+' -> innerEval(left) + innerEval(right),
+      '-' -> innerEval(left) - innerEval(right),
+      '*' -> innerEval(left) * innerEval(right),
+      '/' -> innerEval(left) / innerEval(right),
+    }
+  }
+}
+```
 
 ## Core package
 
