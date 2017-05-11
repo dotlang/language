@@ -4054,3 +4054,147 @@ we want to make code more readable. but by introducing `&` we should make it gen
 about intuitive:
 `var t = do_work() // 5`
 No.
+
+? - predicate dispatch: dispatch a method call based on a predicate (a condition which is checked).
+This is what we have with custom types. Extending it any further will make language too slow.
+
+? - How can we handle templates efficiently with types?
+About using customt types for generics:
+```
+type Data
+type Stack := Data[]
+func push(x: Data, s: Stack) ...
+func pop(s: Stack) -> Data ...
+...
+var s: Stack[Data=int]
+push(s, 10) ;how is push supposed to only accept int?
+var g: int = pop(s) ;how is pop supposed to know it's output must be int?
+```
+Maybe we can add functions that generate types? And calling those functions will define the type of a variable.
+Input of this function is "type" not a value or variable. And it's output will be a type.
+```
+func :Stack(:T) -> :T[]
+var s: createStackType(int)
+func push(x: Stack, value: ?
+```
+Maybe we can define a notation to bind type of an input or output to details of another I/O.
+```
+type Data
+type Stack := Data[]
+func push(x: Data, s: Stack) ...
+func pop(s: Stack) -> Data ...
+...
+var s: Stack[Data=int]
+```
+Where else do we need this?
+What about this?
+```
+type Data
+type Stack := Data[]
+func push(x: Data, s: Stack) ...
+func pop(s: Stack) -> Data ...
+...
+var s: Stack
+push(s, 10)
+push(s, 20)
+var r: int = int(pop(s))
+```
+What if we can tell a type to use my custom type?
+```
+type Data
+type Stack := Data[]
+func push(x: Data, s: Stack) ...
+func pop(s: Stack) -> Data ...
+...
+type MyType := int
+var s: Stack
+push(s, 10)
+push(s, 20)
+var r: int = int(pop(s))
+```
+in map we have a function which can output `int[]` or `float[]` or any other thing. 
+`func map(arr: mapInput[], f: func(mapInput) -> mapTarget) -> mapTarget[]`
+That is because we are binding output type to input type. Because input is an array so we can "extract" and specify it's type. But what if input is something non-array or hash? For example a stack.
+An extensive list of applications of generics: https://github.com/golang/proposal/blob/master/design/15292-generics.md
+What about sort function?
+`func sort(x: sortable[]) -> sortable[]`
+This guarantees output type is same as input type.
+Same way to implement a graph. The only concern is when we want to get something from a data/function.
+How can we define a graph with adjacency list?
+```
+type Node := (children: Node[], data: any)
+type Tree := (root: Node)
+```
+What are important collections? Array, Hash, Set, Queue (circular, double linked, priority, ...), Tree, Heap, Graph, Stack, LinkedList
+Set -> We can use type constraints.
+Queue -> Can be simulated using a list
+Tree, Graph, Heap -> Simplify to Tree
+So basic items are: List, Graph
+Graph can also be explained as a list of nodes each has a list of nodes.
+So we need some kind of LinkedList.
+But we always need to use raw array or hash. We cannot use any custom type.
+`type LinkedList = int[]`
+`func append(x: LinkedList, h: data)`
+`func extract(x: LinkedList) -> data`
+We cannot even use a function. Because we then have to specify exact type -> Use opertors? Not possible.
+We need a function called `append` which adds a new data item to a list. This list can be an array of any type.
+`type LLData := any`
+`type LinkedList := LLData[]`
+`func append(x: LinkedList, h: LLData)`
+`func extract(x: LinkedList) -> LLData`
+What if we can specify exact type of `LLData` when defining a variable of type `LinkedList`?
+We want to bind a type instead of `any`
+`type LLData := any`
+`type LinkedList := LLData[]`
+`func append(x: LinkedList, h: LLData)`
+`func extract(x: LinkedList) -> LLData`
+`var lst: LinkedList` When defining a new data type, we can replace any type with it's subtypes. So `any` can be replaced by any other type. `Sortable` can be replaced by any other type which supports Sortable functions, ....
+`var lst: LinkedList { any => int }` - replace `any` in the definition with `int`
+`var lst: LinkedList { LLData => int }`
+`type Array := ArrayElement[]`
+`var int_array: Array { ArrayElement => int }` - This variable is of type Array but it's ArrayElement is `int`.
+`type Hash := Source => Target`
+`var x: Hash { Source => int, Target => string }`
+`type Headers := Array { ArrayElement => Hash { Source => int, Target => string } }`
+We can limit this notation to type definition only. So in variable/argument definition we cannot do this.
+`type Array := ArrayElement[]`
+`type int_array := Array { ArrayElement => int }`
+`type Hash := Source => Target`
+`type x := Hash { Source => int, Target => string }`
+`type HttpHeaders := Array { ArrayElement => Hash { Source => int, Target => string } }`
+`type LinkedList := LLData[]`
+`type IntList := LinkedList { LLData => int }`
+And this should be the only place where we see a change. No change in function definition or call.
+`type Stack := StackElement[]`
+`type IntStack := Stack { StackElement => int }`
+`func pop(s: Stack) -> StackElement`
+`func pop(s: IntStack) -> StackElement` ;this is specialization
+
+
+
+
+
+? - Write example app. A simple expression parser
+We want to write a function parse which accepts a string like "2+4/3" and returns result (2).
+```
+type Expression := int | (op: char, left: Expression, right: Expression)
+func eval(input: string) -> float 
+{
+  var exp: Expression = parse(input)
+  return innerEval(exp);
+}
+func innerEval(exp: Expression) -> float 
+{
+  return match (exp)
+  {
+    x:int -> x,
+    (op: char, left: Expression, right: Expression) -> match (op) 
+    {
+      '+' -> innerEval(left) + innerEval(right),
+      '-' -> innerEval(left) - innerEval(right),
+      '*' -> innerEval(left) * innerEval(right),
+      '/' -> innerEval(left) / innerEval(right),
+    }
+  }
+}
+```
