@@ -4055,7 +4055,32 @@ about intuitive:
 `var t = do_work() // 5`
 No.
 
-? - predicate dispatch: dispatch a method call based on a predicate (a condition which is checked).
+Y - Write example app. A simple expression parser
+We want to write a function parse which accepts a string like "2+4/3" and returns result (2).
+```
+type Expression := int | (op: char, left: Expression, right: Expression)
+func eval(input: string) -> float 
+{
+  var exp: Expression = parse(input)
+  return innerEval(exp);
+}
+func innerEval(exp: Expression) -> float 
+{
+  return match (exp)
+  {
+    x:int -> x,
+    (op: char, left: Expression, right: Expression) -> match (op) 
+    {
+      '+' -> innerEval(left) + innerEval(right),
+      '-' -> innerEval(left) - innerEval(right),
+      '*' -> innerEval(left) * innerEval(right),
+      '/' -> innerEval(left) / innerEval(right),
+    }
+  }
+}
+```
+
+N - predicate dispatch: dispatch a method call based on a predicate (a condition which is checked).
 This is what we have with custom types. Extending it any further will make language too slow.
 
 ? - How can we handle templates efficiently with types?
@@ -4168,33 +4193,10 @@ And this should be the only place where we see a change. No change in function d
 `type Stack := StackElement[]`
 `type IntStack := Stack { StackElement => int }`
 `func pop(s: Stack) -> StackElement`
-`func pop(s: IntStack) -> StackElement` ;this is specialization
+`func pop(s: IntStack) -> StackElement` ;this is specialization for Stack of integer
 
 
+? - How are we going to handle `x<y` where type of x and y is non primitive?
+Can developer customize this operator? By writing a method for example?
 
 
-
-? - Write example app. A simple expression parser
-We want to write a function parse which accepts a string like "2+4/3" and returns result (2).
-```
-type Expression := int | (op: char, left: Expression, right: Expression)
-func eval(input: string) -> float 
-{
-  var exp: Expression = parse(input)
-  return innerEval(exp);
-}
-func innerEval(exp: Expression) -> float 
-{
-  return match (exp)
-  {
-    x:int -> x,
-    (op: char, left: Expression, right: Expression) -> match (op) 
-    {
-      '+' -> innerEval(left) + innerEval(right),
-      '-' -> innerEval(left) - innerEval(right),
-      '*' -> innerEval(left) * innerEval(right),
-      '/' -> innerEval(left) / innerEval(right),
-    }
-  }
-}
-```
