@@ -4083,6 +4083,17 @@ func innerEval(exp: Expression) -> float
 N - predicate dispatch: dispatch a method call based on a predicate (a condition which is checked).
 This is what we have with custom types. Extending it any further will make language too slow.
 
+N - How are we going to handle `x<y` where type of x and y is non primitive?
+Can developer customize this operator? By writing a method for example?
+
+N - when we see `f(...)` how do we know if `f` is a function or a lambda?
+Perl does this by prefixing all variables: `$var`.
+Naming can be another option.
+`func add(x: int, check: func(int)->int) -> { check(10) }`
+
+N - what is the relation between any and exception?
+exception must be some kind of any. Because it is just a tuple.
+
 ? - How can we handle templates efficiently with types?
 About using customt types for generics:
 ```
@@ -4345,17 +4356,8 @@ No! In wont be intuitive. To refer to an inner part of another thing, we have do
 6- func checkOnlyLong(s: Stack { StackElement <- long })
 7- func reverse(s: Map { Source <- Shape, Target <- Data }) -> Map { Source <- s%Target, Target <- s%Source}
 ```
-#%^|~
-:.
 
 
-N - How are we going to handle `x<y` where type of x and y is non primitive?
-Can developer customize this operator? By writing a method for example?
-
-? - when we see `f(...)` how do we know if `f` is a function or a lambda?
-Perl does this by prefixing all variables: `$var`.
-Naming can be another option.
-`func add(x: int, check: func(int)->int) -> { check(10) }`
 
 ? - can we remove `//` and replace with normal variable with sum type?
 `A // B`
@@ -4375,8 +4377,6 @@ we can say, a block (not a function) always evaluates to none or exception.
 unless it has a type (e.g. if/match/function/lambda).
 
 
-? - what is the relation between any and exception?
-exception must be some kind of any. Because it is just a tuple.
 
 
 ? - we can reduce exposure and make refactoring easy if we can hide some types and functions inside a module
