@@ -4194,9 +4194,54 @@ And this should be the only place where we see a change. No change in function d
 `type IntStack := Stack { StackElement => int }`
 `func pop(s: Stack) -> StackElement`
 `func pop(s: IntStack) -> StackElement` ;this is specialization for Stack of integer
-
+rule: no runtime checking. all at cmopile time. no casting by compiler.
+how to implement a func which accepts two stacks and wants to make sure they are of the same type? We dont want to solve all problems. just major ones.
+what abt casting? or equality check?
+`func pop(s: Stack) -> StackElement ...`
+How is compiler going to know output type is int if we pass a `IntStack`? Just like normal code in Java.
+This:
+```
+type StackElement
+type Stack := StackElement[]
+func pop(s: Stack) -> StackElement ...
+var s = Stack { StackElement => int }
+pop(s)
+```
+translates to this pseudo code:
+```
+type StackElement
+type Stack := StackElement[]
+func pop(s: Stack[SE]) -> SE ...
+var s = Stack { SE => int }
+pop(s)
+```
+what if we have this?
+`func compare(s1: Stack, s2: Stack) -> StackElement ...`. what would be the type of output?
+or
+`func compare(s1: Stack, s2: Stack, s3: StackElement, s4: StackElement)`
+what if we say, if multiple candidates there will be no type check or there will be compiler error?
+in java we would write this:
+`T compare(s1: Stack<T>, s2: Stack<T>, s3: T, s4: T)`
+what about this?
+`type T`
+`type S`
+`func compare(s1: Stack { StackElement => T }, s2: Stack { StackElement => T }, s3: T, s4: T)`
+`func compare(s1: Stack { StackElement => T }, s2: Stack { StackElement => S }, s3: T, s4: S)`
+This is like having a function which creates a new type. like stackInt or stackString. Like a super function which is executed at compile time.
+`func StackType(T: any) -> type Stack := T[]`
+which can be simplified to:
+`type Stack<T> := T[]`
+this is a parametrized type. 
 
 ? - How are we going to handle `x<y` where type of x and y is non primitive?
 Can developer customize this operator? By writing a method for example?
 
+? - when we see `f(...)` how do we know if `f` is a function or a lambda?
+Perl does this by prefixing all variables: `$var`.
+Naming can be another option.
 
+? - can we remove `//` and replace with normal variable with sum type?
+`A // B`
+`var r : t | exception = A`
+a block is evaluated to exception as soon as result of one of it's statements is exception.
+and its not caught, it will return immediately.
