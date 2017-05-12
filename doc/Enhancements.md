@@ -4232,16 +4232,78 @@ This is like having a function which creates a new type. like stackInt or stackS
 which can be simplified to:
 `type Stack<T> := T[]`
 this is a parametrized type. 
+What about defining types like functions?
+`type Stack(T) := T[]` - this is a combination of type and function. a parametrized type
+`func pop(s: Stack(T)) -> T ...`
+`func pop(T)(s: Stack(T)) -> T ...`
+`func pop(T, S)(s: Stack(T), q: Stack(S)) -> T|S ...`
+we have types and functions. that's all. 
+But this notation `pop(T,S)` makes functions not as pure as I want. they should be simple.
+`func pop(T, S)(s: Stack.T, q: Stack.S) -> T|S ...`
+maybe we can use convention: Single letter uppercase type names are generic type arguments.
+`type Stack := T[]`
+`func pop(s: Stack) -> T ...` but we cannot refer to something like T here out of nowhere, also incase of multiple arguments of stack type this would cause confusion.
+What if we did not have generics?
+`func compare(s1: Stack, s2: Stack, s3: any, s4: any)`
+another good example: `func appender(s: string, str: T, toString: func(T)->string)`
+another use case: `type Maybe<T> := T | none`
+**Requirements**: Everything must be done at compile time, subtyping (`Stack<int>` must also be a Stack), clean syntax
+`Stack<int>` cannot be `Stack` just like `int[]` cannot be `any[]`.
+or `(x:int, y:string, z:long)` cannot be a `(x:any, y: string, z:any)`.
+Unless we extend type matching. so a `(x: Circle, y: Circle)` can be of type `(x: Shape, y: Shape)`
+Because a Circle is a Shape. So a compond data type (tuple, array, hash, ...) is of type X if every they have same number of elements and each element can be of the same type as corresponding element in the target type.
+so: `Circle` can be used where a `Shape` is needed. `(Circle, Circle)` can be used where a `(Shape, any)` is needed.
+So we can have subtyping by having `T` as `any` (or any other upper bound on the features we need).
+What if we use dot notation to denote a type belongs to another type: `Stack.StackElement`
+```
+type StackElement := number
+type Stack := StackElement[]
+func push(s: Stack, x: s.StackElement) -> ...
+func pop(s: Stack) -> s.StackElement...
+func len(s: Stack) -> int
+func compare(s1: Stack, s2: Stack) -> s1.StackElement ...
+...
+var s: Stack { StackElement => int }
+push(s, 10)
+;we cannot have compile time specialization
+func len(s: Stack) -> int { if ( type(s.StackElement) != int ) ...
+but we can define our own functions:
+type StackInt := Stack { StackElement => int }
+func len(s: StackInt) ...
+```
+Let's formalize this a bit more with detail and choose a good notation.
+things that need to be covered:
+- Defining a generic type
+- Creating variables of that type
+- How inheritance is handled
+- Writing a function with input/output of generic type
+- Writing function with multiple input/output of different generic types
+- 
 
-? - How are we going to handle `x<y` where type of x and y is non primitive?
+N - How are we going to handle `x<y` where type of x and y is non primitive?
 Can developer customize this operator? By writing a method for example?
 
 ? - when we see `f(...)` how do we know if `f` is a function or a lambda?
 Perl does this by prefixing all variables: `$var`.
 Naming can be another option.
+`func add(x: int, check: func(int)->int) -> { check(10) }`
 
 ? - can we remove `//` and replace with normal variable with sum type?
 `A // B`
 `var r : t | exception = A`
 a block is evaluated to exception as soon as result of one of it's statements is exception.
 and its not caught, it will return immediately.
+```
+var g: none | exception = {
+  func1()
+  func2()
+  func3()
+}
+var h : int|exception = get_number()
+```
+output type of a function is obviously defined. But what about a block?
+we can say, a block (not a function) always evaluates to none or exception.
+unless it has a type (e.g. if/match/function/lambda).
+
+? - what is the relation between any and exception?
+exception must be some kind of any. Because it is just a tuple.
