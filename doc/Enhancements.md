@@ -4273,12 +4273,81 @@ func len(s: StackInt) ...
 ```
 Let's formalize this a bit more with detail and choose a good notation.
 things that need to be covered:
-- Defining a generic type
-- Creating variables of that type
-- How inheritance is handled
-- Writing a function with input/output of generic type
-- Writing function with multiple input/output of different generic types
-- 
+1- Defining a generic type
+2- Creating variables of that type
+3- Writing a function with input/output of generic type
+4- Writing function with multiple input/output of different generic types
+5- Subtype: Write a function for all possible types
+6- Subtype: Write a function for some possible types
+```
+1- type StackElement := number
+1- type Stack := (head: StackElement, data: StackElement[])
+2- var my_stack: Stack { StackElement => int }
+3 - func push(s: Stack, x: s.StackElement)
+3 - func pop(s: Stack) -> s.StackElement
+4 - func mpush(s1: Stack, s2: Stack, x1: s1.StackElement, x2: s2.StackElement)...
+5- func check(s: Stack)
+6- func checkOnlyLong(s: Stack { StackElement => long })
+```
+Now for notation:
+```
+1- type StackElement := number
+1- type Stack := (head: StackElement, data: StackElement[])
+2- var my_stack: Stack { !StackElement := int } ;we customize a type with a more concrete type
+3 - func push(s: Stack, x: s!StackElement)
+3 - func pop(s: Stack) -> s!StackElement
+4 - func mpush(s1: Stack, s2: Stack, x1: s1!StackElement, x2: s2!StackElement)...
+5- func check(s: Stack)
+6- func checkOnlyLong(s: Stack { !StackElement := long })
+7 - a function which reverses a hash
+```
+We need two notations:
+1 - When defining a new variable: Reference to inner type of a variable (set it's value)
+2 - When defining a new argument: Reference to inner type of a variable (define a variable of that type)
+We need a notation which implies hierarchy (because it's an inner type). But dot and `::` are not good.
+dot will cause confision and `::` won't be good when mixed with `:` in our notation.
+It should be simple and easy to read. `!`?
+Why is this different from normal template notation in java and c#? It is more readable when you have multiple generic inputs. And more intuitive to indicate inheritance. `Stack<S>` and `Stack` dont seem to be related. 
+But if we use bare notation for the generic type and put the burden on related types, it will be more indicative of inheritance.
+```
+1- type StackElement := number
+1- type Stack := (head: StackElement, data: StackElement[])
+"Type { A <- B}" creates a new type based on Type but with a modification.
+2- var my_stack: Stack { StackElement : int } ;we customize a type with a more concrete type
+3 - func push(s: Stack, x: s!StackElement)
+3 - func pop(s: Stack) -> s!StackElement
+4 - func mpush(s1: Stack, s2: Stack, x1: s1!StackElement, x2: s2!StackElement)...
+5- func check(s: Stack)
+6- func checkOnlyLong(s: Stack { !StackElement := long })
+7- func reverse(s: Map { Source :: Shape, Target :: Data }) -> Map { Source :: s.Target, Target :: s.Source}
+8- func reverse(s: Source=>Target) -> Target=>Source ...;but here output will definitely be of type Source and Target without attention to real type of s
+```
+q. does the notation support this? 
+```
+public static <K, V> HashMap<K, V> newHashMap(Map<? extends K, ? extends V> map) {
+    return new HashMap<K, V>(map);
+  }
+  type Map := Source => Target
+  func duplicateMap(s: Map { Source :: Shape, Target :: Data }) -> Map { Source :: s.Target, Target :: s.Source}
+  the type of output is parameterized based on type of parameterized input
+```
+Pointing to an inner type in another type is a bit difficult notation. Maybe we should expose that inner type when defining variable of its type. And during exposure just give it a name.
+No! In wont be intuitive. To refer to an inner part of another thing, we have dot notation which is dedicated to tuple.
+`func push(s: Stack!T, x: T)` - and T can be any so inheritance is held.
+```
+;type A(X) means you can create different subtypes of A by passing a type argument for X
+1- type Stack(StackElement) := (head: StackElement, data: StackElement[])
+2- var my_stack: Stack!int ;we customize a type with a more concrete type but they are all subtype of general type
+3 - func push(s: Stack!T, x: T)
+3 - func pop(s: Stack!T) -> T
+4 - func mpush(s1: Stack!T, s2: Stack!S, x1: S, x2: T)...
+5- func check(s: Stack)
+6- func checkOnlyLong(s: Stack { StackElement <- long })
+7- func reverse(s: Map { Source <- Shape, Target <- Data }) -> Map { Source <- s%Target, Target <- s%Source}
+```
+#%^|~
+:.
+
 
 N - How are we going to handle `x<y` where type of x and y is non primitive?
 Can developer customize this operator? By writing a method for example?
@@ -4305,5 +4374,9 @@ output type of a function is obviously defined. But what about a block?
 we can say, a block (not a function) always evaluates to none or exception.
 unless it has a type (e.g. if/match/function/lambda).
 
+
 ? - what is the relation between any and exception?
 exception must be some kind of any. Because it is just a tuple.
+
+
+? - we can reduce exposure and make refactoring easy if we can hide some types and functions inside a module
