@@ -4094,7 +4094,7 @@ Naming can be another option.
 N - what is the relation between any and exception?
 exception must be some kind of any. Because it is just a tuple.
 
-? - How can we handle templates efficiently with types?
+Y - How can we handle templates efficiently with types?
 About using customt types for generics:
 ```
 type Data
@@ -4356,8 +4356,142 @@ No! In wont be intuitive. To refer to an inner part of another thing, we have do
 6- func checkOnlyLong(s: Stack { StackElement <- long })
 7- func reverse(s: Map { Source <- Shape, Target <- Data }) -> Map { Source <- s%Target, Target <- s%Source}
 ```
+Problem is we cannot only have generic type. We need to change something in functions too. 
+If we could do this without changing functions it would be simpler.
+What if we only solve some of the problems?
+E.g. in case of two generic types, they must be same.
+```
+;type A(X) means you can create different subtypes of A by passing a type argument for X
+1- type Stack(StackElement) := (head: StackElement, data: StackElement[])
+2- var my_stack: Stack!int
+3 - func push(s: Stack, x: StackElement) ;any reference to SE means of type inside s. If multiple, they must match or compiler error
+3 - func pop(s: Stack) -> StackElement
+4 - func mpush(s1: Stack, s2: Stack, x1: StackElement, x2: StackElement)...
+5- func check(s: Stack)
+6- func checkOnlyLong(s: Stack!long)
+7- func reverse(s: Map!(Shape, Data)) -> Map(Data, Shape)
+```
+In other words, we are free to refer to generic types with whatever type we want (either the original type name which is implied or any concrete type that we have (used for specialization). But we cannot have variables refer to the type inside the generic type. This can hinder code readability. Like No 3 above, we don't know what is output type of pop. It can be int or ... . But we won't need to do a cast. And someone who looks at the code will have a hard time finding relation between StackElement and Stack (in general case). 
+Maybe we should have a notation to specify generic types. `x: StackElement` -> `x: !StackElement` which means type of x can be set at compile time. It can be StackElement or something derived from it. Depending on another input parameter of the function. It will be of whatever type that it has.
+`func doWork(s: Stack, x: Stack.StackElement)` This makes it explicit
+`func work(s: Stack, x: Stack.StackElement, y: StackElement)` type of y will always be SE but X depends on `s`.
+What about function constraints?
+```
+;type A(X) means you can create different subtypes of A by passing a type argument for X
+1- type Stack(StackElement) := (head: StackElement, data: StackElement[])
+2- var my_stack: Stack!int
+3 - func push(s: Stack, x: StackElement) ;any reference to SE means of type inside s. If multiple, they must match or compiler error
+3 - func pop(s: Stack) -> StackElement
+4 - func mpush(s1: Stack, s2: Stack, x1: StackElement, x2: StackElement)...
+5- func check(s: Stack)
+6- func checkOnlyLong(s: Stack!long)
+7- func reverse(s: Map!(Shape, Data)) -> Map(Data, Shape)
+```
+Maybe we need to return the `::` notation. It is intuitive and readable at least.
+```
+;type A(X) means you can create different subtypes of A by passing a type argument for X
+1- type Stack(StackElement) := (head: StackElement, data: StackElement[])
+2- var my_stack: Stack!int
+3 - func push(s: Stack, x: StackElement) with { s.head :: x }
+3 - func pop(s: Stack) -> StackElement with { $ :: s.head }
+4 - func mpush(s1: Stack, s2: Stack, x1: StackElement, x2: StackElement) with { x1 :: s1.head, x2 :: s2.head }
+5- func check(s: Stack)
+6- func checkOnlyLong(s: Stack) with { long :: s.head }
+7- func reverse(s: Map!(Shape, Data)) -> Map(Data, Shape)
+```
+This is cleaner and more intuitive but: How to refer to array or hash? 
+This is perfect for tuple, primitive and sum types based on those. But what about array or hash?
+`with { x :: s.head[] }` - I think array is ok with `[]` notation.
+`with { x :: s.head => any }` this makes sure key of s.head is the same type as x
+`type Maybe := none | any`
+I think now that we have a better notation for hash and a notation for sum types this can be useful.
+`::` can be called match operator and may even replace `match` keyword.
+anything in `with` block must be compile-time calculatable.
+We can re-use `::` for var definition.
+```
+1- type Stack := (head: StackElement, data: StackElement[])
+2- var my_stack: Stack with { StackElement :: int }
+3 - func push(s: Stack, x: StackElement) with { s.head :: x }
+3 - func pop(s: Stack) -> StackElement with { $ :: s.head }
+4 - func mpush(s1: Stack, s2: Stack, x1: StackElement, x2: StackElement) with { x1 :: s1.head, x2 :: s2.head }
+5- func check(s: Stack)
+6- func checkOnlyLong(s: Stack with { StackElement :: long })
+7- func reverse(s: Map) -> Map with { s.Source :: $.Target, s.Target :: $.source }
+```
+How can we refer to the output? `$` is not a good notation because it is used for other purposes.
+`with` is a keyword which can be used in type or function definition.
+For type definition it sets specific types to concrete types.
+For function, it forces restrictions on type of input/output.
+So we are introducing 3 new things: `with`, `::` and a notation to refer to function output.
+One solution: You cannot refer to function output unless it is named.
+`func pop(s: Stack) -> (n:StackElement) with { n :: s.head }`
+Summary of the results:
+We introduce three two things: `with`, `::`
+When you define a type (whether using `type x :=` or `var x:`) you can specilize it with with.
+You can use `::` to define compile-time restrictions about types of function input or output.
 
+Y - Can we use `::` to do more constraints on function?
+`func add(x: int, y:int) with { x :: 15 }` - this will be invoked only if value of first arg is 15
+`func add(x: int=15, y:int)` - same as above
+Can we just have one solution? Maybe we can pick the second notation.
+The second notation is gen (you should be able to define tuples with default values anywhere)
+and it enforces by intuition that it is compile time.
+`func push(s: Stack, x: StackElement :: s.head)`
+Then we will need `with` only for type definition:
+`var my_stack: Stack with { StackElement :: int }`
+so we can even have:
+`var x: Stack = DefStach where { $ > 0 } with { StackElement :: DataItem }`
+note that where is used for runtime constraint. with is for compile time constraint.
+`func push(s: Stack, x: StackElement :: s.head)`
+This notation is good:
+`func push(s: Stack with { StackElement :: x}, x: StackElement)`
+For pop:
+`func pop(s: Stack) -> StackElement with { :: s.head }`
+So `with` is not something that belongs to the function. It belongs to the type.
+`func work(s: Record) -> any with { => int :: s }` filter hash key
+`func work(s: Record) -> any with { int => :: s }` filter hash value
+`func work(s: Record) -> any with { [] :: s }` filter for array
 
+Y - function output can be named.
+
+N - Can we say function output must be a tuple? So we can make use of named tuples.
+In golang we can have this:
+```
+func split(sum int) (x, y int) {
+	x = sum * 4 / 9
+	y = sum - x
+	return
+}
+```
+Similarly:
+```
+func split(sum: int) -> (x: int, y:int)
+{
+  x=sum/2
+  y=sum-10
+}
+```
+If we have named function outputs: will they be initialized? What if they don't get a value.
+We should not force the named tuple output. Function output can be anything. Only if you need to refer to the output in your `with` clause, then you have to do it with named output.
+Maybe we can have non-tuple named outputs:
+```
+func split(sum: int) -> x: int
+{
+  x=sum/2
+}
+```
+
+Y - replace match with `::`
+`result = match(tree) { Empty -> 0 }`
+`result = tree :: Empty -> 0`
+`result = tree :: Empty -> 0, None -> 1, 1212 -> 2`
+`result = tree :: {
+  Empty -> 0, 
+  None -> 1, 
+  1212 -> 2
+}`
+
+Y - If a function output is const, it can be used for default values for function input
 
 ? - can we remove `//` and replace with normal variable with sum type?
 `A // B`
@@ -4375,8 +4509,5 @@ var h : int|exception = get_number()
 output type of a function is obviously defined. But what about a block?
 we can say, a block (not a function) always evaluates to none or exception.
 unless it has a type (e.g. if/match/function/lambda).
-
-
-
 
 ? - we can reduce exposure and make refactoring easy if we can hide some types and functions inside a module
