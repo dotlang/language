@@ -4493,7 +4493,7 @@ Y - replace match with `::`
 
 Y - If a function output is const, it can be used for default values for function input
 
-? - can we remove `//` and replace with normal variable with sum type?
+Y - can we remove `//` and replace with normal variable with sum type?
 `A // B`
 `var r : t | exception = A`
 a block is evaluated to exception as soon as result of one of it's statements is exception.
@@ -4509,5 +4509,71 @@ var h : int|exception = get_number()
 output type of a function is obviously defined. But what about a block?
 we can say, a block (not a function) always evaluates to none or exception.
 unless it has a type (e.g. if/match/function/lambda).
+
+Y - State that - Mutability can be simulated by passing a mutation lambda.
+
+N - `::` is a bit confusing with `:` specially if there is no space around it.
+`return x if ( h::x:int)`
+It is matching operator too.
+`~` is better for regex
+`:=:`
+`%`
+`^`
+`:`? No.
+
+? - Think more about `with`. Is it well defined?
+`type T`
+`type Array := (len: int, head:T , data: T[])`
+`func f1(x: T, y:Array)`
+`func f1(x: int, y:Array with { T :: x })`
+`with` is called type rewrite operator which re-creates a type at compile time based on given options.
+So if it is for re-writing something, it is not a "criteria" concept. So it should not use `::` or matching.
+So maybe we can return `match` keyword.
+`T with X` means re-write type T with X substitution rule.
+`func push(s: Stack, x: StackElement with {<- s.head})`
+It is tempting to minify the notation and replace x type with: `s.head`.
+`func push(s: Stack, x: s.head)`
+```
+type StackElement
+type Stack := (head: StackElement, data: StackElement[])
+var my_stack: Stack with { StackElement <= int }
+
+func push(s: Stack, x: %s.head })
+func pop(s: Stack) -> %s.head
+func mpush(s1: Stack, s2: Stack, x1: %s1.head, x2: %s2.head)
+func checkOnlyLong(s: Stack with { StackElement <= long })
+func reverseMap(s: Map) -> %s.Target => %s.source }
+```
+We want a way to 1. re-write an existing type (define push input type) or a concrete type (define stack). We can have two separate notations but it will make things complicated.
+Maybe we should use a notation like `%x` to denote type of x. So operators will be more orth and intuitive.
+`x: T with { <= y }` means ?
+Maybe it's better to have two different notations: 
+1. define a variable of a type re-written with a concrete argument: `var my_stack: Stack with { StackElement <= int }` 
+2. define type of input/output of a function based on another type which is known at compile time: `func pop(s: Stack) -> %s.head`
+```
+type StackElement
+type StackInfo
+type Stack := (head: StackElement, data: StackElement[], info: StackInfo)
+var my_stack: Stack with { StackElement <= int, StackInfo <= Record } ;e.g. Stack<int, Record>
+
+func push(s: Stack, x: %s.head })
+func push(s: Stack with { StackElement <= %x}, x: StackElement }) ;same as above? yes if x is typed correctly
+;var t: StackElement with { StackElement <= int } is this ok?
+func info(s: Stack) -> %s.info
+func pop(s: Stack) -> %s.head
+func mpush(s1: Stack, s2: Stack, x1: %s1.head, x2: %s2.head)
+func checkOnlyLong(s: Stack with { StackElement <= long })
+func reverseMap(s: Map) -> %s.Target => %s.source }
+```
+we can ban using `%` inside `with`. will it be useful? This will introduce an exception!
+Ideal case is we can use `with` and `%` whenever we want.
+Note: `with` can be used to replace general types with specialized types.
+test: write a sample generic code with this notation, 
+test: review potential problems with generics in java /c++ and see if they are solved here
+with is type re-write operator
+% is type extract operator
+right side of with is like `A <= B` where A is used in the definition of the parent type.
+`T with { A <= B}` if `T :=A` means `T:=B`
+
 
 ? - we can reduce exposure and make refactoring easy if we can hide some types and functions inside a module
