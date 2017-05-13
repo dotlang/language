@@ -226,8 +226,8 @@ If types are compatible (e.g. long and int) you can cast them using: `TypeName(x
 For example in return statement `return Circle(radius:1)`.
 
 - You can use `with` keyword to put some compile-time restrictions on a type. This can be used for generics.
-A type `T with { :: X }` means type is T but must be castable to X.
-`T with { B :: X }` means B element which is used inside T must be castable to X. B can be either anoter type or part of type T.
+A type `T with { :: X }` means type is T but has to match to X.
+`T with { B :: X }` means B element which is used inside T must be matchable to X. B can be either anoter type or part of type T.
 ```
 type StackElement
 type Stack := (head: StackElement, data: StackElement[])
@@ -442,7 +442,7 @@ get_evens(data) >> sort >> save >> reverse .   ;assuming sort, save and reverse 
 ```
 MatchExp = '(' tuple ')' :: '{' (CaseStmt)+ '}'
 ```
-- This is an expression.
+- This is an expression. It is used to check if two variables can be matched according to matching rules.
 - First case which is matching will be executed and others will be skipped.
 - Case match can be based on value or type (used for sum types).
 - Each match case is a lambda without parentheses for input. The first case that can accept the value inside match will be executed.
@@ -463,6 +463,7 @@ MatchExp = '(' tuple ')' :: '{' (CaseStmt)+ '}'
   ;You can shorten this definition in one line:
   result = my_tree :: 5 -> 11, 6-> 12, Empty -> 0, any -> -1
 ```
+- You can use `::` without `->` too which returns a bool: `if ( x :: int)`
 
 ###if, else
 - If/Else is a syntax sugar for match.
