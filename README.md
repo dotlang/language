@@ -13,7 +13,7 @@ May 8, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`
+- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, added `with` keyword for compile-time type constraints
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -78,6 +78,7 @@ Function section is used to define function bodies.
 - Each statement must be in a separate line and must not end with semicolon.
 Source file contains a number of definitions for types and functions.
 - You can put multiple statements in the same line using `&`: `x++ & run & process`
+- Anywhere you need a compile time literal (default and optional inputs or `with`) you can use functions with constant output.
 
 *Notes:*
 - If a name starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
@@ -189,7 +190,7 @@ When defining a sum type, you specify different types and labels that it can acc
 `type OptionalInt := None | int`
 To match type, you can use match expression:
 ```
-  result = match ( my_tree ) {
+  result = my_tree :: {
     Empty -> 0
     y:int -> 1
     z:NormalTree -> ...
@@ -223,6 +224,23 @@ Note that when using type for alias to a function, you have to specify input nam
 `type comparer := func (x:int, y:int) -> bool;`
 If types are compatible (e.g. long and int) you can cast them using: `TypeName(x)` notation. Note that this notation can also be used to specify type of a literal when we can't or don't want to do it using normal notation:
 For example in return statement `return Circle(radius:1)`.
+
+- You can use `with` keyword to put some compile-time restrictions on a type. This can be used for generics.
+A type `T with { :: X }` means type is T but must be castable to X.
+`T with { B :: X }` means B element which is used inside T must be castable to X. B can be either anoter type or part of type T.
+```
+type StackElement
+type Stack := (head: StackElement, data: StackElement[])
+var my_stack: Stack with { StackElement :: int }
+func push(s: Stack, x: StackElement with { :: s.head })
+func pop(s: Stack) -> StackElement with { :: s.head }
+func mpush(s1: Stack, s2: Stack, x1: StackElement with { :: s1.head }, x2: StackElement with { :: s2.head })
+func checkOnlyLong(s: Stack with { StackElement :: long })
+func reverseMap(s: Map) -> Map with { :: s.Target => s.source }
+```
+So you can have:
+`var x: Stack = DefStack where { $ > 0 } with { StackElement :: DataItem }`
+
 
 ### Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
@@ -258,6 +276,7 @@ func my_func7() -> int { return 10;} ;fn has no input but () is mandatory
 func my_func7() -> 10  ;when function has just a return statement, there is a shortcut
 func my_func8() -> (int, int) { return (10,20) } ;function can return multiple values
 (x,y) = my_func8()
+func myFunc9(x:int) -> y:int { y=12 } ;you can have named output
 
  ;below function receives an array + a function and returns a function
 func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
@@ -318,6 +337,9 @@ f(1,9)
 f(x=1, y=9)
 f(@g)
 ```
+- You can use `with` keywords with `::` operator to put compile-time constraints on a function:
+`func dowork(x: int, y: any with { :: Shape)` y must be of type Shape
+
 
 ### Matching
 `func add(x:int, y:int, z:int) ...`
@@ -399,6 +421,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `//` catch exceptions
 - `&` continue execution
 - `[]` hash and array literals
+- `::` matching
 
 ### Chaining
 You can use `>>` and `<<` operators to chain functions. `a >> b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
@@ -415,22 +438,18 @@ get_evens(data) >> sort >> save >> reverse .   ;assuming sort, save and reverse 
 
 ## Keywords
 
-Electron has a small set of reserved keywords: 
-`if, else, match, 
-, for, break, continue, return, type, import, var, func, invoke, select, native`.
-
 ###match
 ```
-MatchExp = 'match' '(' tuple ')' '{' (CaseStmt)+ '}'
+MatchExp = '(' tuple ')' :: '{' (CaseStmt)+ '}'
 ```
-- `match` is an expression.
+- This is an expression.
 - First case which is matching will be executed and others will be skipped.
 - Case match can be based on value or type (used for sum types).
 - Each match case is a lambda without parentheses for input. The first case that can accept the value inside match will be executed.
 - Mechanism of match is the same as a function call is dispatched to an implementation. Each candidate will be examind against match input for type and values. The first one that can be matched will be invoked.
 - Result of a match expression is the data in the last return executed (or `none` if none).
 ```
-  result = match ( my_tree ) 
+  result = my_tree ::
   {
     x:int, y:int=12 -> ...;this will match if input has two ints or one int (second one will default to 12)
     5 -> 11,
@@ -442,7 +461,7 @@ MatchExp = 'match' '(' tuple ')' '{' (CaseStmt)+ '}'
     any -> { -1 } ;this is default because it matches with anything
   }
   ;You can shorten this definition in one line:
-  result = match (my_tree) 5 -> 11, 6-> 12, Empty -> 0, any -> -1
+  result = my_tree :: 5 -> 11, 6-> 12, Empty -> 0, any -> -1
 ```
 
 ###if, else
@@ -461,7 +480,7 @@ Semantics of this keywords are same as other mainstream languages.
 
 ```
   if ( exp1 and exp2 ) 11 else -1
-  result = match ( exp1 and exp2 ) 
+  result = ( exp1 and exp2 ) ::
   {
     true -> 11,
     any -> { -1 } 
@@ -489,7 +508,7 @@ var h: int = func1() // { return -1 }
 ;accept and expect the exception
 var g: int|exception = func1()   ;this is valid
 ```
-- You can use `defer BLOCK` to tell the runtime to run a block of code after exiting from the function. You can use `$` to refer to function output in that block.
+- You can use `defer BLOCK` to tell the runtime to run a block of code after exiting from the function. If function output is named, it will be accessible in defer block.
 - `//` is used to catch exceptions. In `A // B` if A evaluates to an exception, then B (A lambda without input specification and arrow operator) will be evaluated. Inside `B` we can refer to result of `A` using `$` notation. Note that A can be a block of code.
 
 ###loop, break, continue
@@ -632,6 +651,23 @@ type Stack := storable[]
 func push(s: Stack, i: storable) ...
 func pop(s: Stack) -> storable ...
 ```
+- This type of specialization is useful for simple types where there are clear subtypes. For more general case you can use `with`.
+- You can also use `with` to put compile time restrictions on types.
+```
+type StackElement
+type Stack := (head: StackElement, data: StackElement[])
+var my_stack: Stack with { StackElement :: int }
+func push(s: Stack, x: StackElement with { :: s.head })
+func pop(s: Stack) -> StackElement with { :: s.head }
+func mpush(s1: Stack, s2: Stack, x1: StackElement with { :: s1.head }, x2: StackElement with { :: s2.head })
+func checkOnlyLong(s: Stack with { StackElement :: long })
+func reverseMap(s: Map) -> Map with { :: s.Target => s.source }
+
+func work(s: Record) -> any with { => int :: s } filter hash key
+func work(s: Record) -> any with { int => :: s } filter hash value
+func work(s: Record) -> any with { [] :: s } filter for array
+```
+
 ### Best practice
 ### Naming
 - **Naming rules**: Advised but not mandatory: `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings.
@@ -663,10 +699,10 @@ func eval(input: string) -> float
 }
 func innerEval(exp: Expression) -> float 
 {
-  return match (exp)
+  return exp ::
   {
     x:int -> x,
-    (op: char, left: Expression, right: Expression) -> match (op) 
+    (op: char, left: Expression, right: Expression) -> op ::
     {
       '+' -> innerEval(left) + innerEval(right),
       '-' -> innerEval(left) - innerEval(right),
