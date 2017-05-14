@@ -79,6 +79,7 @@ Function section is used to define function bodies.
 Source file contains a number of definitions for types and functions.
 - You can put multiple statements in the same line using `&`: `x++ & run & process`
 - Anywhere you need a compile time literal (default and optional inputs or `with`) you can use functions with constant output.
+- Mutability can be simulated by passing a mutation lambda. 
 
 *Notes:*
 - If a name starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
@@ -159,6 +160,7 @@ t.1 = "G"
 - Function output can be any type. Even a tuple or a tuple with unnamed fields.
 - Fields that starts with underscore are considered internal state of the tuple and better not to be used outside the module that defines the type. 
 - You can define a tuple with unnamed fields: `type Point := (int, int)` But fields of a tuple must be all either named or unnamed. You cannot mix them.
+
 ###Tuple (Product types)
 ```
 type A :=  (x: int = 19) ;you can assign default value
@@ -225,21 +227,21 @@ Note that when using type for alias to a function, you have to specify input nam
 If types are compatible (e.g. long and int) you can cast them using: `TypeName(x)` notation. Note that this notation can also be used to specify type of a literal when we can't or don't want to do it using normal notation:
 For example in return statement `return Circle(radius:1)`.
 
-- You can use `with` keyword to put some compile-time restrictions on a type. This can be used for generics.
-A type `T with { :: X }` means type is T but has to match to X.
-`T with { B :: X }` means B element which is used inside T must be matchable to X. B can be either anoter type or part of type T.
+- You can use `with` keyword to re-write types, and `%` operator to extract types at compile-time. This can be used for generics.
+A type `T with { A <= X }` means type is T but inside it's definition, replace A with X.
+`x: %y` means type of `x` must be same as `y`.
 ```
 type StackElement
 type Stack := (head: StackElement, data: StackElement[])
-var my_stack: Stack with { StackElement :: int }
-func push(s: Stack, x: StackElement with { :: s.head })
-func pop(s: Stack) -> StackElement with { :: s.head }
-func mpush(s1: Stack, s2: Stack, x1: StackElement with { :: s1.head }, x2: StackElement with { :: s2.head })
-func checkOnlyLong(s: Stack with { StackElement :: long })
-func reverseMap(s: Map) -> Map with { :: s.Target => s.source }
+var my_stack: Stack with { StackElement <= int }
+func push(s: Stack, x: %s.head)
+func pop(s: Stack) -> %s.head
+func mpush(s1: Stack, s2: Stack, x1: %s1.head, x2: %s2.head)
+func checkOnlyLong(s: Stack with { StackElement <= long })
+func reverseMap(s: Map) -> Map with { %s.Target => %s.source }
 ```
 So you can have:
-`var x: Stack = DefStack where { $ > 0 } with { StackElement :: DataItem }`
+`var x: Stack = DefStack where { $ > 0 } with { StackElement <= DataItem }`
 
 
 ### Variables
@@ -337,8 +339,8 @@ f(1,9)
 f(x=1, y=9)
 f(@g)
 ```
-- You can use `with` keywords with `::` operator to put compile-time constraints on a function:
-`func dowork(x: int, y: any with { :: Shape)` y must be of type Shape
+- You can use `with` keywords with `<=` operator to put compile-time constraints on a function:
+`func dowork(x: int, y: any with { Element <= Shape })` y must be of type Shape
 
 
 ### Matching
@@ -422,6 +424,8 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `&` continue execution
 - `[]` hash and array literals
 - `::` matching
+- `%` type extraction
+- `<=` for with keyword
 
 ### Chaining
 You can use `>>` and `<<` operators to chain functions. `a >> b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
@@ -504,13 +508,23 @@ AssertStmt = 'assert' condition [':' expression]
 ;inside function adder
 assert false, "Error!"  ;throw exception and exit
 ;outside: catching error
-var g: int = func1() // 5
-var h: int = func1() // { return -1 }
 ;accept and expect the exception
 var g: int|exception = func1()   ;this is valid
 ```
 - You can use `defer BLOCK` to tell the runtime to run a block of code after exiting from the function. If function output is named, it will be accessible in defer block.
 - `//` is used to catch exceptions. In `A // B` if A evaluates to an exception, then B (A lambda without input specification and arrow operator) will be evaluated. Inside `B` we can refer to result of `A` using `$` notation. Note that A can be a block of code.
+- Output of any code block `{...}` is none by default unless there is an exception. In which case, the block will exit immediately and this exit will cascade until some place that exception is bound to a variable.
+```
+var g: none | exception = {
+  func1()
+  func2()
+  func3()
+}
+return 100 if ( g :: exception)
+
+var h : int|exception = get_number()
+return x if ( h :: x:int)
+```
 
 ###loop, break, continue
 `loop` is a function defined in core. It uses `map` native function.
@@ -595,7 +609,8 @@ Expression will be called with `$` pointing to the new value. If the expression 
 
 ### Exception Handling
 ### Inheritance and Polymorphism
-- Tuples can inherit from other tuples by having their fields (Manually adding them or with explode operator (`@`). This is similar to "Duck typing" in other languages but with data. So A can be trated like B if for every fields in B, I can write `A.field`. This allows developer to write subtypes for types he doesn't have access to. 
+- Tuples can inherit from other tuples by having their fields (Manually adding them or with explode operator (`
+`). This is similar to "Duck typing" in other languages but with data. So A can be trated like B if for every fields in B, I can write `A.field`. This allows developer to write subtypes for types he doesn't have access to. 
 `type Shape := ();`
 `type Circle := (@Shape...)`
 `type Square := (@Shape...)`
@@ -653,21 +668,8 @@ func push(s: Stack, i: storable) ...
 func pop(s: Stack) -> storable ...
 ```
 - This type of specialization is useful for simple types where there are clear subtypes. For more general case you can use `with`.
-- You can also use `with` to put compile time restrictions on types.
-```
-type StackElement
-type Stack := (head: StackElement, data: StackElement[])
-var my_stack: Stack with { StackElement :: int }
-func push(s: Stack, x: StackElement with { :: s.head })
-func pop(s: Stack) -> StackElement with { :: s.head }
-func mpush(s1: Stack, s2: Stack, x1: StackElement with { :: s1.head }, x2: StackElement with { :: s2.head })
-func checkOnlyLong(s: Stack with { StackElement :: long })
-func reverseMap(s: Map) -> Map with { :: s.Target => s.source }
+- You can also use `with` to re-write types according to type of other arguments.
 
-func work(s: Record) -> any with { => int :: s } filter hash key
-func work(s: Record) -> any with { int => :: s } filter hash value
-func work(s: Record) -> any with { [] :: s } filter for array
-```
 
 ### Best practice
 ### Naming
