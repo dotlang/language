@@ -4521,7 +4521,7 @@ It is matching operator too.
 `^`
 `:`? No.
 
-? - Think more about `with`. Is it well defined?
+Y - Think more about `with`. Is it well defined?
 `type T`
 `type Array := (len: int, head:T , data: T[])`
 `func f1(x: T, y:Array)`
@@ -4556,9 +4556,9 @@ type StackInfo
 type Stack := (head: StackElement, data: StackElement[], info: StackInfo)
 var my_stack: Stack with { StackElement <= int, StackInfo <= Record } ;e.g. Stack<int, Record>
 
+;var t: StackElement with { StackElement <= int } is this ok? No. What comes inside with must be part of type definition.
 func push(s: Stack, x: %s.head })
 func push(s: Stack with { StackElement <= %x}, x: StackElement }) ;same as above? yes if x is typed correctly
-;var t: StackElement with { StackElement <= int } is this ok?
 func info(s: Stack) -> %s.info
 func pop(s: Stack) -> %s.head
 func mpush(s1: Stack, s2: Stack, x1: %s1.head, x2: %s2.head)
@@ -4570,10 +4570,173 @@ Ideal case is we can use `with` and `%` whenever we want.
 Note: `with` can be used to replace general types with specialized types.
 test: write a sample generic code with this notation, 
 test: review potential problems with generics in java /c++ and see if they are solved here
-with is type re-write operator
-% is type extract operator
+`with` is type re-write operator
+`%` is type extract operator
 right side of with is like `A <= B` where A is used in the definition of the parent type.
 `T with { A <= B}` if `T :=A` means `T:=B`
+`%` is an operator which returns static type of it's operand. You can use it's output in any definition
+```
+var x:int = 12
+var y: %x ;y is int
+```
+It is like `decltype` in C++. 
+`func reverseMap(s: Map) -> <s.Target> => <%s.source> }`
+
+N - Problem: I still think the notation is not clean. `%` operator is too strong and general and `with` is confusing and vague. And it does not solve problem of nested generics like `List<Hash<List<String>, int>>`.
+Other option: Do not change types or functions (like go), but make writing boilerplate code easier. Cons: Makes code readability hard. But I think this idea has room for thinking.
+Other option: Code generation handled by compiler.
+The common part of above two solutions is that we write functions and types like `any`.
+In the first solution: We call them normally but there are shortcuts and syntx sugars.
+in the second solution: We direct compiler to generate code for that part for a specific type.
+solution 1:
+```
+;a completely normal and general implementation of stack
+type StackElement
+type StackInfo
+type Stack := (head: StackElement, data: StackElement[], info: StackInfo)
+func push(s: Stack, x: StackElement)
+func info(s: Stack) -> StackInfo
+func pop(s: Stack) -> StackElement
+;usage:
+var s1: Stack
+;when calling push, make sure if first input is s1 then type of second input is int
+func push(s1,StackElement :: int) -> push
+func pop(s1) -> int(pop(s1))
+func info(s1) -> float(info(s1))
+```
+Con: The notation in very un-intuitive and not-gen.
+solution2:
+```
+;a completely normal and general implementation of stack
+#define Stack(StackElement, StackInfo)
+	type Stack := (head: StackElement, data: StackElement[], info: StackInfo)
+	func push(s: Stack, x: StackElement)...
+	func info(s: Stack) -> StackInfo...
+	func pop(s: Stack) -> StackElement...
+;usage:
+var s1: Stack(int, float)
+;when calling push, make sure if first input is s1 then type of second input is int
+var x:int = pop(s1)
+```
+Con: It is much more general than we need.
+Con: Adds a level of indentation. Maybe we can fix this by no indent, a normal Stack definition.
+```
+type StackElement
+type StackInfo
+type Stack := (head: StackElement, data: StackElement[], info: StackInfo)
+func push(s: Stack, x: StackElement)...
+func info(s: Stack) -> StackInfo...
+func pop(s: Stack) -> StackElement...
+
+;usage:
+;this will automatically re-generate every function and type that we have, with these concrete types
+var s1: Stack with { StackElement <-int, StackInfo <- float }
+var g: int = pop(s1)
+```
+Con: If I pass `s1` to another function, it's type will be `Stack` so it will have no idea about type of data inside s1. What if we define a type for it? But this is not gen, if we disallow type declaration in function body.
+This seems promising but the only problem is readability. When I am reading `pop` function or debugging it, I don't know if output is any or anything else.
+Maybe we can make code more readable by using special prefix or indicator for types that can be affected. So if a function does not really care about StackElement, it won't be re-generated.
+```
+type StackElement
+type Stack := (head: %StackElement, data: StackElement[])
+func len(s: Stack) -> int ;this one does not need StackElement type
+func pop(s: Stack) -> %StackElement...
+
+var s1: Stack with { StackElement <-int }
+var g: int = pop(s1)
+push(s1, "A") ;who can stop this?
+```
+Con: Adds a huge new notation.
+Maybe we can have a variable of type `type`. And use it in function definition. No.
+
+? - Can we make `with` and `%` more well-defined?
+when we say `%x` what exactly do we mean? It is complicated for example with an array. If we want to refer to type of elements of the array.
+Adding a field of type `type` to tuple -> Con: Cannot be used with sum types.
+Con: Too many types are used and they are all global.
+```
+type Stack := (T: type, data: T[])
+func pop(s: Stack) -> s.T    ;java-like code: func pop(s: Stack<T>) -> T
+var s: Stack(T=int)
+```
+- What if we change value of `T` later without changing other data? It is the curse of generality. You can change whatever you want but you have to manage it. In this case, we will have a Stack with T=float and a data of int. Maybe we can add where to make sure it holds: `type Stack := (T: type, data: T[]) where { T[] :: data }`
+By adding a type type, we don't need a new notation for defining variables of generic type and no new notation for defining function input/output.
+```
+type Stack := (T: Type, data: T[])
+func pop(s: Stack) -> s.T    
+func push(s: Stack, x: s.T) ...
+func len(s: Stack)...
+var s: Stack(T=int)
+var g:int = pop(s)
+```
+`s.T` can be used just like a type in the code or as function input/output.
+If we can formalize it well, it might be a solution which can remove `with`, `<=` and `%`.
+Does this mean reflection? No. Because everything about `type` is done at compile time.
+Do these make sense?
+`Type getElementType(x: any)` returns type of elements of an array
+`Type getOutputType(fu: func(any)->any)` returns type of output of a function.
+No because there is no way to fetch these information. We don't provide reflection.
+User can only assign literals to variables of type `type`.
+How can we avoid the trap of reflection? What if we eliminate `Type` and just say, `T` is a keyword/parameter? No gen.
+This can also be used for `typeOf` function in core which returns type of variables.
+Reflection needs functions to set/get data or call functions which we don't provide.
+But using this concept means we need to have RTTI system. Not necessarily. If there was no way developer can extract type of a variable. So a variavle of type Type can only by assigned from another Type or a literal.
+It seems by this way we loos specialization, at least part of it.
+```
+type Stack := (T: Type, data: T[])
+func pop(s: Stack) -> s.T
+func push(s: Stack, x: s.T) { var t: s.T? }
+func push(s: Stack, x: int) ... ;we specialize for x, but not s
+func len(s: Stack) -> int
+var s: Stack(T=int)
+var s2: Stack(T=int => double[])
+var g:int = pop(s)
+```
+This is not general and is not orth. We need to add a lot of limitation for this.
+
+? - Code generation for templates.
+Note that in this case, we cannot have Stack of int and float with same type name. Because there will be two different types with the same name.
+```
+type StackElement
+type StackInfo
+type Stack := (head: StackElement, data: StackElement[], info: StackInfo)
+func push(s: Stack, x: StackElement)...
+func info(s: Stack) -> StackInfo...
+func pop(s: Stack) -> StackElement...
+
+;usage:
+;this will automatically re-generate every function and type that we have, with these concrete types
+var s1: Stack with { StackElement <-int, StackInfo <- float }
+var s2: Stack with { StackElement <-string, StackInfo <- float }
+var g: int = pop(s1)
+```
+? - Function-like type
+Most similar to Java and C++. Can be considered as a special kind of code-generation.
+```
+type Stack!(T, S) := (head: T, data: T[], info: S) ;calling Stack(int, float) will generate a new type
+var s: Stack!(int, string)
+var s2: Stack!(int, float)
+
+func pop(s: Stack!(T, S)) -> T
+func push(s: Stack!(T, S), x: T) { var t: T }
+func push(s: Stack!(int, float), x: int) ;specialization
+func push(s: Stack!(S, float), x: int) ;specialization 2
+func len(s: Stack!(T,S)) -> int
+var g:int = pop(s)
+```
+Let's try to make this cleaner, more intuitive and more general/orth.
 
 
+? - Overview:
+options:
+- with and `%` to extract type - `func pop(s: Stack) -> %s.head`
+- code generation - Like golang, but built-in
+- Type type - Similar to reflection but with limitations
+- Macro - Like C, generate code for all types and functions needed
+- Auto blueprint - generate call wrappers to cast types
+- Function-like type: `type Stack(S,T,Y)`
+
+? - Every definition is global (type, function) by default. Maybe we want to use it locally.
+maybe multiple definitions of same type , same name and same structure can be regarded the same.
 ? - we can reduce exposure and make refactoring easy if we can hide some types and functions inside a module
+
+? - clarify about inheritance for unnamed tuples.
