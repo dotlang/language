@@ -194,8 +194,8 @@ To match type, you can use match expression:
 ```
   result = my_tree :: {
     Empty -> 0
-    y:int -> 1
-    z:NormalTree -> ...
+    int -> 1+int(my_tree)
+    NormalTree -> ...
   }
 ```
 
@@ -403,8 +403,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `=>` hash type and hash literals
 - `|` sum types
 - `.` access tuple fields
-- `@` explode
-- `//` catch exceptions
+- `@` explode data
 - `&` continue execution
 - `[]` hash and array literals
 - `::` matching
@@ -437,26 +436,35 @@ MatchExp = '(' tuple ')' :: '{' (CaseStmt)+ '}'
 - Case match can be based on value or type (used for sum types).
 - Each match case is a lambda without parentheses for input. The first case that can accept the value inside match will be executed.
 - Mechanism of match is the same as a function call is dispatched to an implementation. Each candidate will be examind against match input for type and values. The first one that can be matched will be invoked.
-- Result of a match expression is the data in the last return executed (or `none` if none).
+- The cases for match must cover all possible inputs or else there will be errors.
 ```
   result = my_tree ::
   {
-    x:int, y:int=12 -> ...;this will match if input has two ints or one int (second one will default to 12)
+    int, int=12 -> ...;this will match if input has two ints or one int (second one will default to 12)
     5 -> 11,
     "A" -> 19,
     local_var -> 22, ;check equality with a local variable's value
     Empty -> 0,
-    y:int -> 1,
-    z:NormalTree -> { return 1+z },
+    int -> 1,
+    NormalTree -> { return 1+z },
     any -> { -1 } ;this is default because it matches with anything
   }
   ;You can shorten this definition in one line:
-  result = my_tree :: 5 -> 11, 6-> 12, Empty -> 0, any -> -1
+  result = my_tree :: 5 -> 11, 6-> 12, Empty -> 0, x:int -> x, any -> -1
 ```
-- You can use `::` without `->` too which returns a bool: `if ( x :: int)`
+- Simple form: You can use `::` without `->` too to check for types which returns a bool: `if ( x :: int)`. In this format, you can check for a type or a literal.
+- Due to subtype rules, `any` will even match a tuple with multiple fields. If you want to be restrict about name, you can add a name and if the tuple is named, then name will be checked too:
+```
+result = my_tree ::
+  {
+    result: any -> ... ;if tuple has a field named result (type does not matter)
+    any -> { -1 } ;this is default because it matches with anything
+  }
+```
+- `if ( x :: y )` is invalid. Right side of match can either be a literal (e.g. 5) or a type (e.g. int) or a new variable with it's own type (e.g. `a:int`). you cannot use `::` to do `==` comparison. And in the shortcut form, you can only use type.
 
 ###if, else
-- If/Else is a syntax sugar for match.
+- If/Else is a syntax sugar for match operator.
 
 ```
 IfElse = 'if' '(' condition ')' Block ['else' (IfElse | Block)]
@@ -471,6 +479,7 @@ Semantics of this keywords are same as other mainstream languages.
 
 ```
   if ( exp1 and exp2 ) 11 else -1
+  ;it is same as below:
   result = ( exp1 and exp2 ) ::
   {
     true -> 11,
@@ -478,9 +487,7 @@ Semantics of this keywords are same as other mainstream languages.
   }
 ```
 
-
 ###assert
-
 ```
 AssertStmt = 'assert' condition [':' expression]
 ```
@@ -511,6 +518,10 @@ return 100 if ( g :: exception)
 var h : int|exception = get_number()
 return x if ( h :: x:int)
 ```
+- **none**: Nothing equals `none`. It won't match in any `::` or if.
+ There is no value for it. You can use it's type for return value of a function.
+ But there is no value you can return. `return` will do that.
+ Type of a block of code, is `none`. It is reverse of `any` where everything matches with it.
 
 ###loop, break, continue
 `loop` is a function defined in core. It uses `map` native function.
@@ -777,3 +788,8 @@ Perl has a `MakeFile.PL` where you specify metadata about your package, requirem
 Python uses same approach with a `setup.py` file containing similar data like Perl.
 Java without maven has a packaging but not a dependency management system. For dep, you create a `pom.xml` file and describe requirements + their version. 
 C# has dll method which is contains byte-code of the source package. DLL has a version metadata but no dep management. For dep it has NuGet.
+
+## ToDo
+- Runtime - use concept of c++ smart ptr to eliminate GC
+- Add native parallelism and communication tools.
+- Introduce caching of function output (if it is not void)
