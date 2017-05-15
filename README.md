@@ -13,7 +13,7 @@ May 8, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, added `with` keyword for compile-time type constraints, clarified sub-typing,
+- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, added `with` keyword for compile-time type constraints, clarified sub-typing, clone `@` only applies to data, `+` used to embed other types, clarifications for rules of inheritance and subtyping
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -227,22 +227,6 @@ Note that when using type for alias to a function, you have to specify input nam
 If types are compatible (e.g. long and int) you can cast them using: `TypeName(x)` notation. Note that this notation can also be used to specify type of a literal when we can't or don't want to do it using normal notation:
 For example in return statement `return Circle(radius:1)`.
 
-- You can use `with` keyword to re-write types, and `%` operator to extract types at compile-time. This can be used for generics.
-A type `T with { A <= X }` means type is T but inside it's definition, replace A with X.
-`x: %y` means type of `x` must be same as `y`.
-```
-type StackElement
-type Stack := (head: StackElement, data: StackElement[])
-var my_stack: Stack with { StackElement <= int }
-func push(s: Stack, x: %s.head)
-func pop(s: Stack) -> %s.head
-func mpush(s1: Stack, s2: Stack, x1: %s1.head, x2: %s2.head)
-func checkOnlyLong(s: Stack with { StackElement <= long })
-func reverseMap(s: Map) -> Map with { %s.Target => %s.source }
-```
-So you can have:
-`var x: Stack = DefStack where { $ > 0 } with { StackElement <= DataItem }`
-
 
 ### Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
@@ -339,7 +323,7 @@ f(1,9)
 f(x=1, y=9)
 f(@g)
 ```
-- You can use `with` keywords with `<=` operator to put compile-time constraints on a function:
+- You can use `with` keywords with `:=` operator to put compile-time constraints on a function:
 `func dowork(x: int, y: any with { Element <= Shape })` y must be of type Shape
 
 
@@ -424,8 +408,10 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `&` continue execution
 - `[]` hash and array literals
 - `::` matching
-- `%` type extraction
-- `<=` for with keyword
+- `%` type extraction (decltype)
+- `_`: Placeholder for explode
+- `+` embed types
+
 
 ### Chaining
 You can use `>>` and `<<` operators to chain functions. `a >> b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
@@ -609,12 +595,11 @@ Expression will be called with `$` pointing to the new value. If the expression 
 
 ### Exception Handling
 ### Inheritance and Polymorphism
-- Tuples can inherit from other tuples by having their fields (Manually adding them or with explode operator (`
-`). This is similar to "Duck typing" in other languages but with data. So A can be trated like B if for every fields in B, I can write `A.field`. This allows developer to write subtypes for types he doesn't have access to. 
+- Tuples can inherit from other tuples by having their fields (Manually adding them or with `+` operator. This is similar to "Duck typing" in other languages but with data. So A can be trated like B if for every fields in B, I can write `A.field`. This allows developer to write subtypes for types he doesn't have access to. 
 `type Shape := ();`
-`type Circle := (@Shape...)`
-`type Square := (@Shape...)`
-`type Polygon := (@Shape...)` 
+`type Circle := Shape + (Shape...)`
+`type Square := Shape + (Shape...)`
+`type Polygon := Shape + (Shape...)` 
 - You can define functions on types and specialize them for special subtypes. This gives polymorphic behavior.
 `func paint(o:Shape) {}`  
 `func paint(o:any){}`
@@ -635,14 +620,14 @@ Note that this binding is for an explicit function call. when we assign function
 So if we have this:
 `func paint(o: Square, c: SolidColor)`
 `type Shape := (name: string)`
-`type Circle := (x: *Shape)`
-`type Square := (x:*Shape)`
+`type Circle := (x: Shape)`
+`type Square := (x:Shape)`
 `type Color := ();`
 `type SolidColor := (x:*Color)`
 a call to paint function with some inputs, will use above 3 rules to dispatch.
 - suppose we have `Base` type and `Derived` types. Two methods `add` and `addAll` are implemented for both of them.
 if `addAll(Derived)` calls `addAdd(Base)` which in turn calls `add(Base)` then a call to `addAll(Derived)` will NOT call `add(Derived)` but will call `add(Base)`. When `addAll(Base)` is called, it has a reference to `Base` not a `Derived`. 
-- **Explode operator**: You can apply this operator to types (also used to define inheritance) or accumulated values (values of type tuple or array or hash). If this is applied to a value of any other type, there will be compiler error. 
+- **Explode operator**: You can apply this operator to data. 
 `var g: int[] = [@my_three_int_tuple]`. It will explode or unpack its operator and be replaced by the inner definition. Explode on data types can be used anywhere you want to define a tuple even for function input or output. 
 `func add(@point) -> ` So add function will accept according to `point` data type.
 You can use `_` notation when using explode on values, to ignore part of the output:
@@ -654,7 +639,7 @@ To have a tuple with unnamed fields based on value of another tuple, just put `@
 `@Point` will translate to `x:int, y:int`
 `Point.@` will translate to `int, int`
 You can combine explode operator with other data or type definition. `var g = (@my_point, z:20)`. g will be `(x:10, y:20, z:20)`. Explode on primitives has no effect (`@int` = `int`).
-- If a type does not have any fields (empty types), you don't need to use explode to inherit from it. It is optional. You just need to implement appropriate methods (If not, and those methods are defined empty for base type, a compiler error will be thrown). So if we have `func check(x: Alpha)` and `Alpha` type does not have any field, any other data type which implements functions written for `Alpha` can be used instead.
+- If a type does not have any fields (empty types), you don't need to use `+` to inherit from it. It is optional. You just need to implement appropriate methods (If not, and those methods are defined empty for base type, a compiler error will be thrown). So if we have `func check(x: Alpha)` and `Alpha` type does not have any field, any other data type which implements functions written for `Alpha` can be used instead.
 - Empty types are like interfaces and are defined like `type Alpha`.
 Rules of subtyping: here `S` is subtype (e.g. a Circle) and `P` is parent type (like Shape)
 - S and P must be of the same kind (primitive, tuple, sum, function)
@@ -673,16 +658,40 @@ Same for `int => string` and `byte => string`. So if we want to have a generic h
 
 ### Templates
 - You can use empty types or types with minimum required features, to define a template.
+- To specialize, you can embed parent generic type transformed with `with` keyword. This is like inheritance but with transformation.
 - You can specialize a generic functions and runtime will choose the most specific candidate.
 ```
 type storable
 
 type Stack := storable[]
+type InStack := Stack with { storable := int }
 func push(s: Stack, i: storable) ...
 func pop(s: Stack) -> storable ...
 ```
-- This type of specialization is useful for simple types where there are clear subtypes. For more general case you can use `with`.
+- The syntax for template-based types is similar to inheritance. This is called parametric polymorphism.
 - You can also use `with` to re-write types according to type of other arguments.
+```
+type T
+type Stack := T[]
+type MyStack = Stack with { T := int }
+type IntStack := int[] ;exactly same as above
+```
+- You can use `%` operator to point to compile-time declared type of another variable. This can be used for generics.
+`x: %y` means type of `x` must be same as `y`.
+```
+var x: int = 12
+var y: %x      ;type of y will be int
+type StackElement
+type Stack := (head: StackElement, data: StackElement[])
+var my_stack: Stack with { StackElement := int }
+func push(s: Stack, x: %s.head)
+func pop(s: Stack) -> %s.head . ;no change can happen on `s` so type of `s.head` won't change.
+func mpush(s1: Stack, s2: Stack, x1: %s1.head, x2: %s2.head)
+func checkOnlyLong(s: Stack with { StackElement := long })
+func reverseMap(s: Map) -> Map with { %s.Target => %s.source }
+```
+So you can have:
+`var x: Stack = DefStack where { $ > 0 } with { StackElement := DataItem }`
 
 
 ### Best practice
