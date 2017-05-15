@@ -2,11 +2,11 @@
 
 Read [Part1] (https://github.com/mm-binary/electron-lang/blob/master/backup/EEP.v1.md).
 
-\* - Runtime - use concept of c++ smart ptr to eliminate GC
+Y - Runtime - use concept of c++ smart ptr to eliminate GC
 
-\* - Add native parallelism and communication tools.
+Y - Add native parallelism and communication tools.
 
-\* - Introduce caching of function output (if it is not void)
+N - Introduce caching of function output (if it is not void)
 Maybe this can be done automatically by runtime.
 
 N - If we really don't want to end statements with `;` then use another notation for comment.
@@ -4862,21 +4862,185 @@ But: `func push(s: Stack, xd: %s.data[])->` this can accept IntStack2 too.
 So we have to have the rule: `%` is applied to input or it's fields. Not a type like T.
 So in `%U` U must be a variable (like x or input.x or ...) not a type (like Stack or T).
 
-N - Overview:
-options:
-- with and `%` to extract type - `func pop(s: Stack) -> %s.head`
-- code generation - Like golang, but built-in
-- Type type - Similar to reflection but with limitations
-- Macro - Like C, generate code for all types and functions needed
-- Auto blueprint - generate call wrappers to cast types
-- Function-like type: `type Stack(S,T,Y)`
-
-? - `if ( x :: t:int)` vs `match(x) t:int`
-`::` with variable definition does not mix. But an operator is better suited because it is more readable.
-`x OP y` rather than `match(x) y`
-
-? - Every definition is global (type, function) by default. Maybe we want to use it locally.
+N - Every definition is global (type, function) by default. Maybe we want to use it locally.
 maybe multiple definitions of same type , same name and same structure can be regarded the same.
 
-? - we can reduce exposure and make refactoring easy if we can hide some types and functions inside a module
+N - we can reduce exposure and make refactoring easy if we can hide some types and functions inside a module
 
+Y - `if ( x :: t:int)` vs `match(x) t:int`
+`::` with variable definition does not mix. But an operator is better suited because it is more readable.
+`x OP y` rather than `match(x) y`.
+`::` can be used to check if a variable can match with a value or type or variable-bound type.
+`x :: 5` x can match with 5
+`x :: int` x is an integer
+`x :: t:int` x is an integer, then t will have it's value.
+Lets remove the third case. If x is matched with int, then you need to cast to be able to use it.
+
+Y - explain about `none`.
+Nothing equals `none`. It won't match in any `::` or if.
+There is no value for it. You can use it's type for return value of a function.
+But there is no value you can return. `return` will do that.
+Type of a block of code, is `none`. It is reverse of `any` where everything matches with it.
+
+N - But `any` will not be matched with a tuple that has two arguments. Is that right?
+no. It will.
+
+N - Do we need `any`? Java/C# have object, golang has `{}` rust has any.
+
+Y - `::` is very confusing. Explain it better and check if we are covering all cases with regards to subtyping.
+I think it is doing two different things. Check for match, ?.
+The fact that we can introduce new variable without `var` is a bit off gen and orth.
+But note that we are defining lambdas here (Really?).
+```
+result = my_tree !! {
+    Empty -> 0,
+    x:int -> 1+x,
+    NormalTree -> ...
+  }
+result = my_tree :: x:int -> 11, any -> -1
+```
+Note that you cannot use complete form of `::` in if. You can just match with a single type.
+Now that we have match, we can write `if ( x :: 5 )` instead of `if ( x == 5)`.
+So it this right?
+Can we say, `::` cannot match with literals? No it will hinder gen. 
+`if ( x :: y )` does it check for type or values? right side of match can either be a literal or a type or a new variable with it's own type. you cannot use `::` to do `==` comparison.
+
+? - Better syntax for `%`. We need to cover hash and array too.
+Maybe we should use a keyword instead of operator. 
+The argument to `typeof` is not evaluated. Compiler uses it to create type.
+```
+var x: int = 12
+var y: typeof(x)
+var z: typeof(y[0])
+var t: int => string
+var p: typeof(t[0]) ;string
+var q: typeof(t)
+```
+That's why other languages (Java, C#, D) all put the parameter on the generic type and not in the other type.
+One bad solution: Force developer to have a default variable inside the generic type, and use it.
+So `%x` means type of x. `%x.` means type of a field named `_type` inside x.
+But this will be a waste of memory.
+What if we can define market fields? Fields that are not allocated. We just use their type.
+`type T`
+`type Stack := (data: T[], info: T, __`
+Or add a way to get keys of a hash-table and let `%` just evaluate an expression.
+But writing a dummy nonesense expression just to fetch a value is not intuitive.
+we can have other keywords: `typeof`, `typeOfElements`... but this is not effective.
+What if we can refer to a type in `%`?
+```
+type T
+type Stack := (data: T[])
+type IntStack := Stack with { T := int }
+type IntStack2 := (data: int[])
+func push(s: Stack, data: s%T)-> . ;refer to type T defined inside variable s
+func pop(s: Stack) -> s%T
+```
+Problem: Maybe in push you receive a sub-type of `Stack` which does not have a `T` (Like IntStack2).
+Is there something like abstract type? Where each sub-type must define?
+If so, we can define a stack with `T` as abstract type. So any type which wants to be subtype of Stack, must define value for T. We should ban defining `IntStack2` because although it makes sense with subtyping, it will cause problem with generics.
+What if we just have `with` and forget about `%`. Cast the result of push. 
+```
+type T
+type Stack := (data: T[])
+type IntStack := Stack with { T := int }
+type IntStack2 := (data: int[])
+func push(s: Stack, data: T)-> 
+func pop(s: Stack) -> T
+```
+For sending parameters, no change is needed. For receiving results, we have to cast.
+Any incorrect type arguments, will be caught at run-time rather than compile time.
+`push(my_int_stack, "A")` will compile well but at runtime there will be error. 
+This can be considered a move to make things simpler.
+Just like the way we have data subtype, we have this for functions.
+`func pop(s: Stacl)->T`
+`func pop(s: IntStack)->int`
+if we call `pop(x)` and x is `IntStack` then the second function will be called. 
+Second pop just calls first one + cast: 
+`func pop(s: IntStack) -> int(pop(s))` -q: how does runtime know which fn to call in this case?
+`func push(s: IntStack, x: int) -> push(s, x)` -but anyway, user can call original push with a string.
+We cannot add a new `push` function with specialized input types. It does not stop developer from making a wrong call.
+Either we have to ignore this all (runtime cast) or change signature of the original function.
+
+N - Overview:
+options:
+- with and `%` to extract type - `func pop(s: Stack) -> %s.head`, confusing and needs a lot of special syntax
+- code generation - Like golang, but built-in, ambiguity about function names
+- Macro - Like C, generate code for all types and functions needed, has same problems as codegen
+- Auto blueprint - generate call wrappers to cast types, code will not be readable.
+- Type type - Similar to reflection but with limitations, we cannot treat type like a variable.
+- Function-like type: `type Stack(S,T,Y)`
+
+N - Maybe adding Type with restrictions (so we don't fall in reflection trap), is the best choice.
+```
+type Stack := (T: Type, data: T[])
+func pop(s: Stack) -> s.T    
+func push(s: Stack, x: s.T) ...
+func len(s: Stack)...
+var s: Stack(T=int)
+var g:int = pop(s)
+```
+- This will be an area which we will put lots of resitrctions.
+- This can be the compile time type. So it wont be needed at runtime.
+- Depends to implementation, maybe compiler decides to enforce it at runtime and do casting code.
+- Writing: You can have variables of type `Type`. You can only assign another Type or a literal to these variables.
+- Reading: You can define other variables, function input or output based on them.
+- How can we read a type and compare it? `if ( tt :: int )` type of `tt` is `Type` not `int` but if it's contents are int?
+`if ( t == int )`
+- Do we need a specific syntac for type literals? e.g. `%int`? So it won't be mistaken.
+`if ( t == %int )`
+- If this is accepted, we won't need decltype and `with` keyword.
+```
+type map := (S: Type, T: Type, data: S => T)
+func reverseMap(s: map) -> s.T => s.S 
+```
+- Maybe we can use this later for serialization (storing type info). By providing a function which converts a Type to a number or identifier string.
+- This will definitely be the least gen and orth part but it's currently the best solution for the problem of generics which adds minimum rules and extra notations.
+- So to inherit: `type Circle := Shape + (r: float)`
+- Generic type: `type Stack := (T: Type, data: T[])`
+We cannot specialize because we cannot define an `IntStack` type. Because types do not deal with values.
+Problem: How can we define a variable of type Stack with real type of elements? 
+Who guarantees type wont be changed?
+- Data: `var intStack :Stack with {T = %int}`
+`T` should not be something along other fields. It should be a one-time set parameter which is not supposed to change. And with this syntax, it is difficult to enforce this. it will mean another exception which I hate to add.
+```
+type Stack<T> := (T: Type, data: T[])
+func pop(s: Stack<T>) -> T
+func push(s: Stack<T>, x: T) ...
+func len(s: Stack)...
+var s: Stack<int>
+var g:int = pop(s)
+```
+We are adding a field of type `Type` but nothing else will be ready for this concept. We cannot stop developer from changing value of this field. It simply is not similar to other fields.
+
+? - What about defining a type-generator type.
+```
+;this is a combination of function and type.
+;it is a function because it has an input argument.
+;it is a type because it defines a type.
+type Stack(T) := (data: T[])
+;what if we really define a function? No. it will be too flexible.
+func Stack(t: Type) -> (data: T[])
+====
+func pop(s: Stack!T) -> T    
+func push(s: Stack!T, x: T) ...
+func len(s: Stack)...
+var s: Stack!int
+var g:int = pop(s)
+```
+
+? - Can we define generic function types?
+
+? - can we remove default values for function inputs.
+This will make matching and `::` simpler.
+But this is norm in FP. Like Haskell's implementation for factorial:
+`fn 0 :: 0`
+But this can easily be done inside the body of the function.
+
+? - Can we enhance abstraction tools?
+
+? - can we return exception? Or it must be done using assert only?
+
+? - q about fn call resolution:
+`fn push(x: Stack, y: any)`
+`fn doWork(x: IntStack, y: int)`
+if we call `doWork(myIntStack, "A")` which one will be called? First one.
