@@ -4755,7 +4755,7 @@ So we can have `func work(x:int, y:int)` and pass `(x=5, y=10, s=112)` to it (Of
 And `type Stack := StackElement[]` and `IntStack := int[]`: IntStack is sub-type of Stack. Whenever we need a stack, we can send `IntStack`. But `int[]` and `long[]` are not subtypes. 
 Same for `int => string` and `byte => string`. So if we want to have a generic hash, the key/value must be non-primitive.
 
-? - make `with` more intuitive and well-defined.
+Y - make `with` more intuitive and well-defined.
 Problems:
 - How to access array or hash data with `%`.
 - Can we replace them with existing language constructs?
@@ -4802,7 +4802,7 @@ We have these purposes for `@`. So it only can be applied to data (much simpler 
 It can be used to explode and create a clone of it's operator. And it does not have anything to do with `with`.
 Now that `@` can explode, we can make use of `_` place-holder and tuple-to-array conversion and call func by tuple exploded.
 
-? - What about `%`? We can make `%` behave like C++ `decltype`. 
+Y - What about `%`? We can make `%` behave like C++ `decltype`. 
 Do we want compile-time generics or run-time generics?
 ```
 type T
@@ -4836,7 +4836,7 @@ func draw(s: Shape) -> %s ;if we pass a circle, it will return a circle
 ```
 Note that with this definition, we can pass `int[]` which does not have any relation to Stack, to `func push(s: Stack, data: %s.T)` and the function should know that there is no `s.T` but it is `int` (type of s, is `int[]` and it is usable because it is a subtype of Stack).
 
-? - subtype
+Y - subtype
 `type Stack := T[]`
 `var s: int[]`
 is s a subtype of Stack? Can I pass `s` to a function which expects a `Stack`? If yes, the compiler will have a hard time finding `T` in param specifications.
@@ -4862,11 +4862,7 @@ But: `func push(s: Stack, xd: %s.data[])->` this can accept IntStack2 too.
 So we have to have the rule: `%` is applied to input or it's fields. Not a type like T.
 So in `%U` U must be a variable (like x or input.x or ...) not a type (like Stack or T).
 
-? - `if ( x :: t:int)` vs `match(x) t:int`
-`::` with variable definition does not mix. But an operator is better suited because it is more readable.
-`x OP y` rather than `match(x) y`
-
-? - Overview:
+N - Overview:
 options:
 - with and `%` to extract type - `func pop(s: Stack) -> %s.head`
 - code generation - Like golang, but built-in
@@ -4874,6 +4870,10 @@ options:
 - Macro - Like C, generate code for all types and functions needed
 - Auto blueprint - generate call wrappers to cast types
 - Function-like type: `type Stack(S,T,Y)`
+
+? - `if ( x :: t:int)` vs `match(x) t:int`
+`::` with variable definition does not mix. But an operator is better suited because it is more readable.
+`x OP y` rather than `match(x) y`
 
 ? - Every definition is global (type, function) by default. Maybe we want to use it locally.
 maybe multiple definitions of same type , same name and same structure can be regarded the same.
