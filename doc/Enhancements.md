@@ -4877,6 +4877,6 @@ options:
 
 ? - Every definition is global (type, function) by default. Maybe we want to use it locally.
 maybe multiple definitions of same type , same name and same structure can be regarded the same.
+
 ? - we can reduce exposure and make refactoring easy if we can hide some types and functions inside a module
 
-? - clarify about inheritance for unnamed tuples.
