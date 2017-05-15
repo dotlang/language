@@ -4649,7 +4649,7 @@ push(s1, "A") ;who can stop this?
 Con: Adds a huge new notation.
 Maybe we can have a variable of type `type`. And use it in function definition. No.
 
-? - Can we make `with` and `%` more well-defined?
+N - Can we make `with` and `%` more well-defined?
 when we say `%x` what exactly do we mean? It is complicated for example with an array. If we want to refer to type of elements of the array.
 Adding a field of type `type` to tuple -> Con: Cannot be used with sum types.
 Con: Too many types are used and they are all global.
@@ -4693,7 +4693,7 @@ var g:int = pop(s)
 ```
 This is not general and is not orth. We need to add a lot of limitation for this.
 
-? - Code generation for templates.
+N - Code generation for templates.
 Note that in this case, we cannot have Stack of int and float with same type name. Because there will be two different types with the same name.
 ```
 type StackElement
@@ -4709,7 +4709,8 @@ var s1: Stack with { StackElement <-int, StackInfo <- float }
 var s2: Stack with { StackElement <-string, StackInfo <- float }
 var g: int = pop(s1)
 ```
-? - Function-like type
+
+N - Function-like type
 Most similar to Java and C++. Can be considered as a special kind of code-generation.
 ```
 type Stack!(T, S) := (head: T, data: T[], info: S) ;calling Stack(int, float) will generate a new type
@@ -4721,9 +4722,64 @@ func push(s: Stack!(T, S), x: T) { var t: T }
 func push(s: Stack!(int, float), x: int) ;specialization
 func push(s: Stack!(S, float), x: int) ;specialization 2
 func len(s: Stack!(T,S)) -> int
+func compare(s: Stack!(T, S), t: Stack!(X,S)) -> T
+;other notation:
+func compare(s: Stack, t: Stack) -> %s.Element
 var g:int = pop(s)
 ```
 Let's try to make this cleaner, more intuitive and more general/orth.
+What if we combine this with code-gen? Functions will be general but runtime will create appropriate wrappers for them.
+- what about default value and super type of template argument?
+
+? - We can make `%` behave like C++ `decltype`. 
+And make `with` more intuitive and well-defined.
+Problems:
+- How to access array or hash data with `%`.
+- Can we replace them with existing language constructs?
+```
+type T
+type Stack := (data: T[])
+func pop(s: Stack) -> %s.T    
+type IntStack := { T := int } Stack ;re-define T as int and create a new Stack type for s
+type IntStack := { T:= int } (data: T[]);this is same as above
+var s: IntStack
+```
+What is the relation with above type and the original Stack? Is it a subtype? Then we need to extend the notation of subtyping.
+`type IntStack := { T := int } Stack` - this is more intuitive.
+We can say IntStack is subtype of Stack? so is `int[]` a subtype of `any[]`?
+I think then we need to extend definition of subtype. 
+How to define nested generics? Like a hash of `list` to `list`.
+`type h := T => U`
+`type myHash := { T := int, U := float } h`
+`type myHash2 := { T := {Element:int} list, U := {Element:float} list } h`; this is not very readable
+in plain english we say: myHash is a hash, where T is int and U is float.
+These are more readable.
+`type myHash := h with { T := int, U := float }`
+`type myHash2 := h with { T := list with {Element:int}, U := list with {Element:float}}`
+If we update notation of subtyping, there will be overlap between inheritance and templates.
+Inheritance: define type Circle based on Shape with additional fields
+template: define type IntStack based on Stack with same fields but different types (subtypes)
+`type Circle := (@Shape, rad: float)`
+`type InStack := Stack with { T := int }`
+So with new notation for subtyping, `func f(x: any, y:any)` and `func f(x:int, y:int)` are related.
+And `(int,int)` is a sub-type of `(any, any)` which makes sense.
+How can we unify these two notations?
+We can apply template for non tuple type.
+
+
+? - clarify sub-typing
+1. how subtyping holds for funcion types?
+2. what about unnamed tuples?
+3. should it be implicit?
+`func dowork(x:int)` can I call this with `dowork(10,20)`?
+Because `(int, int)` inherits from `(int)` like Circle and Shape.
+but this will add ambiguity: which int should represent x? 10 or 20?
+For named tuple, we don't have this problem. but for unnamed, there must be a clear choice.
+I think it makes sense, in general, to send extra parameters (if there is no ambiguity) because this is what inheritance is.
+
+? - `if ( x :: t:int)` vs `match(x) t:int`
+`::` with variable definition does not mix. But an operator is better suited because it is more readable.
+`x OP y` rather than `match(x) y`
 
 
 ? - Overview:
