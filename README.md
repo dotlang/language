@@ -656,6 +656,20 @@ To have a tuple with unnamed fields based on value of another tuple, just put `@
 You can combine explode operator with other data or type definition. `var g = (@my_point, z:20)`. g will be `(x:10, y:20, z:20)`. Explode on primitives has no effect (`@int` = `int`).
 - If a type does not have any fields (empty types), you don't need to use explode to inherit from it. It is optional. You just need to implement appropriate methods (If not, and those methods are defined empty for base type, a compiler error will be thrown). So if we have `func check(x: Alpha)` and `Alpha` type does not have any field, any other data type which implements functions written for `Alpha` can be used instead.
 - Empty types are like interfaces and are defined like `type Alpha`.
+Rules of subtyping: here `S` is subtype (e.g. a Circle) and `P` is parent type (like Shape)
+- S and P must be of the same kind (primitive, tuple, sum, function)
+- Primitive: primitives cannot be subtypes.
+- Function: If both are named, they should have the same name. Also their input and output must be subtype of each other.
+- Sum: if P and S have same number of cases and they are subtypes of each other in any order (A|B vs C|D where A is st of D and B is st of C).
+- Tuple (named, named): If for each element in P (Called P0), there is an element in S (called S0) with the same name and S0 is a subtype of P0.
+- Tuple (unnamed, unnamed): For each member of S (Called S0), there must be a member in P (Called P0) where S0 is subtype of P0.
+- Tuple (named, unnamed): If one of tuples is named, we drop naming and treat them as unnamed.
+- Array: If their elements are subtype.
+- Hash: If key and value are subtype.
+- Anything can be subtype of `any`.
+So we can have `func work(x:int, y:int)` and pass `(x=5, y=10, s=112)` to it (Of course if there is no other function for that input).
+And `type Stack := StackElement[]` and `IntStack := int[]`: IntStack is sub-type of Stack. Whenever we need a stack, we can send `IntStack`. But `int[]` and `long[]` are not subtypes. 
+Same for `int => string` and `byte => string`. So if we want to have a generic hash, the key/value must be non-primitive.
 
 ### Templates
 - You can use empty types or types with minimum required features, to define a template.
