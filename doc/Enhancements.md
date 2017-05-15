@@ -4731,8 +4731,31 @@ Let's try to make this cleaner, more intuitive and more general/orth.
 What if we combine this with code-gen? Functions will be general but runtime will create appropriate wrappers for them.
 - what about default value and super type of template argument?
 
-? - We can make `%` behave like C++ `decltype`. 
-And make `with` more intuitive and well-defined.
+Y - clarify sub-typing
+1. how subtyping holds for funcion types?
+2. what about unnamed tuples?
+3. should it be implicit?
+`func dowork(x:int)` can I call this with `dowork(10,20)`?
+Because `(int, int)` inherits from `(int)` like Circle and Shape.
+but this will add ambiguity: which int should represent x? 10 or 20?
+For named tuple, we don't have this problem. but for unnamed, there must be a clear choice.
+I think it makes sense, in general, to send extra parameters (if there is no ambiguity) because this is what inheritance is.
+Rules of subtyping: here `S` is subtype (e.g. a Circle) and `P` is parent type (like Shape)
+- S and P must be of the same kind (primitive, tuple, sum, function)
+- Primitive: primitives cannot be subtypes.
+- Function: If both are named, they should have the same name. Also their input and output must be subtype of each other.
+- Sum: if P and S have same number of cases and they are subtypes of each other in any order (A|B vs C|D where A is st of D and B is st of C).
+- Tuple (named, named): If for each element in P (Called P0), there is an element in S (called S0) with the same name and S0 is a subtype of P0.
+- Tuple (unnamed, unnamed): For each member of S (Called S0), there must be a member in P (Called P0) where S0 is subtype of P0.
+- Tuple (named, unnamed): If one of tuples is named, we drop naming and treat them as unnamed.
+- Array: If their elements are subtype.
+- Hash: If key and value are subtype.
+- Anything can be subtype of `any`.
+So we can have `func work(x:int, y:int)` and pass `(x=5, y=10, s=112)` to it (Of course if there is no other function for that input).
+And `type Stack := StackElement[]` and `IntStack := int[]`: IntStack is sub-type of Stack. Whenever we need a stack, we can send `IntStack`. But `int[]` and `long[]` are not subtypes. 
+Same for `int => string` and `byte => string`. So if we want to have a generic hash, the key/value must be non-primitive.
+
+? - make `with` more intuitive and well-defined.
 Problems:
 - How to access array or hash data with `%`.
 - Can we replace them with existing language constructs?
@@ -4764,23 +4787,84 @@ template: define type IntStack based on Stack with same fields but different typ
 So with new notation for subtyping, `func f(x: any, y:any)` and `func f(x:int, y:int)` are related.
 And `(int,int)` is a sub-type of `(any, any)` which makes sense.
 How can we unify these two notations?
-We can apply template for non tuple type.
+`type Circle := (@Shape, rad: float)`
+**What if we use `+` to combine two tuples:**
+`type Circle := Shape + (rad: float)`
+`type Stack := (data:StackElement[], info: int)`
+`type InStack := Stack with { T := int }`
+`type Stack2 := StackElement[]`
+`type InStack2 := Stack with { T := int }`
+`type Holder := T`
+`type IntHolder := Holder with { T := int }`
+To re-use an existing type, just write it's name. If you want to specialize, then use `with` block.
+So we no longer need `@` for inheritance. 
+We have these purposes for `@`. So it only can be applied to data (much simpler now).
+It can be used to explode and create a clone of it's operator. And it does not have anything to do with `with`.
+Now that `@` can explode, we can make use of `_` place-holder and tuple-to-array conversion and call func by tuple exploded.
 
+? - What about `%`? We can make `%` behave like C++ `decltype`. 
+Do we want compile-time generics or run-time generics?
+```
+type T
+type Stack := (data: T[])
+type IntStack := Stack with { T := int }
+type IntStack2 := int[] ;same as above
+func push(s: Stack, data: T)->
+func push(s: Stack, t: Stack, data: T, po: T) -> T
+func pop(s: Stack) -> T
+var s: IntStack
+```
+run-time generics: At runtime, data will be casted according to it's real type. so if you call `pop` with `IntStack` althoug it returns `any` but runtime will cast this to real type `int`. 
+If we want compile-time generics, then we have to point to the type we want or return which means we will need `%`.
+Having run-time generics makes compiling simple (only one copy of function is compiled). 
+With runtime polymorphism, we still may need to cast at runtime. 
+`type ShapeStack := Stack with { T := Shape }`
+We can push a Circle to this stack, and when we pop, we will have a `Shape`. So we will need to cast if we need Circle.
+We won't have any way to detect whether result of pop is a Circle or Square or ... .
+But we cannot prevent this, as Circle is a sub-type of Shape.
+But we need some checks at compile time. If `push` receives an IntStack and a string, what should it do?
+So regardless of runtime code, we need a mechanism to say type of input/output of a function is of type `T` which is used in another input.
+```
+type T
+type Stack := (data: T[])
+type IntStack := Stack with { T := int }
+type IntStack2 := (data: int[]) ;same as above
+func push(s: Stack, data: s%T)->
+func push(s: Stack, t: Stack, data: s%T, po: t%T) -> s%T
+func pop(s: Stack) -> s%T
+func draw(s: Shape) -> %s ;if we pass a circle, it will return a circle
+```
+Note that with this definition, we can pass `int[]` which does not have any relation to Stack, to `func push(s: Stack, data: %s.T)` and the function should know that there is no `s.T` but it is `int` (type of s, is `int[]` and it is usable because it is a subtype of Stack).
 
-? - clarify sub-typing
-1. how subtyping holds for funcion types?
-2. what about unnamed tuples?
-3. should it be implicit?
-`func dowork(x:int)` can I call this with `dowork(10,20)`?
-Because `(int, int)` inherits from `(int)` like Circle and Shape.
-but this will add ambiguity: which int should represent x? 10 or 20?
-For named tuple, we don't have this problem. but for unnamed, there must be a clear choice.
-I think it makes sense, in general, to send extra parameters (if there is no ambiguity) because this is what inheritance is.
+? - subtype
+`type Stack := T[]`
+`var s: int[]`
+is s a subtype of Stack? Can I pass `s` to a function which expects a `Stack`? If yes, the compiler will have a hard time finding `T` in param specifications.
+It should not be subtype. Because parent type has a name: `Stack` so sub-type must be based on it.
+`type Stack := T[]`
+`type MyStack = Stack with { T := int }`
+`type IntStack := int[]`
+is IntStack a subtype of Stack? No.
+`type Shape := (x:int)`
+`type Circle := (x: int, r: int)`
+is Circle a subtype of Shape? no.
+Problem will be: if we have a library for Shape, and another one for Circle, which don't know anything about each-other, then I cannot use Circle as a Shape. Because Circle's definition does not reference Shape. Unless I cast it:
+`process_shape(Shape(myCircle))` but this is not good.
+What if in `%` we don't refer to things that are specific type that type?, like T?
+```
+type T
+type Stack := (data: T[])
+type IntStack := Stack with { T := int }
+type IntStack2 := (data: int[]) ;same as above?
+```
+If we define func `push(s: Stack, data: s%T)->` then we cannot send IntStack2 because it does not have any T.
+But: `func push(s: Stack, xd: %s.data[])->` this can accept IntStack2 too.
+So we have to have the rule: `%` is applied to input or it's fields. Not a type like T.
+So in `%U` U must be a variable (like x or input.x or ...) not a type (like Stack or T).
 
 ? - `if ( x :: t:int)` vs `match(x) t:int`
 `::` with variable definition does not mix. But an operator is better suited because it is more readable.
 `x OP y` rather than `match(x) y`
-
 
 ? - Overview:
 options:
