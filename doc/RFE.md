@@ -154,5 +154,10 @@ Why do we need to define a function that can accept "Anything in any number" and
 even when we load a plugin at runtime, the input/output must be specified.
 Or in map function.
 
+Y - Remove extra operators overridable.
+- OpIterate
+- opMath: Reduce to only `+`? No.
+We also need to be able to overload `~` operator so we can have regex for strings.
+
 ? - Find a good name.
 
