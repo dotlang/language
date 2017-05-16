@@ -395,11 +395,10 @@ The math operators can be combined with `=` to do the calculation and assignment
 - An expression which is combination of multiple statements with `&` will result in evaluation of the last non-none one.
 `var g = x=6 & y=7` will make g equal to 7.
 - Regex: `x = ( data ~ '^hello' )` x will be an array containing all matches. You can use groups for matching.
-- You can override opeartors by defining four functions. Array and hash-table type use this feature.
+- You can override opeartors by defining below functions. Array and hash-table type use this feature.
  - `opIndex` for `[]` reading and writing and slice for array and hash
  - `opMath` for `+-*/** %`
- - `opCompare` for `==, !=, <=, ...`
- - `opIterate` for `++, --`
+ - `opCompare` for `==, !=, <=, ~,...`
 
 
 ### Special Syntax
