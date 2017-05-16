@@ -139,7 +139,20 @@ N - Cant we unify array and hash?
 
 Y - what if we define string as `char[]` and override `+` operator for that? and len?
 
+Y - Loading code on the fly.
+`func loadCode(file: string)`
+How can we define type of a general function? `func(any)->any`
+just mention in the core functionality
+
+N - How can we define a function that can accept anything and return anything?
+How can we define a function that accepts only one input and returns anything?
+`type Function := func(any)->any`
+`type SingleFunc := func(i:any)->any`
+what does this mean?
+`type SingleFunc := func(any,any)->any`
+Why do we need to define a function that can accept "Anything in any number" and return anything?
+even when we load a plugin at runtime, the input/output must be specified.
+Or in map function.
+
 ? - Find a good name.
 
-? - Loading code on the fly.
-`func loadCode(file: string)
