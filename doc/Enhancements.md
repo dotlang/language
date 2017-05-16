@@ -4905,7 +4905,7 @@ So it this right?
 Can we say, `::` cannot match with literals? No it will hinder gen. 
 `if ( x :: y )` does it check for type or values? right side of match can either be a literal or a type or a new variable with it's own type. you cannot use `::` to do `==` comparison.
 
-? - Better syntax for `%`. We need to cover hash and array too.
+N - Better syntax for `%`. We need to cover hash and array too.
 Maybe we should use a keyword instead of operator. 
 The argument to `typeof` is not evaluated. Compiler uses it to create type.
 ```
@@ -5012,7 +5012,12 @@ var g:int = pop(s)
 ```
 We are adding a field of type `Type` but nothing else will be ready for this concept. We cannot stop developer from changing value of this field. It simply is not similar to other fields.
 
-? - What about defining a type-generator type.
+N - Can we define generic function types?
+
+N - general sort:
+`func sort(x: Iteratable, compare: func(any, any)->bool)`
+
+N - What about defining a type-generator type.
 ```
 ;this is a combination of function and type.
 ;it is a function because it has an input argument.
@@ -5028,19 +5033,92 @@ var s: Stack!int
 var g:int = pop(s)
 ```
 
-? - Can we define generic function types?
+N - code generation?
+```
+;a completely normal and general implementation of stack
+type Stack := (head: %T, data: %T[])
+func push(s: Stack, x: %T)
+func pop(s: Stack) -> %T { ... return %T(result) }
+;usage:
+;this will render at compile time, all functions above but for int instead of T
+;if input is SE it will be int, if output is, it will be casted.
+var s1: Stack for T := int;
+template (%S, %T )
+{
+	type Map := %S => %T
+	func reverse(x: %S=>%T) -> %T => %S ... 
+}
+;this does not make sense, unless we use a special notation.
+```
 
-? - can we remove default values for function inputs.
+N - "the simplest thing that could possibly work."
+
+N - Write a sample code which sets an inner value in a map
+```
+func setInnerValue(map:string=>any=>..., path: string, value: any) -> 
+{
+	if ( getLen(path) == 1 ) map[path] = value & return
+	var first = getFirst(path)
+	return setInnerValue(map[first], excludeFirst(path), value)
+}
+```
+
+Y - After writing ~1K lines about ways to handle generics, let's just ignore that and go the go way.
+The only thing we might add is a support for another much needed data storage (linked list?)
+Almost every solution for generics needs adding some new keywords and opertors and special syntax.
+Let's use one for linked-list.
+operations: insert, delete, iterate, get head and tail.
+```
+type LLElement := (x: int, next: LLElement, prev: LLElement)
+type People := %int    ;this is a linked list of integers. 
+```
+Let's not handle it in syntax level.
+
+N - what is type of this? `int => string => customer`?
+ If key or value have multiple elements, a tuple should be used.
+
+Y - Why not allow `+` on tuples?
+Because it will have ambiguity. 
+Maybe we should replace it for types too. Return `@`.
+
+Y - can we return exception? Or it must be done using assert only?
+
+Y - can we remove default values for function inputs.
 This will make matching and `::` simpler.
 But this is norm in FP. Like Haskell's implementation for factorial:
 `fn 0 :: 0`
 But this can easily be done inside the body of the function.
+Maybe we add a notation to call a function with the same name.
 
-? - Can we enhance abstraction tools?
-
-? - can we return exception? Or it must be done using assert only?
-
-? - q about fn call resolution:
-`fn push(x: Stack, y: any)`
+N - q about fn call resolution:
+`fn doWork(x: Stack, y: any)`
 `fn doWork(x: IntStack, y: int)`
 if we call `doWork(myIntStack, "A")` which one will be called? First one.
+
+Y - As a move for gen, function input is a tuple which is referred using `$` notation.
+So `$.0` is the first argument.
+But we need a shortcut to refer to the first input to make code more expressive. Maybe not.
+
+Y - Do we need to specify type in a tuple literal? It will be ambiguous with function call:
+`return A(10,20)` is it a call to function A or a tuple?
+You cannot mix tuple literal with it's type. It should be inferred or defined previously.
+
+N - Think a bit more about function call dispatch. Is everything well defined? 
+
+N - Enable iterating over a tuple. We only need an iterator which can be provided by runtime.
+
+N - Can we at least make an improvement about generics: When a data structure is being created with fields of `any` type, runtime will allocate a big space. Can we declare intended type for any? To help runtime make proper allocation and give error is incorrect assignment is made?
+For example linked-list: `type LLE := (data: any, next: LLE, prev: LLE)`
+but we can easily re-define our type which will be a subtype of that type too.
+`type LLTint := (@LLE, data: int)`
+
+N - If output of a function is `none`, it must have a side-effect. Because it also cannot change the input so it would be useless if it has no side effect.
+
+N - Linked list as built-in data type
+If we use functions for operations, then it would be difficult as we need to specify types.
+Same is for hash. How can we define `put` function for a general hash?
+`func put(h: any => any, t: value)` but it won't be type enabled.
+```
+type
+```
+No.
