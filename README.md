@@ -13,7 +13,7 @@ May 8, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, added `with` keyword for compile-time type constraints, clarified sub-typing, clone `@` only applies to data, `+` used to embed other types, clarifications for rules of inheritance and subtyping
+- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -36,9 +36,9 @@ The underlying rules of design of this language are
 [KISS rule] (https://en.wikipedia.org/wiki/KISS_principle) and
 [DRY rule] (https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  There are functions and types. Each function gets one or more input (each of it's own type) and gives an output. Types include primitive data types, tuple, sum types and a general type alias. Concurrency, templates (generics), lambda expression and exception handling are supported.
+As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  There are functions and types. Each function gets one or more input (each of it's own type) and gives an output. Types include primitive data types, tuple, sum types and a general type alias. Concurrency, lambda expression and exception handling are supported.
 
-In summary, Electron is C language + Garabage collector + templates (generic programming) + first-class functions + sum data types + module system + composition and powerful polymorphism + simple and powerful standard library + immutability + built-in data validation + contracts + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + built-in concurrency + built-in memoization + sane defaults - ambiguities - pointers - macros - header files.
+In summary, Electron is C language + Garabage collector + first-class functions + sum data types + module system + composition and powerful polymorphism + simple and powerful standard library + immutability + built-in data validation + contracts + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + built-in concurrency + built-in memoization + sane defaults - ambiguities - pointers - macros - header files.
 
 There is a runtime system which is responsible for memory allocation and management, interaction with OS and 
 other external libraries and handling concurrency.
@@ -78,7 +78,6 @@ Function section is used to define function bodies.
 - Each statement must be in a separate line and must not end with semicolon.
 Source file contains a number of definitions for types and functions.
 - You can put multiple statements in the same line using `&`: `x++ & run & process`
-- Anywhere you need a compile time literal (default and optional inputs or `with`) you can use functions with constant output.
 - Mutability can be simulated by passing a mutation lambda. 
 
 *Notes:*
@@ -99,7 +98,7 @@ Source file contains a number of definitions for types and functions.
 8. **Validation**: For any custom type: `type Age := int where { $ > 0 }`
 9. **Immutability**: Only local variables are mutable. Everything else is immutable.
 10. **Assignment**: Primitives are assigned by value, other types are assigned by reference.
-All other features (loop and considtionals, exception handling, validation, inheritance and subtyping, polymorphism, generics ...) are achieved using above constructs.
+All other features (loop and considtionals, exception handling, validation, inheritance and subtyping, polymorphism ...) are achieved using above constructs.
 
 ## Type System
 ### Primitives
@@ -158,7 +157,7 @@ var number_one = t.0
 t.1 = "G"
 ```
 - Function output can be any type. Even a tuple or a tuple with unnamed fields.
-- Fields that starts with underscore are considered internal state of the tuple and better not to be used outside the module that defines the type. 
+- Fields that start with underscore are considered internal state of the tuple and better not to be used outside the module that defines the type. 
 - You can define a tuple with unnamed fields: `type Point := (int, int)` But fields of a tuple must be all either named or unnamed. You cannot mix them.
 
 ###Tuple (Product types)
@@ -180,11 +179,7 @@ test3[0]=9
 test3[1]="A"
 var t = (x=6, y=5) ;anonymous and untyped tuple
 ```
-- Note that if there is a multiple tuple inheritance which results in function ambiguity, there will be a compiler error: 
-`func x(p: P1)->int ...`
-`func x(p: P2)->int ...`
-`type A := (x:P1, y:P2)`
-`var v: A; var t = x(A)   ;compiler error`
+- You cannot mix tuple literal with it's type. It should be inferred (type of lvalue or function output).
 
 ### Union or Sum types
 When defining a sum type, you specify different types and labels that it can accept. Label can be any valid identifier.
@@ -256,7 +251,6 @@ func my_func1(int) -> float { return $/3 } ;you can omit input name (like an unn
 func my_func(y:int, x:int) -> { 6+y+x } ;based on runtime arguments, one of implementations will be choosed
 func my_func(5, x:int) -> { 6+x } ;if input is a literal, any call which evaluates to that literal, will call this version
 func my_func(5:int) -> 9
-func my_func2(x: int, y: int = 11 ) -> float { return x/y }  ;you can set default value
 func my_func3(x: int, y: int) -> x/y  ;you can omit {} if its a single expression
 func my_func7() -> int { return 10;} ;fn has no input but () is mandatory
 func my_func7() -> 10  ;when function has just a return statement, there is a shortcut
@@ -323,9 +317,12 @@ f(1,9)
 f(x=1, y=9)
 f(@g)
 ```
-- You can use `with` keywords with `:=` operator to put compile-time constraints on a function:
-`func dowork(x: int, y: any with { Element <= Shape })` y must be of type Shape
-
+- Note that you cannot use optional arguments in a function signature. Although you can have multiple functions with the same name:
+```
+func process(x: int, y:int, z:int) -> ...
+func process(x: int) -> process(x, 10, 0)
+```
+- Function input tuple can be accessed via `$` symbol.
 
 ### Matching
 `func add(x:int, y:int, z:int) ...`
@@ -354,12 +351,10 @@ With named inputs, you can ignore first or middle arguments:
 func add(x:int=10, y:int)...
 add(y=19)
 ```
-
 Each function call will be dispatched to the implementation with highest priority according to matching rules. 
 - If function input is not constrained but the argument is, it won't cause a problem. But the other way around, will need casting.
 
 ### Lambda expression
-
 You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too, also  `func` keyword is not needed. This keyword is needed when defining a normal function.
 ```
 var f1 = (x: int, y:int) -> int { return x+y } ;the most complete definition
@@ -371,11 +366,11 @@ type adder := (x: int, y:int) -> int
 var rr: adder = (a:int, b:int) -> { a + b } ;when you have a type, you can define new names for input
 var rr: adder = func { x + y }   ;when you have a type, you can also omit input
 var rr: adder = { x + y }      ;and also func keyword, but {} is mandatory
-var rr:adder = { $0 + 2 }        ;you can use $0 or $ alone instead of name of first input
-func test(x:int) -> plus2 { return { $0+ x} }
-var modifier = { $1 + $2 }  ;if input/output types can be deduced, you can eliminate them
+var rr:adder = { $.0 + 2 }        ;you can use $.0 or $ alone instead of name of first input
+func test(x:int) -> plus2 { return { $.0+ x} }
+var modifier = { $.0 + $.1 }  ;if input/output types can be deduced, you can eliminate them
 ```
-- You can access lambda input using `$0, ...` notation too.
+- You can access lambda input using `$.0, ...` notation too.
 - You can also use `$_` place holder to create a new lambda based on existing functions:
 `var y = calculate(4,a, $_)` is same as `var y = (x:int) -> calculate(4,a,x);`
 `var y = calculate(1, $_, $_)` is same as `var y = (x:int, y:int) -> calculate(4,x,y);`
@@ -394,8 +389,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 
 
 ### Special Syntax
-- `$i` function inputs
-- `$` first input of the function (`$0`)
+- `$i` function inputs tuple
 - `$_` input place-holder
 - `:` tuple declaration, array slice
 - `:=` custom type definition
@@ -403,13 +397,11 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `=>` hash type and hash literals
 - `|` sum types
 - `.` access tuple fields
-- `@` explode data
-- `&` continue execution
+- `@` explode 
+- `&` continue execution/evaluation
 - `[]` hash and array literals
 - `::` matching
-- `%` type extraction (decltype)
 - `_`: Placeholder for explode
-- `+` embed types
 
 
 ### Chaining
@@ -440,7 +432,7 @@ MatchExp = '(' tuple ')' :: '{' (CaseStmt)+ '}'
 ```
   result = my_tree ::
   {
-    int, int=12 -> ...;this will match if input has two ints or one int (second one will default to 12)
+    int, int -> ...;this will match if input has two ints 
     5 -> 11,
     "A" -> 19,
     local_var -> 22, ;check equality with a local variable's value
@@ -489,11 +481,11 @@ Semantics of this keywords are same as other mainstream languages.
 
 ###assert
 ```
-AssertStmt = 'assert' condition [':' expression]
+AssertStmt = 'assert' condition [':' exception]
 ```
 - Assert makes sure the given `condition` is satisfied. 
 - If condition is not satisfied, it will throw an exception (exception is a built-in type). This will exit current function and outer functions, until it is expected.
-- You can return an exception directly too: `return exception(1,2,3)`
+- In order to keep code more readable, you can not return an exception directly.
 - There is no `throw` keyword and this is the only way to cause exception.
 - Output of any function is automatically updated with `| exception`.
 - You can use `assert false, X` to create exception and return from current method immediately.
@@ -606,11 +598,11 @@ Expression will be called with `$` pointing to the new value. If the expression 
 
 ### Exception Handling
 ### Inheritance and Polymorphism
-- Tuples can inherit from other tuples by having their fields (Manually adding them or with `+` operator. This is similar to "Duck typing" in other languages but with data. So A can be trated like B if for every fields in B, I can write `A.field`. This allows developer to write subtypes for types he doesn't have access to. 
+- Tuples can inherit from other tuples by having their fields (Manually adding them or with explode operator. This is similar to "Duck typing" in other languages but with data. So A can be trated like B if for every fields in B, I can write `A.field`. This allows developer to write subtypes for types he doesn't have access to. 
 `type Shape := ();`
-`type Circle := Shape + (Shape...)`
-`type Square := Shape + (Shape...)`
-`type Polygon := Shape + (Shape...)` 
+`type Circle := (@Shape...)`
+`type Square := (@Shape...)`
+`type Polygon := (@Shape...)` 
 - You can define functions on types and specialize them for special subtypes. This gives polymorphic behavior.
 `func paint(o:Shape) {}`  
 `func paint(o:any){}`
@@ -650,7 +642,7 @@ To have a tuple with unnamed fields based on value of another tuple, just put `@
 `@Point` will translate to `x:int, y:int`
 `Point.@` will translate to `int, int`
 You can combine explode operator with other data or type definition. `var g = (@my_point, z:20)`. g will be `(x:10, y:20, z:20)`. Explode on primitives has no effect (`@int` = `int`).
-- If a type does not have any fields (empty types), you don't need to use `+` to inherit from it. It is optional. You just need to implement appropriate methods (If not, and those methods are defined empty for base type, a compiler error will be thrown). So if we have `func check(x: Alpha)` and `Alpha` type does not have any field, any other data type which implements functions written for `Alpha` can be used instead.
+- If a type does not have any fields (empty types), you don't need to use `@` to inherit from it. It is optional. You just need to implement appropriate methods (If not, and those methods are defined empty for base type, a compiler error will be thrown). So if we have `func check(x: Alpha)` and `Alpha` type does not have any field, any other data type which implements functions written for `Alpha` can be used instead.
 - Empty types are like interfaces and are defined like `type Alpha`.
 Rules of subtyping: here `S` is subtype (e.g. a Circle) and `P` is parent type (like Shape)
 - S and P must be of the same kind (primitive, tuple, sum, function)
@@ -666,44 +658,12 @@ Rules of subtyping: here `S` is subtype (e.g. a Circle) and `P` is parent type (
 So we can have `func work(x:int, y:int)` and pass `(x=5, y=10, s=112)` to it (Of course if there is no other function for that input).
 And `type Stack := StackElement[]` and `IntStack := int[]`: IntStack is sub-type of Stack. Whenever we need a stack, we can send `IntStack`. But `int[]` and `long[]` are not subtypes. 
 Same for `int => string` and `byte => string`. So if we want to have a generic hash, the key/value must be non-primitive.
+- You can re-define parent type fields in the child type and if the new type is a subtype, then child will remain subtype of the parent:
+`type ListElement := (data: any, next: LLE, prev: LLE)`
+`type ListElementInt := (@ListElement, data: int)`
 
 ### Templates
 - You can use empty types or types with minimum required features, to define a template.
-- To specialize, you can embed parent generic type transformed with `with` keyword. This is like inheritance but with transformation.
-- You can specialize a generic functions and runtime will choose the most specific candidate.
-```
-type storable
-
-type Stack := storable[]
-type InStack := Stack with { storable := int }
-func push(s: Stack, i: storable) ...
-func pop(s: Stack) -> storable ...
-```
-- The syntax for template-based types is similar to inheritance. This is called parametric polymorphism.
-- You can also use `with` to re-write types according to type of other arguments.
-```
-type T
-type Stack := T[]
-type MyStack = Stack with { T := int }
-type IntStack := int[] ;exactly same as above
-```
-- You can use `%` operator to point to compile-time declared type of another variable. This can be used for generics.
-`x: %y` means type of `x` must be same as `y`.
-```
-var x: int = 12
-var y: %x      ;type of y will be int
-type StackElement
-type Stack := (head: StackElement, data: StackElement[])
-var my_stack: Stack with { StackElement := int }
-func push(s: Stack, x: %s.head)
-func pop(s: Stack) -> %s.head . ;no change can happen on `s` so type of `s.head` won't change.
-func mpush(s1: Stack, s2: Stack, x1: %s1.head, x2: %s2.head)
-func checkOnlyLong(s: Stack with { StackElement := long })
-func reverseMap(s: Map) -> Map with { %s.Target => %s.source }
-```
-So you can have:
-`var x: Stack = DefStack where { $ > 0 } with { StackElement := DataItem }`
-
 
 ### Best practice
 ### Naming
