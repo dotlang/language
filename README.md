@@ -102,7 +102,7 @@ All other features (loop and considtionals, exception handling, validation, inhe
 
 ## Type System
 ### Primitives
-There are only three primitive data types: `number` and `string`. All others are defined based on these two plus some restrictions on size and accuracy.
+There are only three primitive data types: `number`. All others are defined based on these two plus some restrictions on size and accuracy.
 - **Integer data types**: `char`, `short`, `int`, `long`
 - **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
 - **Floating point data types**: `float`, `double`
@@ -111,6 +111,7 @@ There are only three primitive data types: `number` and `string`. All others are
 You can use core functions to get type identifier of a variable: `type` or `hashKeyType` or `hashValueType`.
 `bool` and `none` are special types with only two and one possible values. `none` is used when a function returns nothing, so compile will change `return` to `return none`.
 Some types are pre-defined in core but are not part of the syntax: `none`, `any`, `bool`.
+- `string` is an array of characters. And it is not a primitive.
 
 ### Array
 - Array literals are specified using brackets: `[1, 2, 3]`
@@ -140,6 +141,7 @@ Hashtables are sometimes called "associative arrays". So their syntax is similar
 - `var big_hash: (int, int) => (string, int) = [ (1, 4) => ("A", 5) ]` 
 - `big_hash[3,4] = ("A", 5)`
 - If your code expects a hash which has `int` keys: `func f(x: int => any)...`
+- If you query hash for something which does not exist, it will return `none`.
 
 ### Tuple
 
@@ -323,6 +325,12 @@ func process(x: int, y:int, z:int) -> ...
 func process(x: int) -> process(x, 10, 0)
 ```
 - Function input tuple can be accessed via `$` symbol.
+- using type alias we can stress that some types must be equal in a function call.
+```
+type T
+func add(x: T[], data: T)-> T    ;input must be an array and single var of the same type and same as output
+add(int_array, "A") will fail
+```
 
 ### Matching
 `func add(x:int, y:int, z:int) ...`
@@ -378,14 +386,19 @@ var modifier = { $.0 + $.1 }  ;if input/output types can be deduced, you can eli
 ## Operators
 - Conditional: `and or not == != >= <=`
 - Math: `+ - * % ++ -- **`
-The bitwise and math operators can be combined with `=` to do the calculation and assignment in one statement.
-- `=` operator: copies only for number data type, makes a variable refer to the same object as another variable for any other type. If you need a copy, you have to clone the variable. 
-- `x == y` will call `equals` functions is existing, by default compares field-by-field values. But you can o
-- You can not override operators. 
+The math operators can be combined with `=` to do the calculation and assignment in one statement.
+- `=` operator: copies only for primitive type, makes a variable refer to the same object as another variable for any other type. If you need a copy, you have to clone the variable. 
+- `x == y` will call `equals` functions is existing, by default compares field-by-field values. But you can override.
 - We don't have operators for bitwise operations. They are covered in core. 
 - `a & b` is a shortcut for `x=a y=b if (y == none ) return x else return y`
 - An expression which is combination of multiple statements with `&` will result in evaluation of the last non-none one.
 `var g = x=6 & y=7` will make g equal to 7.
+- Regex: `x = ( data ~ '^hello' )` x will be an array containing all matches. You can use groups for matching.
+- You can override opeartors by defining four functions. Array and hash-table type use this feature.
+ - `opIndex` for `[]` reading and writing and slice for array and hash
+ - `opMath` for `+-*/** %`
+ - `opCompare` for `==, !=, <=, ...`
+ - `opIterate` for `++, --`
 
 
 ### Special Syntax
@@ -402,6 +415,7 @@ The bitwise and math operators can be combined with `=` to do the calculation an
 - `[]` hash and array literals
 - `::` matching
 - `_`: Placeholder for explode
+- `~` regex
 
 
 ### Chaining
@@ -720,6 +734,7 @@ A set of core packages will be included in the language which provide basic and 
 - Garbage collector
 - Function level storage (to simulate static method-local variables in a safe mechanism)
 - Serialization and Deserialization
+- Dump an object
 - Mocking a function
 - RegEx operators and functions
 
