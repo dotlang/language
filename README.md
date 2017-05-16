@@ -397,7 +397,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - Regex: `x = ( data ~ '^hello' )` x will be an array containing all matches. You can use groups for matching.
 - You can override opeartors by defining below functions. Array and hash-table type use this feature.
  - `opIndex` for `[]` reading and writing and slice for array and hash
- - `opMath` for `+-*/** %`
+ - `opMath` for `+-*/** %-(unary negate)`
  - `opCompare` for `==, !=, <=, ~,...`
 
 
