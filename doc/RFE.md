@@ -156,8 +156,31 @@ Or in map function.
 
 Y - Remove extra operators overridable.
 - OpIterate
-- opMath: Reduce to only `+`? No.
+- opMath
+- opCompare we really dont need to compare. we just call some sort methdo with a lambda.
 We also need to be able to overload `~` operator so we can have regex for strings.
+we need `~` and something to concat. 
+users should be able to customize this. 
+
+N - unify function syntax
+`type fadder := int -> int -> int`
+`type fadder := func(int,int)->int`
+
+Y - Why not provide regex as a function? Then we don't need the silly operator `~` for all types.
 
 ? - Find a good name.
+Notron
+light
+hotspot
+Electron
+spot
+go/d+lang
+something+lang
+idlang
+dotlang - it is simplest shape and also very powerful in english language and our language.
 
+? - Think about method call dispatch with respect to multiple inheritance and polymorphism
+
+? - Can we provide a mechanism to organize code better?
+How can a developer find a function?
+Maybe we can force the single space: `func add` so if user want to find a function, he only needs to search for a specific pattern.
