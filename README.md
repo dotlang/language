@@ -389,17 +389,17 @@ var modifier = { $.0 + $.1 }  ;if input/output types can be deduced, you can eli
 - Math: `+ - * % ++ -- **`
 The math operators can be combined with `=` to do the calculation and assignment in one statement.
 - `=` operator: copies only for primitive type, makes a variable refer to the same object as another variable for any other type. If you need a copy, you have to clone the variable. 
-- `x == y` will call `equals` functions is existing, by default compares field-by-field values. But you can override.
+- `x == y` will call `opEquals` functions is existing, by default compares field-by-field values. But you can override.
 - We don't have operators for bitwise operations. They are covered in core. 
 - `a & b` is a shortcut for `x=a y=b if (y == none ) return x else return y`
 - An expression which is combination of multiple statements with `&` will result in evaluation of the last non-none one.
 `var g = x=6 & y=7` will make g equal to 7.
 - Regex: `x = ( data ~ '^hello' )` x will be an array containing all matches. You can use groups for matching.
 - You can override opeartors by defining below functions. Array and hash-table type use this feature.
- - `opIndex` for `[]` reading and writing and slice for array and hash
- - `opMath` for `+-*/** %-(unary negate)`
- - `opCompare` for `==, !=, <=, ~,...`
-
+- `opIndex` for `[]` reading and writing and slice for array and hash
+- `opEquals` to check equality 
+- `opAppend` called with `+`
+- `opMatch` called with `~`. For string it does regex match. For array, it checks existence of an element.
 
 ### Special Syntax
 - `$i` function inputs tuple
