@@ -184,7 +184,7 @@ var t = (x=6, y=5) ;anonymous and untyped tuple
 - You cannot mix tuple literal with it's type. It should be inferred (type of lvalue or function output).
 
 ### Union or Sum types
-When defining a sum type, you specify different types and labels that it can accept. Label can be any valid identifier.
+When defining a sum type, you specify different types and labels that it can accept. Label can be any valid identifier. Labels can be thought of as a special type which has only one valid value: The label itself. 
 `type Tree := Empty | int | (node: int, left: Tree, right: Tree)`
 `type OptionalInt := None | int`
 To match type, you can use match expression:
