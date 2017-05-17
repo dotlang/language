@@ -1,4 +1,4 @@
-# Electron Programming Language Reference
+# Dotlang Programming Language Reference
 Version 0.9
 
 May 8, 2017
@@ -13,20 +13,20 @@ May 8, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading
+- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
 
-That's why I am creating a new programming language: Electron. 
+That's why I am creating a new programming language: Dotlang. 
 
-Electron programming language is a general purpose language based on author's experience and doing research on 
+Dotlang programming language is a general purpose language based on author's experience and doing research on 
 other languages (namely Java, C\#, C, C++, Rust, Go, Scala, Objective-C, Python, Perl, Smalltalk, Ruby, Swift, Haskell, Clojure, F\# and Oberon-2). 
 I call the paradigm of this language "Data-oriented". This is a combination of Object-Oriented and Functional approach and it is designed to work with data. There are no objects or classes. Only data types and functions. But most important features of OOP (encapsulation, abstraction, inheritance and polymorphism) are provided to some extent.
 
 Three main goals are pursued in the design of this language:
 
-1. **Simple**: The code written in Electron language should be consistent, easy to learn, read, write and understand. There has been a lot of effort to make sure there are as few exceptions as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
+1. **Simple**: The code written in Dotlang language should be consistent, easy to learn, read, write and understand. There has been a lot of effort to make sure there are as few exceptions as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
 2. **Powerful**: It should enable (a team of) developers to organise, develop, test, maintain and operate a large and complex software project, with relative ease.
 3. **Fast**: Performance of the final output should be high (something like Java).
 
@@ -38,12 +38,12 @@ The underlying rules of design of this language are
 
 As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  There are functions and types. Each function gets one or more input (each of it's own type) and gives an output. Types include primitive data types, tuple, sum types and a general type alias. Concurrency, lambda expression and exception handling are supported.
 
-In summary, Electron is C language + Garabage collector + first-class functions + sum data types + module system + composition and powerful polymorphism + simple and powerful standard library + immutability + built-in data validation + contracts + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + built-in concurrency + built-in memoization + sane defaults - ambiguities - pointers - macros - header files.
+In summary, Dotlang is C language + Garabage collector + first-class functions + sum data types + module system + composition and powerful polymorphism + simple and powerful standard library + immutability + built-in data validation + contracts + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + built-in concurrency + built-in memoization + sane defaults - ambiguities - pointers - macros - header files.
 
 There is a runtime system which is responsible for memory allocation and management, interaction with OS and 
 other external libraries and handling concurrency.
 Also there is a `core` library which is used to implement some basic, low-level features which can not be 
-simply implemented using pure Electron language.
+simply implemented using pure Dotlang language.
 The `std` library is a layer above runtime and `core` which contains some general-purpose and common functions and data structures.
 
 ### Code organization
@@ -246,7 +246,7 @@ Cloning, passing, assigning to other vars does not change or evaluate the variab
 - You can define local const variables using: `var x: float = 3.14 where { false }`
 
 ## Functions
-Function is a piece of code which accepts a tuple and can return a single value. So any feature of a tuple/types, is supported for input or output of a function. If you want to use a tuple instead of entries of a function, you must explode it first unless function input is the tuple itself.
+Function is a piece of code which accepts a series of inputs and can return a single value. If you want to use a tuple instead of entries of a function, you must explode it first unless function input is the tuple itself.
 ```
 func my_func1(x: int, y: int) -> float { return x/y }
 func my_func1(int) -> float { return $/3 } ;you can omit input name (like an unnamed tuple)
@@ -387,6 +387,7 @@ var modifier = { $.0 + $.1 }  ;if input/output types can be deduced, you can eli
 ## Operators
 - Conditional: `and or not == != >= <=`
 - Math: `+ - * % ++ -- **`
+- Note that `+` operator can also work on arrays which joins two arrays together.
 The math operators can be combined with `=` to do the calculation and assignment in one statement.
 - `=` operator: copies only for primitive type, makes a variable refer to the same object as another variable for any other type. If you need a copy, you have to clone the variable. 
 - `x == y` will call `opEquals` functions is existing, by default compares field-by-field values. But you can override.
@@ -397,9 +398,6 @@ The math operators can be combined with `=` to do the calculation and assignment
 - You can override opeartors by defining below functions. Array and hash-table type use this feature.
 - `opIndex` for `[]` reading and writing and slice for array and hash
 - `opEquals` to check equality 
-- `opAdd` called with `+`
-- `opRemove` called with `-`
-- Combinations with `=` will be handled by runtime (`x+=y` will call `x=x+y`)
 
 ### Special Syntax
 - `$i` function inputs tuple
@@ -669,7 +667,7 @@ Rules of subtyping: here `S` is subtype (e.g. a Circle) and `P` is parent type (
 - Array: If their elements are subtype.
 - Hash: If key and value are subtype.
 - Anything can be subtype of `any`.
-So we can have `func work(x:int, y:int)` and pass `(x=5, y=10, s=112)` to it (Of course if there is no other function for that input).
+So we can NOT have `func work(x:int, y:int)` and pass `(x=5, y=10, s=112)` to it. The passed arguments must be equal to function inputs.
 And `type Stack := StackElement[]` and `IntStack := int[]`: IntStack is sub-type of Stack. Whenever we need a stack, we can send `IntStack`. But `int[]` and `long[]` are not subtypes. 
 Same for `int => string` and `byte => string`. So if we want to have a generic hash, the key/value must be non-primitive.
 - You can re-define parent type fields in the child type and if the new type is a subtype, then child will remain subtype of the parent:
@@ -740,7 +738,7 @@ A set of core packages will be included in the language which provide basic and 
 
 ## Standard package
 
-There will be another set of packages built on top of core which provide common utilities. This will be much larger and more complex than core, so it will be independent of the core and language (This part will be written in Electron). Here is a list of some of classes in this package collection:
+There will be another set of packages built on top of core which provide common utilities. This will be much larger and more complex than core, so it will be independent of the core and language (This part will be written in dotlang). Here is a list of some of classes in this package collection:
 
 - I/O (Network, Console, File, ...)
 - Thread and synchronization management
@@ -757,7 +755,7 @@ There will be another set of packages built on top of core which provide common 
 ## Package Manager
 
 The package manager is a separate utility which helps you package, publish, install and deploy packages (Like `maven` or `dub`).
-Suppose someone downloads the source code for a project written in Electron which has some dependencies. How is he going to compile/run the project? There should be an easy and transparent for fetching dependencies at runtime and defining them at the time of development.
+Suppose someone downloads the source code for a project written in dotlang which has some dependencies. How is he going to compile/run the project? There should be an easy and transparent for fetching dependencies at runtime and defining them at the time of development.
 
 Perl has a `MakeFile.PL` where you specify metadata about your package, requirements + their version, test requirements and packaging options.
 Python uses same approach with a `setup.py` file containing similar data like Perl.
