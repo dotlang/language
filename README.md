@@ -13,7 +13,7 @@ May 8, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, added regex operator
+- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -394,12 +394,12 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `a & b` is a shortcut for `x=a y=b if (y == none ) return x else return y`
 - An expression which is combination of multiple statements with `&` will result in evaluation of the last non-none one.
 `var g = x=6 & y=7` will make g equal to 7.
-- Regex: `x = ( data ~ '^hello' )` x will be an array containing all matches. You can use groups for matching.
 - You can override opeartors by defining below functions. Array and hash-table type use this feature.
 - `opIndex` for `[]` reading and writing and slice for array and hash
 - `opEquals` to check equality 
-- `opAppend` called with `+`
-- `opMatch` called with `~`. For string it does regex match. For array, it checks existence of an element.
+- `opAdd` called with `+`
+- `opRemove` called with `-`
+- Combinations with `=` will be handled by runtime (`x+=y` will call `x=x+y`)
 
 ### Special Syntax
 - `$i` function inputs tuple
@@ -415,7 +415,6 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `[]` hash and array literals
 - `::` matching
 - `_`: Placeholder for explode
-- `~` regex
 
 
 ### Chaining
@@ -613,6 +612,7 @@ Expression will be called with `$` pointing to the new value. If the expression 
 ### Exception Handling
 ### Inheritance and Polymorphism
 - Tuples can inherit from other tuples by having their fields (Manually adding them or with explode operator. This is similar to "Duck typing" in other languages but with data. So A can be trated like B if for every fields in B, I can write `A.field`. This allows developer to write subtypes for types he doesn't have access to. 
+- This type of subtyping is called Structural (https://en.wikipedia.org/wiki/Structural_type_system)
 `type Shape := ();`
 `type Circle := (@Shape...)`
 `type Square := (@Shape...)`
