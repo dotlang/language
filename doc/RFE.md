@@ -270,7 +270,12 @@ f1: func f(ta,tb,tc,td) - tx is type of function input
 ```
 - if ( ta==Sa, tb==Sb, tc==Sc, td==Sd) score=0 (will be chosen only if no other candidates a better score)
 - if ( ta==Da, tb==Db, tc==Dc, td==Dd) score=infinite (will definitely be chosen)
-- 
+Type hierarchy is more like a graph. On the root is `any` and all empty types.
+Below are single field types and so on.
+We need to call an implementation which makes most use of provided fields. If we are passing 20 fields in total, the one that uses all of them (works with dynamic types) is the best choice. Obviously we cannot call a method which needs more parameters than what we have sent to it. Worst case: a function that does not use any of fields (all inputs are any or empty).
+- Solution 1: Rank candidates, based on a score: number of fields they are using.
+- Solution 2: Arg by arg, select functions that have highest fields covered for current argument.
+Solution 2 makes sense because developer can control the dispatch by introducing appropriate functions which cover first arguments rather than all of them.
 
 ? - When we define `type MaybeInt := Nothing | int` we are defining a new type! Aren't we?
 Can we use this notation to provide some kind of generics?
