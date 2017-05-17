@@ -1,4 +1,4 @@
-# Electron - Requests for Enhancement
+# Dotlang - Requests for Enhancement
 
 N - A notation to join two arrays.
 In Haskell we have:
@@ -168,7 +168,14 @@ N - unify function syntax
 
 Y - Why not provide regex as a function? Then we don't need the silly operator `~` for all types.
 
-? - Find a good name.
+Y - To prevent confusion with numbers, shall we change add/remove operators?
+`++` `--` as binary opertors
+main use: for string.
+we can provide `+` as a built-in operator that works on numbers and arrays.
+It join arrays together.
+Then we can eliminate `opAdd` and `opRemove` operator functions.
+
+Y - Find a good name.
 Notron
 light
 hotspot
@@ -179,8 +186,40 @@ something+lang
 idlang
 dotlang - it is simplest shape and also very powerful in english language and our language.
 
-? - Think about method call dispatch with respect to multiple inheritance and polymorphism
+Y - can `f(1,2,3)` be redirected to `func f(x:int, y:int)`? 
+According to subtyping, it can. `(1,2,3)` is like a Circle and `(x:int, y:int)` is like definition of a shape.
+But this will be too confusing. 
+Putting any rule against subtyping, will be agains gen but I think we have to.
+First: function input is not a tuple, it is a series of arguments. So subtype and inheritance is not applied to the input list itself. Of course caller can use explode to prepare this list.
+Second: So a call to `f(1,2,3)` have to call a function with name `f` and three input arguments. No less and no more.
+
+N - If `A` has `x:int` and `B` has `x:int` then type `C` can inherit from both of them!
+And it can be used as any of these two types.
+
+N - Type hierarchy is created based on data and type names.
+So `StackElement` is a different type from `any`. Although data-wise they are the same.
+
+? - Think about method call dispatch with respect to multiple inheritance and polymorphism.
+We can do this step by step:
+- When function `f` is called with n inputs, we find all functions with same name and number of inputs, called candidate list.
+- If call is made with names, drop functions whose inputs does not match with given argument names.
+- Sort candidate list: Bottom-most one should be the one whose input types match with static type of arguments. This is the last option.  Top-most should be the one with types matching dynamic types (if exists).
+- For each candidate, remove it if any of inputs has extra fields compared to arguments. They have to have equal or less fields.
+- Starting with the first argument `a` with static type `Sa` and dynamic type `Da`.
+  - For each function `f0` in the candidate list:
+    - Let's call first input type `S0`.
+    - if `S0` does not match with `(S1, Da)` type range, then discard `f0` from candidate list.
+- After processing is done, choose the topmost function from candidate list.
 
 ? - Can we provide a mechanism to organize code better?
 How can a developer find a function?
 Maybe we can force the single space: `func add` so if user want to find a function, he only needs to search for a specific pattern.
+Maybe we can force a specific filename based on the types involved in functions.
+
+? - Can we make defining empty types easier?
+`type Stack := %StackElement[]`
+Empty types are defined using `%` prefix.
+
+? - Clarify more about types used in collections which mimic generics.
+
+? - focus on performance issues.
