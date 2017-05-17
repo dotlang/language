@@ -728,6 +728,7 @@ func innerEval(exp: Expression) -> float
 
 A set of core packages will be included in the language which provide basic and low-level functionality (This part may be written in C):
 
+- Security policy (how to call a code you don't trust)
 - Calling C/C++ methods
 - Load code on the fly and hot swap
 - Data conversion
