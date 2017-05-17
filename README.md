@@ -103,7 +103,7 @@ All other features (loop and considtionals, exception handling, validation, inhe
 ## Type System
 ### Primitives
 There are only three primitive data types: `number`. All others are defined based on these two plus some restrictions on size and accuracy.
-- **Integer data types**: `char`, `short`, `int`, `long`
+- **Integer data types**: `char`, `byte`, `short`, `int`, `long`
 - **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
 - **Floating point data types**: `float`, `double`
 - **Others**: `bool`, `none`, `any`
@@ -112,6 +112,7 @@ You can use core functions to get type identifier of a variable: `type` or `hash
 `bool` and `none` are special types with only two and one possible values. `none` is used when a function returns nothing, so compile will change `return` to `return none`.
 Some types are pre-defined in core but are not part of the syntax: `none`, `any`, `bool`.
 - `string` is an array of characters. And it is not a primitive.
+- `byte` is 8 bit integer, but `char` can be larger to support unicode.
 
 ### Array
 - Array literals are specified using brackets: `[1, 2, 3]`
