@@ -200,6 +200,7 @@ You can define an enum using sum types.
 ```
 type DoW := SAT | SUN | ...
 ```
+- Note that types inside a union type must not completely overlap (e.g. `Shape | Circle`) is not a valid type.
 
 ### Custom Types
 You can use `type` to define new type based on an existing type. 
