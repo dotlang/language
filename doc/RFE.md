@@ -308,18 +308,64 @@ We need to call an implementation which makes most use of provided fields. If we
 - Solution 1: Rank candidates, based on a score: number of fields they are using.
 - Solution 2: Arg by arg, select functions that have highest fields covered for current argument.
 Solution 2 makes sense because developer can control the dispatch by introducing appropriate functions which cover first arguments rather than all of them.
-For sum type arguments, the type that matches most fields is selected for comparison.
+For sum type arguments, the typethat matches most fields is selected for comparison.
+
+? - also make a syntax sugar for `loop`:
+`loop(x:y) {...}` means `loop(y) (x) -> { ... }`
+
+? - can we remove need to put `()` in function call/loop/if?
 
 ? - Implement a simple logic inference
 ```
 ;format: A is B, B is C -> A is C
 type Sentence = (source: string, target: string)
-func processSentence(s: string) -> 
+func processSentence(s: string) -> Sentence[]
+{
+    return split(s, " is ")
+}
+func checkQuery(data: Sentence[], source: string) -> string | none 
+{
+    loop(s: data)
+    {
+        if ( s.source == source ) 
+        {
+            if ( s.target == surce ) return true
+            return checkQuery(data, s.target)
+        }
+    }
+    
+    return false
+}
 ```
 
 ? - Implement a binary search tree and use it to read data from file and find a specific number
+```
+type BST := Empty | (data: int, left: BST, right: BST)
+func processFile(s: string) -> BST
+{
+}
+func find(bst: BST, x: int) -> bool
+{
+    return false if ( bst == Empty )
+    
+    return true if bst.data == x
+    return find(bst.left, x) if (x<bst.data)
+    return find(bst.right, x)
+}
+```
 
 ? - convert a binary string to a number
+```
+func convert(s: string) -> ulong
+{
+    var result: ulong = 0;
+    loop(x: s) {
+        result += 2**counter if ( x == '1') 
+        counter++
+    }
+    return result
+}
+```
 
 ? - reverse a string
 
