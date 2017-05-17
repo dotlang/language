@@ -213,6 +213,38 @@ Y - Can we have `Circle | Shape` type?
 No. Because they overlap. This is essentially `Shape`.
 Overlap is not a problem, one type being subset of the other, is the problem.
 
+N - When we define `type MaybeInt := Nothing | int` we are defining a new type! Aren't we?
+Can we use this notation to provide some kind of generics?
+`type MaybeType`
+`type Maybe := None | MaybeType`
+`func process() -> Maybe with { MaybeType := int }`?
+`type VectorElement`
+`type Vector := VectorElement[]`
+`type IntVector := Vector with { VectorElement := int }`
+`func append(x: Vector, y: VectorElement)->Vector` type of y is VectorElement.
+No. No generics. It is tempting to say there should be a relation between function inputs but this should not be dealt with at syntax level.
+You can put assertions inside function body to make sure appropriate arguments are passed to the function.
+
+Y - Clarify about sum types. Is everything around `|` a type?
+Even `None`? We can consider them as a simple type which has a single possible value which is the same.
+Shouldn't we isolate them from other symbols? No. After all, they are just types. 
+Special types which have single value.
+
+N - Clarify more about types used in collections which mimic generics.
+
+N - focus on performance issues.
+
+N- Like in julia we can have dispatch checked with type:
+`func work(x: T, y: T)-> ...` this will be invoked if type fo x and y are the same.
+In Julia we can have: `myappend{T}(v::Vector{T}, x::T) = [v..., x]`
+```
+type VectorElement
+type Vector := VectorElement[]
+func append(x: Vector, y: VectorElement)->Vector
+```
+append definition should know that type of `y` is related to type of `x`. So if it is receiving a:
+`type IntVector := int[]` - It should be aware that `VectorElement` is now `int`.
+
 ? - Think about method call dispatch with respect to multiple inheritance and polymorphism.
 We can do this step by step:
 - When function `f` is called with n inputs, we find all functions with same name and number of inputs, called candidate list.
@@ -276,31 +308,21 @@ We need to call an implementation which makes most use of provided fields. If we
 - Solution 1: Rank candidates, based on a score: number of fields they are using.
 - Solution 2: Arg by arg, select functions that have highest fields covered for current argument.
 Solution 2 makes sense because developer can control the dispatch by introducing appropriate functions which cover first arguments rather than all of them.
+For sum type arguments, the type that matches most fields is selected for comparison.
 
-? - When we define `type MaybeInt := Nothing | int` we are defining a new type! Aren't we?
-Can we use this notation to provide some kind of generics?
-`type MaybeType`
-`type Maybe := None | MaybeType`
-`func process() -> Maybe with { MaybeType := int }`?
-`type VectorElement`
-`type Vector := VectorElement[]`
-`type IntVector := Vector with { VectorElement := int }`
-`func append(x: Vector, y: VectorElement)->Vector` type of y is VectorElement.
-
-? - Clarify about sum types. Is everything around `|` a type?
-Even `None`? We can consider them as a simple type which has a single possible value which is the same.
-
-? - Clarify more about types used in collections which mimic generics.
-
-? - focus on performance issues.
-
-?- Like in julia we can have dispatch checked with type:
-`func work(x: T, y: T)-> ...` this will be invoked if type fo x and y are the same.
-In Julia we can have: `myappend{T}(v::Vector{T}, x::T) = [v..., x]`
+? - Implement a simple logic inference
 ```
-type VectorElement
-type Vector := VectorElement[]
-func append(x: Vector, y: VectorElement)->Vector
+;format: A is B, B is C -> A is C
+type Sentence = (source: string, target: string)
+func processSentence(s: string) -> 
 ```
-append definition should know that type of `y` is related to type of `x`. So if it is receiving a:
-`type IntVector := int[]` - It should be aware that `VectorElement` is now `int`.
+
+? - Implement a binary search tree and use it to read data from file and find a specific number
+
+? - convert a binary string to a number
+
+? - reverse a string
+
+? - count vowels in a string
+
+? - A small db engine
