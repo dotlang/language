@@ -418,11 +418,11 @@ The math operators can be combined with `=` to do the calculation and assignment
 
 
 ### Chaining
-`input .> f(x,y)` => `f(x,y, input)`
-`input >. f(x,y)` = `f(x,y, input)`
-`f(x,y) .< input` = `f(input, x, y)`
-`f(x,y) <. input` = `f(x,y, input)`
-`str .> contains(":")`
+`input :> f(x,y)` => `f(x,y, input)`
+`input >: f(x,y)` = `f(x,y, input)`
+`f(x,y) :< input` = `f(input, x, y)`
+`f(x,y) <: input` = `f(x,y, input)`
+`str :> contains(":")`
 
 ## Keywords
 
