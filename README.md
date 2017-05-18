@@ -13,7 +13,7 @@ May 8, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, extended chain operators
+- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, extended chain operators, re-introduces type specialization
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -101,7 +101,7 @@ Source file contains a number of definitions for types and functions.
 All other features (loop and considtionals, exception handling, validation, inheritance and subtyping, polymorphism ...) are achieved using above constructs.
 
 ## Type System
-### Primitives
+### Primitive
 There are only three primitive data types: `number`. All others are defined based on these two plus some restrictions on size and accuracy.
 - **Integer data types**: `char`, `byte`, `short`, `int`, `long`
 - **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
@@ -144,7 +144,7 @@ Hashtables are sometimes called "associative arrays". So their syntax is similar
 - If your code expects a hash which has `int` keys: `func f(x: int => any)...`
 - If you query hash for something which does not exist, it will return `none`.
 
-### Tuple
+### Tuple or Product type
 
 You use this statement to define a new product data structure:
 ```
@@ -184,7 +184,7 @@ var t = (x=6, y=5) ;anonymous and untyped tuple
 ```
 - You cannot mix tuple literal with it's type. It should be inferred (type of lvalue or function output).
 
-### Union or Sum types
+### Union or Sum type
 When defining a sum type, you specify different types and labels that it can accept. Label can be any valid identifier. Labels can be thought of as a special type which has only one valid value: The label itself. 
 `type Tree := Empty | int | (node: int, left: Tree, right: Tree)`
 `type OptionalInt := None | int`
@@ -334,6 +334,8 @@ func add(x: T[], data: T)-> T    ;input must be an array and single var of the s
 add(int_array, "A") will fail
 ```
 - This is a functio that accepts an input of any type and returns any type: `type Function := func(any)->any`. Note that you cannot define a function type that can accept any number of anything.
+- When calling a function, you can remove parentheses if there is no ambiguity (only a single call is being made).
+`process data1, data2 & finalize data3 & save data4`
 
 ### Matching
 `func add(x:int, y:int, z:int) ...`
@@ -366,7 +368,7 @@ Each function call will be dispatched to the implementation with highest priorit
 - If function input is not constrained but the argument is, it won't cause a problem. But the other way around, will need casting.
 
 ### Lambda expression
-You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too, also  `func` keyword is not needed. This keyword is needed when defining a normal function.
+You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too, also  `func` keyword is not needed. 
 ```
 var f1 = (x: int, y:int) -> int { return x+y } ;the most complete definition
 var rr = (x: int, y:int) -> { x + y }  ;return type can be inferred
@@ -406,7 +408,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `$_` input place-holder
 - `:` tuple declaration, array slice
 - `:=` custom type definition
-- `.>, .<, >., <.` chaining
+- `:>, :<, >:, <:` chaining
 - `=>` hash type and hash literals
 - `|` sum types
 - `.` access tuple fields
@@ -416,6 +418,10 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `::` matching
 - `_`: Placeholder for explode
 
+Keywords: `import`, `func`, `var`, `type`, `where`, `defer`, `native`, `with`
+Operators
+Primitive data types
+core functions: `loop`, `if`, `assert`, 
 
 ### Chaining
 `input :> f(x,y)` => `f(x,y, input)`
@@ -487,6 +493,7 @@ Semantics of this keywords are same as other mainstream languages.
 ```
 
 ###assert
+This is a fucntion in core.
 ```
 AssertStmt = 'assert' condition [':' exception]
 ```
@@ -504,7 +511,7 @@ assert false, "Error!"  ;throw exception and exit
 var g: int|exception = func1()   ;this is valid
 ```
 - You can use `defer BLOCK` to tell the runtime to run a block of code after exiting from the function. If function output is named, it will be accessible in defer block.
-- `//` is used to catch exceptions. In `A // B` if A evaluates to an exception, then B (A lambda without input specification and arrow operator) will be evaluated. Inside `B` we can refer to result of `A` using `$` notation. Note that A can be a block of code.
+- Any assert which uses `::` will be evaluated at compile time. You can use this to simulate generics.
 - Output of any code block `{...}` is none by default unless there is an exception. In which case, the block will exit immediately and this exit will cascade until some place that exception is bound to a variable.
 ```
 var g: none | exception = {
@@ -532,7 +539,7 @@ return x if ( h :: x:int)
 `loop(myHash) (k:string) -> {...}`
 `break` and `continue` are handled as exceptions inside the `loop` functions.
 - We have 3 types of loops: numeric (repeat `n` times), predicated (repeat while true) or iteartion.
-- For iteration loop, you can also use `map` and other similar functions.
+- For iteration loop, you can also use `map` and other similar functions. `map` needs a function withoutput but `loop` doesn't.
 ```
 ;general iterator type definition
 type iteratorType;
@@ -566,17 +573,17 @@ func loop(a: array, body: lambda) -> {
 ```
 - To break a loop execution from body -> return exception
 - To continue a loop -> return inside case body lambda.
+- About loop for iterating over a collection, note that you can pass a lambda which accepts elements of that collection type because it will be considered a subtype of `any`. 
 
- ###import
-
+### import
 You can import a source code file using below statement. Note that import, will add symbols (functions and types) inside that source code to the current symbol table:
 
 ```
-//Starting a path with slash means its absolute path (relative to include path). Otherwise it is relative to the current file
-import /core/st/Socket;  //functions and types inside core/st/Socket.e file are imported and available for call/use
-import /core/st/*;       //import source files under st dir
-import /core/st/**;      //import everything recursively
-import /core/st/Socket/;  //if you add slash at the end, it means import symbols using fully qualified name. This is used for refering to the functions using fully qualified names.
+;Starting a path with slash means its absolute path (relative to include path). Otherwise it is relative to the current file
+import /core/st/Socket  ;functions and types inside core/st/Socket.e file are imported and available for call/use
+import /core/st/*       ;import source files under st dir
+import /core/st/**      ;import everything recursively
+import /core/st/Socket/ ;if you add slash at the end, it means import symbols using fully qualified name. This is used for refering to the functions using fully qualified names.
 ```
 It is an error if as a result of imports, there are two exactly similar functions (same name, input and output). In this case, none of conflicting functions will be available for call. 
 The paths in import statement are relative to the runtime path specified for libraries.
@@ -604,6 +611,15 @@ When defining a custom type, you can define validation code/function. This is a 
 Expression will be called with `$` pointing to the new value. If the expression evaluates to false, a runtime exception will be thrown.
 `type x := (x: int, y:int) where { $.x < $.y };`
 - You are not allowed to use `where` in function or lambda definition. It's only allowed in variable or type declaration.
+
+### Specialization
+When defining a custom type, you can replace a type alias with a more specialized type. The result will be a subtype of the original type. For example:
+`type Vector := V[]`
+`type IntVector := Vector with { V := int }`
+But this is not generics. 
+`func shift(v: Vector) -> V ...`
+This will accept any vector and return V which is any. User has to cast it.
+Advantage is that we can use a better named type in functions. Instead of writing `any[]` everywhere, we can simply use a better and more descriptive type name.
 
 ### Exception Handling
 ### Inheritance and Polymorphism
@@ -654,6 +670,7 @@ To have a tuple with unnamed fields based on value of another tuple, just put `@
 You can combine explode operator with other data or type definition. `var g = (@my_point, z:20)`. g will be `(x:10, y:20, z:20)`. Explode on primitives has no effect (`@int` = `int`).
 - If a type does not have any fields (empty types), you don't need to use `@` to inherit from it. It is optional. You just need to implement appropriate methods (If not, and those methods are defined empty for base type, a compiler error will be thrown). So if we have `func check(x: Alpha)` and `Alpha` type does not have any field, any other data type which implements functions written for `Alpha` can be used instead.
 - Empty types are like interfaces and are defined like `type Alpha`.
+- Subtyping can be applied to all types: primitives, union, tuple, function, ....
 Rules of subtyping: here `S` is subtype (e.g. a Circle) and `P` is parent type (like Shape)
 - S and P must be of the same kind (primitive, tuple, sum, function)
 - Primitive: primitives cannot be subtypes.
@@ -726,14 +743,15 @@ A set of core packages will be included in the language which provide basic and 
 
 - Security policy (how to call a code you don't trust)
 - Calling C/C++ methods
+- Interacting with the OS
 - Load code on the fly and hot swap
 - Data conversion
 - Garbage collector (Runtime)
-- Function level storage (to simulate static method-local variables in a safe mechanism)
 - Serialization and Deserialization
 - Dump an object
-- Mocking a function
 - RegEx operators and functions
+
+Generally, anything that cannot be written in atomlang will be placed in this package.
 
 ## Standard package
 
@@ -763,5 +781,19 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 
 ## ToDo
 - Runtime - use concept of c++ smart ptr to eliminate GC
-- Add native parallelism and communication tools.
+- Add native parallelism and communication tools (green thread)
 - Introduce caching of function output (if it is not void)
+
+## Method call resolution
+How runtime should handle a method call like: `f(x,y,z)`?
+(Argument is the data which is being passed, parameter is the function input).
+1. Find all methods with name `f` who has 3 inputs.
+2. If caller has also specified names for arguments, drop candidates who don't match with those names.
+3. Set i=1
+4. For i'th argument:
+ 4.1. If type of corresponding parameter does not match with argument's dynamic type, ignore the candidate (For example we have passed a Shape but function expects a Circle). This step is done based on matching rule.
+ 4.2. Select the candidate(s) that cover most fields of the current argument (most specialized).
+5. If there are more than one candidates remaining, repeat step 2 for next argument (i++).
+6. If there is no candidate, issue a runtime error.
+7. If there is more than one candidate, issue a runtime error.
+8. If there is only one candidate, call it.
