@@ -13,7 +13,7 @@ May 8, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`
+- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, extended chain operators
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -406,7 +406,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `$_` input place-holder
 - `:` tuple declaration, array slice
 - `:=` custom type definition
-- `>>,<<` chaining
+- `.>, .<, >., <.` chaining
 - `=>` hash type and hash literals
 - `|` sum types
 - `.` access tuple fields
@@ -418,17 +418,11 @@ The math operators can be combined with `=` to do the calculation and assignment
 
 
 ### Chaining
-You can use `>>` and `<<` operators to chain functions. `a >> b` where a and b are expressions, mean evaluate a, then send it's value to b for evaluation. `a` can be a literal, variable, function call, or multiple items like `(1,2)`. If evaluation of `b` needs more input than `a` provides, they have to be specified in `b` and for the rest, `$_` will be used which will be filled in order from output of `a`.
-Examples:
-```
-get_evens(data) >> sort(3, 4, $_) ==> save >> reverse($_, 5);
-get_evens(data) >> sort >> save >> reverse .   ;assuming sort, save and reverse have only one input
-5 >> add2 >> print  ;same as: print(add2(5))
-(1,2) >> mul >> print  ;same as: print(mul(1,2))
-(1,2) >> mul($_, 5, $_) >> print  ;same as: print(mul(1,5,2))
-```
-- You can also use `<<` for a top-to-bottom chaining, but this is a syntax sugar and compiler will convert them to `>>`.
-`print << add2 << 5`
+`input .> f(x,y)` => `f(x,y, input)`
+`input >. f(x,y)` = `f(x,y, input)`
+`f(x,y) .< input` = `f(input, x, y)`
+`f(x,y) <. input` = `f(x,y, input)`
+`str .> contains(":")`
 
 ## Keywords
 
@@ -534,6 +528,8 @@ return x if ( h :: x:int)
 `loop(5) { print('hello') }`
 `loop(arr1) { print($) }`
 `loop(arr1) (x: int) -> { print(x) }`
+`loop(myHash) (k:string, v: int) -> {...}`
+`loop(myHash) (k:string) -> {...}`
 `break` and `continue` are handled as exceptions inside the `loop` functions.
 - We have 3 types of loops: numeric (repeat `n` times), predicated (repeat while true) or iteartion.
 - For iteration loop, you can also use `map` and other similar functions.
