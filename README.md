@@ -574,6 +574,8 @@ func loop(a: array, body: lambda) -> {
 - To break a loop execution from body -> return exception
 - To continue a loop -> return inside case body lambda.
 - About loop for iterating over a collection, note that you can pass a lambda which accepts elements of that collection type because it will be considered a subtype of `any`. 
+`loop(customer_array, func(x: Customer) -> ... )`
+`func (x: Customer)` is a subtype of `func (x: any)`
 
 ### import
 You can import a source code file using below statement. Note that import, will add symbols (functions and types) inside that source code to the current symbol table:
@@ -616,6 +618,7 @@ Expression will be called with `$` pointing to the new value. If the expression 
 When defining a custom type, you can replace a type alias with a more specialized type. The result will be a subtype of the original type. For example:
 `type Vector := V[]`
 `type IntVector := Vector with { V := int }`
+`type IntVector := int[]` this is exactly same as above but above is more readable
 But this is not generics. 
 `func shift(v: Vector) -> V ...`
 This will accept any vector and return V which is any. User has to cast it.
