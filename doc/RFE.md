@@ -249,141 +249,15 @@ N - Assign values from an array of `any` to a tuple.
 `var customer = data_array`
 But there is no order in a tuple, while array has order.
 
-? - Think about method call dispatch with respect to multiple inheritance and polymorphism.
-We can do this step by step:
-- When function `f` is called with n inputs, we find all functions with same name and number of inputs, called candidate list.
-- If call is made with names, drop functions whose inputs does not match with given argument names.
-- Sort candidate list: Bottom-most one should be the one whose input types match with static type of arguments. This is the last option.  Top-most should be the one with types matching dynamic types (if exists).
-- For each candidate, for each input, remove candidate it if it's type is not super-type of argument (according to subtype rules). 
-- Define score for each candidate: distance between dynamic type of input and function parameter type.
-- The one with minimum score is chosen. If we have multiple candidates, there will be runtime error.
-- Starting with the first argument `a` with static type `Sa` and dynamic type `Da`.
-  - For each function `f0` in the candidate list:
-    - Let's call first input type `S0`.
-    - if `S0` does not match with `(S1, Da)` type range, then discard `f0` from candidate list.
-- After processing is done, choose the topmost function from candidate list.
-- The possibilities on the caller-side are endless, so we should index and classify functions.
-At compile time we know function name and number of arguments. Also we know the set of all candidates.
-This will give us a list of `n` candidates from which we will need to select one at runtime.
-q1. Is it possible to set this at compile time? Like developer says call this specific function.
-q2. Can we use hash or some other method to make this faster?
-`func f(x:int, y:int)` can be coded as `f/x/int/y/int` or `f_x_y_2/int/int`.
-How can we quickly decide distance between two types? infinite means they are not related at all. zero means they are exactly the same.
-`type Shape := (name: string)`
-`type Shape2 := (name: string, r:float)`
-`type Circle := (@shape, r:float, d: float)`
-Distance between Shape and Circle is 2. Between Circle and Shape2 is 1.
-each argument's type in function signature is either: primitive, array, hash, sum, tuple, named, any.
-- primitive: type must match with corresponding variable being sent. If not, ignore candidate.
-- array: arg must be array. calculate distance for array element's type.
-- This should not be a ranking algorithm. Because ranking equals ambiguity for the developer.
-Algorithm must be clear and simple and it's result will be either a single function or a runtime error.
-We also may call a function where there is no definition for static types. We may use `any` version.
-So we create a list of candidates. process them and drop those who don't pass tests. if result is a single function, call it, else runtime error.
-But there can be multiple candidates:
-```
-func draw(Shape, Shape)
-func draw(Circle, Circle)
-...
-draw(cir1, cir2)
-```
-Process each candidate. If it's better than current candidate, replace current. 
-If it is the same, mark a flag and continue.
-When search is finished, if flag it set, runtime error. Else call the current function.
-This is basically a sort and rank algorithm. Just if there are two best options -> we throw error.
-To measure "better than current candidate" we have to have a method to quantify this.
-So problem of method dispatch boils than to comparing two functions against a call.
-```
-call: f(a,b,c,d)
-f1: func f(ta,tb,tc,td)
-f2: func f(Ta, Tb, Tc, Td)
-```
-- If call is being made with named arguments, this will help us drop more candidates before this step. But at this step, names don't really matter.
-- With a scoring algorithm, we just need to compare a function implementation against the call.
-```
-call: f(Sa:Da,Sb:Db,Sc:Dc,Sd:Dd) - Sx:Dx are static (e.g. Shape) and dynamic (e.g. Circle) type of arguments
-f1: func f(ta,tb,tc,td) - tx is type of function input
-```
-- if ( ta==Sa, tb==Sb, tc==Sc, td==Sd) score=0 (will be chosen only if no other candidates a better score)
-- if ( ta==Da, tb==Db, tc==Dc, td==Dd) score=infinite (will definitely be chosen)
-Type hierarchy is more like a graph. On the root is `any` and all empty types.
-Below are single field types and so on.
-We need to call an implementation which makes most use of provided fields. If we are passing 20 fields in total, the one that uses all of them (works with dynamic types) is the best choice. Obviously we cannot call a method which needs more parameters than what we have sent to it. Worst case: a function that does not use any of fields (all inputs are any or empty).
-- Solution 1: Rank candidates, based on a score: number of fields they are using.
-- Solution 2: Arg by arg, select functions that have highest fields covered for current argument.
-Solution 2 makes sense because developer can control the dispatch by introducing appropriate functions which cover first arguments rather than all of them.
-For sum type arguments, the typethat matches most fields is selected for comparison.
+N - easier notation to loop in a map
+`loop(k: map) { ... }`
+`loop( k,v: map) {...}` seems reasonable.
+Maybe we can let user use the `:` notation too.
+any function can be called with `:` as separator.
+`add(x:y)` No its not useful.
+We can have a lambda with two inputs.
 
-? - also make a syntax sugar for `loop`:
-`loop(x:y) {...}` means `loop(y) (x) -> { ... }`
-
-? - can we remove need to put `()` in function call/loop/if?
-
-? - Implement a simple logic inference
-```
-;format: A is B, B is C -> A is C
-type Sentence = (source: string, target: string)
-func processSentence(s: string) -> Sentence[]
-{
-    return split(s, " is ")
-}
-func checkQuery(data: Sentence[], source: string) -> string | none 
-{
-    loop(s: data)
-    {
-        if ( s.source == source ) 
-        {
-            if ( s.target == surce ) return true
-            return checkQuery(data, s.target)
-        }
-    }
-    
-    return false
-}
-```
-
-? - Implement a binary search tree and use it to read data from file and find a specific number
-```
-type BST := Empty | (data: int, left: BST, right: BST)
-func processFile(s: string) -> BST
-{
-}
-func find(bst: BST, x: int) -> bool
-{
-    return false if ( bst == Empty )
-    
-    return true if bst.data == x
-    return find(bst.left, x) if (x<bst.data)
-    return find(bst.right, x)
-}
-```
-
-? - convert a binary string to a number
-```
-func convert(s: string) -> ulong
-{
-    var result: ulong = 0;
-    loop(x: s) {
-        result += 2**counter if ( x == '1') 
-        counter++
-    }
-    return result
-}
-```
-
-? - reverse a string
-
-? - count vowels in a string
-
-? - A small db engine
-
-? - with the rule of no need to embed in paren if last input if lambda, we can introduce keywords if the function has only a lambda input. 
-```
-if ( x > 0 ) { ... }
-try { ... }
-```
-
-? - Kotlin has this:
+Y - Kotlin has this:
 `val positives = list.filter { x -> x > 0 }`
 maybe we can have this rule that `a.b c` means `b(a,c)`
 But its against all other idioms.
@@ -460,7 +334,143 @@ OR
 `input >. f(x,y)` = `f(x,y, input)`
 `f(x,y) .< input` = `f(input, x, y)`
 `f(x,y) <. input` = `f(x,y, input)`
+`str .> contains(":")`
 
+N - also make a syntax sugar for `loop`:
+`loop(x:y) {...}` means `loop(y) (x) -> { ... }`
+
+N - function cannot change inputs even if assigns them to a local var. the only way is to clone.
+
+? - Think about method call dispatch with respect to multiple inheritance and polymorphism.
+We can do this step by step:
+- When function `f` is called with n inputs, we find all functions with same name and number of inputs, called candidate list.
+- If call is made with names, drop functions whose inputs does not match with given argument names.
+- Sort candidate list: Bottom-most one should be the one whose input types match with static type of arguments. This is the last option.  Top-most should be the one with types matching dynamic types (if exists).
+- For each candidate, for each input, remove candidate it if it's type is not super-type of argument (according to subtype rules). 
+- Define score for each candidate: distance between dynamic type of input and function parameter type.
+- The one with minimum score is chosen. If we have multiple candidates, there will be runtime error.
+- Starting with the first argument `a` with static type `Sa` and dynamic type `Da`.
+  - For each function `f0` in the candidate list:
+    - Let's call first input type `S0`.
+    - if `S0` does not match with `(S1, Da)` type range, then discard `f0` from candidate list.
+- After processing is done, choose the topmost function from candidate list.
+- The possibilities on the caller-side are endless, so we should index and classify functions.
+At compile time we know function name and number of arguments. Also we know the set of all candidates.
+This will give us a list of `n` candidates from which we will need to select one at runtime.
+q1. Is it possible to set this at compile time? Like developer says call this specific function.
+q2. Can we use hash or some other method to make this faster?
+`func f(x:int, y:int)` can be coded as `f/x/int/y/int` or `f_x_y_2/int/int`.
+How can we quickly decide distance between two types? infinite means they are not related at all. zero means they are exactly the same.
+`type Shape := (name: string)`
+`type Shape2 := (name: string, r:float)`
+`type Circle := (@shape, r:float, d: float)`
+Distance between Shape and Circle is 2. Between Circle and Shape2 is 1.
+each argument's type in function signature is either: primitive, array, hash, sum, tuple, named, any.
+- primitive: type must match with corresponding variable being sent. If not, ignore candidate.
+- array: arg must be array. calculate distance for array element's type.
+- This should not be a ranking algorithm. Because ranking equals ambiguity for the developer.
+Algorithm must be clear and simple and it's result will be either a single function or a runtime error.
+We also may call a function where there is no definition for static types. We may use `any` version.
+So we create a list of candidates. process them and drop those who don't pass tests. if result is a single function, call it, else runtime error.
+But there can be multiple candidates:
+```
+func draw(Shape, Shape)
+func draw(Circle, Circle)
+...
+draw(cir1, cir2)
+```
+Process each candidate. If it's better than current candidate, replace current. 
+If it is the same, mark a flag and continue.
+When search is finished, if flag it set, runtime error. Else call the current function.
+This is basically a sort and rank algorithm. Just if there are two best options -> we throw error.
+To measure "better than current candidate" we have to have a method to quantify this.
+So problem of method dispatch boils than to comparing two functions against a call.
+```
+call: f(a,b,c,d)
+f1: func f(ta,tb,tc,td)
+f2: func f(Ta, Tb, Tc, Td)
+```
+- If call is being made with named arguments, this will help us drop more candidates before this step. But at this step, names don't really matter.
+- With a scoring algorithm, we just need to compare a function implementation against the call.
+```
+call: f(Sa:Da,Sb:Db,Sc:Dc,Sd:Dd) - Sx:Dx are static (e.g. Shape) and dynamic (e.g. Circle) type of arguments
+f1: func f(ta,tb,tc,td) - tx is type of function input
+```
+- if ( ta==Sa, tb==Sb, tc==Sc, td==Sd) score=0 (will be chosen only if no other candidates a better score)
+- if ( ta==Da, tb==Db, tc==Dc, td==Dd) score=infinite (will definitely be chosen)
+Type hierarchy is more like a graph. On the root is `any` and all empty types.
+Below are single field types and so on.
+We need to call an implementation which makes most use of provided fields. If we are passing 20 fields in total, the one that uses all of them (works with dynamic types) is the best choice. Obviously we cannot call a method which needs more parameters than what we have sent to it. Worst case: a function that does not use any of fields (all inputs are any or empty).
+- Solution 1: Rank candidates, based on a score: number of fields they are using.
+- Solution 2: Arg by arg, select functions that have highest fields covered for current argument.
+Solution 2 makes sense because developer can control the dispatch by introducing appropriate functions which cover first arguments rather than all of them.
+For sum type arguments, the typethat matches most fields is selected for comparison.
+
+? - can we remove need to put `()` in function call/loop/if?
+
+? - Implement a simple logic inference
+```
+;format: A is B, B is C -> A is C
+type Sentence = (source: string, target: string)
+func processSentence(s: string) -> Sentence[]
+{
+    return split(s, " is ")
+}
+func checkQuery(data: Sentence[], source: string) -> string | none 
+{
+    loop(s: data)
+    {
+        if ( s.source == source ) 
+        {
+            if ( s.target == surce ) return true
+            return checkQuery(data, s.target)
+        }
+    }
+    
+    return false
+}
+```
+
+? - Implement a binary search tree and use it to read data from file and find a specific number
+```
+type BST := Empty | (data: int, left: BST, right: BST)
+func processFile(s: string) -> BST
+{
+}
+func find(bst: BST, x: int) -> bool
+{
+    return false if ( bst == Empty )
+    
+    return true if bst.data == x
+    return find(bst.left, x) if (x<bst.data)
+    return find(bst.right, x)
+}
+```
+
+? - convert a binary string to a number
+```
+func convert(s: string) -> ulong
+{
+    var result: ulong = 0;
+    loop(x: s) {
+        result += 2**counter if ( x == '1') 
+        counter++
+    }
+    return result
+}
+```
+
+? - reverse a string
+
+? - count vowels in a string
+
+? - A small db engine
+
+? - with the rule of no need to embed in paren if last input if lambda, we can introduce keywords if the function has only a lambda input. 
+```
+if ( x > 0 ) { ... }
+try { ... }
+```
 
 ? - adding compile time assertions - this can replace templates somehow
 `func push(s: Stack, x: any) { assert x[] :: s.data }`
@@ -471,11 +481,4 @@ what can we do in a static block?
 1. type checking
 2. check environment variables
 
-? - easier notation to loop in a map
-`loop(k: map) { ... }`
-`loop( k,v: map) {...}` seems reasonable.
-Maybe we can let user use the `:` notation too.
-any function can be called with `:` as separator.
-`add(x:y)` No its not useful.
-
-? - function cannot change inputs even if assigns them to a local var. the only way is to clone.
+? - name: simple, pure, simpla (simple + language), func, 
