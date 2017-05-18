@@ -372,3 +372,33 @@ func convert(s: string) -> ulong
 ? - count vowels in a string
 
 ? - A small db engine
+
+? - with the rule of no need to embed in paren if last input if lambda, we can introduce keywords if the function has only a lambda input. 
+```
+if ( x > 0 ) { ... }
+try { ... }
+```
+
+? - Kotlin has this:
+`val positives = list.filter { x -> x > 0 }`
+maybe we can have this rule that `a.b c` means `b(a,c)`
+But its against all other idioms.
+Maybe we can have other notations different from dot:
+`func add(X:int, y:int)`
+`add(x1,y1)`
+`x1 >> add y1` its not working as add's first argument is supposed to be x
+`x1 >> add $_, y` it's working but not as simple as `x.add y`
+`x..add y` is a syntax sugar for `add(x,y)`?
+`x,y..add z` -> `add(x,y,z)`
+general idea: bringing function parameters before function name.
+`x,y >> add ,z` ?
+maybe we can just allow `x >> f y` if there would be no ambiguity.
+
+? - easier notation to loop in a map
+`loop(k: map) { ... }`
+`loop( k,v: map) {...}` seems reasonable.
+Maybe we can let user use the `:` notation too.
+any function can be called with `:` as separator.
+`add(x:y)` No its not useful.
+
+? - function cannot change inputs even if assigns them to a local var. the only way is to clone.
