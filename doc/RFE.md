@@ -245,6 +245,10 @@ func append(x: Vector, y: VectorElement)->Vector
 append definition should know that type of `y` is related to type of `x`. So if it is receiving a:
 `type IntVector := int[]` - It should be aware that `VectorElement` is now `int`.
 
+N - Assign values from an array of `any` to a tuple.
+`var customer = data_array`
+But there is no order in a tuple, while array has order.
+
 ? - Think about method call dispatch with respect to multiple inheritance and polymorphism.
 We can do this step by step:
 - When function `f` is called with n inputs, we find all functions with same name and number of inputs, called candidate list.
@@ -392,7 +396,80 @@ Maybe we can have other notations different from dot:
 `x,y..add z` -> `add(x,y,z)`
 general idea: bringing function parameters before function name.
 `x,y >> add ,z` ?
-maybe we can just allow `x >> f y` if there would be no ambiguity.
+maybe we can just allow `x >> f y` if there would be no ambiguity. no its not general.
+`x.>add(y)` => `add(x,y)`
+this notation can help make reading code easir.
+what about `(x)add(y)` ?
+`(x)add y`
+We can add a new operator like `~`:
+`x ~ y` means `y(x)` and it would be a syntax sugar
+A better example is `contains`: `contains(str, ":")` vs `str ~ contains(":")`
+`a ~ b(c)` => `b(a,c)`
+`~` will be chain operator but for the beginning.
+`var index = str ~ contains(":")`
+if we have `func contains(string, strin)` then `contains(":")` will create a function pointer: 
+`contains(":")` => `func (x: string) -> contains(":", x)`
+what about named args?
+`str >> contains(pattern=":")`
+or maybe we can just use space:
+`str contains(":")`
+`str->contains(":")`
+`str.length` will call `length(str)`
+When we see `A.B` we don't know if it is referring to tuple member or `B` is a function.
+But if `B` is a noun, it's a member. If it's a verb then its a function.
+Casing is not enough.
+`str!contains(":")` - `!` already has it's own meaning.
+unless we change comparison operators: `<>` for not equal, `==` for equal, and `not` for not.
+Swift, Julia, Rust, Scala uses `!=` - Maybe we should use that one too.
+`str ~ contains(":")`
+`str contains(":")`
+If we also allow paren-less function call this can become ambiguous:
+`contains str, ":"`
+`str.contains(":")`
+we can force, if first arg comes before function name, call should have `()`.
+but the we cannot write: `list.filter {...}`
+space is better than dot.
+`str ~ contains(":")`
+`str contains(":")`
+The problem with space is ambiguity. There can be cases where there is confusion over meaning of it.
+`x fetchData contains ":"` what does this mean? It fetches a string data using input x, then checks if it contains `:`.
+completely unreadable.
+`x ~ fetchData ~ contains ":"` better.
+`~` is like chaining but before. `>>` and `<<` are chain after (at the end) of arguments.
+`func save(x: int, y: int, z: customer)`
+`save(1,2) << loadCustomer(5)`
+`loadCustomer(5) >> save(1,2)`
+`func save(z: customer, x:int, y:int)`
+`5 >> loadCustomer ~ save(1,2)`
+`save(1,2) ~ 5 >> loadCustomer`
+This will become too confusing. Either we should ignore this or unify all chainings.
+`input ~ f($_, a,b,c)`
+`string >> contains($_, ":")`
+`input >> f(x,y,z)` => `f(x,y,z,input)`
+`input >. f(x,y,z)` => `f(input, x, y, z)`
+`string >. contains(":")`
+not bad but still not very readable.
+Can we use single letter operator?
+`input | f`
+`input |> f(x,y)` => `f(x,y, input)`
+`input >| f(x,y)` = `f(x,y, input)`
+`f(x,y) |< input` = `f(input, x, y)`
+`f(x,y) <| input` = `f(x,y, input)`
+OR
+`input .> f(x,y)` => `f(x,y, input)`
+`input >. f(x,y)` = `f(x,y, input)`
+`f(x,y) .< input` = `f(input, x, y)`
+`f(x,y) <. input` = `f(x,y, input)`
+
+
+? - adding compile time assertions - this can replace templates somehow
+`func push(s: Stack, x: any) { assert x[] :: s.data }`
+C has `static_assert` same as D.
+Maybe we can add `static` keyword and it can invoke compiler to execute any kind of statement, not only assert.
+`static assert date>10`
+what can we do in a static block?
+1. type checking
+2. check environment variables
 
 ? - easier notation to loop in a map
 `loop(k: map) { ... }`
