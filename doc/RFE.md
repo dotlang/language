@@ -537,3 +537,13 @@ This will accept any vector and return V which is any. User has to cast it.
 Lisp - list processing
 electron is good but a bit long
 photon? This is good. 
+
+? - can we have a hash of type to function pointer?
+Like a set of factories.
+
+? - We have a problem with map/loop I thought we don't:
+`loop(x, func(x: Customer) -> ... )`
+This should not compile because loop signature is:
+`loop(x: any[], func(x: any)->...`
+No. It's ok. `Customer` is a subtype of `any`.
+So `func (x: Customer)` is a subtype of `func (x: any)`
