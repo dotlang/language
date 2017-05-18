@@ -40,7 +40,7 @@ N - Study Monad. Can we really live without them? yes I think we can.
 N - Real-world use case: Connect to database.
 How can we fetch result of a SELECT? 2D array
 How can we create a dynamic query? string interpolation
-How can we model INSERT? - hash
+How can we model INSERT - hash
 e.g. building a tuple at runtime based on result of select? no.
 ```
 func queryDatabase(db: DBInfo, sql: string) -> cursor
@@ -341,7 +341,7 @@ N - also make a syntax sugar for `loop`:
 
 N - function cannot change inputs even if assigns them to a local var. the only way is to clone.
 
-? - Think about method call dispatch with respect to multiple inheritance and polymorphism.
+Y - Think about method call dispatch with respect to multiple inheritance and polymorphism.
 We can do this step by step:
 - When function `f` is called with n inputs, we find all functions with same name and number of inputs, called candidate list.
 - If call is made with names, drop functions whose inputs does not match with given argument names.
@@ -406,9 +406,7 @@ We need to call an implementation which makes most use of provided fields. If we
 Solution 2 makes sense because developer can control the dispatch by introducing appropriate functions which cover first arguments rather than all of them.
 For sum type arguments, the typethat matches most fields is selected for comparison.
 
-? - can we remove need to put `()` in function call/loop/if?
-
-? - Implement a simple logic inference
+N - Implement a simple logic inference
 ```
 ;format: A is B, B is C -> A is C
 type Sentence = (source: string, target: string)
@@ -431,7 +429,7 @@ func checkQuery(data: Sentence[], source: string) -> string | none
 }
 ```
 
-? - Implement a binary search tree and use it to read data from file and find a specific number
+N - Implement a binary search tree and use it to read data from file and find a specific number
 ```
 type BST := Empty | (data: int, left: BST, right: BST)
 func processFile(s: string) -> BST
@@ -447,7 +445,7 @@ func find(bst: BST, x: int) -> bool
 }
 ```
 
-? - convert a binary string to a number
+N - convert a binary string to a number
 ```
 func convert(s: string) -> ulong
 {
@@ -460,19 +458,61 @@ func convert(s: string) -> ulong
 }
 ```
 
-? - reverse a string
+N - reverse a string
+```
+func reverse(s: string) -> {
+    var len = s :> len
+    var result: string
+    loop(seq(len, 0)) result += s[$0]
+    return result
+}
+```
 
-? - count vowels in a string
+N - lambda input in loop must have `any` type. Because it can be anything.
+`func loop(con: iterator<T>, body: func(x:T)->loopOutput)`
+but in fact, if we are looping as `loop(10)` it will be an int.
+if we are checking a condition, `loop(x>10)` then there will be no `x`.
+if we are iterating: like map but without an output.
+`func loop(data: any[], body: func(x:any)->loopOutput)->loopOutput`
+we can use assert to make sure everything has correct type. 
+Also note that we can pass any function which is subtype of `func(x:any)`!
+so if we have `x: Customer[]`
+we can call: `loop(x, func(x: Customer) -> ...)`
+`loop(x, func(x: Customer) -> ... )`
+`loop(x) (x: Customer) -> { ... }`
 
-? - A small db engine
+N - count vowels in a string
+```
+func count(s: string) -> int 
+{
+    return count(s) (x:char) -> x in 'aeoiy'
+}
+```
 
-? - with the rule of no need to embed in paren if last input if lambda, we can introduce keywords if the function has only a lambda input. 
+Y - can we remove need to put `()` in function call/loop/if?
+
+N - Do we need `in` operator to check if something exists in an array?
+It can be applied to anything. It invokes this:
+`a in arr` -> `return or(loop(arr, (x) -> x == 'a'))`
+but we can simply write a function for that!
+`func in(x: any, y: any[])`
+`if ( data :> in(arr1) ) ...`
+
+N - with the rule of no need to embed in paren if last input if lambda, we can introduce keywords if the function has only a lambda input. 
 ```
 if ( x > 0 ) { ... }
 try { ... }
 ```
 
-? - adding compile time assertions - this can replace templates somehow
+N - can we do import using `@` operator? Let's not make the language cryptic.
+
+N - operator to add to beginning of array
+`arr + x` add to the end
+`x + arr` add to the beginning
+
+N - how can we have `==` built-in while `bool` data type is not built-in?
+
+Y - adding compile time assertions - this can replace templates somehow
 `func push(s: Stack, x: any) { assert x[] :: s.data }`
 C has `static_assert` same as D.
 Maybe we can add `static` keyword and it can invoke compiler to execute any kind of statement, not only assert.
@@ -480,5 +520,20 @@ Maybe we can add `static` keyword and it can invoke compiler to execute any kind
 what can we do in a static block?
 1. type checking
 2. check environment variables
+`assert a::b` 
+we can say assertions that are `::` will be evaluated at compile time. 
+
+Y - The array and hash data structures are pretty handy but problem is we cannot alias them in any way.
+`type Vector := int[]`
+Then what about a vector of string?
+We are not looking for a full generics. But like validation `where` which is only applicable when you are defining a custom type we can have similar case for type re-write.
+`type Vector := V[]`
+`type IntVector := Vector with { V := int }`
+And this `V` parameter cannot be used anywhere else.
+`func shift(v: Vector) -> V ...`
+This will accept any vector and return V which is any. User has to cast it.
 
 ? - name: simple, pure, simpla (simple + language), func, 
+Lisp - list processing
+electron is good but a bit long
+photon? This is good. 
