@@ -13,7 +13,7 @@ May 8, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, extended chain operators, re-introduces type specialization
+- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop` keyword, unified numberic types, dot as a chain operator
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -103,8 +103,7 @@ All other features (loop and considtionals, exception handling, validation, inhe
 ## Type System
 ### Primitive
 There are only three primitive data types: `number`. All others are defined based on these two plus some restrictions on size and accuracy.
-- **Integer data types**: `char`, `byte`, `short`, `int`, `long`
-- **Unsigned data types**: `byte`, `ushort`, `uint`, `ulong`
+- **Number data types**: `char`, `int`, `uint`
 - **Floating point data types**: `float`, `double`
 - **Others**: `bool`, `none`, `any`
 
@@ -272,13 +271,13 @@ func map(arr: mapInput[], f: func(mapInput) -> mapTarget) -> mapTarget[]
 ;these calls are all the same
 new_array = map(my_array, {$+1})
 ```
-- `map` can work on any type that supports loop.
-- If last input of function is a lambda, it can be put outside paren without a comma, when calling it. This useful to make code readable in cases we call `loop` or `map`.
+- `map` can work on any type that supports iterable.
 ```
-new_array = map(my_array) {$+1} ;map will receive a tuple containing two elements: array and lambda
-new_array = map(my_array) (x:int) -> {x+1}
+new_array = map(my_array, {$+1}) ;map will receive a tuple containing two elements: array and lambda
+new_array = map(my_array , (x:int) -> {x+1})
 ```
 - Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability).
+- Parent is required when calling a function, even if there is no input.
 - You can clone the data but have to do it manually using explode operator `@`. Note that assignment makes a clone for primitives, so you need cloning only for tuple, array and hash.
 `var x: Point = (@original_var)`
 `var x: Point = (@original_var, x=19)` clone and modify in-place
@@ -387,6 +386,7 @@ var modifier = { $.0 + $.1 }  ;if input/output types can be deduced, you can eli
 - You can also use `$_` place holder to create a new lambda based on existing functions:
 `var y = calculate(4,a, $_)` is same as `var y = (x:int) -> calculate(4,a,x);`
 `var y = calculate(1, $_, $_)` is same as `var y = (x:int, y:int) -> calculate(4,x,y);`
+- Lambdas have read-only access to free variables in their parent semantic scope.
 
 ## Operators
 - Conditional: `and or not == != >= <=`
@@ -408,27 +408,25 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `$_` input place-holder
 - `:` tuple declaration, array slice
 - `:=` custom type definition
-- `:>, :<, >:, <:` chaining
 - `=>` hash type and hash literals
 - `|` sum types
-- `.` access tuple fields
+- `.` access tuple fields, chaining
 - `@` explode 
 - `&` continue execution/evaluation
 - `[]` hash and array literals
 - `::` matching
 - `_`: Placeholder for explode
 
-Keywords: `import`, `func`, `var`, `type`, `where`, `defer`, `native`, `with`
+Keywords: `import`, `func`, `var`, `type`, `where`, `defer`, `native`, `with`, `loop`, `break`, `continue`
 Operators
 Primitive data types
-core functions: `loop`, `if`, `assert`, 
+core functions: `if`, `assert`, 
 
 ### Chaining
-`input :> f(x,y)` => `f(x,y, input)`
-`input >: f(x,y)` = `f(x,y, input)`
-`f(x,y) :< input` = `f(input, x, y)`
-`f(x,y) <: input` = `f(x,y, input)`
-`str :> contains(":")`
+Chain operators are just syntax sugars. They are transformed by compiler. 
+`input.f(x,y)` => `f(input, x,y)`
+`str.contains(":")`
+So in above case for example, `contains` function must have two inputs. We just use this notation because sometimes it is easier to read. 
 
 ## Keywords
 
@@ -470,6 +468,7 @@ result = my_tree ::
 
 ###if, else
 - If/Else is a syntax sugar for match operator.
+- You should not use `()` for if/else if conditions.
 
 ```
 IfElse = 'if' '(' condition ')' Block ['else' (IfElse | Block)]
@@ -530,52 +529,13 @@ return x if ( h :: x:int)
  Type of a block of code, is `none`. It is reverse of `any` where everything matches with it.
 
 ###loop, break, continue
-`loop` is a function defined in core. It uses `map` native function.
-`func loop(cond: int | any[] | anyHash | func(any)->bool, body: func(x:any)->loopOutput)->loopOutput`
-`loop(5) { print('hello') }`
-`loop(arr1) { print($) }`
-`loop(arr1) (x: int) -> { print(x) }`
-`loop(myHash) (k:string, v: int) -> {...}`
-`loop(myHash) (k:string) -> {...}`
-`break` and `continue` are handled as exceptions inside the `loop` functions.
-- We have 3 types of loops: numeric (repeat `n` times), predicated (repeat while true) or iteartion.
-- For iteration loop, you can also use `map` and other similar functions. `map` needs a function withoutput but `loop` doesn't.
-```
-;general iterator type definition
-type iteratorType;
-func hasNext(x: iteratorType) -> bool;
-func next(x: iteartorType) -> any
-
-;example of an iterator for array
-func getIterator(x: any[]) -> iteartorType {
-  var result: ArrayIteartor = (array:x, index:0)
-  return result
-}
-func hasNext(i: ArrayIterator) -> i.index < length(i.array)
-func next(i: ArrayIteartor) -> (i.array[i.index], (array:x, index:i.index+1))
-
-native map(x: iteartorType, lambda)
-
-func loop(x: int, lambda) -> { 
-  var iteartor = createIterator(x)
-  map(iteartor, body)
-}
-
-func loop(pred: lambda, body: lambda) -> {
-  var iterator = createIteartor(pred)
-  map(iteartor, body)
-}
-
-func loop(a: array, body: lambda) -> {
-  var iterator = getIterator(a)
-  map(iterator, body)
-}
-```
-- To break a loop execution from body -> return exception
-- To continue a loop -> return inside case body lambda.
-- About loop for iterating over a collection, note that you can pass a lambda which accepts elements of that collection type because it will be considered a subtype of `any`. 
-`loop(customer_array, func(x: Customer) -> ... )`
-`func (x: Customer)` is a subtype of `func (x: any)`
+`loop(5) { ... }`
+`loop(x>5) { ... }`
+`loop(x: array) { ... }`
+`loop(k: hash) { ... }`
+`loop(k,v: hash) { ...}`
+`loop(x: IterableType) { ... }`
+- `break` and `continue` are supported like C.
 
 ### import
 You can import a source code file using below statement. Note that import, will add symbols (functions and types) inside that source code to the current symbol table:
