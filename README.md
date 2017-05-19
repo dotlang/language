@@ -13,7 +13,7 @@ May 8, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop` keyword, unified numberic types, dot as a chain operator
+- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -116,6 +116,7 @@ Some types are pre-defined in core but are not part of the syntax: `none`, `any`
 ### Array
 - Array literals are specified using brackets: `[1, 2, 3]`
 - `var x: int[] = [1, 2, 3];`
+- `var x: int[] = [1..10];`
 - `var y: int[3]; y[0] = 11;`
 - `var t: int[n];`
 - `var x: int[2,2];`. 
@@ -417,16 +418,17 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `::` matching
 - `_`: Placeholder for explode
 
-Keywords: `import`, `func`, `var`, `type`, `where`, `defer`, `native`, `with`, `loop`, `break`, `continue`
+Keywords: `import`, `func`, `var`, `type`, `where`, `defer`, `native`, `with`, `loop`, `break`, `continue`, `if`, `else`
 Operators
-Primitive data types
+Primitive data types: `int`, `uint`, `float`, `double`, `char`
 core functions: `if`, `assert`, 
 
 ### Chaining
 Chain operators are just syntax sugars. They are transformed by compiler. 
-`input.f(x,y)` => `f(input, x,y)`
+`input.f(x,y)` means `f(input, x,y)`
 `str.contains(":")`
 So in above case for example, `contains` function must have two inputs. We just use this notation because sometimes it is easier to read. 
+`[1,2,3].map(square).sum()`
 
 ## Keywords
 
@@ -467,8 +469,7 @@ result = my_tree ::
 - `if ( x :: y )` is invalid. Right side of match can either be a literal (e.g. 5) or a type (e.g. int) or a new variable with it's own type (e.g. `a:int`). you cannot use `::` to do `==` comparison. And in the shortcut form, you can only use type.
 
 ###if, else
-- If/Else is a syntax sugar for match operator.
-- You should not use `()` for if/else if conditions.
+- You can use `if/else` block as an expression.
 
 ```
 IfElse = 'if' '(' condition ')' Block ['else' (IfElse | Block)]
@@ -478,7 +479,7 @@ Semantics of this keywords are same as other mainstream languages.
 - Note that condition must be a boolean expression.
 - You can use any of available operators for condition part. 
 - Also you can use a simple boolean variable (or a function with output of boolean) for condition.
-- You can also use suffix syntax for if: `Block if ( condition )`
+- You can also use suffix syntax for if: `Block if condition`
 `var max = if (x > y) x else y`
 
 ```
@@ -531,11 +532,14 @@ return x if ( h :: x:int)
 ###loop, break, continue
 `loop(5) { ... }`
 `loop(x>5) { ... }`
+`loop(x:5) { ... }`
 `loop(x: array) { ... }`
 `loop(k: hash) { ... }`
 `loop(k,v: hash) { ...}`
 `loop(x: IterableType) { ... }`
 - `break` and `continue` are supported like C.
+- If expression inside loop evaluates to a value, `loop` can be used as an expression:
+`var t:int[] = loop(var x:10) x`
 
 ### import
 You can import a source code file using below statement. Note that import, will add symbols (functions and types) inside that source code to the current symbol table:
