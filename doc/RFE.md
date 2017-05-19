@@ -596,7 +596,50 @@ Golang allows this. Same for D (Uniform Function Call Syntax (UFCS))
 Same for C++
 and somehow Rust.
 
-? - can we simulate sum types with type inheritance?
+Y - Should we make loop/if an expression?
+`var t:int[] = loop(var x:10) x`
+
+Y - Because we can have `and/or/...` lets enforce paren for if.
+
+N - What about inside paren? Can we eliminate commas?
+`list.procees(1 2 3)`
+
+Y - There is not much use for having `if/else` a syntax sugar. Maybe we should make them keywords too.
+`if`, `else`
+
+N - One idea to better org:
+two file types: types and functions.
+And in type file we specify the modules that can have them.
+
+Y - Suppose we have `First` and `Second` type and `type S := First | Second`
+can S accept a variable which both supports First and Second type?
+```
+type First := (x:int)
+type Second := (y: string)
+type S := First | Second ;this is valid because F and S do not overlap
+var t : (x:int, y: string) = (1, "G")
+;t is satisfying both First and Second
+if ( t :: First ) ... true
+if ( t :: Second ) ... true
+```
+```
+type S
+type First := (x: int)
+type Second := (y: string)
+var t: (x: int, y: string) = (1, "G") ;type of t is S and First and Second
+```
+Seems that sum type does not mix well with implicit inheritance.
+We should have only one of them.
+Even if we remove implicit inheritance, we cannot remove multiple inheritance. So we can have a type inherit from A and B and a sum type as `A | B`.
+But sum types give us expressiveness. Maybe we should replace it with another thing.
+Interface does not give us any type checking. You can assign a string to a variable of type `DoW`.
+Why not keep it? And accept this problem. And issue a compiler/runtime error when it is misused.
+`type Tree := A | B | C` a variable of type Tree must be either A or B or C.
+So if you want to use a variable as a Tree which is none of them or multiple of them, there will be an error either by compiler or by runtime.
+
+N - get rid of `any`. If you want this, you have to implement generics!
+
+N - can we simulate sum types with type inheritance?
 ```
 type Operator;
 type Plus := @Opertor
@@ -631,10 +674,80 @@ The only problem is that now we can send a string as a tree, because of subtypin
 Solution1: Let it be. Less exceptions and restrictions, means better.
 Solution2: Disallow automatic subtyping for `Tree` by adding some config. -> No new notation.
 We can add a random field to make sure no other type will be subtype of Tree but that is not necessary.
+Solution 3: Define base type inherit from `none` instead of `any`.
+Or maybe we can add a better name, like `unit`, but then again, any type that has a `unit` in it, will become a Tree.
+What about maybe/optional?
+`type Maybe`
+We are already using this for exceptions.
+`type Maybe`
+But `|` is more expressive.
 
+N - Maybe in a type we should indicate is it an implicit parent or an explicit parent.
+implicit parent - every other type can be it's child as long as fields match
+explicit parent - every type must match fields and indicate it's parent
+Why not make parent explicit?
+Even if some type is in a lib and later someone else wants to inherit from it, they can just mention parent name and they can use that type everywhere.
+In this way, no one can send an int instead of a tree in accident.
+This will still be done with explode operator but not inside () because there are other types too.
+`type Point := (@Shape, x: int, y: int) @Drawable @DT @GE`
+Then what about sum types?
+`type ST := int | string` the sum type itself cannot be child of anything. It's inner types can be.
+`type ST := int @A @B | string @C @D @E`
+So `(x:int, y: string)` cannot be child of `(x:int)` because it must be stated explicitly.
+Problem is: What if the type is defined in a library and we cannot change it? This should be completely implicit.
+But in that library, they don't need any extra information about that type.
+Anywhere else, we just tag that type with new type.
+So: to indicate inheritance, one should tag a type with it's parent and contain parent fields. This can be done in one step using explode operator.
+`type X := int @A @B` means variables of type X can be used as int or A or B type.
 
-? - can we allow mutable function inputs with some kind of container?
+N - Can we define abstract types? Which are empty and you cannot return values of them. Only for their children.
+`type A := any where false` incorrect.
+`type A := any`
+`func A(any) -> assert false` ?
+
+N - allow tagging a type so we state it's parent. It's optional but can help make code readable.
+```
+type Tree
+type EmptyTree
+type Leaf := int @Tree ;tag Leaf so we indicate it's parent type is Tree
+```
+
+N - can we allow mutable function inputs with some kind of container?
 If we allow closure to modify free variables, this can be done with ease. No need to change syntax or add a new notation.
 or maybe we can specify a special type of lambda only to change a value.
 Like `set` lambda.
+Like converting a local variable to a closure which is bound to it.
+`var g:int = 12`
+`var cl: func(int) = %g`
+`cl(11)` will set value of g
+No.
+What about this?
+```
+type Wrapper := (set: func(x: any), get: func()->any)
+var intWrapper := (a: int, set: func(x: int) -> { a=x }, get: func()->a) ;this is incorrect
+```
+Or let's have a core/built-in keyword which gives you two functions for an input: getter and setter.
+or maybe only setter.
+`processData(x,y,z, setter(x))`
+or add `&` notation. This definitely should not be attached to type name because it will make type system mode complicated.
+`func process(x: int, y:int, &z: int)`
+- This definitely applies to function argument. Not to type or variable or any other thing.
+- Caller does not need to do anything special.
+Can this be simulated by compiler?
+```
+func check(&x: int[]) -> x[5] = 11
+...
+var t: int[]
+check(t)
+;above is changed to this:
+t = check(t)
+;and the function becomes:
+func check(x: int[])->int[] y=[@x] & y[5] = 11 & return y
+```
+In other words, result is copied back to the caller. 
+function receives a read-only reference to the variable. makes changes to a clone and returns it.
+But the developer can do this himself! why complicate compiler and notation by this hack?
 
+Y - what should be default value for a sum type? or any?
+for any you must initialize. 
+for sum type, same.
