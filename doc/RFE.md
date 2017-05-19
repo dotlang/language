@@ -591,6 +591,11 @@ Y - unify data types : int and uint for all precisions.
 Go has the proposal:https://github.com/golang/go/issues/19623
 Lisp and Smalltalk support it.
 
+Y - Is it a good idea to have `str.contains(":")`?
+Golang allows this. Same for D (Uniform Function Call Syntax (UFCS))
+Same for C++
+and somehow Rust.
+
 ? - can we simulate sum types with type inheritance?
 ```
 type Operator;
@@ -609,13 +614,27 @@ But how to have and send variables?
 `var op: Operator`
 `op = Minus()` - cast nothing to minus. It's possible because minus does not have any value.
 `if ( op :: Minus ) ...`
+How can we define a tree?
+```
+type Tree
+type Empty := @Tree
+type Leaf := int
+type TreeNode := (node: int, left: Tree, right: Tree)
+func dfs(t: Tree) {
+    if ( t :: Empty ) return 0;
+    if ( t :: Leaf ) return 1;
+    ...
+}
+```
+`type Tree := Empty | int | (node: int, left: Tree, right: Tree)`
+The only problem is that now we can send a string as a tree, because of subtyping rule!
+Solution1: Let it be. Less exceptions and restrictions, means better.
+Solution2: Disallow automatic subtyping for `Tree` by adding some config. -> No new notation.
+We can add a random field to make sure no other type will be subtype of Tree but that is not necessary.
+
 
 ? - can we allow mutable function inputs with some kind of container?
 If we allow closure to modify free variables, this can be done with ease. No need to change syntax or add a new notation.
 or maybe we can specify a special type of lambda only to change a value.
 Like `set` lambda.
-
-? - Is it a good idea to have `str.contains(":")`?
-Golang allows this. Same for D (Uniform Function Call Syntax (UFCS))
-Same for C++
 
