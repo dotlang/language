@@ -1,5 +1,10 @@
 # Dotlang - Requests for Enhancement
 
+? - name: simple, pure, simpla (simple + language), func, 
+Lisp - list processing
+electron is good but a bit long
+photon? This is good. 
+
 N - A notation to join two arrays.
 In Haskell we have:
 ```
@@ -533,17 +538,84 @@ And this `V` parameter cannot be used anywhere else.
 `func shift(v: Vector) -> V ...`
 This will accept any vector and return V which is any. User has to cast it.
 
-? - name: simple, pure, simpla (simple + language), func, 
-Lisp - list processing
-electron is good but a bit long
-photon? This is good. 
+Y - Closure should not have write access to free variables. Because if closure becomes a thread, this will become a shared mutable state.
 
-? - can we have a hash of type to function pointer?
-Like a set of factories.
+N - can we have a hash of type to function pointer?
+Like a set of factories. We can but we won't have a Type type.
 
-? - We have a problem with map/loop I thought we don't:
+N - We have a problem with map/loop I thought we don't:
 `loop(x, func(x: Customer) -> ... )`
 This should not compile because loop signature is:
 `loop(x: any[], func(x: any)->...`
 No. It's ok. `Customer` is a subtype of `any`.
 So `func (x: Customer)` is a subtype of `func (x: any)`
+
+
+Y - Now that closure can only have read-only access, maybe we should make `loop` a keyword.
+`loop(5) { ... }`
+`loop(x>5) { ... }`
+`loop(x: array) { ... }`
+`loop(k: hash) { ... }`
+`loop(k,v: hash) { ...}`
+`loop(x: IterableType) { ... }`
+
+Y - for `if` we can force user not to use paren.
+
+Y - better operator for chaining - maybe `.`
+beause 4 different operators can become really confusing.
+`str :> contains(":")`
+first of all, chaining is just a syntax sugar. 
+So we don't need to cover every possible scenario (from left to right, from left to left, ...)
+So we will have `A.B` having two meanings: access field B of tuple A or call method B with input A.
+If paren becomes mandatory, this will not be a problem.
+`A.B` is field access, `A.B()` is method call.
+`str.contains(":")`
+We can allow paren removal but cannot be used in conjunction with this syntax sugar. But it will be another exception which is not like the gen/orth we want.
+If something is allowed, it should be allowed everywhere.
+But for example for `filter` we want to have: `list.filter { ... }`
+No this is not good. It is hard to read amd can become confusing in a large code-base.
+`str.length()` -> `length(str)`
+If we mandate paren, filter becomes like this: `list.filter() { ... }` which does not make any sense.
+But there should be a way to reduce number of all those `{}` and `()`s.
+`my_string.contains(":").send(file)`
+`@(x,y).process()` -> `process(x,y)`
+What about eliminating paren everywhere?
+`f x y z` to call `f(x,y,z)`
+`str.contains ":"` -> `contains(str, ":")`
+This is not good because function name and it's input are not separable.
+`map(data, { ... })`
+So:
+- In function call, paren is mandatory even if there is no input (`str.length()`)
+
+Y - unify data types : int and uint for all precisions.
+Go has the proposal:https://github.com/golang/go/issues/19623
+Lisp and Smalltalk support it.
+
+? - can we simulate sum types with type inheritance?
+```
+type Operator;
+type Plus := @Opertor
+type Minus := @Operator
+type Multiply := @Operator
+type Divide := @Operator
+var g: Operator = Add
+if ( g :: Add ) ...
+```
+We can simplify by allowing define multiple type in one line. `type A,B,C := D`
+`type SAT, SUN, ... := DoW`
+`type DoW := none`
+We have a `none` type which has only one possible value.
+But how to have and send variables?
+`var op: Operator`
+`op = Minus()` - cast nothing to minus. It's possible because minus does not have any value.
+`if ( op :: Minus ) ...`
+
+? - can we allow mutable function inputs with some kind of container?
+If we allow closure to modify free variables, this can be done with ease. No need to change syntax or add a new notation.
+or maybe we can specify a special type of lambda only to change a value.
+Like `set` lambda.
+
+? - Is it a good idea to have `str.contains(":")`?
+Golang allows this. Same for D (Uniform Function Call Syntax (UFCS))
+Same for C++
+
