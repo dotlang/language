@@ -13,7 +13,7 @@ May 8, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator
+- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -202,6 +202,18 @@ You can define an enum using sum types.
 type DoW := SAT | SUN | ...
 ```
 - Note that types inside a union type must not completely overlap (e.g. `Shape | Circle`) is not a valid type.
+- If you try to use a value as a sum type which covers more than one of it's choices there will be an error.
+```
+type First := (x:int)
+type Second := (y: string)
+type S := First | Second ;this is valid because F and S do not overlap
+var t : (x:int, y: string) = (1, "G")
+;t is satisfying both First and Second
+if ( t :: First ) ... true
+if ( t :: Second ) ... true
+var x: S = t ;error
+```
+- You must initialize sum type variables upon initialization.
 
 ### Custom Types
 You can use `type` to define new type based on an existing type. 
@@ -225,7 +237,6 @@ Note that when using type for alias to a function, you have to specify input nam
 `type comparer := func (x:int, y:int) -> bool;`
 If types are compatible (e.g. long and int) you can cast them using: `TypeName(x)` notation. Note that this notation can also be used to specify type of a literal when we can't or don't want to do it using normal notation:
 For example in return statement `return Circle(radius:1)`.
-
 
 ### Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
