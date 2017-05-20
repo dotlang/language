@@ -751,3 +751,29 @@ But the developer can do this himself! why complicate compiler and notation by t
 Y - what should be default value for a sum type? or any?
 for any you must initialize. 
 for sum type, same.
+
+? - Is it possible to make sure functions that accept a Tree (or Stack or ...) will not accept `any`?
+I want to make sure `func DFS(x: Tree)` won't receive a Stack for example, just because both are empty.
+`any <- Tree, Stack ...`
+The easiest solution is to introduce a special field that is unique to a Tree.
+Any Tree or subtype will definitely have it while a Stack won't have it. So dev cannot send a Stack by mistake.
+Now, what that "unique field" should be? 
+We cannot waste memory by adding a field which is not supposed to contain any data. This will be just a compile time thing.
+We can add a small field with a random name. 
+`type Tree := (dsddasdsadasd: int)`
+`type Leaf := (@Tree, x: value)`
+But still any other type that has an int field will be considered a subtype of Tree.
+We should add some kind of a Tag to types.
+If a type wants to be subtype of other, it should contain subset of it's fields and same tags.
+Will this preserve good things that duck typing gives us? If base type is defined in a library, we can make it subtype of our own type by adding our own type without a tag!
+An easy way is to add a dummy field of type `none` or a type which inherits from none. It is according to all rules, no new exception or notation. We may just add a sugar for this.
+`type Tree := (dummy: none)`
+Maybe we need a shotcut to define a new type in-place based on any or none, if it's going to be used in only one place.
+`type Stack := %StackElement[]` -> StackElement is child of any.
+```
+type TreeBase := none   ;this type does not have any value. It is just a market/tag
+type Tree := (id:TreeBase)`
+type HeapBase := none
+type Heap := (id:HeapBase)`
+```
+Let's don't change it. It will only complicate the language, adding new notation or syntax.
