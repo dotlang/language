@@ -891,6 +891,7 @@ It should be allowed as an input but it does not make sense.
 in `x :: { y:int -> ...}` it is a case statement.
 But these two definitions are compatible.
 
+
 ? - loop can accept expression and will output an array:
 `var x: int[] = loop(10)` same as `[0..9]`
 maybe we can even remove 1..10 notation.
@@ -958,8 +959,14 @@ Good but it is a bit long!
 We can replace it with a notation like `%` but I think `ref` is more descriptive (and intuitive at least for c# developers)
 The good thing is that its not possible to use ref when declaring a tuple or any other place.
 And a function can call another func with ref input either if argument is local or its a ref too.
+This definition helps us keep method dispatch, type casting and many other places without a change.
 
 ? - if we have `func process(ref x: int)` can we also have `func process(x:int)`?
 I think we can have (gen. do not ban anything unless you really have to). But it would make code complicated but still readable.
 Because when the call is made, we make clear which version we want to call.
 So `ref` will affect method dispatch too.
+
+? - q find cases where we have "you cannot" in the specification. These are exceptions.
+Of course some of them are necessary: you cannot assign a string to int.
+
+?- if we agree that function input is not a tuple, can we use `x:12` notation to send named function input?
