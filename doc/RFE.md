@@ -791,8 +791,8 @@ So if (x,y) is expected, you can provide `(x,y,z)` (as function input or output 
 So when type T is expected, you can provide either T itself or any of it's subtypes.
 ------------
 We have two categories of types: named and unnamed.
-Unnamed: `int, string[], float => int, (int,int)...` - They are created using language keywords and notations.
-Named: `type MyType := ?????` These are defined by the developer and on the right side we can have another named or unnamed type.
+Unnamed: `int, string[], float => int, (int,int)...` - They are created using language keywords and notations like primitive type names, `any`, arry or hash, ....
+Named: `type MyType := ?????` These are defined by the developer and on the right side we can have another named or unnamed type. Right side is called underlying type.
 We have two special types: `nothing` and `any`. All types are subtypes of `any`. `nothing` is only subtype of itself. So if a function expects nothing (which is weird) you can only pass a nothing to it and nothing else. If a function expects `any` you can pass anything to it.
 We have 7 kinds of type: tuple, union, array, hash, primitive, function.
 We write C <: S which means C (child) is subtype of S (supertype). 
@@ -803,8 +803,8 @@ We write C <: S which means C (child) is subtype of S (supertype).
 - function: C:func(I1)->O1, S: func(I2)->O2 I1<:I2 and O1 <: O2 and if inputs are named, they should match.
 - Sum types: C: C1|C2|...|Cn and S: S1|S2|...|Sm if Ci<:Si and n<=m
 - Tuple: C=(C1,...,Cn) and S=(S1,...,Sm) if Ci<:S1 and n>=m and if both have named fields, they must match
-Variable of named type can be assigned to unnamed type and vice versa. `type SE := int` then SE and int are assignable.
-Two named types with different names are not assignable implicitly.
+Variable of named type can be assigned to underlying unnamed type and vice versa. `type SE := int` then SE and int are assignable.
+Two named types with different names are not assignable implicitly, are never equal and not subtype of each other.
 `type SE := int & var s: SE = 12`
 Suppose that we have a function `func f(x: T1, y: T2, z: T3)`
 You can call this function with 3 data, if type of each data is subtype of corresponding function argument. if input is named, it should match with names on the function declaration.
