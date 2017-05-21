@@ -752,7 +752,7 @@ Y - what should be default value for a sum type? or any?
 for any you must initialize. 
 for sum type, same.
 
-? - Is it possible to make sure functions that accept a Tree (or Stack or ...) will not accept `any`?
+N - Is it possible to make sure functions that accept a Tree (or Stack or ...) will not accept `any`?
 I want to make sure `func DFS(x: Tree)` won't receive a Stack for example, just because both are empty.
 `any <- Tree, Stack ...`
 The easiest solution is to introduce a special field that is unique to a Tree.
@@ -777,3 +777,21 @@ type HeapBase := none
 type Heap := (id:HeapBase)`
 ```
 Let's don't change it. It will only complicate the language, adding new notation or syntax.
+
+? - More thinking about type syste, subtyping, type equality and type aliasing and matching rules.
+`type A := B` means A is a new type that internally is exactly same as B.
+`type T` is an empty type or it is for `any`? If empty type, it does not have any value or representation.
+If it is any then it can represent anything. It should represent nothing (none).
+if we differentiate any from none, then an empty type which inherits from none...?
+I think none should be parent of any (if they are not separate). Because of subtyping rules.
+So if a lambda is supposed to have none output, it can return anything (and it will be ignored).
+if it's output is any, it cannot return none.
+Whenever a specific type is expected, you can provide a more specialized type with more fields and details but not vice versa.
+So if (x,y) is expected, you can provide `(x,y,z)` (as function input or output or ...).
+So when type T is expected, you can provide either T itself or any of it's subtypes.
+
+? - Go does not permit adding a new function to an existing type if the type is outside file of new function. Can we do the same thing here? It will help organizing the code.
+
+? - The implicit subtyping for empty types can be confusing sometimes. Is it possible to make it more explicit and readable.
+Think about different situations like multiple functions, type hierarchy, function overriding. 
+Note that we want a simple and readable language with minimum rules and exceptions.
