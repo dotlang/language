@@ -790,22 +790,37 @@ Whenever a specific type is expected, you can provide a more specialized type wi
 So if (x,y) is expected, you can provide `(x,y,z)` (as function input or output or ...).
 So when type T is expected, you can provide either T itself or any of it's subtypes.
 ------------
-We have 7 kinds of type: tuple, union, array, hash, primitive, function and named.
+We have two categories of types: named and unnamed.
+Unnamed: `int, string[], float => int, (int,int)...` - They are created using language keywords and notations.
+Named: `type MyType := ?????` These are defined by the developer and on the right side we can have another named or unnamed type.
+We have two special types: `nothing` and `any`. All types are subtypes of `any`. `nothing` is not subtype of anything. So if a function expects nothing (which is weird) you can only pass a nothing to it and nothing else.
+We have 7 kinds of type: tuple, union, array, hash, primitive, function.
 We write C <: S which means C (child) is subtype of S (supertype). 
+- A type is subtype of itself.
 - Primitive: C and S are the same
 - Array: if their elements <:
 - Hash: same key, Vs <: Vc
-- function: C:func(I1)->O1, S: func(I2)->O2 I1<:I2 and O2 <: O1
+- function: C:func(I1)->O1, S: func(I2)->O2 I1<:I2 and O1 <: O2 and if inputs are named, they should match.
 - Sum types: C: C1|C2|...|Cn and S: S1|S2|...|Sm if Ci<:Si and n<=m
 - Tuple: C=(C1,...,Cn) and S=(S1,...,Sm) if Ci<:S1 and n>=m and if both have named fields, they must match
-- Named: A named type is subtype of it's definition (type SE := int, then SE is subtype of int).
-`nothing` is supertype of `any` and all other types.
 Variable of named type can be assigned to unnamed type and vice versa. `type SE := int` then SE and int are assignable.
-Two named types with different names are not assignable implicitly, but a named type and it's underlying type are.
+Two named types with different names are not assignable implicitly.
 `type SE := int & var s: SE = 12`
+Suppose that we have a function `func f(x: T1, y: T2, z: T3)`
+You can call this function with 3 data, if type of each data is subtype of corresponding function argument. if input is named, it should match with names on the function declaration.
 
+? - Type hierarchy
+The ones who are below are those who can accept more general data. so (int,int) is below int.
+As a result top of the tree if `nothing`.
+
+? - Should we consider `(int)` same as `int`?
+If we do so, a func which expects `(int)` can be called with an integer.
+
+? - What about function pointer/lambda?
+A lambda has a `func` type. The lambda we want to send to a function should have a type which is subtype of expected type.
 
 ? - Go does not permit adding a new function to an existing type if the type is outside file of new function. Can we do the same thing here? It will help organizing the code.
+But we do not want to tie data (type) and functions.
 
 ? - The implicit subtyping for empty types can be confusing sometimes. Is it possible to make it more explicit and readable.
 Think about different situations like multiple functions, type hierarchy, function overriding. 
@@ -821,9 +836,50 @@ var g: DE = 12
 f(SE(g))
 ```
 Type alias is a different type but it is subtype of its target type.
+You cannot send a `DE` when `SE` is expected. Two named types can never be equal.
+
+? - what happens if I send a `(int,int)` when `(int)` is expected?
+If both are tuples, then this is a simple case of inheritance. If tye is not specified, it's ok and we can pass.
+If type name is specified then they must match.
 
 ? - Golang has similar syntax for type assert and extract.
 `x = y.(int)`
 `switch ( y.(type)` 
 Can we make them similar too?
 Similarly, `x.[]` is a good notation to use. 
+custom cast can be done in custom functions.
+`Circle.(Shape)`? Does not seem nice.
+What about type checking? `::`
+`if ( x :: int ) { y=int(x) ... }`
+Does not seem a good idea.
+
+? - Suppose that `type SE := int` and we have only one function: `func f(SE)` 
+can we send an integer to it? NO.
+We should not be able to do that.
+if we only have `func f(int)` we can send int and SE to it? NO. Let's make things simpler.
+In golang you cannot.
+The simpler one is: If two functions we have, each will go to same type.
+Make it simple: Same type always.
+The purpose of defining named type is not to redirect calls to another type because those calls are already being made with underlying type. `type SE :=int` purpose is not to catch calls that are passing int. The purpose is defining new functions with new type (SE) and caller will send correct SE type not int.
+So there should be no implicit casting. So that's why in golang it says, "A named and an unnamed type are always different".
+`type SE := int` means internally SE is an integer and you can easily connvert it.
+So as a result of this, you can never send `Heap` in place where `Tree` is expected.
+But where `Tree` is expected you can pass subtypes of Tree.
+
+? - should `int` be subtype of `nothing` or `any`?
+You can send a circle where a shape is needed. shape is supertype and circle is subtype.
+You can send any where int is needed? no.
+You can send int where any is needed? yes. so any is supertype and int is subtype! No.
+I think there are two different concepts here. any and super-sub typing.
+any can be considered a sub-type of everything.
+Maybe we should treat any and nothing separately. nothing is a type which does not have only one valid value: nothing.
+any is a type which contains all types in the system (like int | string | ...).
+These two can be considered keywords to mean a function can accept everything or nothing.
+Other than these two, rules of parameter sending is specified with subtyping. 
+So if f expects type T you can send a subtype of T. If f expects a Shape you can send a shape.
+So we don't need to put any/nothing in the type tree.
+You can send nothing where int is needed? no.
+You can send int where nothing is needed? no.
+An input cannot be of type nothing. 
+It can only be used as output of a function or block. But this is not general.
+It should be allowed as an input but it does not make sense.
