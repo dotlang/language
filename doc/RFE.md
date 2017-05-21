@@ -793,7 +793,7 @@ So when type T is expected, you can provide either T itself or any of it's subty
 We have two categories of types: named and unnamed.
 Unnamed: `int, string[], float => int, (int,int)...` - They are created using language keywords and notations.
 Named: `type MyType := ?????` These are defined by the developer and on the right side we can have another named or unnamed type.
-We have two special types: `nothing` and `any`. All types are subtypes of `any`. `nothing` is not subtype of anything. So if a function expects nothing (which is weird) you can only pass a nothing to it and nothing else.
+We have two special types: `nothing` and `any`. All types are subtypes of `any`. `nothing` is only subtype of itself. So if a function expects nothing (which is weird) you can only pass a nothing to it and nothing else. If a function expects `any` you can pass anything to it.
 We have 7 kinds of type: tuple, union, array, hash, primitive, function.
 We write C <: S which means C (child) is subtype of S (supertype). 
 - A type is subtype of itself.
@@ -883,3 +883,7 @@ You can send int where nothing is needed? no.
 An input cannot be of type nothing. 
 It can only be used as output of a function or block. But this is not general.
 It should be allowed as an input but it does not make sense.
+
+? - rename `any` to `anything` and `none` to `nothing`.
+
+? - can we make `::` notation simpler and more intuitive like go, but expressive?
