@@ -960,5 +960,6 @@ The good thing is that its not possible to use ref when declaring a tuple or any
 And a function can call another func with ref input either if argument is local or its a ref too.
 
 ? - if we have `func process(ref x: int)` can we also have `func process(x:int)`?
-I think we can have (gen). But it would make code complicated but still readable.
+I think we can have (gen. do not ban anything unless you really have to). But it would make code complicated but still readable.
 Because when the call is made, we make clear which version we want to call.
+So `ref` will affect method dispatch too.
