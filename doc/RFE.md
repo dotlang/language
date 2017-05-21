@@ -789,7 +789,7 @@ if it's output is any, it cannot return none.
 Whenever a specific type is expected, you can provide a more specialized type with more fields and details but not vice versa.
 So if (x,y) is expected, you can provide `(x,y,z)` (as function input or output or ...).
 So when type T is expected, you can provide either T itself or any of it's subtypes.
-------------
+.....
 We have two categories of types: named and unnamed.
 Unnamed: `int, string[], float => int, (int,int)...` - They are created using language keywords and notations like primitive type names, `any`, arry or hash, ....
 Named: `type MyType := ?????` These are defined by the developer and on the right side we can have another named or unnamed type. Right side is called underlying type.
@@ -887,3 +887,78 @@ It should be allowed as an input but it does not make sense.
 ? - rename `any` to `anything` and `none` to `nothing`.
 
 ? - can we make `::` notation simpler and more intuitive like go, but expressive?
+`::` is doing multiple things. in `if ( x :: int)` its a bool operator for type checking.
+in `x :: { y:int -> ...}` it is a case statement.
+But these two definitions are compatible.
+
+? - loop can accept expression and will output an array:
+`var x: int[] = loop(10)` same as `[0..9]`
+maybe we can even remove 1..10 notation.
+we can extend loop like `loop(2,20)` means 2 to 19.
+
+? - provide shortcut for tuple:
+`x,y = func1()` will assign x and y output of func1.
+`return 1,2` will return a tuple of two values.
+`return (x=1, y=2)` same as above with name.
+maybe we should write: `x,y = @func1()` so we are expanding a tuple.
+`(x,y) = func1()` does not have a meaning. what is the left side?
+`@` is inverse of `()`.
+
+? - can we simplify function by saying its input is a tuple?
+If so, we should permit sending subtypes to the function which makes things confusing.
+Also we should permit optional values which makes method dispatch difficult.
+
+? - if we use function name as a variable it will be confusing.
+`func f(x:int)->`
+`var t: func(int) = f`
+Maybe we should add a notation. The only advantage is prevent confusion.
+When I see `t=u` and t is lambda, then is `u` another lambda or it is a function name?
+`t=&u` this is more intuitive. but is used for continutation.
+`t=^f` to denote pointer to a function.
+
+? - `&` can be used for continuation in one line. for multiple line, create a block.
+
+? - Returning modified data in output as an alternative for mutability is good but may be bad for performance.
+`x=f(a,b,c,x)`
+`func f(a,b,c,x) {...y=@x..return y}`
+Is it possible that we keep things pure and also give permission to change the value?
+I think, only if we provide lambda. Anything else will either be complicated or making things impure.
+Giving lambda gives control to the outside world to control/mock things.
+idiomatic way: return modified value
+suppose in real-world we have a function which receives an array of 1000 customers and wants to mark something.
+
+? - Do we need `where`?
+If we need it, it should be allowed in function definition too.
+maybe we can extend where to allow modification through lambda. Then we can use it for mutable function input.
+But first lets solve the method dispatch issue:
+`func f(x: int where {$>12})...`
+`var g:int = 12`
+can we call `f(g)`?
+Let's remove `where` it makes things simpler. And prevents future exceptions.
+what if inline lambda can change local variables. It cannot be shared between two threads because it is online.
+BUT this will be a big exception.
+But even haskell has mutable arrays.
+What if we employ a concept similar to monad?
+The function returns an action (lambda?) which will change the array. The caller will execute this action and it's local variable will be updated.
+why not let the developer decide if something should be immutable or not?
+everything being immutable is some kind of exception too!
+Of course default is immutable for everything but function input can be mutable too.
+But we should not go too far (an immutable array of mutable int, an immutable hash with mutable values, ...)
+Now that function does not accept a tuple, we can have a special definition for function signature.
+There we can denote if an input argument is mutable or not.
+This definitely does not change anything about type or ...
+We are not defining a NEW type. We use same types.
+The only requirement: function should clearly indicate mutable input.
+Sender should indicate argument which is being sent as mutable -> this will make code readable.
+If I see `process(x,y,z)` I don't know whether any of these 3 arguments will be changed or no. But when there is a notation I know when I read the function.
+C# has `ref` or `out` keyword. This is good because does not imply change in the type.
+`func process(x: int, ref y: int)`
+`process(t, ref u)`
+Good but it is a bit long! 
+We can replace it with a notation like `%` but I think `ref` is more descriptive (and intuitive at least for c# developers)
+The good thing is that its not possible to use ref when declaring a tuple or any other place.
+And a function can call another func with ref input either if argument is local or its a ref too.
+
+? - if we have `func process(ref x: int)` can we also have `func process(x:int)`?
+I think we can have (gen). But it would make code complicated but still readable.
+Because when the call is made, we make clear which version we want to call.
