@@ -789,9 +789,41 @@ if it's output is any, it cannot return none.
 Whenever a specific type is expected, you can provide a more specialized type with more fields and details but not vice versa.
 So if (x,y) is expected, you can provide `(x,y,z)` (as function input or output or ...).
 So when type T is expected, you can provide either T itself or any of it's subtypes.
+------------
+We have 7 kinds of type: tuple, union, array, hash, primitive, function and named.
+We write C <: S which means C (child) is subtype of S (supertype). 
+- Primitive: C and S are the same
+- Array: if their elements <:
+- Hash: same key, Vs <: Vc
+- function: C:func(I1)->O1, S: func(I2)->O2 I1<:I2 and O2 <: O1
+- Sum types: C: C1|C2|...|Cn and S: S1|S2|...|Sm if Ci<:Si and n<=m
+- Tuple: C=(C1,...,Cn) and S=(S1,...,Sm) if Ci<:S1 and n>=m and if both have named fields, they must match
+- Named: A named type is subtype of it's definition (type SE := int, then SE is subtype of int).
+`nothing` is supertype of `any` and all other types.
+Variable of named type can be assigned to unnamed type and vice versa. `type SE := int` then SE and int are assignable.
+Two named types with different names are not assignable implicitly, but a named type and it's underlying type are.
+`type SE := int & var s: SE = 12`
+
 
 ? - Go does not permit adding a new function to an existing type if the type is outside file of new function. Can we do the same thing here? It will help organizing the code.
 
 ? - The implicit subtyping for empty types can be confusing sometimes. Is it possible to make it more explicit and readable.
 Think about different situations like multiple functions, type hierarchy, function overriding. 
 Note that we want a simple and readable language with minimum rules and exceptions.
+If `type` defines a new type, then user cannot use another type instead of that (if that another type does not have a direct matching function)
+```
+type SE := int
+type DE := int
+func f(x:SE) ->...
+var g: DE = 12
+;you cannot call f with g because their type do not match
+;you can of course cast
+f(SE(g))
+```
+Type alias is a different type but it is subtype of its target type.
+
+? - Golang has similar syntax for type assert and extract.
+`x = y.(int)`
+`switch ( y.(type)` 
+Can we make them similar too?
+Similarly, `x.[]` is a good notation to use. 
