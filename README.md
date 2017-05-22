@@ -13,7 +13,7 @@ May 8, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword
+- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -305,7 +305,7 @@ new_array = map(my_array, {$+1})
 new_array = map(my_array, {$+1}) ;map will receive a tuple containing two elements: array and lambda
 new_array = map(my_array , (x:int) -> {x+1})
 ```
-- Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability).
+- Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability) except those marked with `ref`.
 - Parent is required when calling a function, even if there is no input.
 - You can clone the data but have to do it manually using explode operator `@`. Note that assignment makes a clone for primitives, so you need cloning only for tuple, array and hash.
 `var x: Point = (@original_var)`
@@ -424,7 +424,7 @@ var modifier = { $.0 + $.1 }  ;if input/output types can be deduced, you can eli
 
 ## Operators
 - Conditional: `and or not == != >= <=`
-- Math: `+ - * % ++ -- **`
+- Math: `+ - * % %% (is divisible) ++ -- **`
 - Note that `+` operator can also work on arrays which joins two arrays together.
 The math operators can be combined with `=` to do the calculation and assignment in one statement.
 - `=` operator: copies only for primitive type, makes a variable refer to the same object as another variable for any other type. If you need a copy, you have to clone the variable. 
@@ -606,12 +606,10 @@ Denotes function is implemented by runtime or external libraries.
 
 ## Miscellaneous
 ### Validation
-When defining a custom type, you can define validation code/function. This is a block which will be executed/evaluated everytime variable gets a new value or function is executed. You can makes sure the data is in consistent and valid state.
-`type m := int where {validate_month};`
-`type m := int where validate_month . ;same as above`
-Expression will be called with `$` pointing to the new value. If the expression evaluates to false, a runtime exception will be thrown.
-`type x := (x: int, y:int) where { $.x < $.y };`
-- You are not allowed to use `where` in function or lambda definition. It's only allowed in variable or type declaration.
+A predicate or label function is of the form `func predicate(x: any)->bool` (only one input and bool output). Any piece of data can have a number of labels attached to it which are results of calls to predicates on it. 
+The important thing about labels is that they are transparently cached by runtime system. So further calls to the same label (predicate), will just re-use cached data. 
+As a result, to implement predicate/validation/constraints/refinement types, you just call the function that checks the specific filter you need. Code becomes more readable and runtime makes the execution efficient. 
+Another advantage: It won't interfer with method dispatch or subtyping.
 
 ### Specialization
 When defining a custom type, you can replace a type alias with a more specialized type. The result will be a subtype of the original type. For example:
