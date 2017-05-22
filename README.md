@@ -13,7 +13,7 @@ May 8, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types
+- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -101,15 +101,32 @@ Source file contains a number of definitions for types and functions.
 All other features (loop and considtionals, exception handling, validation, inheritance and subtyping, polymorphism ...) are achieved using above constructs.
 
 ## Type System
+We have two categories of types: named and unnamed.
+Unnamed: `int, string[], float => int, (int,int)...` - They are created using language keywords and notations like primitive type names, `any`, arry or hash, ....
+Named: `type MyType := ?????` These are defined by the developer and on the right side we can have another named or unnamed type. Right side is called underlying type.
+We have two special types: `nothing` and `anything`. All types are subtypes of `anything` (except `nothing`). `nothing` is only subtype of itself. So if a function expects nothing (which is weird) you can only pass a nothing to it and nothing else. If a function expects `anything` you can pass anything to it (except `nothing`).
+We have 7 kinds of type: tuple, union, array, hash, primitive, function.
+We write C <: S which means C (child) is subtype of S (supertype). 
+- A type is subtype of itself.
+- Primitive: C and S are the same
+- Array: if their elements <:
+- Hash: Vs <: Vc, Kc <: Ks
+- function: C:func(I1)->O1, S: func(I2)->O2 I1<:I2 and O1 <: O2 and if inputs are named, they should match.
+- Sum types: C: C1|C2|...|Cn and S: S1|S2|...|Sm if Ci<:Si and n<=m
+- Tuple: C=(C1,...,Cn) and S=(S1,...,Sm) if Ci==Si and n>=m and if both have named fields, they must match
+Variable of named type can be assigned to underlying unnamed type and vice versa. `type SE := int` then SE and int are assignable.
+Suppose that we have a function `func f(x: T1, y: T2, z: T3)`
+You can call this function with 3 data, if type of each data is subtype of corresponding function argument. if input is named, it should match with names on the function declaration.
+
 ### Primitive
 There are only three primitive data types: `number`. All others are defined based on these two plus some restrictions on size and accuracy.
 - **Number data types**: `char`, `int`, `uint`
 - **Floating point data types**: `float`, `double`
-- **Others**: `bool`, `none`, `any`
+- **Others**: `bool`, `nothing`, `anything`
 
 You can use core functions to get type identifier of a variable: `type` or `hashKeyType` or `hashValueType`.
 `bool` and `none` are special types with only two and one possible values. `none` is used when a function returns nothing, so compile will change `return` to `return none`.
-Some types are pre-defined in core but are not part of the syntax: `none`, `any`, `bool`.
+Some types are pre-defined in core but are not part of the syntax: `nothing`, `anything`, `bool`.
 - `string` is an array of characters. And it is not a primitive.
 - `byte` is 8 bit integer, but `char` can be larger to support unicode.
 
@@ -269,14 +286,14 @@ func my_func(5:int) -> 9
 func my_func3(x: int, y: int) -> x/y  ;you can omit {} if its a single expression
 func my_func7() -> int { return 10;} ;fn has no input but () is mandatory
 func my_func7() -> 10  ;when function has just a return statement, there is a shortcut
-func my_func8() -> (int, int) { return (10,20) } ;function can return multiple values
-(x,y) = my_func8()
+func my_func8() -> (int, int) { return 10,20 } ;function can return multiple values
+(x,y) = @my_func8()
 func myFunc9(x:int) -> y:int { y=12 } ;you can have named output
 
  ;below function receives an array + a function and returns a function
 func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
 
-;We can enforce same type constraints, simply by using types. Like below. `mapTarget` is basically same as `any`.
+;We can enforce same type constraints, simply by using types. Like below. `mapTarget` is basically same as `anything`.
 type mapTarget
 func map(arr: mapInput[], f: func(mapInput) -> mapTarget) -> mapTarget[]
 
@@ -304,7 +321,7 @@ new_array = map(my_array , (x:int) -> {x+1})
 func f(x:int, y:float) -> (a: int, b: string)
 {
   ;returning anon-tuple
-  return (a=1, b=9) ;or return (1, 9)
+  return (a=1, b=9) ;or return (1, 9) or return 1,9
 }
 
 func read_customer(id:int) -> Nothing | CustomerData
@@ -347,6 +364,10 @@ add(int_array, "A") will fail
 - This is a functio that accepts an input of any type and returns any type: `type Function := func(any)->any`. Note that you cannot define a function type that can accept any number of anything.
 - When calling a function, you can remove parentheses if there is no ambiguity (only a single call is being made).
 `process data1, data2 & finalize data3 & save data4`
+- In function declaration you can use `ref` to indicate parameter will be accessible as read-write. Caller needs to mention `ref` when sending corresponding parameter:
+`func process(x: int, ref y: int)`
+caller: `process(t, ref u)`
+`ref` will affect method dispatch so you can have two functions with the same name and input but one of them with `ref` argument.
 
 ### Matching
 `func add(x:int, y:int, z:int) ...`
@@ -399,6 +420,7 @@ var modifier = { $.0 + $.1 }  ;if input/output types can be deduced, you can eli
 `var y = calculate(4,a, $_)` is same as `var y = (x:int) -> calculate(4,a,x);`
 `var y = calculate(1, $_, $_)` is same as `var y = (x:int, y:int) -> calculate(4,x,y);`
 - Lambdas have read-only access to free variables in their parent semantic scope.
+- You can assign an existing function to a lambda using `^` operator: `var comp = ^compareString`
 
 ## Operators
 - Conditional: `and or not == != >= <=`
@@ -427,7 +449,8 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `&` continue execution/evaluation
 - `[]` hash and array literals
 - `::` matching
-- `_`: Placeholder for explode
+- `_` Placeholder for explode
+- `^` assign function to lambda variable
 
 Keywords: `import`, `func`, `var`, `type`, `where`, `defer`, `native`, `with`, `loop`, `break`, `continue`, `if`, `else`
 Operators
@@ -469,7 +492,7 @@ MatchExp = '(' tuple ')' :: '{' (CaseStmt)+ '}'
   result = my_tree :: 5 -> 11, 6-> 12, Empty -> 0, x:int -> x, any -> -1
 ```
 - Simple form: You can use `::` without `->` too to check for types which returns a bool: `if ( x :: int)`. In this format, you can check for a type or a literal.
-- Due to subtype rules, `any` will even match a tuple with multiple fields. If you want to be restrict about name, you can add a name and if the tuple is named, then name will be checked too:
+- Due to subtype rules, `anything` will even match a tuple with multiple fields. If you want to be restrict about name, you can add a name and if the tuple is named, then name will be checked too:
 ```
 result = my_tree ::
   {
@@ -542,6 +565,7 @@ return x if ( h :: x:int)
 
 ###loop, break, continue
 `loop(5) { ... }`
+`loop(2,20) { ... }`
 `loop(x>5) { ... }`
 `loop(x:5) { ... }`
 `loop(x: array) { ... }`
@@ -550,7 +574,7 @@ return x if ( h :: x:int)
 `loop(x: IterableType) { ... }`
 - `break` and `continue` are supported like C.
 - If expression inside loop evaluates to a value, `loop` can be used as an expression:
-`var t:int[] = loop(var x:10) x`
+`var t:int[] = loop(var x:10) x` or simply `var t:int[] = loop(10)` because a loop without body will evaluate to the counter.
 
 ### import
 You can import a source code file using below statement. Note that import, will add symbols (functions and types) inside that source code to the current symbol table:
@@ -602,7 +626,7 @@ Advantage is that we can use a better named type in functions. Instead of writin
 ### Exception Handling
 ### Inheritance and Polymorphism
 - Tuples can inherit from other tuples by having their fields (Manually adding them or with explode operator. This is similar to "Duck typing" in other languages but with data. So A can be trated like B if for every fields in B, I can write `A.field`. This allows developer to write subtypes for types he doesn't have access to. 
-- This type of subtyping is called Structural (https://en.wikipedia.org/wiki/Structural_type_system)
+- This type of subtyping is called Structural (https://en.wikipedia.org/wiki/Structural_type_system) and we have width subtyping (https://en.wikipedia.org/wiki/Subtyping).
 `type Shape := ();`
 `type Circle := (@Shape...)`
 `type Square := (@Shape...)`
