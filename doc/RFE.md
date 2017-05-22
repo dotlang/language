@@ -778,7 +778,7 @@ type Heap := (id:HeapBase)`
 ```
 Let's don't change it. It will only complicate the language, adding new notation or syntax.
 
-? - More thinking about type syste, subtyping, type equality and type aliasing and matching rules.
+Y - More thinking about type syste, subtyping, type equality and type aliasing and matching rules.
 `type A := B` means A is a new type that internally is exactly same as B.
 `type T` is an empty type or it is for `any`? If empty type, it does not have any value or representation.
 If it is any then it can represent anything. It should represent nothing (none).
@@ -793,36 +793,34 @@ So when type T is expected, you can provide either T itself or any of it's subty
 We have two categories of types: named and unnamed.
 Unnamed: `int, string[], float => int, (int,int)...` - They are created using language keywords and notations like primitive type names, `any`, arry or hash, ....
 Named: `type MyType := ?????` These are defined by the developer and on the right side we can have another named or unnamed type. Right side is called underlying type.
-We have two special types: `nothing` and `any`. All types are subtypes of `any`. `nothing` is only subtype of itself. So if a function expects nothing (which is weird) you can only pass a nothing to it and nothing else. If a function expects `any` you can pass anything to it.
+We have two special types: `nothing` and `anything`. All types are subtypes of `anything` (except `nothing`). `nothing` is only subtype of itself. So if a function expects nothing (which is weird) you can only pass a nothing to it and nothing else. If a function expects `anything` you can pass anything to it (except `nothing`).
 We have 7 kinds of type: tuple, union, array, hash, primitive, function.
 We write C <: S which means C (child) is subtype of S (supertype). 
 - A type is subtype of itself.
 - Primitive: C and S are the same
 - Array: if their elements <:
-- Hash: same key, Vs <: Vc
+- Hash: Vs <: Vc, Kc <: Ks
 - function: C:func(I1)->O1, S: func(I2)->O2 I1<:I2 and O1 <: O2 and if inputs are named, they should match.
 - Sum types: C: C1|C2|...|Cn and S: S1|S2|...|Sm if Ci<:Si and n<=m
-- Tuple: C=(C1,...,Cn) and S=(S1,...,Sm) if Ci<:S1 and n>=m and if both have named fields, they must match
+- Tuple: C=(C1,...,Cn) and S=(S1,...,Sm) if Ci==Si and n>=m and if both have named fields, they must match
 Variable of named type can be assigned to underlying unnamed type and vice versa. `type SE := int` then SE and int are assignable.
-Two named types with different names are not assignable implicitly, are never equal and not subtype of each other.
-`type SE := int & var s: SE = 12`
 Suppose that we have a function `func f(x: T1, y: T2, z: T3)`
 You can call this function with 3 data, if type of each data is subtype of corresponding function argument. if input is named, it should match with names on the function declaration.
 
-? - Type hierarchy
+N - Type hierarchy
 The ones who are below are those who can accept more general data. so (int,int) is below int.
 As a result top of the tree if `nothing`.
 
-? - Should we consider `(int)` same as `int`?
+N - Should we consider `(int)` same as `int`?
 If we do so, a func which expects `(int)` can be called with an integer.
 
-? - What about function pointer/lambda?
+N - What about function pointer/lambda?
 A lambda has a `func` type. The lambda we want to send to a function should have a type which is subtype of expected type.
 
-? - Go does not permit adding a new function to an existing type if the type is outside file of new function. Can we do the same thing here? It will help organizing the code.
+N - Go does not permit adding a new function to an existing type if the type is outside file of new function. Can we do the same thing here? It will help organizing the code.
 But we do not want to tie data (type) and functions.
 
-? - The implicit subtyping for empty types can be confusing sometimes. Is it possible to make it more explicit and readable.
+N - The implicit subtyping for empty types can be confusing sometimes. Is it possible to make it more explicit and readable.
 Think about different situations like multiple functions, type hierarchy, function overriding. 
 Note that we want a simple and readable language with minimum rules and exceptions.
 If `type` defines a new type, then user cannot use another type instead of that (if that another type does not have a direct matching function)
@@ -838,11 +836,11 @@ f(SE(g))
 Type alias is a different type but it is subtype of its target type.
 You cannot send a `DE` when `SE` is expected. Two named types can never be equal.
 
-? - what happens if I send a `(int,int)` when `(int)` is expected?
+N - what happens if I send a `(int,int)` when `(int)` is expected?
 If both are tuples, then this is a simple case of inheritance. If tye is not specified, it's ok and we can pass.
-If type name is specified then they must match.
+If type name is specified then they must match. but there is ambiguity so there will be error.
 
-? - Golang has similar syntax for type assert and extract.
+N - Golang has similar syntax for type assert and extract.
 `x = y.(int)`
 `switch ( y.(type)` 
 Can we make them similar too?
@@ -853,7 +851,7 @@ What about type checking? `::`
 `if ( x :: int ) { y=int(x) ... }`
 Does not seem a good idea.
 
-? - Suppose that `type SE := int` and we have only one function: `func f(SE)` 
+N - Suppose that `type SE := int` and we have only one function: `func f(SE)` 
 can we send an integer to it? NO.
 We should not be able to do that.
 if we only have `func f(int)` we can send int and SE to it? NO. Let's make things simpler.
@@ -866,10 +864,10 @@ So there should be no implicit casting. So that's why in golang it says, "A name
 So as a result of this, you can never send `Heap` in place where `Tree` is expected.
 But where `Tree` is expected you can pass subtypes of Tree.
 
-? - should `int` be subtype of `nothing` or `any`?
+N - should `int` be subtype of `nothing` or `any`?
 You can send a circle where a shape is needed. shape is supertype and circle is subtype.
 You can send any where int is needed? no.
-You can send int where any is needed? yes. so any is supertype and int is subtype! No.
+You can send int where any is needed? yes. so any is supertype and int is subtype!
 I think there are two different concepts here. any and super-sub typing.
 any can be considered a sub-type of everything.
 Maybe we should treat any and nothing separately. nothing is a type which does not have only one valid value: nothing.
@@ -884,20 +882,14 @@ An input cannot be of type nothing.
 It can only be used as output of a function or block. But this is not general.
 It should be allowed as an input but it does not make sense.
 
-? - rename `any` to `anything` and `none` to `nothing`.
+Y - rename `any` to `anything` and `none` to `nothing`.
 
-? - can we make `::` notation simpler and more intuitive like go, but expressive?
-`::` is doing multiple things. in `if ( x :: int)` its a bool operator for type checking.
-in `x :: { y:int -> ...}` it is a case statement.
-But these two definitions are compatible.
-
-
-? - loop can accept expression and will output an array:
+Y - loop can accept expression and will output an array:
 `var x: int[] = loop(10)` same as `[0..9]`
 maybe we can even remove 1..10 notation.
 we can extend loop like `loop(2,20)` means 2 to 19.
 
-? - provide shortcut for tuple:
+Y - provide shortcut for tuple:
 `x,y = func1()` will assign x and y output of func1.
 `return 1,2` will return a tuple of two values.
 `return (x=1, y=2)` same as above with name.
@@ -905,11 +897,11 @@ maybe we should write: `x,y = @func1()` so we are expanding a tuple.
 `(x,y) = func1()` does not have a meaning. what is the left side?
 `@` is inverse of `()`.
 
-? - can we simplify function by saying its input is a tuple?
+N - can we simplify function by saying its input is a tuple?
 If so, we should permit sending subtypes to the function which makes things confusing.
 Also we should permit optional values which makes method dispatch difficult.
 
-? - if we use function name as a variable it will be confusing.
+Y - if we use function name as a variable it will be confusing.
 `func f(x:int)->`
 `var t: func(int) = f`
 Maybe we should add a notation. The only advantage is prevent confusion.
@@ -917,9 +909,9 @@ When I see `t=u` and t is lambda, then is `u` another lambda or it is a function
 `t=&u` this is more intuitive. but is used for continutation.
 `t=^f` to denote pointer to a function.
 
-? - `&` can be used for continuation in one line. for multiple line, create a block.
+N - `&` can be used for continuation in one line. for multiple line, create a block.
 
-? - Returning modified data in output as an alternative for mutability is good but may be bad for performance.
+N - Returning modified data in output as an alternative for mutability is good but may be bad for performance.
 `x=f(a,b,c,x)`
 `func f(a,b,c,x) {...y=@x..return y}`
 Is it possible that we keep things pure and also give permission to change the value?
@@ -936,6 +928,8 @@ But first lets solve the method dispatch issue:
 `var g:int = 12`
 can we call `f(g)`?
 Let's remove `where` it makes things simpler. And prevents future exceptions.
+
+Y - add `ref` keyword.
 what if inline lambda can change local variables. It cannot be shared between two threads because it is online.
 BUT this will be a big exception.
 But even haskell has mutable arrays.
@@ -961,12 +955,37 @@ The good thing is that its not possible to use ref when declaring a tuple or any
 And a function can call another func with ref input either if argument is local or its a ref too.
 This definition helps us keep method dispatch, type casting and many other places without a change.
 
-? - if we have `func process(ref x: int)` can we also have `func process(x:int)`?
+Y - if we have `func process(ref x: int)` can we also have `func process(x:int)`?
 I think we can have (gen. do not ban anything unless you really have to). But it would make code complicated but still readable.
 Because when the call is made, we make clear which version we want to call.
 So `ref` will affect method dispatch too.
 
-? - q find cases where we have "you cannot" in the specification. These are exceptions.
+N - q find cases where we have "you cannot" in the specification. These are exceptions.
 Of course some of them are necessary: you cannot assign a string to int.
 
-?- if we agree that function input is not a tuple, can we use `x:12` notation to send named function input?
+N - if we agree that function input is not a tuple, can we use `x:12` notation to send named function input?
+It won't be intuitive and consistent.
+
+Y - If named types can never be equal it will be against subtyping rules -> exception.
+Named types are subtype if their underlying types are subtype.
+So anyway someone can send a Heap when a Tree is needed.
+The correct and general way: Named types are what their underlying types are in terms of subtyping. They are equal to their underlying type.
+
+N - if we have `(x:int, y:string)` and two method candidates accept int and string, there will definitely be a runtime error in method dispatch -> runtime error.
+
+N - if a method accepts `any` we should not be able to send anything to it except any.
+is this correct? No: All types are subtypes of `any`
+
+N - what about comparison?
+what data types can be compared? `x==y` (other comparisons are only for int and float).
+equality check is only possible for data of the same type, unless user has provided `opEquals` methods.
+
+? - What we are trying to achieve using `where` is available in some other languages and is called refinemenet types.
+Perl6, Haskell, Rust (proposed), Ada
+Check to see how it is implemented there and if it is general.
+
+
+? - can we make `::` notation simpler and more intuitive like go, but expressive?
+`::` is doing multiple things. in `if ( x :: int)` its a bool operator for type checking.
+in `x :: { y:int -> ...}` it is a case statement.
+But these two definitions are compatible.
