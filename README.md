@@ -13,7 +13,7 @@ May 8, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy operator
+- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -444,6 +444,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `@` explode 
 - `$i` function inputs tuple
 - `$_` input place-holder
+- `%` local-anything-type creator 
 - `^` type-copy operator
 - `&` lambda-maker
 - `:` tuple declaration, array slice
@@ -630,6 +631,10 @@ type optionalInt := ^optional{ xany := int}
 ```
 `type Packet :=   (status: Data[], result: (x:int, y:int),       headers: xany[] => yany[])`
 `type IPPacket := (^Packet{Data := int, xany := int, yany := string})`
+In above definition, you must have defined `Data, xany, yany` which are just empty types.
+`%` local-anything-type creator will define a local type based off anything.
+baseically `%T` means anything, but can be referenced in child types to specialize the type. So you don't need to write a lot of empty types (which is boring and increases chances of type name duplication).
+`type Packet :=   (status: %Data[], result: (x:int, y:int),       headers: %xany[] => %yany[])`
 
 ### Exception Handling
 ### Inheritance and Polymorphism
