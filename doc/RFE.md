@@ -1030,6 +1030,7 @@ Can we handle this transparently by caching function results?
 If this is called once for a variable, it's result can be cached. so next time another function calls this, it will use cache.
 All of this can be handled behind the scene and transparently. No need to do anything by the developer.
 Just put checks whenever you want. Just know that functions that receive a single input and output `bool` are predicate functions and are treated like labels.
+This is a good example of reducing complexity while retainin much of benefits.
 
 N - in `where` ability to define custom errors.
 
@@ -1038,11 +1039,92 @@ N - can we make `::` notation simpler and more intuitive like go, but expressive
 in `x :: { y:int -> ...}` it is a case statement.
 But these two definitions are compatible.
 
-? - Clatify `with`.
+Y - Clatify `with`.
 We are using with subtyping. Now this is trying to give depth subtyping.
 `type Point := (x: Shape, y: Shape)`
 `type Data := Point with { Shape := Circle}`?
 Are we going to have both? Doesn't it make things more complicated?
 Can we simplify it?
 What comes inside `with`? What is the purpose of with?
+If IntStack is going to be a subtype of Stack, then we have depth subtyping.
+`func push(s: Stack, x: any)`
+We want to be able to send a Stack with same structure but different type (int) to push function.
+covariant: a variable that can accept any of it's subtypes
+`@` is used to width subtyping. `with` is for depth subtyping.
+`func equals(x: any[], y: any[])->bool`
+We can do width subtyping with `@` with minimum effort. What about depth subtyping?
+Maybe we can do this similar to templates (by adding parameters that can be used for depth subtype)
+`type Map := Source => Target`
+`type MyMap := Map with { Source := int, Target := string }`
+`type MyMap := int => string` same as above.
+a map of `list<int>` to `list<string>`?
+I feel that the effort to keep gen and orth and no exceptions, is making the whole subtyping more and more complicated.
+Java does not let this subtyping to exist.
+C++ makes it easy with generics but I think there is no inheritance.
+Easy way: dont provide anything. Let the developer copy the super-type data structure.
+`type Stack := StackElement[]`
+`type IntStack := int[]`
+`type Packet :=   (status: Data[], result: (x:int, y:int),       headers: xany[] => yany[])`
+`type IPPacket := (status: int[],  result: (x:int, y:int), headers: int[] => string[])`
+`type IPPacket := (^Packet{Data := int, xany := int, yany := string})`
+We can make it super-flexible by type-generating functions.
+C++ covers this type of subtyping with generics.
+But in structural subtyping, we want types to match if their structures match. This should not rely on the designer of base type see the future and how his type will be used. 
+Requiring use of generic types, will make language more complex and require designer of a type to forsee the future about how his type will be needed.
+Let the designer of the base type do his job and design the type as he wishes.
+The user, should be able to "customize" and "re-write" other types to create a new type.
 
+Y - We should modify type system explanations to support depth subtyping too.
+
+Y - Clarify about using `@` to subtype an array or sum type.
+```
+type arr := xany[]
+type optional := Empty | xany
+type arrInt := @arr{xany := int}
+type optionalInt := @optional{ xany := int}
+```
+definition of `@` then will become too broad. Maybe we should use another notation.
+`@` will solely be used on data and used to explode/clone data.
+`&` can be used. This denotes some kind of reference which makes sense.
+What happens to the original `&` opertor then?
+Advantage: The definition of explode `@` does not make sense for non-tuple types.
+So using `&` is a good idea. It duplicates another type at place of declaration.
+We can call it "type duplication" operator. or type copy or type reference operator.
+Let's make `^` a type copy operator and `&` to assign lambda to function.
+
+Y - method dispatch.
+A method will be chosen which satisfies most fields of the tuple.
+`func process(any[])` - 0 fields are covered
+`func process(Shape[])` - 2 fields are covered
+`func process(Circle[])` - 5 fields are covered
+if we call process with a Circle array, the third function above should be chosen.
+
+N - Can we define the expected type in-place?
+`func printName(x: (name: string))...`
+Any data type that contains a string name can be passed to `printName`.
+If we make function call with x parameter: `processData(x)` this will call a copy of processData function which accepts a parameter with `name` input (named or typed).
+
+N - can we make type system simpler?
+solution 1: remove subtyping.
+
+Y - Use `&` to assign function name to a lambda.
+
+Y - can we prevent casting circle to shape?
+when we want to have only methods on circle and if something is defined for shape but not circle, dont call it.
+`func process(s: Shape)`
+we don't want to implement all Shape methods for a circle and we don't want runtime system to fall back to shape when a method is not defined for circle but defined for shape.
+what about casting?
+`func Shape(c: Circle) -> return c` this is the default behavior
+`func Shape(c: Circle) -> assert false` this prevents calling any method which is defined on Shape, with an instance of Circle.
+
+N -  As NASA found out, passing an object of type DistanceInInches to a function expecting DistanceInCentimeters can be problematic.
+I think this typing is not ideal. You should have something like this:
+`type Distance := (value: int, unit: CM | IN)`
+
+N - What about continue execution?
+Do we really need it?
+Usage: When we are supposed to provide a simple expression, we can put multiple expressions and combine them using `&`.
+No we don't really need it.
+
+? - we will need to define a lot of empty types for generics. can this be avoided?
+!@
