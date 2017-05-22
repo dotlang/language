@@ -13,7 +13,7 @@ May 8, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions
+- **Version 0.95**: ??? ?? ???? - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy operator
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -77,7 +77,6 @@ Function section is used to define function bodies.
 - **Adressing**: Functions are called using `function_name(input1, input2, input3)` notation. Fields of a tuple are addressed using `tuple_name.field_name` notation. Modules are addressed using `/` notation (e.g. `/code/st/net/create_socket`).
 - Each statement must be in a separate line and must not end with semicolon.
 Source file contains a number of definitions for types and functions.
-- You can put multiple statements in the same line using `&`: `x++ & run & process`
 - Mutability can be simulated by passing a mutation lambda. 
 
 *Notes:*
@@ -113,10 +112,18 @@ We write C <: S which means C (child) is subtype of S (supertype).
 - Hash: Vs <: Vc, Kc <: Ks
 - function: C:func(I1)->O1, S: func(I2)->O2 I1<:I2 and O1 <: O2 and if inputs are named, they should match.
 - Sum types: C: C1|C2|...|Cn and S: S1|S2|...|Sm if Ci<:Si and n<=m
-- Tuple: C=(C1,...,Cn) and S=(S1,...,Sm) if Ci==Si and n>=m and if both have named fields, they must match
+- Tuple: C=(C1,...,Cn) and S=(S1,...,Sm) if Ci<:Si and n>=m and if both have named fields, they must match
 Variable of named type can be assigned to underlying unnamed type and vice versa. `type SE := int` then SE and int are assignable.
 Suppose that we have a function `func f(x: T1, y: T2, z: T3)`
 You can call this function with 3 data, if type of each data is subtype of corresponding function argument. if input is named, it should match with names on the function declaration.
+Example:
+`func process(any[])`
+`func process(Shape[])` 
+`func process(Circle[])`
+if we call process with a Circle array, the third item should be invoked.
+You can even define type in-place when defining the function:
+`func printName(x: (name: string))...`
+Any data type that contains a string name can be passed to `printName`.
 
 ### Primitive
 There are only three primitive data types: `number`. All others are defined based on these two plus some restrictions on size and accuracy.
@@ -361,9 +368,8 @@ type T
 func add(x: T[], data: T)-> T    ;input must be an array and single var of the same type and same as output
 add(int_array, "A") will fail
 ```
-- This is a functio that accepts an input of any type and returns any type: `type Function := func(any)->any`. Note that you cannot define a function type that can accept any number of anything.
+- This is a function that accepts an input of any type and returns any type: `type Function := func(any)->any`. Note that you cannot define a function type that can accept any number of anything.
 - When calling a function, you can remove parentheses if there is no ambiguity (only a single call is being made).
-`process data1, data2 & finalize data3 & save data4`
 - In function declaration you can use `ref` to indicate parameter will be accessible as read-write. Caller needs to mention `ref` when sending corresponding parameter:
 `func process(x: int, ref y: int)`
 caller: `process(t, ref u)`
@@ -420,7 +426,7 @@ var modifier = { $.0 + $.1 }  ;if input/output types can be deduced, you can eli
 `var y = calculate(4,a, $_)` is same as `var y = (x:int) -> calculate(4,a,x);`
 `var y = calculate(1, $_, $_)` is same as `var y = (x:int, y:int) -> calculate(4,x,y);`
 - Lambdas have read-only access to free variables in their parent semantic scope.
-- You can assign an existing function to a lambda using `^` operator: `var comp = ^compareString`
+- You can assign an existing function to a lambda using `&` operator: `var comp = &compareString`
 
 ## Operators
 - Conditional: `and or not == != >= <=`
@@ -430,32 +436,28 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `=` operator: copies only for primitive type, makes a variable refer to the same object as another variable for any other type. If you need a copy, you have to clone the variable. 
 - `x == y` will call `opEquals` functions is existing, by default compares field-by-field values. But you can override.
 - We don't have operators for bitwise operations. They are covered in core. 
-- `a & b` is a shortcut for `x=a y=b if (y == none ) return x else return y`
-- An expression which is combination of multiple statements with `&` will result in evaluation of the last non-none one.
-`var g = x=6 & y=7` will make g equal to 7.
 - You can override opeartors by defining below functions. Array and hash-table type use this feature.
 - `opIndex` for `[]` reading and writing and slice for array and hash
 - `opEquals` to check equality 
 
 ### Special Syntax
+- `@` explode 
 - `$i` function inputs tuple
 - `$_` input place-holder
+- `^` type-copy operator
+- `&` lambda-maker
 - `:` tuple declaration, array slice
 - `:=` custom type definition
 - `=>` hash type and hash literals
 - `|` sum types
 - `.` access tuple fields, chaining
-- `@` explode 
-- `&` continue execution/evaluation
 - `[]` hash and array literals
 - `::` matching
 - `_` Placeholder for explode
-- `^` assign function to lambda variable
 
-Keywords: `import`, `func`, `var`, `type`, `where`, `defer`, `native`, `with`, `loop`, `break`, `continue`, `if`, `else`
+Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `with`, `loop`, `break`, `continue`, `if`, `else`, `assert`
 Operators
 Primitive data types: `int`, `uint`, `float`, `double`, `char`
-core functions: `if`, `assert`, 
 
 ### Chaining
 Chain operators are just syntax sugars. They are transformed by compiler. 
@@ -612,23 +614,31 @@ As a result, to implement predicate/validation/constraints/refinement types, you
 Another advantage: It won't interfer with method dispatch or subtyping.
 
 ### Specialization
-When defining a custom type, you can replace a type alias with a more specialized type. The result will be a subtype of the original type. For example:
+When defining a custom type, you can replace a type alias with a more specialized type (This is called depth subtyping). The result will be a subtype of the original type. We use type-copy operator `^`. For example:
 `type Vector := V[]`
-`type IntVector := Vector with { V := int }`
+`type IntVector := ^Vector with { V := int }`
 `type IntVector := int[]` this is exactly same as above but above is more readable
 But this is not generics. 
 `func shift(v: Vector) -> V ...`
 This will accept any vector and return V which is any. User has to cast it.
 Advantage is that we can use a better named type in functions. Instead of writing `any[]` everywhere, we can simply use a better and more descriptive type name.
+```
+type arr := xany[]
+type optional := Empty | xany
+type arrInt := ^arr{xany := int}
+type optionalInt := ^optional{ xany := int}
+```
+`type Packet :=   (status: Data[], result: (x:int, y:int),       headers: xany[] => yany[])`
+`type IPPacket := (^Packet{Data := int, xany := int, yany := string})`
 
 ### Exception Handling
 ### Inheritance and Polymorphism
-- Tuples can inherit from other tuples by having their fields (Manually adding them or with explode operator. This is similar to "Duck typing" in other languages but with data. So A can be trated like B if for every fields in B, I can write `A.field`. This allows developer to write subtypes for types he doesn't have access to. 
+- Tuples can inherit from other tuples by having their fields (Manually adding them or with type-copy operator. This is similar to "Duck typing" in other languages but with data. So A can be trated like B if for every fields in B, I can write `A.field`. This allows developer to write subtypes for types he doesn't have access to. 
 - This type of subtyping is called Structural (https://en.wikipedia.org/wiki/Structural_type_system) and we have width subtyping (https://en.wikipedia.org/wiki/Subtyping).
 `type Shape := ();`
-`type Circle := (@Shape...)`
-`type Square := (@Shape...)`
-`type Polygon := (@Shape...)` 
+`type Circle := (^Shape...)`
+`type Square := (^Shape...)`
+`type Polygon := (^Shape...)` 
 - You can define functions on types and specialize them for special subtypes. This gives polymorphic behavior.
 `func paint(o:Shape) {}`  
 `func paint(o:any){}`
@@ -652,12 +662,15 @@ So if we have this:
 `type Circle := (x: Shape)`
 `type Square := (x:Shape)`
 `type Color := ();`
-`type SolidColor := (x:*Color)`
+`type SolidColor := (^Color)`
 a call to paint function with some inputs, will use above 3 rules to dispatch.
 - suppose we have `Base` type and `Derived` types. Two methods `add` and `addAll` are implemented for both of them.
 if `addAll(Derived)` calls `addAdd(Base)` which in turn calls `add(Base)` then a call to `addAll(Derived)` will NOT call `add(Derived)` but will call `add(Base)`. When `addAll(Base)` is called, it has a reference to `Base` not a `Derived`. 
+- **Type-copy operator**: This operator `^` is used to define a type which includes another type. This is used for subtyping. 
+`^Point` will translate to `x:int, y:int`
+`Point.^` will translate to `int, int`
 - **Explode operator**: You can apply this operator to data. 
-`var g: int[] = [@my_three_int_tuple]`. It will explode or unpack its operator and be replaced by the inner definition. Explode on data types can be used anywhere you want to define a tuple even for function input or output. 
+`var g: int[] = [my_three_int_tuple.@]`. It will explode or unpack its operator and be replaced by the inner definition. Explode on data types can be used anywhere you want to define a tuple even for function input or output. 
 `func add(@point) -> ` So add function will accept according to `point` data type.
 You can use `_` notation when using explode on values, to ignore part of the output:
 `var x,y,_ = @my_three_ints`
@@ -665,10 +678,8 @@ You can use `_` notation when using explode on values, to ignore part of the out
 To have a tuple with unnamed fields based on value of another tuple, just put `@` after the dot. So assume `Point` has x and y fields:
 `@my_point` will translate to `x:10, y:20`
 `my_point.@` will translate to `10, 20`
-`@Point` will translate to `x:int, y:int`
-`Point.@` will translate to `int, int`
 You can combine explode operator with other data or type definition. `var g = (@my_point, z:20)`. g will be `(x:10, y:20, z:20)`. Explode on primitives has no effect (`@int` = `int`).
-- If a type does not have any fields (empty types), you don't need to use `@` to inherit from it. It is optional. You just need to implement appropriate methods (If not, and those methods are defined empty for base type, a compiler error will be thrown). So if we have `func check(x: Alpha)` and `Alpha` type does not have any field, any other data type which implements functions written for `Alpha` can be used instead.
+- If a type does not have any fields (empty types), you don't need to use `^` to inherit from it. It is optional. You just need to implement appropriate methods (If not, and those methods are defined empty for base type, a compiler error will be thrown). So if we have `func check(x: Alpha)` and `Alpha` type does not have any field, any other data type which implements functions written for `Alpha` can be used instead.
 - Empty types are like interfaces and are defined like `type Alpha`.
 - Subtyping can be applied to all types: primitives, union, tuple, function, ....
 Rules of subtyping: here `S` is subtype (e.g. a Circle) and `P` is parent type (like Shape)
@@ -687,7 +698,9 @@ And `type Stack := StackElement[]` and `IntStack := int[]`: IntStack is sub-type
 Same for `int => string` and `byte => string`. So if we want to have a generic hash, the key/value must be non-primitive.
 - You can re-define parent type fields in the child type and if the new type is a subtype, then child will remain subtype of the parent:
 `type ListElement := (data: any, next: LLE, prev: LLE)`
-`type ListElementInt := (@ListElement, data: int)`
+`type ListElementInt := (^ListElement, data: int)`
+You can prevent automatic type casting during method dispatch by writing custom casting function. For example, we don't want to implement all Shape methods for a circle and we don't want runtime system to fall back to shape when a method is not defined for circle but defined for shape.
+`func Shape(c: Circle) -> assert false`
 
 ### Templates
 - You can use empty types or types with minimum required features, to define a template.
