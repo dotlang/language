@@ -1039,5 +1039,10 @@ in `x :: { y:int -> ...}` it is a case statement.
 But these two definitions are compatible.
 
 ? - Clatify `with`.
-
+We are using with subtyping. Now this is trying to give depth subtyping.
+`type Point := (x: Shape, y: Shape)`
+`type Data := Point with { Shape := Circle}`?
+Are we going to have both? Doesn't it make things more complicated?
+Can we simplify it?
+What comes inside `with`? What is the purpose of with?
 
