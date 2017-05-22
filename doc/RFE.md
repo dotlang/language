@@ -1126,5 +1126,10 @@ Do we really need it?
 Usage: When we are supposed to provide a simple expression, we can put multiple expressions and combine them using `&`.
 No we don't really need it.
 
-? - we will need to define a lot of empty types for generics. can this be avoided?
-!@
+Y - we will need to define a lot of empty types for generics. can this be avoided?
+`type Packet :=   (status: Data[], result: (x:int, y:int),       headers: xany[] => yany[])`
+`type IPPacket := (^Packet{Data := int, xany := int, yany := string})`
+we can say, `!T` will define internally a type T which is based off `anything`. It will not conflict with any other type.
+And you can replace it with `^Parent{T:=int}` or `%`.
+`%` local-anything-type creator will define a local type based off anything.
+baseically `%T` means anything but can be referenced in child types to specialize the type.
