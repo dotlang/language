@@ -980,12 +980,64 @@ N - what about comparison?
 what data types can be compared? `x==y` (other comparisons are only for int and float).
 equality check is only possible for data of the same type, unless user has provided `opEquals` methods.
 
-? - What we are trying to achieve using `where` is available in some other languages and is called refinemenet types.
+Y - User can check if a constraint is valid using `::` opertor.
+`type Even := int where $ %% 2`
+`if ( myNum :: Even ) ...`
+And cast normallt: `var t = Even(g)` it will give exception if g is not even.
+
+Y - `%%` operator for check divisibility `x%%2` = `x%2==0`
+
+Y - if `::` is used with literals, it checks both for type and value equality. Else checks for type matching.
+
+Y - What we are trying to achieve using `where` is available in some other languages and is called refinemenet types.
 Perl6, Haskell, Rust (proposed), Ada
 Check to see how it is implemented there and if it is general.
+Can we instead of this general concept, use a sum type where each section has a criteria?
+`type Num := int $>0 | int $<0 | int $==0`
+Another option: where cannot be used to affect method dispatch. It will be executed when method is chosen.
+Another option: Each data type has different states. we can put these states in a sum type and dispatch based on those sum types. Example of states: int (positive, negative, zero), file (open, closed), ...
+We can do all these checks in the function too but this can happen in a lot of functions -> a lot of code repeated.
+Advantage: With assert we have to do it everywhere we want to work with the data. but with where only once.
+About method dispatch: We can do dispatch normally without where clause mentioned in function signature. Then when a method is chosen we can check where clause. 
+If we encode this into a sum type, we can dispatch based on it's type too and leverage method dispatch.
+`type MyInt := Positive where $>0 | Negative where $<0 | Zero where $==0`
+`func process(x: Positive)`
+`func process(x: Negative)`
+But most of the time we only want to denote valid/invalid cases.
+What about a specific data type: `type Validated := (x: any, validator: func(any)->bool)`
+`type IntV := validated with { }` But this needs suppose from runtime.
+Other solution which is not readable: function with specific naming.
 
+Y - How does `where` affect inheritance?
+if A inherits from B does it also inherit it's validations?
+A valid Circle must be a valid Shape too!
+If so, you must refer to them when you define circle:
+`type Circle := (@Shape, r: float) where { $ :: Shape and $.r>0}`
 
-? - can we make `::` notation simpler and more intuitive like go, but expressive?
+Y - How does `where` affect method dispatch?
+It just makes things more complicated everywhere.
+Can't we just simplify it?
+For example if `x` is casted to `PositiveInt` for a function call, then casted to `SmallInt` for another function.
+Then can we call the first function again? No. The data has one type at each time. If we change type from PositiveInt to SmallInt, all the information about PositiveInt will be lost.
+What about making data and type and predicates separate? 
+Predicates can be like labels for a variable. We can assign as many labels as we want to a variable.
+A function can check for any number of labels.
+Labels are not changed until variable is changed.
+Operations: Add a label to a variable, check if variable has a label.
+A label is a function which returns bool.
+Can we handle this transparently by caching function results?
+`func isPositive(x: any) -> bool`
+If this is called once for a variable, it's result can be cached. so next time another function calls this, it will use cache.
+All of this can be handled behind the scene and transparently. No need to do anything by the developer.
+Just put checks whenever you want. Just know that functions that receive a single input and output `bool` are predicate functions and are treated like labels.
+
+N - in `where` ability to define custom errors.
+
+N - can we make `::` notation simpler and more intuitive like go, but expressive?
 `::` is doing multiple things. in `if ( x :: int)` its a bool operator for type checking.
 in `x :: { y:int -> ...}` it is a case statement.
 But these two definitions are compatible.
+
+? - Clatify `with`.
+
+
