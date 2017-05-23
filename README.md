@@ -1,10 +1,10 @@
 # Dotlang Programming Language Reference
 Version 0.95
 
-May 22, 2017
+May 23, 2017
 
 ## History
-- **Version 0.1**: Sep 4, 2016 - Initial document created after more than 9 months of research, comparison and thinking.
+- **Version 0.1**: Sep 4, 2016 - Initial document created after more than 10 months of research, comparison and thinking.
 - **Version 0.2**: Sep 22, 2016 - Leaning towards Functional Programming.
 - **Version 0.3**: Oct 13, 2016 - Added clarifications for inheritance, polymorphism and templates
 - **Version 0.4**: Oct 27, 2016 - Removed some less needed features (monad), defined rules for multiple dispatch.
@@ -13,8 +13,8 @@ May 22, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: May 22 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
-- **Version 0.98**: ??? ?? ???? - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization,
+- **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
+- **Version 0.98**: ??? ?? ???? - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -263,6 +263,13 @@ Note that when using type for alias to a function, you have to specify input nam
 If types are compatible (e.g. long and int) you can cast them using: `TypeName(x)` notation. Note that this notation can also be used to specify type of a literal when we can't or don't want to do it using normal notation:
 For example in return statement `return Circle(radius=1)`.
 - Note that you cannot define your own casting function using `TypeName(x)` name. You can write cast functions using a standard name, however.
+```
+type A := (x:int, y: int)
+type B := (x: int)
+var t = A(x=10,y=20)
+var w: B = (@A) ;this will fail, because type B does not have y
+var w: B = B(@A) ;this will not fail because we are casting, so it will ignore extra data
+```
 
 ### Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
@@ -438,6 +445,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `x == y` will call `opEquals` functions is existing, by default compares field-by-field values. But you can override.
 - We don't have operators for bitwise operations. They are covered in core. 
 - `equals` functions is used for equality check.
+- You can have multiple assignments at once: `x,y=1,2`
 
 ### Special Syntax
 - `@` explode 
@@ -639,6 +647,7 @@ baseically `!T` means anything, but can be referenced in child types to speciali
 `type Tree := (x: !A, left: Tree{!A}, right: Tree{!A})`
 `type ShapeTree := Tree{Shape}`
 - Note that this is not a full generics support. Because you cannot use type aliases in a function definition. Things like `func push(x: Tree{T})->T` are not valid.
+`TYPE{ A := B, C := D}` will be replaced by compiler, with definition of `TYPE` type and it will apply given transformations to the definition.
 
 ### Exception Handling
 ### Inheritance and Polymorphism
@@ -675,15 +684,13 @@ So if we have this:
 a call to paint function with some inputs, will use above 3 rules to dispatch.
 - suppose we have `Base` type and `Derived` types. Two methods `add` and `addAll` are implemented for both of them.
 if `addAll(Derived)` calls `addAdd(Base)` which in turn calls `add(Base)` then a call to `addAll(Derived)` will NOT call `add(Derived)` but will call `add(Base)`. When `addAll(Base)` is called, it has a reference to `Base` not a `Derived`. 
-- **Explode operator**: You can apply this operator to data. 
-`var g: int[] = [my_three_int_tuple.@]`. It will explode or unpack its operator and be replaced by the inner definition. Explode on data types can be used anywhere you want to define a tuple even for function input or output. 
-`func add(@point) -> ` So add function will accept according to `point` data type.
+- **Explode operator**: You can apply this operator to data/variables. 
+It will explode or unpack its operator and be replaced by the inner definition. 
 You can use `_` notation when using explode on values, to ignore part of the output:
 `var x,y,_ = @my_three_ints`
 `var first, _, last = @my_array`
 To have a tuple with unnamed fields based on value of another tuple, just put `@` after the dot. So assume `Point` has x and y fields:
-`@my_point` will translate to `x:10, y:20`
-`my_point.@` will translate to `10, 20`
+`@my_point` will translate to `x=10, y=20`
 You can combine explode operator with other data or type definition. `var g = (@my_point, z:20)`. g will be `(x:10, y:20, z:20)`. Explode on primitives has no effect (`@int` = `int`).
 - If a type does not have any fields (empty types), you don't need to use embedding to inherit from it. It is optional. You just need to implement appropriate methods (If not, and those methods are defined empty for base type, a compiler error will be thrown). So if we have `func check(x: Alpha)` and `Alpha` type does not have any field, any other data type which implements functions written for `Alpha` can be used instead.
 - Empty types are like interfaces and are defined like `type Alpha`.
@@ -814,3 +821,20 @@ How runtime should handle a method call like: `f(x,y,z)`?
 6. If there is no candidate, issue a runtime error.
 7. If there is more than one candidate, issue a runtime error.
 8. If there is only one candidate, call it.
+functions with named empty types are superior to unnamed (anything).
+```
+func process(x: anything)
+func process(x: Comparable)
+func process(x: Iterable)
+func process(x: Drawable)
+type Comparable
+type Iterable
+type Drawable
+type Circle := (r: Radius)
+var c: Circle = (r=12)
+process(c)
+```
+Still we have 3 candidates: Comparable, Iterable and Drawable.
+There is no way we can prioritize these three.
+-> Compiler error. unless we cast
+`process(Drawable(c))`
