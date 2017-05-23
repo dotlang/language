@@ -920,7 +920,7 @@ Giving lambda gives control to the outside world to control/mock things.
 idiomatic way: return modified value
 suppose in real-world we have a function which receives an array of 1000 customers and wants to mark something.
 
-? - Do we need `where`?
+Y - Do we need `where`?
 If we need it, it should be allowed in function definition too.
 maybe we can extend where to allow modification through lambda. Then we can use it for mutable function input.
 But first lets solve the method dispatch issue:
@@ -1133,3 +1133,116 @@ we can say, `!T` will define internally a type T which is based off `anything`. 
 And you can replace it with `^Parent{T:=int}` or `%`.
 `%` local-anything-type creator will define a local type based off anything.
 baseically `%T` means anything but can be referenced in child types to specialize the type.
+
+Y - Remove operator overloading.
+it is not general.
+`opIndex` this needs reference access which does not make sense with the syntax:
+`func opIndex(ref x: Customer, i: int, v: string) -> `
+
+N - casting code must be written in the same file that type is defined.
+
+Y - Disallow writing custom cast function with `TypeName(x)` name.
+
+N - Strategy about casting: if we let user disallow cast from circle to shape, he should also be able to disallow cast from shape to circle which is against polymorphism that we have. 
+The code can become really confusing.
+Let's forget about casting at all. toString and normal conversion from int to string and ... will be provided by runtime using normal functions.
+Casting notation is not confusing because function names must start with lowercase.
+
+N - `var z = Car(age=121)` this is confusing and similar to function call. It's not. function name start with lowercase.
+
+N - in go we can have:
+```
+if v, ok := value.(migrater); ok {
+    v.migrate()
+}
+var c int
+if c = b; a > b {
+    c = a
+}
+```
+Maybe we can use semicolon to group some statements together into a single expression.
+But this hurts readability.
+```
+var (v, ok) = Migrater(value)
+if (ok) v.migrate()
+v.migate if (ok)
+```
+
+Y - use `!` for local anything type. `%` is used for numbers.
+
+Y - adding paren to if makes code more readable. same as what we have for loop.
+
+N - tree definition:
+`type Tree := (x: !T, left: ^Tree{ T := !T }, right: ^Tree{T:=!T})`
+Here using `!T` is mandatory because if we use plain T:
+`type T`
+`type Tree := (x: T, left: ^Tree{ T := T }, right: ^Tree{T:=T})`
+it becomes confusing.
+```
+type Hash := !K => !V
+type hh := ^Hash { K := int, V := string }`
+;or
+```
+
+Y - maybe we can just eliminate `^`! if you want width subtyping:
+`type Circle := (Shape, r: float)`
+for depth subtyping:
+`type IntStack := Stack{T:=int}`
+or
+`type IntRecord := (x:int, y:float, Stack{T:=int})`
+using an unnamed field in tuple, means expand definition of that type here.
+Also to simplify (as an option), you can assume order:
+`type Stack := !A[]`
+`type IntStack := Stack{int}`
+here, if we don't specify name, first will be `A` second will be `B` and so on.
+This makes syntax cleaner.
+`type Tree := (x: !A, left: Tree{!A}, right: Tree{!A})`
+
+N - Array cannot be used for queue or linked-list because it is supposed to be consecutive memory locations.
+
+N - push
+`type Tree := (x: !A, left: Tree{!A}, right: Tree{!A})`
+`func push(x: Tree)->anything`
+`func push(x: Tree{int})->int` this is ok
+`func push(x: Tree{T})->T` not valid.
+what comes on the right side of `{A := B}` must be either a concrete type or another alias.
+
+? - method dispatch
+`func process(s: anything[])`
+`func process(s Shape[])`
+`func process(s: Circle[])`
+`var g: Shape[] = createCircleArray()`
+static type of g is shape array but dynamic type is circle array.
+```
+type LinkedList := (x: !T, next: ^LinkedList{ T := !T })
+type ShapeLL := ^LinkedList{ T := Shape }
+type CircleLL := ^LinkedList{ T := Circle }
+func process(x: LinkedList)
+func process(x: ShapeLL)
+func process(x: CircleLL)
+```
+```
+type Tree := (x: !T, left: ^Tree{ T := !T }, right: ^Tree{T:=!T})
+type ShapeTree := ^Tree{ T:=Shape }
+type CircleTree := ^Tree{ T:=Circle }
+```
+
+? - can we simplify polymorphism
+we have two types: width and depth
+width:
+`type Shape := (name: string)`
+`type Circle := (^Shape, r: float)`
+depth:
+`type Stack := %Element[]`
+`type IntStack := ^Stack{ Element := int }`
+Golang does not let you define two methds with the same name even if parameters are different.
+When user writes `process(x,y,z)` there is a chance that his intended process function is not called.
+Because of polymorphism and ... .
+one solution: import only one file at a time.
+this does not stop the problem but makes tracking easier.
+langauges with multiple dispatch: common lisp, perl 6.
+one approach: define fixed parameter, which cannot be overriden and determined at compile time.
+`func process(x: Customer, f: !File)`
+this function can only be called with second argument of static type of File.
+obviously, you cannot overload this with other File children.
+output of functions with the same name must be compatible.
