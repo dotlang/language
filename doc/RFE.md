@@ -1207,7 +1207,7 @@ N - push
 `func push(x: Tree{T})->T` not valid.
 what comes on the right side of `{A := B}` must be either a concrete type or another alias.
 
-? - method dispatch
+N - method dispatch
 `func process(s: anything[])`
 `func process(s Shape[])`
 `func process(s: Circle[])`
@@ -1222,12 +1222,12 @@ func process(x: ShapeLL)
 func process(x: CircleLL)
 ```
 ```
-type Tree := (x: !T, left: ^Tree{ T := !T }, right: ^Tree{T:=!T})
-type ShapeTree := ^Tree{ T:=Shape }
-type CircleTree := ^Tree{ T:=Circle }
+type Tree := (x: !T, left: Tree{ T := !T }, right: Tree{T:=!T})
+type ShapeTree := Tree{ T:=Shape }
+type CircleTree := Tree{ T:=Circle }
 ```
 
-? - can we simplify polymorphism
+Y - can we simplify polymorphism
 we have two types: width and depth
 width:
 `type Shape := (name: string)`
@@ -1246,3 +1246,104 @@ one approach: define fixed parameter, which cannot be overriden and determined a
 this function can only be called with second argument of static type of File.
 obviously, you cannot overload this with other File children.
 output of functions with the same name must be compatible.
+```
+func process(s: Shape) -> doWork(s)
+func doWork(s: Shape)
+func doWork(c: Circle)
+```
+The doWork call in process cannot be determined at compile time. unless we only have one doWork function.
+problem is, a variable can have a lot of types which are implicit.
+`var c: Circle = ...`
+c has a Circle, Shape, Drawable, Comparable, Equalitable, Iterable, Object and anything type.
+So if we make a call to `process` function which can accept all of above types, it might not be resolved at compile time.
+maybe we also have `BigCircle` type and type of c becomes BigCircle at runtime.
+what about zero size types?
+```
+func process(x: anything)
+func process(x: Comparable)
+func process(x: Iterable)
+func process(x: Drawable)
+type Comparable
+type Iterable
+type Drawable
+type Circle := (r: Radius)
+var c: Circle = (r=12)
+process(c)
+```
+1. functions with named empty types are superior to unnamed (anything).
+Still we have 3 candidates: Comparable, Iterable and Drawable.
+There is no way we can prioritize these three.
+-> Compiler error. unless we cast
+`process(Drawable(c))`
+`var s: Shape = Shape(circle)` still keeps original circle
+`process(Shape(circle))` keeps original data
+`var s: Shape = Shape(@circle)` clones circle into a shape.
+`process(Shape(@circle))`
+
+Y - What happens with this?
+```
+type A := (x:int, y: int)
+type B := (x: int)
+var t = A(x=10,y=20)
+var y: B = (@A)
+```
+It should fail because we are providing extra input to y variable initialization.
+But if we cast, it should be ok, because that is the point of casting:
+`var y: B = B(@A)`
+
+N - How do you write this?
+```
+ParseResult<V> VParser::parse_impl(ParseState state)
+{
+    ParseResult<A> a = a_parser.parse(state);
+    if (ParseSuccess<A> * success = a.get_success())
+        return ParseSuccess<V>{{std::move(success->value)}, success->new_state};
+    ParseResult<B> b = b_parser.parse(state);
+    if (ParseSuccess<B> * success = b.get_success())
+        return ParseSuccess<V>{{std::move(success->value)}, success->new_state};
+    ParseResult<C> c = c_parser.parse(state);
+    if (ParseSuccess<C> * success = c.get_success())
+        return ParseSuccess<V>{{std::move(success->value)}, success->new_state};
+    ParseResult<D> d = d_parser.parse(state);
+    if (ParseSuccess<D> * success = d.get_success())
+        return ParseSuccess<V>{{std::move(success->value)}, success->new_state};
+    return select_parse_error(*a.get_error(), *b.get_error(), *c.get_error(), *d.get_error());
+}
+```
+```
+loop(x: [a_parser, b_parser, c_parser, d_parser]) {
+    var ok, result = @parse(x)
+    if ( ok ) return process(result)
+}
+```
+
+N - shouldn't we support multiple return?
+`var ok, result = @parse(x)`
+vs
+`var ok, result = parse(x)`
+
+Y - remove `.@`
+We can also have:
+`var ok, result = parse(x).@` which is weird.
+this operator is used to clone a tuple, array or hash.
+So it is useful.
+The `.@` notation is used to convert a tuple to an array in the ref which is not really needed.
+`var ok, result = (x=10, y=12)` this should be fine.
+`var ok, result = (10, 12)`
+so we can remove `.@` notation.
+
+N - How can we do type specialization with nested data types?
+The parameter should be defined in the main type too.
+```
+type Array := !T[]
+type Stack := Array[] ;you cannot specialize this
+type Stack := Array{ T := !T }[]
+type IntStack := Stack { T := int }
+```
+
+N - in order to reduce complexity can we state parameter in a type must be anything to be specializable?
+You can specialize type A if it has `anything` or `!T` types. You can replace them with the type you want.
+We already have subtyping rules in place.
+If we have `type Array := !T[]` and `type Stack := Array[]` then we can specialize Stack with another type which is subtype of `Array`.
+Some more exaplanation about type re-write.
+`TYPE{ A := B, C := D}` will be replaced by compiler, with definition of `TYPE` type and it will apply given transformations to the definition.
