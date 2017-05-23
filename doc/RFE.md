@@ -1347,3 +1347,34 @@ We already have subtyping rules in place.
 If we have `type Array := !T[]` and `type Stack := Array[]` then we can specialize Stack with another type which is subtype of `Array`.
 Some more exaplanation about type re-write.
 `TYPE{ A := B, C := D}` will be replaced by compiler, with definition of `TYPE` type and it will apply given transformations to the definition.
+
+N - alternative for subtyping: group function definition redirection (whatever on circle, redirect to shape)
+at runtime, dispatch will be only done for dynamic type of the inputs. no complicated algorithms. 
+But user can define a group of functions at the same time to redirect some of those cases.
+```
+func process(s: Shape)
+func draw(s: Shape)
+func process(c: Circle)
+funcs *(*Circle*) -> *(*Shape(Circle)*)
+```
+what if these mass rules have conflict? 
+Then we can handle it at compile time?
+```
+func process(s: Shape, t: Color)
+func process(c: Circle, t: Color)
+func process(s: Shape, t: SolidColor)
+...
+process(myCircle, mySolidColor)
+```
+I don't think it will add any clarity. Will just make things more complicated and add a new notation.
+
+N - example of method dispatch with multiple candidates:
+```
+Shape -> Circle -> GoodCircle
+Shape -> Rect -> Square
+GoodCircle + Square -> Sprite
+var mySprite : anything = createSprite
+process(mySprite)
+;if we have function for Sprite or one of Square/GoodCircle it would be fine.
+
+```
