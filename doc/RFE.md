@@ -1376,5 +1376,51 @@ GoodCircle + Square -> Sprite
 var mySprite : anything = createSprite
 process(mySprite)
 ;if we have function for Sprite or one of Square/GoodCircle it would be fine.
-
 ```
+
+Y - if a function needs a parameter which must have fields from two types, it can be defined like this:
+`func process(x: (TypeA, TypeB))` this is an in-place definition of a tuple which inherits from two other tuples.
+
+? - shall we differentiate the notation for tuple? it is similar to function call.
+what about type specialization?
+```
+type Point := (x: int, y: int)
+var p: Point = Point(x=10, y=20)
+var p: Point{int} = (x=10, y=20)
+```
+`[]` is used for hash and array
+`()` for function call
+`{}` for block and type specialization
+if we use `{}` for tuple definition and literals (then we can use `a:b` notation) what about type specialization?
+`%` and `^` are not used.
+`a=b` notation implies a variable definition in tuple assignment.
+```
+type Point := {x: int, y: int}
+var p: Point = Point{x:10, y:20}
+@p ==> x:10,y:20
+{@p} ==> {x:10,y:20}
+var t,u = @p -> t=10, u=20
+var p: Point{int} = {x:10, y:20}
+process(x:10, y:20)
+process(@p)
+var p: Point{int} = (x=10, y=20)
+```
+What about calling a function with named input?
+`process(x:10, y:20)`
+we should use `a=b` when a is a defined variable.
+
+? - How do we solve diamond problem?
+`type MyType := (A, T, B)`
+`func process(x: (A,T))`
+`func process(x: (T, B))`
+```
+func process(int, int, int, int, int)
+func process(string)
+type C := (string, int, int, int, int, int)
+process(c) ?
+```
+there is ambiguity here in both cases. what if fields are not same?
+in this case shall we match with the one which covers most arguments? 
+I think a better solution which makes method dispatch simpler and more understandable is to issue a compiler error.
+Only if there is ambiguity. 
+For example for Shape-Circle case, if a method is not defined for Circle but for Shape, a call with Circle instance which is not ambiguous can be redirected to Shape.
