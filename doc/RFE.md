@@ -1381,7 +1381,118 @@ process(mySprite)
 Y - if a function needs a parameter which must have fields from two types, it can be defined like this:
 `func process(x: (TypeA, TypeB))` this is an in-place definition of a tuple which inherits from two other tuples.
 
-? - shall we differentiate the notation for tuple? it is similar to function call.
+Y - How do we solve diamond problem?
+`type MyType := (A, T, B)`
+`func process(x: (A,T))`
+`func process(x: (T, B))`
+```
+func process(int, int, int, int, int)
+func process(string)
+type C := (string, int, int, int, int, int)
+process(c) ?
+```
+there is ambiguity here in both cases. what if fields are not same?
+in this case shall we match with the one which covers most arguments? 
+I think a better solution which makes method dispatch simpler and more understandable is to issue a compiler error.
+Only if there is ambiguity. 
+For example for Shape-Circle case, if a method is not defined for Circle but for Shape, a call with Circle instance which is not ambiguous can be redirected to Shape.
+
+Y - multiple dispatch
+maybe we should only care to the dynamic type and function should specify dynamic types they can accept.
+`Drawable >> Shape >> Polygon >> Rectangle`
+`func process(x: Drawable, y: Drawable, z: Drawable)`
+`func process(x: Polygon, y: Shape, z: Drawable)`
+`func process(x: Rectangle, y: Drawable, z: Shape)`
+`func process(x: Rectangle, y: Shape, z: Shape)`
+`func process(x: Polygon, y: Polygon, z: Shape)`
+`func process(x: Drawable, y: Shape, z: Polygon)`
+suppose that we have these methods. when we make a call `process(a,b,c)` if dynamic types are R,R,R then no function will match the type completely. There are three options:
+1. Provide an algorithm to select best match
+2. Issue compiler/runtime error
+3. Provide a mechanism to select default method
+We can combine 2 and 3: You can define default method using `anything` type! and redirect to a good method. Else there will be error.
+But how can we cast `anything` to `Shape`? This may not work all the time.
+`func process(x: anything, y: anything, z: anything) -> process(...`
+
+Y - When we have this:
+`func process(x: Circle) -> process(Shape(x))`
+the runtime type of x is not changed. It will still be Circle, so how can we force calling process(Shape)?
+similarly:
+`var t = Shape(myCircle) - process(t)`
+which pocess should be called? Process(Circle) or process(Shape)?
+static type of t is Shape (specified in the code), but dynamic type is Circle.
+We dispatch a method call based on dynamic type of a variable so how can we ever redirect to another version?
+Maybe we should keep 3 types: static, dynamic and dispatch.
+`var t = createCircle - process(t)`
+What about this? If static type of t is Shape and dynamic is Circle? Definitely process(Circle) should be called.
+So, `Shape(t)` will change both static and dynamic type of the data. So, any further call to methods with this value, will consider it's static and dynamic type as Shape.
+As a result, inside a method we are sure that static and dynamic type of input are the same.
+But: `var cir: Shape = createCircle(); process(cir)`
+if there is no `process(Circle)` this should call `process(Shape)` automatically! No.
+If Circle inherit from Shape and Drawable and we have methods for both of these types, it will cause ambiguity.
+Now that we are allowing multiple dispatch and multiple inheritance, things in the call-side are getting very confusing and ambiguous.
+We should try to make this part as simple and stratight forward as possible.
+If there is ambiguity (more than one choice) we should throw error.
+User can cast a variable to a supertype, to remove ambiguity. `process(Shape(circle))` or `process(Drawable(circle))`.
+We can say, in a function with more than one input, dispatch method can travel in hierarchy for the first argument but other arguments should exactly match dynamic type of the input. But this is too complicated.
+User can easily write catch-all function:
+`func process(x: Shape*, y: Drawable*, z: Drawable*) -> ...`
+this will catch any call where x is Shape or it's subtypes, y is Drawable or subtypes and ...
+Of course any other function with this name and 3 inputs must not have conflict with this.
+Or maybe we can cover this in a sum type: `type ShapeOrChildren := Shape | Circle | Square | ...` No.
+multiple inheritance with single dispatch
+single inheritance with multiple dispatch
+multiple inheritance with multiple dispatch!
+another way: when calling a function, indicate which argument can be casted to parent type if needed.
+automatic casting of an argument to higher type (Circle to Shape) means loosing data. And this should only be done with explicit permission of the caller/developer.
+For a function with just one argument, polymorphism is easy. Just traverse inheritance graph upward. If multiple choices found, issue an error.
+```
+Drawable + Shape -> Circle
+func process(Drawable)
+func process(Shape)
+process(myCircle) -> error : two candidates found
+```
+- If function argument type must match the dynamic type of the argument, how can we earn flexibility? 
+1. By changing function signature `func process(x: Shape*)`
+2. By changing at call site: `process(~x)`
+"There are not that many real cases where double or triple dispatch is used" - http://hpac.rwth-aachen.de/teaching/sem-lsc-12/MultipleDispatching.pdf
+So why make it so complicated?
+- In case of single argument, we can look in type graph.
+- More than one: what if second arg is an integer?
+For each method call, first find candidates (same name and number of inputs).
+Filter out the ones that type of argument conflicts with type of parameter being sent.
+Remaining: If one -> call, if multiple and they differe on only one type -> traverse type graph
+else error.
+
+Y - If f is for Shape and we call it with Circle, it will be called with Shape.
+If `f` calls another function which is for both Circle and Shape, which one will be called?
+The one for Shape? Circle?
+Option: If a parameter is named `this`, it can match with subtypes of that type. Else type must match.
+`func process(this: Shape, x: Drawable, c: Color)`
+here x and c must match given types. but `this` can be Shape or Circle or ... .
+So when you call another method `method1(this, ...)` it be resolved to find best match.
+So if we have `method1(Shape)` and `method1(Circle)` and `this` is not Shape but a Circle, it will call `method1(Circle)`.
+This makes method dispatch simpler and more explicit and naturally prevents multiple dispatch problems.
+
+Y - `&process(myCircle,$_,$_)(10)(20)` - does this make sense?
+
+N - assign by value/reference
+```
+type AB := int | float | Customer
+var t: AB = 9
+var h: AB = x ;is this assignment done by value or reference? should be by value.
+var g: int = int(x) ;is this possible? no. you should cast (and check type before).
+var g:int = x :: int -> int(x), anything -> 0
+```
+Assignment of sum types, is based on type. if primitive is being assigned: copy else, reference.
+
+Y - provide a mechanism to put multiple commands in the same line
+`var x =10;x++`?
+`a&b&c if (x>0)`
+`loop(5) a&b&c`
+`&`?
+
+Y - shall we differentiate the notation for tuple? it is similar to function call.
 what about type specialization?
 ```
 type Point := (x: int, y: int)
@@ -1400,27 +1511,46 @@ var p: Point = Point{x:10, y:20}
 @p ==> x:10,y:20
 {@p} ==> {x:10,y:20}
 var t,u = @p -> t=10, u=20
-var p: Point{int} = {x:10, y:20}
+var p: Point(int) = {x:10, y:20}
 process(x:10, y:20)
 process(@p)
-var p: Point{int} = (x=10, y=20)
+var p: Point(int) = {x=10, y=20}
+type Record := { Vector(V:int), Stack(int), Map(int, string) }
 ```
 What about calling a function with named input?
 `process(x:10, y:20)`
 we should use `a=b` when a is a defined variable.
+summary of changes proposed:
+- Type specialization: `T(A:X, B:Y, C:Z)` or `T(X, Y, Z)`
+- Casting with specialization: `var p: Point(int) = Point(int){x=10, y=20}`
+- Tuple definition: `type Point := {x: int, y: int}`
+- Tuple literal: `var p: Point = Point{x:10, y:20}`
+- Function call: `process(x:10, y:20)`
+- Call by explode: `process(@p)` ==> `process(x: 10, y:20)`
+- Explode operator: `@p ==> x:10,y:20`
+- Cloning: `var x = {@p}`
+- Explode tuple: `var t,u = @p -> t=10, u=20`
 
-? - How do we solve diamond problem?
-`type MyType := (A, T, B)`
-`func process(x: (A,T))`
-`func process(x: (T, B))`
-```
-func process(int, int, int, int, int)
-func process(string)
-type C := (string, int, int, int, int, int)
-process(c) ?
-```
-there is ambiguity here in both cases. what if fields are not same?
-in this case shall we match with the one which covers most arguments? 
-I think a better solution which makes method dispatch simpler and more understandable is to issue a compiler error.
-Only if there is ambiguity. 
-For example for Shape-Circle case, if a method is not defined for Circle but for Shape, a call with Circle instance which is not ambiguous can be redirected to Shape.
+N - what if function output is a tuple?
+`func process(x:int) -> {y:int} { ... }`
+
+N - what is the syntax for casting? primitive, tuple, string, sum, func, ...
+`int(x)` `x.(int)` `x:int` 
+`Point(x:10, y:20)` or `Point(var)`
+`Point(int)(x:10, y:20)`
+`string(x)`
+`OptionalInt(x)`
+Maybe using `type(x)` notation is not really good because it's confusing with function call.
+`x.(type)`
+`x%type`
+`{x:10, y:20}%Point(int)`
+`Point(int)({x:10, y:20})`
+`{x:10, y:20}.(Point(int)).process...`
+`{x:10, y:20}.(Point(int)).process...`
+
+Y - What if user wants to write a function with the same name as a type?
+`func bool(x:int)`
+`func string(t: Record)`
+We can disallow that.
+What about casting to string? maybe `toString` function.
+There is no built-in casting. If you want to cast MyRecord to Customer, write a custom function for that.
