@@ -14,7 +14,7 @@ May 23, 2017
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
-- **Version 0.98**: ??? ?? ???? - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation
+- **Version 0.98**: ??? ?? ???? - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, simplification of method dispatch with `this`, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -130,7 +130,7 @@ Any data type that contains a string name can be passed to `printName`.
 There are only three primitive data types: `number`. All others are defined based on these two plus some restrictions on size and accuracy.
 - **Number data types**: `char`, `int`, `uint`
 - **Floating point data types**: `float`, `double`
-- **Others**: `bool`, `nothing`, `anything`
+- **Others**: `bool`, `nothing`, `anything`, `string`
 
 You can use core functions to get type identifier of a variable: `type` or `hashKeyType` or `hashValueType`.
 `bool` and `none` are special types with only two and one possible values. `none` is used when a function returns nothing, so compile will change `return` to `return none`.
@@ -173,39 +173,42 @@ Hashtables are sometimes called "associative arrays". So their syntax is similar
 
 You use this statement to define a new product data structure:
 ```
-type Car := (
+type Car := {
   color: int, 
   age: int = 19, ;setting default value
-)
-var x: Car = ()   ;init x with all default values based on definition of Car
-var y: Car = (age=11) ;customize value
-var z = Car(age=121) ;when we want to write a literal we can also specify its type with this notation
-var t : (int, string) = (1, "A")  ;you can have tuples with unnamed fields. They can be accessed like an array.
+}
+var x: Car = {}   ;init x with all default values based on definition of Car
+var y: Car = {age:11} ;customize value
+var z = %Car(age:121) ;when we want to write a literal we can also specify its type with this notation
+var t : {int, string} = {1, "A"}  ;you can have tuples with unnamed fields. They can be accessed like an array.
 var number_one = t.0
 t.1 = "G"
 ```
 - Function output can be any type. Even a tuple or a tuple with unnamed fields.
 - Fields that start with underscore are considered internal state of the tuple and better not to be used outside the module that defines the type. 
-- You can define a tuple with unnamed fields: `type Point := (int, int)` But fields of a tuple must be all either named or unnamed. You cannot mix them.
+- You can define a tuple with unnamed fields: `type Point := {int, int}` But fields of a tuple must be all either named or unnamed. You cannot mix them.
 
 ###Tuple (Product types)
+- Tuple definition: `type Point := {x: int, y: int}`
+- Tuple literal: `var p: Point = %Point({x:10, y:20})`
+
 ```
-type A :=  (x: int = 19) ;you can assign default value
-type B := (a: A, y: int) ;B composes A
-type C := ()             ;empty tuple
-type C := (y: int = 9)   ;setting default value
-type D := (int=9, string="G") ; unnamed fields. You can access them like an array. Also we can set default value.
+type A :=  {x: int = 19} ;you can assign default value
+type B := {A, y: int}    ;B inherits A. So in cases, it can be dynamically casted to A during method dispatch
+type C := {}             ;empty tuple
+type C := {y: int = 9}   ;setting default value
+type D := {int=9, string="G"} ; unnamed fields. You can access them like an array. Also we can set default value.
 ```
 
 To create a new tuple instance you just set it's type and assign it to an appropriate tuple:
 ```
-var test: A = (x= 10)
-var test2: A = () ;no init 
-var test3: D = (1,"A")
-var test4: C=(9)
-test3[0]=9
-test3[1]="A"
-var t = (x=6, y=5) ;anonymous and untyped tuple
+var test: A = {x: 10}
+var test2: A = {} ;no init 
+var test3: D = {1,"A"}
+var test4: C={9}
+test3.0=9
+test3.1="A"
+var t = {x:6, y:5} ;anonymous and untyped tuple
 ```
 - You cannot mix tuple literal with it's type. It should be inferred (type of lvalue or function output).
 
@@ -270,6 +273,17 @@ var t = A(x=10,y=20)
 var w: B = (@A) ;this will fail, because type B does not have y
 var w: B = B(@A) ;this will not fail because we are casting, so it will ignore extra data
 ```
+- Casting examples:
+`%int(x)`
+`%string(x)`
+`%OptionalInt(x)`
+`%Point(var)`
+`%Point({x:10, y:20})` --cast a tuple literal
+`%Point(x:10, y:20)` -- cast an exploded tuple
+`%Point(@t)` same as `%Point(t)`
+`%Point(int)(x:10, y:20)` -- casting combined with type specialization
+Casting to a tuple, can accept either a tuple literal or tuple variable or an exploded tuple.
+Note that there is no support for implicit casting functions. If you need a custom cast, write a separate function and explicitly call it.
 
 ### Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
@@ -297,14 +311,13 @@ Function is a piece of code which accepts a series of inputs and can return a si
 func my_func1(x: int, y: int) -> float { return x/y }
 func my_func1(int) -> float { return $/3 } ;you can omit input name (like an unnamed tuple)
 func my_func(y:int, x:int) -> { 6+y+x } ;based on runtime arguments, one of implementations will be choosed
-func my_func(5, x:int) -> { 6+x } ;if input is a literal, any call which evaluates to that literal, will call this version
 func my_func(5:int) -> 9
 func my_func3(x: int, y: int) -> x/y  ;you can omit {} if its a single expression
 func my_func7() -> int { return 10;} ;fn has no input but () is mandatory
 func my_func7() -> 10  ;when function has just a return statement, there is a shortcut
 func my_func8() -> (int, int) { return 10,20 } ;function can return multiple values
 (x,y) = @my_func8()
-func myFunc9(x:int) -> y:int { y=12 } ;you can have named output
+func myFunc9(x:int) -> {y:int} {y:12} ;you can have named output
 
  ;below function receives an array + a function and returns a function
 func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
@@ -324,7 +337,8 @@ new_array = map(my_array , (x:int) -> {x+1})
 - Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability) except those marked with `ref`.
 - Parent is required when calling a function, even if there is no input.
 - You can clone the data but have to do it manually using explode operator `@`. Note that assignment makes a clone for primitives, so you need cloning only for tuple, array and hash.
-`var x: Point = (@original_var)`
+- Cloning: `var x = {@p}`
+`var x: Point = {@original_var}`
 `var x: Point = (@original_var, x=19)` clone and modify in-place
 `var a = [1,2,3]`
 `var b = [@a]`
@@ -359,10 +373,10 @@ func f(x:int, y:int) -> ...
 func f(t:int =12, y:int) -> ... ; this will be invoked if first argument is 12
 func f(x:int, y:int=6) ... ;this will be invoked if secod argument is 6 or missing
 ...
-var g = (x=10, y=12)
+var g = {x:10, y:12}
 f(g) ; this is not correct. f expects a tuple with x and y not a tuple with another tuple.
 f(1,9)
-f(x=1, y=9)
+f(x:1, y:9)
 f(@g)
 ```
 - Note that you cannot use optional arguments in a function signature. Although you can have multiple functions with the same name:
@@ -385,6 +399,8 @@ caller: `process(t, ref u)`
 `ref` will affect method dispatch so you can have two functions with the same name and input but one of them with `ref` argument.
 if a function needs a parameter which must have fields from two types, it can be defined like this:
 `func process(x: (TypeA, TypeB))` this is an in-place definition of a tuple which inherits from two other tuples.
+- Function call: `process(x:10, y:20)`
+- Call by explode: `process(@p)` ==> `process(x: 10, y:20)`
 
 ### Matching
 `func add(x:int, y:int, z:int) ...`
@@ -436,7 +452,8 @@ var modifier = { $.0 + $.1 }  ;if input/output types can be deduced, you can eli
 `var y = calculate(4,a, $_)` is same as `var y = (x:int) -> calculate(4,a,x);`
 `var y = calculate(1, $_, $_)` is same as `var y = (x:int, y:int) -> calculate(4,x,y);`
 - Lambdas have read-only access to free variables in their parent semantic scope.
-- You can assign an existing function to a lambda using `&` operator: `var comp = &compareString`
+- You can assign an existing function to a lambda using `^` operator: `var comp = ^compareString`
+- `^process(myCircle,$_,$_)(10, 20)` ~ `process(myCircle, 10, 20)`
 
 ## Operators
 - Conditional: `and or not == != >= <=`
@@ -448,14 +465,20 @@ The math operators can be combined with `=` to do the calculation and assignment
 - We don't have operators for bitwise operations. They are covered in core. 
 - `equals` functions is used for equality check.
 - You can have multiple assignments at once: `x,y=1,2`
+- You can use `&` operator to put multiple expressions/statements in one line where one expression/statement is expected:
+`a&b&c if (x>0)`
+`loop(5) a&b&c`
+
 
 ### Special Syntax
 - `@` explode 
 - `$.i` function inputs tuple
 - `$_` input place-holder
 - `!` local-anything-type creator 
-- `&` lambda-maker
-- `:` tuple declaration, array slice
+- `%` casting
+- `^` lambda-maker
+- `&` expression combine
+- `:` tuple declaration, array slice, function call by name
 - `:=` custom type definition
 - `=>` hash type and hash literals
 - `|` sum types
@@ -463,6 +486,8 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `[]` hash and array literals
 - `::` matching
 - `_` Placeholder for explode
+- `{}` code block, tuple definition and literal
+- `()` function call, type specialization
 
 Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `with`, `loop`, `break`, `continue`, `if`, `else`, `assert`
 Operators
@@ -625,7 +650,7 @@ Another advantage: It won't interfer with method dispatch or subtyping.
 ### Specialization
 When defining a custom type, you can replace a type alias with a more specialized type (This is called depth subtyping). The result will be a subtype of the original type. For example:
 `type Vector := !V[]`
-`type IntVector := Vector{ V := int }`
+`type IntVector := Vector(V:int)`
 `type IntVector := int[]` this is exactly same as above but above is more readable
 But this is not generics. 
 `func shift(v: Vector) -> V ...`
@@ -634,22 +659,24 @@ Advantage is that we can use a better named type in functions. Instead of writin
 ```
 type arr := xany[]
 type optional := Empty | xany
-type arrInt := arr{xany := int}
-type optionalInt := optional{ xany := int}
+type arrInt := arr(xany:int)
+type optionalInt := optional(xany := int)
 ```
-`type Packet :=   (status: Data[], result: (x:int, y:int),       headers: xany[] => yany[])`
-`type IPPacket := (Packet{Data := int, xany := int, yany := string})`
+`type Packet :=   {status: Data[], result: (x:int, y:int),       headers: xany[] => yany[]}`
+`type IPPacket := {Packet(Data:int, xany : int, yany : string)}`
 In above definition, you must have defined `Data, xany, yany` which are just empty types.
 `!` local-anything-type creator will define a local type based off anything.
 baseically `!T` means anything, but can be referenced in child types to specialize the type. So you don't need to write a lot of empty types (which is boring and increases chances of type name duplication).
-`type Packet :=   (status: !Data[], result: (x:int, y:int),       headers: !xany[] => !yany[])`
+`type Packet :=   {status: !Data[], result: {x:int, y:int},       headers: !xany[] => !yany[]}`
 - As a shortcut, if you don't specify type alias name, first will go to `A` second to `B` etc. Example:
 `type Stack := !A[]`
-`type IntStack := Stack{int}`
-`type Tree := (x: !A, left: Tree{!A}, right: Tree{!A})`
-`type ShapeTree := Tree{Shape}`
-- Note that this is not a full generics support. Because you cannot use type aliases in a function definition. Things like `func push(x: Tree{T})->T` are not valid.
+`type IntStack := Stack(int)`
+`type Tree := {x: !A, left: Tree(!A), right: Tree(!A)}`
+`type ShapeTree := Tree(Shape)`
+- Note that this is not a full generics support. Because you cannot use type aliases in a function definition. Things like `func push(x: Tree(T))->T` are not valid.
 `TYPE{ A := B, C := D}` will be replaced by compiler, with definition of `TYPE` type and it will apply given transformations to the definition.
+- Type specialization example: `T(A:X, B:Y, C:Z)` or `T(X, Y, Z)`
+- Casting with specialization: `var p: Point(int) = Point(int){x=10, y=20}` or `Point(int)({x=10, y=20})`
 
 ### Exception Handling
 ### Inheritance and Polymorphism
@@ -664,7 +691,7 @@ baseically `!T` means anything, but can be referenced in child types to speciali
 `func paint(o:any){}`
 `func paint(o:Circle)...`
 `func paint(o:Square)...`
-- If a function (`f1`) is implemented for parent type (`Shape`), and called with an instance of child (e.g. `Circle`) it will receive an instance of `Shape` which is a field of `Circle`. If `f1` function calls another function which is written for both parent and child types, it will be called for child (the most specialized type).
+- If a function (`f1`) is implemented for parent type (`Shape`), and called with an instance of child (e.g. `Circle`) it will receive an instance of `Shape` which is a field of `Circle`. If `f1` function calls another function which is written for both parent and child types, it will be called for parent.
 - We can keep a list of shapes in an array/collection of type Shape: `var o: Shape[] = [Circle(), Square()];`
 - You can iterate over shapes in `o` array defined above, and call `paint` on them. With each call, appropriate `paint` method will be called (this appropriate method is identified using 3 dispatch rules explained below).
 - Visible type (or static type), is the type of the variable which can be seen in the source code. Actual type or dynamic type, is it's type at runtime. For example:
@@ -689,11 +716,13 @@ if `addAll(Derived)` calls `addAdd(Base)` which in turn calls `add(Base)` then a
 - **Explode operator**: You can apply this operator to data/variables. 
 It will explode or unpack its operator and be replaced by the inner definition. 
 You can use `_` notation when using explode on values, to ignore part of the output:
+- Explode tuple: `var t,u = @p -> t=10, u=20`
 `var x,y,_ = @my_three_ints`
 `var first, _, last = @my_array`
+- Explode operator: `@p ==> x:10,y:20`
 To have a tuple with unnamed fields based on value of another tuple, just put `@` after the dot. So assume `Point` has x and y fields:
 `@my_point` will translate to `x=10, y=20`
-You can combine explode operator with other data or type definition. `var g = (@my_point, z:20)`. g will be `(x:10, y:20, z:20)`. Explode on primitives has no effect (`@int` = `int`).
+You can combine explode operator with other data or type definition as long as you change type of the field. `var g = {@my_point, z:20}`. g will be `{x:10, y:20, z:20}`. Explode on primitives has no effect (`@int` = `int`).
 - If a type does not have any fields (empty types), you don't need to use embedding to inherit from it. It is optional. You just need to implement appropriate methods (If not, and those methods are defined empty for base type, a compiler error will be thrown). So if we have `func check(x: Alpha)` and `Alpha` type does not have any field, any other data type which implements functions written for `Alpha` can be used instead.
 - Empty types are like interfaces and are defined like `type Alpha`.
 - Subtyping can be applied to all types: primitives, union, tuple, function, ....
@@ -812,17 +841,18 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 
 ## Method call resolution
 How runtime should handle a method call like: `f(x,y,z)`?
+- If a parameter is named `this`, it can match with subtypes of that type. Other than that, type of the argument must match with dynamic type of the parameter being sent. 
+- For example if we have `process(this: Shape), work(x: Shape), work(x: Circle)` and process calls `work(this)` and we call process with a variable of type Circle, it will accept it and call `work(Circle)`. This provides a dynamic method override behavior that can be seen in other OOP languages.
+- Also matching with multiple input types, provides multiple method dispatch.
 (Argument is the data which is being passed, parameter is the function input).
 1. Find all methods with name `f` who has 3 inputs.
 2. If caller has also specified names for arguments, drop candidates who don't match with those names.
-3. Set i=1
-4. For i'th argument:
- 4.1. If type of corresponding parameter does not match with argument's dynamic type, ignore the candidate (For example we have passed a Shape but function expects a Circle). This step is done based on matching rule.
- 4.2. Select the candidate(s) that cover most fields of the current argument (most specialized).
-5. If there are more than one candidates remaining, repeat step 2 for next argument (i++).
-6. If there is no candidate, issue a runtime error.
-7. If there is more than one candidate, issue a runtime error.
-8. If there is only one candidate, call it.
+3. If there is a candidate which is matching with dynamic type of arguments, call it.
+4. If there is an argument named `this`, traverse in it's type graph and filter candidates.
+5. If result is empty -> error
+6. if result has one item -> call
+7. Issue error
+
 functions with named empty types are superior to unnamed (anything).
 ```
 func process(x: anything)
@@ -840,3 +870,4 @@ Still we have 3 candidates: Comparable, Iterable and Drawable.
 There is no way we can prioritize these three.
 -> Compiler error. unless we cast
 `process(Drawable(c))`
+Note that when you cast, you change dynamic type of the data too.
