@@ -383,6 +383,8 @@ add(int_array, "A") will fail
 `func process(x: int, ref y: int)`
 caller: `process(t, ref u)`
 `ref` will affect method dispatch so you can have two functions with the same name and input but one of them with `ref` argument.
+if a function needs a parameter which must have fields from two types, it can be defined like this:
+`func process(x: (TypeA, TypeB))` this is an in-place definition of a tuple which inherits from two other tuples.
 
 ### Matching
 `func add(x:int, y:int, z:int) ...`
