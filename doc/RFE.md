@@ -1554,3 +1554,14 @@ Y - What if user wants to write a function with the same name as a type?
 We can disallow that.
 What about casting to string? maybe `toString` function.
 There is no built-in casting. If you want to cast MyRecord to Customer, write a custom function for that.
+
+Y - What about `%` for casting to make it super explicit?
+`%int(x)`
+`%string(x)`
+`%OptionalInt(x)`
+`%Point(var)`
+`%Point({x:10, y:20})` --cast a tuple literal
+`%Point(x:10, y:20)` -- cast an exploded tuple
+`%Point(@t)` same as `Point(t)`
+`%Point(int)(x:10, y:20)` -- casting combined with type specialization
+then user can write functions with name of built-in types. one less rule.
