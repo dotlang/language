@@ -1565,3 +1565,52 @@ Y - What about `%` for casting to make it super explicit?
 `%Point(@t)` same as `Point(t)`
 `%Point(int)(x:10, y:20)` -- casting combined with type specialization
 then user can write functions with name of built-in types. one less rule.
+
+Y - The notation for specialization is a bit weird. Can we make it more readable?
+`type ShapeTree := Tree(Shape)`
+`push(int)(intStack, intVar)`
+`Stack(int)`
+Alternatives:
+`Stack<int>` - more intuitive and familiar
+`push<int>(...)`
+
+? - Can we do the same specialization that we have for tuple, for functions?
+```
+type Stack := !A[]
+func pop(x: Stack<!A>)->!A ;notation is same as type definition, we use !X or any type name.
+;when we want to call push, we can specify value:
+var t = pop<A:int>(intStack)
+var t = pop<int>(intStack)
+;for push
+func push(x: Stack<!A>, y: !A)
+push<int>(intStack, intVar)
+push(intStack, 10) ;does this work? depends on method dispatch that we have
+```
+This needs more typing but is more readable. And provides some level of generics.
+What is exact explanation about this? 
+What changes does it mean?
+1. Function declaration is like type declaration. You can use any type and also use `!T` notation to simplify.
+2. Function call: `functionName(A:B, C:D)(input1, input2)`
+This will re-create the function and replace types with given types and make the call.
+It depends on the implementation, maybe compiler just adds type checking.
+question: How do we define a length function for Stack? (supposed to work with all stacks)
+solution 1: use this, so parameter can actually be subtypes.
+`func length(this: Stack)->int`
+solution 2: define it as generic. user needs to specify type
+`func length(x: Stack<!T>)->int`
+`var y:int = length<int>(intStack)`
+what if we have this?
+`func push(x: Stack<!A>, y: !A)`
+`func push(x: Stack<int>, y:int)`
+if we call `stack(a,b)` and `a` is `Stack<int>` which one will be called? Of course second one because there is full match.
+if we call `stack<int>(a, b)`? still the second one should be called. because compiler wants to re-create `stack` using `int` but notices it is already defined. So just makes the call to the existing one.
+
+? - explain full method dispatch flow.
+steps, options and choices.
+named arguments, ref parameters, multiple hierarchies, generics, this parameters, primitives, array, hash.
+first option: full match with dynamic
+second option: this parameter, subtype match
+last option: static type full match
+
+? - With new method dispatch mechanism, how does it affect subtyping rules that we have?
+for function, tuple, sum, ...
