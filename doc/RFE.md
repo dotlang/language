@@ -1630,12 +1630,27 @@ x = len(t)
 Y - is it possible to define a generic function which has no generic input?
 `func process<T>(x: int) -> T`
 
-? - explain full method dispatch flow.
+Y - explain full method dispatch flow.
 steps, options and choices.
 named arguments, ref parameters, multiple hierarchies, generics, this parameters, primitives, array, hash.
 first option: full match with dynamic
 second option: this parameter, subtype match
 last option: static type full match.
+- Suppose that there is a call to function `f` with 3 input arguments. Here is the method dispatch process:
+1. CL := find all functions with name `f` which have 3 inputs.
+2. If inputs are named: remove from CL where there is name mismatch.
+3. If there are `ref` inputs: remove from CL where there is ref mismatch.
+4. DT1, DT2, DT3 = dynamic type of 3 arguments specified in the call.
+5. find x in CL where type of parameters are DT1, DT2, DT3
+6. If found one, call `x` and finish. If found more than one -> Error and finish.
+7. for x: CL where name of one of parameters is `this`:
+    7.1. T := type of this parameter
+    7.2. AT := type of corresponding argument
+    7.3. if AT is T or T's child, add `x` as a final candidate.
+8. If there is only one final candidate -> call, if there is more than one -> Error
+9. ST1, ST2, ST3 := Static types of 3 arguments
+10. find x in CL where type of parameters is exactly ST1, ST2 and ST3
+11. If found one -> call, if not found or more than one found -> Error
 
 ? - With new method dispatch mechanism, how does it affect subtyping rules that we have?
 for function, tuple, sum, ...
