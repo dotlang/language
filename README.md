@@ -14,7 +14,7 @@ May 23, 2017
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
-- **Version 0.98**: ??? ?? ???? - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, simplification of method dispatch with `this`, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics
+- **Version 0.98**: ??? ?? ???? - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, simplification of method dispatch with `this`, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -309,7 +309,7 @@ Cloning, passing, assigning to other vars does not change or evaluate the variab
 Function is a piece of code which accepts a series of inputs and can return a single value. If you want to use a tuple instead of entries of a function, you must explode it first unless function input is the tuple itself.
 ```
 func my_func1(x: int, y: int) -> float { return x/y }
-func my_func1(int) -> float { return $/3 } ;you can omit input name (like an unnamed tuple)
+func my_func1(y:int) -> float { return $/3 } ;you must specify input name
 func my_func(y:int, x:int) -> { 6+y+x } ;based on runtime arguments, one of implementations will be choosed
 func my_func(5:int) -> 9
 func my_func3(x: int, y: int) -> x/y  ;you can omit {} if its a single expression
@@ -401,6 +401,7 @@ if a function needs a parameter which must have fields from two types, it can be
 `func process(x: (TypeA, TypeB))` this is an in-place definition of a tuple which inherits from two other tuples.
 - Function call: `process(x:10, y:20)`
 - Call by explode: `process(@p)` ==> `process(x: 10, y:20)`
+- Function input name is required.
 
 ### Matching
 `func add(x:int, y:int, z:int) ...`
@@ -845,18 +846,23 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 
 ## Method call resolution
 How runtime should handle a method call like: `f(x,y,z)`?
-- If a parameter is named `this`, it can match with subtypes of that type. Other than that, type of the argument must match with dynamic type of the parameter being sent. 
+- Suppose that there is a call to function `f` with 3 input arguments. Here is the method dispatch process:
+1. CL := find all functions with name `f` which have 3 inputs.
+2. If inputs are named: remove from CL where there is name mismatch.
+3. If there are `ref` inputs: remove from CL where there is ref mismatch.
+4. DT1, DT2, DT3 = dynamic type of 3 arguments specified in the call.
+5. find x in CL where type of parameters are DT1, DT2, DT3
+6. If found one, call `x` and finish. If found more than one -> Error and finish.
+7. for x: CL where name of one of parameters is `this`:
+    7.1. T := type of this parameter
+    7.2. AT := type of corresponding argument
+    7.3. if AT is T or T's child, add `x` as a final candidate.
+8. If there is only one final candidate -> call, if there is more than one -> Error
+9. ST1, ST2, ST3 := Static types of 3 arguments
+10. find x in CL where type of parameters is exactly ST1, ST2 and ST3
+11. If found one -> call, if not found or more than one found -> Error
 - For example if we have `process(this: Shape), work(x: Shape), work(x: Circle)` and process calls `work(this)` and we call process with a variable of type Circle, it will accept it and call `work(Circle)`. This provides a dynamic method override behavior that can be seen in other OOP languages.
 - Also matching with multiple input types, provides multiple method dispatch.
-(Argument is the data which is being passed, parameter is the function input).
-1. Find all methods with name `f` who has 3 inputs.
-2. If caller has also specified names for arguments, drop candidates who don't match with those names.
-3. If there is a candidate which is matching with dynamic type of arguments, call it.
-4. If there is an argument named `this`, traverse in it's type graph and filter candidates.
-5. If result is empty -> error
-6. if result has one item -> call
-7. Issue error
-
 functions with named empty types are superior to unnamed (anything).
 ```
 func process(x: anything)
@@ -875,3 +881,4 @@ There is no way we can prioritize these three.
 -> Compiler error. unless we cast
 `process(Drawable(c))`
 Note that when you cast, you change dynamic type of the data too.
+- `func process(x: anything)` will only accept `anything` type variables but `func process(this: anything)` will accept any input.
