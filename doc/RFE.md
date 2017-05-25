@@ -1574,7 +1574,11 @@ Alternatives:
 `Stack<int>` - more intuitive and familiar
 `push<int>(...)`
 
-? - Can we do the same specialization that we have for tuple, for functions?
+Y - Note: you cannot use `<>` notation when declaring a function or a type.
+Only when you call a function or refer to a type.
+`func push(Stack<!T>)` is refering to a type.
+
+Y - Can we do the same specialization that we have for tuple, for functions?
 ```
 type Stack := !A[]
 func pop(x: Stack<!A>)->!A ;notation is same as type definition, we use !X or any type name.
@@ -1584,13 +1588,13 @@ var t = pop<int>(intStack)
 ;for push
 func push(x: Stack<!A>, y: !A)
 push<int>(intStack, intVar)
-push(intStack, 10) ;does this work? depends on method dispatch that we have
+push(intStack, 10)
 ```
 This needs more typing but is more readable. And provides some level of generics.
 What is exact explanation about this? 
 What changes does it mean?
 1. Function declaration is like type declaration. You can use any type and also use `!T` notation to simplify.
-2. Function call: `functionName(A:B, C:D)(input1, input2)`
+2. Function call: `functionName<A:B, C:D>(input1, input2)`
 This will re-create the function and replace types with given types and make the call.
 It depends on the implementation, maybe compiler just adds type checking.
 question: How do we define a length function for Stack? (supposed to work with all stacks)
@@ -1602,15 +1606,37 @@ solution 2: define it as generic. user needs to specify type
 what if we have this?
 `func push(x: Stack<!A>, y: !A)`
 `func push(x: Stack<int>, y:int)`
-if we call `stack(a,b)` and `a` is `Stack<int>` which one will be called? Of course second one because there is full match.
+if we call `push(a,6)` and `a` is `Stack<int>` which one will be called? Of course second one because there is full match.
 if we call `stack<int>(a, b)`? still the second one should be called. because compiler wants to re-create `stack` using `int` but notices it is already defined. So just makes the call to the existing one.
+
+Y - in order to increase readability, limit templating only to arguments marked with `!`.
+Then, how can we limit it?
+`!X` where type is single capital letter is reserved for general generics.
+Other than that you can write `!MyType` to mean that this parameter must inherit from mytype.
+```
+type Map<K,V> := K => V
+type Stack<T: Customer> := T[]
+func push<T>(s: Stack<T>, x: T)
+func push<int>(s: Stack<int>, x: int) ;specialization
+func pop<T>(s: Stack<T>) -> T
+func len<T>(s: Stack<T>) -> int   ;general function for all instances
+var t : Stack<int>
+var h : Map<int, string>
+push(t, 10)
+var y = pop(t)
+x = len(t)
+```
+
+Y - is it possible to define a generic function which has no generic input?
+`func process<T>(x: int) -> T`
 
 ? - explain full method dispatch flow.
 steps, options and choices.
 named arguments, ref parameters, multiple hierarchies, generics, this parameters, primitives, array, hash.
 first option: full match with dynamic
 second option: this parameter, subtype match
-last option: static type full match
+last option: static type full match.
 
 ? - With new method dispatch mechanism, how does it affect subtyping rules that we have?
 for function, tuple, sum, ...
+
