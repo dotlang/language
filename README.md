@@ -657,35 +657,33 @@ Another advantage: It won't interfer with method dispatch or subtyping.
 - 
 
 ### Specialization
-When defining a custom type, you can replace a type alias with a more specialized type (This is called depth subtyping). The result will be a subtype of the original type. For example:
-`type Vector := !V[]`
-`type IntVector := Vector<V:int>`
-`type IntVector := int[]` this is exactly same as above but above is more readable
-But this is not generics. 
-`func shift(v: Vector) -> V ...`
-This will accept any vector and return V which is any. User has to cast it.
-Advantage is that we can use a better named type in functions. Instead of writing `anything[]` everywhere, we can simply use a better and more descriptive type name.
 ```
-type arr := xany[]
-type optional := Empty | xany
-type arrInt := arr<xany:int>
-type optionalInt := optional<xany : int>
+type Map<K,V> := K => V
+type Stack<T: Customer> := T[]  ;define base type for generic type
+func push<T>(s: Stack<T>, x: T)
+func push<int>(s: Stack<int>, x: int) ;specialization
+func pop<T>(s: Stack<T>) -> T
+func len<T>(s: Stack<T>) -> int   ;general function for all instances
+var t : Stack<int>
+var h : Map<int, string>
+push(t, 10) ;same as push<int>(t, 10)
+var y = pop(t)
+x = len(t)
 ```
-`type Packet :=   {status: Data[], result: (x:int, y:int),       headers: xany[] => yany[]}`
-`type IPPacket := {Packet(Data:int, xany : int, yany : string)}`
-In above definition, you must have defined `Data, xany, yany` which are just empty types.
-`!` local-anything-type creator will define a local type based off anything.
-baseically `!T` means anything, but can be referenced in child types to specialize the type. So you don't need to write a lot of empty types (which is boring and increases chances of type name duplication).
-`type Packet :=   {status: !Data[], result: {x:int, y:int},       headers: !xany[] => !yany[]}`
-- As a shortcut, if you don't specify type alias name, first will go to `A` second to `B` etc. Example:
-`type Stack := !A[]`
-`type IntStack := Stack<int>`
-`type Tree := {x: !A, left: Tree(!A), right: Tree(!A)}`
+- Argument names for generics must be single letter capitals.
+`type optional<T> := Nothing | T`
+`type Packet<T> :=   {status: T[], result: (x:int, y:int))`
+`type IPPacket := Packet<int>`
+`type Tree<T> := {x: T, left: Tree<T>, right: Tree<T>}`
 `type ShapeTree := Tree<Shape>`
-- Note that this is not a full generics support. Because you cannot use type aliases in a function definition. Things like `func push(x: Tree(T))->T` are not valid.
-`TYPE{ A : B, C : D}` will be replaced by compiler, with definition of `TYPE` type and it will apply given transformations to the definition.
-- Type specialization example: `T<A:X, B:Y, C:Z>` or `T<X, Y, Z>`
-- Casting with specialization: `var p: Point(int) = %Point<int>(x=10, y=20)` or `%Point<int>({x=10, y=20})`
+Example:
+`func push<T>(x: Stack<T>, y: T)`
+`func push(x: Stack<int>, y:int)`
+if we call `push(a,6)` and `a` is `Stack<int>` second function will be called because there is full match.
+if we call `stack<int>(a, b)` still the second one will be called.
+- When calling a generic function, you can omit type specifier only if it can be deduced from input. If not, you must specify input.
+Example: `func process<T>(x: int) -> T`
+`process(10)` is wrong. You must specify type: `var g: string = process<string>(10)`
 
 ### Exception Handling
 ### Inheritance and Polymorphism
@@ -847,6 +845,7 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Runtime - use concept of c++ smart ptr to eliminate GC
 - Add native parallelism and communication tools (green thread)
 - Introduce caching of function output (if it is not void)
+- Versioning, packaging and distribution
 
 ## Method call resolution
 How runtime should handle a method call like: `f(x,y,z)`?
