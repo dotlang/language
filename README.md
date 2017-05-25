@@ -487,6 +487,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `::` matching
 - `_` Placeholder for explode
 - `{}` code block, tuple definition and literal
+- `<>` specialization
 - `()` function call, type specialization
 
 Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `with`, `loop`, `break`, `continue`, `if`, `else`, `assert`
@@ -647,10 +648,18 @@ The important thing about labels is that they are transparently cached by runtim
 As a result, to implement predicate/validation/constraints/refinement types, you just call the function that checks the specific filter you need. Code becomes more readable and runtime makes the execution efficient. 
 Another advantage: It won't interfer with method dispatch or subtyping.
 
+### Generics
+- You can define and use generic types.
+- When defining them, you don't need to do anything special. Although you can make use of `!` notation to simplify type definition: Example: `type TypeName := !A => !B`. If someone refers to TypeName (without specialization), it will be a hashmap from anything to anything. `TypeName` is exactly same as `TypeName<A>`.
+- When creating a variable of generic type, you "can" refer to the type name like this: `TypeName<A:X, B:Y>` where T is a type used in TypeName definition. You create a new type which replaces A with X and B with Y (There is also a shortcut for this).
+- Note that `X` must be of the same type of A or it's subtype. If `A` is defined `anything` then this will always hold.
+- You can use the generic variable like a normal variable.
+- 
+
 ### Specialization
 When defining a custom type, you can replace a type alias with a more specialized type (This is called depth subtyping). The result will be a subtype of the original type. For example:
 `type Vector := !V[]`
-`type IntVector := Vector(V:int)`
+`type IntVector := Vector<V:int>`
 `type IntVector := int[]` this is exactly same as above but above is more readable
 But this is not generics. 
 `func shift(v: Vector) -> V ...`
@@ -659,8 +668,8 @@ Advantage is that we can use a better named type in functions. Instead of writin
 ```
 type arr := xany[]
 type optional := Empty | xany
-type arrInt := arr(xany:int)
-type optionalInt := optional(xany := int)
+type arrInt := arr<xany:int>
+type optionalInt := optional<xany : int>
 ```
 `type Packet :=   {status: Data[], result: (x:int, y:int),       headers: xany[] => yany[]}`
 `type IPPacket := {Packet(Data:int, xany : int, yany : string)}`
@@ -670,13 +679,13 @@ baseically `!T` means anything, but can be referenced in child types to speciali
 `type Packet :=   {status: !Data[], result: {x:int, y:int},       headers: !xany[] => !yany[]}`
 - As a shortcut, if you don't specify type alias name, first will go to `A` second to `B` etc. Example:
 `type Stack := !A[]`
-`type IntStack := Stack(int)`
+`type IntStack := Stack<int>`
 `type Tree := {x: !A, left: Tree(!A), right: Tree(!A)}`
-`type ShapeTree := Tree(Shape)`
+`type ShapeTree := Tree<Shape>`
 - Note that this is not a full generics support. Because you cannot use type aliases in a function definition. Things like `func push(x: Tree(T))->T` are not valid.
-`TYPE{ A := B, C := D}` will be replaced by compiler, with definition of `TYPE` type and it will apply given transformations to the definition.
-- Type specialization example: `T(A:X, B:Y, C:Z)` or `T(X, Y, Z)`
-- Casting with specialization: `var p: Point(int) = Point(int){x=10, y=20}` or `Point(int)({x=10, y=20})`
+`TYPE{ A : B, C : D}` will be replaced by compiler, with definition of `TYPE` type and it will apply given transformations to the definition.
+- Type specialization example: `T<A:X, B:Y, C:Z>` or `T<X, Y, Z>`
+- Casting with specialization: `var p: Point(int) = %Point<int>(x=10, y=20)` or `%Point<int>({x=10, y=20})`
 
 ### Exception Handling
 ### Inheritance and Polymorphism
