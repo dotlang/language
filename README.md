@@ -14,7 +14,7 @@ May 23, 2017
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
-- **Version 0.98**: ??? ?? ???? - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, simplification of method dispatch with `this`, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting
+- **Version 0.98**: ??? ?? ???? - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, simplification of method dispatch with `this`, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -474,7 +474,6 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `@` explode 
 - `$.i` function inputs tuple
 - `$_` input place-holder
-- `!` local-anything-type creator 
 - `%` casting
 - `^` lambda-maker
 - `&` expression combine
@@ -487,7 +486,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `::` matching
 - `_` Placeholder for explode
 - `{}` code block, tuple definition and literal
-- `<>` specialization
+- `<>` generics
 - `()` function call, type specialization
 
 Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `with`, `loop`, `break`, `continue`, `if`, `else`, `assert`
@@ -649,14 +648,12 @@ As a result, to implement predicate/validation/constraints/refinement types, you
 Another advantage: It won't interfer with method dispatch or subtyping.
 
 ### Generics
-- You can define and use generic types.
-- When defining them, you don't need to do anything special. Although you can make use of `!` notation to simplify type definition: Example: `type TypeName := !A => !B`. If someone refers to TypeName (without specialization), it will be a hashmap from anything to anything. `TypeName` is exactly same as `TypeName<A>`.
-- When creating a variable of generic type, you "can" refer to the type name like this: `TypeName<A:X, B:Y>` where T is a type used in TypeName definition. You create a new type which replaces A with X and B with Y (There is also a shortcut for this).
-- Note that `X` must be of the same type of A or it's subtype. If `A` is defined `anything` then this will always hold.
-- You can use the generic variable like a normal variable.
-- 
-
-### Specialization
+- When defining types, you can append `<A, B, C, ...>` to the type name to indicate it is a generic type. You can then use these symbols inside type definition.
+- When defining functions, if input or output are of generic type, you must append `<A,B,C,...>` to the function name to match required generic types for input/output. 
+- When you define a variable or another type, you can refer to a generic type using it's name and concrete values for their types. Like `Type<int, string>`
+- When calling a function, if generic type values can be deduced from input you don't need to specify them. But if not (which means generic types are used for function output), it is required to specify types.
+- Argument names for generics must be single letter capitals.
+- When defining a generic type or function, you can use `T:Base` notation for generic type to force user to specify a concrete type which is child of `Base` type.
 ```
 type Map<K,V> := K => V
 type Stack<T: Customer> := T[]  ;define base type for generic type
@@ -670,7 +667,6 @@ push(t, 10) ;same as push<int>(t, 10)
 var y = pop(t)
 x = len(t)
 ```
-- Argument names for generics must be single letter capitals.
 `type optional<T> := Nothing | T`
 `type Packet<T> :=   {status: T[], result: (x:int, y:int))`
 `type IPPacket := Packet<int>`
