@@ -1682,3 +1682,137 @@ You can pass int or string or float or `int|string` or `int|float` or `string|fl
 We have 7 kinds of type: tuple, union, array, hash, primitive, function.
 Subtyping is only defined for tuple and sum types.
 - Tuple: C=(C1,...,Cn) and S=(S1,...,Sm) if Ci<:Si and n>=m and if both have named fields, they must match
+
+N - We need to add built-in concurrency (goroutine and channels)
+Added to ToDo
+
+N - Can we simplify subtyping even more?
+Can we write `var x: Shape = createShape`?
+Assignment: `a=b` is valid if b is subtype of a. -> not in go
+for non-tuple this is not applicable.
+
+N - The important thing about Go is that you cannot assign a type to one of it's anonymouse embedded types. You can only cast to the interface type.
+
+Y - In Go you cannot cast from child (Circle) to Shape.
+If a method needs parent, you cannot send child. You must write `method(child.ParentType)`
+But you can access the embedded field.
+You cannot have: `var x: Shape = Circle{...}` if Shape is not interface.
+If Shape is interface you can have: `var x: Shape = createCircle`
+if you call method `show` on Circle and there is no such method, `show(Shape)` will be called.
+If Child embeds Parent and Parent has methods, child will have them too. So it can cause child to implement an interface.
+When a method call on child is redirected to parent method, all subsequent calls will be made will consider parent instance and not child.
+And a struct inherits from another one by embedding them. Not by including their fields. This should be explicit.
+(Note that golang is single dispatch. For multi-dispatch, we still have to deal with type graph).
+So only two things can happen transparently and automatically:
+- Cast a type to it's interface
+- Redirect a call to a type to it's embedded field
+- A type cannot embed empty types.
+Maybe we should change empty type to another name to be more explicit. Like `protocol`. Because it is fundamentally different.
+How can we simplify this to the most?
+```
+interface Hobby<T> := 
+{
+    Speak(T)
+}
+
+func Speak(Hobby) ;base definition for Speak function. must be empty function, and arg name is not needed
+type Human    ; this is different from interface. 
+func Speak(x: Human) ;So Human implements Hobby
+type Man := (Human, name: string)
+function Speak(x: Man)  ;customize Speak for Man, if not defined, Human implementation would be called
+type Woman := (Human, age: int)
+function Speak(x: Woman)
+type Dog 
+function Speak(x: Dog) ;Dog also implements Hobby
+var all: ??Hobby??[] = [%Human, %Man, %Woman, %Dog]
+for(Hobby h: all) Speak(h)
+```
+Problem: Matching Speak with Speak defined in Hobby is difficult! In golang it has receiver which we don't have here.
+Haskell does not have subtyping.
+We want a powerful, expressive and simple mechanism.
+Maybe now that we have generics, we can work on this.
+- Purpose 1: To be able to treat different types the same. So: `loop(x: shapes) draw(x)`
+- Purpose 2: Reuse existing code. So `process(myCircle)` will call process for Shape if circle does not have it.
+- Purpose 3: Implicit casting, `var x: Shape = createCircle` or `var x: Shape[] = ...`
+p2 can be achieved rather easily. If each type specifies it's parent type (anonymous field in tuple), this redirection will be done automatically. Nothing else needs to be done. Issues like diamond or ... should be handled with error. If function has multiple inputs, this will be handled according to current dispatch policy: dynamic match, this, static match.
+P1 can be achieved using generics? Not simply. `draw(x)` where `x` is Shape but contains a Circle!
+If we include notation for embedding and rule of redirect (if argument name is this), we can achieve p1 and p2.
+The protocol means it will have children. So it must be a `this` argument in functions. 
+We do not need a protocol when we define data types. We just need it when we define variables or call functions. 
+Haskell way: `type Shape := Circle | Square | ...`
+But this does not let us extend supported types.
+Maybe we can have: `func draw<T: Shape> (...)` but we dont need generics for this.
+we want to have a variable, static type=Shape, dynamic type=Circle, call `draw` and `draw(Circle)` gets called.
+This is Ok I think.
+We want to have a variable of type `Shape` and assign it a variable of type `Circle`. or return type of function is Shape and we want to return a Circle.
+We can simuate return and call with variable assignment. `return x` where return type is T, means `var t: T = x; return t` same for function call and argument passing.
+- In Go, you cannot extend or change an already defined interface.
+question is: How can we define and use common behavior of a set of types?
+BUT we are not supposed to attach behavior to data! This is what attracts us to OOP.
+This contradicts with method dispatch, multiple inheritance and typing because it is against every other things.
+What's wrong with empty type? Problem is we want to bind type with behavior. 
+Type is one thing, behavios is multiple things. Creating this bind is ambiguous and confusing.
+```
+type Shape
+func Draw(Shape, int)->int
+
+type BasicShape := (x: string)              ; a normal type
+func Draw(x: BasicShape, y:int)             ; Now BasicShape is compatible with Shape type
+
+type Circle := (BasicShape, name: string)   ; another type which inherits from BasicShape
+func Draw(x: Circle, y:int)                 ; It has it's own impl of Draw which hides Human implementation
+
+type Square := (BasicShape, age: int)       ; another type which embeds BasicShape.
+;calling Draw on Square will call BasicShape version
+
+type OtherShape
+function Draw(x: OtherShape, y:int)         ; OtherShape also implements Hobby
+
+var all: Shape[] = [myBasicShape, myCircle, mySquare, myOtherShape]
+for(Hobby h: all) Draw(h,1,"")
+;implicit casting to empty type. Compiler can check if this is a valid casting or no.
+;compiler can make sure that all currently defined empty functions which accept Shape
+;are defined for MyOtherShape too
+var t: Shape = myOtherShape
+var r: BasicShape = myCircle ;automatic casting - because Circle inherits from BasicShape
+```
+
+Y - What does `%X` without paren mean?
+It can be used to create a default instance (every field 0 or empty)
+
+? - If we can write: `var x: BasicShape = myCircle` then we should be able to call a function like:
+`func process(x: BasicShape)` -> `process(x)`
+But we have said that only `this` parameter can be dynamic typed.
+I think it's ok. Because assignment is one thing, but function call is different.
+When I assign, I am changing static type which affects method dispatch.
+```
+func process(x: BasicShape)
+func store(this: BasicShape)
+var myCircle: Circle = ...
+process(myCircle) ;this will fail
+store(myCircle) ;will work
+var bShape: BasicShape = %BasicShape(myCircle) ;you need to cast
+process(bShape) ;this will work because static type has changed
+```
+Its better to force explicit cast everywhere. Is is more straight forward and readable. 
+When we cast a variable to an empty type or a super-type we change it's static type. But it's dynamic type does not change. 
+NO! this was supposed to change both static and dynamic type!
+A cast, will change both static and dynamic type of a variable.
+I argument name is `this`, you don't need a cast if type is subtype of expected input.
+So how is this supposed to work?
+```
+var all: Shape[] = [myBasicShape, myCircle, mySquare, myOtherShape]
+for(Hobby h: all) Draw(h,1,"")
+```
+We can say, dynamic cast to empty should be possible. Empty type is similar to golang's interface to which you can cast implicitly. 
+Can this replace `this` rule? No. Because it enforces a single dynamically typed argument.
+`this` rule is kind of an exception. Let's remove this exception and instead make method dispatch process more complete.
+1. Dynamic full match
+2. Static full match
+So, suppose `Circle` embeds `Shape` and we have `draw(Shape)`. calling `draw(myCircle)` should redirect to draw for Shape. 
+Problem is we have multiple dispatch and multiple inheritance and we do not want to have multi-methods.
+Why bother to provide support for implicit cast? If you want to call draw for Shape and you have a Circle, just call `draw(x.Shape)`. But this won't be easy to change: If we later add support for Circle draw, we need to update this code. 
+But instead language will be more readable and understandable.
+Can we totally remove the concept of dynamic type?
+No. We already have `anything` and empty types.
+I think the most important issue is escaping from multiple dispatch.
