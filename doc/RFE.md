@@ -3,7 +3,17 @@
 ? - name: simple, pure, simpla (simple + language), func, 
 Lisp - list processing
 electron is good but a bit long
-photon? This is good. 
+photon? This is good. but is name of a game engine.
+This is mostly influenced by go and c/c++ and scala. 
+Let's name it after C. Like "microc".
+betterc
+main features:
+- immutability: Haskell
+- type system: C, C#
+- generics: C++
+- first-class function: Go
+Go#?
+
 
 N - A notation to join two arrays.
 In Haskell we have:
