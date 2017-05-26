@@ -88,17 +88,17 @@ Source file contains a number of definitions for types and functions.
 
 ## Language in a nutshell
 1. **Primitives**: `int`, `uint`, `string`, ...
-2. **Tuple**: `type Point := (x: int, y:int)`
+2. **Tuple**: `type Point := {x: int, y:int}`
 3. **Union**: `type OperationResult := Point | int | Error`
 4. **Array**: `type JobQueue := int[]`
-4. **Hashtable**: `type CountryPopulation := string => long`
-5. **Function**: `func functionName (*INPUT_TUPLE*) -> *OUTPUT_TYPE* { *BODY* }`
-6. **Variable**: `var location: Point = (x:10, y:20)`
+4. **Hashtable**: `type CountryPopulation := string => int`
+5. **Function**: `func functionName (x: int, y: string) -> float { *BODY* }`
+6. **Variable**: `var location: Point = {x:10, y:20}`
 7. **Import**: Is used to import types and functions defined in another file: `import /code/std/Queue`
-8. **Validation**: For any custom type: `type Age := int where { $ > 0 }`
-9. **Immutability**: Only local variables are mutable. Everything else is immutable.
-10. **Assignment**: Primitives are assigned by value, other types are assigned by reference.
-All other features (loop and considtionals, exception handling, validation, inheritance and subtyping, polymorphism ...) are achieved using above constructs.
+8. **Generics**: `type Stack<T> := T[]`
+9. **Immutability**: Only local variables and `ref` arguments are mutable. Everything else is immutable.
+10. **Assignment**: Numbers are assigned by value, other types are assigned by reference.
+All other features (loop and conditionals, exception handling, inheritance and subtyping, polymorphism ...) are achieved using above constructs.
 
 ## Type System
 We have two categories of types: named and unnamed.
@@ -628,7 +628,7 @@ Also you can call a function or refer to a type with fully qualified name:
 - By default, `import` works on local file system but you can work on other types too:
 `import /a/b` import from local file system
 `import file/a/b` import from local file system
-`import http/github.com/adsad/dsada` import from github
+`import git/github.com/adsad/dsada` import from github
 
 ### native
 Denotes function is implemented by runtime or external libraries.
