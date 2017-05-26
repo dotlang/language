@@ -277,6 +277,7 @@ var w: B = B(@A) ;this will not fail because we are casting, so it will ignore e
 `%Point(int)(x:10, y:20)` -- casting combined with type specialization
 Casting to a tuple, can accept either a tuple literal or tuple variable or an exploded tuple.
 Note that there is no support for implicit casting functions. If you need a custom cast, write a separate function and explicitly call it.
+- `%Type` without paren creates a default instance of the given type.
 
 ### Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
@@ -677,19 +678,13 @@ Example: `func process<T>(x: int) -> T`
 
 ### Exception Handling
 ### Inheritance and Polymorphism
-- Tuples can inherit from other tuples by having their fields (Manually adding them or with an unnamed field. This is similar to "Duck typing" in other languages but with data. So A can be trated like B if for every fields in B, I can write `A.field`. This allows developer to write subtypes for types he doesn't have access to. 
-- This type of subtyping is called Structural (https://en.wikipedia.org/wiki/Structural_type_system) and we have width subtyping (https://en.wikipedia.org/wiki/Subtyping).
-`type Shape := ();`
-`type Circle := (Shape, ...)`
-`type Square := (Shape, ...)`
-`type Polygon := (Shape, ...)` 
+- Tuples can inherit from other tuples by having their fields (defined with an unnamed field). So A can be treated like B if it has an embedded unnamed field of type B.
 - You can define functions on types and specialize them for special subtypes. This gives polymorphic behavior.
-`func paint(o:Shape) {}`  
+`func paint(o:Shape) {}`
 `func paint(o:any){}`
 `func paint(o:Circle)...`
 `func paint(o:Square)...`
-- If a function (`f1`) is implemented for parent type (`Shape`), and called with an instance of child (e.g. `Circle`) it will receive an instance of `Shape` which is a field of `Circle`. If `f1` function calls another function which is written for both parent and child types, it will be called for parent.
-- We can keep a list of shapes in an array/collection of type Shape: `var o: Shape[] = [Circle(), Square()];`
+- We can keep a list of shapes in an array/collection of type Shape: `var o: Shape[] = [myCircle, mySquare];`
 - You can iterate over shapes in `o` array defined above, and call `paint` on them. With each call, appropriate `paint` method will be called (this appropriate method is identified using 3 dispatch rules explained below).
 - Visible type (or static type), is the type of the variable which can be seen in the source code. Actual type or dynamic type, is it's type at runtime. For example:
 `func create(x:type)->Shape { if ( type == 1 ) return Circle{}; else return Square{}; }`
@@ -740,9 +735,34 @@ Same for `int => string` and `byte => string`. So if we want to have a generic h
 - You can re-define parent type fields in the child type and if the new type is a subtype, then child will remain subtype of the parent:
 `type ListElement := (data: any, next: LLE, prev: LLE)`
 `type ListElementInt := (ListElement, data: int)`
+Example about empty types, inheritance, polymorphism and subtyping:
+```
+type Shape
+func Draw(Shape, int)->int
+
+type BasicShape := (x: string)              ; a normal type
+func Draw(x: BasicShape, y:int)             ; Now BasicShape is compatible with Shape type
+
+type Circle := (BasicShape, name: string)   ; another type which inherits from BasicShape
+func Draw(x: Circle, y:int)                 ; It has it's own impl of Draw which hides Human implementation
+
+type Square := (BasicShape, age: int)       ; another type which embeds BasicShape.
+;calling Draw on Square will call BasicShape version
+
+type OtherShape
+function Draw(x: OtherShape, y:int)         ; OtherShape also implements Hobby
+
+var all: Shape[] = [myBasicShape, myCircle, mySquare, myOtherShape]
+for(Hobby h: all) Draw(h,1,"")
+;implicit casting to empty type. Compiler can check if this is a valid casting or no.
+;compiler can make sure that all currently defined empty functions which accept Shape
+;are defined for MyOtherShape too
+var t: Shape = myOtherShape
+var r: BasicShape = myCircle ;automatic casting - because Circle inherits from BasicShape
+```
+- You can assign a variable any of it's subtypes (including empty type) variables. 
 
 ### Templates
-- You can use empty types or types with minimum required features, to define a template.
 
 ### Best practice
 ### Naming
@@ -833,8 +853,8 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 
 ## ToDo
 - Runtime - use concept of c++ smart ptr to eliminate GC
-- Add native parallelism and communication tools (green thread)
-- Introduce caching of function output (if it is not void)
+- Add native concurrency and communication tools (green thread, channels)
+- Introduce caching of function output
 - Versioning, packaging and distribution
 
 ## Method call resolution
@@ -877,3 +897,4 @@ There is no way we can prioritize these three.
 `process(Drawable(c))`
 Note that when you cast, you change dynamic type of the data too.
 - `func process(x: anything)` will only accept `anything` type variables but `func process(this: anything)` will accept any input.
+- An argument named `this` means it will be treated like a "virtual method". Inside the function any parameter must have the same type as specified except `this`.
