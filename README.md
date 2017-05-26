@@ -14,7 +14,7 @@ May 23, 2017
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
-- **Version 0.98**: ??? ?? ???? - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, simplification of method dispatch with `this`, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch
+- **Version 0.98**: ??? ?? ???? - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, simplification of method dispatch with `this`, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch and type system
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -103,28 +103,21 @@ All other features (loop and considtionals, exception handling, validation, inhe
 ## Type System
 We have two categories of types: named and unnamed.
 Unnamed: `int, string[], float => int, (int,int)...` - They are created using language keywords and notations like primitive type names, `any`, arry or hash, ....
-Named: `type MyType := ?????` These are defined by the developer and on the right side we can have another named or unnamed type. Right side is called underlying type.
-We have two special types: `nothing` and `anything`. All types are subtypes of `anything` (except `nothing`). `nothing` is only subtype of itself. So if a function expects nothing (which is weird) you can only pass a nothing to it and nothing else. If a function expects `anything` you can pass anything to it (except `nothing`).
+Named: `type MyType := ?????` These are defined using `type` statement and on the right side we can have another named or unnamed type. Underlying type of a named type is the underlying type of declaration on the right side. Underlying type of unnamed types, is themselves.
+We have two special types: `nothing` and `anything`. All types are subtypes of `anything` (except `nothing`). `nothing` is only subtype of itself. Nothing is subtype of `nothing`. So if a function expects nothing (which is weird) you can only pass a nothing to it and nothing else. If a function expects `anything` you can pass anything to it (except `nothing`).
 We have 7 kinds of type: tuple, union, array, hash, primitive, function.
-We write C <: S which means C (child) is subtype of S (supertype). 
-- A type is subtype of itself.
-- Primitive: C and S are the same
-- Array: if their elements <:
-- Hash: Vs <: Vc, Kc <: Ks
-- function: C:func(I1)->O1, S: func(I2)->O2 I1<:I2 and O1 <: O2 and if inputs are named, they should match.
-- Sum types: C: C1|C2|...|Cn and S: S1|S2|...|Sm if Ci<:Si and n<=m
+Subtyping is only defined for tuple and sum types.
 - Tuple: C=(C1,...,Cn) and S=(S1,...,Sm) if Ci<:Si and n>=m and if both have named fields, they must match
-Variable of named type can be assigned to underlying unnamed type and vice versa. `type SE := int` then SE and int are assignable.
-Suppose that we have a function `func f(x: T1, y: T2, z: T3)`
-You can call this function with 3 data, if type of each data is subtype of corresponding function argument. if input is named, it should match with names on the function declaration.
-Example:
-`func process(any[])`
-`func process(Shape[])` 
-`func process(Circle[])`
-if we call process with a Circle array, the third item should be invoked.
+`func process(x: int|string|float)`
+You can pass int or string or float or `int|string` or `int|float` or `string|float` variables to it.
 You can even define type in-place when defining the function:
 `func printName(x: (name: string))...`
 Any data type that contains a string name can be passed to `printName`.
+- two variables declared with the same named/unnamed type have the same type. 
+- Two variables declared with two similar looking named types have different types.
+- Assignment of variables with similar looking named types to each other is forbidden.
+- Assignment of variables with same named/unnamed types is allowed.
+- Assignment of variables of same unnamed and named type is allowed.
 
 ### Primitive
 There are only three primitive data types: `number`. All others are defined based on these two plus some restrictions on size and accuracy.
@@ -857,7 +850,9 @@ How runtime should handle a method call like: `f(x,y,z)`?
     7.1. T := type of this parameter
     7.2. AT := type of corresponding argument
     7.3. if AT is T or T's child, add `x` as a final candidate.
-8. If there is only one final candidate -> call, if there is more than one -> Error
+8. If there is only one final candidate -> call
+    8.1. if there is more than one -> Sort them based on how many fields their type covers on T
+    8.2. Call max item (if we have only one max)
 9. ST1, ST2, ST3 := Static types of 3 arguments
 10. find x in CL where type of parameters is exactly ST1, ST2 and ST3
 11. If found one -> call, if not found or more than one found -> Error
