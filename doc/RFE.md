@@ -1652,6 +1652,23 @@ last option: static type full match.
 10. find x in CL where type of parameters is exactly ST1, ST2 and ST3
 11. If found one -> call, if not found or more than one found -> Error
 
-? - With new method dispatch mechanism, how does it affect subtyping rules that we have?
+N - With new method dispatch mechanism, how does it affect subtyping rules that we have?
 for function, tuple, sum, ...
 
+Y - If we assume named and unnamed types are different, `Stack<int>` and `int[]` will be two different things.
+- Named types are types defined with `type` statement.
+- Underlying type of unnamed types is themselves.
+- Underlying type of a named type is the underlying type of what comes on right side of `:=` in its declaration.
+- two variables declared with the same named/unnamed type have the same type. 
+- Two variables declared with two similar looking named types have different types.
+- Assignment of variables with similar looking named types to each other is forbidden.
+- Assignment of variables with same named/unnamed types is allowed.
+- Assignment of variables of same unnamed and named type is allowed.
+
+Y - simplify subtyping rules. it makes no sense to define subtyping for a hash or array or function.
+And how does it related to anything/nothing.
+`func process(x: int|string|float)`
+You can pass int or string or float or `int|string` or `int|float` or `string|float` variables to it.
+We have 7 kinds of type: tuple, union, array, hash, primitive, function.
+Subtyping is only defined for tuple and sum types.
+- Tuple: C=(C1,...,Cn) and S=(S1,...,Sm) if Ci<:Si and n>=m and if both have named fields, they must match
