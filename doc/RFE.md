@@ -1830,5 +1830,180 @@ Both of these need change the original function which may not be possible.
 `func draw(s: Circle, c: Color)`
 `func draw(s: Shape, c: SolidColor)`
 `draw(myCircle, mySolidColor)`
-- We can say we have single inheritance for implicit dispatch. The first field of a tuple is it's implicit parent.
+- **We can say we have single inheritance for implicit dispatch. The first field of a tuple (if anonymous) is it's implicit parent**  .
 - So in method dispatch, the function which matches with max number of argument dynamic types is selected, if there is only one.
+- NO! **The only variables that their static and dynamic can be different are empty types.**
+- When Circle embeds Shape, all functions defined for Shape are implicitly re-defined for Circle unless they are dfined by developer. These re-defined functions, just cast Circle to Shape and call Shape function. So, in those functions, they receive something which has static type and dynamic type set as Shape. So if we had `draw(x: Shape, y: Color, z: Canvas)` the compiler will add `draw(x: Circle, y: Color, z: Canvas) -> draw(x.Shape, y, z)`.
+- If Circle implements methods of two interfaces, you can assign a circle to any of them. They will keep track of their dynamic type.
+- The last level in the hierarchy is set of interfaces that the type is implementing.
+`Square -> Polygon -> Drawable -> Shape -> Object -> Comparable, Iterable, Serializable`
+when there is a call `process(x)` and `x` is a Square, it embeds Polygon, Drawable, Shape and Object.
+So these candidates will be looked up: `process(Square) -> process(Polygon) -> process(Drawable) -> process(Shape) -> process(Object)`. If none of them is defined, we will look for process functions which accept any of interfaces. If found one-> make the call, else error.
+Same for multiple arguments. The candidate which matches with max number of dynamic types will be chosen. If multiple candidates-> error.
+- But: how can we re-write those methods if they will have multiple inputs of different types? There cannot be an implicit re-write of methods. So seems that this dynamic/static type separation should exist in all other types. Because if a method is not defined for Circle, but best choice is the one for Shape, we implicitly do the cast but the dynamic type will be Circle. So all variables of type tuple, can potentitally have separate dynamic type.
+when we see a call like `process(myCircle, myColor, myCanvas, myPen)` first choice is a function that has support for dynamic type of all of these. If not, we look for all other `process` functions with 4 parameters.
+if there is only one that covers 3 dynamic types -> call
+if there is more than one -> error
+if there is only one that covers 2 dynamic types -> call
+if there is more than one -> error
+if there is only one that covers 1 dynamic types -> call
+if there is more than one -> error
+if there is no function that covers any of dynamic types, we look for interfaces.
+Each of 4 arguments has a set of interfaces that it supports. so we have 4 sets of interfaces each set for each argument.
+if there is a single function that has support for I1, I2, I3, I4 where each Ii is a member of corresponding set created before, then we will call it.
+if there is more than one -> error
+if there is no function -> look for a function to have full match with static types, if found -> call (there cannot be multiple functions with same full match).
+if not found -> error
+- If you write `var s: Shape = myCircle.Shape` then static and dyn type of s will be Shape. 
+- If you write `var s: Shape = myCircle` it will give error. Non-empty type cannot be dynamic.
+- if you write `var s : Shape = %Shape(myCircle)` st=dt=Shape
+- It is better if only empty types have different dynamic type. Because in case of Circle->Shape, maybe the Shape type has some methods that are overriden in Circle. And when Shape methods call eachother, they expect their own methods to be executed. Otherwise unexpected things may happen.
+
+? - Can't we just use functions instead of empty types?
+What is the purpose of an interface? To define a set of behavior -> To define a set of functions.
+So why not use functions themselves instad of adding this new interface concept.
+example:
+```
+//java code
+public interface Logger { public void log() }
+public class FileLogger implements Logger ...
+...source code
+public void save(string file, lg logger) {
+    lg.log("Start saving")
+}
+;now instead of passing the interface, here we pass a function!
+func save(f: string, lg: func(string)) -> {
+    lg("Start saving")
+}
+```
+Interface is only a set of empty functions.
+`type Logger := func(logText: string)`
+`type Comparable := func(x: anything, y: anything)->bool`
+`In other words, the signature of the function is the interface.`
+What is implication of this?
+No need to have dynamic/static type. 
+No empty types.
+But still we need embedding. But single inheritance.
+And the other result: Every variable has same static and dynamic type.
+So how can I have an array of shapes?
+Ad-hoc polymorphism: We can have same function accept different types? No. But with single inheritance and function promotion, this can be achieved.
+But to have subtyping and polymorphism, we need dynamic type!
+Maybe not. Maybe there is a way.
+Maybe with each different type we can have a converter function. which converts it to type we want.
+`myCircle, { return $0.Shape }`
+`type Shape := (name: string)`
+`type dShape<T> := (x: T, converter: func(T)->Shape)` 
+OR
+`type dShape<T> := (x: T, getName: func(T)->string)` 
+Now everything has same structure.
+`var g: dShape<?>[] = [getCircle(), getSquare(), getTriangle()]`
+`func getCircle() -> dShape<Circle> { return ... }`
+`var s: Shape = g[0].convert()`
+`process(g[0].x)` this will call `process(Circle)`
+type of first element of the above array is `Shape<Circle>`.
+`Shape<?>` can be used as a mechanism to have dynamic type. Because we don't know type of `?` until possibly at runtime.
+Can we have `type Y : =?[]` this will be same as anything.
+So we cannot deal with polymorphic data alone? They should be in a collection like array.
+No! We can have this: `var x: Shape<?> = getCircle()`
+This will give us single inheritance or better say, dynamic single inheritance. Circle inherits from Shape but in a limited yet flexible way. But we can write a code that gives you `Drawable<?>` based on a circle. So we define the inheritance. 
+The only problem is that we are binding data and behavior again.
+What if `Shape<?>` can only contain types that embed Shape in their first field?
+```
+type Shape := (name: string)
+type SArr<T: Shape> := (x:T)
+var s: SArr<?>[] = [getCircle(), getSquare(), getRect()]
+var r: Shape = s[0].x
+;this will call process(Circle)
+;conversion will be handled behind the scene
+process(s[0].data)
+;normal way with dynamic type
+type Shape := (name: string)
+var s: Shape[] = [getCircle(), getSquare(), getRect()]
+var r: Shape = s[0]
+;this will call process(Circle)
+;conversion will be handled behind the scene
+process(s[0])
+```
+How can we implement `Account` interface which provides withdraw and deposit functionality?
+```
+func process(x: Account, wd: func(Account, int), dp: func(Accout, int))
+```
+Or if we have dynamic type, we can simply write appropriate functions and just call them in process.
+what `process` receives can be a subtype of Account and calling methods on it, will invoke subtype methods.
+problem: we cannot pass a subtype of account to process function without loosing its dynamic type.
+When using `dShape<?>` what is the guarantee that the type inside `<>` embeds Shape?
+`type dShape<T:Shape> := (x:T)` this is a structure which can store different types as long as they embed Shape
+`var item: dShape<?>` this variable is a tuple containing `x`. Type of `x` is unknown at declaration time but we know it will embed a Shape.
+`process(item.x)` this will call a process based on the actual type item.x which can be anything embedding a Shape. 
+On the declaration side, methods for Circle have been automatically defined to re-route to Shape if they are not already defined.
+Can't we have `var item: ?: Shape`? No! of course not. There is no `?` type in our system. `?` is just a wildcard used in templates to simulate polymorphism in a static way. 
+We use this notation to define polymorphic generic: `type SA<T: Shape> := (x:T)`
+Can't we use this notation in normal code to achieve same thing?
+`var t: Shape = getCircle()`
+We can but it will need dynamic/static type management. While generic one does not need that.
+Can we simplify the generic method?
+```
+type Shape := (name: string)
+type SA<T: Shape> := (x:T)
+var s: SA<?>[] = [getCircle(), getSquare(), getRect()]
+var r: Shape = s[0] ;implicit cast to Shape. st=dt=Shape
+;this will call process(Circle), conversion will be handled behind the scene
+process(s[0])
+```
+What happens next? If we call `save(x)` inside process, will it call `save(Circle)` or `save(Shape)`? Depends on the implementation.
+But note that inside `process` we will not know the real type of input. It can be anything inheriting from Shape.
+No! `process(s[0])` will definitely call `process(Circle)` which will receive a Circle and nothing else. 
+If and only if there is not `process(Circle)` then `process(Shape)` will be called with a Shape variable and not a Circle.
+So: There is no dynamic type, but in case of wildcard generic, we won't know the real type of the data. We can just call a function and the best implementation will be chosen.
+And this is not extensive unless we extend it to functions.
+```
+func create<T: Shape>(type: string) -> T
+type Shape := (name: string)
+type SA<T: Shape> := (x:T)
+var s: SA<?>[] = [create<Circle>("c"), create<Square>("s"), create<Rect>("r")]
+var t: SA<Circle> = create<Circle>("c")
+var s: SA<?>[] = [create("c"), create("s"), create("r")]
+```
+Can this let us remove dynamic type completely? What about other arguments?
+```
+type Shape := (name: string)
+type SA<T: Shape> := (x:T)
+var s: SA<?>[] = [getCircle(), getSquare(), getRect()]
+;this will call process(Circle), conversion will be handled behind the scene
+process(s[0], mySolidColor, myPen, myCanvas)
+;what if we only have this: color does not match
+func process(Circle, Color, Pen, Canvas)
+;as soon as we define the type SolidColor embeding color, compiler creates this for us
+func process(Circle, SolidColor, Pen, Canvas) -> process(Circle, %Color, Pen, Canvas)
+```
+I think we can completely eliminate dynamic type if compiler generates appropriate functions for us. 
+1. The first field of tuple, if anonymous, is it's base type.
+2. When declaring a tuple (T) with base type (B), compiler will do this code generation:
+2.a. For each function f such that `func f(...x: B...)` generate `func f(...x:T...)->f(...x.B...)`
+3. Each function call will need full type match.
+4. Each variable has a single type: Static type. 
+5. This static type can be a variable itself. This can be achieved using wildcard in generics.
+5.a. `type Element<T: Shape> := (x:T)` we define a polymorphic type which can represent any type which embeds a Shape
+5.b. `func create<T: Shape>(type: string) -> T` items can also be generated using generic functions
+5.c. `var s: Element<?>[] = [create("c"), create("s"), create("r")]` we use `?` to represent any type.
+5.d. When you call a generic function which only needs generic type for output type, you can eliminate type literal, if output is bound (`<T: Shape>`).
+`var t = create("c")` what will be type of t? it will be Shape.
+`var c: Circle = create("c")` this will give compiler error because compiler cannot verify output if Circle.
+`var c: Element<?> = create("c")` type of c will be `SA<Circle>`.
+This notation is not intuitive. Specially item 5.c. Right side is not compatible with left side.
+`var s: <T: Shape>[] = [create("c"), create("s"), create("r")]` 
+then can we write:
+`var t: Shape = create("c")`?
+Yes because create output is compatible with shape. But you will have a shape not a circle.
+If you want to keep the actual type:
+`var s: <?: Shape> = create("c")`
+
+? - So what do we do with anything and nothing?
+
+? - Even if you need an interface with a lot of methods, you can define a type to contain those functions rather than passing each function separately to the code.
+
+? - The bad thing about empty type is that we are using it as a way to describe behavior using data. 
+
+? - implement an account withdraw and deposit and another account of type supporting overdraft
+
+? - maybe we should remove the rule for `a.f(x)` ~ `f(a,x)`
