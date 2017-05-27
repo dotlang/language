@@ -1816,3 +1816,19 @@ But instead language will be more readable and understandable.
 Can we totally remove the concept of dynamic type?
 No. We already have `anything` and empty types.
 I think the most important issue is escaping from multiple dispatch.
+- Seems the best solution is to have function for exact parameter combination that we have. 
+- This means no big change about empty types. They specify required implementations that a type has to satisfy.
+- But the implicit conversion of Circle to Shape (embedded type) when it is being used as a function argument won't work. There must be a function for Circle (even if it redirects to another function).
+`func draw(x: Circle) -> draw(x.Shape)`
+`func paint(x: Circle, y: Color, z: BaseProcessManager) -> paint(x.Shape, y, z)`
+We need to manually write rules of method dispatch. But this means a lot of task.
+Two options are available to reduce it:
+1. `this` argument
+2. Generics methods
+Both of these need change the original function which may not be possible.
+`type Circle := (Shape, r: float)`
+`func draw(s: Circle, c: Color)`
+`func draw(s: Shape, c: SolidColor)`
+`draw(myCircle, mySolidColor)`
+- We can say we have single inheritance for implicit dispatch. The first field of a tuple is it's implicit parent.
+- So in method dispatch, the function which matches with max number of argument dynamic types is selected, if there is only one.
