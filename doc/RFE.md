@@ -1780,7 +1780,7 @@ var r: BasicShape = myCircle ;automatic casting - because Circle inherits from B
 Y - What does `%X` without paren mean?
 It can be used to create a default instance (every field 0 or empty)
 
-? - If we can write: `var x: BasicShape = myCircle` then we should be able to call a function like:
+Y - If we can write: `var x: BasicShape = myCircle` then we should be able to call a function like:
 `func process(x: BasicShape)` -> `process(x)`
 But we have said that only `this` parameter can be dynamic typed.
 I think it's ok. Because assignment is one thing, but function call is different.
@@ -1859,7 +1859,7 @@ if not found -> error
 - if you write `var s : Shape = %Shape(myCircle)` st=dt=Shape
 - It is better if only empty types have different dynamic type. Because in case of Circle->Shape, maybe the Shape type has some methods that are overriden in Circle. And when Shape methods call eachother, they expect their own methods to be executed. Otherwise unexpected things may happen.
 
-? - Can't we just use functions instead of empty types?
+Y - Can't we just use functions instead of empty types?
 What is the purpose of an interface? To define a set of behavior -> To define a set of functions.
 So why not use functions themselves instad of adding this new interface concept.
 example:
@@ -1997,13 +1997,98 @@ then can we write:
 Yes because create output is compatible with shape. But you will have a shape not a circle.
 If you want to keep the actual type:
 `var s: <?: Shape> = create("c")`
+This is confusing. Let's have dynamic/static type everywhere and base it upon single inheritance.
+1. The first field of tuple, if anonymous, is it's base type.
+2. When declaring a tuple (T) with base type (B), a variable of type T can be implicitly treated like a B.
+3. When a function call like `f` is done with 3 arguments, best match is full dynamic type match.
+4. If that is not found, runtime will look for a candidate which supports maximum number of dynamic types.
+5. If failed, full static type match will be checked.
+And if we call Shape-bound functions with circle instance, they will receive a variable with static type of shape and dynamic type of circle. So if code makes another call, dynamic type will be circle.
+Fragile base class exists because data and behavior are bound together. Here they are not. So there is no "base" "class".
+`var c: Shape = createCircle` st=Shape, dt=Circle
+Now that it must be first field and must be unnamed, can we remove these rules implicitly?
+`type Circle := (Shape, ...)`
 
-? - So what do we do with anything and nothing?
+N - SOLID
+S: single responsibility
+O: open for extension closed for modification
+L: ubstitution
+I: interface segregation
+D: dependency inversion
 
-? - Even if you need an interface with a lot of methods, you can define a type to contain those functions rather than passing each function separately to the code.
+N - This is in F#. Can we have it?
+`[1..10] |> List.map add2 |> printfn "%A"`
+`[1..10] |> map(add2, $_)  |> printf("%A", $_)`
+`[1..10].map(add2, $_).printf("%A", $_)`
+`sort.map(array)` -> map(sort(array))
+`array.map.sort` -> sort(map(array))
 
-? - The bad thing about empty type is that we are using it as a way to describe behavior using data. 
+Y - Force that a generic function must use its type in inputs.
 
-? - implement an account withdraw and deposit and another account of type supporting overdraft
+Y - Let's remove bound limit for generic type. Because if we allow, we should allowe generic bounds which makes things so complicated.
 
-? - maybe we should remove the rule for `a.f(x)` ~ `f(a,x)`
+N - Even if you need an interface with a lot of methods, you can define a type to contain those functions rather than passing each function separately to the code.
+
+N - maybe we should remove the rule for `a.f(x)` ~ `f(a,x)`
+
+N - So what do we do with anything and nothing?
+
+Y - Nothing has not value. So how can we assign value to a variable of type nothing?
+The only way to get nothing, is to run a block which does not throw exception: `{}`
+`var g: nothing = {}`
+
+N - Is this correct?
+`func printName(x: (name: string))...`
+Any data type that contains a string name can be passed to `printName`.
+No! This will mean multiple inheritance.
+`func process(x: (name: string))...`
+`func process(x: (age: int))...`
+`type Data := (name: string, age: int)`
+`process(myData)` which one should we call?
+
+N - implement an account withdraw and deposit and another account of type supporting overdraft.
+```
+type Account := (balance: int)
+func withdraw(x: Account)
+func deposit(x: Account)
+type OverdraftAccount := (Account, limit: int)
+func withdraw(o: OverdraftAccount)
+func deposit(o: OA)
+func process(Account, Employee)
+;I want to make sure that any function for Account, is supported for ODA too
+func process(OverdraftAccount, Employee)
+```
+
+Y - How can we define map function?
+`func map<T, S>(arr: T[], f: func(T) -> S) -> S[]`
+
+N - Another type of subtyping: a tuple with original type and some convert functions.
+```
+type Shape := (name: string)
+type Circle := (r: float, s: Shape, aaa: func(Circle)->Shape $0.s)
+```
+You can define any number of "implicit conversion" functions. This is very flexible. 
+We can have multiple inheritance and ....
+How does it make method dispatch simpler?
+How does it enable us to create an array of shapes with circles and squares?
+
+
+N - How can we define strategy design pattern? using a function pointer.
+
+Y - if a function expects `f: func()->Shape` can I send a function which returns a cat? Yes.
+if a function expects `x: Stack<Shape>` can I send `Stack<Circle>`? No
+
+N - The bad thing about empty type is that we are using it as a way to describe behavior using data. 
+pure data -> types
+behavior+data -> functions
+pur behavior -> empty functions.
+The idea of empty type seems logical and orth and gen.
+Maybe we should clarify it or make it more explicit.
+`type Countable := anything`
+`func count(Countable)->`
+`type Array := int[]`
+`func count(x: Array) -> len(x)`
+`func process(f: Countable)`
+`process(myArray)`
+
+? - Think more about method dispatch with single inheritance, empty types, anything and nothing.
