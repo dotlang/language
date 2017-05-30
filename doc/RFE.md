@@ -2114,9 +2114,7 @@ N - How to get a list of word count per line of a text?
 `lineLengths = map (length . words) . lines -- Haskell`
 `var length = loop(l: text.lines()) l.words().length()`
 
-? - Think more about method dispatch with single inheritance, empty types, anything and nothing.
-
-? - A lazy load variable (scalar, array, hash)
+N - A lazy load variable (scalar, array, hash)
 For example an array which is bound to a file. 
 When you iterate through array, it reads from file.
 It won't read until you really need to.
@@ -2198,5 +2196,20 @@ Advantage:
 - Watch for change in a variable: observer design pattern
 The only use case for this is when we have a very large volume of data.
 We can simulate iteartion by writing custom iterator data and functions (e.g. reading tokens from a file).
+read/write behavior can also be simulated using custom data types. 
+The only problem is interoperability. If an existing function expects an `int[]` but we have `DataList` type.
+Can we simply write `var t:int[] = %int[](myDataList)`?
+This is data-level, not type level but has minimum effect on the notation. Actually no new notation is needed.
+The only requirement is in convension. To be able to cast some data to `int[]` there must be a set of functions defined for that data type.
+Advantage: min change in notation, general and orth, you can do it for any other type.
+`var t: int=>string = %int=>string(myCollection)`
+Now you can write any data type you want, provide required functions and simply cast it to an array.
+What about primitives?
+`var t: int = %int(myInteger)`
+Disadvantage: This will affect the runtime performance. We no longer can cast `arr[0]=1` to a simple memory copy function.
+If we are able to determine data type at compile time, it will make us generate more efficient machine code. 
 
-? - If we can replace `int` with `func()->int` then what about `ref int`?
+N - If we can replace `int` with `func()->int` then what about `ref int`?
+You can only `ref` a variable which is not func. 
+
+? - Think more about method dispatch with single inheritance, empty types, anything and nothing.
