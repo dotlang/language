@@ -2091,4 +2091,28 @@ Maybe we should clarify it or make it more explicit.
 `func process(f: Countable)`
 `process(myArray)`
 
+N - Is this possible to replacec vowels with x in a string? yes
+`var t: string = 'this is a test'`
+`var g: string = loop(c: t) if ( isVowel(c) ) then 'x' else c`
+
+N - Adding built-in linked-list. This can be used to create stack, queue and other data structures
+`var t:[int] = [1, 2, 3]`
+Like D we can use `~` opertor to concat two arrays. 
+Methods that we need:
+- Set at specific index: t[0] = 112
+- Clone: explode
+- Clear: t=[]
+- Add to beginning: `t = [1, @t]`
+- Add to end: `t = [@t, 10]`
+- ToArray -> clone to array: `var y: int[] = [@t]`
+- From array: `var t: [int] = [@arr]`
+- Other using functions: sort, search, delete, insert at index, length
+- No slice, because this is a linked-list.
+It will be confusing with array. 
+
+N - How to get a list of word count per line of a text?
+`lineLengths = map (length . words) . lines -- Haskell`
+`var length = loop(l: text.lines()) l.words().length()`
+
 ? - Think more about method dispatch with single inheritance, empty types, anything and nothing.
+
