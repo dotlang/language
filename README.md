@@ -78,7 +78,6 @@ Function section is used to define function bodies.
 - **Adressing**: Functions are called using `function_name(input1, input2, input3)` notation. Fields of a tuple are addressed using `tuple_name.field_name` notation. Modules are addressed using `/` notation (e.g. `/code/st/net/create_socket`).
 - Each statement must be in a separate line and must not end with semicolon.
 Source file contains a number of definitions for types and functions.
-- Mutability can be simulated by passing a mutation lambda. 
 
 *Notes:*
 - If a name starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
@@ -291,7 +290,7 @@ var x:int
 var y : int = 19
 var t = 12  ;imply type from 12
 ```
-A function which has no input and returns `T` is treated like a variable of type `T`. This can be used to have lazy evaluation. So if you send the function/lambda to another function, to the outside world, it is int variable. inside they carry a lambda.
+A function which has no input and returns `T` is treated like a variable of type `T`. This can be used to have lazy evaluation. So if you send the function/lambda to another function, to the outside world, it is int variable. inside they carry a lambda. Note that you cannot use this for `ref` variables.
 Cloning, passing, assigning to other vars does not change or evaluate the variable. But as soon as you have something like: `x=lazy_var+1` then function is being called.
 - As soon as you declare a variable it will have some value. Even if it is a tuple, it will have all fields set to default value.
 - You can define local variables using `var` keyword.
