@@ -2116,3 +2116,87 @@ N - How to get a list of word count per line of a text?
 
 ? - Think more about method dispatch with single inheritance, empty types, anything and nothing.
 
+? - A lazy load variable (scalar, array, hash)
+For example an array which is bound to a file. 
+When you iterate through array, it reads from file.
+It won't read until you really need to.
+Or a hash which is bound to a DB table. key is mapped to PK and value to something else.
+Advantage: Being lazy. We don't need to read all the data.
+We have a function which calculates something on the input array. We want to do the calculation on a file.
+But we don't want to read it all into an array.
+Can this be solved with custom `[]` operators? It is one way but it won't be a native array.
+`func process(x: int[])`
+I want to pass a function instead of `int[]`, but it will behave like an int array.
+- Can I define a tuple which embeds an anonymous int array? 
+`type MyArr := (int[], fileHandle: int)`
+`type MyH := (int=>string, ...)`
+`func getIndex(x: MyArr, y: int) -> int`
+`func setIndex(x: MyArr, y: int, z:int)`
+`func getValue(x: MyH, key: int)->string`
+`func setValue(x: MyH, key: int, value: string)`
+Also I can embed primitives:
+`type MyInt := (int)`
+But there should be not such thing for set/get values. Because it will make things complicated.
+Can't I just write:
+`type MyArr := int[]`
+`type MyH := int=>string`
+`func getIndex(x: MyArr, y: int) -> int`
+`func setIndex(x: MyArr, y: int, z:int)`
+`func getValue(x: MyH, key: int)->string`
+`func setValue(x: MyH, key: int, value: string)`
+But if a function expects int array: `func avg(x: int[])` can I send MyArr instance to it?
+I think the named-type solution makes more sense than embedding.
+We should state embedding is only possible for tuples.
+What if what I have is not an array? What if is it a file handle and array elements are supposed to be file lines?
+We want to keep behavior separate from data. 
+This seems to only be applicable to hash and array. But to keep gen and orth we may want to extend it to "ALL" types.
+What about using functions? `func s()->int` can be used instead of an int. But here it is different.
+The `type MyArr := int[]` solution does not make sense. Because we will need some additional data.
+We need embedding to be enabled for non-tuple types.
+`type MyArr := (int[], fileHandle: int)`
+`var t: MyArr = [1,2,3]`? It will be confusing if we embed non-tuple fields.
+`var FH := (fileHandle: int)`
+Example: A lexer, we want to treat a file as an array/list of tokens. But actually each token is parsed from file bytes. 
+But this example is not good. Array is supposed to provide random access. This is not compatible with tokenizer.
+We want an array/hash which is a proxy in front of a set of functions.
+`type MyArr := (int[], fileHandle: int)`
+`type MyH := (int=>string, ...)`
+`func readValue(x: MyArr, y: int) -> int`
+`func writeValue(x: MyArr, y: int, z:int)`
+`func getValue(x: MyH, key: int)->string`
+`func setValue(x: MyH, key: int, value: string)`
+What if user writes `getIndex(x: int[] ,y:int)`? Can he re-write built-in features?
+He shouldn't be able to.
+`var t: MyArr = [1,2,3]` this will call setIndex 3 times?
+Array is a fixed length data structure.
+Can we combine two functions and make the result seem like an array?
+`var x: int[] = (^set, ^get)`
+There are two approaches to this problem: Handling at type level (define a specific type and functions for that), Handling at data level (define a normal variable then bind it to functions).
+The type-level is more complicated but more consistent with current notation, more readable
+Data-level: We possibly need to add new notation, but it will be simpler, more difficult to debug and trace.
+Data-Level: When you declare an array, hash or ... you can tie it to a set of lambdas. These lambdas will be invoked when data is read/written from/to the variable.
+But how can we force this syntax to only be applicable to array and hash and at the same time, keep language gen and orth?
+Embedding an anonymous array or hash, is totally complicated and unreadable.
+`type MyA := (arr:int[], fileHandle: int)`
+`type MyH := (h:int=>string, ...)`
+`func readValue(x: MyArr, y: int) -> int`
+`func writeValue(x: MyArr, y: int, z:int)`
+`func getValue(x: MyH, key: int)->string`
+`func setValue(x: MyH, key: int, value: string)`
+We need 3 things:
+1. Define type X
+2. Declare that type X should be treated like `int[]`
+3. Define code to handle get/set operations
+If we do it in data-level, we need these:
+1. Define a variable of type `int[]`
+2. Assign lambdas to that variable
+All of these can be done with normal types. Without need for special notation.
+Java/Go don't have this. C# has only `this[]` function which acts like indexer.
+This will make things more complicated: Things like slicing? or ref?
+Advantage:
+- Proxy read/write data and change the behavior
+- Watch for change in a variable: observer design pattern
+The only use case for this is when we have a very large volume of data.
+We can simulate iteartion by writing custom iterator data and functions (e.g. reading tokens from a file).
+
+? - If we can replace `int` with `func()->int` then what about `ref int`?
