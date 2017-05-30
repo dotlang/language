@@ -2212,4 +2212,67 @@ If we are able to determine data type at compile time, it will make us generate 
 N - If we can replace `int` with `func()->int` then what about `ref int`?
 You can only `ref` a variable which is not func. 
 
+N - A hash is simiar to a function. 
+`int => string`
+`func get(key:int) -> string`
+`func set(key:int, value: string)`
+
+N - Missing features: Cost of not having, alternative
+- Lazy evaluation: Provided to some extent using lambdas more is not necessary
+- Built-in linked-list: Use a normal type
+- Virtual array/hash: iterator, use custom types.
+Virtual hash/array: If they are read-only they can be simulated with a function:
+`string[]` ~ `func getData(index:int)->string`
+`int=>string` ~ `func getData(key: int) -> string`
+And to process a large volume of data, we usually need only to read these data.
+Instead of any new notation, the function can accept a func.
+Simulating an array using a function makes language more complicated and less orth.
+
+? - Go has interface, Clojure has protocol. Haskell has type class.
+Advantage: Compile time check that the type satisfies some pre-requisites.
+Go: You can write an interface which an existing complies with that.
+Actually interface is a set of functions.
+So the method can accept those functions.
+For example an interface to a car (start, stop):
+```
+type CarInterface := (start: func(), stop: func())
+```
+Advantage: This can be combined with templates
+Usage:
+```
+func drive(x: CarInterface) -> ...
+...
+drive({start: ^start, stop: ^stop})
+```
+We really dont need duck typing for interfaces as Go offers them. Because we do not have objects and interfaces.
+```
+type Eq<T> := func(a:T, b:T)->bool
+type Point := {x:int, y:int}
+func ???(a: Point, b: Point)->bool { ... }
+func isIn<T>(a: Eq<T>, b:T[])->bool
+```
+A type that embeds another type, inerits from that.
+A type that embeds another type-class, supports provided functions.
+type-class is a type itself. When we define type of an argument as a type-class, it means that type supports those functions.
+There are these things:
+1. Declare a type-class type with it's functions (e.g. Eq)
+2. Implement a type-class for a normal type (e.g. Point)
+3. Define argument/variables of a type-class
+Actually there are two ways to specify argument type: Data type (it has to have these fields), or type-class (it has to support these functions). For example when I want to check if an item exists in an array, I just need support for equality check. I don't care about what data it has. So type-class is something simiar to type but separate from them. Each variable can have a type and a type-class.
+type-class defines the behavior that a type should have. But why we cannot mix data members and behaviors?
+In Haskell you can define functions of a type class based on each other (== and !=). And they can inherit from each other.
+For example in loop (if it was a function) iteration, it would expect a type that supports iterator.
+In Haskell, either we need a specific data type, or we need a generic data type with specific behavior.
+If we use a specific data type, the behavior is already specified. So this can apply to generics.
+This is similar to constraints in Generics: 
+`public class MyGenericClass<T> where T:IComparable { }  `
+It is used to constraint a generics type to support a specific set of functions.
+```
+protocol Eq<T> := {
+    func equals(x: T, y:T)->bool
+}
+```
+
 ? - Think more about method dispatch with single inheritance, empty types, anything and nothing.
+
+? - What about `ThisOrThat` naming for functions?
