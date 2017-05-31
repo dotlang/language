@@ -447,6 +447,7 @@ var modifier = { $.0 + $.1 }  ;if input/output types can be deduced, you can eli
 - Lambdas have read-only access to free variables in their parent semantic scope.
 - You can assign an existing function to a lambda using `^` operator: `var comp = ^compareString`
 - `^process(myCircle,$_,$_)(10, 20)` ~ `process(myCircle, 10, 20)`
+- You can use `^` to get a pointer to a specific function. For example inside `process(Circle)` you need to call `process(Shape)` but don't want to cast the data: `var fp: func(Shape) = ^process`. Then call `fp`.
 
 ## implicit
 When writing a generic function, you may have expectations regarding behavior of the type `T`. These expectations can be defined in a tuple and referenced as an argument marked with `implicit` keyword. The value for this argument is optional and if it's not present, compiler will deduce functions based on name and type of the fields in that tuple.
@@ -568,7 +569,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `()` function call
 
 Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `loop`, `break`, `continue`, `if`, `else`, `assert`, `implicit`
-Operators
+Operators: 
 Primitive data types: `int`, `uint`, `float`, `double`, `char`
 
 ### Chaining
