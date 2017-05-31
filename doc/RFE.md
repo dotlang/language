@@ -2374,7 +2374,48 @@ How does it affect subtyping and ref? and method dispatch?
 - implicit arguments are just like normal arguments but optional. You cannot have `func(x, implicit y)` and `func(x)`
 - implicit must be at the end of argument list: We can say whtever comes after implicit is implicit.
 
-? - implicit and ref are not consistent with each-other and they are not orth.
+N - Scala has `sealed` to signal a trait cannot be extended.
+Similarly, we may have a function which we don't want to be defined elsewhere with children types.
+Which means, children are not supposed to override this function.
+`func process(x: Shape, y: Color)`
+But what does `children` mean here?
+Suppose that `process` is doing some important things. 
+It does not make sense to stop this. Because functions are free out there. Everyone can write or call a function.
+
+N - How can we provide set for hash using generics?
+`func put<K,V>(x: K, y: V, m: Map<K,V>)`
+
+N - Make sum type similar to Haskell?
+`data ToyOrd = Smol | Large Int`
+`data Maybe a = Just a | Nothing`
+`type Maybe<T> := T | Nothing`
+For example returning U when type is `Maybe<U>`:
+`func win<U>(x: U) -> Maybe<U> { return x }`
+In Haskell we write: `win a = Just a`
+
+N - If I have `func process(Circle)` and inside I want to call `func process(Shape)` can I do it without casting?
+`var s: Shape = myCircle;`
+`process(s)`
+You have to cast: `process(%Shape(myCircle))`
+
+Y - If you need to point to parent function:
+`func process(Shape)`
+`func process(Circle)`
+inside second we want to invoke the first one. 
+we can write `process(%Shape(myCircle))`
+What if dont want to cast? We may want to pass a circle.
+Solution: Get a function pointer to that specific function.
+`var fp: func(Shape) = ^process`
+`fp(myCircle)` this will invoke process(Shape) with a circle.
+Maybe we can replace implicit with this?
+But then it won't be explicit enough and compiler cannot check it.
+
+N - How can we remove `ref`?
+We can define specific types and mark those types as mutable. So anyone that receives them can edit them.
+`type MutableIntArray = int[]`
+Maybe if we can have Monads, we can have mutable data?
+
+N - implicit and ref are not consistent with each-other and they are not orth.
 Can we make them orth? Merge them or change them in a way they can be compatible.
 Maybe we can replace mutable data structures with built-ins? Like Scala `scala.collection.mutable`.
 `ref` is not a big deal for primitives. Its only important for array/hash and tuples (stack, set, ...).
@@ -2382,11 +2423,42 @@ So if type of function input is `MutableArray` then it can be mutated.
 Maybe it is worth. In return we can get rid of `ref` keyword.
 We can even provide built-in features for this.
 Scala solves this by defining a class with `var` fields. But we don't have classes.
+We can provide a magic built-in function which gives a mutable reference to a function argument.
+`func process(x: int[])`
+If everything becomes a type, we can have mut and imm types.
+Then it will be a matter of specifying types.
+```
+type Array<T> := native
+type Map<K,V> := native
+type MutableArray<T> := native
+```
+It would be good if we could provide this with functions.
+This could be a use case of `implicit`. We are expecting to have types that have getter/setter functions.
+`type editor := { set: func(x: int[], i: int, v: int) }`
+`func processList(x: int[], implicit z: editor)`
+If no parameter is passed for `z` compiler will generate these methods? to set array element.
+But what dictates the behavior of this function?
+- the parameter which is named `this` can be mutated.
+`func processList(this: int[])`
+types of mutation: `x=10`, `x[0]=5`, `x[5] = "A"`, `x.f=???`, ...
 
-? - Make sum type similar to Haskell?
-`data ToyOrd = Smol | Large Int`
-`data Maybe a = Just a | Nothing`
-For example returning U when type is `Maybe<U>`:
-`func win<U>(x: U) -> Maybe<U> { return U }`
-In Haskell we write: `win a = Just a`
+N - Mutability?
+```
+func createMap(k: int, v: string) -> int=>string { ... }
+...
+var y = 10
+var t = createMap(y, "A")
+y++ ;will this change key inside the map?
+```
 
+N - Maybe we should push some things which are expected to be done in code to declaration scope.
+For example `assert T :: Num`.
+Or maybe we should push them to code, if compiler can check them at compile time.
+`func process<T>(k: T, ref v: T[], implicit z: Eq<T>) -> int=>string`
+
+? - Can we simplify?
+- remove `uint` and `float`?
+- Everything is a type? No. unification has an extreme.
+
+? - replace implicit with auto.
+It is easier to read and shorter and still makes sense.
