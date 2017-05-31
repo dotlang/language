@@ -2228,6 +2228,12 @@ And to process a large volume of data, we usually need only to read these data.
 Instead of any new notation, the function can accept a func.
 Simulating an array using a function makes language more complicated and less orth.
 
+N - Maybe we can use `implicit` to support caching. No.
+
+N - Data and behavior should not be bound together. This means either we should specify data we need (`func work(x:int)`) or we should specify the behavior we need (`func isInArray(x:Eq!T, y:Eq!T[])`).
+
+N - Shall we have `var` and `val` like in scala?
+
 ? - Go has interface, Clojure has protocol. Haskell has type class.
 Advantage: Compile time check that the type satisfies some pre-requisites.
 Go: You can write an interface which an existing complies with that.
@@ -2269,63 +2275,112 @@ This is similar to constraints in Generics:
 It is used to constraint a generics type to support a specific set of functions.
 A type class is a special type which describes behavior on it rather than date.
 ```
-protocol Eq(T) := {
-    func equals(x: T, y:T)->bool
-    func notEqual(x: T, y:T) -> !equals(x,y)
+;Alternative method: More consistent with current notation, user has more control (he can send value for `z` explicitly)
+;Also we can initialize tuple members, we have embedding
+;Note that if T is a sum type, each function here can be multiple implemented functions
+type Eq<T> := {
+    equals: func(x: T, y:T)->bool
+    notEquals: func(x: Eq, y:Eq) -> bool = !equals(x,y)
+    ;if any expected function does not have an input, we can declare it as a data field
+    constValue: T ;will be calculated by calling constValue<T>()->int
 }
-type Point := {x:int, y:int}
-func equals(x: Point, y: Point)->bool { ... }
-func isInArray<T: Eq>(x:T, y:T[]) -> bool {
-    if ( equals(x, y[0])...
+;we can also use non-generic types to be later used as implicit but its not very useful
+;it can be used to have a handle to a function without method dispatch rules (exact match)
+type Writer := {
+    write: func(x: int, y:string)
+    PI: func()->double
 }
----
-protocol Ord!T := {
-    func compare(x:T, y:T)->int
-}
-func sort<T: Ord>(x:T[])
----
-protocol Stringer!T := {
-    func toString(x:T)->string
-}
-func dump<T: Stringer>(x:T)->string
----
-protocol Serializer!T := {
-    func serialize(x:T)->string
-    func Deser(x:string)->T
-}
-func process<T: Serializer>(x: T) -> ...
--- 
-protocol Adder!(S,T,X) := {
-    func add(x: S, y:T)->X
-}
-func process<S,T,X: Adder>(x: S, y:T)->X { return add(x,y) }
-
-type Addable1 := anything
-type Addable2 := anything
-
-func add<T>(x: Addable1, y: Addable2)->T
-func add<float>(x:int, y:float)->float
-func process<T>(x: Addable1, y:Addable2)->T { return add(x,y) }
-
-
-type Eq := anything
-func equals<T>(x: T, y:T)->bool
-func notEqual(x: Eq, y:Eq) -> !equals(x,y)
 
 type Point := {x:int, y:int}
 func equals(x: Point, y: Point)->bool { ... }
-func isInArray<T: Eq>(x:T, y:T[]) -> bool {
-    if ( equals(x, y[0])...
-}
+func notEquals(x: Point, y: Point)->bool { ... }
 
-type Stringer := anything
-func toString(x: Stringer)->string
-func toString(x: int[])->string
+func isInArray<T>(x:T, y:T[], implicit z: Eq<T>, implicit g: Writer) -> bool {
+    if ( z.equals(x, y[0])...
+}
+---
+type Ord<T> := {
+    compare: func(x:T, y:T)->int
+}
+func sort<T>(x:T[], implicit z: Ord<T>)
+---
+type Stringer<T> := {
+    toString :func(x:T)->string
+}
+func dump<T>(x:T, implicit z: Stringer<T>)->string
+---
+type Serializer<T> := {
+    serialize: func(x:T)->string
+    deserialize: func(x:string)->T
+}
+func process<T>(x: T, implicit z: Serializer<T>) -> ...
+---
+type Adder<S,T,X> := {
+    add: func(x: S, y:T)->X
+}
+func process<S,T,X>(x: S, y:T, implicit z: Adder<S,T,X>)->X { return z.add(x,y) }
+---
+type Failable<T, U> := {
+    oops: T<U>,
+    pick: func(T<U>, T<U>)->T<U>,
+    win: func(U)->T<U>
+}
+type Maybe<U> := U | Nothing
+func oops<U>()->Maybe<U> { return Nothing }
+func pick<U>(x: Maybe<U>, y: Maybe<U>)-> Maybe<U>
+func win<U>(x: U) -> Maybe<U> { return U }
+
+func safeDiv<T>(x: double, y: double, implicit z: Failable<T, double>) -> T<double> {
+    if ( y == 0 ) return z.oops
+    return z.win(x/y)
+}
+;when calling above function, you must provide type of function
+var t = safeDiv<Maybe>(x, y)
+
+---
+type Factory<T> := {
+    create: func()->T
+}
+func create()->int { return 5 }
+func create()->string { return "A" }
+func generalCreate<T>(implicit z: Factory<T>) { return z.create() }
+;here we have to specify type because it cannot be inferred
+var r = generalCreate<string>()
+var y = generalCreate<int>()
+---
+;you can define primitives as implicit
+func process(implicit item: int)
+this will invoke `func item()->int` to provide value for this argument.
 ```
-We are trying to implement the type class concept using existing tools. But result is unreadable, confusing.
 
-? - Data and behavior should not be bound together. This means either we should specifying data we need (`func work(x:int)`) or we should specify the behavior we need (`func isInArray(x:Eq!T, y:Eq!T[])`).
+How does it affect subtyping and ref? and method dispatch?
+- `ref` cannot be combined with `implicit`.
+- implicit arguments are just like normal arguments but optional. You cannot have `func(x, implicit y)` and `func(x)`
+- implicit must be at the end of argument list: We can say whtever comes after implicit is implicit.
+
+? - implicit and ref are not consistent with each-other and they are not orth.
+Can we make them orth? Merge them or change them in a way they can be compatible.
+Maybe we can replace mutable data structures with built-ins? Like Scala `scala.collection.mutable`.
+`ref` is not a big deal for primitives. Its only important for array/hash and tuples (stack, set, ...).
+So if type of function input is `MutableArray` then it can be mutated.
+Maybe it is worth. In return we can get rid of `ref` keyword.
+
+? - Maybe we should allow any name for generics. As we extend their usage, we will need more meaningful names for them.
+
+? - State that embedding is not limited to one. But the first embedded field is parent type.
 
 ? - Think more about method dispatch with single inheritance, empty types, anything and nothing.
 
 ? - What about `ThisOrThat` naming for functions?
+
+? - Make sum type similar to Haskell?
+`data ToyOrd = Smol | Large Int`
+`data Maybe a = Just a | Nothing`
+For example returning U when type is `Maybe<U>`:
+`func win<U>(x: U) -> Maybe<U> { return U }`
+In Haskell we write: `win a = Just a`
+
+? - Like Scala use `[]` for generics?
+
+? - should we mark implicit definition function with something?
+Scala: `implicit object NumberLikeDouble extends NumberLike[Double]`
