@@ -14,7 +14,7 @@ May 23, 2017
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
-- **Version 0.98**: ??? ?? ???? - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch and type system, changed inheritance model to single-inheritance to make function dispatch more well-defined
+- **Version 0.98**: ??? ?? ???? - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added `implicit` keyword
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -172,6 +172,7 @@ type Car := {
 var x: Car = {}   ;init x with all default values based on definition of Car
 var y: Car = {age:11} ;customize value
 var z = %Car(age:121) ;when we want to write a literal we can also specify its type with this notation
+var z = %Car({age:121})
 var t : {int, string} = {1, "A"}  ;you can have tuples with unnamed fields. They can be accessed like an array.
 var number_one = t.0
 t.1 = "G"
@@ -447,6 +448,91 @@ var modifier = { $.0 + $.1 }  ;if input/output types can be deduced, you can eli
 - You can assign an existing function to a lambda using `^` operator: `var comp = ^compareString`
 - `^process(myCircle,$_,$_)(10, 20)` ~ `process(myCircle, 10, 20)`
 
+## implicit
+When writing a generic function, you may have expectations regarding behavior of the type `T`. These expectations can be defined in a tuple and referenced as an argument marked with `implicit` keyword. The value for this argument is optional and if it's not present, compiler will deduce functions based on name and type of the fields in that tuple.
+The members of tuple can have default values (e.g. one function calls another function).
+```
+;Also we can initialize tuple members, we have embedding
+;Note that if T is a sum type, each function here can be multiple implemented functions
+type Eq<T> := {
+    equals: func(x: T, y:T)->bool
+    notEquals: func(x: Eq, y:Eq) -> bool = !equals(x,y)
+    ;if any expected function does not have an input, we can declare it as a data field
+    constValue: T ;will be calculated by calling constValue<T>()->int
+}
+;we can also use non-generic types to be later used as implicit but its not very useful
+;it can be used to have a handle to a function without method dispatch rules (exact match)
+type Writer := {
+    write: func(x: int, y:string)
+    PI: func()->double
+}
+
+type Point := {x:int, y:int}
+func equals(x: Point, y: Point)->bool { ... }
+func notEquals(x: Point, y: Point)->bool { ... }
+
+func isInArray<T>(x:T, y:T[], implicit z: Eq<T>, implicit g: Writer) -> bool {
+    if ( z.equals(x, y[0])...
+}
+---
+type Ord<T> := {
+    compare: func(x:T, y:T)->int
+}
+func sort<T>(x:T[], implicit z: Ord<T>)
+---
+type Stringer<T> := {
+    toString :func(x:T)->string
+}
+func dump<T>(x:T, implicit z: Stringer<T>)->string
+---
+type Serializer<T> := {
+    serialize: func(x:T)->string
+    deserialize: func(x:string)->T
+}
+func process<T>(x: T, implicit z: Serializer<T>) -> ...
+---
+type Adder<S,T,X> := {
+    add: func(x: S, y:T)->X
+}
+func process<S,T,X>(x: S, y:T, implicit z: Adder<S,T,X>)->X { return z.add(x,y) }
+---
+type Failable<T, U> := {
+    oops: T<U>,
+    pick: func(T<U>, T<U>)->T<U>,
+    win: func(U)->T<U>
+}
+type Maybe<U> := U | Nothing
+func oops<U>()->Maybe<U> { return Nothing }
+func pick<U>(x: Maybe<U>, y: Maybe<U>)-> Maybe<U>
+func win<U>(x: U) -> Maybe<U> { return U }
+
+func safeDiv<T>(x: double, y: double, implicit z: Failable<T, double>) -> T<double> {
+    if ( y == 0 ) return z.oops
+    return z.win(x/y)
+}
+;when calling above function, you must provide type of function
+var t = safeDiv<Maybe>(x, y)
+
+---
+type Factory<T> := {
+    create: func()->T
+}
+func create()->int { return 5 }
+func create()->string { return "A" }
+func generalCreate<T>(implicit z: Factory<T>) { return z.create() }
+;here we have to specify type because it cannot be inferred
+var r = generalCreate<string>()
+var y = generalCreate<int>()
+---
+;you can define primitives as implicit
+func process(implicit item: int)
+this will invoke `func item()->int` to provide value for this argument.
+```
+- These types can embeds other types to include their fields.
+- You cannot have `func(x, implicit y)` and `func(x)`
+- `ref` cannot be combined with `implicit`.
+- implicit arguments must be at the end of function arguments.
+
 ## Operators
 - Conditional: `and or not == != >= <=`
 - Math: `+ - * % %% (is divisible) ++ -- **`
@@ -481,7 +567,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `<>` generics
 - `()` function call
 
-Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `with`, `loop`, `break`, `continue`, `if`, `else`, `assert`
+Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `loop`, `break`, `continue`, `if`, `else`, `assert`, `implicit`
 Operators
 Primitive data types: `int`, `uint`, `float`, `double`, `char`
 
@@ -573,7 +659,7 @@ assert false, "Error!"  ;throw exception and exit
 var g: int|exception = func1()   ;this is valid
 ```
 - You can use `defer BLOCK` to tell the runtime to run a block of code after exiting from the function. If function output is named, it will be accessible in defer block.
-- Any assert which uses `::` will be evaluated at compile time. You can use this to simulate generics.
+- Any assert which uses `::` will be evaluated at compile time. You can use this to implement generic bounds.
 - Output of any code block `{...}` is none by default unless there is an exception. In which case, the block will exit immediately and this exit will cascade until some place that exception is bound to a variable.
 ```
 var g: none | exception = {
@@ -644,7 +730,6 @@ Another advantage: It won't interfer with method dispatch or subtyping.
 - When defining functions, if input or output are of generic type, you must append `<A,B,C,...>` to the function name to match required generic types for input/output. 
 - When you define a variable or another type, you can refer to a generic type using it's name and concrete values for their types. Like `Type<int, string>`
 - Generic functions, must make use of their type argument in their input.
-- Argument names for generics must be single letter capitals.
 ```
 type Map<K,V> := K => V
 type Stack<T> := T[]  ;define base type for generic type
@@ -671,6 +756,7 @@ if we call `stack<int>(a, b)` still the second one will be called.
 - When calling a generic function, you can omit type specifier only if it can be deduced from input. If not, you must specify input.
 Example: `func process<T>(x: int) -> T`
 `process(10)` is wrong. You must specify type: `var g: string = process<string>(10)`
+- If some types cannot be inferred from function input, you must specify them when calling the generic function.
 
 ### Exception Handling
 ### Inheritance and Polymorphism
@@ -739,6 +825,7 @@ var r: BasicShape = myCircle ;automatic casting - because Circle inherits from B
 - You can assign a variable any of it's subtypes (including empty type) variables. 
 if a function expects `f: func()->Shape` you can send a function which returns a Circle, because there are implicitly castable.
 If a function expects `x: Stack<Shape>` you cannot send `Stack<Circle>`.
+- You can embed as many types as you want in your tuple, but the first one will be parent.
 
 
 ### Templates
