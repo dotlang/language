@@ -2322,6 +2322,7 @@ type Stringer := anything
 func toString(x: Stringer)->string
 func toString(x: int[])->string
 ```
+We are trying to implement the type class concept using existing tools. But result is unreadable, confusing.
 
 ? - Data and behavior should not be bound together. This means either we should specifying data we need (`func work(x:int)`) or we should specify the behavior we need (`func isInArray(x:Eq!T, y:Eq!T[])`).
 
