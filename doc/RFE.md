@@ -2267,11 +2267,63 @@ If we use a specific data type, the behavior is already specified. So this can a
 This is similar to constraints in Generics: 
 `public class MyGenericClass<T> where T:IComparable { }  `
 It is used to constraint a generics type to support a specific set of functions.
+A type class is a special type which describes behavior on it rather than date.
 ```
-protocol Eq<T> := {
+protocol Eq(T) := {
     func equals(x: T, y:T)->bool
+    func notEqual(x: T, y:T) -> !equals(x,y)
 }
+type Point := {x:int, y:int}
+func equals(x: Point, y: Point)->bool { ... }
+func isInArray<T: Eq>(x:T, y:T[]) -> bool {
+    if ( equals(x, y[0])...
+}
+---
+protocol Ord!T := {
+    func compare(x:T, y:T)->int
+}
+func sort<T: Ord>(x:T[])
+---
+protocol Stringer!T := {
+    func toString(x:T)->string
+}
+func dump<T: Stringer>(x:T)->string
+---
+protocol Serializer!T := {
+    func serialize(x:T)->string
+    func Deser(x:string)->T
+}
+func process<T: Serializer>(x: T) -> ...
+-- 
+protocol Adder!(S,T,X) := {
+    func add(x: S, y:T)->X
+}
+func process<S,T,X: Adder>(x: S, y:T)->X { return add(x,y) }
+
+type Addable1 := anything
+type Addable2 := anything
+
+func add<T>(x: Addable1, y: Addable2)->T
+func add<float>(x:int, y:float)->float
+func process<T>(x: Addable1, y:Addable2)->T { return add(x,y) }
+
+
+type Eq := anything
+func equals<T>(x: T, y:T)->bool
+func notEqual(x: Eq, y:Eq) -> !equals(x,y)
+
+type Point := {x:int, y:int}
+func equals(x: Point, y: Point)->bool { ... }
+func isInArray<T: Eq>(x:T, y:T[]) -> bool {
+    if ( equals(x, y[0])...
+}
+
+type Stringer := anything
+func toString(x: Stringer)->string
+func toString(x: int[])->string
 ```
+
+? - Data and behavior should not be bound together. This means either we should specifying data we need (`func work(x:int)`) or we should specify the behavior we need (`func isInArray(x:Eq!T, y:Eq!T[])`).
 
 ? - Think more about method dispatch with single inheritance, empty types, anything and nothing.
 
