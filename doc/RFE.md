@@ -2234,7 +2234,24 @@ N - Data and behavior should not be bound together. This means either we should 
 
 N - Shall we have `var` and `val` like in scala?
 
-? - Go has interface, Clojure has protocol. Haskell has type class.
+Y - Maybe we should allow any name for generics. As we extend their usage, we will need more meaningful names for them.
+
+Y - State that embedding is not limited to one. But the first embedded field is parent type.
+
+N - Like Scala use `[]` for generics?
+It is already used for array and hash.
+
+N - should we mark implicit definition function with something?
+Scala: `implicit object NumberLikeDouble extends NumberLike[Double]`
+
+N - In scala even array and hash are classes, not built-in.
+Disadvantage: more typing
+Advantage: We can use `[]` for other purposes.
+But we cannot make array and hash, not built-in because it will make syntax complicated.
+
+N - What about `ThisOrThat` naming for functions?
+
+Y - Go has interface, Clojure has protocol. Haskell has type class.
 Advantage: Compile time check that the type satisfies some pre-requisites.
 Go: You can write an interface which an existing complies with that.
 Actually interface is a set of functions.
@@ -2275,7 +2292,6 @@ This is similar to constraints in Generics:
 It is used to constraint a generics type to support a specific set of functions.
 A type class is a special type which describes behavior on it rather than date.
 ```
-;Alternative method: More consistent with current notation, user has more control (he can send value for `z` explicitly)
 ;Also we can initialize tuple members, we have embedding
 ;Note that if T is a sum type, each function here can be multiple implemented functions
 type Eq<T> := {
@@ -2364,14 +2380,8 @@ Maybe we can replace mutable data structures with built-ins? Like Scala `scala.c
 `ref` is not a big deal for primitives. Its only important for array/hash and tuples (stack, set, ...).
 So if type of function input is `MutableArray` then it can be mutated.
 Maybe it is worth. In return we can get rid of `ref` keyword.
-
-? - Maybe we should allow any name for generics. As we extend their usage, we will need more meaningful names for them.
-
-? - State that embedding is not limited to one. But the first embedded field is parent type.
-
-? - Think more about method dispatch with single inheritance, empty types, anything and nothing.
-
-? - What about `ThisOrThat` naming for functions?
+We can even provide built-in features for this.
+Scala solves this by defining a class with `var` fields. But we don't have classes.
 
 ? - Make sum type similar to Haskell?
 `data ToyOrd = Smol | Large Int`
@@ -2380,7 +2390,3 @@ For example returning U when type is `Maybe<U>`:
 `func win<U>(x: U) -> Maybe<U> { return U }`
 In Haskell we write: `win a = Just a`
 
-? - Like Scala use `[]` for generics?
-
-? - should we mark implicit definition function with something?
-Scala: `implicit object NumberLikeDouble extends NumberLike[Double]`
