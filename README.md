@@ -504,7 +504,7 @@ type Failable<T, U> := {
 type Maybe<U> := U | Nothing
 func oops<U>()->Maybe<U> { return Nothing }
 func pick<U>(x: Maybe<U>, y: Maybe<U>)-> Maybe<U>
-func win<U>(x: U) -> Maybe<U> { return U }
+func win<U>(x: U) -> Maybe<U> { return x }
 
 func safeDiv<T>(x: double, y: double, implicit z: Failable<T, double>) -> T<double> {
     if ( y == 0 ) return z.oops
