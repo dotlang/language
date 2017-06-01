@@ -14,7 +14,7 @@ May 23, 2017
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
-- **Version 0.98**: ??? ?? ???? - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added `implicit` keyword
+- **Version 0.98**: ??? ?? ???? - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added `auto` keyword
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -131,6 +131,13 @@ Some types are pre-defined in core but are not part of the syntax: `nothing`, `a
 - `byte` is 8 bit integer, but `char` can be larger to support unicode.
 
 ### Array
+Arrays are a special built-in type:
+`type Array<T> := native`
+But compiler provides syntax sugars for them:
+1. `int[]` will be translated to `array<int>`
+2. `arr[2]` will be translated to `get(arr, 2)` and `set(arr, 2, value)`
+3. Array literals like `[1,2,3]` will be translated to `set` function calls.
+
 - Array literals are specified using brackets: `[1, 2, 3]`
 - `var x: int[] = [1, 2, 3];`
 - `var x: int[] = [1..10];`
@@ -151,6 +158,12 @@ Some types are pre-defined in core but are not part of the syntax: `nothing`, `a
 - Slice can be left side of an assignment.
 
 ### Hashtable
+Hashtable or Maps are built-in types:
+`type Map<K,V> := native`
+But compiler will provide syntax sugar for them:
+`K=>V` => `Map<K,V>`
+`map[key]` => `get(map, key)`/`set(map,key, value)`
+Hash literals will be converted to a set of `set` function calls.
 Hashtables are sometimes called "associative arrays". So their syntax is similar to arrays:
 - `A => B` is used to define hash type. Left of `=>` is type of key and on the right side is type of value. If key or value have multiple elements, a tuple should be used.
 - `var hash1: string => int`
@@ -449,8 +462,8 @@ var modifier = { $.0 + $.1 }  ;if input/output types can be deduced, you can eli
 - `^process(myCircle,$_,$_)(10, 20)` ~ `process(myCircle, 10, 20)`
 - You can use `^` to get a pointer to a specific function. For example inside `process(Circle)` you need to call `process(Shape)` but don't want to cast the data: `var fp: func(Shape) = ^process`. Then call `fp`.
 
-## implicit
-When writing a generic function, you may have expectations regarding behavior of the type `T`. These expectations can be defined in a tuple (called prototype tuple) as some function pointers, and reference the protocol as an argument marked with `implicit` keyword. The value for this argument is optional and if it's not provided, compiler will deduce functions based on name and type of the fields in that tuple.
+## auto
+When writing a generic function, you may have expectations regarding behavior of the type `T`. These expectations can be defined in a tuple (called prototype tuple) as some function pointers, and reference the protocol as an argument marked with `auto` keyword. The value for this argument is optional and if it's not provided, compiler will deduce functions based on name and type of the fields in that tuple.
 The members of tuple can have default values (e.g. one function calls another function).
 ```
 ;Also we can initialize tuple members, we have embedding
@@ -462,7 +475,7 @@ type Eq<T> := {
     ;if any expected function does not have an input, we can declare it as a data field
     constValue: T ;will be calculated by calling constValue<T>()->int
 }
-;we can also use non-generic types to be later used as implicit but its not very useful
+;we can also use non-generic types to be later used as auto but its not very useful
 ;it can be used to have a handle to a function without method dispatch rules (exact match)
 type Writer := {
     write: func(x: int, y:string)
@@ -473,30 +486,30 @@ type Point := {x:int, y:int}
 func equals(x: Point, y: Point)->bool { ... }
 func notEquals(x: Point, y: Point)->bool { ... }
 
-func isInArray<T>(x:T, y:T[], implicit z: Eq<T>, implicit g: Writer) -> bool {
+func isInArray<T>(x:T, y:T[], auto z: Eq<T>, auto g: Writer) -> bool {
     if ( z.equals(x, y[0])...
 }
 ---
 type Ord<T> := {
     compare: func(x:T, y:T)->int
 }
-func sort<T>(x:T[], implicit z: Ord<T>)
+func sort<T>(x:T[], auto z: Ord<T>)
 ---
 type Stringer<T> := {
     toString :func(x:T)->string
 }
-func dump<T>(x:T, implicit z: Stringer<T>)->string
+func dump<T>(x:T, auto z: Stringer<T>)->string
 ---
 type Serializer<T> := {
     serialize: func(x:T)->string
     deserialize: func(x:string)->T
 }
-func process<T>(x: T, implicit z: Serializer<T>) -> ...
+func process<T>(x: T, auto z: Serializer<T>) -> ...
 ---
 type Adder<S,T,X> := {
     add: func(x: S, y:T)->X
 }
-func process<S,T,X>(x: S, y:T, implicit z: Adder<S,T,X>)->X { return z.add(x,y) }
+func process<S,T,X>(x: S, y:T, auto z: Adder<S,T,X>)->X { return z.add(x,y) }
 ---
 type Failable<T, U> := {
     oops: T<U>,
@@ -508,7 +521,7 @@ func oops<U>()->Maybe<U> { return Nothing }
 func pick<U>(x: Maybe<U>, y: Maybe<U>)-> Maybe<U>
 func win<U>(x: U) -> Maybe<U> { return x }
 
-func safeDiv<T>(x: double, y: double, implicit z: Failable<T, double>) -> T<double> {
+func safeDiv<T>(x: double, y: double, auto z: Failable<T, double>) -> T<double> {
     if ( y == 0 ) return z.oops
     return z.win(x/y)
 }
@@ -521,20 +534,20 @@ type Factory<T> := {
 }
 func create()->int { return 5 }
 func create()->string { return "A" }
-func generalCreate<T>(implicit z: Factory<T>) { return z.create() }
+func generalCreate<T>(auto z: Factory<T>) { return z.create() }
 ;here we have to specify type because it cannot be inferred
 var r = generalCreate<string>()
 var y = generalCreate<int>()
 ---
-;you can define primitives as implicit
-func process(implicit item: int)
+;you can define primitives as auto
+func process(auto item: int)
 this will invoke `func item()->int` to provide value for this argument.
 ```
-- These types can embeds other types to include their fields.
-- You cannot have `func(x, implicit y)` and `func(x)`
-- `ref` cannot be combined with `implicit`.
-- implicit arguments must be at the end of function arguments.
+- Protocols can embed other types to include their fields.
+- You cannot have `func(x, auto y)` and `func(x)`
 - You can define and implement a protocol for a type outside your codebase, that's why you dont need to specify which protocols are implemented by a type upon declaration.
+- auto arguments must be at the end of function arguments.
+- `ref` cannot be combined with `auto`.
 
 ## Operators
 - Conditional: `and or not == != >= <=`
@@ -570,7 +583,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `<>` generics
 - `()` function call
 
-Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `loop`, `break`, `continue`, `if`, `else`, `assert`, `implicit`
+Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `loop`, `break`, `continue`, `if`, `else`, `assert`, `auto`, `ref`
 Operators: 
 Primitive data types: `int`, `uint`, `float`, `double`, `char`
 
@@ -761,6 +774,14 @@ if we call `stack<int>(a, b)` still the second one will be called.
 Example: `func process<T>(x: int) -> T`
 `process(10)` is wrong. You must specify type: `var g: string = process<string>(10)`
 - If some types cannot be inferred from function input, you must specify them when calling the generic function.
+```
+type DepValue<T> := (value:T)
+func magic<T>(that: DepValue<T>)->T that.value
+var x = %DepValue<int>(1) ;x is int
+var y = %DepValue<string>("a") ;y is string
+var xx: int = magic(x)
+var yy: string = magic(y)
+```
 
 ### Exception Handling
 ### Inheritance and Polymorphism
@@ -830,7 +851,7 @@ var r: BasicShape = myCircle ;automatic casting - because Circle inherits from B
 if a function expects `f: func()->Shape` you can send a function which returns a Circle, because there are implicitly castable.
 If a function expects `x: Stack<Shape>` you cannot send `Stack<Circle>`.
 - You can embed as many types as you want in your tuple, but the first one will be parent.
-
+- You can even subtype a primitive (or hash or array) to provide a simulated type. For example we are interested in calling a function which expects `int[]` but data comes from a file. We can define `type MyFile := (int[], file_handle:int)` and pass this to the function. All calls to the array will be translated to function calls. `x[0]` will make the call `get(x,0)` so you can write your own functions.
 
 ### Templates
 
