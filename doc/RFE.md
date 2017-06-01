@@ -2496,14 +2496,10 @@ x :: {
 }
 ```
 
-? - Can we simplify?
-- remove `uint` and `float`?
-- Everything is a type? No. unification has an extreme.
-
-? - replace implicit with auto.
+Y - replace implicit with auto.
 It is easier to read and shorter and still makes sense.
 
-? - Scala has `view`. Can we use it to make `CustomersList` look like an array?
+N - Scala has `view`. Can we use it to make `CustomersList` look like an array?
 Or maybe to make something mutable.
 When we create a view (maybe choose a better name), we provide a set of functions to work with it. These function can be used to read/write data.
 Use cases:
@@ -2589,7 +2585,7 @@ var tt: box<int> = box t:int
 - To make this more consistent and orth, we must make the value of box, more similar to normal variables. It should be a simple tuple literal.
 - Maybe replace `t:int` with `t>>int` to make distinction with argument definition
 - Even if a function receives a normal var, it can use `::` to check if it is boxed.
-? - You can omit `set` functions if you assign result of box command to a normal variable and plan to use variable as normal type and provide read-only access to outside world. But if you assign the 
+You can omit `set` functions if you assign result of box command to a normal variable and plan to use variable as normal type and provide read-only access to outside world. But if you assign the 
 - Can we define box in tuple? yes. `type Customer := (name: string, age: box<int>)` So age is read/write.
 - Maybe we should replace `box` with a notation like `&int`?
 - Key in a map cannot be reference type.
@@ -2604,8 +2600,11 @@ var f = fopen("large_file")
 ;but how is caching handled
 ```
 - The prefix `&` notation is not good. 
+- We can achieve the second item by embedding another type (like an array) and implementing appropriate methods (if "everything is a type" is implemented, so `x[0]` will call `get(x,0)`).
+- So the only concern is the `ref` keyword and it being inconsistent and not orth with `auto/implicit`?
+Seems there is not an easy way to remove this. So lets keep both of them.
 
-? - Define array and hash as normal built-in types and provide syntax sugar for them.
+Y - Define array and hash as normal built-in types and provide syntax sugar for them.
 This makes things more unified.
 And with introduction of box, we need unification.
 `type Array<T> := native`
@@ -2615,3 +2614,23 @@ And with introduction of box, we need unification.
 `y[x]` => `get(y, x)`/`set(y,x)`
 array and hash literals will be converted to corresponding calls to get/set
 
+N - Can we extend notation to support dependent types to make type system more expressive?
+```
+type DepValue<T> := (value:T)
+func magic<T>(that: DepValue<T>)->T that.value
+var x = %DepValue<int>(1) ;x is int
+var y = %DepValue<string>("a") ;y is string
+var xx: int = magic(x)
+var yy: string = magic(y)
+```
+```
+type EApply<T> := func(T)
+func applyEither<T, F, G>(t:T, f: F, g: G, implicit z: EApply<T>) -> 
+```
+
+? - Can we simplify?
+- remove `uint` and `float`?
+- Everything is a type? No. unification has an extreme.
+
+
+? - Can we add Monads?
