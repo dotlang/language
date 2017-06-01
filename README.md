@@ -450,11 +450,12 @@ var modifier = { $.0 + $.1 }  ;if input/output types can be deduced, you can eli
 - You can use `^` to get a pointer to a specific function. For example inside `process(Circle)` you need to call `process(Shape)` but don't want to cast the data: `var fp: func(Shape) = ^process`. Then call `fp`.
 
 ## implicit
-When writing a generic function, you may have expectations regarding behavior of the type `T`. These expectations can be defined in a tuple and referenced as an argument marked with `implicit` keyword. The value for this argument is optional and if it's not present, compiler will deduce functions based on name and type of the fields in that tuple.
+When writing a generic function, you may have expectations regarding behavior of the type `T`. These expectations can be defined in a tuple (called prototype tuple) as some function pointers, and reference the protocol as an argument marked with `implicit` keyword. The value for this argument is optional and if it's not provided, compiler will deduce functions based on name and type of the fields in that tuple.
 The members of tuple can have default values (e.g. one function calls another function).
 ```
 ;Also we can initialize tuple members, we have embedding
 ;Note that if T is a sum type, each function here can be multiple implemented functions
+;This kind of type is called a protocol (specified a template for a group of functions)
 type Eq<T> := {
     equals: func(x: T, y:T)->bool
     notEquals: func(x: Eq, y:Eq) -> bool = !equals(x,y)
@@ -533,6 +534,7 @@ this will invoke `func item()->int` to provide value for this argument.
 - You cannot have `func(x, implicit y)` and `func(x)`
 - `ref` cannot be combined with `implicit`.
 - implicit arguments must be at the end of function arguments.
+- You can define and implement a protocol for a type outside your codebase, that's why you dont need to specify which protocols are implemented by a type upon declaration.
 
 ## Operators
 - Conditional: `and or not == != >= <=`
@@ -600,8 +602,9 @@ MatchExp = '(' tuple ')' :: '{' (CaseStmt)+ '}'
     local_var -> 22, ;check equality with a local variable's value
     Empty -> 0,
     int -> 1,
+    y:float -> y,
     NormalTree -> { return 1+z },
-    any -> { -1 } ;this is default because it matches with anything
+    anything -> { -1 } ;this is default because it matches with anything
   }
   ;You can shorten this definition in one line:
   result = my_tree :: 5 -> 11, 6-> 12, Empty -> 0, x:int -> x, any -> -1
