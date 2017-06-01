@@ -2456,6 +2456,46 @@ For example `assert T :: Num`.
 Or maybe we should push them to code, if compiler can check them at compile time.
 `func process<T>(k: T, ref v: T[], implicit z: Eq<T>) -> int=>string`
 
+N - Should we explicitly indicate what protocols does a type cover?
+`type Customer := {name: string} deriving Show`
+`type Show<T> := { func toString(T)->string }`
+But what if I want to write my own protocol and an existing type?
+
+N - Both in Haskell and F# they have label syntax for sum type.
+```
+;Haskell
+data DivisionResult = DivisionByZero | Success Double
+safeDivide x y =
+    if y == 0
+    then DivisionByZero
+    else Success (x / y)
+;pattern matching
+divisionToString r = case r of
+    DivisionByZero -> "Division failed"
+    Success x      -> show x
+```
+```
+;F#
+type IntOrBool = I of int | B of bool
+let i  = I 99 
+let b  = B true
+match x with
+  | Tup (x,y) -> 
+        printfn "Tuple matched with %i %i" x y
+  | P {first=f; last=l} -> 
+        printfn "Person matched with %s %s" f l
+```
+```
+type DivResult := Error | x:double
+func div ... 
+...return DivResult.Error 
+...return DivResult.x{12.1}
+x :: {
+    DivResult.Error -> ... ,
+    DivResult.x
+}
+```
+
 ? - Can we simplify?
 - remove `uint` and `float`?
 - Everything is a type? No. unification has an extreme.
@@ -2485,46 +2525,51 @@ type box<T> := T
 ;result of `box a:b` is box<b>
 ;if a is a local variable or a boxed argument, you can read/write
 ;but if a is a normal argument, you can only read
-var s: box<string> = box t:string 
-{
+
+;s is a reference to a string. You can use it just like a normal string or a &string.
+var t:int
+var s: box<string>
+;you can make s a proxy with a set of pre-defined closures to simulate read/write
+s = box t >> string {
     ;these are closures and have read-access to local variables + read/write acces to the variable t
-    getValue: func() -> string  { return toString(t) },
-    setValue: func(s: string)   { t = toInt(s) }
+    get: func() -> string  { return toString(t) },
+    set: func(s: string)   { t = toInt(s) }
 }
-;now s has two types: string and box<string>
-;setting value will call setValue and get will call getValue
-s="12"  ;calls setValue("12") will make t=12
+s="12"  ;calls set("12") which will make t=12
 s+="1"  ;will make t=121
 s="A"   ;throw error
-func process(x: box<int>) { x+= 10 }
+func process(x: &int) { x+= 10 }
 
-var y: string = s ;valid, but type of y is string not box<string>
+var y: string = s ;valid, but type of y is string not string&
 process(y)   ;process will have read-only access like a normal argument 
-process2(s)  ;process2 will have read-write access if argument is defined as box<string>
+process2(s)  ;process2 will have read-write access if argument is defined as string&
+;you can pass int or int& when an int is expected. but if int& is expected, you cannot pass an int.
 
-;if a function refers to argument as box<string> it can write to it like a local string variable
+;if a function refers to argument as string& it can write to it like a local string variable
 ;or it can use string and just read from it.
-;we can use a box<string> just like a normal string
+;we can use a string& just like a normal string
 s = "12"
-print s + "Hello"
-print t ;12
+print s + "Hello" ;prints 12Hello
+print t ;prints 12
 
-var s: box<string[]> = box t:string[] 
+var s: &string[] =  
 {
     get: func(i: index) -> string ...,
     set: func(i: index, s: string) ...
 }
-var s: box<string=>int> = box t:string=>int 
+?????
+var s: string=>int = 
 {
     get: func(key: string) -> int ...,
     set: func(key: string, value: int) ...
     ;maybe clear?
 }
-type Customer := {name: string, age:int}
-var s: box<Customer> = box t:Customer 
+type Customer := {name: string, age:int, data: int[]}
+var s: &Customer = 
 {
     name: { get: func() -> string ..., set: func(value: string) ...},
     age: { get: func() -> int ..., set: func(value: int) ...},
+    data: { get: func(i: index)->int ..., set: func(i:index, value: int)...,
 }
 var s: box<int|string> = box t:int|string 
 {
@@ -2539,9 +2584,26 @@ var s: box<func(int)->string> = box t:func(int)->string
 var tt: int = box t:int  
 var tt: box<int> = box t:int  
 ```
-
-
-? - Both in Haskell and F# they have label syntax for sum type.
+- What if the structure is complex (tuple containing arrays and other tuples and ...)?
+- If we refer to something fixed in the get/set functions (box functions), we can re-use functions.
+- To make this more consistent and orth, we must make the value of box, more similar to normal variables. It should be a simple tuple literal.
+- Maybe replace `t:int` with `t>>int` to make distinction with argument definition
+- Even if a function receives a normal var, it can use `::` to check if it is boxed.
+? - You can omit `set` functions if you assign result of box command to a normal variable and plan to use variable as normal type and provide read-only access to outside world. But if you assign the 
+- Can we define box in tuple? yes. `type Customer := (name: string, age: box<int>)` So age is read/write.
+- Maybe we should replace `box` with a notation like `&int`?
+- Key in a map cannot be reference type.
+- if we use `&` prefix how can we handle hash and sum?
+- What if a function returns a reference? It does not make sense but banning this will add a new exception!
+- There are two main applications for this change:
+1. Provide mutable function argument
+2. Simulate another type (simulate array of int with a customer list or a very big list with a disk-file)
+```
+var f = fopen("large_file")
+;we want to simulate a string[] so the first element will point to the first line in the file
+;but how is caching handled
+```
+- The prefix `&` notation is not good. 
 
 ? - Define array and hash as normal built-in types and provide syntax sugar for them.
 This makes things more unified.
