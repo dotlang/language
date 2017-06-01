@@ -2628,9 +2628,50 @@ type EApply<T> := func(T)
 func applyEither<T, F, G>(t:T, f: F, g: G, implicit z: EApply<T>) -> 
 ```
 
+N - Can we add Monads?
+No. Mostly useful where we want to keep everything pure.
+Maybe we add them at a later stage.
+
+Y - Scala has Phantom types, so does Haskell. Also Rust and F#!
+Can we add them?
+For example, a Person type, and two methods: play and rest. We want to make sure there is no play calls after each-other. Person should rest before being able to play again.
+Phantom are compile-time label/state attached to a type. You can use these labels to do some compile-time checks and validations.
+For example we have a string which is result of md5 hash and another for sha-1. We should not be comparing these two although they are both strings. So how can we mark them?
+```
+type HashType := MD5 | SHA1
+ ;when generic type is not used on the right side, it will be only for compile time check
+type HashStr<T> := string     
+type Md5Hash := HashStr<MD5> 
+;Md5Hash type can be easily cast to string, but if in the code a string
+;is expected to be of type Sha1Hash you cannot pass Md5Hash
+type Sha1Hash := HashStr<SHA1>
+func md5(s: string)->Md5Hash {
+    var result: string = "ddsadsadsad"
+    return %Md5Hash(result)  ;create a new string of type md5-hash
+}
+func sha1(s: string)->Sha1Hash
+var t: Md5Hash  = sha1("A")  ;will give compiler error because output of sha1 is Sha1Hash
+func testMd5(s: string, t: Md5Hash) -> md5(s) == t
+
+;if there is only one case, you can simply use named type
+type SafeString := string
+func processString(s: string)->SafeString
+func work(s: SafeString)
+
+;another example: expressions
+type ExpType := INT | STR
+type Expression<T> := (token: string)
+func readIntExpression(...) -> Expression<INT>
+func plus(left: Expression<INT>, right: Expression<INT>)...
+func concat(left: Expression<STR>, right: Expression<STR>)...
+```
+
+Y - When a function expects a named type (`type SafeInt := int`), you have to pass a named type.
+But when a function expects an unnamed type, you can either pass named or unnamed type.
+
 ? - Can we simplify?
 - remove `uint` and `float`?
 - Everything is a type? No. unification has an extreme.
 
-
-? - Can we add Monads?
+? - As a step toward more modularity, prevent importing multiple modules.
+Module name of form `core.st.general` is better?
