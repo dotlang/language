@@ -105,18 +105,21 @@ Unnamed: `int, string[], float => int, (int,int)...` - They are created using la
 Named: `type MyType := ?????` These are defined using `type` statement and on the right side we can have another named or unnamed type. Underlying type of a named type is the underlying type of declaration on the right side. Underlying type of unnamed types, is themselves.
 We have two special types: `nothing` and `anything`. All types are subtypes of `anything` (except `nothing`). `nothing` is only subtype of itself. Nothing is subtype of `nothing`. So if a function expects nothing (which is weird) you can only pass a nothing to it and nothing else. If a function expects `anything` you can pass anything to it (except `nothing`).
 We have 7 kinds of type: tuple, union, array, hash, primitive, function.
-Subtyping is only defined for tuple and sum types.
+Subtyping is only defined for tuples.
 - Tuple: C=(C1,...,Cn) and S=(S1,...,Sm) if Ci<:Si and n>=m and if both have named fields, they must match
 `func process(x: int|string|float)`
 You can pass int or string or float or `int|string` or `int|float` or `string|float` variables to it.
 - two variables declared with the same named/unnamed type have the same type. 
-- Two variables declared with two similar looking named types have different types.
+- Two variables declared with two similar looking names but in different locations types have different types.
 - Assignment of variables with similar looking named types to each other is forbidden.
 - Assignment of variables with same named/unnamed types is allowed.
-- Assignment of variables of same unnamed and named type is allowed.
--  Nothing has not value. So how can we assign value to a variable of type nothing?
+- Assignment from named to unnamed is possible with explicit cast.
+- Assignment from unnamed to named is possible.
+-  Nothing has no value. So how can we assign value to a variable of type nothing?
 The only way to get nothing, is to run a block which does not throw exception: `{}`
 `var g: nothing = {}`
+- When a function expects a named type (`type SafeInt := int`), you have to pass a named type.
+- But when a function expects an unnamed type, you can either pass named or unnamed type.
 
 ### Primitive
 There are only three primitive data types: `number`. All others are defined based on these two plus some restrictions on size and accuracy.
@@ -549,6 +552,38 @@ this will invoke `func item()->int` to provide value for this argument.
 - auto arguments must be at the end of function arguments.
 - `ref` cannot be combined with `auto`.
 
+## Phantom types
+Phantom are compile-time label/state attached to a type. You can use these labels to do some compile-time checks and validations. Here labels are implemented using generic types which are not used for data allocation.
+For example we have a string which is result of md5 hash and another for sha-1. We should not be comparing these two although they are both strings. So how can we mark them?
+```
+type HashType := MD5 | SHA1
+ ;when generic type is not used on the right side, it will be only for compile time check
+type HashStr<T> := string     
+type Md5Hash := HashStr<MD5> 
+;Md5Hash type can be easily cast to string, but if in the code a string
+;is expected to be of type Sha1Hash you cannot pass Md5Hash
+type Sha1Hash := HashStr<SHA1>
+func md5(s: string)->Md5Hash {
+    var result: string = "ddsadsadsad"
+    return %Md5Hash(result)  ;create a new string of type md5-hash
+}
+func sha1(s: string)->Sha1Hash
+var t: Md5Hash  = sha1("A")  ;will give compiler error because output of sha1 is Sha1Hash
+func testMd5(s: string, t: Md5Hash) -> md5(s) == t
+
+;if there is only one case, you can simply use named type
+type SafeString := string
+func processString(s: string)->SafeString
+func work(s: SafeString)
+
+;another example: expressions
+type ExpType := INT | STR
+type Expression<T> := (token: string)
+func readIntExpression(...) -> Expression<INT>
+func plus(left: Expression<INT>, right: Expression<INT>)...
+func concat(left: Expression<STR>, right: Expression<STR>)...
+```
+
 ## Operators
 - Conditional: `and or not == != >= <=`
 - Math: `+ - * % %% (is divisible) ++ -- **`
@@ -709,13 +744,12 @@ return x if ( h :: x:int)
 
 ### import
 You can import a source code file using below statement. Note that import, will add symbols (functions and types) inside that source code to the current symbol table:
+- You can only import one module in each import statement.
 
 ```
 ;Starting a path with slash means its absolute path (relative to include path). Otherwise it is relative to the current file
 import /core/st/Socket  ;functions and types inside core/st/Socket.e file are imported and available for call/use
-import /core/st/*       ;import source files under st dir
-import /core/st/**      ;import everything recursively
-import /core/st/Socket/ ;if you add slash at the end, it means import symbols using fully qualified name. This is used for refering to the functions using fully qualified names.
+import /core/st/Socket/ ;if you add slash at the end, it means import symbols using fully qualified name. This is used for refering to the functions using fully qualified names. Functions imported with this method won't be used in method dispatch mechanism.
 ```
 It is an error if as a result of imports, there are two exactly similar functions (same name, input and output). In this case, none of conflicting functions will be available for call. 
 The paths in import statement are relative to the runtime path specified for libraries.
@@ -857,7 +891,7 @@ If a function expects `x: Stack<Shape>` you cannot send `Stack<Circle>`.
 
 ### Best practice
 ### Naming
-- **Naming rules**: Advised but not mandatory: `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings.
+- **Naming rules**: Advised but not mandatory: `  someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings.
 - You can suffix if and for and `x loop(10)` will run x 10 times.
 
 ## Examples
