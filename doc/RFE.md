@@ -2462,3 +2462,94 @@ Or maybe we should push them to code, if compiler can check them at compile time
 
 ? - replace implicit with auto.
 It is easier to read and shorter and still makes sense.
+
+? - Scala has `view`. Can we use it to make `CustomersList` look like an array?
+Or maybe to make something mutable.
+When we create a view (maybe choose a better name), we provide a set of functions to work with it. These function can be used to read/write data.
+Use cases:
+- Provide mutable function argument
+- Providing a normal array which behind the scene works with a file to provide data
+- Property
+Objetives:
+- To provide a live conversion of a type to another (bi-directional)
+- Make something modifiable
+- Make something look like something else 
+- Provide read-only/read-write access to some inner variable
+we can use `$$` to refer to the inner variable.
+Other names: wrapper, package, envelope, box
+- We need a keyword for this.
+For: primitives, array, hash, tuple, union, function
+```
+var t: int = 12
+type box<T> := T
+;result of `box a:b` is box<b>
+;if a is a local variable or a boxed argument, you can read/write
+;but if a is a normal argument, you can only read
+var s: box<string> = box t:string 
+{
+    ;these are closures and have read-access to local variables + read/write acces to the variable t
+    getValue: func() -> string  { return toString(t) },
+    setValue: func(s: string)   { t = toInt(s) }
+}
+;now s has two types: string and box<string>
+;setting value will call setValue and get will call getValue
+s="12"  ;calls setValue("12") will make t=12
+s+="1"  ;will make t=121
+s="A"   ;throw error
+func process(x: box<int>) { x+= 10 }
+
+var y: string = s ;valid, but type of y is string not box<string>
+process(y)   ;process will have read-only access like a normal argument 
+process2(s)  ;process2 will have read-write access if argument is defined as box<string>
+
+;if a function refers to argument as box<string> it can write to it like a local string variable
+;or it can use string and just read from it.
+;we can use a box<string> just like a normal string
+s = "12"
+print s + "Hello"
+print t ;12
+
+var s: box<string[]> = box t:string[] 
+{
+    get: func(i: index) -> string ...,
+    set: func(i: index, s: string) ...
+}
+var s: box<string=>int> = box t:string=>int 
+{
+    get: func(key: string) -> int ...,
+    set: func(key: string, value: int) ...
+    ;maybe clear?
+}
+type Customer := {name: string, age:int}
+var s: box<Customer> = box t:Customer 
+{
+    name: { get: func() -> string ..., set: func(value: string) ...},
+    age: { get: func() -> int ..., set: func(value: int) ...},
+}
+var s: box<int|string> = box t:int|string 
+{
+    get: func() -> int|string  ...
+    set: func(s: int|string)   ...
+}
+var s: box<func(int)->string> = box t:func(int)->string
+{
+    invoke: func(int)->string 
+}
+;as a shortcut, when type of source and target are the same, writing functions is optional
+var tt: int = box t:int  
+var tt: box<int> = box t:int  
+```
+
+
+? - Both in Haskell and F# they have label syntax for sum type.
+
+? - Define array and hash as normal built-in types and provide syntax sugar for them.
+This makes things more unified.
+And with introduction of box, we need unification.
+`type Array<T> := native`
+`type Map<K,V> := native`
+`T[]` => `Array<T>`
+`K=>V` => `Map<K,V>`
+`y[x]` => `get(y, x)`/`set(y,x)`
+array and hash literals will be converted to corresponding calls to get/set
+
