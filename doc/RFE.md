@@ -2745,3 +2745,8 @@ Advantage of `->` notation is that we can simply write an expression instead of 
 `func process(int, int, int, int, int)->float`
 `var g = ^process($_, 5, $_, $_, $_)`
 
+N - Is it possible that any variable can hold an exception? How can this be explained with this type system?
+We can say that exception type is subtype of all other types. 
+`type exception := (anything, code: int)`
+No. we dont need to have this subtyping. Output of every function of type T is T|exception.
+so `var g:int = process()` this will just miss the exception.
