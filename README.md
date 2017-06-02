@@ -14,7 +14,7 @@ May 23, 2017
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
-- **Version 0.98**: ??? ?? ???? - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added `auto` keyword, Added phantom types
+- **Version 0.98**: ??? ?? ???? - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`.
 
 ## Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -342,7 +342,7 @@ new_array = map(my_array, {$+1})
 new_array = map(my_array, {$+1}) ;map will receive a tuple containing two elements: array and lambda
 new_array = map(my_array , (x:int) -> {x+1})
 ```
-- Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability) except those marked with `ref`.
+- Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability) for parameters passed by reference.
 - Parent is required when calling a function, even if there is no input.
 - You can clone the data but have to do it manually using explode operator `@`. Note that assignment makes a clone for primitives, so you need cloning only for tuple, array and hash.
 - Cloning: `var x = {@p}`
@@ -401,10 +401,10 @@ add(int_array, "A") will fail
 ```
 - This is a function that accepts an input of any type and returns any type: `type Function := func(any)->any`. Note that you cannot define a function type that can accept any number of anything.
 - When calling a function, you can remove parentheses if there is no ambiguity (only a single call is being made).
-- In function declaration you can use `ref` to indicate parameter will be accessible as read-write. Caller needs to mention `ref` when sending corresponding parameter:
-`func process(x: int, ref y: int)`
-caller: `process(t, ref u)`
-`ref` will affect method dispatch so you can have two functions with the same name and input but one of them with `ref` argument.
+- In function declaration you can use `&` before parameter name to indicate parameter will be accessible as read-write. Caller needs to mention `&` when sending corresponding parameter:
+`func process(x: int, &y: int)`
+caller: `process(t, &u)`
+`&` will affect method dispatch so you can have two functions with the same name and input but one of them with `&` argument.
 if a function needs a parameter which must have fields from two types, it can be defined like this:
 `func process(x: (TypeA, TypeB))` this is an in-place definition of a tuple which inherits from two other tuples.
 - Function call: `process(x:10, y:20)`
@@ -465,9 +465,10 @@ var modifier = { $.0 + $.1 }  ;if input/output types can be deduced, you can eli
 - `^process(myCircle,$_,$_)(10, 20)` ~ `process(myCircle, 10, 20)`
 - You can use `^` to get a pointer to a specific function. For example inside `process(Circle)` you need to call `process(Shape)` but don't want to cast the data: `var fp: func(Shape) = ^process`. Then call `fp`.
 
-## auto
-When writing a generic function, you may have expectations regarding behavior of the type `T`. These expectations can be defined in a tuple (called prototype tuple) as some function pointers, and reference the protocol as an argument marked with `auto` keyword. The value for this argument is optional and if it's not provided, compiler will deduce functions based on name and type of the fields in that tuple.
+## Implicit parameters
+When writing a generic function, you may have expectations regarding behavior of the type `T`. These expectations can be defined in a tuple (called prototype tuple) as some function pointers, and reference the protocol as an argument marked with `!`. The value for this argument is optional and if it's not provided, compiler will deduce functions based on name and type of the fields in that tuple.
 The members of tuple can have default values (e.g. one function calls another function).
+If parameter name starts with `!`, it is implicit.
 ```
 ;Also we can initialize tuple members, we have embedding
 ;Note that if T is a sum type, each function here can be multiple implemented functions
@@ -489,30 +490,30 @@ type Point := {x:int, y:int}
 func equals(x: Point, y: Point)->bool { ... }
 func notEquals(x: Point, y: Point)->bool { ... }
 
-func isInArray<T>(x:T, y:T[], auto z: Eq<T>, auto g: Writer) -> bool {
+func isInArray<T>(x:T, y:T[], !z: Eq<T>, !g: Writer) -> bool {
     if ( z.equals(x, y[0])...
 }
 ---
 type Ord<T> := {
     compare: func(x:T, y:T)->int
 }
-func sort<T>(x:T[], auto z: Ord<T>)
+func sort<T>(x:T[], !z: Ord<T>)
 ---
 type Stringer<T> := {
     toString :func(x:T)->string
 }
-func dump<T>(x:T, auto z: Stringer<T>)->string
+func dump<T>(x:T, !z: Stringer<T>)->string
 ---
 type Serializer<T> := {
     serialize: func(x:T)->string
     deserialize: func(x:string)->T
 }
-func process<T>(x: T, auto z: Serializer<T>) -> ...
+func process<T>(x: T, !z: Serializer<T>) -> ...
 ---
 type Adder<S,T,X> := {
     add: func(x: S, y:T)->X
 }
-func process<S,T,X>(x: S, y:T, auto z: Adder<S,T,X>)->X { return z.add(x,y) }
+func process<S,T,X>(x: S, y:T, !z: Adder<S,T,X>)->X { return z.add(x,y) }
 ---
 type Failable<T, U> := {
     oops: T<U>,
@@ -524,7 +525,7 @@ func oops<U>()->Maybe<U> { return Nothing }
 func pick<U>(x: Maybe<U>, y: Maybe<U>)-> Maybe<U>
 func win<U>(x: U) -> Maybe<U> { return x }
 
-func safeDiv<T>(x: double, y: double, auto z: Failable<T, double>) -> T<double> {
+func safeDiv<T>(x: double, y: double, !z: Failable<T, double>) -> T<double> {
     if ( y == 0 ) return z.oops
     return z.win(x/y)
 }
@@ -537,7 +538,7 @@ type Factory<T> := {
 }
 func create()->int { return 5 }
 func create()->string { return "A" }
-func generalCreate<T>(auto z: Factory<T>) { return z.create() }
+func generalCreate<T>(_z: Factory<T>) { return z.create() }
 ;here we have to specify type because it cannot be inferred
 var r = generalCreate<string>()
 var y = generalCreate<int>()
@@ -547,10 +548,9 @@ func process(auto item: int)
 this will invoke `func item()->int` to provide value for this argument.
 ```
 - Protocols can embed other types to include their fields.
-- You cannot have `func(x, auto y)` and `func(x)`
 - You can define and implement a protocol for a type outside your codebase, that's why you dont need to specify which protocols are implemented by a type upon declaration.
+- You cannot have `func(x, !y)` and `func(x)`
 - auto arguments must be at the end of function arguments.
-- `ref` cannot be combined with `auto`.
 
 ## Phantom types
 Phantom are compile-time label/state attached to a type. You can use these labels to do some compile-time checks and validations. Here labels are implemented using generic types which are not used for data allocation.
@@ -588,7 +588,6 @@ type DoorState := Open | Closed
 type Door<T> := (string)
 func closeDoor(x: Door<Open>) -> Door<Closed>
 func openDoor(x: Door<Closed>) -> Door<Open>
-
 ```
 
 ## Operators
@@ -601,10 +600,6 @@ The math operators can be combined with `=` to do the calculation and assignment
 - We don't have operators for bitwise operations. They are covered in core. 
 - `equals` functions is used for equality check.
 - You can have multiple assignments at once: `x,y=1,2`
-- You can use `&` operator to put multiple expressions/statements in one line where one expression/statement is expected:
-`a&b&c if (x>0)`
-`loop(5) a&b&c`
-
 
 ### Special Syntax
 - `@` explode 
@@ -612,7 +607,6 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `$_` input place-holder
 - `%` casting
 - `^` lambda-maker
-- `&` expression combine
 - `:` tuple declaration, array slice, function call by name
 - `:=` custom type definition
 - `=>` hash type and hash literals
@@ -624,10 +618,12 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `{}` code block, tuple definition and literal
 - `<>` generics
 - `()` function call
+- `&` pass-by-reference
+- `!` implicit parameters
 
-Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `loop`, `break`, `continue`, `if`, `else`, `assert`, `auto`, `ref`
+Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `loop`, `break`, `continue`, `if`, `else`, `assert`
 Operators: 
-Primitive data types: `int`, `uint`, `float`, `double`, `char`
+Primitive data types: `int`, `float`, `char`
 
 ### Chaining
 Chain operators are just syntax sugars. They are transformed by compiler. 
@@ -719,9 +715,9 @@ var g: int|exception = func1()   ;this is valid
 ```
 - You can use `defer BLOCK` to tell the runtime to run a block of code after exiting from the function. If function output is named, it will be accessible in defer block.
 - Any assert which uses `::` will be evaluated at compile time. You can use this to implement generic bounds.
-- Output of any code block `{...}` is none by default unless there is an exception. In which case, the block will exit immediately and this exit will cascade until some place that exception is bound to a variable.
+- Output of any code block `{...}` is evaluation of the last statement unless there is an exception. In which case, the block will exit immediately and this exit will cascade until some place that exception is bound to a variable.
 ```
-var g: none | exception = {
+var g = {
   func1()
   func2()
   func3()
@@ -731,10 +727,10 @@ return 100 if ( g :: exception)
 var h : int|exception = get_number()
 return x if ( h :: x:int)
 ```
-- **none**: Nothing equals `none`. It won't match in any `::` or if.
- There is no value for it. You can use it's type for return value of a function.
+- **none**: Nothing equals `nothing`. It won't match in any `::` or if.
+ You can use it's type for return value of a function.
  But there is no value you can return. `return` will do that.
- Type of a block of code, is `none`. It is reverse of `any` where everything matches with it.
+ Type of an empty block of code, is `none`. It is reverse of `anything` where everything matches with it.
 
 ###loop, break, continue
 `loop(5) { ... }`
@@ -769,8 +765,8 @@ Also you can call a function or refer to a type with fully qualified name:
 `var t: /core/pack2/myStruct;`
 - By default, `import` works on local file system but you can work on other types too:
 `import /a/b` import from local file system
-`import file/a/b` import from local file system
-`import git/github.com/adsad/dsada` import from github
+`import file:/a/b` import from local file system
+`import git:/github.com/adsad/dsada` import from github
 
 ### native
 Denotes function is implemented by runtime or external libraries.
@@ -988,6 +984,7 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Add native concurrency and communication tools (green thread, channels) and async i/o
 - Introduce caching of function output
 - Versioning, packaging and distribution
+- Debugger and plugins for Editors
 
 ## Method call resolution
 How runtime should handle a method call like: `f(x,y,z)`?
