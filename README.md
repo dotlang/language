@@ -14,7 +14,7 @@ June 2, 2017
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
-- **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`.
+- **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword and replace with template, added `!` to support protocol parameters.
 - **Version 0.99**: ??? ??? ???? - 
 
 # Introduction
@@ -301,6 +301,7 @@ var w: B = B(@A) ;this will not fail because we are casting, so it will ignore e
 Casting to a tuple, can accept either a tuple literal or tuple variable or an exploded tuple.
 Note that there is no support for implicit casting functions. If you need a custom cast, write a separate function and explicitly call it.
 - `%Type` without paren creates a default instance of the given type.
+- When doing cast to a generic type, you can ignore type if it can be deduced. `var t = %ref(t)`
 
 ### Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
@@ -478,10 +479,19 @@ add(int_array, "A") will fail
 ```
 - This is a function that accepts an input of any type and returns any type: `type Function := func(any)->any`. Note that you cannot define a function type that can accept any number of anything.
 - When calling a function, you can remove parentheses if there is no ambiguity (only a single call is being made).
-- In function declaration you can use `&` before parameter name to indicate parameter will be accessible as read-write. Caller needs to mention `&` when sending corresponding parameter:
-`func process(x: int, &y: int)`
-caller: `process(t, &u)`
-`&` will affect method dispatch so you can have two functions with the same name and input but one of them with `&` argument.
+- There is a special type: `type mut<T> := T` which can be used to include a mutable reference to another value.
+```
+func process(x:mut<int>) { x.value++ }
+...
+var t = 12
+process(%mut(t))   ;you can omit <int>
+```
+`var g: mut<int> = %mut(x) ;g++ will increase value of x`
+compiler can help with literal and mut: `var f: mut<int> = 12` will create a temp variable and ref to it.
+`var t:int = refVar.value` t is no longer mutable.
+- `mut<mut<t>>` is same as `mut<t>`
+- Key of a hashtable cannot be mutable.
+
 if a function needs a parameter which must have fields from two types, it can be defined like this:
 `func process(x: (TypeA, TypeB))` this is an in-place definition of a tuple which inherits from two other tuples.
 - Function call: `process(x:10, y:20)`
@@ -585,11 +595,8 @@ var xx: int = magic(x)
 var yy: string = magic(y)
 ```
 
-
-## Implicit parameters
-When writing a generic function, you may have expectations regarding behavior of the type `T`. These expectations can be defined in a tuple (called prototype tuple) as some function pointers, and reference the protocol as an argument marked with `!`. The value for this argument is optional and if it's not provided, compiler will deduce functions based on name and type of the fields in that tuple.
-The members of tuple can have default values (e.g. one function calls another function).
-If parameter name starts with `!`, it is implicit.
+## Protocol parameters
+When writing a generic function, you may have expectations regarding behavior of the type `T`. These expectations can be defined in a tuple (called protocol tuple) as some function pointers. When calling this function, the code either should provide value or ask compiler to deduce values (using `!` notation)
 ```
 ;Also we can initialize tuple members, we have embedding
 ;Note that if T is a sum type, each function here can be multiple implemented functions
@@ -611,30 +618,32 @@ type Point := {x:int, y:int}
 func equals(x: Point, y: Point)->bool { ... }
 func notEquals(x: Point, y: Point)->bool { ... }
 
-func isInArray<T>(x:T, y:T[], !z: Eq<T>, !g: Writer) -> bool {
+func isInArray<T>(x:T, y:T[], z: Eq<T>, g: Writer) -> bool {
     if ( z.equals(x, y[0])...
 }
+;when calling:
+isInArray(x, arr, !, !)
 ---
 type Ord<T> := {
     compare: func(x:T, y:T)->int
 }
-func sort<T>(x:T[], !z: Ord<T>)
+func sort<T>(x:T[], z: Ord<T>)
 ---
 type Stringer<T> := {
     toString :func(x:T)->string
 }
-func dump<T>(x:T, !z: Stringer<T>)->string
+func dump<T>(x:T, z: Stringer<T>)->string
 ---
 type Serializer<T> := {
     serialize: func(x:T)->string
     deserialize: func(x:string)->T
 }
-func process<T>(x: T, !z: Serializer<T>) -> ...
+func process<T>(x: T, z: Serializer<T>) -> ...
 ---
 type Adder<S,T,X> := {
     add: func(x: S, y:T)->X
 }
-func process<S,T,X>(x: S, y:T, !z: Adder<S,T,X>)->X { return z.add(x,y) }
+func process<S,T,X>(x: S, y:T, z: Adder<S,T,X>)->X { return z.add(x,y) }
 ---
 type Failable<T, U> := {
     oops: T<U>,
@@ -646,7 +655,7 @@ func oops<U>()->Maybe<U> { return Nothing }
 func pick<U>(x: Maybe<U>, y: Maybe<U>)-> Maybe<U>
 func win<U>(x: U) -> Maybe<U> { return x }
 
-func safeDiv<T>(x: double, y: double, !z: Failable<T, double>) -> T<double> {
+func safeDiv<T>(x: double, y: double, z: Failable<T, double>) -> T<double> {
     if ( y == 0 ) return z.oops
     return z.win(x/y)
 }
@@ -659,10 +668,10 @@ type Factory<T> := {
 }
 func create()->int { return 5 }
 func create()->string { return "A" }
-func generalCreate<T>(_z: Factory<T>) { return z.create() }
+func generalCreate<T>(z: Factory<T>) { return z.create() }
 ;here we have to specify type because it cannot be inferred
-var r = generalCreate<string>()
-var y = generalCreate<int>()
+var r = generalCreate<string>(!)
+var y = generalCreate<int>(!)
 ---
 ;you can define primitives as auto
 func process(auto item: int)
@@ -670,8 +679,7 @@ this will invoke `func item()->int` to provide value for this argument.
 ```
 - Protocols can embed other types to include their fields.
 - You can define and implement a protocol for a type outside your codebase, that's why you dont need to specify which protocols are implemented by a type upon declaration.
-- You cannot have `func(x, !y)` and `func(x)`
-- auto arguments must be at the end of function arguments.
+
 
 ## Phantom types
 Phantom are compile-time label/state attached to a type. You can use these labels to do some compile-time checks and validations. Here labels are implemented using generic types which are not used for data allocation.
@@ -727,6 +735,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - You can have multiple assignments at once: `x,y=1,2`
 
 ### Special Syntax
+- `!` protocol inference
 - `@` explode 
 - `$.i` function inputs tuple
 - `$_` input place-holder
@@ -743,8 +752,6 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `{}` code block, tuple definition and literal
 - `<>` generics
 - `()` function call
-- `&` pass-by-reference
-- `!` implicit parameters
 
 Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `loop`, `break`, `continue`, `if`, `else`, `assert`
 Operators: 
@@ -1004,13 +1011,13 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Build, versioning, packaging and distribution
 - Plugin system to load/unload libraries at runtime
 - Debugger and plugins for Editors
+- Atomic
 
 ## Method call resolution
 How runtime should handle a method call like: `f(x,y,z)`?
 - Suppose that there is a call to function `f` with 3 input arguments. Here is the method dispatch process:
 1. CL := find all functions with name `f` which have 3 inputs.
 2. If inputs are named: remove from CL where there is name mismatch.
-3. If there are `ref` inputs: remove from CL where there is ref mismatch.
 4. DT1, DT2, DT3 = dynamic type of 3 arguments specified in the call.
 5. find x in CL where type of parameters are DT1, DT2, DT3
 6. If found one, call `x` and finish. If found more than one -> Error and finish.
