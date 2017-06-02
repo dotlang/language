@@ -2750,3 +2750,59 @@ We can say that exception type is subtype of all other types.
 `type exception := (anything, code: int)`
 No. we dont need to have this subtyping. Output of every function of type T is T|exception.
 so `var g:int = process()` this will just miss the exception.
+
+Y - When doing cast to a generic type, you can ignore type if it can be deduced.
+`var t = %ref(t)`
+
+Y - Still `!` notation does not seem beautiful.
+`+`?
+Another solution: Do not use any notation. When calling the function, pass either a valid data or a notation there.
+This will solve the 2 remaining exceptions: They must be at the end, and no `func(x,auto y)` and `func(x)`
+```
+func isInArray<T>(x:T, y:T[], &tt: int, +z: Eq<T>, +g: Writer) -> bool {
+    if ( z.equals(x, y[0])...
+}
+...
+isInArray(10, intArray, &tt, !, !)
+isInArray(10, intArray, &tt, \, \)
+isInArray(10, intArray, &tt, /, /)
+isInArray(10, intArray, &tt, $_, $_)
+isInArray(10, intArray, &tt, _, _)
+```
+
+Y - can we get rid of ref?
+We need pass-by-ref but maybe we can implement it using existing tools.
+```
+func process(&x:int) { x++ }
+...
+var t = 12
+process(&t)
+```
+Maybe by using a special container with generics: `ref`
+`type mut<T> := (value: T)`
+`mut<T>` behaves exacty like T but you can change it.
+you cannot pass a variable of type `ref<T>` when `T` is needed (you should use `.value`).
+```
+func process(x:mut<int>) { x.value++ }
+...
+var t = 12
+process(%mut(t))   ;you can omit <int>
+```
+Problem: can I now use `ref` inside function body?
+You should be able to do that.
+`var g: mut<int> = %ref(x) ;g++ will increase value of x`
+`var t: int = g.value`
+Maybe compiler can help with literal and ref: `var f: mut<int> = 12` will create a temp variable and ref to it.
+`var t:int = refVar.value`
+q: What happens if a tuple embeds a ref?
+`type Point := (mut<int>, x: int)`
+Point has a `.value` of type int which is a reference to an integer.
+q: What does `mut<mut<t>>` mean? it is same as `ref<t>`
+`mut<int>[]` vs `mut<int[]>`
+`mut<int=>string>` vs `int=>mut<string>`
+
+? - research: how to generate assembly code?
+yasm
+
+? - research: unified type system
+
