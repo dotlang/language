@@ -2669,9 +2669,79 @@ func concat(left: Expression<STR>, right: Expression<STR>)...
 Y - When a function expects a named type (`type SafeInt := int`), you have to pass a named type.
 But when a function expects an unnamed type, you can either pass named or unnamed type.
 
-? - Can we simplify?
+Y - As a step toward more modularity, prevent importing multiple modules.
+
+N - Module name of form `core.st.general` is better?
+rust: `std::core::aaa`
+go: `core/pkg/std`
+scala: `p.x.a`
+
+Y - Can we remove rules regarding ref and auto?
+1. `ref` cannot be combined with `auto`.
+2. You cannot have `func(x, auto y)` and `func(x)`
+3. auto arguments must be at the end of function arguments.
+solution:
+1. remove `ref` and replace it with something which does not make sense to be combined with auto.
+2. for example: `_` for auto, `&` for ref.
+`func sort<T>(x:T[], &t : int, _z : Ord<T>)`
+with this notation, item 1 is solved. but what happens in the call site?
+`sort(a,&b)`
+if we have:
+`func sort<T>(x:T[], &t : int, _z : Ord<T>)`
+and
+`func sort<T>(x:T[], &t : int)`
+what should happen? Maybe we should re-introduce the notation of optional arguments.
+Java and go and Rust don't have it. 
+Let's have these two rules.
+
+Y - change `&` used for continue expression.
+You can just use `{}`. It will evaluate to the last expression. This makes sense and is used in scala
+But then we will have problem with exception handling.
+Each block evaluates to it's last statement of exception. If the last statement does not have a type, it can be nothing. But you don't need to worry about the type:
+```
+var g = {
+  func1()
+  func2()
+  func3()
+}
+return 100 if ( g :: exception)
+```
+
+Y - underscore for implicit is not good. What if a struct field name has underscore?
+It is confusing.
+`func sort<T>(x:T[], &t : int, !z : Ord<T>)`
+
+N - Find most popular libraries for Go and Java and Scala and C.
+- Spring
+- Grails
+- JSF
+
+Y - Can we simplify?
 - remove `uint` and `float`?
 - Everything is a type? No. unification has an extreme.
 
-? - As a step toward more modularity, prevent importing multiple modules.
-Module name of form `core.st.general` is better?
+N - Now that notations are types, can we use `[int]` for list/sequence?
+- Set at specific index. This is not possible, because this is a linked-list.
+- Clone: explode
+- Clear: t=[]
+- Add to beginning: `t = [1, @t]`
+- Add to end: `t = [@t, 10]`
+- ToArray -> clone to array: `var y: int[] = [@t]`
+- From array: `var t: [int] = [@arr]`
+- Other using functions: sort, search, delete, insert at index, length
+- No slice, because this is a linked-list.
+Almost everything needs to be done via functions. So why use a special notation?
+
+N - In ocaml, a function which takes two ints and returns a float is actually a function which takes an int and returns a function which takes an int and returns a float.
+Haskell: `add                     :: Integer -> Integer -> Integer`
+`add x y                 =  x + y`
+Ocaml: `let average a b`
+F#: `let add x y = x + y`
+calling `add(1)` will return a functin which takes a single input and returns an integer.
+`func add(x:int->y:int->int)`
+`func add(x:int,y:int,{r:int}) := x+y` lets not use `:=` and keep it only for types
+Advantage of `->` notation is that we can simply write an expression instead of result type
+`func add(x:int, y:int) -> 3`
+`func process(int, int, int, int, int)->float`
+`var g = ^process($_, 5, $_, $_, $_)`
+
