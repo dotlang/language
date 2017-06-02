@@ -1,9 +1,9 @@
 # Dotlang Programming Language Reference
-Version 0.95
+Version 0.98
 
-May 23, 2017
+June 2, 2017
 
-## History
+# History
 - **Version 0.1**: Sep 4, 2016 - Initial document created after more than 10 months of research, comparison and thinking.
 - **Version 0.2**: Sep 22, 2016 - Leaning towards Functional Programming.
 - **Version 0.3**: Oct 13, 2016 - Added clarifications for inheritance, polymorphism and templates
@@ -14,9 +14,10 @@ May 23, 2017
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
-- **Version 0.98**: ??? ?? ???? - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`.
+- **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`.
+- **Version 0.99**: ??? ??? ???? - 
 
-## Introduction
+# Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
 
 That's why I am creating a new programming language: Dotlang. 
@@ -99,7 +100,9 @@ Source file contains a number of definitions for types and functions.
 10. **Assignment**: Numbers are assigned by value, other types are assigned by reference.
 All other features (loop and conditionals, exception handling, inheritance and subtyping, polymorphism ...) are achieved using above constructs.
 
-## Type System
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
+
+# Type System
 We have two categories of types: named and unnamed.
 Unnamed: `int, string[], float => int, (int,int)...` - They are created using language keywords and notations like primitive type names, `any`, arry or hash, ....
 Named: `type MyType := ?????` These are defined using `type` statement and on the right side we can have another named or unnamed type. Underlying type of a named type is the underlying type of declaration on the right side. Underlying type of unnamed types, is themselves.
@@ -132,6 +135,8 @@ You can use core functions to get type identifier of a variable: `type` or `hash
 Some types are pre-defined in core but are not part of the syntax: `nothing`, `anything`, `bool`.
 - `string` is an array of characters. And it is not a primitive.
 - `byte` is 8 bit integer, but `char` can be larger to support unicode.
+
+### Function type
 
 ### Array
 Arrays are a special built-in type:
@@ -197,7 +202,7 @@ t.1 = "G"
 - Fields that start with underscore are considered internal state of the tuple and better not to be used outside the module that defines the type. 
 - You can define a tuple with unnamed fields: `type Point := {int, int}` But fields of a tuple must be all either named or unnamed. You cannot mix them.
 
-###Tuple (Product types)
+### Tuple (Product types)
 - Tuple definition: `type Point := {x: int, y: int}`
 - Tuple literal: `var p: Point = %Point({x:10, y:20})`
 
@@ -314,8 +319,78 @@ Cloning, passing, assigning to other vars does not change or evaluate the variab
 `var x: int = 19; x= 11 ;ok - can re-assign`
 - You can define consts using functions: `func PI -> 3.14`
 - You can define local const variables using: `var x: float = 3.14 where { false }`
+### Inheritance and Polymorphism
+- Tuples can inherit from a single other tuple by having it as their first field and defined as anonymous.
+`type Circle := (Shape, ...)`
+- You can define functions on types and specialize them for special subtypes. This gives polymorphic behavior.
+`func paint(o:Shape) {}`
+`func paint(o:any){}`
+`func paint(o:Circle)...`
+`func paint(o:Square)...`
+- Any variable has two types: Static (what is visible in the source code), and dynamic.
+`var c: Shape = createCircle` - static type is Shape but dynamic type is Circle. 
+- We can keep a list of shapes in an array/collection of type Shape: `var o: Shape[] = [myCircle, mySquare];`
+- You can iterate over shapes in `o` array defined above, and call `paint` on them. With each call, appropriate `paint` method will be called (this appropriate method is identified using 3 dispatch rules explained below).
+- Visible type (or static type), is the type of the variable which can be seen in the source code. Actual type or dynamic type, is it's type at runtime. For example:
+`func create(x:type)->Shape { if ( type == 1 ) return Circle{}; else return Square{}; }`
+Then `var x: Shape = create(y);` static type of `x` is Shape because it's output of `create` but it's dynamic type can be either `Circle` or `Square`.
+Note that this binding is for an explicit function call. when we assign function to a variable, the actual function to be used, is determined at runtime with dynamic dispatch. so `var x = paint` where type of x is `func(Circle, Color)` will find a paint function body with matching input. you can have x of type `func(Shape, Color)` and assign a value to it and expect it to do dynamic dispatch when called at runtime. 
+So if we have this:
+`func paint(o: Square, c: SolidColor)`
+`type Shape := (name: string)`
+`type Circle := (x: Shape)`
+`type Square := (x:Shape)`
+`type Color := ();`
+`type SolidColor := (Color, )`
+a call to paint function with some inputs, will use above 3 rules to dispatch.
+- suppose we have `Base` type and `Derived` types. Two methods `add` and `addAll` are implemented for both of them.
+if `addAll(Derived)` calls `addAdd(Base)` which in turn calls `add(Base)` then a call to `addAll(Derived)` will NOT call `add(Derived)` but will call `add(Base)`. When `addAll(Base)` is called, it has a reference to `Base` not a `Derived`. 
+- **Explode operator**: You can apply this operator to data/variables. 
+It will explode or unpack its operator and be replaced by the inner definition. 
+You can use `_` notation when using explode on values, to ignore part of the output:
+- Explode tuple: `var t,u = @p -> t=10, u=20`
+`var x,y,_ = @my_three_ints`
+`var first, _, last = @my_array`
+- Explode operator: `@p ==> x:10,y:20`
+To have a tuple with unnamed fields based on value of another tuple, just put `@` after the dot. So assume `Point` has x and y fields:
+`@my_point` will translate to `x=10, y=20`
+You can combine explode operator with other data or type definition as long as you change type of the field. `var g = {@my_point, z:20}`. g will be `{x:10, y:20, z:20}`. Explode on primitives has no effect (`@int` = `int`).
+- If a type does not have any fields (empty types), you don't need to use embedding to inherit from it. It is optional. You just need to implement appropriate methods (If not, and those methods are defined empty for base type, a compiler error will be thrown). So if we have `func check(x: Alpha)` and `Alpha` type does not have any field, any other data type which implements functions written for `Alpha` can be used instead.
+- Empty types are like interfaces and are defined like `type Alpha`.
+Example about empty types (anythings), inheritance, polymorphism and subtyping:
+```
+type Shape := anything
+func Draw(Shape, int)->int
 
-## Functions
+type BasicShape := (x: string)              ; a normal type
+func Draw(x: BasicShape, y:int)             ; Now BasicShape is compatible with Shape type
+
+type Circle := (BasicShape, name: string)   ; another type which inherits from BasicShape
+func Draw(x: Circle, y:int)                 ; It has it's own impl of Draw which hides Human implementation
+
+type Square := (BasicShape, age: int)       ; another type which embeds BasicShape.
+;calling Draw on Square will call BasicShape version
+
+type OtherShape := anything
+function Draw(x: OtherShape, y:int)         ; OtherShape also implements Hobby
+
+var all: Shape[] = [myBasicShape, myCircle, mySquare, myOtherShape]
+for(Hobby h: all) Draw(h,1,"")
+;implicit casting to empty type. Compiler can check if this is a valid casting or no.
+;compiler can make sure that all currently defined empty functions which accept Shape
+;are defined for MyOtherShape too
+var t: Shape = myOtherShape
+var r: BasicShape = myCircle ;automatic casting - because Circle inherits from BasicShape
+```
+- You can assign a variable any of it's subtypes (including empty type) variables. 
+if a function expects `f: func()->Shape` you can send a function which returns a Circle, because there are implicitly castable.
+If a function expects `x: Stack<Shape>` you cannot send `Stack<Circle>`.
+- You can embed as many types as you want in your tuple, but the first one will be parent.
+- You can even subtype a primitive (or hash or array) to provide a simulated type. For example we are interested in calling a function which expects `int[]` but data comes from a file. We can define `type MyFile := (int[], file_handle:int)` and pass this to the function. All calls to the array will be translated to function calls. `x[0]` will make the call `get(x,0)` so you can write your own functions.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
+
+# Functions
 Function is a piece of code which accepts a series of inputs and can return a single value. If you want to use a tuple instead of entries of a function, you must explode it first unless function input is the tuple itself.
 ```
 func my_func1(x: int, y: int) -> float { return x/y }
@@ -465,6 +540,50 @@ var modifier = { $.0 + $.1 }  ;if input/output types can be deduced, you can eli
 - `^process(myCircle,$_,$_)(10, 20)` ~ `process(myCircle, 10, 20)`
 - You can use `^` to get a pointer to a specific function. For example inside `process(Circle)` you need to call `process(Shape)` but don't want to cast the data: `var fp: func(Shape) = ^process`. Then call `fp`.
 
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
+
+# Template
+- When defining types, you can append `<A, B, C, ...>` to the type name to indicate it is a generic type. You can then use these symbols inside type definition.
+- When defining functions, if input or output are of generic type, you must append `<A,B,C,...>` to the function name to match required generic types for input/output. 
+- When you define a variable or another type, you can refer to a generic type using it's name and concrete values for their types. Like `Type<int, string>`
+- Generic functions, must make use of their type argument in their input.
+```
+type Map<K,V> := K => V
+type Stack<T> := T[]  ;define base type for generic type
+func push<T>(s: Stack<T>, x: T)
+func push<int>(s: Stack<int>, x: int) ;specialization
+func pop<T>(s: Stack<T>) -> T
+func len<T>(s: Stack<T>) -> int   ;general function for all instances
+var t : Stack<int>
+var h : Map<int, string>
+push(t, 10) ;same as push<int>(t, 10)
+var y = pop(t)
+x = len(t)
+```
+`type optional<T> := Nothing | T`
+`type Packet<T> :=   {status: T[], result: (x:int, y:int))`
+`type IPPacket := Packet<int>`
+`type Tree<T> := {x: T, left: Tree<T>, right: Tree<T>}`
+`type ShapeTree := Tree<Shape>`
+Example:
+`func push<T>(x: Stack<T>, y: T)`
+`func push(x: Stack<int>, y:int)`
+if we call `push(a,6)` and `a` is `Stack<int>` second function will be called because there is full match.
+if we call `stack<int>(a, b)` still the second one will be called.
+- When calling a generic function, you can omit type specifier only if it can be deduced from input. If not, you must specify input.
+Example: `func process<T>(x: int) -> T`
+`process(10)` is wrong. You must specify type: `var g: string = process<string>(10)`
+- If some types cannot be inferred from function input, you must specify them when calling the generic function.
+```
+type DepValue<T> := (value:T)
+func magic<T>(that: DepValue<T>)->T that.value
+var x = %DepValue<int>(1) ;x is int
+var y = %DepValue<string>("a") ;y is string
+var xx: int = magic(x)
+var yy: string = magic(y)
+```
+
+
 ## Implicit parameters
 When writing a generic function, you may have expectations regarding behavior of the type `T`. These expectations can be defined in a tuple (called prototype tuple) as some function pointers, and reference the protocol as an argument marked with `!`. The value for this argument is optional and if it's not provided, compiler will deduce functions based on name and type of the fields in that tuple.
 The members of tuple can have default values (e.g. one function calls another function).
@@ -590,6 +709,10 @@ func closeDoor(x: Door<Open>) -> Door<Closed>
 func openDoor(x: Door<Closed>) -> Door<Open>
 ```
 
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
+
+# Notations
+
 ## Operators
 - Conditional: `and or not == != >= <=`
 - Math: `+ - * % %% (is divisible) ++ -- **`
@@ -632,7 +755,9 @@ Chain operators are just syntax sugars. They are transformed by compiler.
 So in above case for example, `contains` function must have two inputs. We just use this notation because sometimes it is easier to read. 
 `[1,2,3].map(square).sum()`
 
-## Keywords
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
+
+# Keywords
 
 ###match
 ```
@@ -772,6 +897,8 @@ Also you can call a function or refer to a type with fully qualified name:
 Denotes function is implemented by runtime or external libraries.
 `native func file_open(path: string) -> File;`
 
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
+
 ## Miscellaneous
 ### Validation
 A predicate or label function is of the form `func predicate(x: any)->bool` (only one input and bool output). Any piece of data can have a number of labels attached to it which are results of calls to predicates on it. 
@@ -779,118 +906,7 @@ The important thing about labels is that they are transparently cached by runtim
 As a result, to implement predicate/validation/constraints/refinement types, you just call the function that checks the specific filter you need. Code becomes more readable and runtime makes the execution efficient. 
 Another advantage: It won't interfer with method dispatch or subtyping.
 
-### Generics
-- When defining types, you can append `<A, B, C, ...>` to the type name to indicate it is a generic type. You can then use these symbols inside type definition.
-- When defining functions, if input or output are of generic type, you must append `<A,B,C,...>` to the function name to match required generic types for input/output. 
-- When you define a variable or another type, you can refer to a generic type using it's name and concrete values for their types. Like `Type<int, string>`
-- Generic functions, must make use of their type argument in their input.
-```
-type Map<K,V> := K => V
-type Stack<T> := T[]  ;define base type for generic type
-func push<T>(s: Stack<T>, x: T)
-func push<int>(s: Stack<int>, x: int) ;specialization
-func pop<T>(s: Stack<T>) -> T
-func len<T>(s: Stack<T>) -> int   ;general function for all instances
-var t : Stack<int>
-var h : Map<int, string>
-push(t, 10) ;same as push<int>(t, 10)
-var y = pop(t)
-x = len(t)
-```
-`type optional<T> := Nothing | T`
-`type Packet<T> :=   {status: T[], result: (x:int, y:int))`
-`type IPPacket := Packet<int>`
-`type Tree<T> := {x: T, left: Tree<T>, right: Tree<T>}`
-`type ShapeTree := Tree<Shape>`
-Example:
-`func push<T>(x: Stack<T>, y: T)`
-`func push(x: Stack<int>, y:int)`
-if we call `push(a,6)` and `a` is `Stack<int>` second function will be called because there is full match.
-if we call `stack<int>(a, b)` still the second one will be called.
-- When calling a generic function, you can omit type specifier only if it can be deduced from input. If not, you must specify input.
-Example: `func process<T>(x: int) -> T`
-`process(10)` is wrong. You must specify type: `var g: string = process<string>(10)`
-- If some types cannot be inferred from function input, you must specify them when calling the generic function.
-```
-type DepValue<T> := (value:T)
-func magic<T>(that: DepValue<T>)->T that.value
-var x = %DepValue<int>(1) ;x is int
-var y = %DepValue<string>("a") ;y is string
-var xx: int = magic(x)
-var yy: string = magic(y)
-```
 
-### Exception Handling
-### Inheritance and Polymorphism
-- Tuples can inherit from a single other tuple by having it as their first field and defined as anonymous.
-`type Circle := (Shape, ...)`
-- You can define functions on types and specialize them for special subtypes. This gives polymorphic behavior.
-`func paint(o:Shape) {}`
-`func paint(o:any){}`
-`func paint(o:Circle)...`
-`func paint(o:Square)...`
-- Any variable has two types: Static (what is visible in the source code), and dynamic.
-`var c: Shape = createCircle` - static type is Shape but dynamic type is Circle. 
-- We can keep a list of shapes in an array/collection of type Shape: `var o: Shape[] = [myCircle, mySquare];`
-- You can iterate over shapes in `o` array defined above, and call `paint` on them. With each call, appropriate `paint` method will be called (this appropriate method is identified using 3 dispatch rules explained below).
-- Visible type (or static type), is the type of the variable which can be seen in the source code. Actual type or dynamic type, is it's type at runtime. For example:
-`func create(x:type)->Shape { if ( type == 1 ) return Circle{}; else return Square{}; }`
-Then `var x: Shape = create(y);` static type of `x` is Shape because it's output of `create` but it's dynamic type can be either `Circle` or `Square`.
-Note that this binding is for an explicit function call. when we assign function to a variable, the actual function to be used, is determined at runtime with dynamic dispatch. so `var x = paint` where type of x is `func(Circle, Color)` will find a paint function body with matching input. you can have x of type `func(Shape, Color)` and assign a value to it and expect it to do dynamic dispatch when called at runtime. 
-So if we have this:
-`func paint(o: Square, c: SolidColor)`
-`type Shape := (name: string)`
-`type Circle := (x: Shape)`
-`type Square := (x:Shape)`
-`type Color := ();`
-`type SolidColor := (Color, )`
-a call to paint function with some inputs, will use above 3 rules to dispatch.
-- suppose we have `Base` type and `Derived` types. Two methods `add` and `addAll` are implemented for both of them.
-if `addAll(Derived)` calls `addAdd(Base)` which in turn calls `add(Base)` then a call to `addAll(Derived)` will NOT call `add(Derived)` but will call `add(Base)`. When `addAll(Base)` is called, it has a reference to `Base` not a `Derived`. 
-- **Explode operator**: You can apply this operator to data/variables. 
-It will explode or unpack its operator and be replaced by the inner definition. 
-You can use `_` notation when using explode on values, to ignore part of the output:
-- Explode tuple: `var t,u = @p -> t=10, u=20`
-`var x,y,_ = @my_three_ints`
-`var first, _, last = @my_array`
-- Explode operator: `@p ==> x:10,y:20`
-To have a tuple with unnamed fields based on value of another tuple, just put `@` after the dot. So assume `Point` has x and y fields:
-`@my_point` will translate to `x=10, y=20`
-You can combine explode operator with other data or type definition as long as you change type of the field. `var g = {@my_point, z:20}`. g will be `{x:10, y:20, z:20}`. Explode on primitives has no effect (`@int` = `int`).
-- If a type does not have any fields (empty types), you don't need to use embedding to inherit from it. It is optional. You just need to implement appropriate methods (If not, and those methods are defined empty for base type, a compiler error will be thrown). So if we have `func check(x: Alpha)` and `Alpha` type does not have any field, any other data type which implements functions written for `Alpha` can be used instead.
-- Empty types are like interfaces and are defined like `type Alpha`.
-Example about empty types (anythings), inheritance, polymorphism and subtyping:
-```
-type Shape := anything
-func Draw(Shape, int)->int
-
-type BasicShape := (x: string)              ; a normal type
-func Draw(x: BasicShape, y:int)             ; Now BasicShape is compatible with Shape type
-
-type Circle := (BasicShape, name: string)   ; another type which inherits from BasicShape
-func Draw(x: Circle, y:int)                 ; It has it's own impl of Draw which hides Human implementation
-
-type Square := (BasicShape, age: int)       ; another type which embeds BasicShape.
-;calling Draw on Square will call BasicShape version
-
-type OtherShape := anything
-function Draw(x: OtherShape, y:int)         ; OtherShape also implements Hobby
-
-var all: Shape[] = [myBasicShape, myCircle, mySquare, myOtherShape]
-for(Hobby h: all) Draw(h,1,"")
-;implicit casting to empty type. Compiler can check if this is a valid casting or no.
-;compiler can make sure that all currently defined empty functions which accept Shape
-;are defined for MyOtherShape too
-var t: Shape = myOtherShape
-var r: BasicShape = myCircle ;automatic casting - because Circle inherits from BasicShape
-```
-- You can assign a variable any of it's subtypes (including empty type) variables. 
-if a function expects `f: func()->Shape` you can send a function which returns a Circle, because there are implicitly castable.
-If a function expects `x: Stack<Shape>` you cannot send `Stack<Circle>`.
-- You can embed as many types as you want in your tuple, but the first one will be parent.
-- You can even subtype a primitive (or hash or array) to provide a simulated type. For example we are interested in calling a function which expects `int[]` but data comes from a file. We can define `type MyFile := (int[], file_handle:int)` and pass this to the function. All calls to the array will be translated to function calls. `x[0]` will make the call `get(x,0)` so you can write your own functions.
-
-### Templates
 
 ### Best practice
 ### Naming
