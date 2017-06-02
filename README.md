@@ -87,7 +87,8 @@ Source file contains a number of definitions for types and functions.
 - Immutability: All variables are immutable but can be re-assigned.
 
 ## Language in a nutshell
-1. **Primitives**: `int`, `uint`, `string`, ...
+
+1. **Primitives**: `int`, `float`, `char`, `bool`
 2. **Tuple**: `type Point := {x: int, y:int}`
 3. **Union**: `type OperationResult := Point | int | Error`
 4. **Array**: `type JobQueue := int[]`
@@ -97,14 +98,14 @@ Source file contains a number of definitions for types and functions.
 7. **Import**: Is used to import types and functions defined in another file: `import /code/std/Queue`
 8. **Generics**: `type Stack<T> := T[]`
 9. **Immutability**: Only local variables and `ref` arguments are mutable. Everything else is immutable.
-10. **Assignment**: Numbers are assigned by value, other types are assigned by reference.
-All other features (loop and conditionals, exception handling, inheritance and subtyping, polymorphism ...) are achieved using above constructs.
+10. **Assignment**: Primitives are assigned by value, other types are assigned by reference.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Type System
 We have two categories of types: named and unnamed.
-Unnamed: `int, string[], float => int, (int,int)...` - They are created using language keywords and notations like primitive type names, `any`, arry or hash, ....
+Unnamed: `int, string[], float => int, (int,int)...` - They are created using language keywords and notations like 1. **Primitives**: `int`, `float`, `char`, `string`, ...
+ type names, `any`, arry or hash, ....
 Named: `type MyType := ?????` These are defined using `type` statement and on the right side we can have another named or unnamed type. Underlying type of a named type is the underlying type of declaration on the right side. Underlying type of unnamed types, is themselves.
 We have two special types: `nothing` and `anything`. All types are subtypes of `anything` (except `nothing`). `nothing` is only subtype of itself. Nothing is subtype of `nothing`. So if a function expects nothing (which is weird) you can only pass a nothing to it and nothing else. If a function expects `anything` you can pass anything to it (except `nothing`).
 We have 7 kinds of type: tuple, union, array, hash, primitive, function.
@@ -125,10 +126,11 @@ The only way to get nothing, is to run a block which does not throw exception: `
 - But when a function expects an unnamed type, you can either pass named or unnamed type.
 
 ### Primitive
-There are only three primitive data types: `number`. All others are defined based on these two plus some restrictions on size and accuracy.
-- **Number data types**: `char`, `int`, `uint`
-- **Floating point data types**: `float`, `double`
+All others are defined based on these two plus some restrictions on size and accuracy.
+- **Number data types**: `char`, `int`
+- **Floating point data types**: `float`
 - **Others**: `bool`, `nothing`, `anything`, `string`
+Some other types are native types which are not primitive but are provided by compiler: `array`, `map`, `anything`, `nothing`, `string`
 
 You can use core functions to get type identifier of a variable: `type` or `hashKeyType` or `hashValueType`.
 `bool` and `none` are special types with only two and one possible values. `none` is used when a function returns nothing, so compile will change `return` to `return none`.
@@ -829,7 +831,7 @@ AssertStmt = 'assert' condition [':' exception]
 - If condition is not satisfied, it will throw an exception (exception is a built-in type). This will exit current function and outer functions, until it is expected.
 - In order to keep code more readable, you can not return an exception directly.
 - There is no `throw` keyword and this is the only way to cause exception.
-- Output of any function is automatically updated with `| exception`.
+- Output of any function is automatically updated with `| exception` by the compiler (if needed).
 - You can use `assert false, X` to create exception and return from current method immediately.
 ```
 ;inside function adder
@@ -839,7 +841,7 @@ assert false, "Error!"  ;throw exception and exit
 var g: int|exception = func1()   ;this is valid
 ```
 - You can use `defer BLOCK` to tell the runtime to run a block of code after exiting from the function. If function output is named, it will be accessible in defer block.
-- Any assert which uses `::` will be evaluated at compile time. You can use this to implement generic bounds.
+- Any assert which only uses `::` with generic types, will be evaluated at compile time. You can use this to implement generic bounds.
 - Output of any code block `{...}` is evaluation of the last statement unless there is an exception. In which case, the block will exit immediately and this exit will cascade until some place that exception is bound to a variable.
 ```
 var g = {
@@ -852,7 +854,7 @@ return 100 if ( g :: exception)
 var h : int|exception = get_number()
 return x if ( h :: x:int)
 ```
-- **none**: Nothing equals `nothing`. It won't match in any `::` or if.
+- **nothing**: Nothing equals `nothing`. It won't match in any `::` or if.
  You can use it's type for return value of a function.
  But there is no value you can return. `return` will do that.
  Type of an empty block of code, is `none`. It is reverse of `anything` where everything matches with it.
@@ -999,7 +1001,8 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Runtime - use concept of c++ smart ptr to eliminate GC
 - Add native concurrency and communication tools (green thread, channels) and async i/o
 - Introduce caching of function output
-- Versioning, packaging and distribution
+- Build, versioning, packaging and distribution
+- Plugin system to load/unload libraries at runtime
 - Debugger and plugins for Editors
 
 ## Method call resolution
