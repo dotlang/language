@@ -2804,5 +2804,9 @@ q: What does `mut<mut<t>>` mean? it is same as `ref<t>`
 ? - research: how to generate assembly code?
 yasm
 
+
 ? - research: unified type system
+- how to interact with DB
+- How to itneract with C/C++ other libraries
+- `+-*/` operations
 
