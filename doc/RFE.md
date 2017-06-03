@@ -2801,12 +2801,43 @@ q: What does `mut<mut<t>>` mean? it is same as `ref<t>`
 `mut<int>[]` vs `mut<int[]>`
 `mut<int=>string>` vs `int=>mut<string>`
 
+N - can we implement `loop` using functions?
+`loop(10)` -> special case of second item
+`loop(2..20)` -> `loop(2..20, lambda)`
+`loop(x>5)` -> `loop`
+loop over array or hash -> map
+problem 1: implementing break and continue
+problem 2: loop with condition
+problem 3: if it is closure, it cannot modify local variables
+
+Y - `ref<t>` is a big exception. maybe we should get rid of it.
+it is not a big deal for primitives and tuple. 
+The only important use case is for array and hash.
+I believe it is possible to implement efficient immutable hash.
+only array which we can accept.
+
+Y - allow usage of `!` in every case that compiler can deduce value.
+e.g. `func process(x: int, create: func()->int)...`
+`process(12, !)`
+
+Y - what if a tuple embeds anything or nothing?
+for anything its ok. its implied anyway.
+for nothing, it should not be allowed.
+why do we need nothing? to support functions that dont return anything.
+and blocks. 
+
 ? - research: how to generate assembly code?
 yasm
-
 
 ? - research: unified type system
 - how to interact with DB
 - How to itneract with C/C++ other libraries
 - `+-*/` operations
 
+? - determine algorithm for method dispatch and how to implement is with max speed at runtime
+
+? - in order to max compiler speed, we should only re-compile the changed parts. How can this be done?
+
+? - practice with yasm and learn it's syntax (macros, syscall, ...)
+
+? - try to write a PoC code in C to invoke libyasm and compile assembly.
