@@ -14,7 +14,7 @@ June 2, 2017
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
-- **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword and replace with template, added `!` to support protocol parameters.
+- **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.99**: ??? ??? ???? - 
 
 # Introduction
@@ -97,7 +97,7 @@ Source file contains a number of definitions for types and functions.
 6. **Variable**: `var location: Point = {x:10, y:20}`
 7. **Import**: Is used to import types and functions defined in another file: `import /code/std/Queue`
 8. **Generics**: `type Stack<T> := T[]`
-9. **Immutability**: Only local variables and `ref` arguments are mutable. Everything else is immutable.
+9. **Immutability**: Only local variables are mutable. Everything else is immutable.
 10. **Assignment**: Primitives are assigned by value, other types are assigned by reference.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
@@ -301,7 +301,7 @@ var w: B = B(@A) ;this will not fail because we are casting, so it will ignore e
 Casting to a tuple, can accept either a tuple literal or tuple variable or an exploded tuple.
 Note that there is no support for implicit casting functions. If you need a custom cast, write a separate function and explicitly call it.
 - `%Type` without paren creates a default instance of the given type.
-- When doing cast to a generic type, you can ignore type if it can be deduced. `var t = %ref(t)`
+- When doing cast to a generic type, you can ignore type if it can be deduced. 
 
 ### Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
@@ -315,7 +315,7 @@ var x:int
 var y : int = 19
 var t = 12  ;imply type from 12
 ```
-A function which has no input and returns `T` is treated like a variable of type `T`. This can be used to have lazy evaluation. So if you send the function/lambda to another function, to the outside world, it is int variable. inside they carry a lambda. Note that you cannot use this for `ref` variables.
+A function which has no input and returns `T` is treated like a variable of type `T`. This can be used to have lazy evaluation. So if you send the function/lambda to another function, to the outside world, it is int variable. inside they carry a lambda.
 Cloning, passing, assigning to other vars does not change or evaluate the variable. But as soon as you have something like: `x=lazy_var+1` then function is being called.
 - As soon as you declare a variable it will have some value. Even if it is a tuple, it will have all fields set to default value.
 - You can define local variables using `var` keyword.
@@ -390,6 +390,7 @@ if a function expects `f: func()->Shape` you can send a function which returns a
 If a function expects `x: Stack<Shape>` you cannot send `Stack<Circle>`.
 - You can embed as many types as you want in your tuple, but the first one will be parent.
 - You can even subtype a primitive (or hash or array) to provide a simulated type. For example we are interested in calling a function which expects `int[]` but data comes from a file. We can define `type MyFile := (int[], file_handle:int)` and pass this to the function. All calls to the array will be translated to function calls. `x[0]` will make the call `get(x,0)` so you can write your own functions.
+- You cannot inherit from `nothing`.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
@@ -479,19 +480,6 @@ add(int_array, "A") will fail
 ```
 - This is a function that accepts an input of any type and returns any type: `type Function := func(any)->any`. Note that you cannot define a function type that can accept any number of anything.
 - When calling a function, you can remove parentheses if there is no ambiguity (only a single call is being made).
-- There is a special type: `type mut<T> := T` which can be used to include a mutable reference to another value.
-```
-func process(x:mut<int>) { x.value++ }
-...
-var t = 12
-process(%mut(t))   ;you can omit <int>
-```
-`var g: mut<int> = %mut(x) ;g++ will increase value of x`
-compiler can help with literal and mut: `var f: mut<int> = 12` will create a temp variable and ref to it.
-`var t:int = refVar.value` t is no longer mutable.
-- `mut<mut<t>>` is same as `mut<t>`
-- Key of a hashtable cannot be mutable.
-
 if a function needs a parameter which must have fields from two types, it can be defined like this:
 `func process(x: (TypeA, TypeB))` this is an in-place definition of a tuple which inherits from two other tuples.
 - Function call: `process(x:10, y:20)`
@@ -679,6 +667,7 @@ this will invoke `func item()->int` to provide value for this argument.
 ```
 - Protocols can embed other types to include their fields.
 - You can define and implement a protocol for a type outside your codebase, that's why you dont need to specify which protocols are implemented by a type upon declaration.
+- You can use `!` anytime when calling a function to ask compiler to infer the parameter. For example if parameter is a function pointer, appropriate function with same name will be sent. If it is a primitive, a local variable with the same name or type (if not found, a function) will be used.
 
 
 ## Phantom types
@@ -735,7 +724,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - You can have multiple assignments at once: `x,y=1,2`
 
 ### Special Syntax
-- `!` protocol inference
+- `!` inference
 - `@` explode 
 - `$.i` function inputs tuple
 - `$_` input place-holder
@@ -753,9 +742,11 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `<>` generics
 - `()` function call
 
-Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `loop`, `break`, `continue`, `if`, `else`, `assert`
+Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `loop`, `break`, `continue`, `assert`
+semi-Keywords: `if`, `else` (used in syntax sugar)
 Operators: 
 Primitive data types: `int`, `float`, `char`
+Helper data types: `bool`, `string`, `array`, `map`, `anything`, `nothing`
 
 ### Chaining
 Chain operators are just syntax sugars. They are transformed by compiler. 
@@ -864,13 +855,12 @@ return x if ( h :: x:int)
 - **nothing**: Nothing equals `nothing`. It won't match in any `::` or if.
  You can use it's type for return value of a function.
  But there is no value you can return. `return` will do that.
- Type of an empty block of code, is `none`. It is reverse of `anything` where everything matches with it.
+ Type of an empty block of code, is `nothing`. It is reverse of `anything` where everything matches with it.
 
 ###loop, break, continue
 `loop(5) { ... }`
 `loop(2,20) { ... }`
 `loop(x>5) { ... }`
-`loop(x:5) { ... }`
 `loop(x: array) { ... }`
 `loop(k: hash) { ... }`
 `loop(k,v: hash) { ...}`
@@ -901,6 +891,7 @@ Also you can call a function or refer to a type with fully qualified name:
 `import /a/b` import from local file system
 `import file:/a/b` import from local file system
 `import git:/github.com/adsad/dsada` import from github
+`import /core/std/{ab, cd, ef}` to import multiple modules
 
 ### native
 Denotes function is implemented by runtime or external libraries.
@@ -919,7 +910,7 @@ Another advantage: It won't interfer with method dispatch or subtyping.
 
 ### Best practice
 ### Naming
-- **Naming rules**: Advised but not mandatory: `  someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings.
+- **Naming rules**: Advised but not mandatory: `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings.
 - You can suffix if and for and `x loop(10)` will run x 10 times.
 
 ## Examples
@@ -1012,6 +1003,7 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Plugin system to load/unload libraries at runtime
 - Debugger and plugins for Editors
 - Atomic
+- Testing
 
 ## Method call resolution
 How runtime should handle a method call like: `f(x,y,z)`?
@@ -1022,6 +1014,7 @@ How runtime should handle a method call like: `f(x,y,z)`?
 5. find x in CL where type of parameters are DT1, DT2, DT3
 6. If found one, call `x` and finish. If found more than one -> Error and finish.
 7. Look for a candidate which supports maximum number of dynamic types.
+We will be looking for most specialized implementation. The most specialized type is the dynamic type and least one is `anything`. Named types are more specialized than their unnamed equivalent.
 functions with named empty types are superior to unnamed (anything).
 ```
 func process(x: anything)
