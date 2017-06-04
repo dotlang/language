@@ -2844,3 +2844,10 @@ yasm
 ? - practice with yasm and learn it's syntax (macros, syscall, ...)
 
 ? - try to write a PoC code in C to invoke libyasm and compile assembly.
+
+? - if a tuple has a function pointer, we can write: `point.process(...)`.
+This will be ambiguous with chaining!
+And by adding function pointers inside tuple, we can have minified oop.
+maybe we should set composition operator to `<<` and `>>`
+
+? - embedding a dummy array does not seem intuitive. Here, the goal is to simulate an array. we can define a normal tuple, write appropriate functions, then in the target function declare `x:T, arrayAccessor: Arr<T>` meaning that we expect T to be treated like an array. As a result, tuples can only embed other tuples. no primitive or hash or array or sum-type.
