@@ -2849,6 +2849,7 @@ yasm
 This will be ambiguous with chaining!
 And by adding function pointers inside tuple, we can have minified oop.
 maybe we should set composition operator to `<<` and `>>`
+or `\` `/`
 
 ? - embedding a dummy array does not seem intuitive. Here, the goal is to simulate an array. we can define a normal tuple, write appropriate functions, then in the target function declare `x:T, arrayAccessor: Arr<T>` meaning that we expect T to be treated like an array. As a result, tuples can only embed other tuples. no primitive or hash or array or sum-type.
 
@@ -2858,3 +2859,13 @@ unsigned can be removed.
 int8 -> byte
 int32 -> int
 int64 -> long
+what about everything long and providing core functions to support multi-byte tuple to process images or do bitwise operations?
+
+? - places of special behavior: array and map. anything and nothing.
+where we have exceptions.
+
+? - q: in which cases should we allocate on heap and in which on stack?
+
+? - in method dispathc, there should be an exception for methods with one arg. if we have `f(Shape)` and we call `f(myCircle)` although there is no func that covers at least one argument's dynamic type, but we should call f-Shape because it makes sense. but what if we have another argument which is int?
+`func process(s: Shape, len: int)`
+`process(myCircle, 10)`?
