@@ -2826,6 +2826,9 @@ for nothing, it should not be allowed.
 why do we need nothing? to support functions that dont return anything.
 and blocks. 
 
+? - Maybe we should disallow embedding primitives (char, int, float) because suppose there is a function which accepts char.
+Then, what should I pop from stack? 1 byte (normal char) or 4 bytes (a pointer to a tuple which embeds char)?
+
 ? - research: how to generate assembly code?
 yasm
 
