@@ -321,7 +321,7 @@ Cloning, passing, assigning to other vars does not change or evaluate the variab
 - You can define local variables using `var` keyword.
 `var x: int = 19; x= 11 ;ok - can re-assign`
 - You can define consts using functions: `func PI -> 3.14`
-- You can define local const variables using: `var x: float = 3.14 where { false }`
+
 ### Inheritance and Polymorphism
 - Tuples can inherit from a single other tuple by having it as their first field and defined as anonymous.
 `type Circle := (Shape, ...)`
@@ -331,7 +331,7 @@ Cloning, passing, assigning to other vars does not change or evaluate the variab
 `func paint(o:Circle)...`
 `func paint(o:Square)...`
 - Any variable has two types: Static (what is visible in the source code), and dynamic.
-`var c: Shape = createCircle` - static type is Shape but dynamic type is Circle. 
+`var c: Shape = createCircle()` - static type is Shape but dynamic type is Circle. 
 - We can keep a list of shapes in an array/collection of type Shape: `var o: Shape[] = [myCircle, mySquare];`
 - You can iterate over shapes in `o` array defined above, and call `paint` on them. With each call, appropriate `paint` method will be called (this appropriate method is identified using 3 dispatch rules explained below).
 - Visible type (or static type), is the type of the variable which can be seen in the source code. Actual type or dynamic type, is it's type at runtime. For example:
@@ -388,9 +388,7 @@ var r: BasicShape = myCircle ;automatic casting - because Circle inherits from B
 - You can assign a variable any of it's subtypes (including empty type) variables. 
 if a function expects `f: func()->Shape` you can send a function which returns a Circle, because there are implicitly castable.
 If a function expects `x: Stack<Shape>` you cannot send `Stack<Circle>`.
-- You can embed as many types as you want in your tuple, but the first one will be parent.
-- You can even subtype a primitive (or hash or array) to provide a simulated type. For example we are interested in calling a function which expects `int[]` but data comes from a file. We can define `type MyFile := (int[], file_handle:int)` and pass this to the function. All calls to the array will be translated to function calls. `x[0]` will make the call `get(x,0)` so you can write your own functions.
-- You cannot inherit from `nothing`.
+- You can embed as many types as you want in your tuple, but the first field will be parent.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
@@ -715,17 +713,18 @@ func openDoor(x: Door<Closed>) -> Door<Open>
 ## Operators
 - Conditional: `and or not == != >= <=`
 - Math: `+ - * % %% (is divisible) ++ -- **`
-- Note that `+` operator can also work on arrays which joins two arrays together.
 The math operators can be combined with `=` to do the calculation and assignment in one statement.
 - `=` operator: copies only for primitive type, makes a variable refer to the same object as another variable for any other type. If you need a copy, you have to clone the variable. 
 - `x == y` will call `opEquals` functions is existing, by default compares field-by-field values. But you can override.
 - We don't have operators for bitwise operations. They are covered in core. 
 - `equals` functions is used for equality check.
 - You can have multiple assignments at once: `x,y=1,2`
+- `x[y]` will call `opIndex(x,y)` function. This is handled by the compiler to provide syntax sugar for arrays and hashtables, but you can also use it for your own types.
 
 ### Special Syntax
-- `!` inference
+- `!` argument inference 
 - `@` explode 
+- `#` chaining
 - `$.i` function inputs tuple
 - `$_` input place-holder
 - `%` casting
@@ -734,7 +733,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `:=` custom type definition
 - `=>` hash type and hash literals
 - `|` sum types
-- `.` access tuple fields, chaining
+- `.` access tuple fields
 - `[]` hash and array literals
 - `::` matching
 - `_` Placeholder for explode
@@ -750,10 +749,10 @@ Helper data types: `bool`, `string`, `array`, `map`, `anything`, `nothing`
 
 ### Chaining
 Chain operators are just syntax sugars. They are transformed by compiler. 
-`input.f(x,y)` means `f(input, x,y)`
-`str.contains(":")`
+`input#f(x,y)` means `f(input, x,y)`
+`str#contains(":")`
 So in above case for example, `contains` function must have two inputs. We just use this notation because sometimes it is easier to read. 
-`[1,2,3].map(square).sum()`
+`[1,2,3]#map(square)#sum()`
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
