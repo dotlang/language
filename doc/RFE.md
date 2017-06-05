@@ -2840,6 +2840,10 @@ Then, what should I pop from stack? 1 byte (normal char) or 4 bytes (a pointer t
 N - places of special behavior: array and map. anything and nothing.
 where we have exceptions.
 
+Y - now that `x[y]` calls `opIndex` let's remove another exception:
+`x=[7, 8, 9]` will make 3 calls: `opIndex(x,0, 7)` to `opIndex(x, 2, 9)`
+`x=[1=>'a', 2=>'b', 3=>'c']` calls: `opIndex(x, 1, 'a')`, ...
+
 ? - research: how to generate assembly code?
 yasm
 
@@ -2863,9 +2867,15 @@ int8 -> byte
 int32 -> int
 int64 -> long
 what about everything long and providing core functions to support multi-byte tuple to process images or do bitwise operations?
+Also when dealing with externals, we can provide function to convert int to 8-16-32 bit integers using a byte array.
+Also based on https://stackoverflow.com/questions/4584637/double-or-float-which-is-faster and https://stackoverflow.com/questions/417568/float-vs-double-performance it seems that at least on x86, they are the same. So let's just keep float which has a more meaningful name and remove double.
+Maybe we don't need to deal with arb precision int. a 64 bit integer is sufficient for 99% of cases. The other 1% can use builtin bigInt types.
 
 ? - q: in which cases should we allocate on heap and in which on stack?
 
 ? - in method dispathc, there should be an exception for methods with one arg. if we have `f(Shape)` and we call `f(myCircle)` although there is no func that covers at least one argument's dynamic type, but we should call f-Shape because it makes sense. but what if we have another argument which is int?
 `func process(s: Shape, len: int)`
 `process(myCircle, 10)`?
+
+? - we might be able to eliminate heap fragmentation by double referencing.
+So a heap pointer does not point to actual memory address but points to an index inside an array whose values are memory pointers. 
