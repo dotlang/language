@@ -2826,8 +2826,19 @@ for nothing, it should not be allowed.
 why do we need nothing? to support functions that dont return anything.
 and blocks. 
 
-? - Maybe we should disallow embedding primitives (char, int, float) because suppose there is a function which accepts char.
+Y - if a tuple has a function pointer, we can write: `point.process(...)`.
+This will be ambiguous with chaining!
+And by adding function pointers inside tuple, we can have minified oop.
+maybe we should set composition operator to `<<` and `>>`
+or `\` `/`. 
+
+Y - embedding a dummy array does not seem intuitive. Here, the goal is to simulate an array. we can define a normal tuple, write appropriate functions, then in the target function declare `x:T, arrayAccessor: Arr<T>` meaning that we expect T to be treated like an array. As a result, tuples can only embed other tuples. no primitive or hash or array or sum-type.
+
+Y - Maybe we should disallow embedding primitives (char, int, float) because suppose there is a function which accepts char.
 Then, what should I pop from stack? 1 byte (normal char) or 4 bytes (a pointer to a tuple which embeds char)?
+
+N - places of special behavior: array and map. anything and nothing.
+where we have exceptions.
 
 ? - research: how to generate assembly code?
 yasm
@@ -2845,14 +2856,6 @@ yasm
 
 ? - try to write a PoC code in C to invoke libyasm and compile assembly.
 
-? - if a tuple has a function pointer, we can write: `point.process(...)`.
-This will be ambiguous with chaining!
-And by adding function pointers inside tuple, we can have minified oop.
-maybe we should set composition operator to `<<` and `>>`
-or `\` `/`
-
-? - embedding a dummy array does not seem intuitive. Here, the goal is to simulate an array. we can define a normal tuple, write appropriate functions, then in the target function declare `x:T, arrayAccessor: Arr<T>` meaning that we expect T to be treated like an array. As a result, tuples can only embed other tuples. no primitive or hash or array or sum-type.
-
 ? - data types: int8, int16, int32, int64.
 int16 can be removed. 
 unsigned can be removed.
@@ -2860,9 +2863,6 @@ int8 -> byte
 int32 -> int
 int64 -> long
 what about everything long and providing core functions to support multi-byte tuple to process images or do bitwise operations?
-
-? - places of special behavior: array and map. anything and nothing.
-where we have exceptions.
 
 ? - q: in which cases should we allocate on heap and in which on stack?
 
