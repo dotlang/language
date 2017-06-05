@@ -167,6 +167,8 @@ But compiler provides syntax sugars for them:
 `var x: int[3] = [1,2,3]` hybrid
 `var x: int[] = [1,2,3]` pure
 - Slice can be left side of an assignment.
+- So if a function plans to accept inputs which are not native array, it can be defined like this:
+`func process<T>(x: T, arrayFuncs: ArrAccessors<T>)` which means `x` input will have appropriate methods to be accessed like an array. Then inside `process` function it can use `x[0]` and other methods to work with x.
 
 ### Hashtable
 Hashtable or Maps are built-in types:
