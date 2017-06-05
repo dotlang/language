@@ -15,7 +15,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - 
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -88,7 +88,7 @@ Source file contains a number of definitions for types and functions.
 
 ## Language in a nutshell
 
-1. **Primitives**: `int`, `float`, `char`, `bool`
+1. **Primitives**: `int`, `float`, `byte`, `bool`
 2. **Tuple**: `type Point := {x: int, y:int}`
 3. **Union**: `type OperationResult := Point | int | Error`
 4. **Array**: `type JobQueue := int[]`
@@ -104,7 +104,7 @@ Source file contains a number of definitions for types and functions.
 
 # Type System
 We have two categories of types: named and unnamed.
-Unnamed: `int, string[], float => int, (int,int)...` - They are created using language keywords and notations like 1. **Primitives**: `int`, `float`, `char`, `string`, ...
+Unnamed: `int, string[], float => int, (int,int)...` - They are created using language keywords and notations like 1. **Primitives**: `int`, `float`, `byte`, `string`, ...
  type names, `any`, arry or hash, ....
 Named: `type MyType := ?????` These are defined using `type` statement and on the right side we can have another named or unnamed type. Underlying type of a named type is the underlying type of declaration on the right side. Underlying type of unnamed types, is themselves.
 We have two special types: `nothing` and `anything`. All types are subtypes of `anything` (except `nothing`). `nothing` is only subtype of itself. Nothing is subtype of `nothing`. So if a function expects nothing (which is weird) you can only pass a nothing to it and nothing else. If a function expects `anything` you can pass anything to it (except `nothing`).
@@ -145,8 +145,9 @@ Arrays are a special built-in type:
 `type Array<T> := native`
 But compiler provides syntax sugars for them:
 1. `int[]` will be translated to `array<int>`
-2. `arr[2]` will be translated to `get(arr, 2)` and `set(arr, 2, value)`
-3. Array literals like `[1,2,3]` will be translated to `set` function calls.
+2. `arr[2]` will be translated to `opIndexGet(arr, 2)` and `opIndexSet(arr, 2, value)`
+3. Array literals like `[1,2,3]` will be translated to `opIndex` function calls.
+`x=[7, 8, 9]` will make 3 calls: `opIndex(x,0, 7)` to `opIndex(x, 2, 9)`
 
 - Array literals are specified using brackets: `[1, 2, 3]`
 - `var x: int[] = [1, 2, 3];`
@@ -173,6 +174,7 @@ Hashtable or Maps are built-in types:
 But compiler will provide syntax sugar for them:
 `K=>V` => `Map<K,V>`
 `map[key]` => `get(map, key)`/`set(map,key, value)`
+`x=[1=>'a', 2=>'b', 3=>'c']` calls: `opIndex(x, 1, 'a')`, ...
 Hash literals will be converted to a set of `set` function calls.
 Hashtables are sometimes called "associative arrays". So their syntax is similar to arrays:
 - `A => B` is used to define hash type. Left of `=>` is type of key and on the right side is type of value. If key or value have multiple elements, a tuple should be used.
