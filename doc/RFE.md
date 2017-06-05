@@ -2873,9 +2873,34 @@ Maybe we don't need to deal with arb precision int. a 64 bit integer is sufficie
 
 ? - q: in which cases should we allocate on heap and in which on stack?
 
-? - in method dispathc, there should be an exception for methods with one arg. if we have `f(Shape)` and we call `f(myCircle)` although there is no func that covers at least one argument's dynamic type, but we should call f-Shape because it makes sense. but what if we have another argument which is int?
+? - In method dispatch, there should be an exception for methods with one arg. if we have `f(Shape)` and we call `f(myCircle)` although there is no func that covers at least one argument's dynamic type, but we should call f-Shape because it makes sense. but what if we have another argument which is int?
 `func process(s: Shape, len: int)`
 `process(myCircle, 10)`?
 
 ? - we might be able to eliminate heap fragmentation by double referencing.
 So a heap pointer does not point to actual memory address but points to an index inside an array whose values are memory pointers. 
+double and int are both 8 bytes. Byte is 1 byte. string is a byte array. 
+Because variety of storage size is not much (1 and 8 bytes) it will help reduce heap fragmentation.
+Also we should do stack allocation as much as we can.
+
+? - When generating redirection functions, how can we write it?
+`func process(Circle, SolidColor) -> process(Shape, Color)`
+`func process(Circle, SolidColor) -> %func(Shape,color)(^process)(x, y)`
+This is like: `getAdder(1,2)("Hello")(4)` because if output of an expression if a fp you can call it directly.
+The only thing that we can do to make this more readable is to change casting syntax.
+
+? - The syntax for casting can become messy. Can we enhance it?
+`%func(Shape,color)(^process)`
+`%Point({x:10, y:20})`
+We do not allow the developer to write custom casting functions. So the syntax should not be similar to function call.
+`%Point{x:10, y:20}`
+`%func(Shape,color){^process}`
+`%Storage<int, Circle>{x,y,z}`
+
+? - for method dispatch, we can consider any type like a range.
+anything will be -inf,+inf
+shape will be: -100,100
+circle will be: -20,+20
+each type will be inside it's parent.
+each argument's dynamic type is like a ball which is being dropped on the surface. The first level which it hit by the ball is the actual type used for function call.
+So for any non-tuple field, we use explicit match to remove excess candidates. Remaining candidates will be tested with their tuple parameters, against tuple arguments. So we can think of the problem as matching a set of tuple arguments with tuple parameters belonging to candidates.
