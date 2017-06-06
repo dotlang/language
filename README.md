@@ -15,7 +15,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable, remove anything type, change notation for inference, added `~ for `opCat`, removed lambda-maker and `$_` placeholder
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable, remove anything type, change notation for inference, added `~ for `opCat`, removed lambda-maker and `$_` placeholder, clarifications about casting to function type and forwarding,
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -531,7 +531,18 @@ var modifier = { $.0 + $.1 }  ;if input/output types can be deduced, you can eli
 ```
 - You can access lambda input using `$.0, ...` notation too.
 - Lambdas have read-only access to free variables in their parent semantic scope.
-- You can call a function pointer by providing argument names. In this case, names should match with type of the function pointer, not the literal or function which is assigned to the pointer.
+- Function pointers cannot take part in method dispatch. They must point to a specific function. This is specified using their type or by casting a function name: `%func(s:Shape){process}` this will return a function pointer pointing to a specific function named process with one input which can accept a Shape (maybe not exactly a Shape, depending on method dispatch algorithm).
+- Casting to function pointer can be used to forward a call or call a function which is hidden in child types.
+`func process(c: Circle) -> %func(s:Shape){process}(c)`
+Other way to do this:
+```
+func process(c: Circle) -> int {
+;you cannot infer type from a function name, unless there is only one function with that name
+ var f: func(s: Shape) = process 
+ var g = process ;this is wrong
+ return f(c)
+}
+```
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
