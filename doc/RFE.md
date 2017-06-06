@@ -2862,23 +2862,29 @@ We do not allow the developer to write custom casting functions. So the syntax s
 `%func(Shape,color){^process}`
 `%Storage<int, Circle>{x,y,z}`
 
-? - research: how to generate assembly code?
-yasm
+Y - Nothing is a sum type with only one value: `nothing`.
 
-? - research: unified type system
+Y - remove `anything`.
+With having templates, we don't need `anything`. It just makes method dispatch more complicated.
+What about matching?
+Rust -> `_`
+Haskell -> `_`
+F# -> `_` same as Scala
+
+Y - a function pointer should not participate in dynamic method resolution. We should use it's type to find the exact methods we need to call.
+
+N - Maybe we can change casting syntax:
+`var x = int{{y}}`
+`var x = Point{{x:10, y:20}}`
+`var x = func(Shape,color){{^process}}`
+But I think, `%` notation is more readable.
+
+N - research: unified type system
 - how to interact with DB
 - How to itneract with C/C++ other libraries
 - `+-*/` operations
 
-? - determine algorithm for method dispatch and how to implement is with max speed at runtime
-
-? - in order to max compiler speed, we should only re-compile the changed parts. How can this be done?
-
-? - practice with yasm and learn it's syntax (macros, syscall, ...)
-
-? - try to write a PoC code in C to invoke libyasm and compile assembly.
-
-? - data types: int8, int16, int32, int64.
+Y - data types: int8, int16, int32, int64.
 int16 can be removed. 
 unsigned can be removed.
 int8 -> byte
@@ -2889,18 +2895,79 @@ Also when dealing with externals, we can provide function to convert int to 8-16
 Also based on https://stackoverflow.com/questions/4584637/double-or-float-which-is-faster and https://stackoverflow.com/questions/417568/float-vs-double-performance it seems that at least on x86, they are the same. So let's just keep float which has a more meaningful name and remove double.
 Maybe we don't need to deal with arb precision int. a 64 bit integer is sufficient for 99% of cases. The other 1% can use builtin bigInt types.
 
-? - q: in which cases should we allocate on heap and in which on stack?
-we can have  pre-allocated buffer for int and strings.
+Y - Can a function pointer be assigned to functions with different parameter names?
+If so, can we call the function pointer with named arguments?
+Do we need to specify parameter name in function pointer?
+`type adder := (x: int, y:int) -> int`
+`func process(a: int, b:int) ...`
+`var t: adder = ^process;`
+`t(x: 10, y:12)`
 
-? - In method dispatch, there should be an exception for methods with one arg. if we have `f(Shape)` and we call `f(myCircle)` although there is no func that covers at least one argument's dynamic type, but we should call f-Shape because it makes sense. but what if we have another argument which is int?
-`func process(s: Shape, len: int)`
-`process(myCircle, 10)`?
+Y - We should state that argument name is not part of a type. So any function with same types can be assigned to a lambda variable.
 
-? - we might be able to eliminate heap fragmentation by double referencing.
+Y - remove call by Named arguments: 
+Cons: it can result in style war, there should be preferraly only one way to do it.
+But with this, a function with 3 inputs will have 3! ways to be called.
+- One way to do it: Other than 3! we also can use a tuple with named fields.
+Alternative: Using an unnamed tuple.
+Disadvantage: If we use unnamed tuple, method dispatch won't work. Because it cannot go inside a tuple fields.
+`func process(x: {s: Shape})`
+what if we call process like: `process({s: myCircle})`?
+Also there is a confusion regarding lambdas. If the type indicates argument names, can we use/change it in the literal?
+`type adder := (x: int, y:int) -> int`
+`var rr: adder = (a:int, b:int) -> { a + b }`
+`var rr: adder = func { x + y }`
+Problem is we use multiple dispatch but Go does not have this. Forcing developer to use unnamed tuples, will stop him from using multiple dispatch.
+if we have multiple functions with same name and arg count but different arg name, can named arguments force runtime to pick a specific function?
+`func process(s: Shape, c:Color)`
+`func process(cr: Circle, sc: SolidColor)`
+`process(c: ..., s:...)`
+what if I want to use named arg and keep method dispatch?
+There is a chance that I miss method dispatch by providing argument names. 
+So:
+cons: may loose method dispatch, useless style war, many ways to do something, encourages functions with large number of arguments, it won't help readability if its not mandatory. 
+
+N - What syntax sugar do we have? Is it worth the cost (notation, learning curve, complexity)? What is the alternative?
+- Array and Map
+- string and concat
+- `$_`
+- `_`
+
+Y - How do we solve the problem of string concatenation?
+Will it remain an exception? 
+we dont need operator for regex.
+So maybe we can make use of `~` operator. 
+Just like `x[y]` which calls opIndex, we can define `~` to call `opConcat`.
+And user can define this method for any other type he wants.
+So `+` doesn't need to be changed.
+
+Y - Provide a simple comparison with C, Go, Scala.
+
+N - we might be able to eliminate heap fragmentation by double referencing.
 So a heap pointer does not point to actual memory address but points to an index inside an array whose values are memory pointers. 
 double and int are both 8 bytes. Byte is 1 byte. string is a byte array. 
 Because variety of storage size is not much (1 and 8 bytes) it will help reduce heap fragmentation.
 Also we should do stack allocation as much as we can.
+
+N - implementation: Instead of confusing things like perl's INC or Go's GOPATH, we should do like Go's new `vendor` dir or node system, to store dependencies.
+
+Y - The duality of function call and function pointer call may make things confusing.
+We should have same rules.
+For example:
+`&process(myCircle,$_,$_)(10, 20)` ~ `process(myCircle, 10, 20)`
+Which `process` function will this code call?
+What is type of this expression: `process(myCircle, $_, $_)`?
+Suppose that we have:
+`func pocess(Circle, int, int)`
+`func process(Circle float, float)`
+`var x = &process(myCircle, $_, $_)`
+`var x = func(x: int, y:int) -> { process(myCircle, x, y) }`
+We shall remove `$_` but what about `&`?
+If we have to follow `var t = &func` it does not make much sense to have `&`.
+
+? - In method dispatch, there should be an exception for methods with one arg. if we have `f(Shape)` and we call `f(myCircle)` although there is no func that covers at least one argument's dynamic type, but we should call f-Shape because it makes sense. but what if we have another argument which is int?
+`func process(s: Shape, len: int)`
+`process(myCircle, 10)`?
 
 ? - for method dispatch, we can consider any type like a range.
 anything will be -inf,+inf
@@ -2965,18 +3032,4 @@ When generating these fwd functions, compiler can save space and time by using s
 But this is not a matrix, this will be a set of trees. But I think the same rule can be applied using child/parent relation.
 So by using sum types, number of fwd functions will be equal or less than number of developer defined functions.
 Equivalently, we can say for each definition like `type Circle := { Shape...` we need to scan functions that have Shape input. and write fwd from Circle to Shape with same name and other inputs.
-
-
-? - Nothing is a sum type with only one value: `nothing`.
-
-? - remove `anything`.
-With having templates, we don't need `anything`. It just makes method dispatch more complicated.
-
-? - a function pointer should not participate in dynamic method resolution. We should use it's type to find the exact methods we need to call.
-
-? - Maybe we can change casting syntax:
-`var x = int{{y}}`
-`var x = Point{{x:10, y:20}}`
-`var x = func(Shape,color){{^process}}`
-But I think, `%` notation is more readable.
 
