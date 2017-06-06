@@ -13,6 +13,10 @@ main features:
 - generics: C++
 - first-class function: Go
 Go#?
+potent
+brute
+jumpstate - Simple and powerful state management for Redux.
+dotlang.org is free, dot is a short and simple word and a dot is a simple notation which is also powerful because it is used everywhere.
 
 
 N - A notation to join two arrays.
