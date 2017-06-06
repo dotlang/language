@@ -2965,6 +2965,30 @@ Suppose that we have:
 We shall remove `$_` but what about `&`?
 If we have to follow `var t = &func` it does not make much sense to have `&`.
 
+Y - So: How can we write fwd function:
+`func process(c: Circle) -> process(?)`
+we want to redirect to process which accepts a Shape.
+If we want to change the type, we can easily cast. But sometimes this is not what we want.
+`var x = func(x: int, y:int) -> { process(myCircle, x, y) }`
+`var x: func(s:Shape) = process` this will match with exact type name.
+`func process(c: Circle) -> %func(s:Shape){process}(c)`
+Maybe we should ban this!
+What if inside a function working with Circle, I want to call the same function for Shape?
+Go: `process(c.Shape)`. This will loose the dynamic type.
+But if we want to call a function based on parent, maybe we should really change the type of the argument.
+`func process(c: Circle) -> process(c.Shape)`
+Maybe we should just avoid all virtual functions. Children types can hide functions of the parent with their own implementation. But if a function on the parent calls another function, it will be called for parent.
+But having virtual functions will give us better runtime polymorphism. And if `area` for Circle is re-defined, anywhere we call `area` for a Circle, it should call the re-defined function.
+Similarly, we may want to call a method for parent's parent. 
+`process(myCircle)` - when we call a function normally, a full method dispatch process takes place.
+If we ignore that, we need to specify exactly what function to call.
+Option 1: Have normal method call or static-typed method call -> what if that method for static type does not exist?
+Option 2: Change type of the argument.
+Option 3: Invoke method dispatch to fetch result as a function pointer. Then call it.
+We can define casting on a function name, as a result of method dispatch. 
+Because a function pointer, cannot be used in method dispatch.
+`func process(c: Circle) -> %func(s:Shape){process}(c)`
+
 ? - In method dispatch, there should be an exception for methods with one arg. if we have `f(Shape)` and we call `f(myCircle)` although there is no func that covers at least one argument's dynamic type, but we should call f-Shape because it makes sense. but what if we have another argument which is int?
 `func process(s: Shape, len: int)`
 `process(myCircle, 10)`?
@@ -3032,4 +3056,7 @@ When generating these fwd functions, compiler can save space and time by using s
 But this is not a matrix, this will be a set of trees. But I think the same rule can be applied using child/parent relation.
 So by using sum types, number of fwd functions will be equal or less than number of developer defined functions.
 Equivalently, we can say for each definition like `type Circle := { Shape...` we need to scan functions that have Shape input. and write fwd from Circle to Shape with same name and other inputs.
+for each `func process(T,U,V)` add another function:
+`func process(x:T1|T2|..., y:U1|U2|U3..., z:V1|V2|V3...) -> %func(T,U,V){process}(x, y, z)`
+where Ti, Ui, Vi are child types for T, U and V.
 
