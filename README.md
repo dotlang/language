@@ -15,7 +15,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -294,17 +294,16 @@ var w: B = (@A) ;this will fail, because type B does not have y
 var w: B = B(@A) ;this will not fail because we are casting, so it will ignore extra data
 ```
 - Casting examples:
-`%int(x)`
-`%string(x)`
-`%OptionalInt(x)`
-`%Point(var)`
-`%Point({x:10, y:20})` --cast a tuple literal
-`%Point(x:10, y:20)` -- cast an exploded tuple
-`%Point(@t)` same as `%Point(t)`
-`%Point(int)(x:10, y:20)` -- casting combined with type specialization
+`%int{x}`
+`%string{x}`
+`%OptionalInt{x}`
+`%Point{var}`
+`%Point{x:10, y:20}` --cast a tuple literal
+`%Point{@t}` same as `%Point(t)`
+`%Point<int>{x:10, y:20}` -- casting combined with type specialization
 Casting to a tuple, can accept either a tuple literal or tuple variable or an exploded tuple.
 Note that there is no support for implicit casting functions. If you need a custom cast, write a separate function and explicitly call it.
-- `%Type` without paren creates a default instance of the given type.
+- `%Type{}` without input creates a default instance of the given type.
 - When doing cast to a generic type, you can ignore type if it can be deduced. 
 
 ### Variables
@@ -393,6 +392,8 @@ var r: BasicShape = myCircle ;automatic casting - because Circle inherits from B
 if a function expects `f: func()->Shape` you can send a function which returns a Circle, because there are implicitly castable.
 If a function expects `x: Stack<Shape>` you cannot send `Stack<Circle>`.
 - You can embed as many types as you want in your tuple, but the first field will be parent.
+- To redirect a function to another one with types in the same hierarchy:
+`func process(Circle, SolidColor) -> %func(Shape,color){^process}(x, y)`
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
