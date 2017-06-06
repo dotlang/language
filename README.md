@@ -15,7 +15,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable, remove anything type, change notation for inference, added `~ for `opCat`, removed lambda-maker and `$_` placeholder
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -40,7 +40,13 @@ The underlying rules of design of this language are
 
 As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  There are functions and types. Each function gets one or more input (each of it's own type) and gives an output. Types include primitive data types, tuple, sum types and a general type alias. Concurrency, lambda expression and exception handling are supported.
 
-In summary, Dotlang is C language + Garabage collector + first-class functions + sum data types + module system + composition and powerful polymorphism + simple and powerful standard library + immutability + built-in data validation + contracts + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + built-in concurrency + built-in memoization + sane defaults - ambiguities - pointers - macros - header files.
+### Comparison
+Compared with C: dotlang is C language + Garabage collector + first-class functions + template programming + sum data types + module system + composition and powerful polymorphism + simple and powerful standard library + immutability + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + multiple dispatch + sane defaults - ambiguities - pointers - macros - header files
+
+dotLang compared to Scala: Scala - dependency on JVM - cryptic syntax - trait
+
+dotLang compared to Go: Go + template programming + immutability + multiple dispatch + sum types + sane defaults + better orthogonality - pointers 
+
 
 There is a runtime system which is responsible for memory allocation and management, interaction with OS and 
 other external libraries and handling concurrency.
@@ -88,7 +94,7 @@ Source file contains a number of definitions for types and functions.
 
 ## Language in a nutshell
 
-1. **Primitives**: `int`, `float`, `byte`, `bool`
+1. **Primitives**: `int`, `float`, `char`, `bool`
 2. **Tuple**: `type Point := {x: int, y:int}`
 3. **Union**: `type OperationResult := Point | int | Error`
 4. **Array**: `type JobQueue := int[]`
@@ -104,10 +110,10 @@ Source file contains a number of definitions for types and functions.
 
 # Type System
 We have two categories of types: named and unnamed.
-Unnamed: `int, string[], float => int, (int,int)...` - They are created using language keywords and notations like 1. **Primitives**: `int`, `float`, `byte`, `string`, ...
+Unnamed: `int, string[], float => int, (int,int)...` - They are created using language keywords and notations like 1. **Primitives**: `int`, `float`, `char`, `string`, ...
  type names, `any`, arry or hash, ....
-Named: `type MyType := ?????` These are defined using `type` statement and on the right side we can have another named or unnamed type. Underlying type of a named type is the underlying type of declaration on the right side. Underlying type of unnamed types, is themselves.
-We have two special types: `nothing` and `anything`. All types are subtypes of `anything` (except `nothing`). `nothing` is only subtype of itself. Nothing is subtype of `nothing`. So if a function expects nothing (which is weird) you can only pass a nothing to it and nothing else. If a function expects `anything` you can pass anything to it (except `nothing`).
+Named: `type MyType := ?????` These are defined using `type` statement and on the right side we can have another named or unnamed type. Underlying type of a named type is the underlying type of declaration on the right side. Underlying type of unnamed types, is themselves. named type is a completely new type. it has no relation to the unnamed type except for underlying storage.
+We have a special type: `Nothing`. 
 We have 7 kinds of type: tuple, union, array, hash, primitive, function.
 Subtyping is only defined for tuples.
 - Tuple: C=(C1,...,Cn) and S=(S1,...,Sm) if Ci<:Si and n>=m and if both have named fields, they must match
@@ -115,26 +121,25 @@ Subtyping is only defined for tuples.
 You can pass int or string or float or `int|string` or `int|float` or `string|float` variables to it.
 - two variables declared with the same named/unnamed type have the same type. 
 - Two variables declared with two similar looking names but in different locations types have different types.
-- Assignment of variables with similar looking named types to each other is forbidden.
+- Assignment of variables with similar looking (but different) named types to each other is forbidden.
 - Assignment of variables with same named/unnamed types is allowed.
 - Assignment from named to unnamed is possible with explicit cast.
 - Assignment from unnamed to named is possible.
--  Nothing has no value. So how can we assign value to a variable of type nothing?
-The only way to get nothing, is to run a block which does not throw exception: `{}`
-`var g: nothing = {}`
+- Nothing variables have only one valid value: `nothing`.
 - When a function expects a named type (`type SafeInt := int`), you have to pass a named type.
 - But when a function expects an unnamed type, you can either pass named or unnamed type.
+- Assigning a value of one named type to variable of a different named type is forbidden, even if the underlying type is the same. 
 
 ### Primitive
 All others are defined based on these two plus some restrictions on size and accuracy.
 - **Number data types**: `char`, `int`
 - **Floating point data types**: `float`
-- **Others**: `bool`, `nothing`, `anything`, `string`
-Some other types are native types which are not primitive but are provided by compiler: `array`, `map`, `anything`, `nothing`, `string`
+- **Others**: `bool`, `Nothing`, `string`
+Some other types are native types which are not primitive but are provided by compiler: `array`, `map`, `Nothing`, `string`
 
 You can use core functions to get type identifier of a variable: `type` or `hashKeyType` or `hashValueType`.
 `bool` and `none` are special types with only two and one possible values. `none` is used when a function returns nothing, so compile will change `return` to `return none`.
-Some types are pre-defined in core but are not part of the syntax: `nothing`, `anything`, `bool`.
+Some types are pre-defined in core but are not part of the syntax: `Nothing`, `bool`.
 - `string` is an array of characters. And it is not a primitive.
 - `byte` is 8 bit integer, but `char` can be larger to support unicode.
 
@@ -363,9 +368,9 @@ To have a tuple with unnamed fields based on value of another tuple, just put `@
 You can combine explode operator with other data or type definition as long as you change type of the field. `var g = {@my_point, z:20}`. g will be `{x:10, y:20, z:20}`. Explode on primitives has no effect (`@int` = `int`).
 - If a type does not have any fields (empty types), you don't need to use embedding to inherit from it. It is optional. You just need to implement appropriate methods (If not, and those methods are defined empty for base type, a compiler error will be thrown). So if we have `func check(x: Alpha)` and `Alpha` type does not have any field, any other data type which implements functions written for `Alpha` can be used instead.
 - Empty types are like interfaces and are defined like `type Alpha`.
-Example about empty types (anythings), inheritance, polymorphism and subtyping:
+Example about inheritance, polymorphism and subtyping:
 ```
-type Shape := anything
+type Shape := {}
 func Draw(Shape, int)->int
 
 type BasicShape := (x: string)              ; a normal type
@@ -377,7 +382,7 @@ func Draw(x: Circle, y:int)                 ; It has it's own impl of Draw which
 type Square := (BasicShape, age: int)       ; another type which embeds BasicShape.
 ;calling Draw on Square will call BasicShape version
 
-type OtherShape := anything
+type OtherShape := {}
 function Draw(x: OtherShape, y:int)         ; OtherShape also implements Hobby
 
 var all: Shape[] = [myBasicShape, myCircle, mySquare, myOtherShape]
@@ -393,7 +398,7 @@ if a function expects `f: func()->Shape` you can send a function which returns a
 If a function expects `x: Stack<Shape>` you cannot send `Stack<Circle>`.
 - You can embed as many types as you want in your tuple, but the first field will be parent.
 - To redirect a function to another one with types in the same hierarchy:
-`func process(Circle, SolidColor) -> %func(Shape,color){^process}(x, y)`
+`func process(Circle, SolidColor) -> %func(Shape,color){&process}(x, y)`
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
@@ -459,15 +464,10 @@ func read_customer(id:int) -> Nothing | CustomerData
 - Function definition specifies a contract which shows input tuple and output tuple. If input tuple is named, you must pass a set of input or tuple with the exact same name or an unnamed tuple. If input is unnamed, you can pass either unnamed or named tuple.
 ```
 func f(x:int, y:int) -> ...
-;note that even when you have a literal for an input, you must specify name and type.
-func f(t:int =12, y:int) -> ... ; this will be invoked if first argument is 12
-func f(x:int, y:int=6) ... ;this will be invoked if secod argument is 6 or missing
-...
 var g = {x:10, y:12}
-f(g) ; this is not correct. f expects a tuple with x and y not a tuple with another tuple.
+f(g) ; this is not correct. f expects x and y not a tuple with another tuple.
 f(1,9)
-f(x:1, y:9)
-f(@g)
+f(g.x, g.y)
 ```
 - Note that you cannot use optional arguments in a function signature. Although you can have multiple functions with the same name:
 ```
@@ -481,13 +481,8 @@ type T
 func add(x: T[], data: T)-> T    ;input must be an array and single var of the same type and same as output
 add(int_array, "A") will fail
 ```
-- This is a function that accepts an input of any type and returns any type: `type Function := func(any)->any`. Note that you cannot define a function type that can accept any number of anything.
+- This is a function that accepts an input of any type and returns any type: `type Function<I,O> := func(I)->O`.
 - When calling a function, you can remove parentheses if there is no ambiguity (only a single call is being made).
-if a function needs a parameter which must have fields from two types, it can be defined like this:
-`func process(x: (TypeA, TypeB))` this is an in-place definition of a tuple which inherits from two other tuples.
-- Function call: `process(x:10, y:20)`
-- Call by explode: `process(@p)` ==> `process(x: 10, y:20)`
-- Function input name is required.
 
 ### Matching
 `func add(x:int, y:int, z:int) ...`
@@ -535,13 +530,8 @@ func test(x:int) -> plus2 { return { $.0+ x} }
 var modifier = { $.0 + $.1 }  ;if input/output types can be deduced, you can eliminate them
 ```
 - You can access lambda input using `$.0, ...` notation too.
-- You can also use `$_` place holder to create a new lambda based on existing functions:
-`var y = calculate(4,a, $_)` is same as `var y = (x:int) -> calculate(4,a,x);`
-`var y = calculate(1, $_, $_)` is same as `var y = (x:int, y:int) -> calculate(4,x,y);`
 - Lambdas have read-only access to free variables in their parent semantic scope.
-- You can assign an existing function to a lambda using `^` operator: `var comp = ^compareString`
-- `^process(myCircle,$_,$_)(10, 20)` ~ `process(myCircle, 10, 20)`
-- You can use `^` to get a pointer to a specific function. For example inside `process(Circle)` you need to call `process(Shape)` but don't want to cast the data: `var fp: func(Shape) = ^process`. Then call `fp`.
+- You can call a function pointer by providing argument names. In this case, names should match with type of the function pointer, not the literal or function which is assigned to the pointer.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
@@ -587,7 +577,7 @@ var yy: string = magic(y)
 ```
 
 ## Protocol parameters
-When writing a generic function, you may have expectations regarding behavior of the type `T`. These expectations can be defined in a tuple (called protocol tuple) as some function pointers. When calling this function, the code either should provide value or ask compiler to deduce values (using `!` notation)
+When writing a generic function, you may have expectations regarding behavior of the type `T`. These expectations can be defined in a tuple (called protocol tuple) as some function pointers. When calling this function, the code either should provide value or ask compiler to deduce values (using `^` notation)
 ```
 ;Also we can initialize tuple members, we have embedding
 ;Note that if T is a sum type, each function here can be multiple implemented functions
@@ -613,7 +603,7 @@ func isInArray<T>(x:T, y:T[], z: Eq<T>, g: Writer) -> bool {
     if ( z.equals(x, y[0])...
 }
 ;when calling:
-isInArray(x, arr, !, !)
+isInArray(x, arr, ^, ^)
 ---
 type Ord<T> := {
     compare: func(x:T, y:T)->int
@@ -661,8 +651,8 @@ func create()->int { return 5 }
 func create()->string { return "A" }
 func generalCreate<T>(z: Factory<T>) { return z.create() }
 ;here we have to specify type because it cannot be inferred
-var r = generalCreate<string>(!)
-var y = generalCreate<int>(!)
+var r = generalCreate<string>(^)
+var y = generalCreate<int>(^)
 ---
 ;you can define primitives as auto
 func process(auto item: int)
@@ -670,7 +660,7 @@ this will invoke `func item()->int` to provide value for this argument.
 ```
 - Protocols can embed other types to include their fields.
 - You can define and implement a protocol for a type outside your codebase, that's why you dont need to specify which protocols are implemented by a type upon declaration.
-- You can use `!` anytime when calling a function to ask compiler to infer the parameter. For example if parameter is a function pointer, appropriate function with same name will be sent. If it is a primitive, a local variable with the same name or type (if not found, a function) will be used.
+- You can use `^` anytime when calling a function to ask compiler to infer the parameter. For example if parameter is a function pointer, appropriate function with same name will be sent. If it is a primitive, a local variable with the same name or type (if not found, a function) will be used.
 
 
 ## Phantom types
@@ -725,32 +715,34 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `equals` functions is used for equality check.
 - You can have multiple assignments at once: `x,y=1,2`
 - `x[y]` will call `opIndex(x,y)` function. This is handled by the compiler to provide syntax sugar for arrays and hashtables, but you can also use it for your own types.
+- `x ~ y` will call `opCat(x,y)` function. This is handled by compiler for string variables and literals but you can implement this function for any other type that you want and use `~` to invoke that function.
 
 ### Special Syntax
-- `!` argument inference 
+- `~` opConcat
 - `@` explode 
 - `#` chaining
 - `$.i` function inputs tuple
-- `$_` input place-holder
 - `%` casting
-- `^` lambda-maker
-- `:` tuple declaration, array slice, function call by name
+- `^` argument inference 
+- `:` tuple declaration, array slice
 - `:=` custom type definition
 - `=>` hash type and hash literals
 - `|` sum types
 - `.` access tuple fields
 - `[]` hash and array literals
 - `::` matching
-- `_` Placeholder for explode
-- `{}` code block, tuple definition and literal
+- `_` Placeholder for explode, anything catcher in pattern matching
+- `{}` code block, tuple definition and literal, casting
 - `<>` generics
 - `()` function call
 
 Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `loop`, `break`, `continue`, `assert`
 semi-Keywords: `if`, `else` (used in syntax sugar)
 Operators: 
-Primitive data types: `int`, `float`, `char`
-Helper data types: `bool`, `string`, `array`, `map`, `anything`, `nothing`
+Primitive data types: `int`, `float`, `char` (int is signed and 64 bit, char is unsigned)
+Helper data types: `bool`, `string`, `Array`, `Map`, `Nothing`
+- `bool` is a simple sum type
+- `string` is a named type based on char array.
 
 ### Chaining
 Chain operators are just syntax sugars. They are transformed by compiler. 
@@ -784,20 +776,12 @@ MatchExp = '(' tuple ')' :: '{' (CaseStmt)+ '}'
     int -> 1,
     y:float -> y,
     NormalTree -> { return 1+z },
-    anything -> { -1 } ;this is default because it matches with anything
+    _ -> { -1 } ;this is default because it matches with anything
   }
   ;You can shorten this definition in one line:
   result = my_tree :: 5 -> 11, 6-> 12, Empty -> 0, x:int -> x, any -> -1
 ```
 - Simple form: You can use `::` without `->` too to check for types which returns a bool: `if ( x :: int)`. In this format, you can check for a type or a literal.
-- Due to subtype rules, `anything` will even match a tuple with multiple fields. If you want to be restrict about name, you can add a name and if the tuple is named, then name will be checked too:
-```
-result = my_tree ::
-  {
-    result: any -> ... ;if tuple has a field named result (type does not matter)
-    any -> { -1 } ;this is default because it matches with anything
-  }
-```
 - `if ( x :: y )` is invalid. Right side of match can either be a literal (e.g. 5) or a type (e.g. int) or a new variable with it's own type (e.g. `a:int`). you cannot use `::` to do `==` comparison. And in the shortcut form, you can only use type.
 
 ###if, else
@@ -856,14 +840,14 @@ return 100 if ( g :: exception)
 var h : int|exception = get_number()
 return x if ( h :: x:int)
 ```
-- **nothing**: Nothing equals `nothing`. It won't match in any `::` or if.
+- **Nothing**: Nothing is a sum type with only one value: `nothing`.
  You can use it's type for return value of a function.
  But there is no value you can return. `return` will do that.
- Type of an empty block of code, is `nothing`. It is reverse of `anything` where everything matches with it.
 
 ###loop, break, continue
 `loop(5) { ... }`
 `loop(2,20) { ... }`
+`loop(x:2,20) { ... }` assign a variable as loop counter value
 `loop(x>5) { ... }`
 `loop(x: array) { ... }`
 `loop(k: hash) { ... }`
@@ -1004,6 +988,7 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Add native concurrency and communication tools (green thread, channels) and async i/o
 - Introduce caching of function output
 - Build, versioning, packaging and distribution
+- Dependency definition and management 
 - Plugin system to load/unload libraries at runtime
 - Debugger and plugins for Editors
 - Atomic
@@ -1018,22 +1003,4 @@ How runtime should handle a method call like: `f(x,y,z)`?
 5. find x in CL where type of parameters are DT1, DT2, DT3
 6. If found one, call `x` and finish. If found more than one -> Error and finish.
 7. Look for a candidate which supports maximum number of dynamic types.
-We will be looking for most specialized implementation. The most specialized type is the dynamic type and least one is `anything`. Named types are more specialized than their unnamed equivalent.
-functions with named empty types are superior to unnamed (anything).
-```
-func process(x: anything)
-func process(x: Comparable)
-func process(x: Iterable)
-func process(x: Drawable)
-type Comparable := anything
-type Iterable := anything
-type Drawable := anything
-type Circle := (r: Radius)
-var c: Circle = (r=12)
-process(c)
-```
-Still we have 3 candidates: Comparable, Iterable and Drawable.
-There is no way we can prioritize these three.
--> Compiler error. unless we cast
-`process(Drawable(c))`
-Note that when you cast, you change dynamic type of the data too.
+
