@@ -3060,3 +3060,37 @@ for each `func process(T,U,V)` add another function:
 `func process(x:T1|T2|..., y:U1|U2|U3..., z:V1|V2|V3...) -> %func(T,U,V){process}(x, y, z)`
 where Ti, Ui, Vi are child types for T, U and V.
 
+? - Do we really need redirection in code? 
+If we do, it does not make sense to redirect to a specific function. 
+Normally we should want to redirect/call the next function in method dispatch order.
+Lisp and Dylan have: call-next-method and next-method.
+Another solution: Give functions unique nicknames.
+Or add a separate notation: `var t = &(c,h,y,u)` where `&` means the next function. You dont need to specify function name because it will be current function's name.
+`func process(x: Circle) -> &(x)`
+or maybe we should add a keyword for this. Note that we should be able to call it in the middle of a normal function.is
+this will look like a function. I think we should use a symbol instead of keyword. Because when reading the code, it will be perceived that it is a normal function call.
+What problems will this solve:
+1. We no longer need the nasty notation of casting a function name to `func(Circle)`
+2. fwd methods
+3. in a method for Circle, you can call same method for Shape which will receive an instance of Circle.
+How fwd methods can use this notation? If developer is using them it would be fine.
+But what about runtime?
+Maybe we should force developer to write fwd methods so at runtime we just need to check dynamic type.
+But, when we see this `func process(T, U,V)->&(x,y,z)` which function should we call?
+This does not solve the dispatch algorithm.
+
+? - I think we should not stop at static type when resolving a method call.
+`Obj -> Shape -> Circle`
+`var c: Shape = createCircle()`
+`process(c)`
+If we don't have process defined for Circle and Shape, then the one for Obj should be called.
+So when we have `f(x,y,z)` we have 3 dynamic types and go up in the hierarchy.
+first we go up for the `x` type. When reacing first function `g` we do the same for rest arguments.
+If as a result, we come to the same function for x,y and z then it should be called.
+C++ also does not stop at static type and goes up in hierarchy to find appropriate function to cal. 
+This fwd can be done by compiler (not by the developer). and hence it can detect ambiguity at compile time.
+if we have a function for types A,B,C which are parents of T,U,V compiler will generate:
+`func f(x: T,y: U,z: V) -> f/A/B/C(x,y,z)`
+`f/A/B/C` is a unique name for a function which does not need method resolution. This fwd can be extended with sum types to make number of function defined by compiler less.
+This fwd functions are extremely lightweight (no pushall/popall, just another assembly call instruction).
+
