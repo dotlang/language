@@ -2844,6 +2844,20 @@ Y - now that `x[y]` calls `opIndex` let's remove another exception:
 `x=[7, 8, 9]` will make 3 calls: `opIndex(x,0, 7)` to `opIndex(x, 2, 9)`
 `x=[1=>'a', 2=>'b', 3=>'c']` calls: `opIndex(x, 1, 'a')`, ...
 
+Y - When generating redirection functions, how can we write it?
+`func process(Circle, SolidColor) -> process(Shape, Color)`
+`func process(Circle, SolidColor) -> %func(Shape,color)(^process)(x, y)`
+This is like: `getAdder(1,2)("Hello")(4)` because if output of an expression if a fp you can call it directly.
+The only thing that we can do to make this more readable is to change casting syntax.
+
+Y - The syntax for casting can become messy. Can we enhance it?
+`%func(Shape,color)(^process)`
+`%Point({x:10, y:20})`
+We do not allow the developer to write custom casting functions. So the syntax should not be similar to function call.
+`%Point{x:10, y:20}`
+`%func(Shape,color){^process}`
+`%Storage<int, Circle>{x,y,z}`
+
 ? - research: how to generate assembly code?
 yasm
 
@@ -2872,6 +2886,7 @@ Also based on https://stackoverflow.com/questions/4584637/double-or-float-which-
 Maybe we don't need to deal with arb precision int. a 64 bit integer is sufficient for 99% of cases. The other 1% can use builtin bigInt types.
 
 ? - q: in which cases should we allocate on heap and in which on stack?
+we can have  pre-allocated buffer for int and strings.
 
 ? - In method dispatch, there should be an exception for methods with one arg. if we have `f(Shape)` and we call `f(myCircle)` although there is no func that covers at least one argument's dynamic type, but we should call f-Shape because it makes sense. but what if we have another argument which is int?
 `func process(s: Shape, len: int)`
@@ -2883,20 +2898,6 @@ double and int are both 8 bytes. Byte is 1 byte. string is a byte array.
 Because variety of storage size is not much (1 and 8 bytes) it will help reduce heap fragmentation.
 Also we should do stack allocation as much as we can.
 
-? - When generating redirection functions, how can we write it?
-`func process(Circle, SolidColor) -> process(Shape, Color)`
-`func process(Circle, SolidColor) -> %func(Shape,color)(^process)(x, y)`
-This is like: `getAdder(1,2)("Hello")(4)` because if output of an expression if a fp you can call it directly.
-The only thing that we can do to make this more readable is to change casting syntax.
-
-? - The syntax for casting can become messy. Can we enhance it?
-`%func(Shape,color)(^process)`
-`%Point({x:10, y:20})`
-We do not allow the developer to write custom casting functions. So the syntax should not be similar to function call.
-`%Point{x:10, y:20}`
-`%func(Shape,color){^process}`
-`%Storage<int, Circle>{x,y,z}`
-
 ? - for method dispatch, we can consider any type like a range.
 anything will be -inf,+inf
 shape will be: -100,100
@@ -2904,3 +2905,74 @@ circle will be: -20,+20
 each type will be inside it's parent.
 each argument's dynamic type is like a ball which is being dropped on the surface. The first level which it hit by the ball is the actual type used for function call.
 So for any non-tuple field, we use explicit match to remove excess candidates. Remaining candidates will be tested with their tuple parameters, against tuple arguments. So we can think of the problem as matching a set of tuple arguments with tuple parameters belonging to candidates.
+if we auto-generate all required forwarding functions, then we will have:
+`f(Circle)-->f(Shape)`
+or
+`f(Shape)-->f(anything)`
+`-->` is a notation to show auto-generated forwarding methods.
+on the right side is a method call for an already defined function by developer.
+on the left is a new function definition for a subtype and that function is not defined by the developer.
+suppose we have a type hierarchy and compiler wants to compile.
+`anything -> Shape -> Circle -> Oval`
+`anything -> Color -> SolidColor`
+`anything -> Person -> Employee -> Manager`
+then compiler will generate a set of forwarding functions as below:
+- for each function like f which has at least one argument of a non-anything type:
+`func f(Color, Shape, Person)` ?
+Let's do this: For functions with single tuple argument, generate forwarding functions.
+For any other function (with 2+ tuple inputs), there must be either a function with exact match or exact match with static type or a function with anything input.
+full dynamic match -> full static match -> anything
+what about named types? named type is a completely new type. it has no relation to the unnamed type except for underlying storage.
+what about functions with some anything and some other tuple types?
+do we need anything type? no.
+`process(Shape, Color)`
+`process(Shape, SolidColor)`
+we define Circle and SolidColor.
+`process(Circle, Color) -> process(Shape, Color)`
+`process(Circle, SolidColor)` -> process(Shape, SolidColor)`
+Suppose that we have:
+`Shape -> Circle -> Oval`
+`Color -> SolidColor`
+`Person -> Employee -> Manager`
+Then, for each function (f) which has a tuple type (T) in it's inputs:
+For each Ci in the list of T's children:
+`f(...Ci...) --> f(...T...)` unless function already exists
+if two same functions are created as a result of above forwardings, it will give a compiler error.
+If we have:
+`process(Circle, Color)`
+`process(Shape, SolidColor)`
+Then:
+`process(Circle, SolidColor) --> process(Circle, Color)`
+this will be generated for both function declarations -> compiler error.
+if we have:
+`Obj -> Shape -> Circle`
+`Paint -> Color -> SolidColor`
+f(Obj, Paint)
+f(Circle, SolidColor)
+then compiler will generate:
+f(Shape, Paint)->f(Obj, Paint)
+f(Circle, Paint)->f(Obj, Paint)
+f(Circle, 
+If we consider a 2-D matrix where rows are hierarchy levels and columns are function input types, this can be created for each function name/input count. Each function will represent a set of marked cells, each of them in a separate column.
+This can be seen as a curve. If no two curves, intersect with each other, it is fine and compiler can generate fwd functions.
+But if they collid, there will be ambiguities. This algorithm also covers the case with a single tuple input.
+When generating these fwd functions, compiler can save space and time by using sum types:
+`func process(x: Triangle|Circle,...)->process(Shape,...)`
+But this is not a matrix, this will be a set of trees. But I think the same rule can be applied using child/parent relation.
+So by using sum types, number of fwd functions will be equal or less than number of developer defined functions.
+Equivalently, we can say for each definition like `type Circle := { Shape...` we need to scan functions that have Shape input. and write fwd from Circle to Shape with same name and other inputs.
+
+
+? - Nothing is a sum type with only one value: `nothing`.
+
+? - remove `anything`.
+With having templates, we don't need `anything`. It just makes method dispatch more complicated.
+
+? - a function pointer should not participate in dynamic method resolution. We should use it's type to find the exact methods we need to call.
+
+? - Maybe we can change casting syntax:
+`var x = int{{y}}`
+`var x = Point{{x:10, y:20}}`
+`var x = func(Shape,color){{^process}}`
+But I think, `%` notation is more readable.
+
