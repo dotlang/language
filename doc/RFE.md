@@ -3093,4 +3093,15 @@ if we have a function for types A,B,C which are parents of T,U,V compiler will g
 `func f(x: T,y: U,z: V) -> f/A/B/C(x,y,z)`
 `f/A/B/C` is a unique name for a function which does not need method resolution. This fwd can be extended with sum types to make number of function defined by compiler less.
 This fwd functions are extremely lightweight (no pushall/popall, just another assembly call instruction).
+But note that when a function is called, compiler must check if there is "any" matching function with it. The matching function should accept either static types of their parents.
 
+? - compiler can detect intervening functions (that cross lines in the type hierarchy of their arguments). And force developer to correct this. After this is done, we will have "layers" of argument capture, each layer belonging to a specific function. We can create a list of functions from most specialized to least one.
+`f1->f2->f3->f4`
+So when a call is made, we can call f4 all the time. In f4's beginning, we check for dynamic type of the argument. If they are parents of what we expect, we redirect the call to f3 and same happens in f3.
+Maybe we can even optimize thir further by the compiler using the static type and call a better candidate, redugin number of fwds.
+
+
+? - About casting, the `{}` is common with code block, but we can re-use the definition!
+We can say `%int{C}` will execute code-block C and it's evaluation result, will be casted to int. So we are not introducing any new concept. We re-use code block just prepend a cast type. But what about tuples? `%Point{x:10, y:20}`
+We can say, for a tuple, the redundant `{}` is options:
+`%Point{x:10, y:20}` is same as `%Point{{x:10, y:20}}`. Or maybe it should not be optional?
