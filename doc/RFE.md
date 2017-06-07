@@ -2989,7 +2989,12 @@ We can define casting on a function name, as a result of method dispatch.
 Because a function pointer, cannot be used in method dispatch.
 `func process(c: Circle) -> %func(s:Shape){process}(c)`
 
-? - In method dispatch, there should be an exception for methods with one arg. if we have `f(Shape)` and we call `f(myCircle)` although there is no func that covers at least one argument's dynamic type, but we should call f-Shape because it makes sense. but what if we have another argument which is int?
+Y - About casting, the `{}` is common with code block, but we can re-use the definition!
+We can say `%int{C}` will execute code-block C and it's evaluation result, will be casted to int. So we are not introducing any new concept. We re-use code block just prepend a cast type. But what about tuples? `%Point{x:10, y:20}`
+We can say, for a tuple, the redundant `{}` is options:
+`%Point{x:10, y:20}` is same as `%Point{{x:10, y:20}}`. Or maybe it should not be optional?
+
+N - In method dispatch, there should be an exception for methods with one arg. if we have `f(Shape)` and we call `f(myCircle)` although there is no func that covers at least one argument's dynamic type, but we should call f-Shape because it makes sense. but what if we have another argument which is int?
 `func process(s: Shape, len: int)`
 `process(myCircle, 10)`?
 
@@ -3099,9 +3104,7 @@ But note that when a function is called, compiler must check if there is "any" m
 `f1->f2->f3->f4`
 So when a call is made, we can call f4 all the time. In f4's beginning, we check for dynamic type of the argument. If they are parents of what we expect, we redirect the call to f3 and same happens in f3.
 Maybe we can even optimize thir further by the compiler using the static type and call a better candidate, redugin number of fwds.
+With this list notation, the `&` symbol becomes easier to invoke.
 
-
-? - About casting, the `{}` is common with code block, but we can re-use the definition!
-We can say `%int{C}` will execute code-block C and it's evaluation result, will be casted to int. So we are not introducing any new concept. We re-use code block just prepend a cast type. But what about tuples? `%Point{x:10, y:20}`
-We can say, for a tuple, the redundant `{}` is options:
-`%Point{x:10, y:20}` is same as `%Point{{x:10, y:20}}`. Or maybe it should not be optional?
+? - static type is what compiler uses to do type checks but at runtime we only have dynamic type. 
+We dont care about static type at runtime.
