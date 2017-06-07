@@ -290,7 +290,7 @@ Note that when using type for alias to a function, you have to specify input nam
 `type comparer := func (x:int, y:int) -> bool;`
 If types are compatible (e.g. long and int) you can cast them using: `TypeName(x)` notation. Note that this notation can also be used to specify type of a literal when we can't or don't want to do it using normal notation:
 For example in return statement `return Circle(radius=1)`.
-- Note that you cannot define your own casting function using `TypeName(x)` name. You can write cast functions using a standard name, however.
+- Note that you cannot define your own casting function using `%TypeName{x}` name. Here `x` is a code block which will evaluate to something we want to cast. You can write cast functions using a standard name, however.
 ```
 type A := (x:int, y: int)
 type B := (x: int)
@@ -303,9 +303,9 @@ var w: B = B(@A) ;this will not fail because we are casting, so it will ignore e
 `%string{x}`
 `%OptionalInt{x}`
 `%Point{var}`
-`%Point{x:10, y:20}` --cast a tuple literal
+`%Point{{x:10, y:20}}` --cast a tuple literal
 `%Point{@t}` same as `%Point(t)`
-`%Point<int>{x:10, y:20}` -- casting combined with type specialization
+`%Point<int>{{x:10, y:20}}` -- casting combined with type specialization
 Casting to a tuple, can accept either a tuple literal or tuple variable or an exploded tuple.
 Note that there is no support for implicit casting functions. If you need a custom cast, write a separate function and explicitly call it.
 - `%Type{}` without input creates a default instance of the given type.
@@ -743,7 +743,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `[]` hash and array literals
 - `::` matching
 - `_` Placeholder for explode, anything catcher in pattern matching
-- `{}` code block, tuple definition and literal, casting
+- `{}` code block, tuple definition and literal
 - `<>` generics
 - `()` function call
 
