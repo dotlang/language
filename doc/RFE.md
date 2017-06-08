@@ -3022,7 +3022,7 @@ But you can also include type name only.
 
 Y - If we can use `+` to merge two strings, can it be used to merge any two arrays? it should be.
 
-? - for method dispatch, we can consider any type like a range.
+N - for method dispatch, we can consider any type like a range.
 anything will be -inf,+inf
 shape will be: -100,100
 circle will be: -20,+20
@@ -3053,7 +3053,7 @@ do we need anything type? no.
 `process(Shape, SolidColor)`
 we define Circle and SolidColor.
 `process(Circle, Color) -> process(Shape, Color)`
-`process(Circle, SolidColor)` -> process(Shape, SolidColor)`
+`process(Circle, SolidColor) -> process(Shape, SolidColor)`
 Suppose that we have:
 `Shape -> Circle -> Oval`
 `Color -> SolidColor`
@@ -3089,7 +3089,7 @@ for each `func process(T,U,V)` add another function:
 `func process(x:T1|T2|..., y:U1|U2|U3..., z:V1|V2|V3...) -> %func(T,U,V){process}(x, y, z)`
 where Ti, Ui, Vi are child types for T, U and V.
 
-? - Do we really need redirection in code? 
+N - Do we really need redirection in code? 
 If we do, it does not make sense to redirect to a specific function. 
 Normally we should want to redirect/call the next function in method dispatch order.
 Lisp and Dylan have: call-next-method and next-method.
@@ -3108,7 +3108,7 @@ Maybe we should force developer to write fwd methods so at runtime we just need 
 But, when we see this `func process(T, U,V)->&(x,y,z)` which function should we call?
 This does not solve the dispatch algorithm.
 
-? - I think we should not stop at static type when resolving a method call.
+N - I think we should not stop at static type when resolving a method call.
 `Obj -> Shape -> Circle`
 `var c: Shape = createCircle()`
 `process(c)`
@@ -3124,7 +3124,7 @@ if we have a function for types A,B,C which are parents of T,U,V compiler will g
 This fwd functions are extremely lightweight (no pushall/popall, just another assembly call instruction).
 But note that when a function is called, compiler must check if there is "any" matching function with it. The matching function should accept either static types of their parents.
 
-? - compiler can detect intervening functions (that cross lines in the type hierarchy of their arguments). And force developer to correct this. After this is done, we will have "layers" of argument capture, each layer belonging to a specific function. We can create a list of functions from most specialized to least one.
+N - compiler can detect intervening functions (that cross lines in the type hierarchy of their arguments). And force developer to correct this. After this is done, we will have "layers" of argument capture, each layer belonging to a specific function. We can create a list of functions from most specialized to least one.
 `f1->f2->f3->f4`
 So when a call is made, we can call f4 all the time. In f4's beginning, we check for dynamic type of the argument. If they are parents of what we expect, we redirect the call to f3 and same happens in f3.
 Maybe we can even optimize thir further by the compiler using the static type and call a better candidate, redugin number of fwds.
@@ -3137,4 +3137,86 @@ At runtime, we will call based on full dynamic type match.
 Also at compile time, for each `f(x,y,z)` we should make sure there is a function with the same name and argument types which are equal or parent of x,y and z.
 What about generic functions? if we have `f<T,U>(T,U,V)` what should we generate? 
 We should generate fwd functions for each "call" to f. At the call-site, we can deduce actual types and will generate appropriate fwd functions.
+So as a summary:
+1. Compiler will generate fwd functions for all child types of defined methods.
+2. In case of conflict, compiler error will be issued.
+3. At runtime, call will be made using full dynamic type.
 
+Y - Generating fwd functions seems complex and also checking for conflicts.
+Maybe we should do it like this (assuming there is no conflict):
+Current options:
+Option 1: Have a list of candidates, call the head, it will process and fwd if needed.
+Option 2: At runtime, traverse type graph, find a candidate, validate, invoke
+Option 3: Generate fwd functions by compiler. How can we call parent function? Maybe we should disable it. If you want to 
+Option 4: simple full dynamic type match. Force user to write appropriate method of fwd.
+Option 4 needs some fwd notation to make definition of fwd easier.
+Define a function without argument name, and in the value use `~` to denote current function.
+`func process(Circle) -> ~(Shape)`
+can we use `~` inside normal functions? no. If we allow this, it will add a lot of side effects.
+How to handle ambiguities? `_` can be used whenever we don't care about a value or a type.
+`func process(Circle, _, _, _) -> ~(Shape, _, _, _)`
+But this is also confusing both for the developer and compiler.
+`func process(Circle, string, int, int) -> ~(Shape, int, int, string)`
+We are not supposed to change order or number of function arguments.
+So why define them at all? We have to define them on the left side of `->`.
+`func process(Circle, string, int, int) -> ~(Shape, _, _, _)`
+`func process(float, Circle, string, int, int) -> ~(_, Shape, _, _, _)`
+- This, if done correctly, will impose a bit of burden on developer but will simplify compiler, increase method call performance and make code more clear and understandable. No unexpected method call.
+`func process(float, Circle, string, int, int) -> ~Shape`
+`func process(float, Circle, string, int, SolidColor, int) -> ~(Shape, Color)`
+`func process(float, Circle, string, int, SolidColor, int) -> ~(float, Shape, string, int, Color, int)`
+`func process(float, Circle->Shape, string, int, SolidColor->Color, int)`
+`func process(float, Polygon|Square|Circle->Shape, string, int, GradientColor|SolidColor->Color, int)`
+
+N - Think about call by arg name.
+problem1: If lambda type indicates argument names, but is assigned to a function with other names. How should we call?
+problem2: if we have multiple functions with same name and arg count but different arg name, can named arguments force runtime to pick a specific function?
+for p1: call should be made based on the names of the lambda.
+`func process(data:int)->int ...`
+`var f: func(x:int)->int = process`
+`var y = f(x:12)`
+for p2: all functions with the same name and argument count must have same argument name.
+`func process(x:Circle, y:SolidColor)`
+`func process(t:Shape, z: Color)`
+`process(x:myShape, y: myColor)`?
+This does not make sense. This is the main problem which stop us from calling by name.
+It stops multiple method dispatch from working properly.
+
+Y - Remove protocol parameters
+Haskell needs type classes, because if not present, you need to write `colorEq` to compare colors, `stringEq` to compare string, .... You cannot have functions with the same name.
+But here we allow functions with the same name.
+This affects the protocol concept and `^` notation.
+If every function that calls other functions using it's inputs, needs to define a protocol, it will make code very messy.
+Clojure has protocol because functions cannot have same name.
+Functions should not be expected to define their expectations regarding "behaviors". They just specify data inputs and make function calls. For non generic functions, if those calls don't point to an actual implementation, compiler will issue an error.
+For generic functions, this will mean that any call to a function which does not rely on the generic type, will be checked by compiler even if there is no call to that function. Any call to another function relying on generic argument, will be checked by compiler to bee defined.
+
+? - Change template notation to `!`.
+
+? - Simplification:
+- (OK) remove chaining operator. it is a syntax sugar which is ugly and not very necessary.
+- type casting: can we use a core function? instead of `%`? 
+`%Point<int>{{x:10, y:20}}` 
+`%Point!int{x:10, y:20}`
+`{x:10, y:20}^Point!int` 
+`{x:10, y:20}.(Point!int)`
+`MyInt(a)` this is not readable much.
+`%MyInt{a}`
+`a->MyInt()` an imaginary function is called which takes `a` and returns MyInt
+`var x = a->MyInt()`
+`var x = ->MyInt(a)` uses function concept which is known, so it more intuitive that `%`
+`var x = ->Point!int({x:10, y:20})`
+- explode: why/when do we need it? it was originally added for subtyping which is not used now. the only usage is for cloning. we need to clone a tuple, hash or array.
+`F#: let p2 = {p1 with Y = 0.0}`
+`Go: copy(a, b)`
+`Scala: clone method`
+`Rust: clone method`
+`var g = [1,2,3]`
+`var h = g` this will assign by reference
+maybe we can use this with casting notation? no. two purpose for one notation is wrong.
+`var h = [@g]`
+`var tup = {@tup1}`
+`var h = ->(g)` this is similar to cast but output type is inferred from input type because we are not casting but cloning. 
+
+
+? - State that we no longer have "empty types"
