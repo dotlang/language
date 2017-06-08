@@ -2998,6 +2998,30 @@ N - In method dispatch, there should be an exception for methods with one arg. i
 `func process(s: Shape, len: int)`
 `process(myCircle, 10)`?
 
+Y - Shall we remove opIndex and opCat and add exceptions instead?
+general solution: let user define functions with custom name e.g. `~`
+to make this decision I have to answer: 'what is the primary purpose of the language?'
+simplicity? being powerful? being fast?
+This does not affect speed of execution.
+Makes the language a bit far from simple.
+Does not affect power but makes the language more expressive.
+But it adds a bit of confusion: How am I supposed to access? Shall I call using function or use the operator? which one is faster? ...
+There should only be one way to do it.
+opCat `~` - string concatenation is also handled by compiler by using `+` for strings.
+opIndex `x[y]` - these are handled by the compiler, user can write a function is he wants to. this is more consistent with the fact that functions cannot change their input.
+It does not mean to have `opIndexSetter`!
+
+N - static type is what compiler uses to do type checks but at runtime we only have dynamic type. 
+We dont care about static type at runtime.
+
+N - See how golang resolves function pointer assignment when there are more than one function with the same name but different arguments.
+In Go there must be full exact match.
+
+N - In Go you must always specify name of the argument. If it's not relevant you can use `_`.
+But you can also include type name only.
+
+Y - If we can use `+` to merge two strings, can it be used to merge any two arrays? it should be.
+
 ? - for method dispatch, we can consider any type like a range.
 anything will be -inf,+inf
 shape will be: -100,100
@@ -3105,6 +3129,12 @@ But note that when a function is called, compiler must check if there is "any" m
 So when a call is made, we can call f4 all the time. In f4's beginning, we check for dynamic type of the argument. If they are parents of what we expect, we redirect the call to f3 and same happens in f3.
 Maybe we can even optimize thir further by the compiler using the static type and call a better candidate, redugin number of fwds.
 With this list notation, the `&` symbol becomes easier to invoke.
+Option 1: Have a list of candidates, call the head, it will process and fwd if needed.
+Option 2: At runtime, traverse type graph, find a candidate, validate, invoke
+Option 3: Generate fwd functions by compiler. How can we call parent function? Maybe we should disable it. If you want to call, you must cast. This is simpler. Maybe this is simplest and most straight forward. Compiler can address a function uniquely. For each function `f(T,U,V)` generate a fwd function like `g` where: `g(T1|T2|..., U1|...,V1|...) -> f/T/U/V`. Here we can keep the original dynamic type because the compiler is generating the code. This is just a representation.
+If two fwd methods collide, it will be a compiler error.
+At runtime, we will call based on full dynamic type match.
+Also at compile time, for each `f(x,y,z)` we should make sure there is a function with the same name and argument types which are equal or parent of x,y and z.
+What about generic functions? if we have `f<T,U>(T,U,V)` what should we generate? 
+We should generate fwd functions for each "call" to f. At the call-site, we can deduce actual types and will generate appropriate fwd functions.
 
-? - static type is what compiler uses to do type checks but at runtime we only have dynamic type. 
-We dont care about static type at runtime.
