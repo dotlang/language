@@ -15,7 +15,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable, remove anything type, change notation for inference, added `~ for `opCat`, removed lambda-maker and `$_` placeholder, clarifications about casting to function type and forwarding,
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type and forwarding, removed opIndex, 
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -150,9 +150,7 @@ Arrays are a special built-in type:
 `type Array<T> := native`
 But compiler provides syntax sugars for them:
 1. `int[]` will be translated to `array<int>`
-2. `arr[2]` will be translated to `opIndexGet(arr, 2)` and `opIndexSet(arr, 2, value)`
-3. Array literals like `[1,2,3]` will be translated to `opIndex` function calls.
-`x=[7, 8, 9]` will make 3 calls: `opIndex(x,0, 7)` to `opIndex(x, 2, 9)`
+2. set and get of array elements is handled by the compiler.
 
 - Array literals are specified using brackets: `[1, 2, 3]`
 - `var x: int[] = [1, 2, 3];`
@@ -180,9 +178,6 @@ Hashtable or Maps are built-in types:
 `type Map<K,V> := native`
 But compiler will provide syntax sugar for them:
 `K=>V` => `Map<K,V>`
-`map[key]` => `get(map, key)`/`set(map,key, value)`
-`x=[1=>'a', 2=>'b', 3=>'c']` calls: `opIndex(x, 1, 'a')`, ...
-Hash literals will be converted to a set of `set` function calls.
 Hashtables are sometimes called "associative arrays". So their syntax is similar to arrays:
 - `A => B` is used to define hash type. Left of `=>` is type of key and on the right side is type of value. If key or value have multiple elements, a tuple should be used.
 - `var hash1: string => int`
@@ -397,8 +392,8 @@ var r: BasicShape = myCircle ;automatic casting - because Circle inherits from B
 if a function expects `f: func()->Shape` you can send a function which returns a Circle, because there are implicitly castable.
 If a function expects `x: Stack<Shape>` you cannot send `Stack<Circle>`.
 - You can embed as many types as you want in your tuple, but the first field will be parent.
-- To redirect a function to another one with types in the same hierarchy:
-`func process(Circle, SolidColor) -> %func(Shape,color){&process}(x, y)`
+- To redirect a function to another one with types in the same hierarchy, you need to cast the argument.
+`func process(Circle, SolidColor) -> process(%Shape{c}, %Color{sc})`
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
@@ -531,10 +526,8 @@ var modifier = { $.0 + $.1 }  ;if input/output types can be deduced, you can eli
 ```
 - You can access lambda input using `$.0, ...` notation too.
 - Lambdas have read-only access to free variables in their parent semantic scope.
-- Function pointers cannot take part in method dispatch. They must point to a specific function. This is specified using their type or by casting a function name: `%func(s:Shape){process}` this will return a function pointer pointing to a specific function named process with one input which can accept a Shape (maybe not exactly a Shape, depending on method dispatch algorithm).
-- Casting to function pointer can be used to forward a call or call a function which is hidden in child types.
-`func process(c: Circle) -> %func(s:Shape){process}(c)`
-Other way to do this:
+- Function pointers cannot take part in method dispatch. They must point to a specific function. This is specified using their type. 
+- Another way to forward a call to another function but without loosing dynamic type:
 ```
 func process(c: Circle) -> int {
 ;you cannot infer type from a function name, unless there is only one function with that name
@@ -722,14 +715,13 @@ func openDoor(x: Door<Closed>) -> Door<Open>
 The math operators can be combined with `=` to do the calculation and assignment in one statement.
 - `=` operator: copies only for primitive type, makes a variable refer to the same object as another variable for any other type. If you need a copy, you have to clone the variable. 
 - `x == y` will call `opEquals` functions is existing, by default compares field-by-field values. But you can override.
-- We don't have operators for bitwise operations. They are covered in core. 
+- We don't have operators for bitwise operations. They are covered in core functions. 
 - `equals` functions is used for equality check.
 - You can have multiple assignments at once: `x,y=1,2`
-- `x[y]` will call `opIndex(x,y)` function. This is handled by the compiler to provide syntax sugar for arrays and hashtables, but you can also use it for your own types.
-- `x ~ y` will call `opCat(x,y)` function. This is handled by compiler for string variables and literals but you can implement this function for any other type that you want and use `~` to invoke that function.
+- `+` can be used to merge two arrays. This can be used for string concatenation, because string is an array of chars.
+
 
 ### Special Syntax
-- `~` opConcat
 - `@` explode 
 - `#` chaining
 - `$.i` function inputs tuple
