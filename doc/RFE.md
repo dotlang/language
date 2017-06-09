@@ -3191,10 +3191,11 @@ Clojure has protocol because functions cannot have same name.
 Functions should not be expected to define their expectations regarding "behaviors". They just specify data inputs and make function calls. For non generic functions, if those calls don't point to an actual implementation, compiler will issue an error.
 For generic functions, this will mean that any call to a function which does not rely on the generic type, will be checked by compiler even if there is no call to that function. Any call to another function relying on generic argument, will be checked by compiler to bee defined.
 
-? - Change template notation to `!`.
+Y - State that we no longer have "empty types"
 
-? - Simplification:
-- (OK) remove chaining operator. it is a syntax sugar which is ugly and not very necessary.
+Y - (OK) remove chaining operator. it is a syntax sugar which is ugly and not very necessary.
+
+Y - Simplification:
 - type casting: can we use a core function? instead of `%`? 
 `%Point<int>{{x:10, y:20}}` 
 `%Point!int{x:10, y:20}`
@@ -3227,10 +3228,53 @@ We can add something before `->` to make it clearer:
 `x + @->int(y)` or `x + @->(y)`
 `x + %->int(y)` or `x + %->(y)`
 `x + !->int(y)` or `x + !->(y)`
+`x + $->int(y)` or `x + $->(y)`
+`x + ~->int(y)` or `x + ~->(y)`
+or if we use `!` for template we can assume this unnamed function is generic:
+`x + !int(y)` or `x + !(y)`
+`x + @int(y)` or `x + @(y)`
+But problem is, if target type is generic too, it will be confusing:
+`x + @Point!int(y)` or `x + @(y)`
+So: `@` is a special function which can cast/clone a given variable. if no type is given, it will clone.
 
-? - State that we no longer have "empty types"
+Y - Change template notation to `!` or `[]`.
+Type definition, function definition, type instantiation, function call
+`type Stack<T> := T[]`
+`func push<T>(x: Stack<T>, y: T)`
+`var g: Stack<int>`
+`push<int>(g, 5)`
+`x + @Point!int(y)`
+Sometimes, the notation for cast and a type name can be mixed together:
+`x + @Point!(int,float)(y)` which is confusing.
+We use `[]` for array and hash. Scala uses `()` for this type of adressing. and `[]` is dedicated for generics.
+`var x : array[int] = @array(1,2,3)` `g=x(0) ;to read from array`  
+`var y : map[string,int] = @map('aa' => 1, 'bb' => 2)`
+But the notation will change a lot and wont be as intuitive.
+It is good to have `[]` dedicated for generics. It will be more readable.
+But what should we do about hash and array?
+Definition: they are using generics.
+Literals/read/write.
+`var t = {1,2,3}` this is how c++ does it with uniform init
+`var g = {1: "A", 2: "B"}` similar to tuple, we can get rid of `=>`
+Can't we use `[]` for both purposes?
+`Type[???]` is generic. `var[???]` is indexing.
+`arr[0] = arr[1]`
+`map1["hello"] = map1["good"]`
+`arr[0] = arr[1]`
+Syntax to cast something to a generic type: `@Point!(int, float)(y)` vs `@Point[int, float](y)`
+`arr!0 = arr!1`
+`map1!"hello" = map1!str_var`
+`map1!"hello" = map1!str_var`
+`set(arr, 0, get(arr, 1))`
+What about `.()` or `.[]`?
+`arr.[0] = arr.[1]`
+`map1.["hello"] = map1.["good"]`
+`.[` is never used for generics. so `??[]` is generics and `???.[` is array or hash.
+So
+- Array: `var x: array[int] = {1,2,3,4}` `x.[0] = x.[1]++`
+- Hash: `var y: map[string, int] = {"a": 1, "b": 2}` `y.["a"] = 1+y.["b"]`
 
-? - Now that protocol is removed, how can we state in a function signature, it's input must provide `getIndex` function? Do we need to?
+Y - Now that protocol is removed, how can we state in a function signature, it's input must provide `getIndex` function? Do we need to?
 `func process<T>(x:T) -> getIndex(x,0)`
 Is it possible to use empty types like interfaces?
 But what about other types like primitive or hash? we cannot inherit them from anything.
@@ -3275,3 +3319,11 @@ I think we should return protocol tuples and the `^` notation to automatically i
 `type HasCompare<S,T> := { compare: func<S,T>(S,T)->bool, test: int[]}`
 anything func will be bound to a local function with exact same type.
 any other thing: will be bound to a local variable or function with no input and same name and output.
+And also in the related section, explain why we need this.
+
+? - Can we make `^` notation a bit more explicit regarding it must be applied to a tuple?
+
+? - A better and more consistent config and log management. 
+So things like Ambari dont need to edit/grep/sed config xml files.
+
+? - array or Array or map or Map?
