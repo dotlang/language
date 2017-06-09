@@ -3353,3 +3353,95 @@ But using a notation like `@` is more readable and explicit.
 
 N - if output of a block is Nothing by default then:
 `var g = { x+4 }` g can be 
+
+Y - functions can name their output
+`func process() -> x:int`
+in their body, they can either set value for x or return 10. empty return also works.
+Advantage: in defer, we can work with function output.
+
+Y - Letting user catch exceptions makes them control structures. In Go you can only catch an exception in `defer`.
+Shall we do that?
+```
+defer if ( recover() :: exception ) ...
+```
+Our exception mechanism is good just note we can catch an exception in defer:
+```
+;process can also generate an exception!
+func process() -> x: int {
+    ;without this defer, any thrown exception will be propagated until it is caught.
+    defer if ( x :: exception ) 
+}
+```
+In terms of runtime, the fact that anything can be exception, is a bit difficult to implement.
+We have an integer. To check if it is exception, what should I do in assembly?
+So, the function must define `|exception` if it is interested in explicitly returning an exception. So we don't really need to have a special exception type. It can be anything and use current language features.
+So, assert does not "return" an exception. It throws (like panic).
+The only way to catch this type of exception (rather than normal return value), is in defer.
+```
+func process() -> x:int {
+    defer {
+        var maybeException = catch[int]()
+        ;in case of an exception, return value should be 19
+        if ( maybeException :: int ) x = 19
+    }
+```
+- About returning an exception, we don't need to do anything in lang spec. Because this is a normal feature of the language.
+- We don't even need a special exception type. Go panic and recover work with `interface{}`.
+- `assert` will throw an exception. This exception can only be caught in a defer block.
+- You can get current exception (if any) using a call to `catch`.
+- You can change function output in a defer block, if it is named.
+```
+func process() -> x:int {
+    defer {
+        var maybeException = catch[int]()
+        ;in case of an exception, return value should be 19
+        if ( maybeException :: int ) x = 19
+    }
+```
+
+N - Go does not have assertion.
+https://golang.org/doc/faq#assertions
+Shall we do the same?
+
+Y - How can we differentiate between tuple literal and map litereal?
+- Hash: `var y: map[string, int] = {x: 1, y: 2}`
+- Tuple: `{x: 1, y:2}`
+The `{x:1, y:2}` can be either a tuple literal or a hash literal.
+if x,y are variables, this is a map.
+if they are identifiers, this is a tuple.
+- `var x: array[int] = {1,2,3}` - array is not ambiguous because there is no `:` involved.
+- What if we use `=` when defining tuple literals?
+`var x: Point = {x=1, y=2}`. Seems a good solution.
+
+N - Important parts:
+- exception
+- type system: tuple, sum, hash, array, primitives, cast, clone
+- inheritance and polymorphism
+- functions: lambda
+- generics, protocols and phantom types
+- match
+
+N - is there a way to remove `loop, break, continue`?
+Is it possible to replace them using available concepts? Like lambda?
+We can make `loop` a normal function defined in core. We can simulate continue with return.
+But we won't have access to local variables.
+
+N - assert function can be implemented as a core function which calls `throw`.
+so `throw` is more fundamental than `assert`.
+also `throw` can be defined as a core function.
+They are interchangeable.
+
+? - Make sure there is only one syntax for each task.
+suffix if and loop? remove. **only prefix. **
+call function without comma in args or without paren? **No**
+define function while ommitting parts? 
+define lambda type or literal with ommitted parts?
+dont be afraid to force developer to write a bit more.
+
+? - Is this readable? `var x = loop(10)`
+
+? - assert/throw what is their input? is it free? How can we catch it later? How can we know the type?
+
+? - If we define a base type like Exception and want to throw a subtype of exception, we have to write fwd function.
+`type MyException := {Exception, code: int}`
+`func catch(MyException->Exception)`
