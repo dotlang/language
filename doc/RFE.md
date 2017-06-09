@@ -3321,9 +3321,30 @@ anything func will be bound to a local function with exact same type.
 any other thing: will be bound to a local variable or function with no input and same name and output.
 And also in the related section, explain why we need this.
 
-? - Can we make `^` notation a bit more explicit regarding it must be applied to a tuple?
+Y - array or Array or map or Map?
+naming should be MyData except for primitives, bool, array, map, string
 
-? - A better and more consistent config and log management. 
+Y - Can we make `^` notation a bit more explicit regarding it must be applied to a tuple?
+`var x: Car = {}`
+It should seem like something which is a tuple.
+`{^}` means create a tuple based on the expected type of the function argument, each member M (type T) of the tuple will be initialized with a value X where: if T is a function, X will be a pointer to a function with name M and signature T. otherwise, X will be value of a local variable of type T and name M. 
+It is a bit ambiguous. What if there is a local variable with name of a function pointer inside the tuple?
+After all, everything inside tuple is a variable.
+```
+type Adder[S,T,X] := {
+    add: func(x: S, y:T)->X,
+    data: func()->T,    
+    data: T,
+    y: int[]
+}
+```
+But using local variables seems a bit weird. What if we call `{^}` before introducing a local variable? It is confusing.
+Let's just limit `{^}` to local functions.
+
+N - A better and more consistent config and log management. 
 So things like Ambari dont need to edit/grep/sed config xml files.
 
-? - array or Array or map or Map?
+? - can we simplify cast/clone notation? e.g. `[]` for clone.
+`x + @int(y)` or `x + @(y)`
+`x + [int](y)` or `x + [](y)`
+This is not very readable: `[Point[int]]({x:10, y:20})`
