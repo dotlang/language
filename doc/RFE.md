@@ -3351,3 +3351,5 @@ N - can we simplify cast/clone notation? e.g. `[]` for clone.
 Because of naming, we may be able to use `T(x)`.
 But using a notation like `@` is more readable and explicit.
 
+N - if output of a block is Nothing by default then:
+`var g = { x+4 }` g can be 
