@@ -536,8 +536,8 @@ type Map[K,V] := K => V
 type Stack[T] := array[T]  ;define base type for generic type
 func push[T](s: Stack[T], x: T)
 func push[int](s: Stack[int], x: int) ;specialization
-func pop[T](s: Stack[T]) -] T
-func len[T](s: Stack[T]) -] int   ;general function for all instances
+func pop[T](s: Stack[T]) -> T
+func len[T](s: Stack[T]) -> int   ;general function for all instances
 var t : Stack[int]
 var h : Map[int, string]
 push(t, 10) ;same as push[int](t, 10)
@@ -555,12 +555,12 @@ Example:
 if we call `push(a,6)` and `a` is `Stack[int]` second function will be called because there is full match.
 if we call `stack[int](a, b)` still the second one will be called.
 - When calling a generic function, you can omit type specifier only if it can be deduced from input. If not, you must specify input.
-Example: `func process[T](x: int) -] T`
+Example: `func process[T](x: int) -> T`
 `process(10)` is wrong. You must specify type: `var g: string = process[string](10)`
 - If some types cannot be inferred from function input, you must specify them when calling the generic function.
 ```
 type DepValue[T] := (value:T)
-func magic[T](that: DepValue[T])-]T that.value
+func magic[T](that: DepValue[T])->T that.value
 var x = %DepValue[int](1) ;x is int
 var y = %DepValue[string]("a") ;y is string
 var xx: int = magic(x)
@@ -577,60 +577,60 @@ When writing a generic function, you may have expectations regarding behavior of
 ;Note that if T is a sum type, each function here can be multiple implemented functions
 ;This kind of type is called a protocol (specified a template for a group of functions)
 type Eq[T] := {
-    equals: func(x: T, y:T)-]bool
-    notEquals: func(x: Eq, y:Eq) -] bool = !equals(x,y)
+    equals: func(x: T, y:T)->bool
+    notEquals: func(x: Eq, y:Eq) -> bool = !equals(x,y)
     ;if any expected function does not have an input, we can declare it as a data field
-    constValue: T ;will be calculated by calling constValue[T]()-]int
+    constValue: T ;will be calculated by calling constValue[T]()->int
 }
 ;we can also use non-generic types to be later used as auto but its not very useful
 ;it can be used to have a handle to a function without method dispatch rules (exact match)
 type Writer := {
     write: func(x: int, y:string)
-    PI: func()-]double
+    PI: func()->double
 }
 
 type Point := {x:int, y:int}
-func equals(x: Point, y: Point)-]bool { ... }
-func notEquals(x: Point, y: Point)-]bool { ... }
+func equals(x: Point, y: Point)->bool { ... }
+func notEquals(x: Point, y: Point)->bool { ... }
 
-func isInArray[T](x:T, y:T[], z: Eq[T], g: Writer) -] bool {
+func isInArray[T](x:T, y:T[], z: Eq[T], g: Writer) -> bool {
     if ( z.equals(x, y[0])...
 }
 ;when calling:
 isInArray(x, arr, {^}, {^})
 ---
 type Ord[T] := {
-    compare: func(x:T, y:T)-]int
+    compare: func(x:T, y:T)->int
 }
 func sort[T](x:T[], z: Ord[T])
 ---
 type Stringer[T] := {
-    toString :func(x:T)-]string
+    toString :func(x:T)->string
 }
-func dump[T](x:T, z: Stringer[T])-]string
+func dump[T](x:T, z: Stringer[T])->string
 ---
 type Serializer[T] := {
-    serialize: func(x:T)-]string
-    deserialize: func(x:string)-]T
+    serialize: func(x:T)->string
+    deserialize: func(x:string)->T
 }
-func process[T](x: T, z: Serializer[T]) -] ...
+func process[T](x: T, z: Serializer[T]) -> ...
 ---
 type Adder[S,T,X] := {
-    add: func(x: S, y:T)-]X
+    add: func(x: S, y:T)->X
 }
-func process[S,T,X](x: S, y:T, z: Adder[S,T,X])-]X { return z.add(x,y) }
+func process[S,T,X](x: S, y:T, z: Adder[S,T,X])->X { return z.add(x,y) }
 ---
 type Failable[T, U] := {
     oops: T[U],
-    pick: func(T[U], T[U])-]T[U],
-    win: func(U)-]T[U]
+    pick: func(T[U], T[U])->T[U],
+    win: func(U)->T[U]
 }
 type Maybe[U] := U | Nothing
-func oops[U]()-]Maybe[U] { return Nothing }
-func pick[U](x: Maybe[U], y: Maybe[U])-] Maybe[U]
-func win[U](x: U) -] Maybe[U] { return x }
+func oops[U]()->Maybe[U] { return Nothing }
+func pick[U](x: Maybe[U], y: Maybe[U])-> Maybe[U]
+func win[U](x: U) -> Maybe[U] { return x }
 
-func safeDiv[T](x: double, y: double, z: Failable[T, double]) -] T[double] {
+func safeDiv[T](x: double, y: double, z: Failable[T, double]) -> T[double] {
     if ( y == 0 ) return z.oops
     return z.win(x/y)
 }
@@ -670,31 +670,31 @@ type Md5Hash := HashStr[MD5]
 ;Md5Hash type can be easily cast to string, but if in the code a string
 ;is expected to be of type Sha1Hash you cannot pass Md5Hash
 type Sha1Hash := HashStr[SHA1]
-func md5(s: string)-]Md5Hash {
+func md5(s: string)->Md5Hash {
     var result: string = "ddsadsadsad"
     return %Md5Hash(result)  ;create a new string of type md5-hash
 }
-func sha1(s: string)-]Sha1Hash
+func sha1(s: string)->Sha1Hash
 var t: Md5Hash  = sha1("A")  ;will give compiler error because output of sha1 is Sha1Hash
-func testMd5(s: string, t: Md5Hash) -] md5(s) == t
+func testMd5(s: string, t: Md5Hash) -> md5(s) == t
 
 ;if there is only one case, you can simply use named type
 type SafeString := string
-func processString(s: string)-]SafeString
+func processString(s: string)->SafeString
 func work(s: SafeString)
 
 ;another example: expressions
 type ExpType := INT | STR
 type Expression[T] := (token: string)
-func readIntExpression(...) -] Expression[INT]
+func readIntExpression(...) -> Expression[INT]
 func plus(left: Expression[INT], right: Expression[INT])...
 func concat(left: Expression[STR], right: Expression[STR])...
 
 ;door
 type DoorState := Open | Closed
 type Door[T] := (string)
-func closeDoor(x: Door[Open]) -] Door[Closed]
-func openDoor(x: Door[Closed]) -] Door[Open]
+func closeDoor(x: Door[Open]) -> Door[Closed]
+func openDoor(x: Door[Closed]) -> Door[Open]
 ```
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
