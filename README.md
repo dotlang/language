@@ -15,7 +15,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex, removed protocol and `^`
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -101,7 +101,7 @@ Source file contains a number of definitions for types and functions.
 5. **Function**: `func functionName (x: int, y: string) -> float { *BODY* }`
 6. **Variable**: `var location: Point = {x:10, y:20}`
 7. **Import**: Is used to import types and functions defined in another file: `import /code/std/Queue`
-8. **Generics**: `type Stack<T> := T[]`
+8. **Generics**: `type Stack[T] := ...`
 9. **Immutability**: Only local variables are mutable. Everything else is immutable.
 10. **Assignment**: Primitives are assigned by value, other types are assigned by reference.
 
@@ -146,11 +146,10 @@ Some types are pre-defined in core but are not part of the syntax: `Nothing`, `b
 
 ### Array
 Arrays are a special built-in type:
-`type Array<T> := native`
-But compiler provides syntax sugars for them:
-1. `int[]` will be translated to `array<int>`
-2. set and get of array elements is handled by the compiler.
+`type array[T] := native`
+- Array: `var x: array[int] = {1,2,3,4}` `x.[0] = x.[1]++`
 
+But compiler provides syntax sugars for them:
 - Array literals are specified using brackets: `[1, 2, 3]`
 - `var x: int[] = [1, 2, 3];`
 - `var x: int[] = [1..10];`
@@ -170,13 +169,14 @@ But compiler provides syntax sugars for them:
 `var x: int[] = [1,2,3]` pure
 - Slice can be left side of an assignment.
 - So if a function plans to accept inputs which are not native array, it can be defined like this:
-`func process<T>(x: T, arrayFuncs: ArrAccessors<T>)` which means `x` input will have appropriate methods to be accessed like an array. Then inside `process` function it can use `x[0]` and other methods to work with x.
+`func process[T](x: T, arrayFuncs: ArrAccessors[T])` which means `x` input will have appropriate methods to be accessed like an array. Then inside `process` function it can use `x[0]` and other methods to work with x.
 
 ### Hashtable
 Hashtable or Maps are built-in types:
-`type Map<K,V> := native`
+`type Map[K,V] := native`
+- Hash: `var y: map[string, int] = {"a": 1, "b": 2}` `y.["a"] = 1+y.["b"]`
 But compiler will provide syntax sugar for them:
-`K=>V` => `Map<K,V>`
+`K=>V` => `Map[K,V]`
 Hashtables are sometimes called "associative arrays". So their syntax is similar to arrays:
 - `A => B` is used to define hash type. Left of `=>` is type of key and on the right side is type of value. If key or value have multiple elements, a tuple should be used.
 - `var hash1: string => int`
@@ -284,25 +284,17 @@ Note that when using type for alias to a function, you have to specify input nam
 `type comparer := func (x:int, y:int) -> bool;`
 If types are compatible (e.g. long and int) you can cast them using: `TypeName(x)` notation. Note that this notation can also be used to specify type of a literal when we can't or don't want to do it using normal notation:
 For example in return statement `return Circle(radius=1)`.
-- Note that you cannot define your own casting function using `%TypeName{x}` name. Here `x` is a code block which will evaluate to something we want to cast. You can write cast functions using a standard name, however.
-```
-type A := (x:int, y: int)
-type B := (x: int)
-var t = A(x=10,y=20)
-var w: B = (@A) ;this will fail, because type B does not have y
-var w: B = B(@A) ;this will not fail because we are casting, so it will ignore extra data
-```
+- Note that you cannot define your own casting function using `@TypeName(x)` name. Here `x` is a code block which will evaluate to something we want to cast. You can write cast functions using a standard name, however.
 - Casting examples:
-`%int{x}`
-`%string{x}`
-`%OptionalInt{x}`
-`%Point{var}`
-`%Point{{x:10, y:20}}` --cast a tuple literal
-`%Point{@t}` same as `%Point(t)`
-`%Point<int>{{x:10, y:20}}` -- casting combined with type specialization
+`@int(x)`
+`@string(x)`
+`@OptionalInt(x)`
+`@Point(var)`
+`@Point({x:10, y:20})` --cast a tuple literal
+`@Point[int]({x:10, y:20})` -- casting combined with type specialization
 Casting to a tuple, can accept either a tuple literal or tuple variable or an exploded tuple.
 Note that there is no support for implicit casting functions. If you need a custom cast, write a separate function and explicitly call it.
-- `%Type{}` without input creates a default instance of the given type.
+- `@Type()` without input creates a default instance of the given type.
 - When doing cast to a generic type, you can ignore type if it can be deduced. 
 
 ### Variables
@@ -360,8 +352,6 @@ You can use `_` notation when using explode on values, to ignore part of the out
 To have a tuple with unnamed fields based on value of another tuple, just put `@` after the dot. So assume `Point` has x and y fields:
 `@my_point` will translate to `x=10, y=20`
 You can combine explode operator with other data or type definition as long as you change type of the field. `var g = {@my_point, z:20}`. g will be `{x:10, y:20, z:20}`. Explode on primitives has no effect (`@int` = `int`).
-- If a type does not have any fields (empty types), you don't need to use embedding to inherit from it. It is optional. You just need to implement appropriate methods (If not, and those methods are defined empty for base type, a compiler error will be thrown). So if we have `func check(x: Alpha)` and `Alpha` type does not have any field, any other data type which implements functions written for `Alpha` can be used instead.
-- Empty types are like interfaces and are defined like `type Alpha`.
 Example about inheritance, polymorphism and subtyping:
 ```
 type Shape := {}
@@ -387,9 +377,8 @@ for(Hobby h: all) Draw(h,1,"")
 var t: Shape = myOtherShape
 var r: BasicShape = myCircle ;automatic casting - because Circle inherits from BasicShape
 ```
-- You can assign a variable any of it's subtypes (including empty type) variables. 
 if a function expects `f: func()->Shape` you can send a function which returns a Circle, because there are implicitly castable.
-If a function expects `x: Stack<Shape>` you cannot send `Stack<Circle>`.
+If a function expects `x: Stack[Shape]` you cannot send `Stack[Circle]`.
 - You can embed as many types as you want in your tuple, but the first field will be parent.
 - To redirect a function to another one with types in the same hierarchy, you need to cast the argument.
 `func process(Circle, SolidColor) -> process(%Shape{c}, %Color{sc})`
@@ -425,14 +414,13 @@ new_array = map(my_array , (x:int) -> {x+1})
 ```
 - Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability) for parameters passed by reference.
 - Parent is required when calling a function, even if there is no input.
-- You can clone the data but have to do it manually using explode operator `@`. Note that assignment makes a clone for primitives, so you need cloning only for tuple, array and hash.
-- Cloning: `var x = {@p}`
-`var x: Point = {@original_var}`
-`var x: Point = (@original_var, x=19)` clone and modify in-place
+- You can clone the data but have to do it manually using `@` special function. Note that assignment makes a clone for primitives, so you need cloning only for tuple, array and hash.
+- Cloning: `var x = @(p)`
+`var x: Point = @(original_var)`
 `var a = [1,2,3]`
-`var b = [@a]`
+`var b = @(a)`
 `var h = string => int = ["A"=>1, "B"=>2]`
-`var g = [@h]`
+`var g = @(h)`
 - You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
 - `rest` is a normal array which is created by compiler for each call to `print` function.
 - Functions are not allowed to change (directly or indirectly) any of their inputs.
@@ -475,7 +463,7 @@ type T
 func add(x: T[], data: T)-> T    ;input must be an array and single var of the same type and same as output
 add(int_array, "A") will fail
 ```
-- This is a function that accepts an input of any type and returns any type: `type Function<I,O> := func(I)->O`.
+- This is a function that accepts an input of any type and returns any type: `type Function[I,O] := func(I)->O`.
 - When calling a function, you can remove parentheses if there is no ambiguity (only a single call is being made).
 
 ### Matching
@@ -539,45 +527,46 @@ func process(c: Circle) -> int {
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Template
-- When defining types, you can append `<A, B, C, ...>` to the type name to indicate it is a generic type. You can then use these symbols inside type definition.
-- When defining functions, if input or output are of generic type, you must append `<A,B,C,...>` to the function name to match required generic types for input/output. 
-- When you define a variable or another type, you can refer to a generic type using it's name and concrete values for their types. Like `Type<int, string>`
+- When defining types, you can append `[A, B, C, ...]` to the type name to indicate it is a generic type. You can then use these symbols inside type definition.
+- When defining functions, if input or output are of generic type, you must append `[A,B,C,...]` to the function name to match required generic types for input/output. 
+- When you define a variable or another type, you can refer to a generic type using it's name and concrete values for their types. Like `Type{int, string]`
 - Generic functions, must make use of their type argument in their input.
 ```
-type Map<K,V> := K => V
-type Stack<T> := T[]  ;define base type for generic type
-func push<T>(s: Stack<T>, x: T)
-func push<int>(s: Stack<int>, x: int) ;specialization
-func pop<T>(s: Stack<T>) -> T
-func len<T>(s: Stack<T>) -> int   ;general function for all instances
-var t : Stack<int>
-var h : Map<int, string>
-push(t, 10) ;same as push<int>(t, 10)
+type Map[K,V] := K => V
+type Stack[T] := array[T]  ;define base type for generic type
+func push[T](s: Stack[T], x: T)
+func push[int](s: Stack[int], x: int) ;specialization
+func pop[T](s: Stack[T]) -] T
+func len[T](s: Stack[T]) -] int   ;general function for all instances
+var t : Stack[int]
+var h : Map[int, string]
+push(t, 10) ;same as push[int](t, 10)
 var y = pop(t)
 x = len(t)
 ```
-`type optional<T> := Nothing | T`
-`type Packet<T> :=   {status: T[], result: (x:int, y:int))`
-`type IPPacket := Packet<int>`
-`type Tree<T> := {x: T, left: Tree<T>, right: Tree<T>}`
-`type ShapeTree := Tree<Shape>`
+`type optional[T] := Nothing | T`
+`type Packet[T] :=   {status: T[], result: (x:int, y:int))`
+`type IPPacket := Packet[int]`
+`type Tree[T] := {x: T, left: Tree[T], right: Tree[T]}`
+`type ShapeTree := Tree[Shape]`
 Example:
-`func push<T>(x: Stack<T>, y: T)`
-`func push(x: Stack<int>, y:int)`
-if we call `push(a,6)` and `a` is `Stack<int>` second function will be called because there is full match.
-if we call `stack<int>(a, b)` still the second one will be called.
+`func push[T](x: Stack[T], y: T)`
+`func push(x: Stack[int], y:int)`
+if we call `push(a,6)` and `a` is `Stack[int]` second function will be called because there is full match.
+if we call `stack[int](a, b)` still the second one will be called.
 - When calling a generic function, you can omit type specifier only if it can be deduced from input. If not, you must specify input.
-Example: `func process<T>(x: int) -> T`
-`process(10)` is wrong. You must specify type: `var g: string = process<string>(10)`
+Example: `func process[T](x: int) -] T`
+`process(10)` is wrong. You must specify type: `var g: string = process[string](10)`
 - If some types cannot be inferred from function input, you must specify them when calling the generic function.
 ```
-type DepValue<T> := (value:T)
-func magic<T>(that: DepValue<T>)->T that.value
-var x = %DepValue<int>(1) ;x is int
-var y = %DepValue<string>("a") ;y is string
+type DepValue[T] := (value:T)
+func magic[T](that: DepValue[T])-]T that.value
+var x = %DepValue[int](1) ;x is int
+var y = %DepValue[string]("a") ;y is string
 var xx: int = magic(x)
 var yy: string = magic(y)
 ```
+
 For generic functions, any call to a function which does not rely on the generic type, will be checked by compiler even if there is no call to that generic function. Any call to another function relying on generic argument, will be checked by compiler to be defined.
 
 ## Phantom types
@@ -586,36 +575,36 @@ For example we have a string which is result of md5 hash and another for sha-1. 
 ```
 type HashType := MD5 | SHA1
  ;when generic type is not used on the right side, it will be only for compile time check
-type HashStr<T> := string     
-type Md5Hash := HashStr<MD5> 
+type HashStr[T] := string     
+type Md5Hash := HashStr[MD5] 
 ;Md5Hash type can be easily cast to string, but if in the code a string
 ;is expected to be of type Sha1Hash you cannot pass Md5Hash
-type Sha1Hash := HashStr<SHA1>
-func md5(s: string)->Md5Hash {
+type Sha1Hash := HashStr[SHA1]
+func md5(s: string)-]Md5Hash {
     var result: string = "ddsadsadsad"
     return %Md5Hash(result)  ;create a new string of type md5-hash
 }
-func sha1(s: string)->Sha1Hash
+func sha1(s: string)-]Sha1Hash
 var t: Md5Hash  = sha1("A")  ;will give compiler error because output of sha1 is Sha1Hash
-func testMd5(s: string, t: Md5Hash) -> md5(s) == t
+func testMd5(s: string, t: Md5Hash) -] md5(s) == t
 
 ;if there is only one case, you can simply use named type
 type SafeString := string
-func processString(s: string)->SafeString
+func processString(s: string)-]SafeString
 func work(s: SafeString)
 
 ;another example: expressions
 type ExpType := INT | STR
-type Expression<T> := (token: string)
-func readIntExpression(...) -> Expression<INT>
-func plus(left: Expression<INT>, right: Expression<INT>)...
-func concat(left: Expression<STR>, right: Expression<STR>)...
+type Expression[T] := (token: string)
+func readIntExpression(...) -] Expression[INT]
+func plus(left: Expression[INT], right: Expression[INT])...
+func concat(left: Expression[STR], right: Expression[STR])...
 
 ;door
 type DoorState := Open | Closed
-type Door<T> := (string)
-func closeDoor(x: Door<Open>) -> Door<Closed>
-func openDoor(x: Door<Closed>) -> Door<Open>
+type Door[T] := (string)
+func closeDoor(x: Door[Open]) -] Door[Closed]
+func openDoor(x: Door[Closed]) -] Door[Open]
 ```
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
@@ -635,20 +624,17 @@ The math operators can be combined with `=` to do the calculation and assignment
 
 
 ### Special Syntax
-- `@` explode 
-- `#` chaining
 - `$.i` function inputs tuple
-- `%` casting
+- `@` casting/clone
 - `:` tuple declaration, array slice
 - `:=` custom type definition
-- `=>` hash type and hash literals
 - `|` sum types
 - `.` access tuple fields
-- `[]` hash and array literals
+- `[]` generics
+- `.[]` access array/map elements
 - `::` matching
 - `_` Placeholder for explode, anything catcher in pattern matching
-- `{}` code block, tuple definition and literal
-- `<>` generics
+- `{}` code block, tuple definition and tuple/array/map literal
 - `()` function call
 
 Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `loop`, `break`, `continue`, `assert`
@@ -658,13 +644,6 @@ Primitive data types: `int`, `float`, `char` (int is signed and 64 bit, char is 
 Helper data types: `bool`, `string`, `Array`, `Map`, `Nothing`
 - `bool` is a simple sum type
 - `string` is a named type based on char array.
-
-### Chaining
-Chain operators are just syntax sugars. They are transformed by compiler. 
-`input#f(x,y)` means `f(input, x,y)`
-`str#contains(":")`
-So in above case for example, `contains` function must have two inputs. We just use this notation because sometimes it is easier to read. 
-`[1,2,3]#map(square)#sum()`
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
