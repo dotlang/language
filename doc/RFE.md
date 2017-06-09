@@ -3344,7 +3344,10 @@ Let's just limit `{^}` to local functions.
 N - A better and more consistent config and log management. 
 So things like Ambari dont need to edit/grep/sed config xml files.
 
-? - can we simplify cast/clone notation? e.g. `[]` for clone.
-`x + @int(y)` or `x + @(y)`
-`x + [int](y)` or `x + [](y)`
-This is not very readable: `[Point[int]]({x:10, y:20})`
+N - can we simplify cast/clone notation? e.g. `[]` for clone.
+`x + int(y)` or `x + @(y)`
+`x + int(y)` or `x + [](y)`
+`Point[int]({x:10, y:20})`
+Because of naming, we may be able to use `T(x)`.
+But using a notation like `@` is more readable and explicit.
+
