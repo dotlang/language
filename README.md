@@ -569,6 +569,96 @@ var yy: string = magic(y)
 
 For generic functions, any call to a function which does not rely on the generic type, will be checked by compiler even if there is no call to that generic function. Any call to another function relying on generic argument, will be checked by compiler to be defined.
 
+## Protocol parameters
+If someone calls process with some user-defined type, they really don't know what they should implement until they see the compiler error or the source code. Protocol parameters are used to document this.
+When writing a generic function, you may have expectations regarding behavior of the type T. These expectations can be defined in a tuple (called protocol tuple) as some function pointers. When calling this function, the code either should provide value or ask compiler to deduce values (using `{^}` notation)
+```
+;Also we can initialize tuple members, we have embedding
+;Note that if T is a sum type, each function here can be multiple implemented functions
+;This kind of type is called a protocol (specified a template for a group of functions)
+type Eq[T] := {
+    equals: func(x: T, y:T)-]bool
+    notEquals: func(x: Eq, y:Eq) -] bool = !equals(x,y)
+    ;if any expected function does not have an input, we can declare it as a data field
+    constValue: T ;will be calculated by calling constValue[T]()-]int
+}
+;we can also use non-generic types to be later used as auto but its not very useful
+;it can be used to have a handle to a function without method dispatch rules (exact match)
+type Writer := {
+    write: func(x: int, y:string)
+    PI: func()-]double
+}
+
+type Point := {x:int, y:int}
+func equals(x: Point, y: Point)-]bool { ... }
+func notEquals(x: Point, y: Point)-]bool { ... }
+
+func isInArray[T](x:T, y:T[], z: Eq[T], g: Writer) -] bool {
+    if ( z.equals(x, y[0])...
+}
+;when calling:
+isInArray(x, arr, {^}, {^})
+---
+type Ord[T] := {
+    compare: func(x:T, y:T)-]int
+}
+func sort[T](x:T[], z: Ord[T])
+---
+type Stringer[T] := {
+    toString :func(x:T)-]string
+}
+func dump[T](x:T, z: Stringer[T])-]string
+---
+type Serializer[T] := {
+    serialize: func(x:T)-]string
+    deserialize: func(x:string)-]T
+}
+func process[T](x: T, z: Serializer[T]) -] ...
+---
+type Adder[S,T,X] := {
+    add: func(x: S, y:T)-]X
+}
+func process[S,T,X](x: S, y:T, z: Adder[S,T,X])-]X { return z.add(x,y) }
+---
+type Failable[T, U] := {
+    oops: T[U],
+    pick: func(T[U], T[U])-]T[U],
+    win: func(U)-]T[U]
+}
+type Maybe[U] := U | Nothing
+func oops[U]()-]Maybe[U] { return Nothing }
+func pick[U](x: Maybe[U], y: Maybe[U])-] Maybe[U]
+func win[U](x: U) -] Maybe[U] { return x }
+
+func safeDiv[T](x: double, y: double, z: Failable[T, double]) -] T[double] {
+    if ( y == 0 ) return z.oops
+    return z.win(x/y)
+}
+;when calling above function, you must provide type of function
+var t = safeDiv[Maybe](x, y)
+
+---
+type Factory[T] := {
+    create: func()->T
+}
+func create()->int { return 5 }
+func create()->string { return "A" }
+func generalCreate[T](z: Factory[T]) { return z.create() }
+;here we have to specify type because it cannot be inferred
+var r = generalCreate[string]({^})
+var y = generalCreate[int]({^})
+```
+this will invoke `func item()->int` to provide value for this argument.
+Protocols can embed other types to include their fields.
+You can define and implement a protocol for a type outside your codebase, that's why you dont need to specify which protocols are implemented by a type upon declaration.
+You can use `{^}` anytime when calling a function to ask compiler to infer the parameter. For example if parameter is a function pointer, appropriate function with same name will be sent. If it is a primitive, a local variable with the same name or type (if not found, a function) will be used.
+About using `{^}` operator:
+- It must be applied for an argument of type tuple. Because otherwise, we cannot care about the name of an argument as this will interfere with multiple dispatch.
+- Inside the tuple, anything func will be bound to a local function with exact same type.
+- `{^}` means create a tuple based on the expected type of the function argument.
+- For each field inside the tuple, Compiler will look for a function with same name and type. If not found, compiler will issue an error. If tuple has non-func fields, you cannot use `{^}` and must initialize manually.
+- You can use `{^}` outside function call too, but it's type must be specified: `var x: Adder<int> = {^}`
+
 ## Phantom types
 Phantom are compile-time label/state attached to a type. You can use these labels to do some compile-time checks and validations. Here labels are implemented using generic types which are not used for data allocation.
 For example we have a string which is result of md5 hash and another for sha-1. We should not be comparing these two although they are both strings. So how can we mark them?
@@ -624,8 +714,9 @@ The math operators can be combined with `=` to do the calculation and assignment
 
 
 ### Special Syntax
-- `$.i` function inputs tuple
 - `@` casting/clone
+- `$.i` function inputs tuple
+- `{^}` imply argument value
 - `:` tuple declaration, array slice
 - `:=` custom type definition
 - `|` sum types
@@ -792,7 +883,7 @@ Another advantage: It won't interfer with method dispatch or subtyping.
 
 ### Best practice
 ### Naming
-- **Naming rules**: Advised but not mandatory: `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings.
+- **Naming rules**: Advised but not mandatory: `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Except for primitives, bool, array, map, string
 - You can suffix if and for and `x loop(10)` will run x 10 times.
 
 ## Examples
