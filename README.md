@@ -89,7 +89,6 @@ Source file contains a number of definitions for types and functions.
 *Notes:*
 - If a name starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
 - The order of the contents of source code file matters: First `import` section, `type` section and finally functions. If the order is not met, compiler will give warnings.
-- `any` denotes any type (It is defined in core). It is basically an empty type. Everything can be used for `any` type (primitives, tuples, unions, function pointers, ...). It can be something like an empty tuple. You have to initialize variables of type `any`.
 - Immutability: All variables are immutable but can be re-assigned.
 
 ## Language in a nutshell
