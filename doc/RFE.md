@@ -3217,6 +3217,61 @@ maybe we can use this with casting notation? no. two purpose for one notation is
 `var h = [@g]`
 `var tup = {@tup1}`
 `var h = ->(g)` this is similar to cast but output type is inferred from input type because we are not casting but cloning. 
-
+Advantage: Consistent, we get rid of two special notations: explode @ and cast %.
+So, to cast: `var result = ->int(x)`
+to clone:`var result = ->(x)` if output type is missing, it will clone, if it is there (even if the same as type of argument), it will cast.
+The only problem is mixing this with other notations: `x + ->int(y)` or `x + ->(y)`
+Note that casting to int makes sense if it is from a named type. 
+We can add something before `->` to make it clearer:
+`x + ->int(y)` or `x + ->(y)`
+`x + @->int(y)` or `x + @->(y)`
+`x + %->int(y)` or `x + %->(y)`
+`x + !->int(y)` or `x + !->(y)`
 
 ? - State that we no longer have "empty types"
+
+? - Now that protocol is removed, how can we state in a function signature, it's input must provide `getIndex` function? Do we need to?
+`func process<T>(x:T) -> getIndex(x,0)`
+Is it possible to use empty types like interfaces?
+But what about other types like primitive or hash? we cannot inherit them from anything.
+in OOP when you invoke a method, it determines both data and behavior it expects:
+`void process(Employee e)` Here Employee is name of a class which has data + behavior.
+But in functional programming, where there is no class, we only specify the data we expect:
+`func process(e: EmployeeData)` - inside process we may need to call a lot of other functions with `e` argument, but it is never documented.
+This argument does not apply to non generics. The moment I am typing the function and making calls, I am aware of existence of appropriate functions:
+`func process(x: Shape) -> draw(s)` Here I already know there is a `draw` function for Shape.
+But, what about generics?
+`func process<T>(x: T) -> draw(x)` If someone calls process with some user-defined type, they really don't know what they should implement until they see the compiler error or the source code.
+In D, we use `()` when defining template and `!` when invoking/using them.
+`func process<T: R>(x: T)...`
+`process!int(t)`
+I think it does not make sense to constraint a generic argument with a data-based type: `func process<T: Shape>(x: T)` because if we need that, we don't really need template, we can write a normal function: `func process(x: Shape)`.
+So, generic arguments, need constraints but not on their data, but on their behavior.
+This is similar to protocol that we had (and removed recently).
+`func process!(T: HasArea)(x: T) { ... var g = area(x, 0)... }`
+```
+protocol HasArea<T> := {
+    func area<T>(x: T, y:int)->float
+}
+```
+`func process!(S, T: HasCompare)(x: T, y: S) { ... var g = compare(x, y)... }`
+```
+protocol HasCompare<S, T> := {
+    func compare<S,T>(x: S, y: T) -> bool
+}
+```
+`func process!(S, T) with HasCompare<S, T> (x: T, y: S) { ... var g = compare(x, y)... }`
+What about subtyping? What if I need T to be subtype of S? let's forget this one. It's not very popular and useful.
+The original model where you defined a type with function pointers, made sense but was not clear:
+`func process<S, T>(x: T, y: S, z: HasCompare<S,T>) { ... var g = z.compare(x, y)... }`
+Advantage of the old approach: Almost no new notation is needed, only `^` can be used to simplify, function definition or call, using expected functions, ... nothing changed.
+This is more implicit, consistent notation, more place to play but ugly
+`func process<S, T>(x: T, y: S, z: HasCompare<S,T>) { ... var g = z.compare(x, y)... }`
+This is explicit, new notation `where`, you cannot pass custom functions, might be faster.
+`func process<S, T> where HasCompare<S,T> (x: T, y: S) { ... var g = compare(x, y)... }`
+Why the `z: HasCompare` might be slower? calling functions inside `z.` is basically a `call xyz` assembly instruction.
+and instead of `call xyz` here we have `call [z+10]`. But as z members are function pointers, there is no method dispatch happening (Its not happenning for other types too, because method dispatch is supposed to be on full dynamic match).
+I think we should return protocol tuples and the `^` notation to automatically imply items. Just make the imply process more clear.
+`type HasCompare<S,T> := { compare: func<S,T>(S,T)->bool, test: int[]}`
+anything func will be bound to a local function with exact same type.
+any other thing: will be bound to a local variable or function with no input and same name and output.
