@@ -285,6 +285,7 @@ Note that when using type for alias to a function, you have to specify input nam
 If types are compatible (e.g. long and int) you can cast them using: `TypeName(x)` notation. Note that this notation can also be used to specify type of a literal when we can't or don't want to do it using normal notation:
 For example in return statement `return Circle(radius=1)`.
 - Note that you cannot define your own casting function using `@TypeName(x)` name. Here `x` is a code block which will evaluate to something we want to cast. You can write cast functions using a standard name, however.
+- You can use casting syntax to cast between named and unnamed types and also downcast (from Circle to Shape).
 - Casting examples:
 `@int(x)`
 `@string(x)`
@@ -419,7 +420,7 @@ new_array = map(my_array , (x:int) -> {x+1})
 `var x: Point = @(original_var)`
 `var a = [1,2,3]`
 `var b = @(a)`
-`var h = string => int = ["A"=>1, "B"=>2]`
+`var h = map[string, int] = {"A": 1, "B":2}`
 `var g = @(h)`
 - You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
 - `rest` is a normal array which is created by compiler for each call to `print` function.
@@ -883,7 +884,7 @@ Another advantage: It won't interfer with method dispatch or subtyping.
 
 ### Best practice
 ### Naming
-- **Naming rules**: Advised but not mandatory: `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Except for primitives, bool, array, map, string
+- **Naming rules**: Advised but not mandatory: `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Except for primitives (int, float, char), bool, array, map, string
 - You can suffix if and for and `x loop(10)` will run x 10 times.
 
 ## Examples
