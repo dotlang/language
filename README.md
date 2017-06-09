@@ -196,9 +196,9 @@ type Car := {
   age: int = 19, ;setting default value
 }
 var x: Car = {}   ;init x with all default values based on definition of Car
-var y: Car = {age:11} ;customize value
-var z = %Car(age:121) ;when we want to write a literal we can also specify its type with this notation
-var z = %Car({age:121})
+var y: Car = {age=11} ;customize value
+var z = %Car(age=121) ;when we want to write a literal we can also specify its type with this notation
+var z = %Car({age=121})
 var t : {int, string} = {1, "A"}  ;you can have tuples with unnamed fields. They can be accessed like an array.
 var number_one = t.0
 t.1 = "G"
@@ -221,15 +221,16 @@ type D := {int=9, string="G"} ; unnamed fields. You can access them like an arra
 
 To create a new tuple instance you just set it's type and assign it to an appropriate tuple:
 ```
-var test: A = {x: 10}
+var test: A = {x= 10}
 var test2: A = {} ;no init 
 var test3: D = {1,"A"}
 var test4: C={9}
 test3.0=9
 test3.1="A"
-var t = {x:6, y:5} ;anonymous and untyped tuple
+var t = {x=6, y=5} ;anonymous and untyped tuple
 ```
 - You cannot mix tuple literal with it's type. It should be inferred (type of lvalue or function output).
+- We define a tuple literal using `{a=b, c=d}` syntax but map literal using `{a:b, c:d}` syntax.
 
 ### Union or Sum type
 When defining a sum type, you specify different types and labels that it can accept. Label can be any valid identifier. Labels can be thought of as a special type which has only one valid value: The label itself. 
@@ -285,7 +286,7 @@ Note that when using type for alias to a function, you have to specify input nam
 If types are compatible (e.g. long and int) you can cast them using: `TypeName(x)` notation. Note that this notation can also be used to specify type of a literal when we can't or don't want to do it using normal notation:
 For example in return statement `return Circle(radius=1)`.
 - Note that you cannot define your own casting function using `@TypeName(x)` name. Here `x` is a code block which will evaluate to something we want to cast. You can write cast functions using a standard name, however.
-- You can use casting syntax to cast between named and unnamed types and also downcast (from Circle to Shape).
+- You can use casting syntax to cast between named and unnamed types, downcast (from Circle to Shape) or cast a sum type to one of it's elements or a compatible sum type.
 - Casting examples:
 `@int(x)`
 `@string(x)`
@@ -465,7 +466,8 @@ func add(x: T[], data: T)-> T    ;input must be an array and single var of the s
 add(int_array, "A") will fail
 ```
 - This is a function that accepts an input of any type and returns any type: `type Function[I,O] := func(I)->O`.
-- When calling a function, you can remove parentheses if there is no ambiguity (only a single call is being made).
+- Functions can name their output. In this case, you can assign to it like a local variable and use empty return.
+`func process() -> x:int `
 
 ### Matching
 `func add(x:int, y:int, z:int) ...`
@@ -657,7 +659,7 @@ About using `{^}` operator:
 - It must be applied for an argument of type tuple. Because otherwise, we cannot care about the name of an argument as this will interfere with multiple dispatch.
 - Inside the tuple, anything func will be bound to a local function with exact same type.
 - `{^}` means create a tuple based on the expected type of the function argument.
-- For each field inside the tuple, Compiler will look for a function with same name and type. If not found, compiler will issue an error. If tuple has non-func fields, you cannot use `{^}` and must initialize manually.
+- For each field inside the tuple, Compiler will look for a function with same name and type. If not found, compiler will issue an error. If tuple has non-func fields, they will not be set and must initialize manually.
 - You can use `{^}` outside function call too, but it's type must be specified: `var x: Adder<int> = {^}`
 
 ## Phantom types
@@ -729,7 +731,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `{}` code block, tuple definition and tuple/array/map literal
 - `()` function call
 
-Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `loop`, `break`, `continue`, `assert`
+Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `loop`, `break`, `continue`
 semi-Keywords: `if`, `else` (used in syntax sugar)
 Operators: 
 Primitive data types: `int`, `float`, `char` (int is signed and 64 bit, char is unsigned)
@@ -814,18 +816,24 @@ var g: int|exception = func1()   ;this is valid
 ```
 - You can use `defer BLOCK` to tell the runtime to run a block of code after exiting from the function. If function output is named, it will be accessible in defer block.
 - Any assert which only uses `::` with generic types, will be evaluated at compile time. You can use this to implement generic bounds.
-- Output of any code block `{...}` is evaluation of the last statement unless there is an exception. In which case, the block will exit immediately and this exit will cascade until some place that exception is bound to a variable.
+- About returning an exception, we don't need to do anything in lang spec. Because this is a normal feature of the language.
+- We don't even need a special exception type. Go panic and recover work with `interface{}`.
+- `assert` will throw an exception. This exception can only be caught in a defer block.
+- You can get current exception (if any) using a call to `catch`.
+- You can change function output in a defer block, if it is named.
 ```
-var g = {
-  func1()
-  func2()
-  func3()
-}
-return 100 if ( g :: exception)
+func process() -> x:int {
+    defer {
+        var maybeException = catch() ;returns Exception|Nothing
+        ;in case of an exception, return value should be 19
+        if ( maybeException :: Exception ) x = 19
+    }
+```
+- `Exception` is a simple tuple defined in core.
+- You can assert inside a defer block, which if fulfilled, will continue throwing the exception.
+- `assert` and `catch` are two functions defined in core. 
+- If you call `catch` outside defer block, it will always return Nothing.
 
-var h : int|exception = get_number()
-return x if ( h :: x:int)
-```
 - **Nothing**: Nothing is a sum type with only one value: `nothing`.
  You can use it's type for return value of a function.
  But there is no value you can return. `return` will do that.
@@ -842,6 +850,7 @@ return x if ( h :: x:int)
 - `break` and `continue` are supported like C.
 - If expression inside loop evaluates to a value, `loop` can be used as an expression:
 `var t:int[] = loop(var x:10) x` or simply `var t:int[] = loop(10)` because a loop without body will evaluate to the counter.
+
 
 ### import
 You can import a source code file using below statement. Note that import, will add symbols (functions and types) inside that source code to the current symbol table:
@@ -884,7 +893,7 @@ Another advantage: It won't interfer with method dispatch or subtyping.
 
 ### Best practice
 ### Naming
-- **Naming rules**: Advised but not mandatory: `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Except for primitives (int, float, char), bool, array, map, string
+- **Naming rules**: Advised but not mandatory: `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Except for primitives (int, float, char), bool, array, map, string, exception
 - You can suffix if and for and `x loop(10)` will run x 10 times.
 
 ## Examples
@@ -977,7 +986,7 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Dependency definition and management 
 - Plugin system to load/unload libraries at runtime
 - Debugger and plugins for Editors
-- Atomic
+- Atomic operations
 - Testing
 
 ## Method call resolution
