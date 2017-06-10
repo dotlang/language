@@ -3473,6 +3473,23 @@ N - To provide readability we always require `() ->` for lambda. Now if we have 
 N - this is a bit ambiguous:
 `func process(x:int) -> {y:int} {y=12}`
 
-? - Is this readable? `var x = loop(10)`
+Y - Is this readable? `var x = loop(10)`
 
-
+Scala:
+```
+for( var x <- Range ){
+   statement(s);
+}
+```
+simplify loop. remove loop(k:hash)
+create different function to generate different usages of loop.
+Now:
+we use`:` for type purposes, so maybe `in` is better here:
+`loop(x <- range)` or `loop(range)` (if we don't care about range status)
+range can be: `range(start, end)` or `range(count)` or an array or a hash or any type that has iterator or a predicate.
+`loop(x <- {0..10})` or `loop({0..10})`
+`loop(x <- {a..b})`
+`loop(x <- my_array)`
+`loop(k <- my_hash)`
+`loop(x>0)`
+You can use `{a..b}` notation to initialize arrays too.
