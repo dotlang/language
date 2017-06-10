@@ -3493,3 +3493,26 @@ range can be: `range(start, end)` or `range(count)` or an array or a hash or any
 `loop(k <- my_hash)`
 `loop(x>0)`
 You can use `{a..b}` notation to initialize arrays too.
+
+Y - The concept of protocol is very uneasy and needs `{^}` strange notation. Let's add a keyword.
+`Protocol p[t,u] := { ... }`
+`func process[t,u,v] p[t,u] (x: t...)`
+Embedding is allowed
+No casting
+Nothing else
+lambda? 
+cloning?
+define variable of type protocol?
+```
+
+protocol Ord[T] := {
+    func compare(x:T, y:T)->int
+}
+func sort[T: Ord] (x:T[], z: Ord[T]) { ... }
+
+protocol Adder[S,T,X] := {
+    add: func(x: S, y:T)->X
+}
+func process[S,T,X: Adder] (x: S, y:T, z: Adder[S,T,X])->X { return z.add(x,y) }
+
+```
