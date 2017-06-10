@@ -40,7 +40,7 @@ The underlying rules of design of this language are
 
 As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  There are functions and types. Each function gets one or more input (each of it's own type) and gives an output. Types include primitive data types, tuple, sum types and a general type alias. Concurrency, lambda expression and exception handling are supported.
 
-### Comparison
+## Comparison
 Compared with C: dotlang is C language + Garabage collector + first-class functions + template programming + sum data types + module system + composition and powerful polymorphism + simple and powerful standard library + immutability + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + multiple dispatch + sane defaults - ambiguities - pointers - macros - header files
 
 dotLang compared to Scala: Scala - dependency on JVM - cryptic syntax - trait
@@ -53,7 +53,7 @@ Also there is a `core` library which is used to implement some basic, low-level 
 simply implemented using pure Dotlang language.
 The `std` library is a layer above runtime and `core` which contains some general-purpose and common functions and data structures.
 
-### Code organization
+## Code organization
 
 There are three main entities: Primitive data types (`int`, `float`, ...), complex data structures and functions.
 At very few cases compiler does something for the developer automatically. Most of the time, developer should do the job manually.
@@ -69,7 +69,7 @@ core
 In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages.
 Each package contains zero or more source code files, which are called modules. Modules contain data structure definitions and function definitions. Each module can reference other modules to call their functions or use their data structures.
 
-### Structure of source code file
+## Structure of source code file
 
 Each source code file contains 3 sections: import, types and function.
 Import section is used to reference other modules that are being used in this module.
@@ -128,7 +128,7 @@ You can pass int or string or float or `int|string` or `int|float` or `string|fl
 - But when a function expects an unnamed type, you can either pass named or unnamed type.
 - Assigning a value of one named type to variable of a different named type is forbidden, even if the underlying type is the same. 
 
-### Primitive
+## Primitive
 All others are defined based on these two plus some restrictions on size and accuracy.
 - **Number data types**: `char`, `int`
 - **Floating point data types**: `float`
@@ -141,9 +141,7 @@ Some types are pre-defined in core but are not part of the syntax: `Nothing`, `b
 - `string` is an array of characters. And it is not a primitive.
 - `byte` is 8 bit integer, but `char` can be larger to support unicode.
 
-### Function type
-
-### Array
+## Array
 Arrays are a special built-in type:
 `type array[T] := native`
 - Array: `var x: array[int] = {1,2,3,4}` `x.[0] = x.[1]++`
@@ -171,7 +169,7 @@ But compiler provides syntax sugars for them:
 - So if a function plans to accept inputs which are not native array, it can be defined like this:
 `func process[T](x: T, arrayFuncs: ArrAccessors[T])` which means `x` input will have appropriate methods to be accessed like an array. Then inside `process` function it can use `x[0]` and other methods to work with x.
 
-### Hashtable
+## Map
 Hashtable or Maps are built-in types:
 `type Map[K,V] := native`
 - Hash: `var y: map[string, int] = {"a": 1, "b": 2}` `y.["a"] = 1+y.["b"]`
@@ -187,7 +185,7 @@ Hashtables are sometimes called "associative arrays". So their syntax is similar
 - If your code expects a hash which has `int` keys: `func f(x: int => any)...`
 - If you query hash for something which does not exist, it will return `none`.
 
-### Tuple or Product type
+## Tuple
 
 You use this statement to define a new product data structure:
 ```
@@ -207,7 +205,6 @@ t.1 = "G"
 - Fields that start with underscore are considered internal state of the tuple and better not to be used outside the module that defines the type. 
 - You can define a tuple with unnamed fields: `type Point := {int, int}` But fields of a tuple must be all either named or unnamed. You cannot mix them.
 
-### Tuple (Product types)
 - Tuple definition: `type Point := {x: int, y: int}`
 - Tuple literal: `var p: Point = %Point({x:10, y:20})`
 
@@ -232,7 +229,7 @@ var t = {x=6, y=5} ;anonymous and untyped tuple
 - You cannot mix tuple literal with it's type. It should be inferred (type of lvalue or function output).
 - We define a tuple literal using `{a=b, c=d}` syntax but map literal using `{a:b, c:d}` syntax.
 
-### Union or Sum type
+## Union
 When defining a sum type, you specify different types and labels that it can accept. Label can be any valid identifier. Labels can be thought of as a special type which has only one valid value: The label itself. 
 `type Tree := Empty | int | (node: int, left: Tree, right: Tree)`
 `type OptionalInt := None | int`
@@ -263,7 +260,7 @@ var x: S = t ;error
 ```
 - You must initialize sum type variables upon initialization.
 
-### Custom Types
+## Named Types
 You can use `type` to define new type based on an existing type. 
 You can also use it to define a type alias.
 
@@ -299,7 +296,7 @@ Note that there is no support for implicit casting functions. If you need a cust
 - `@Type()` without input creates a default instance of the given type.
 - When doing cast to a generic type, you can ignore type if it can be deduced. 
 
-### Variables
+## Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
 Reasons for including type at the end:
 - Due to type inference, type is optional and better not to be first part of the definition.
@@ -318,7 +315,7 @@ Cloning, passing, assigning to other vars does not change or evaluate the variab
 `var x: int = 19; x= 11 ;ok - can re-assign`
 - You can define consts using functions: `func PI -> 3.14`
 
-### Inheritance and Polymorphism
+## Inheritance and Polymorphism
 - Tuples can inherit from a single other tuple by having it as their first field and defined as anonymous.
 `type Circle := (Shape, ...)`
 - You can define functions on types and specialize them for special subtypes. This gives polymorphic behavior.
@@ -454,7 +451,23 @@ func process(x: int) -> process(x, 10, 0)
 - Functions can name their output. In this case, you can assign to it like a local variable and use empty return.
 `func process() -> x:int `
 
-### Matching
+## Method call resolution
+Method call is done using full dynamic match. Developer has to define appropriate functions or forwarding functions. This will impose a bit of burden on developer but will simplify compiler, increase method call performance and make code more clear and understandable. No unexpected method call.
+To define forwarding function you define a function signature without body, with `-> Target` for the types you want to forward:
+You can have multiple forwading in the same definition and use sum type to group multiple functions.
+`func process(Polygon|Square|Circle->Shape, GradientColor|SolidColor->Color)`
+Above means, any call to `process` with any of `Polygon, Square, Circle` and any of `GradientColor, SolidColor` will be redirected to `process(Shape, Color)`.
+You can mix forwarded arguments with normal arguments:
+`func process(float, Polygon|Square|Circle->Shape, string, int, GradientColor|SolidColor->Color, int)`
+Note that any argument can only be forwarded to a parent type.
+- For functions that have only one input of type tuple, forwarding functions are automatically generated by the compiler.
+e.g. `func process(Circle->Shape)`.
+So forwarding function is automatically generated for `func process(x: Shape|int, y: float)`.
+For `func process(x: Shape|int, y: Color|float)` forwarding is generated for cases where either x is int or y is float.
+`func process(x: Circle->Shape, y:float)`
+`func process(x:int, y:SolidColor->Color)`
+
+## Matching
 `func add(x:int, y:int, z:int) ...`
 `func add(x:int=15, y:int, z:int) ...`
 `func add(x:int, y:int, z:int=9)...`
@@ -483,7 +496,7 @@ add(y=19)
 ```
 Each function call will be dispatched to the implementation with highest priority according to matching rules. 
 
-### Lambda expression
+## Lambda expression
 You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too, also  `func` keyword is not needed. The essential part is input and `->`.
 If you use `{}` for the body, you must specify output type and use return keyword.
 ```
@@ -514,7 +527,7 @@ func process(c: Circle) -> int {
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
-# Template
+# Templates
 - When defining types, you can append `[A, B, C, ...]` to the type name to indicate it is a generic type. You can then use these symbols inside type definition.
 - When defining functions, if input or output are of generic type, you must append `[A,B,C,...]` to the function name to match required generic types for input/output. 
 - When you define a variable or another type, you can refer to a generic type using it's name and concrete values for their types. Like `Type{int, string]`
@@ -557,13 +570,13 @@ var yy: string = magic(y)
 
 For generic functions, any call to a function which does not rely on the generic type, will be checked by compiler even if there is no call to that generic function. Any call to another function relying on generic argument, will be checked by compiler to be defined.
 
-## Protocol parameters
+## Protocols
 If someone calls a generic function with some user-defined type, they really don't know what they should implement until they see the compiler error or the source code. Protocols are used to document this.
 When writing a generic function, you may have expectations regarding behavior of the type T. These expectations can be defined using a protocol. When you call this function with a concrete type, compiler makes sure the protocol is satisfied.
 General definition of function with protocol:
 ;S,T,X must comply with prot1, N,M with prot2, P,Q are free
 `func process[S,T,X: prot1, N,M: prot2, P, Q]`
-
+When defining a protocol, argument names is optional.
 ```
 ;Also we can initialize tuple members, we have embedding
 ;Note that if T is a sum type, each function here can be multiple implemented functions
@@ -825,7 +838,7 @@ You can use `loop` keyword with an array, hash, predicate or any type that has a
 - If expression inside loop evaluates to a value, `loop` can be used as an expression:
 `var t:int[] = loop(var x <- {0..10}) x` or simply `var t:int[] = loop({0..10})` because a loop without body will evaluate to the counter, same as `var t:array[int] = {0..10}`
 
-### import
+## import
 You can import a source code file using below statement. Note that import, will add symbols (functions and types) inside that source code to the current symbol table:
 - You can only import one module in each import statement (No wildcard).
 
@@ -855,17 +868,8 @@ Denotes function is implemented by runtime or external libraries.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
-## Miscellaneous
-### Validation
-A predicate or label function is of the form `func predicate(x: any)->bool` (only one input and bool output). Any piece of data can have a number of labels attached to it which are results of calls to predicates on it. 
-The important thing about labels is that they are transparently cached by runtime system. So further calls to the same label (predicate), will just re-use cached data. 
-As a result, to implement predicate/validation/constraints/refinement types, you just call the function that checks the specific filter you need. Code becomes more readable and runtime makes the execution efficient. 
-Another advantage: It won't interfer with method dispatch or subtyping.
-
-
-
-### Best practice
-### Naming
+# Best practice
+## Naming
 - **Naming rules**: Advised but not mandatory: `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Except for primitives (int, float, char), bool, array, map, string, exception
 
 ## Examples
@@ -951,7 +955,6 @@ Java without maven has a packaging but not a dependency management system. For d
 C# has dll method which is contains byte-code of the source package. DLL has a version metadata but no dep management. For dep it has NuGet.
 
 ## ToDo
-- Runtime - use concept of c++ smart ptr to eliminate GC
 - Add native concurrency and communication tools (green thread, channels) and async i/o
 - Introduce caching of function output
 - Build, versioning, packaging and distribution
@@ -961,18 +964,3 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Atomic operations
 - Testing
 
-## Method call resolution
-Method call is done using full dynamic match. Developer has to define appropriate functions or forwarding functions. This will impose a bit of burden on developer but will simplify compiler, increase method call performance and make code more clear and understandable. No unexpected method call.
-To define forwarding function you define a function signature without body, with `-> Target` for the types you want to forward:
-You can have multiple forwading in the same definition and use sum type to group multiple functions.
-`func process(Polygon|Square|Circle->Shape, GradientColor|SolidColor->Color)`
-Above means, any call to `process` with any of `Polygon, Square, Circle` and any of `GradientColor, SolidColor` will be redirected to `process(Shape, Color)`.
-You can mix forwarded arguments with normal arguments:
-`func process(float, Polygon|Square|Circle->Shape, string, int, GradientColor|SolidColor->Color, int)`
-Note that any argument can only be forwarded to a parent type.
-- For functions that have only one input of type tuple, forwarding functions are automatically generated by the compiler.
-e.g. `func process(Circle->Shape)`.
-So forwarding function is automatically generated for `func process(x: Shape|int, y: float)`.
-For `func process(x: Shape|int, y: Color|float)` forwarding is generated for cases where either x is int or y is float.
-`func process(x: Circle->Shape, y:float)`
-`func process(x:int, y:SolidColor->Color)`
