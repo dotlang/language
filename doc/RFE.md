@@ -3516,3 +3516,9 @@ protocol Adder[S,T,X] := {
 func process[S,T,X: Adder] (x: S, y:T, z: Adder[S,T,X])->X { return z.add(x,y) }
 
 ```
+
+? - N
+`func process() -> char|Nothing`
+when we call this function, what should we extract from call stack as the result?
+one byte for char? or some other thing for Nothing?
+In this case, result will have a leading byte to indicate the type. and another piece of data for actual result.
