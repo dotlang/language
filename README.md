@@ -92,16 +92,16 @@ Source file contains a number of definitions for types and functions.
 
 ## Language in a nutshell
 
-1. **Primitives**: `int`, `float`, `char`, `bool`
+1. **Primitives**: `int`, `float`, `char` (extended primitives: `bool`, `string`)
 2. **Tuple**: `type Point := {x: int, y:int}`
 3. **Union**: `type OperationResult := Point | int | Error`
-4. **Array**: `type JobQueue := int[]`
-4. **Hashtable**: `type CountryPopulation := string => int`
-5. **Function**: `func functionName (x: int, y: string) -> float { *BODY* }`
-6. **Variable**: `var location: Point = {x:10, y:20}`
-7. **Import**: Is used to import types and functions defined in another file: `import /code/std/Queue`
-8. **Generics**: `type Stack[T] := ...`
-9. **Immutability**: Only local variables are mutable. Everything else is immutable.
+8. **Generics**: `type Stack[T] := {data: array[T], info: int}`
+4. **Array**: `type JobQueue := array[int] = {0, 1, 2, 3}`
+4. **Map**: `type CountryPopulation := map[string,int] = {"US": 300, "CA": 180, "UK":80}`
+5. **Function**: `func calculate(x: int, y: string) -> float { return if ( x > 0 ) 1.0 else 2.0  }`
+6. **Variable**: `var location: Point = {x=10, y=20}`
+7. **Import**: `import /code/std/Queue`
+9. **Immutability**: Only function local variables are mutable. Everything else is immutable.
 10. **Assignment**: Primitives are assigned by value, other types are assigned by reference.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
