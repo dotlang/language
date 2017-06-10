@@ -15,7 +15,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -45,8 +45,7 @@ Compared with C: dotlang is C language + Garabage collector + first-class functi
 
 dotLang compared to Scala: Scala - dependency on JVM - cryptic syntax - trait
 
-dotLang compared to Go: Go + template programming + immutability + multiple dispatch + sum types + sane defaults + better orthogonality - pointers 
-
+dotLang compared to Go: Go + template programming + immutability + multiple dispatch + sum types + sane defaults + better orthogonality - pointers + simpler primitives
 
 There is a runtime system which is responsible for memory allocation and management, interaction with OS and 
 other external libraries and handling concurrency.
@@ -344,16 +343,6 @@ So if we have this:
 a call to paint function with some inputs, will use above 3 rules to dispatch.
 - suppose we have `Base` type and `Derived` types. Two methods `add` and `addAll` are implemented for both of them.
 if `addAll(Derived)` calls `addAdd(Base)` which in turn calls `add(Base)` then a call to `addAll(Derived)` will NOT call `add(Derived)` but will call `add(Base)`. When `addAll(Base)` is called, it has a reference to `Base` not a `Derived`. 
-- **Explode operator**: You can apply this operator to data/variables. 
-It will explode or unpack its operator and be replaced by the inner definition. 
-You can use `_` notation when using explode on values, to ignore part of the output:
-- Explode tuple: `var t,u = @p -> t=10, u=20`
-`var x,y,_ = @my_three_ints`
-`var first, _, last = @my_array`
-- Explode operator: `@p ==> x:10,y:20`
-To have a tuple with unnamed fields based on value of another tuple, just put `@` after the dot. So assume `Point` has x and y fields:
-`@my_point` will translate to `x=10, y=20`
-You can combine explode operator with other data or type definition as long as you change type of the field. `var g = {@my_point, z:20}`. g will be `{x:10, y:20, z:20}`. Explode on primitives has no effect (`@int` = `int`).
 Example about inheritance, polymorphism and subtyping:
 ```
 type Shape := {}
@@ -388,18 +377,20 @@ If a function expects `x: Stack[Shape]` you cannot send `Stack[Circle]`.
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Functions
-Function is a piece of code which accepts a series of inputs and can return a single value. If you want to use a tuple instead of entries of a function, you must explode it first unless function input is the tuple itself.
+Function is a piece of code which accepts a series of inputs and can return a single value. 
+If you use `{}` for the body, you must specify output type and use return keyword.
+
 ```
 func my_func1(x: int, y: int) -> float { return x/y }
-func my_func1(y:int) -> float { return $/3 } ;you must specify input name
-func my_func(y:int, x:int) -> { 6+y+x } ;based on runtime arguments, one of implementations will be choosed
+func my_func1(y:int) -> float { return y/3 } ;you must specify input name
+func my_func(y:int, x:int) -> int { return 6+y+x } ;based on runtime arguments, one of implementations will be choosed
 func my_func(5:int) -> 9
 func my_func3(x: int, y: int) -> x/y  ;you can omit {} if its a single expression
 func my_func7() -> int { return 10;} ;fn has no input but () is mandatory
 func my_func7() -> 10  ;when function has just a return statement, there is a shortcut
 func my_func8() -> (int, int) { return 10,20 } ;function can return multiple values
 (x,y) = @my_func8()
-func myFunc9(x:int) -> {y:int} {y:12} ;you can have named output
+func myFunc9(x:int) -> {y:int} {y=12} ;you can have named output
 
  ;below function receives an array + a function and returns a function
 func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
@@ -407,11 +398,11 @@ func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
 func map<T, S>(arr: T[], f: func(T) -> S) -> S[]
 
 ;these calls are all the same
-new_array = map(my_array, {$+1})
+new_array = map(my_array, (x) -> x+1)
 ```
 - `map` can work on any type that supports iterable.
 ```
-new_array = map(my_array, {$+1}) ;map will receive a tuple containing two elements: array and lambda
+new_array = map(my_array, (x) -> x+1) ;map will receive a tuple containing two elements: array and lambda
 new_array = map(my_array , (x:int) -> {x+1})
 ```
 - Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability) for parameters passed by reference.
@@ -458,13 +449,6 @@ f(g.x, g.y)
 func process(x: int, y:int, z:int) -> ...
 func process(x: int) -> process(x, 10, 0)
 ```
-- Function input tuple can be accessed via `$` symbol.
-- using type alias we can stress that some types must be equal in a function call.
-```
-type T
-func add(x: T[], data: T)-> T    ;input must be an array and single var of the same type and same as output
-add(int_array, "A") will fail
-```
 - This is a function that accepts an input of any type and returns any type: `type Function[I,O] := func(I)->O`.
 - Functions can name their output. In this case, you can assign to it like a local variable and use empty return.
 `func process() -> x:int `
@@ -499,22 +483,22 @@ add(y=19)
 Each function call will be dispatched to the implementation with highest priority according to matching rules. 
 
 ### Lambda expression
-You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too, also  `func` keyword is not needed. 
+You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too, also  `func` keyword is not needed. The essential part is input and `->`.
+If you use `{}` for the body, you must specify output type and use return keyword.
 ```
 var f1 = (x: int, y:int) -> int { return x+y } ;the most complete definition
-var rr = (x: int, y:int) -> { x + y }  ;return type can be inferred
+var rr = (x: int, y:int) -> x + y  ;return type can be inferred
 var rr = { x + y } ;WRONG! - input is not specified
 var f1 = (x: int, y:int) -> int { return x+y } ;the most complete definition
 
 type adder := (x: int, y:int) -> int
 var rr: adder = (a:int, b:int) -> { a + b } ;when you have a type, you can define new names for input
-var rr: adder = func { x + y }   ;when you have a type, you can also omit input
-var rr: adder = { x + y }      ;and also func keyword, but {} is mandatory
-var rr:adder = { $.0 + 2 }        ;you can use $.0 or $ alone instead of name of first input
-func test(x:int) -> plus2 { return { $.0+ x} }
-var modifier = { $.0 + $.1 }  ;if input/output types can be deduced, you can eliminate them
+var rr: adder = (x,y) -> x + y   ;when you have a type, you can also omit input
+var rr: adder = (x,y) -> int { return x + y }      ;and also func keyword, but {} is mandatory
+var rr:adder = (x,y) -> x + 2      
+func test(x:int) -> plus2 { return (y) -> y+ x }
+var modifier = (x:int, y:int) -> x+y  ;if input/output types can be deduced, you can eliminate them
 ```
-- You can access lambda input using `$.0, ...` notation too.
 - Lambdas have read-only access to free variables in their parent semantic scope.
 - Function pointers cannot take part in method dispatch. They must point to a specific function. This is specified using their type. 
 - Another way to forward a call to another function but without loosing dynamic type:
@@ -718,7 +702,6 @@ The math operators can be combined with `=` to do the calculation and assignment
 
 ### Special Syntax
 - `@` casting/clone
-- `$.i` function inputs tuple
 - `{^}` imply argument value
 - `:` tuple declaration, array slice
 - `:=` custom type definition
@@ -727,7 +710,6 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `[]` generics
 - `.[]` access array/map elements
 - `::` matching
-- `_` Placeholder for explode, anything catcher in pattern matching
 - `{}` code block, tuple definition and tuple/array/map literal
 - `()` function call
 
@@ -764,7 +746,7 @@ MatchExp = '(' tuple ')' :: '{' (CaseStmt)+ '}'
     int -> 1,
     y:float -> y,
     NormalTree -> { return 1+z },
-    _ -> { -1 } ;this is default because it matches with anything
+    else -> { -1 } ;this is default because it matches with anything
   }
   ;You can shorten this definition in one line:
   result = my_tree :: 5 -> 11, 6-> 12, Empty -> 0, x:int -> x, any -> -1
@@ -783,7 +765,6 @@ Block  = Statement | '{' (Statement)* '}'
 - Note that condition must be a boolean expression.
 - You can use any of available operators for condition part. 
 - Also you can use a simple boolean variable (or a function with output of boolean) for condition.
-- You can also use suffix syntax for if: `Block if condition`
 `var max = if (x > y) x else y`
 
 ```
@@ -833,16 +814,22 @@ func process() -> x:int {
 - You can assert inside a defer block, which if fulfilled, will continue throwing the exception.
 - `assert` and `catch` are two functions defined in core. 
 - If you call `catch` outside defer block, it will always return Nothing.
+`func throw[T](x: T)`
+`func catch[T]()->T|Nothing`
 
 - **Nothing**: Nothing is a sum type with only one value: `nothing`.
  You can use it's type for return value of a function.
- But there is no value you can return. `return` will do that.
 
 ###loop, break, continue
-`loop(5) { ... }`
-`loop(2,20) { ... }`
-`loop(x:2,20) { ... }` assign a variable as loop counter value
+`loop(0<5;++) { ... }`
+`loop(x: 0;<5;++) { ... }`
+`loop(0..5) { ... }` repeat 5 times
+`loop(var x: 0..5) { ... }` repeat 5 times with counter
+`loop(var x: 0..5, x+=2) { ... }` 
+`loop(2..20) { ... }`
+`loop(var x:2..20) { ... }` assign a variable as loop counter value
 `loop(x>5) { ... }`
+`loop(x>5, x+=3) { ... }` when you assign for counter to a variable, you can add an update expression
 `loop(x: array) { ... }`
 `loop(k: hash) { ... }`
 `loop(k,v: hash) { ...}`
@@ -851,10 +838,9 @@ func process() -> x:int {
 - If expression inside loop evaluates to a value, `loop` can be used as an expression:
 `var t:int[] = loop(var x:10) x` or simply `var t:int[] = loop(10)` because a loop without body will evaluate to the counter.
 
-
 ### import
 You can import a source code file using below statement. Note that import, will add symbols (functions and types) inside that source code to the current symbol table:
-- You can only import one module in each import statement.
+- You can only import one module in each import statement (No wildcard).
 
 ```
 ;Starting a path with slash means its absolute path (relative to include path). Otherwise it is relative to the current file
@@ -894,7 +880,6 @@ Another advantage: It won't interfer with method dispatch or subtyping.
 ### Best practice
 ### Naming
 - **Naming rules**: Advised but not mandatory: `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Except for primitives (int, float, char), bool, array, map, string, exception
-- You can suffix if and for and `x loop(10)` will run x 10 times.
 
 ## Examples
 ### Empty application
@@ -992,10 +977,15 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 ## Method call resolution
 Method call is done using full dynamic match. Developer has to define appropriate functions or forwarding functions. This will impose a bit of burden on developer but will simplify compiler, increase method call performance and make code more clear and understandable. No unexpected method call.
 To define forwarding function you define a function signature without body, with `-> Target` for the types you want to forward:
-`func process(Circle->Shape)` will call `process(Shape)` if it is called with a Circle argument.
 You can have multiple forwading in the same definition and use sum type to group multiple functions.
 `func process(Polygon|Square|Circle->Shape, GradientColor|SolidColor->Color)`
 Above means, any call to `process` with any of `Polygon, Square, Circle` and any of `GradientColor, SolidColor` will be redirected to `process(Shape, Color)`.
 You can mix forwarded arguments with normal arguments:
 `func process(float, Polygon|Square|Circle->Shape, string, int, GradientColor|SolidColor->Color, int)`
 Note that any argument can only be forwarded to a parent type.
+- For functions that have only one input of type tuple, forwarding functions are automatically generated by the compiler.
+e.g. `func process(Circle->Shape)`.
+So forwarding function is automatically generated for `func process(x: Shape|int, y: float)`.
+For `func process(x: Shape|int, y: Color|float)` forwarding is generated for cases where either x is int or y is float.
+`func process(x: Circle->Shape, y:float)`
+`func process(x:int, y:SolidColor->Color)`
