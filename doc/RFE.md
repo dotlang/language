@@ -3431,17 +3431,48 @@ so `throw` is more fundamental than `assert`.
 also `throw` can be defined as a core function.
 They are interchangeable.
 
-? - Make sure there is only one syntax for each task.
+Y - assert/throw what is their input? is it free? How can we catch it later? How can we know the type?
+Let's have throw and assert both. 
+`func throw[T](x: T)`
+`func catch[T]()->T|Nothing`
+
+Y - Make sure there is only one syntax for each task.
 suffix if and loop? remove. **only prefix. **
 call function without comma in args or without paren? **No**
 define function while ommitting parts? 
 define lambda type or literal with ommitted parts?
 dont be afraid to force developer to write a bit more.
 
-? - Is this readable? `var x = loop(10)`
+Y - Shall we disallow function body that evaluates to an expression?
+`var x: func(int)->int = (x:int) -> x+1` this is ok because there is no body
+`var x: func(int)->int = (x:int) -> int { return x+1}` this is also ok. normal return statement.
+`var x: func(int)->int = (x:int) -> {x+1}` ? this should be invalid.
 
-? - assert/throw what is their input? is it free? How can we catch it later? How can we know the type?
+N - We can eliminate catch by having `var g : int|exception = callFunc()`
 
-? - If we define a base type like Exception and want to throw a subtype of exception, we have to write fwd function.
+N - If we define a base type like Exception and want to throw a subtype of exception, we have to write fwd function.
 `type MyException := {Exception, code: int}`
 `func catch(MyException->Exception)`
+
+Y - What about this? `func process[T,U](x: T, y:U)` does it have one tuple input?
+and: `func process(x: Shape|int, y: Color|float)`? how can compiler write fwd functions?
+
+Y - Maybe we should say compiler will generate fwd methods for single tuple functions.
+
+Y - If we force user to name function inputs, maybe we don't need `$`?
+scala: `(1 to 5).map( x => x*x )`
+`(1 to 5).map(_*2)`
+maybe we should remove `$.0` notation and use the lightweight `_`?
+But we are already using `_` in other places.
+`_` is only used for anything catcher in matching.
+`new_array = map(my_array, (x) -> x+1)`
+Let's remove `$` for now. And replace `_` with `else` keyword.
+
+N - To provide readability we always require `() ->` for lambda. Now if we have `()` then input must be named. so there is no need for a shortcut notation like `_+1`.
+
+N - this is a bit ambiguous:
+`func process(x:int) -> {y:int} {y=12}`
+
+? - Is this readable? `var x = loop(10)`
+
+
