@@ -15,7 +15,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -558,94 +558,85 @@ var yy: string = magic(y)
 For generic functions, any call to a function which does not rely on the generic type, will be checked by compiler even if there is no call to that generic function. Any call to another function relying on generic argument, will be checked by compiler to be defined.
 
 ## Protocol parameters
-If someone calls process with some user-defined type, they really don't know what they should implement until they see the compiler error or the source code. Protocol parameters are used to document this.
-When writing a generic function, you may have expectations regarding behavior of the type T. These expectations can be defined in a tuple (called protocol tuple) as some function pointers. When calling this function, the code either should provide value or ask compiler to deduce values (using `{^}` notation)
+If someone calls a generic function with some user-defined type, they really don't know what they should implement until they see the compiler error or the source code. Protocols are used to document this.
+When writing a generic function, you may have expectations regarding behavior of the type T. These expectations can be defined using a protocol. When you call this function with a concrete type, compiler makes sure the protocol is satisfied.
+General definition of function with protocol:
+;S,T,X must comply with prot1, N,M with prot2, P,Q are free
+`func process[S,T,X: prot1, N,M: prot2, P, Q]`
+
 ```
 ;Also we can initialize tuple members, we have embedding
 ;Note that if T is a sum type, each function here can be multiple implemented functions
-;This kind of type is called a protocol (specified a template for a group of functions)
-type Eq[T] := {
-    equals: func(x: T, y:T)->bool
-    notEquals: func(x: Eq, y:Eq) -> bool = !equals(x,y)
-    ;if any expected function does not have an input, we can declare it as a data field
-    constValue: T ;will be calculated by calling constValue[T]()->int
+protocol Eq[T] := {
+    func equals(x: T, y:T)->bool
+    func notEquals(x: Eq, y:Eq) -> !equals(x,y)  ;you can provide default impl
 }
-;we can also use non-generic types to be later used as auto but its not very useful
-;it can be used to have a handle to a function without method dispatch rules (exact match)
-type Writer := {
-    write: func(x: int, y:string)
-    PI: func()->double
-}
-
 type Point := {x:int, y:int}
+;here we are implementing protocol Eq[Point]
 func equals(x: Point, y: Point)->bool { ... }
+;this one is not necessary because it has a default implementation
 func notEquals(x: Point, y: Point)->bool { ... }
 
-func isInArray[T](x:T, y:T[], z: Eq[T], g: Writer) -> bool {
+;just like the way we define type for variables, we can define protocol for generic types
+func isInArray[T: Eq] (x:T, y:T[], z: Eq[T], g: Writer) -> bool {
     if ( z.equals(x, y[0])...
 }
-;when calling:
-isInArray(x, arr, {^}, {^})
+;call:
+isInArray(x, arr)
 ---
-type Ord[T] := {
-    compare: func(x:T, y:T)->int
+protocol Ord[T] := {
+    func compare(x:T, y:T)->int
 }
-func sort[T](x:T[], z: Ord[T])
+func sort[T: Ord](x:T[])
 ---
-type Stringer[T] := {
-    toString :func(x:T)->string
+protocol Stringer[T] := {
+    func toString(x:T)->string
 }
-func dump[T](x:T, z: Stringer[T])->string
+func dump[T: Stringer](x:T)->string
 ---
-type Serializer[T] := {
-    serialize: func(x:T)->string
-    deserialize: func(x:string)->T
+protocol Serializer[T] := {
+    func serialize(x:T)->string
+    func deserialize(x:string)->T
 }
-func process[T](x: T, z: Serializer[T]) -> ...
+func process[T: Serializer](x: T) -> ...
 ---
-type Adder[S,T,X] := {
-    add: func(x: S, y:T)->X
+protocol Adder[S,T,X] := {
+    func add(x: S, y:T)->X
 }
-func process[S,T,X](x: S, y:T, z: Adder[S,T,X])->X { return z.add(x,y) }
+func process[S,T,X: Adder](x: S, y:T)->X { return add(x,y) }
 ---
-type Failable[T, U] := {
-    oops: T[U],
-    pick: func(T[U], T[U])->T[U],
-    win: func(U)->T[U]
+protocol Failable[T, U] := {
+    func oops() -> T[U]
+    func pick(T[U], T[U])->T[U]
+    func win(U)->T[U]
 }
 type Maybe[U] := U | Nothing
 func oops[U]()->Maybe[U] { return Nothing }
 func pick[U](x: Maybe[U], y: Maybe[U])-> Maybe[U]
 func win[U](x: U) -> Maybe[U] { return x }
 
-func safeDiv[T](x: double, y: double, z: Failable[T, double]) -> T[double] {
-    if ( y == 0 ) return z.oops
-    return z.win(x/y)
+func safeDiv[T: Failable](x: double, y: double) -> T[double] {
+    if ( y == 0 ) return oops
+    return win(x/y)
 }
 ;when calling above function, you must provide type of function
 var t = safeDiv[Maybe](x, y)
 
 ---
-type Factory[T] := {
-    create: func()->T
+protocol Factory[T] := {
+    func create()->T
 }
 func create()->int { return 5 }
 func create()->string { return "A" }
-func generalCreate[T](z: Factory[T]) { return z.create() }
+func generalCreate[T: Factory]() -> T { return create() }
 ;here we have to specify type because it cannot be inferred
-var r = generalCreate[string]({^})
-var y = generalCreate[int]({^})
+var r = generalCreate[string]() ;will result "A"
+var y = generalCreate[int]() ;will result 5
 ```
 this will invoke `func item()->int` to provide value for this argument.
-Protocols can embed other types to include their fields.
+Protocols can embed other protocols to include their functions.
 You can define and implement a protocol for a type outside your codebase, that's why you dont need to specify which protocols are implemented by a type upon declaration.
-You can use `{^}` anytime when calling a function to ask compiler to infer the parameter. For example if parameter is a function pointer, appropriate function with same name will be sent. If it is a primitive, a local variable with the same name or type (if not found, a function) will be used.
-About using `{^}` operator:
-- It must be applied for an argument of type tuple. Because otherwise, we cannot care about the name of an argument as this will interfere with multiple dispatch.
-- Inside the tuple, anything func will be bound to a local function with exact same type.
-- `{^}` means create a tuple based on the expected type of the function argument.
-- For each field inside the tuple, Compiler will look for a function with same name and type. If not found, compiler will issue an error. If tuple has non-func fields, they will not be set and must initialize manually.
-- You can use `{^}` outside function call too, but it's type must be specified: `var x: Adder<int> = {^}`
+- Note that although a protocol may require a specific function, but actual function to be called is determined at runtime based on dynamic type.
 
 ## Phantom types
 Phantom are compile-time label/state attached to a type. You can use these labels to do some compile-time checks and validations. Here labels are implemented using generic types which are not used for data allocation.
@@ -703,8 +694,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 
 ### Special Syntax
 - `@` casting/clone
-- `{^}` imply argument value
-- `:` tuple declaration, array slice
+- `:` tuple declaration, array slice, protocol
 - `:=` custom type definition
 - `|` sum types
 - `.` access tuple fields
@@ -716,7 +706,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `->` function declaration
 - `<-` loop
 
-Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `loop`, `break`, `continue`
+Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `loop`, `break`, `continue`, `protocol`
 semi-Keywords: `if`, `else` (used in syntax sugar)
 Operators: 
 Primitive data types: `int`, `float`, `char` (int is signed and 64 bit, char is unsigned)
