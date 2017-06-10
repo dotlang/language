@@ -15,7 +15,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -147,6 +147,7 @@ Some types are pre-defined in core but are not part of the syntax: `Nothing`, `b
 Arrays are a special built-in type:
 `type array[T] := native`
 - Array: `var x: array[int] = {1,2,3,4}` `x.[0] = x.[1]++`
+- `var arr: array[int] = {1..4}`
 
 But compiler provides syntax sugars for them:
 - Array literals are specified using brackets: `[1, 2, 3]`
@@ -712,6 +713,8 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `::` matching
 - `{}` code block, tuple definition and tuple/array/map literal
 - `()` function call
+- `->` function declaration
+- `<-` loop
 
 Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `loop`, `break`, `continue`
 semi-Keywords: `if`, `else` (used in syntax sugar)
@@ -821,22 +824,16 @@ func process() -> x:int {
  You can use it's type for return value of a function.
 
 ###loop, break, continue
-`loop(0<5;++) { ... }`
-`loop(x: 0;<5;++) { ... }`
-`loop(0..5) { ... }` repeat 5 times
-`loop(var x: 0..5) { ... }` repeat 5 times with counter
-`loop(var x: 0..5, x+=2) { ... }` 
-`loop(2..20) { ... }`
-`loop(var x:2..20) { ... }` assign a variable as loop counter value
-`loop(x>5) { ... }`
-`loop(x>5, x+=3) { ... }` when you assign for counter to a variable, you can add an update expression
-`loop(x: array) { ... }`
-`loop(k: hash) { ... }`
-`loop(k,v: hash) { ...}`
-`loop(x: IterableType) { ... }`
+You can use `loop` keyword with an array, hash, predicate or any type that has an iterator.
+`loop(x <- {0..10})` or `loop({0..10})`
+`loop(x <- {a..b})`
+`loop(x <- my_array)`
+`loop(k <- my_hash)`
+`loop(x>0)`
+`loop(x <- IterableType) { ... }`
 - `break` and `continue` are supported like C.
 - If expression inside loop evaluates to a value, `loop` can be used as an expression:
-`var t:int[] = loop(var x:10) x` or simply `var t:int[] = loop(10)` because a loop without body will evaluate to the counter.
+`var t:int[] = loop(var x <- {0..10}) x` or simply `var t:int[] = loop({0..10})` because a loop without body will evaluate to the counter, same as `var t:array[int] = {0..10}`
 
 ### import
 You can import a source code file using below statement. Note that import, will add symbols (functions and types) inside that source code to the current symbol table:
