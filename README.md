@@ -3,7 +3,7 @@ Version 0.98
 
 June 2, 2017
 
-# History
+# History1
 - **Version 0.1**: Sep 4, 2016 - Initial document created after more than 10 months of research, comparison and thinking.
 - **Version 0.2**: Sep 22, 2016 - Leaning towards Functional Programming.
 - **Version 0.3**: Oct 13, 2016 - Added clarifications for inheritance, polymorphism and templates
