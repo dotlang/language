@@ -103,12 +103,26 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Type System
-We have two categories of types: named and unnamed. Named types are defined using `type` statement
-Unnamed: `int, string[], float => int, (int,int)...` - They are created using language keywords and notations like 1. **Primitives**: `int`, `float`, `char`, `string`, ...
- type names, `any`, arry or hash, ....
-Named: `type MyType := ?????` These are defined using `type` statement and on the right side we can have another named or unnamed type. Underlying type of a named type is the underlying type of declaration on the right side. Underlying type of unnamed types, is themselves. named type is a completely new type. it has no relation to the unnamed type except for underlying storage.
-We have a special type: `Nothing`. 
-We have 7 kinds of type: tuple, union, array, hash, primitive, function.
+
+## Rules
+- We have two categories of types: named and unnamed. 
+- Named types are defined using `type` statement: `type MyInt := int`. Right side of `:=` is called the underlying type.
+- Unnamed types are defined using existing types in the system or other named types: `array[int]`
+- Unnamed types can be one of these: primitive, tuple, union, array, map, function.
+- **Primitives**: `int`, `float`, `char`
+- **Extended primitives**: `string` (array of char) and `bool` (union type with only two valid values)
+- Named type is a completely new type, different from the underlying type. it has no relation to the unnamed type except for underlying storage. So if a function expects `MyInt` you have to either pass a `MyInt` variable or cast an integer.
+- Two variables of same named types, have the same type.
+- Two variables of unnamed types which is structurally similar, have the same type (e.g. `array[int]` vs `array[int]`).
+- Assignment between different variables is only possible if they have the same type. Otherwise, a casting is needed.
+```
+var x: int = 12
+var y: int = 19
+x=y  ;valid
+```
+
+
+
 Subtyping is only defined for tuples.
 - Tuple: C=(C1,...,Cn) and S=(S1,...,Sm) if Ci<:Si and n>=m and if both have named fields, they must match
 `func process(x: int|string|float)`
