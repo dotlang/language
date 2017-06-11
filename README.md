@@ -34,8 +34,8 @@ Three main goals are pursued in the design of this language:
 Achieving all of above goals at the same time is something impossible so there will definitely be trade-offs and exceptions.
 The underlying rules of design of this language are 
 [Principle of least astonishment](https://en.wikipedia.org/wiki/Principle_of_least_astonishment), 
-[KISS rule] (https://en.wikipedia.org/wiki/KISS_principle) and
-[DRY rule] (https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
+[KISS rule](https://en.wikipedia.org/wiki/KISS_principle) and
+[DRY rule](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
 As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  There are functions and types. Each function gets one or more input (of different types) and gives an output. Types include primitive data types, tuple, union types and a general type alias. Polymorphism, templates, lambda expression and exception handling are also supported.
 
