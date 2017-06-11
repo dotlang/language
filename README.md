@@ -120,10 +120,7 @@ var x: int = 12
 var y: int = 19
 x=y  ;valid
 ```
-
-
-
-Subtyping is only defined for tuples.
+- Subtyping is only defined for tuples.
 - Tuple: C=(C1,...,Cn) and S=(S1,...,Sm) if Ci<:Si and n>=m and if both have named fields, they must match
 `func process(x: int|string|float)`
 You can pass int or string or float or `int|string` or `int|float` or `string|float` variables to it.
