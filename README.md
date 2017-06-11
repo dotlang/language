@@ -103,23 +103,41 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Type System
-
 ## Rules
-- We have two categories of types: named and unnamed. 
-- Named types are defined using `type` statement: `type MyInt := int`. Right side of `:=` is called the underlying type.
-- Unnamed types are defined using existing types in the system or other named types: `array[int]`
-- Unnamed types can be one of these: primitive, tuple, union, array, map, function.
-- **Primitives**: `int`, `float`, `char`
-- **Extended primitives**: `string` (array of char) and `bool` (union type with only two valid values)
-- Named type is a completely new type, different from the underlying type. it has no relation to the unnamed type except for underlying storage. So if a function expects `MyInt` you have to either pass a `MyInt` variable or cast an integer.
-- Two variables of same named types, have the same type.
-- Two variables of unnamed types which is structurally similar, have the same type (e.g. `array[int]` vs `array[int]`).
-- Assignment between different variables is only possible if they have the same type. Otherwise, a casting is needed.
+There are two categories of types: Named and unnamed. An unnamed type is defined using existing language constructs.
+For example these are some unnmaed types: `int, array[string], {x:int, y:float}, int|string`.
+A named type is defined using `type` statement: `type MyInt := int`. 
+Underlying type is the internal structure of a type. For unnamed types, their underlying type is the same as themselves but for named types, their underlying type is what comes after `:=` in their declaration.
+
+There are 4 kinds of unnamed types: primitives, function, tuple and union.
+There are two named types which are called "Extended Primitives" because of their internal role in the lagnuage: `bool` (Which is a union type with just two valid values) and `string` (Which is an array of chars).
+
+A named type is completely different from it's underlying type and the only similarity is their internal memory representation.
+```
+type MyInt := int
+;in a function
+var t: int = 12
+var y: MyInt = t  ;wrong! You have to cast t
+```
+
+Two variables of same named types, have the same type. Two variables of unnamed types which is structurally similar, have the same type (e.g. `array[int]` vs `array[int]`).
+
+Assignment between different variables is only possible if they have the same type. Otherwise, a casting is needed.
 ```
 var x: int = 12
 var y: int = 19
 x=y  ;valid
 ```
+Assignment operator `=` for primitives and extended primitives, makes a copy of the right side. For every other type, assignment if done by copying the reference.
+```
+var t: int = 12
+var g: int = t    ;g has a copy of 't', any change on g does not affect 't'
+
+var p: Point = {x=10, y=20}
+var q: Point = p
+q.x++ ;this will increase p.x too! if you don't want this, you must clone 'p'
+```
+
 - Subtyping is only defined for tuples.
 - Tuple: C=(C1,...,Cn) and S=(S1,...,Sm) if Ci<:Si and n>=m and if both have named fields, they must match
 `func process(x: int|string|float)`
