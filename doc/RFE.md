@@ -1,6 +1,6 @@
 # Dotlang - Requests for Enhancement
 
-? - name: simple, pure, simpla (simple + language), func, 
+Y - name: simple, pure, simpla (simple + language), func, 
 Lisp - list processing
 electron is good but a bit long
 photon? This is good. but is name of a game engine.
@@ -17,7 +17,6 @@ potent
 brute
 jumpstate - Simple and powerful state management for Redux.
 dotlang.org is free, dot is a short and simple word and a dot is a simple notation which is also powerful because it is used everywhere.
-
 
 N - A notation to join two arrays.
 In Haskell we have:
@@ -3543,3 +3542,15 @@ var g : Pr[Circle] = {radius=100}
 g.area()
 
 ```
+
+Y - Can we have generic lambdas? If so, can they have protocols?
+`var g: func(x:int)->int...`
+`var g: func[T](x:T)->T...`
+`var g: func[T:Stringer](x:T)->T...`
+`g("A") g(2) g(1.2)`
+
+Y - Support local var initialization in if and loop.
+`if (varx=getResult(), x>0) ... else ...`
+`if (var x=1, var y=2, x>y)...`
+`loop(var t=getData(), t>0)...`
+`loop(var t=getList(), x <- t)...
