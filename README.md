@@ -40,11 +40,12 @@ The underlying rules of design of this language are
 As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  There are functions and types. Each function gets one or more input (of different types) and gives an output. Types include primitive data types, tuple, union types and a general type alias. Polymorphism, templates, lambda expression and exception handling are also supported.
 
 ## Comparison with other languages
-Compared with C: dotLang is C language + Garabage collector + first-class functions + template programming + sum data types + module system + composition and powerful polymorphism + simple and powerful standard library + immutability + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + multiple dispatch + sane defaults - ambiguities - pointers - macros - header files.
 
-dotLang compared to Scala: Scala - dependency on JVM - cryptic syntax - trait + multiple dispatch - custom operators + support for `break` and `continue` in loops.
+**Compared to C**: dotLang is C language + Garabage collector + first-class functions + template programming + sum data types + module system + composition and powerful polymorphism + simple and powerful standard library + immutability + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + multiple dispatch + sane defaults - ambiguities - pointers - macros - header files.
 
-dotLang compared to Go: Go + template programming + immutability + multiple dispatch + sum types + sane defaults + better orthogonality (e.g. creating maps) - pointers + simpler primitives.
+**Compared to Scala**: Scala - dependency on JVM - cryptic syntax - trait + multiple dispatch - custom operators + support for `break` and `continue` in loops.
+
+**Compared to Go**: Go + template programming + immutability + multiple dispatch + sum types + sane defaults + better orthogonality (e.g. creating maps) - pointers + simpler primitives.
 
 ## Subsystems
 
