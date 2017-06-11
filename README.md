@@ -45,7 +45,7 @@ As a 10,000 foot view of the language, code is written in files (called modules)
 
 **Compared to Scala**: Scala - dependency on JVM - cryptic syntax - trait + multiple dispatch - custom operators + support for `break` and `continue` in loops.
 
-**Compared to Go**: Go + template programming + immutability + multiple dispatch + sum types + sane defaults + better orthogonality (e.g. creating maps) - pointers + simpler primitives.
+**Compared to Go**: Go + generics + immutability + multiple dispatch + sum types + sane defaults + better orthogonality (e.g. creating maps) - pointers + simpler primitives.
 
 ## Subsystems
 
@@ -524,9 +524,14 @@ func process(c: Circle) -> int {
 }
 ```
 
+`var g: func(x:int)->int...`
+`var g: func[T](x:T)->T...`
+`var g: func[T:Stringer](x:T)->T...`
+`g("A") g(2) g(1.2)`
+
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
-# Templates
+# Generics
 - When defining types, you can append `[A, B, C, ...]` to the type name to indicate it is a generic type. You can then use these symbols inside type definition.
 - When defining functions, if input or output are of generic type, you must append `[A,B,C,...]` to the function name to match required generic types for input/output. 
 - When you define a variable or another type, you can refer to a generic type using it's name and concrete values for their types. Like `Type{int, string]`
@@ -784,6 +789,10 @@ Block  = Statement | '{' (Statement)* '}'
     false -> { -1 } 
   }
 ```
+- You can have one variable declarations before the condition.
+These declarations will be only available inside if/else block.
+`if (var x=getResult(), x>0) ... else ...`
+`if (var x=1, x>y)...`
 
 ###assert
 This is a fucntion in core.
@@ -839,6 +848,9 @@ You can use `loop` keyword with an array, hash, predicate or any type that has a
 - `break` and `continue` are supported like C.
 - If expression inside loop evaluates to a value, `loop` can be used as an expression:
 `var t:int[] = loop(var x <- {0..10}) x` or simply `var t:int[] = loop({0..10})` because a loop without body will evaluate to the counter, same as `var t:array[int] = {0..10}`
+- Like if, you can have a variable declaration before main part. These varsiables will only be available inside loop block.
+`loop(var t=getData(), t>0)...`
+`loop(var t=getList(), x <- t)...
 
 ## import
 You can import a source code file using below statement. Note that import, will add symbols (functions and types) inside that source code to the current symbol table:
