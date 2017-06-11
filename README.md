@@ -18,19 +18,18 @@ June 2, 2017
 - **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols
 
 # Introduction
-After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala and Rust) it still irritates me that these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
+After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
 
-That's why I am creating a new programming language: Dotlang. 
+That's why I am creating a new programming language: dotLang (or dot for short). 
 
-Dotlang programming language is a general purpose language based on author's experience and doing research on 
-other languages (namely Java, C\#, C, C++, Rust, Go, Scala, Objective-C, Python, Perl, Smalltalk, Ruby, Swift, Haskell, Clojure, F\# and Oberon-2). 
-I call the paradigm of this language "Data-oriented". This is a combination of Object-Oriented and Functional approach and it is designed to work with data. There are no objects or classes. Only data types and functions. But most important features of OOP (encapsulation, abstraction, inheritance and polymorphism) are provided to some extent.
+dotLang programming language is an imperative, static-typed general-purpose language based on author's experience and doing research on many languages (namely Java, C\#, C, C++, Rust, Go, Scala, Objective-C, Python, Perl, Smalltalk, Ruby, Swift, Haskell, Clojure, Eiffel, Falcon, Julia, F\# and Oberon-2). 
+I call the paradigm of this language "Data-oriented". This is a combination of Object-Oriented and Functional approach and it is designed to work with data. There are no objects or classes. Only data types and functions. But most useful features of the OOP (encapsulation, abstraction, inheritance and polymorphism) are provided to some extent. On the other hand, we have first-class and higher-order functions borrowed from functional approach.
 
 Three main goals are pursued in the design of this language:
 
-1. **Simple**: The code written in Dotlang language should be consistent, easy to learn, read, write and understand. There has been a lot of effort to make sure there are as few exceptions as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
+1. **Simple**: The code written in dotLang should be consistent, easy to learn, read, write and understand. There has been a lot of effort to make sure there are as few exceptions as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
 2. **Powerful**: It should enable (a team of) developers to organise, develop, test, maintain and operate a large and complex software project, with relative ease.
-3. **Fast**: Performance of the final output should be high (something like Java).
+3. **Fast**: The compiler will compile to native code which will bring high performance.
 
 Achieving all of above goals at the same time is something impossible so there will definitely be trade-offs and exceptions.
 The underlying rules of design of this language are 
@@ -38,36 +37,35 @@ The underlying rules of design of this language are
 [KISS rule] (https://en.wikipedia.org/wiki/KISS_principle) and
 [DRY rule] (https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  There are functions and types. Each function gets one or more input (each of it's own type) and gives an output. Types include primitive data types, tuple, sum types and a general type alias. Concurrency, lambda expression and exception handling are supported.
+As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  There are functions and types. Each function gets one or more input (of different types) and gives an output. Types include primitive data types, tuple, union types and a general type alias. Polymorphism, templates, lambda expression and exception handling are also supported.
 
-## Comparison
-Compared with C: dotlang is C language + Garabage collector + first-class functions + template programming + sum data types + module system + composition and powerful polymorphism + simple and powerful standard library + immutability + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + multiple dispatch + sane defaults - ambiguities - pointers - macros - header files
+## Comparison with other languages
+Compared with C: dotLang is C language + Garabage collector + first-class functions + template programming + sum data types + module system + composition and powerful polymorphism + simple and powerful standard library + immutability + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + multiple dispatch + sane defaults - ambiguities - pointers - macros - header files.
 
-dotLang compared to Scala: Scala - dependency on JVM - cryptic syntax - trait
+dotLang compared to Scala: Scala - dependency on JVM - cryptic syntax - trait + multiple dispatch - custom operators + support for `break` and `continue` in loops.
 
-dotLang compared to Go: Go + template programming + immutability + multiple dispatch + sum types + sane defaults + better orthogonality - pointers + simpler primitives
+dotLang compared to Go: Go + template programming + immutability + multiple dispatch + sum types + sane defaults + better orthogonality (e.g. creating maps) - pointers + simpler primitives.
 
-There is a runtime system which is responsible for memory allocation and management, interaction with OS and 
-other external libraries and handling concurrency.
-Also there is a `core` library which is used to implement some basic, low-level features which can not be 
-simply implemented using pure Dotlang language.
-The `std` library is a layer above runtime and `core` which contains some general-purpose and common functions and data structures.
+## Subsystems
+
+- There is a runtime system which is responsible for memory allocation and management, interaction with the Operating System and other external libraries and handling concurrency.
+- Also there is a `core` package which is used to implement some basic, low-level features which can not be simply implemented using pure dotLang language.
+- The `std` library is a layer above runtime and `core` which contains some general-purpose and common functions and data structures.
 
 ## Code organization
 
-There are three main entities: Primitive data types (`int`, `float`, ...), complex data structures and functions.
-At very few cases compiler does something for the developer automatically. Most of the time, developer should do the job manually.
 Code is organized into packages. Each package is represented by a directory in the file-system. Packages have a hierarchical structure:
-
+```
 core  
 |-----sys  
 |-----net  
 |-----|-----http  
 |-----|-----tcp  
-
-
+```
 In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages.
 Each package contains zero or more source code files, which are called modules. Modules contain data structure definitions and function definitions. Each module can reference other modules to call their functions or use their data structures.
+
+Unlike many other languages, modules are stateless. Meaning there is no variable or static code defined in a module.
 
 ## Structure of source code file
 
@@ -576,6 +574,9 @@ When writing a generic function, you may have expectations regarding behavior of
 General definition of function with protocol:
 ;S,T,X must comply with prot1, N,M with prot2, P,Q are free
 `func process[S,T,X: prot1, N,M: prot2, P, Q]`
+Note that one type can be part of more than one protocol:
+`func process[S,T,X: prot1, N,M: prot2, T,N: prot3, P, Q]`
+
 When defining a protocol, argument names is optional.
 ```
 ;Also we can initialize tuple members, we have embedding
@@ -832,7 +833,7 @@ You can use `loop` keyword with an array, hash, predicate or any type that has a
 `loop(x <- {a..b})`
 `loop(x <- my_array)`
 `loop(k <- my_hash)`
-`loop(x>0)`
+`loop(n <- x>0)` or `loop(x>0)`
 `loop(x <- IterableType) { ... }`
 - `break` and `continue` are supported like C.
 - If expression inside loop evaluates to a value, `loop` can be used as an expression:
@@ -870,7 +871,7 @@ Denotes function is implemented by runtime or external libraries.
 
 # Best practice
 ## Naming
-- **Naming rules**: Advised but not mandatory: `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Except for primitives (int, float, char), bool, array, map, string, exception
+- **Naming rules**: Advised but not mandatory: `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Except for primitives (int, float, char), and types defined in core: bool, array, map, string, exception
 
 ## Examples
 ### Empty application
@@ -930,7 +931,7 @@ Generally, anything that cannot be written in atomlang will be placed in this pa
 
 ## Standard package
 
-There will be another set of packages built on top of core which provide common utilities. This will be much larger and more complex than core, so it will be independent of the core and language (This part will be written in dotlang). Here is a list of some of classes in this package collection:
+There will be another set of packages built on top of core which provide common utilities. This will be much larger and more complex than core, so it will be independent of the core and language (This part will be written in dotLang). Here is a list of some of classes in this package collection:
 
 - I/O (Network, Console, File, ...)
 - Thread and synchronization management
@@ -947,7 +948,7 @@ There will be another set of packages built on top of core which provide common 
 ## Package Manager
 
 The package manager is a separate utility which helps you package, publish, install and deploy packages (Like `maven` or `dub`).
-Suppose someone downloads the source code for a project written in dotlang which has some dependencies. How is he going to compile/run the project? There should be an easy and transparent for fetching dependencies at runtime and defining them at the time of development.
+Suppose someone downloads the source code for a project written in dotLang which has some dependencies. How is he going to compile/run the project? There should be an easy and transparent for fetching dependencies at runtime and defining them at the time of development.
 
 Perl has a `MakeFile.PL` where you specify metadata about your package, requirements + their version, test requirements and packaging options.
 Python uses same approach with a `setup.py` file containing similar data like Perl.
