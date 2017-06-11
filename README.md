@@ -3,7 +3,7 @@ Version 0.98
 
 June 2, 2017
 
-# History1
+# History
 - **Version 0.1**: Sep 4, 2016 - Initial document created after more than 10 months of research, comparison and thinking.
 - **Version 0.2**: Sep 22, 2016 - Leaning towards Functional Programming.
 - **Version 0.3**: Oct 13, 2016 - Added clarifications for inheritance, polymorphism and templates
@@ -116,8 +116,8 @@ A named type is completely different from it's underlying type and the only simi
 ```
 type MyInt := int
 ;in a function
-var t: int = 12
-var y: MyInt = t  ;wrong! You have to cast t
+var t: int = 12   ;define a variable of type int and named 't'
+var y: MyInt = t  ;wrong! You have to cast 't'
 ```
 
 Two variables of same named types, have the same type. Two variables of unnamed types which is structurally similar, have the same type (e.g. `array[int]` vs `array[int]`).
@@ -137,6 +137,8 @@ var p: Point = {x=10, y=20}
 var q: Point = p
 q.x++ ;this will increase p.x too! if you don't want this, you must clone 'p'
 ```
+If function expects a named type, you cannot pass an equivalent unnamed type. Similarly, when a function expects an unnamed type, you cannot pass a named type with same underlying type.
+
 
 - Subtyping is only defined for tuples.
 - Tuple: C=(C1,...,Cn) and S=(S1,...,Sm) if Ci<:Si and n>=m and if both have named fields, they must match
@@ -146,11 +148,7 @@ You can pass int or string or float or `int|string` or `int|float` or `string|fl
 - Two variables declared with two similar looking names but in different locations types have different types.
 - Assignment of variables with similar looking (but different) named types to each other is forbidden.
 - Assignment of variables with same named/unnamed types is allowed.
-- Assignment from named to unnamed is possible with explicit cast.
-- Assignment from unnamed to named is possible.
-- Nothing variables have only one valid value: `nothing`.
-- When a function expects a named type (`type SafeInt := int`), you have to pass a named type.
-- But when a function expects an unnamed type, you can either pass named or unnamed type.
+
 - Assigning a value of one named type to variable of a different named type is forbidden, even if the underlying type is the same. 
 
 ## Primitive
