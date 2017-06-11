@@ -3517,8 +3517,29 @@ func process[S,T,X: Adder] (x: S, y:T, z: Adder[S,T,X])->X { return z.add(x,y) }
 
 ```
 
-? - N
+N - 
 `func process() -> char|Nothing`
 when we call this function, what should we extract from call stack as the result?
 one byte for char? or some other thing for Nothing?
 In this case, result will have a leading byte to indicate the type. and another piece of data for actual result.
+
+Y - When we have a protocol, what if one type is bound to multiple protocols?
+`func process[S,T,X: prot1, N,M: prot2, P, Q]`
+`func process[S,T,X: prot1, N,M: prot2, T,N: prot3, P, Q]`?
+
+N - How do you define a generic graph?
+```
+type Graph[T] := {vertices_count:int, vertices: List[T]}
+```
+
+N - Imagining:
+An OOP class = tuple + protocol.
+```
+type Circle := (radiug: float)
+protocol Pr[T] := {
+    func area(this: T)->float
+}
+var g : Pr[Circle] = {radius=100}
+g.area()
+
+```
