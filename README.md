@@ -25,10 +25,10 @@ That's why I am creating a new programming language: dotLang (or dot for short).
 dotLang programming language is an imperative, static-typed general-purpose language based on author's experience and doing research on many languages (namely Java, C\#, C, C++, Rust, Go, Scala, Objective-C, Python, Perl, Smalltalk, Ruby, Swift, Haskell, Clojure, Eiffel, Falcon, Julia, F\# and Oberon-2). 
 I call the paradigm of this language "Data-oriented". This is a combination of Object-Oriented and Functional approach and it is designed to work with data. There are no objects or classes. Only data types and functions. But most useful features of the OOP (encapsulation, abstraction, inheritance and polymorphism) are provided to some extent. On the other hand, we have first-class and higher-order functions borrowed from functional approach.
 
-Three main goals are pursued in the design of this language:
+Three main objectives are pursued in the design of this language:
 
 1. **Simple**: The code written in dotLang should be consistent, easy to learn, read, write and understand. There has been a lot of effort to make sure there are as few exceptions as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
-2. **Powerful**: It should enable (a team of) developers to organise, develop, test, maintain and operate a large and complex software project, with relative ease.
+2. **Powerful**: It should enable (a team of) developers to organise, develop, test, maintain and operate a large and complex software project, with relative ease. This means a comprehensive standard library in addition to language rules.
 3. **Fast**: The compiler will compile to native code which will bring high performance.
 
 Achieving all of above goals at the same time is something impossible so there will definitely be trade-offs and exceptions.
@@ -43,19 +43,20 @@ As a 10,000 foot view of the language, code is written in files (called modules)
 
 **Compared to C**: dotLang is C language + Garabage collector + first-class functions + template programming + sum data types + module system + composition and powerful polymorphism + simple and powerful standard library + immutability + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + multiple dispatch + sane defaults - ambiguities - pointers - macros - header files.
 
-**Compared to Scala**: Scala - dependency on JVM - cryptic syntax - trait + multiple dispatch - custom operators + support for `break` and `continue` in loops.
+**Compared to Scala**: Scala + better loops + multiple dispatch - dependency on JVM - cryptic syntax - trait - custom operators - variance.
 
-**Compared to Go**: Go + generics + immutability + multiple dispatch + sum types + sane defaults + better orthogonality (e.g. creating maps) - pointers + simpler primitives.
+**Compared to Go**: Go + generics + immutability + multiple dispatch + sum types + sane defaults + better orthogonality (e.g. creating maps) + simpler primitives + more readable syntax - pointers - interfaces - global variables.
 
 ## Subsystems
 
-- There is a runtime system which is responsible for memory allocation and management, interaction with the Operating System and other external libraries and handling concurrency.
-- Also there is a `core` package which is used to implement some basic, low-level features which can not be simply implemented using pure dotLang language.
-- The `std` library is a layer above runtime and `core` which contains some general-purpose and common functions and data structures.
+- Runtime system: Responsible for memory allocation and management, interaction with the Operating System and other external libraries and handling concurrency.
+- Core: This package is used to implement some basic, low-level features which can not be simply implemented using pure dotLang language.
+- Std: A layer above runtime and `core` which contains some general-purpose and common functions and data structures.
 
 ## Code organization
 
-Code is organized into packages. Each package is represented by a directory in the file-system. Packages have a hierarchical structure:
+- **Module**: Source code is written inside files which are called "Modules". Each module can reference other modules to call their functions or use their data structures.
+- **Package**: Modules are organized into directories which are called packages. Each package is represented by a directory in the file-system. Packages have a hierarchical structure:
 ```
 core  
 |-----sys  
@@ -64,49 +65,45 @@ core
 |-----|-----tcp  
 ```
 In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages.
-Each package contains zero or more source code files, which are called modules. Modules contain data structure definitions and function definitions. Each module can reference other modules to call their functions or use their data structures.
+- Unlike many other languages, modules are stateless. Meaning there is no variable or static code defined in a module.
 
-Unlike many other languages, modules are stateless. Meaning there is no variable or static code defined in a module.
-
-## Structure of source code file
-
-Each source code file contains 3 sections: import, types and function.
-Import section is used to reference other modules that are being used in this module.
-Type section is used to define data types.
-Function section is used to define function bodies.
-
+## General rules
 - **Encoding**: Source code files are encoded in UTF-8 format.
 - **Whitespace**: Any instance of space(' '), tab(`\t`), newline(`\r` and `\n`) are whitespace and will be ignored.
 - **Comments**: `;` is used to denote comment. It must be either first character of the line or follow a whitespace.
-- **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0b0101011101` binary number, `192.121d` double, `1234l` long. Also `true`, `false` are literals.
-- You can separate number digits using undescore: `1_000_000`.
+- **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0b0101011101` binary number. You can separate digits using undescore: `1_000_000`.
+- **Terminator**: Each statement must be in a separate line and must not end with semicolon.
+- **Order**: Each source code file contains 3 sections: import, definitions and function. The order of the contents of source code file matters: `import` section must come first, then type and protocol declarations and functions come at the end. If the order is not met, compiler will give warnings.
+- Import section is used to reference other modules that are being used in this module.
+- Definitions section is used to define data types and protocols.
+- Function section is used to define functions.
 - **Adressing**: Functions are called using `function_name(input1, input2, input3)` notation. Fields of a tuple are addressed using `tuple_name.field_name` notation. Modules are addressed using `/` notation (e.g. `/code/st/net/create_socket`).
-- Each statement must be in a separate line and must not end with semicolon.
-Source file contains a number of definitions for types and functions.
-
-*Notes:*
-- If a name starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
-- The order of the contents of source code file matters: First `import` section, `type` section and finally functions. If the order is not met, compiler will give warnings.
-- Immutability: All variables are immutable but can be re-assigned.
+- **Encapsulation**: If a name (of a type, protocol or function) starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
+- **Immutability**: Only local variables of a function are mutable. Everything else is immutable.
+- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Primitives (int, float, char), and types defined in core (bool, array, map, string, exception) are only exceptions to naming rules.
 
 ## Language in a nutshell
-
 1. **Primitives**: `int`, `float`, `char` (extended primitives: `bool`, `string`)
-2. **Tuple**: `type Point := {x: int, y:int}`
-3. **Union**: `type OperationResult := Point | int | Error`
-8. **Generics**: `type Stack[T] := {data: array[T], info: int}`
+2. **Tuple**: `type Point := {x: int, y:int, data: float}`
+3. **Inheritance**: Only for tuples, `type Circle := (Shape, radius: float)` 
 4. **Array**: `type JobQueue := array[int] = {0, 1, 2, 3}`
-4. **Map**: `type CountryPopulation := map[string,int] = {"US": 300, "CA": 180, "UK":80}`
-5. **Function**: `func calculate(x: int, y: string) -> float { return if ( x > 0 ) 1.0 else 2.0  }`
-6. **Variable**: `var location: Point = {x=10, y=20}`
-7. **Import**: `import /code/std/Queue`
-9. **Immutability**: Only function local variables are mutable. Everything else is immutable.
-10. **Assignment**: Primitives are assigned by value, other types are assigned by reference.
+5. **Generics**: `type Stack[T] := { data: array[T], info: int }`
+6. **Union**: `type Tree[T] := Empty | T | { data: T, left: Tree[T], right: Tree[T] }`
+7. **Map**: `type CountryPopulation := map[string,int] = { "US": 300, "CA": 180, "UK":80 }`
+8. **Function**: `func calculate(x: int, y: string) -> float { return if ( x > 0 ) 1.0 else 2.0  }`
+9. **Variable**: `var location: Point = { x=10, y=20, data: 1.19 }`
+10. **Import**: `import /core/std/Queue`
+11. **Immutability**: Only function local variables are mutable. Everything else is immutable.
+12. **Assignment**: Primitives are assigned by value, other types are assigned by reference.
+13. **Cloning**: `var population = @(country_population)`
+14. **Casting**: `var pt = @Point[int]({ x=10, y=20, data=1.11 })`
+15. **Lambda**: `var adder: func(int,int)->int = (x:int, y:int) -> x+y`
+16. **Protocols**: `protocol Comparable[T] := { func compare(x:T, y:T)->int }`, `func sort[T: Comparable](x:array[T])`
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Type System
-We have two categories of types: named and unnamed.
+We have two categories of types: named and unnamed. Named types are defined using `type` statement
 Unnamed: `int, string[], float => int, (int,int)...` - They are created using language keywords and notations like 1. **Primitives**: `int`, `float`, `char`, `string`, ...
  type names, `any`, arry or hash, ....
 Named: `type MyType := ?????` These are defined using `type` statement and on the right side we can have another named or unnamed type. Underlying type of a named type is the underlying type of declaration on the right side. Underlying type of unnamed types, is themselves. named type is a completely new type. it has no relation to the unnamed type except for underlying storage.
@@ -882,9 +879,6 @@ Denotes function is implemented by runtime or external libraries.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
-# Best practice
-## Naming
-- **Naming rules**: Advised but not mandatory: `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Except for primitives (int, float, char), and types defined in core: bool, array, map, string, exception
 
 ## Examples
 ### Empty application
