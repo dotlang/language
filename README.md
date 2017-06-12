@@ -15,7 +15,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for range generation
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -108,9 +108,15 @@ There are two categories of types: Named and unnamed. An unnamed type is defined
 For example these are some unnmaed types: `int, array[string], {x:int, y:float}, int|string`.
 A named type is defined using `type` statement: `type MyInt := int`. 
 Underlying type is the internal structure of a type. For unnamed types, their underlying type is the same as themselves but for named types, their underlying type is what comes after `:=` in their declaration.
-
-There are 4 kinds of unnamed types: primitives, function, tuple and union.
-There are two named types which are called "Extended Primitives" because of their internal role in the lagnuage: `bool` (Which is a union type with just two valid values) and `string` (Which is an array of chars).
+There are 4 kinds of unnamed types: primitive, function, tuple and union. These will be explained in next sections.
+```
+;you can define a new named type using type keyword
+type MyInt := int
+;you can define a variable using var keyword
+var x: MyInt
+var y: int
+var z: string
+```
 
 A named type is completely different from it's underlying type and the only similarity is their internal memory representation.
 ```
@@ -137,124 +143,124 @@ var p: Point = {x=10, y=20}
 var q: Point = p
 q.x++ ;this will increase p.x too! if you don't want this, you must clone 'p'
 ```
-If function expects a named type, you cannot pass an equivalent unnamed type. Similarly, when a function expects an unnamed type, you cannot pass a named type with same underlying type.
-
-we never do implicit casts like int to float.
-
-
-- Subtyping is only defined for tuples.
-- Tuple: C=(C1,...,Cn) and S=(S1,...,Sm) if Ci<:Si and n>=m and if both have named fields, they must match
-`func process(x: int|string|float)`
-You can pass int or string or float or `int|string` or `int|float` or `string|float` variables to it.
-- two variables declared with the same named/unnamed type have the same type. 
-- Two variables declared with two similar looking names but in different locations types have different types.
-- Assignment of variables with similar looking (but different) named types to each other is forbidden.
-- Assignment of variables with same named/unnamed types is allowed.
-
+- If function expects a named type, you cannot pass an equivalent unnamed type. 
+- Similarly, when a function expects an unnamed type, you cannot pass a named type with same underlying type. 
+- We never do implicit casts like int to float.
 - Assigning a value of one named type to variable of a different named type is forbidden, even if the underlying type is the same. 
 
 ## Primitive
-All others are defined based on these two plus some restrictions on size and accuracy.
-- **Number data types**: `char`, `int`
-- **Floating point data types**: `float`
-- **Others**: `bool`, `Nothing`, `string`
-Some other types are native types which are not primitive but are provided by compiler: `array`, `map`, `Nothing`, `string`
-
-You can use core functions to get type identifier of a variable: `type` or `hashKeyType` or `hashValueType`.
-`bool` and `none` are special types with only two and one possible values. `none` is used when a function returns nothing, so compile will change `return` to `return none`.
-Some types are pre-defined in core but are not part of the syntax: `Nothing`, `bool`.
-- `string` is an array of characters. And it is not a primitive.
-- `byte` is 8 bit integer, but `char` can be larger to support unicode.
+There are three primitive data types: `int`, `char` and `float`.
+- **int**: Represents signed integer numbers with 64-bits of data (or 32-bits in 32-bit systems)
+- **float**: Represents a double-precision floating point number (64-bits)
+- **char**: Represents a single character or an unsigned integer number (0 to 255).
+There are two named types which are called "Extended Primitives" because of their internal role in the lagnuage: `bool` and `string`:
+```
+type bool := true | false
+type string := array[char]
+```
 
 ## Array
-Arrays are a special built-in type:
-`type array[T] := native`
-- Array: `var x: array[int] = {1,2,3,4}` `x.[0] = x.[1]++`
-- `var arr: array[int] = {1..4}`
+Arrays are a special built-in type. They are defined using generics. Compiler provides some syntax sugars to work with them.
+```
+;define an array of integer number and initialize
+var numbers: array[int] = {1, 2, 3, 4}
 
-But compiler provides syntax sugars for them:
-- Array literals are specified using brackets: `[1, 2, 3]`
-- `var x: int[] = [1, 2, 3];`
-- `var x: int[] = [1..10];`
-- `var y: int[3]; y[0] = 11;`
-- `var t: int[n];`
-- `var x: int[2,2];`. 
-- `var pop: (string, int)[]` - dynamic array of tuples
-- `var pop: string[4]` - static array of string
-- We have slicing for arrays `x[start:step:end]` with support for negative index.
-- we have built-in lists using same notation as array.
-- every array can be extended by just adding elements to it (it will be a hybrid, array+list). 
-- if you want to define a list from beginning, dont specify size.
-- if you specify a size, it will be a mixed list (can be extended to become a list).
-`var x: int[3]`  hybrid list
-`var x: int[]`  pure list
-`var x: int[3] = [1,2,3]` hybrid
-`var x: int[] = [1,2,3]` pure
-- Slice can be left side of an assignment.
-- So if a function plans to accept inputs which are not native array, it can be defined like this:
-`func process[T](x: T, arrayFuncs: ArrAccessors[T])` which means `x` input will have appropriate methods to be accessed like an array. Then inside `process` function it can use `x[0]` and other methods to work with x.
+;t will be 1
+var t:int = numbers.[0]   
+
+;this will change '2' to '3'
+numbers.[1]++             
+
+;syntax sugar to create a range of values (inclusive)
+var months: array[int] = {1..12} 
+
+;syntax sugar to repeat a number for 10 times
+var allZero: array[int] = {1..x10} 
+
+;you can use core function to allocate array
+var allocated: array[int] = allocate[int](100)
+
+;multi-dimensional arrays are created using nested generic type
+var x: array[array[int]]
+
+;note that you can use 'type' to simplify cases where type name is complicated
+type TwoDimArray := array[array[int]]
+var x: TwoDimArray
+```
+- **Slice**: You can use slicing notation to create a virtual array which is pointing to a location inside another array. You use `array_var[start:end]` notation to create a slice.
+```
+;a normal array
+var x: array[int] = {11, 12, 13, 14, 15, 16, 17}
+
+;defining a slice containintg '12' and '13'
+var y: array[int] = x.[1:2]
+
+;this will make '12' change to '22'
+y.[0]+=10
+
+;start and end are optional and if ommitted will default to beginning/end of the array
+;here z will contain '15', '16' and '17'
+var z: array[int] = x.[4:]
+
+;here u will contain '11' and '12'
+var u: array[int] = x.[:1]
+
+;you can make slice a clone of original array by eliminating both start and end
+var p: array[int] = x.[:]
+
+;you can use a slice on the left side of an assignment
+;it will put result of right side of '=' into the original array
+mySlice = createValues()
+```
 
 ## Map
-Hashtable or Maps are built-in types:
-`type Map[K,V] := native`
-- Hash: `var y: map[string, int] = {"a": 1, "b": 2}` `y.["a"] = 1+y.["b"]`
-But compiler will provide syntax sugar for them:
-`K=>V` => `Map[K,V]`
-Hashtables are sometimes called "associative arrays". So their syntax is similar to arrays:
-- `A => B` is used to define hash type. Left of `=>` is type of key and on the right side is type of value. If key or value have multiple elements, a tuple should be used.
-- `var hash1: string => int`
-- `hash1 = ['OH' => 12, 'CA' => 33]`
-- `hash1["B"] = 19`
-- `var big_hash: (int, int) => (string, int) = [ (1, 4) => ("A", 5) ]` 
-- `big_hash[3,4] = ("A", 5)`
-- If your code expects a hash which has `int` keys: `func f(x: int => any)...`
-- If you query hash for something which does not exist, it will return `none`.
+Maps, hashtables or associative arrays are a data structure to keep a set of keys and their corresponding values.
+```
+;defining and initializing a map
+var y: map[string, int] = {"a": 1, "b": 2}
+
+;read/write from/to a map
+y.["a"] = 100
+var t: int = y.["b"]
+```
+- If you query a map for something which does not exist, it will return `Nothing`. Below shows two ways to read data from a map:
+`if ( var t = my_map.["key1"], t @ var x:int )`
+`if ( var t = my_map.["key1"], t !@ Nothing )`
 
 ## Tuple
-
-You use this statement to define a new product data structure:
+A tuple is a collection of variables combined together under a single type. This is similar to an array but with different data types for fields. 
 ```
-type Car := {
-  color: int, 
-  age: int = 19, ;setting default value
-}
-var x: Car = {}   ;init x with all default values based on definition of Car
-var y: Car = {age=11} ;customize value
-var z = %Car(age=121) ;when we want to write a literal we can also specify its type with this notation
-var z = %Car({age=121})
-var t : {int, string} = {1, "A"}  ;you can have tuples with unnamed fields. They can be accessed like an array.
-var number_one = t.0
-t.1 = "G"
+;defining a named type for a tuple
+type Car := { color: int, age: int }
+;defining variables of 'Car' type, initialized with default values
+var x: Car = {}
+;if you omit {} part, variable will be initialized with default values automatically
+var d: Car
+;But you can assign values upon declaration:
+var y: Car = { color:100, age=11 }
+;you can cast an anonymous tuple to a specific type
+var z = @Car({age=121})
+;you can define an anonymous tuple
+var t1 : {field1: int, field2: string} = {1, "A"}
+;field name is optional for anonymous tuples
+var t2 : {int, string} = {1, "A"}
+;you can use dot notation to assign value for unnamed tuple fields
+t2.1 = "AG"
+;You can specify default values for tuple
+type Car := { color: int, age: int=100 }
 ```
-- Function output can be any type. Even a tuple or a tuple with unnamed fields.
-- Fields that start with underscore are considered internal state of the tuple and better not to be used outside the module that defines the type. 
-- You can define a tuple with unnamed fields: `type Point := {int, int}` But fields of a tuple must be all either named or unnamed. You cannot mix them.
-
-- Tuple definition: `type Point := {x: int, y: int}`
-- Tuple literal: `var p: Point = %Point({x:10, y:20})`
-
-```
-type A :=  {x: int = 19} ;you can assign default value
-type B := {A, y: int}    ;B inherits A. So in cases, it can be dynamically casted to A during method dispatch
-type C := {}             ;empty tuple
-type C := {y: int = 9}   ;setting default value
-type D := {int=9, string="G"} ; unnamed fields. You can access them like an array. Also we can set default value.
-```
-
-To create a new tuple instance you just set it's type and assign it to an appropriate tuple:
-```
-var test: A = {x= 10}
-var test2: A = {} ;no init 
-var test3: D = {1,"A"}
-var test4: C={9}
-test3.0=9
-test3.1="A"
-var t = {x=6, y=5} ;anonymous and untyped tuple
-```
-- You cannot mix tuple literal with it's type. It should be inferred (type of lvalue or function output).
-- We define a tuple literal using `{a=b, c=d}` syntax but map literal using `{a:b, c:d}` syntax.
+- Fields that start with underscore are considered internal state of the tuple and better not to be used outside the module that defines the type. If you do so, compiler will issue a warning.
+- You can define a tuple literal using `{}` notation: `var t = {field1=10, field2=20}`.
+- If a function expects a specific input type, you can pass a tuple literal, if field order, names and types match.
+- If function expects a specific input type and tuple uses unnamed fields, you can use tuple if order and types match.
+- You can cast a tuple literal to a specific type. `var g = @MyTuple({field=10, field2=20})`
 
 ## Union
+union types which only have defined values, are handled using a char so they will be assigned by value.
+`func process(x: int|string|float)`
+You can pass int or string or float or `int|string` or `int|float` or `string|float` variables to it.
+
+
 When defining a sum type, you specify different types and labels that it can accept. Label can be any valid identifier. Labels can be thought of as a special type which has only one valid value: The label itself. 
 `type Tree := Empty | int | (node: int, left: Tree, right: Tree)`
 `type OptionalInt := None | int`
@@ -407,6 +413,8 @@ How can I pass a Dot to process function? You need to write a proxy function:
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Functions
+function inputs must be named.
+- Function output can be any type. Even a tuple or a tuple with unnamed fields.
 Function is a piece of code which accepts a series of inputs and can return a single value. 
 If you use `{}` for the body, you must specify output type and use return keyword.
 
@@ -608,6 +616,11 @@ var yy: string = magic(y)
 For generic functions, any call to a function which does not rely on the generic type, will be checked by compiler even if there is no call to that generic function. Any call to another function relying on generic argument, will be checked by compiler to be defined.
 
 ## Protocols
+
+- So if a function plans to accept inputs which are not native array, it can be defined like this:
+`func process[T](x: T, arrayFuncs: ArrAccessors[T])` which means `x` input will have appropriate methods to be accessed like an array. Then inside `process` function it can use `x[0]` and other methods to work with x.
+
+
 If someone calls a generic function with some user-defined type, they really don't know what they should implement until they see the compiler error or the source code. Protocols are used to document this.
 When writing a generic function, you may have expectations regarding behavior of the type T. These expectations can be defined using a protocol. When you call this function with a concrete type, compiler makes sure the protocol is satisfied.
 General definition of function with protocol:
@@ -746,18 +759,18 @@ The math operators can be combined with `=` to do the calculation and assignment
 
 
 ### Special Syntax
-- `@` casting/clone
+- `@` casting/clone/type check
+- `|` sum types
 - `:` tuple declaration, array slice, protocol
 - `:=` custom type definition
-- `|` sum types
-- `.` access tuple fields
-- `[]` generics
 - `.[]` access array/map elements
-- `::` matching
+- `..` range generator
+- `<-` loop
+- `->` function declaration
+- `[]` generics
 - `{}` code block, tuple definition and tuple/array/map literal
 - `()` function call
-- `->` function declaration
-- `<-` loop
+- `.` access tuple fields
 
 Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `loop`, `break`, `continue`, `protocol`
 semi-Keywords: `if`, `else` (used in syntax sugar)
@@ -770,10 +783,14 @@ Helper data types: `bool`, `string`, `Array`, `Map`, `Nothing`
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Keywords
-
+- `@` is an operator which can be used in three ways:
+- with a type and a value to cast value to this type: `var t = @int(12.0)`
+- with a value, to clone: `var t = @(pt)`
+- As a binary infix operator to check for type matching.
+- You can use `!@` to check for not matching.
 ###match
 ```
-MatchExp = '(' tuple ')' :: '{' (CaseStmt)+ '}'
+MatchExp = '(' tuple ')' @ '{' (CaseStmt)+ '}'
 ```
 - This is an expression. It is used to check if two variables can be matched according to matching rules.
 - First case which is matching will be executed and others will be skipped.
@@ -782,23 +799,24 @@ MatchExp = '(' tuple ')' :: '{' (CaseStmt)+ '}'
 - Mechanism of match is the same as a function call is dispatched to an implementation. Each candidate will be examind against match input for type and values. The first one that can be matched will be invoked.
 - The cases for match must cover all possible inputs or else there will be errors.
 ```
-  result = my_tree ::
+  result = my_tree @
   {
-    int, int -> ...;this will match if input has two ints 
+    {int, int} -> ...;this will match if input has two ints 
     5 -> 11,
     "A" -> 19,
     local_var -> 22, ;check equality with a local variable's value
     Empty -> 0,
     int -> 1,
-    y:float -> y,
+    var y:float -> y,
     NormalTree -> { return 1+z },
     else -> { -1 } ;this is default because it matches with anything
   }
   ;You can shorten this definition in one line:
-  result = my_tree :: 5 -> 11, 6-> 12, Empty -> 0, x:int -> x, any -> -1
+  result = my_tree @ 5 -> 11, 6-> 12, Empty -> 0, x:int -> x, any -> -1
 ```
-- Simple form: You can use `::` without `->` too to check for types which returns a bool: `if ( x :: int)`. In this format, you can check for a type or a literal.
-- `if ( x :: y )` is invalid. Right side of match can either be a literal (e.g. 5) or a type (e.g. int) or a new variable with it's own type (e.g. `a:int`). you cannot use `::` to do `==` comparison. And in the shortcut form, you can only use type.
+- Simple form: You can use `@` without `->` too to check for types which returns a bool: `if ( x @ int)`. In this format, you can check for a type or a literal.
+- `if ( x @ var t:int)` inside if block you have a local variable `t` which is `int` value of `x`.
+- `if ( x @ y )` is invalid. Right side of match can either be a literal (e.g. 5) or a type (e.g. int) or a new variable with it's own type (e.g. `a:int`). you cannot use `@` to do `==` comparison.
 
 ###if, else
 - You can use `if/else` block as an expression.
@@ -816,7 +834,7 @@ Block  = Statement | '{' (Statement)* '}'
 ```
   if ( exp1 and exp2 ) 11 else -1
   ;it is same as below:
-  result = ( exp1 and exp2 ) ::
+  result = ( exp1 and exp2 ) @
   {
     true -> 11,
     false -> { -1 } 
@@ -846,7 +864,7 @@ assert false, "Error!"  ;throw exception and exit
 var g: int|exception = func1()   ;this is valid
 ```
 - You can use `defer BLOCK` to tell the runtime to run a block of code after exiting from the function. If function output is named, it will be accessible in defer block.
-- Any assert which only uses `::` with generic types, will be evaluated at compile time. You can use this to implement generic bounds.
+- Any assert which only uses `@` with generic types, will be evaluated at compile time. You can use this to implement generic bounds.
 - About returning an exception, we don't need to do anything in lang spec. Because this is a normal feature of the language.
 - We don't even need a special exception type. Go panic and recover work with `interface{}`.
 - `assert` will throw an exception. This exception can only be caught in a defer block.
@@ -857,7 +875,7 @@ func process() -> x:int {
     defer {
         var maybeException = catch() ;returns Exception|Nothing
         ;in case of an exception, return value should be 19
-        if ( maybeException :: Exception ) x = 19
+        if ( maybeException @ Exception ) x = 19
     }
 ```
 - `Exception` is a simple tuple defined in core.
@@ -910,6 +928,7 @@ Also you can call a function or refer to a type with fully qualified name:
 `import /core/std/{ab, cd, ef}` to import multiple modules
 
 ### native
+`type Map[K,V] := native` ;same for array
 Denotes function is implemented by runtime or external libraries.
 `native func file_open(path: string) -> File;`
 
@@ -942,10 +961,10 @@ func eval(input: string) -> float
 }
 func innerEval(exp: Expression) -> float 
 {
-  return exp ::
+  return exp @
   {
     x:int -> x,
-    (op: char, left: Expression, right: Expression) -> op ::
+    (op: char, left: Expression, right: Expression) -> op @
     {
       '+' -> innerEval(left) + innerEval(right),
       '-' -> innerEval(left) - innerEval(right),
