@@ -3553,4 +3553,27 @@ Y - Support local var initialization in if and loop.
 `if (varx=getResult(), x>0) ... else ...`
 `if (var x=1, var y=2, x>y)...`
 `loop(var t=getData(), t>0)...`
-`loop(var t=getList(), x <- t)...
+`loop(var t=getList(), x <- t)..`
+
+Y - To add: we never implicit casts like int to float.
+
+? - Just like the way protocol is handled (only define functions) or interface in go,
+we may need something about inheritance of tuples.
+`type Shape := {name: string}`
+`type Circle := {Shape, r: float}` this inherits from shape normally
+suppose we have another class which has appropriate fields to be a Shape, but does not state inheritance from Shape.
+This cannot be simply inferred by the compiler because fields may have differnt name or positions.
+We need a mechanism to say that type X has appropriate fields to be treated like a shape without manually creating a new modified clone.
+```
+type Dot := { x: int }
+type Point := { data: string, x: int }
+func process(p: Dot) ...
+```
+How can I pass a Dot to process function?
+The most convinient way is to say, we define structure of the function argument, not their actual type. So process will accept any type that has `x:int` ( a field with this name and type ). This will affect embedding, subtyping, lambda, polymorphism and method dispatch. This is convinient but difficult to implement. Runtime/combpiler will need to search for all possible combination of fields to determine target method in a call.
+Another way: write a proxy function.
+`func process(p: Point) -> process(@Dot(p.x))`
+This will extend the semantics of casting. But has almost no effect to other parts.
+Another option: writing an implicit casting function.
+The main point here is that we do not have access to the original type but want it to behave like another type.
+I thin proxy function is the best choice. Write a normal function with the same name and arguments and do the casting.
