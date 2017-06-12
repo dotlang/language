@@ -139,6 +139,8 @@ q.x++ ;this will increase p.x too! if you don't want this, you must clone 'p'
 ```
 If function expects a named type, you cannot pass an equivalent unnamed type. Similarly, when a function expects an unnamed type, you cannot pass a named type with same underlying type.
 
+we never do implicit casts like int to float.
+
 
 - Subtyping is only defined for tuples.
 - Tuple: C=(C1,...,Cn) and S=(S1,...,Sm) if Ci<:Si and n>=m and if both have named fields, they must match
@@ -394,6 +396,13 @@ If a function expects `x: Stack[Shape]` you cannot send `Stack[Circle]`.
 - You can embed as many types as you want in your tuple, but the first field will be parent.
 - To redirect a function to another one with types in the same hierarchy, you need to cast the argument.
 `func process(Circle, SolidColor) -> process(%Shape{c}, %Color{sc})`
+```
+type Dot := { x: int }
+type Point := { data: string, x: int }
+func process(p: Dot) ...
+```
+How can I pass a Dot to process function? You need to write a proxy function:
+`func process(p: Point) -> process(@Dot(p.x))`
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
