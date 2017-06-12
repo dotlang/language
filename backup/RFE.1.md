@@ -4510,3 +4510,67 @@ but for struct, we can use type alias: `type x := core.std.x;`
 Y - Don't promote. If type is casted, they already have whay they want. If it's not casted, use `a.b` notation.
 
 Y - Like python, a function which is executed when module is imported.
+
+? - Do we need nothing?
+usages: map does not have element.
+There is nothing special about nothing. It's just a type that is useful in some cases.
+
+Y - How to define size for array, multidim array?
+`var months: array[int, int]`
+`var x: array2[int]` - this is not beautiful
+`var x: array[array[int]]` - this is a bit ugly but consistent
+Scala: `var t: array[int](10)`
+`var t: array[int] = initArray(10)`
+`var t: array[int] = {0..x100}`
+`var t: array[int] = repeater(0, 100)`
+
+N - Shall we replace `{1..100}` notation with a function.
+`loop(x <- {0..10})` or `loop({0..10})`
+`loop(x <- range(0,100))` `loop(range(0,100))`
+No. `))` is not a good sign.
+
+Y - Add `!::` for 'not match'.
+Can we simplify this with using cast notation? `@?`
+`if ( t :: Nothing )...`
+`if ( t @ Nothing )...`
+`@` with a type and a value -> cast value to this type
+with a value -> clone this value
+with two types -> do they match?
+`var t = @int(12.0)`
+`var t = @(pt)`
+`var t = myType @int`
+```
+  result = my_tree @ {
+    Empty -> 0
+    t:int -> 1+t
+    NormalTree -> ...
+  }
+```
+So `@` can be used as a binary infix operator.
+
+Y - How should map deal with case where key does not exist?
+`if ( var t = my_map.["key1"], t !:: Nothing )`
+`if ( var value,exists = my_map.["key1"], exists )`
+missing hashtable key is not an exception. So `get` function should not throw an exception.
+But if it is going to return a tuple containing result and success bool flag, then what is the use of union?
+`func get(map, key) -> (result:T, success: bool)`
+`func get(map, key) -> T | Nothing`
+I think we should go with union and let shortcut syntax for `::` use variable assignment too.
+To do this, we should change `::` because it will be confusing with `var t:int`
+
+? - Nothing or nothing?
+
+? - `{}` is being used in a lot of cases. Can we simplify that?
+
+? - what is value of uninitialized tuple vars?
+`var x: Car`
+`process(x)`?
+Golang: even after declaring variables, it is initialized with default value (all 0)
+
+? - If a function returns `{int, int}` can I write:
+`var x,y = process()`? so compiler automatically unpack and assigns result.
+
+? - Empty tuple. Is it allowed?
+If so, it can be parent of all tuples.
+
+? - If we need to write fwd methods, then it is not real polymorphism.
