@@ -174,9 +174,6 @@ numbers.[1]++
 ;syntax sugar to create a range of values (inclusive)
 var months: array[int] = {1..12} 
 
-;syntax sugar to repeat a number for 10 times
-var allZero: array[int] = {1..x10} 
-
 ;you can use core function to allocate array
 var allocated: array[int] = allocate[int](100)
 
@@ -248,6 +245,10 @@ var t2 : {int, string} = {1, "A"}
 t2.1 = "AG"
 ;You can specify default values for tuple
 type Car := { color: int, age: int=100 }
+
+var myCar: Car = {color=100, age=20}
+;compiler will handle this regarding type inference and assignment
+var x,y = myCar
 ```
 - Fields that start with underscore are considered internal state of the tuple and better not to be used outside the module that defines the type. If you do so, compiler will issue a warning.
 - You can define a tuple literal using `{}` notation: `var t = {field1=10, field2=20}`.
@@ -288,7 +289,7 @@ t = 12
 ```
 var a: int| string = 12
 var b: int | string | float
-;wrong:
+;correct?
 b = a     
 ```
 
