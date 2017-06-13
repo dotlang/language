@@ -256,8 +256,43 @@ type Car := { color: int, age: int=100 }
 - You can cast a tuple literal to a specific type. `var g = @MyTuple({field=10, field2=20})`
 
 ## Union
-union types which only have defined values, are handled using a char so they will be assigned by value.
-`func process(x: int|string|float)`
+Union is a specific data type which defines a set of possible other types it can contain. Variables of union type, can only contain one of their possible types at any time. You use `|` to separate different possible types.
+
+```
+type IntOrFloat := int | float
+var f: IntOrFloat
+;you can assign an int to f
+f = 1
+;or a floating point number
+f = 3.59
+;note that you cannot assign f to a floating point variable, even if it has a float, you must cast
+var fl: float = f  ;wrong!
+var fl: float = @float(f)
+
+;note that for union and other non-primitive types, assignment is by reference
+var g: IntOrFloat = f
+;this will change value of 'f' too
+g = 66
+;clone f
+g = @(f)
+;this won't change value of f:
+g = 99
+;You can define 'labels' for valid values of a union:
+type MaybeInt := int | Nothing
+var t: MaybeInt
+t = Nothing
+t = 12
+```
+- A union variable can accept values of any of it's valid types.
+- You cannot assign a union value to another one, without casting, even if their types match:
+```
+var a: int| string = 12
+var b: int | string | float
+;wrong:
+b = a     
+```
+
+
 You can pass int or string or float or `int|string` or `int|float` or `string|float` variables to it.
 
 
