@@ -3584,12 +3584,11 @@ It makes code un-readable and prone to misuse.
 Y - replace `1..x10` with `1..*10` so we can use variables too.
 or maybe just have `a..b` notation?
 
-
 ? - if I send `x` to a function which will be executed in a thread, any change on the value of `x` will affect the thread too. If so, maybe we need to change `var` to `val`? Or have both and say you can only send `val` to a function.
 Another solution: send by copy.
 This will affect assignment, cloning, function definition, closure capturing, lambda, parameter passing, type inference.
 Note that, mutability or immutability should be part of behavior not data. So we don't need to indicate whether a tuple or union is mutable or no. the function that uses them should.
-This important because one of our goals is to be used in server applications.
+This is important because one of our goals is to be used in server applications.
 **Option 1**: Don't change anything. accept the issue. (Clojure seems to have this and solved concurrency with STM)
 **Option 2**: Everything immutable. - makes writing code more difficult + simpler to read
 **Option 3**: Scala model: `var` and `val` in local and functions. - makes language complex + more flexibility
@@ -3681,7 +3680,7 @@ But if you want to change db and propagate changes to otherDb, then just use oth
 If you want to have isolated changes, then assign by copy makes sense.
 = = =
 Regarding a change on a big data structure stored on disk: Can we prevent duplication?
-1. read disk contents into local variable db -> db must be declared val because it is capturing output of a function. if we do this, we cannot change it in the next step. Actually we may be able to store result of a function as a var. Because if that function shares it's result with other threads, it must send them `val`s. So it needs to copy the result. 
+1. read disk contents into local variable db -> db must be declared val because it is capturing output of a function. if we do this, we cannot change it in the next step. Actually we may be able to store result of a function as a var. Because if that function shares it's result with other threads, it must send them `val`s. So it needs to copy the result. But what if it was a val from the beginning? 
 2. make changes to db -> no copy, it is a var
 3. return db -> no copy, return the var
 4. outside: assign db to a val. -> no copy
@@ -3721,7 +3720,7 @@ And this?
 ```
 func readDb() -> Database {
     var result = fileRead()
-    start_thread(val_result) ;this works, you cannot pass result to the thread
+    start_thread(val_result) ;this works, you cannot pass result (which is mutable) to the thread
     ;make lots of changes to the result
     return result
 }
@@ -3734,7 +3733,7 @@ whatever a function returns can be safely converted to val without need to clone
 And
 ```
 func readDb() -> Database {
-    var result = fileRead()
+    var result = fileRead() 
     start_thread(val_result) ;this works, you cannot pass result to the thread
     ;make lots of changes to the result
     return result
@@ -3742,18 +3741,14 @@ func readDb() -> Database {
 ...
 val data = readDb() ;i am sure that my data is not shared with any other thread
 ```
-**Summary**
-- Whatever you send to a function or receive from should be using val.
-- Inside a function, you can use var to do processing or return something.
-- `val` can only have one `=`. They can only appear on the left side of `=` whey they are born (declared).
-? - Cloning: `x=y` will clone y into x.
-- casting: This is done normally. Result can be assigned to var or val.
-- function definition: No change, even regarding return statement
-- closure capturing: It can only capture vals.
-- lambda: Like a function.
-- parameter passing: you must pass vals.
-- type inference: var/val is not part of type. So no change here.
-- assignment: we can assign anything to anything except if target is val, which can be assigned only once. it creates a copy.
+Why do we need to store result of a function into a val? Suppose I store result in a var. Then I have a mutable reference to some data that might be immutable originally. What if that (possibly) immutable data is sent to a thread?
+**Option 6**: In the API to create thread, force clone. But suppose that I have a closure. It will have access to parent variables (read-only). Now I can modify those values in the container method.
+- What advantage does this provide compare to the case where we define var/val for function input?
+1. It is simpler
+2. What about function output? will depend on the assignment on the call site.
+`val x = process()`
+`val x = process(val1, val2, val3)`
+We can use `@(x)` notation to make a copy of a data. if this is used in function call, result will be a val. but this is confusing.
 `val=val` ok no need to clone
 `val=var` must clone
 `var=val` must clone
@@ -3762,10 +3757,143 @@ val data = readDb() ;i am sure that my data is not shared with any other thread
 `tuple var=var` - like array and hash
 `array var=var` - clone makes sense. If you don't want clone, just re-use rvalue
 `hash var=var` - clone makes sense
+- We may need a shortcut notation to convert between val/var.
+`var x = myVal` this will copy
+`val y = myVar` this will copy
+When I call a function, I must commit that I won't change things that I am giving to the function.
+When I call a function I must commit that I won't change things that it gives me.
+But two commitments are importnat only when that function is doing some parallel/async tasks. 
+if a closure/thread can only access a copy of outside data, I don't need these commitments but then again, what if that data is a big buffer?
 
+**Summary**
+- Whatever you send to a function or receive from, should be using val.
+- Inside a function, you can use var to do processing or return a var/val.
+- `val` can only have one `=`. They can only appear on the left side of `=` whey they are born (declared).
+- Cloning: `x=y` will clone y into x, instead of reference assignment.
+- casting: This is done normally. Result can be assigned to var or val.
+- closure capturing: It can only capture vals.
+- parameter passing: you must pass vals.
+- assignment: we can assign anything to anything except if target is val, which can be assigned only once. it creates a copy.
+- function definition: No change, even regarding return statement
+- lambda: Like a function.
+- type inference: var/val is not part of type. So no change here.
+Can we simplify this more? One way is to have everything immutable. And provide some special classes to manipulate variables. 
+If I want to have a mutable special class, what would be the requirements?
+I cannot pass them to a function and I cannot assign output of a function to them. I should be able to do that. But this becomes like var/val keywords, or can become.
 
+We still have the problem with extra cloning in read-large-data-from-disk problem:
+A function which reads a large piece of data from disk and wants to modify and return the result.
+We don't want to allocate the space twice. And be able to make changes locally.
+```
+var largeData = readFromDisk() ;readFromDisk will allocate a very big buffer to store result. I don't want to duplicate it
+;but if that buffer it sent to a thread, I can change that thread's data from here.
+;so here we have a dilemma. I must declare a var to store the result and I must not declare a var because it may affect another thread and become shared mutable state.
+So how can I do this without duplicating the big buffer?
 
+func fileRead() -> Buffer {
+    var buf = newArray(10_000_000)
+    ...
+    return buf
+}
+func readDb() -> Database {
+    var result = fileRead() 
+    start_thread(val_result) ;this works, you cannot pass result to the thread
+    ;make lots of changes to the result
+    return result
+}
+...
+val data = readDb() ;i am sure that my data is not shared with any other thread
+```
+option1 - declare output type of a function
+option2 - convert val to var without cloning.
+option3 - everything is val. like scala/haskell define mutable types.
+```
 
+func fileRead() -> array[byte] {
+    val buf: mutarray[byte] = allocate(10_000_000)
+    set_index(buf, 100, 19)
+    ...
+    return toArray(buf) ;BUT still we are duplicating!
+}
+func fileRead() -> array[byte] {
+    val buf: mutarray[byte] = allocate(10_000_000)
+    set_index(buf, 100, 19)
+    ...
+    return toArray(buf) ;BUT still we are duplicating!
+}
+func readDb() -> Database {
+    var result = fileRead() 
+    start_thread(val_result) ;this works, you cannot pass result to the thread
+    ;make lots of changes to the result
+    return result
+}
+...
+val data = readDb() ;i am sure that my data is not shared with any other thread
+```
+What about this? We duplicate the array when returnng it but the runtime will optimize this if it's not passed to anywhere outside.
+```
+func fileRead() -> array[byte] {
+    ;here I assign function output to a var which means it will be possibly
+    ;cloned, but runtime can optimize this
+    ;every variable which is sent to or accessed from another thread is must-clone, which means
+    ;if you assign it to a var, it must be duplicated.
+    var buf: array[byte] = allocate(10_000_000)
+    ...
+    buf[100]=19
+    ...
+    return buf
+}
+func readDb() -> Database {
+    ;again, I know that result of fileRead may need to be duplicated, because I am assigning it to a var.
+    ;if I assign output to a val, it won't need to be duplicated.
+    ;this is like val-to-var assignment which causes cloning.
+    ;for example runtime can divide functions into two types: normal and concurrent. 
+    ;concurrent functions start a thread or process or green thread and pass variables to them.
+    ;those variables, if returned, will need to be cloned in the caller. everything else, can be just re-used.
+    ;but this is task of compiler/runtime to handle and optimize this.
+    var result = fileRead() 
+    start_thread(val_result) ;this works, you cannot pass result to the thread
+    ;make lots of changes to the result
+    return result
+}
+...
+val data = readDb() ;i am sure that my data is not shared with any other thread
+```
+**Summary**
+- Whatever you send to a function or receive from, should be using val.
+- Inside a function, you can use var to do processing or return a var/val.
+- `val` can only have one `=`. They can only appear on the left side of `=` whey they are born (declared).
+- Cloning: `x=y` will clone y into x, instead of reference assignment.
+- closure capturing: It can only capture vals.
+- parameter passing: you must pass vals.
+- assignment: we can assign anything to anything except if target is val, which can be assigned only once. it creates a copy.
+- If you assign output of a function to a `var`, generally it will cause a duplication of the function output. Unless runtime optiizes this. If the function's output is referenced in a thread/async code, then it must be duplicated. But detecting this can be difficult and confusing, and developer won't know if the assignment will cause duplication or no.
+```
+func fileRead() -> array[byte] {
+    var buf: array[byte] = allocate(10_000_000)
+    ...
+    buf[100]=19
+    ...
+    return buf
+}
+func readDb() -> Database {
+    var result = fileRead()
+    val val_result = result
+    start_thread(val_result) ;this works, you cannot pass result to the thread
+    ;make lots of changes to the result
+    return result
+}
+...
+val data = readDb() ;i am sure that my data is not shared with any other thread
+```
+We need an approach which is:
+1. Simple and easy to understand/read/write
+2. Prevents shared mutable state
+3. Is efficient in case of large data (read big buffer from disk)
+options: like now, everything immutable, scala (optional with var/val), var/val with rules, custom mutable types
+custom mutable types is not simple and easy to understand.
+like now: it wont stop shared mutable state.
+everything imm: is not efficient.
 
 
 ? - if `@` is only for types, how do we support `select` statement? we should support it too.
