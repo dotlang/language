@@ -3578,19 +3578,21 @@ Another option: writing an implicit casting function.
 The main point here is that we do not have access to the original type but want it to behave like another type.
 I thin proxy function is the best choice. Write a normal function with the same name and arguments and do the casting.
 
-? - Is it ok to assign `a|b` to a variable of type `a|b|c|d`?
-note that this will be an assignment by reference.
+N - Once again: Why we cannot overload operators for custom types?
+It makes code un-readable and prone to misuse.
 
-? - Can we write `var x,y = process()` where process returns a tuple? If so, can we ignore an output by `_` like go/scala?
+Y - replace `1..x10` with `1..*10` so we can use variables too.
+or maybe just have `a..b` notation?
+
 
 ? - if I send `x` to a function which will be executed in a thread, any change on the value of `x` will affect the thread too. If so, maybe we need to change `var` to `val`? Or have both and say you can only send `val` to a function.
 Another solution: send by copy.
 This will affect assignment, cloning, function definition, closure capturing, lambda, parameter passing, type inference.
 Note that, mutability or immutability should be part of behavior not data. So we don't need to indicate whether a tuple or union is mutable or no. the function that uses them should.
 This important because one of our goals is to be used in server applications.
-Option 1: Don't change anything. accept the issue.
-Option 2: Everything immutable. - makes writing code more difficult + simpler
-Option 3: Scala model: `var` and `val`. - makes language complex + more flexibility
+**Option 1**: Don't change anything. accept the issue. (Clojure seems to have this and solved concurrency with STM)
+**Option 2**: Everything immutable. - makes writing code more difficult + simpler to read
+**Option 3**: Scala model: `var` and `val` in local and functions. - makes language complex + more flexibility
 `func process(var x:int, val y:float) -> int`
 `val p = process()`
 `var q = process()`
@@ -3603,8 +3605,176 @@ Then can we define an immutable array of mutable integers?
 You shouldn't have a mutable reference to immutable data.
 `val x: Point = ...`
 `var y = x` ;
-Option 4: function inputs are `val` only, local variables can be var or val. You can only send vals to functions.
+**Option 4**: function inputs are `val` only, local variables can be var or val. You can only send vals to functions.
+Maybe later I can define `mutable[T]` type to send to functions which can be mutated using STM to handle read/write conflict.
+function definition: nothing changes, still input is immutable
+cloning: result can be var or val depending on the assignment. if used in function call, will be val.
+casting: result can be var or val depending on the assignment. if used in function call, will be val.
+assignment: you cannot assign to val twice. var cal accept any assignment. `var = val` will make a copy,so it wont be assign by reference. `var myPt = myValPoint -- myPt.x++` this won't change myValPoint.
+`var myInt = myValInt - myInt++` this won't change myValInt.
+So to assign val to var, you must clone. to assign var to val, you must clone. var-var and val-val assignment is ok. but var-var will make a copy for primitives and assign reference for other types.
+Can we limit var? Like prevent defining var primitives?
+closure capturing: closure has r/o access to parent vals.
+lambda: same as closure and like functions.
+parameter passing: pass val by reference.
+type inference: type does not have anything to do with var/val. they are orthogonal.
+**Option 5**: Everything immutable, but provide some tools/runtime to have mutable data structures. For example by creating a data structure + function pointers to change it. These function pointers can handle concurrency.
+`var arr, set_fp = createArray(100_000)`
+`set_fp(100, 19)`
+`arr` is just another immutable arrays. but it can be mutated! This is dangerous.
+What if `arr` is of type `mutable_array`?
+Haskell has mutable array, as well as Scala.
+Having var/val makes things complicated.
+OTOH everything val and having specialized classes for mutable structure also makes things complicated.
+The most pain point is for map and array? What about a graph, tree or trie. 
+What if we go with var/val but simplify assignment semantics? 
+Assign var to val - only valid upon declaration, make a copy
+Assign var to var - valid anytime, make a copy
+Assign val to val - only valid upon declaration, point to the same
+Assign val to var - valid anytime, make a copy
+- Assign var to var: 
+```
+var x:int = 12
+var y = x ;duplicate 12 into y
+var x: Point = {a=12, b=100}
+var y: Point = x ;y.a is separate from x.a
+```
+Isn't this same as saying everything is var and we will call by copy? No. If it is a val, we dont need to copy. we pass by reference.
+And how this var/val is going to solve the problem of a huge tree manipulation? we load data from disk/network/... into a var, or pass it to a function. it uses var to make a copy. does all the changes and returns the result.
+can I get output of a function in a var? if I do so, and that item is also sent to a thread, then I can change it's data:
+```
+func process() -> { val x = 10; start_thread(x); return x; }
+var x = process()
+x++ ;will this change the thread's local variable?.
+```
+We have two references to the same variable, one is mutable and the other is immutable.
+This should not happen. So: you must store result of a function as val? or you must return val?
+Won't it be easier if we make everything val then? What about cases where we need to modify a huge array or a complex data structure like a graph?
+The idea behind var/val is everywhere we have val. In places we need to modify data, we create a mutable copy.
+But suppose that function wants to make a lot of changes on a big array, if we return `val` this means a cloning needs to take place to prepare return value of the function.
+`func process() { var big_array = ... return @(big_array) }` - return val 
+Then caller can write: `val x = process()`
+But if we say function can return anything, but caller must use `val` to get return value:
+`func process() { var big_array = ... return big_array }`
+`val result = process()` 
+This means there will be no need to clone.
+So: You must send val to a function and store it's result into val. so basically `val` must be used to interact with another function.
+Inside a function, you can use var to do processing or return value.
+This is same as Scala but more limited: you cannot have functions which accept/return `var`.
+What advantages do we have compared to the case where everything is val? Even Haskell has mutable array.
+`val` can only have one `=`. They can only appear on the left side of `=` whey they are born (declared).
+This will affect:
+- cloning: If we create a copy with `=` then maybe we don't need cloning.
+- casting: This is done normally. Result can be assigned to var or val.
+- function definition: No change, even regarding return statement
+- closure capturing: It can only capture vals.
+- lambda: Like a function.
+- parameter passing: Done by reference. Because input must be val.
+- type inference: var/val is not part of type. So no change here.
+- assignment: we can assign anything to anything except if target is val, which can be assigned only once.
+- assignment creates a copy.
+= = = 
+so `@` will be used for casting and matching.
+This makes sense for primitives: `var y =x` y++ should not affect x.
+But for data structures: `var db = otherDb`
+But if you want to change db and propagate changes to otherDb, then just use otherDb!
+If you want to have isolated changes, then assign by copy makes sense.
+= = =
+Regarding a change on a big data structure stored on disk: Can we prevent duplication?
+1. read disk contents into local variable db -> db must be declared val because it is capturing output of a function. if we do this, we cannot change it in the next step. Actually we may be able to store result of a function as a var. Because if that function shares it's result with other threads, it must send them `val`s. So it needs to copy the result. 
+2. make changes to db -> no copy, it is a var
+3. return db -> no copy, return the var
+4. outside: assign db to a val. -> no copy
+Inside funciton to read data from disk:
+```
+func readDb() -> Database {
+    var result = fileRead()
+    start_thread(result) ;this will fail
+    start_thread(val_result) ;this works
+    return result
+}
+...
+var data = readDb() ;i am sure that my data is not shared with any other thread
+```
+what about this?
+```
+func readDb() -> Database {
+    val result = fileRead()
+    start_thread(result) ;this works
+    return result
+}
+...
+var data = readDb() ;i am sure that my data is not shared with any other thread
+```
+In Scala, you can store result of a function into a var.
+I should get result of a function in a var. I am sure this var is not shared with any thread or process. Because in this case, user has to clone it. But what if the data inside the function is originall immutable?
+```
+func readDb() -> Database {
+    val result = fileRead()
+    start_thread(result) ;this works
+    return result
+}
+...
+var data = readDb() ;data is pointing to something which is immutable! There should not be a mutable reference to something immutable
+```
+And this?
+```
+func readDb() -> Database {
+    var result = fileRead()
+    start_thread(val_result) ;this works, you cannot pass result to the thread
+    ;make lots of changes to the result
+    return result
+}
+...
+val data = readDb() ;i am sure that my data is not shared with any other thread
+;there is no need to duplicate here, just get the reference to the result. 
+The point is: Any variable which is sent to outside world, must be val. If this is satisfied, then
+whatever a function returns can be safely converted to val without need to clone.
+```
+And
+```
+func readDb() -> Database {
+    var result = fileRead()
+    start_thread(val_result) ;this works, you cannot pass result to the thread
+    ;make lots of changes to the result
+    return result
+}
+...
+val data = readDb() ;i am sure that my data is not shared with any other thread
+```
+**Summary**
+- Whatever you send to a function or receive from should be using val.
+- Inside a function, you can use var to do processing or return something.
+- `val` can only have one `=`. They can only appear on the left side of `=` whey they are born (declared).
+? - Cloning: `x=y` will clone y into x.
+- casting: This is done normally. Result can be assigned to var or val.
+- function definition: No change, even regarding return statement
+- closure capturing: It can only capture vals.
+- lambda: Like a function.
+- parameter passing: you must pass vals.
+- type inference: var/val is not part of type. So no change here.
+- assignment: we can assign anything to anything except if target is val, which can be assigned only once. it creates a copy.
+`val=val` ok no need to clone
+`val=var` must clone
+`var=val` must clone
+`primitive var=var` must clone (we already have this)
+`unin var=var` clone makes sense
+`tuple var=var` - like array and hash
+`array var=var` - clone makes sense. If you don't want clone, just re-use rvalue
+`hash var=var` - clone makes sense
 
-? - Once again: Why we cannot overload operators for custom types?
 
-? - if `@` is only for types, how do we support `select` statement?
+
+
+
+
+? - if `@` is only for types, how do we support `select` statement? we should support it too.
+so `@` is cast, clone and match.
+
+
+
+? - Can we write `var x,y = process()` where process returns a tuple? If so, can we ignore an output by `_` like go/scala?
+
+? - Is it ok to assign `a|b` to a variable of type `a|b|c|d`?
+note that this will be an assignment by reference.
+This depends on whether we assign by ref or copy.
