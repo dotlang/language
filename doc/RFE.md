@@ -3557,7 +3557,7 @@ Y - Support local var initialization in if and loop.
 
 Y - To add: we never implicit casts like int to float.
 
-? - Just like the way protocol is handled (only define functions) or interface in go,
+N - Just like the way protocol is handled (only define functions) or interface in go,
 we may need something about inheritance of tuples.
 `type Shape := {name: string}`
 `type Circle := {Shape, r: float}` this inherits from shape normally
@@ -3577,3 +3577,34 @@ This will extend the semantics of casting. But has almost no effect to other par
 Another option: writing an implicit casting function.
 The main point here is that we do not have access to the original type but want it to behave like another type.
 I thin proxy function is the best choice. Write a normal function with the same name and arguments and do the casting.
+
+? - Is it ok to assign `a|b` to a variable of type `a|b|c|d`?
+note that this will be an assignment by reference.
+
+? - Can we write `var x,y = process()` where process returns a tuple? If so, can we ignore an output by `_` like go/scala?
+
+? - if I send `x` to a function which will be executed in a thread, any change on the value of `x` will affect the thread too. If so, maybe we need to change `var` to `val`? Or have both and say you can only send `val` to a function.
+Another solution: send by copy.
+This will affect assignment, cloning, function definition, closure capturing, lambda, parameter passing, type inference.
+Note that, mutability or immutability should be part of behavior not data. So we don't need to indicate whether a tuple or union is mutable or no. the function that uses them should.
+This important because one of our goals is to be used in server applications.
+Option 1: Don't change anything. accept the issue.
+Option 2: Everything immutable. - makes writing code more difficult + simpler
+Option 3: Scala model: `var` and `val`. - makes language complex + more flexibility
+`func process(var x:int, val y:float) -> int`
+`val p = process()`
+`var q = process()`
+Literals are `val`. 
+`var x:int = 12`
+`val y:int = 19`
+D/Scala/Rust have optional immutability.
+Then can we define an immutable array of mutable integers?
+`type` should not declare whether something is val or var.
+You shouldn't have a mutable reference to immutable data.
+`val x: Point = ...`
+`var y = x` ;
+Option 4: function inputs are `val` only, local variables can be var or val. You can only send vals to functions.
+
+? - Once again: Why we cannot overload operators for custom types?
+
+? - if `@` is only for types, how do we support `select` statement?
