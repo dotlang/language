@@ -4236,7 +4236,10 @@ like D's inout? maybe `var/val`.
 var is like a memory cell without lock.
 If you want to use val as var, you must clone the memory cell.
 
-? - We may even be able to define map using normal language constructs.
+? - Add `binary` type.
+Advantage: It helps unify type system. it can be used to describe almost all other types.
+Advantage: Makes language more powerful. if anyone needs a raw buffer, it can use this type.
+We may even be able to define map using normal language constructs.
 About array:
 `type array[T] = (size:int, data: binary)`
 then `binary` type will be an allocated area of memory of a given size.
@@ -4264,4 +4267,41 @@ So we need another primitive data type which is `binary`. It is primitive in the
 `var y:array[int] = x` this will ref-assign
 `var z: binary = x.data` it is better to ref-assign here. User can clone if he wants.
 For int/float/char we have to make a copy on assignment because this is the exception of many developers.
-I really like to unify it's behavior so it "ALWAYS" ref-assigns. When developer needs a copy, uses `@`.
+`type int := binary` int is a buffer in memory, compiler/runtime will handle size of that buffer.
+`type binary := native`
+`var x: binary = allocate(100)` allocate 100 bytes (100x8 bits) from memory
+`var x: binary[100]` - type binary is generic so you can specify size as a generic argument.
+`var buffer: binary[x]` allocate x bytes from memory. No. generic is supposed to be resolved at compile time. 
+if we get a var int as a result of get, we don't have access to the original location of the array because int should be copy-value on assign.
+
+
+? - I really like to unify it's behavior so it "ALWAYS" ref-assigns. When developer needs a copy, uses `@`.
+problem1: developer expectations
+problem2: performance. 
+`loop({1..1000}) {...}` this will repeat 1000 times and there is no need to use any variable.
+`loop(var x <- {1..1000}) { ... }` assignment to x means?
+`x=100` means store 100 in the cell that x points to. which is more complicated than setting a value inside a memory cell because it has redirection.
+`loop(var x <- {1..1000}) { ... }` in the beginning of each of 1000 iterations, we will have something like this: `x=101`.
+increment on pointer translates to:
+```
+movq    -16(%rbp), %rcx
+movl    (%rcx), %edx
+addl    $1, %edx
+movl    %edx, (%rcx)
+```
+increment in int translates to:
+```
+movl    -4(%rbp), %edx
+addl    $1, %edx
+movl    %edx, -4(%rbp)
+```
+It is one instruction extra.
+Maybe compiler/runtime can optimize that. val int does not need to be a pointer.
+var-int needs to be a pointer because if I write `var y:int = x` then y should be pointing to same address as x is pointing to.
+q: can I have `val x = 12` `x = 19`? no.
+so it does not mean `loop(val x <- {1..100})`
+loop counter must be var.
+runtime can use normal integer and make it pointer when it needs to.
+Running `x++` and `(*y)++` 1 billion times in two different executables, shows the ptr version is almost the same as normal var (sometimes even faster).
+This article discusses why we should have primitives.
+http://www.javaworld.com/article/2150208/java-language/a-case-for-keeping-primitives-in-java.html
