@@ -160,6 +160,7 @@ type string := array[char]
 ```
 
 ## Array
+- If an array is var, all it's elements are var. Same for hash and tuple. This means const is deep and transitive.
 Arrays are a special built-in type. They are defined using generics. Compiler provides some syntax sugars to work with them.
 ```
 ;define an array of integer number and initialize
@@ -288,11 +289,13 @@ t = 12
 - You cannot assign a union value to another one, without casting, even if their types match:
 ```
 var a: int| string = 12
+a = "A"
 var b: int | string | float
-;correct?
-b = a     
 ```
+You can have `myIntOrFloat = 12` or `myIntOrFloat = floatVar` as long as type or rvalue is included in union type.
+But for anything else, you must cast.
 
+To cast union to it's internal types: `if ( myIntOrFloat @ var x:int)`
 
 You can pass int or string or float or `int|string` or `int|float` or `string|float` variables to it.
 
@@ -449,6 +452,10 @@ How can I pass a Dot to process function? You need to write a proxy function:
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Functions
+- A function can determine whether is expects var or val inputs. Caller must send exactly the same type.
+- A function can state it's output var/val. A caller must store it's output in exactly the same type and function must return exactly the same type.
+by default everything is val. so if it's not mentioned, output is val.
+
 function inputs must be named.
 - Function output can be any type. Even a tuple or a tuple with unnamed fields.
 Function is a piece of code which accepts a series of inputs and can return a single value. 
@@ -573,6 +580,8 @@ add(y=19)
 Each function call will be dispatched to the implementation with highest priority according to matching rules. 
 
 ## Lambda expression
+- closure capturing: It captures outside vars and vals. Can change vars.
+
 You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too, also  `func` keyword is not needed. The essential part is input and `->`.
 If you use `{}` for the body, you must specify output type and use return keyword.
 ```
@@ -609,6 +618,10 @@ func process(c: Circle) -> int {
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Generics
+- You can use generics to specify cases where function is agnostic to var/val. For example when adding two complex numbers:
+`func add[V](V a: complex, V b: complex)->V complex` You can use `V x:int` to declare a variable same as input but you cannot modify it's value because it can be val.
+
+
 - When defining types, you can append `[A, B, C, ...]` to the type name to indicate it is a generic type. You can then use these symbols inside type definition.
 - When defining functions, if input or output are of generic type, you must append `[A,B,C,...]` to the function name to match required generic types for input/output. 
 - When you define a variable or another type, you can refer to a generic type using it's name and concrete values for their types. Like `Type{int, string]`
@@ -792,6 +805,9 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `equals` functions is used for equality check.
 - You can have multiple assignments at once: `x,y=1,2`
 - `+` can be used to merge two arrays. This can be used for string concatenation, because string is an array of chars.
+- Assignment makes a copy for var primitives (because it is expected and is cheap) and label-only unions. For other cases, it will ref-assign: meaning `a=b` will make a point to the same memory call as b is. If left and right are val/var, user must use `@` to clone:
+`myVar=@(myVal)`
+
 
 
 ### Special Syntax
@@ -808,7 +824,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `()` function call
 - `.` access tuple fields
 
-Keywords: `import`, `func`, `var`, `type`, `defer`, `native`, `loop`, `break`, `continue`, `protocol`
+Keywords: `import`, `func`, `var`, `val`, `type`, `defer`, `native`, `loop`, `break`, `continue`, `protocol`
 semi-Keywords: `if`, `else` (used in syntax sugar)
 Operators: 
 Primitive data types: `int`, `float`, `char` (int is signed and 64 bit, char is unsigned)
@@ -824,7 +840,8 @@ Helper data types: `bool`, `string`, `Array`, `Map`, `Nothing`
 - with a value, to clone: `var t = @(pt)`
 - As a binary infix operator to check for type matching.
 - You can use `!@` to check for not matching.
-###match
+
+### match
 ```
 MatchExp = '(' tuple ')' @ '{' (CaseStmt)+ '}'
 ```
@@ -852,7 +869,7 @@ MatchExp = '(' tuple ')' @ '{' (CaseStmt)+ '}'
 ```
 - Simple form: You can use `@` without `->` too to check for types which returns a bool: `if ( x @ int)`. In this format, you can check for a type or a literal.
 - `if ( x @ var t:int)` inside if block you have a local variable `t` which is `int` value of `x`.
-- `if ( x @ y )` is invalid. Right side of match can either be a literal (e.g. 5) or a type (e.g. int) or a new variable with it's own type (e.g. `a:int`). you cannot use `@` to do `==` comparison.
+- `if ( x @ y )` is invalid. Right side of match can either be a literal (e.g. 5) or a type (e.g. int) or a new variable with it's own type (e.g. `a:int`).
 
 ###if, else
 - You can use `if/else` block as an expression.
