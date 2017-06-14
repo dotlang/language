@@ -3584,7 +3584,7 @@ It makes code un-readable and prone to misuse.
 Y - replace `1..x10` with `1..*10` so we can use variables too.
 or maybe just have `a..b` notation?
 
-? - if I send `x` to a function which will be executed in a thread, any change on the value of `x` will affect the thread too. If so, maybe we need to change `var` to `val`? Or have both and say you can only send `val` to a function.
+Y - if I send `x` to a function which will be executed in a thread, any change on the value of `x` will affect the thread too. If so, maybe we need to change `var` to `val`? Or have both and say you can only send `val` to a function.
 Another solution: send by copy.
 This will affect assignment, cloning, function definition, closure capturing, lambda, parameter passing, type inference.
 Note that, mutability or immutability should be part of behavior not data. So we don't need to indicate whether a tuple or union is mutable or no. the function that uses them should.
@@ -4058,7 +4058,7 @@ For every other case (val-to-val, or var-to-var for tuple, hash and array and un
 - A function can determine whether is expects var or val inputs. Caller must send exactly the same type.
 - A function can state it's output var/val. A caller must store it's output in exactly the same type and function must return exactly the same type.
 - Assignment makes a copy for var/val assignment (because it has to), var primitives (because it is expected and is cheap) and label-only unions. For other cases, it will ref-assign.
-- If an array is var, all it's elements are var. Same for hash and tuple.
+- If an array is var, all it's elements are var. Same for hash and tuple. This means const is deep and transitive.
 - closure capturing: It captures outside vars and vals. Can change vars.
 - We can use `@` to force clone.
 ```
@@ -4076,28 +4076,134 @@ var g = h.["A"] ;get reference, we can change
 val h: map[int, Point] = ...
 var g = h.["A"] ;makes a copy
 ```
+Suppose a substr function which returns substring of a given string. If it's input is val, it will return a val. if it is var, it will return var.
+`func substr(var s: string, start: int, end:int)-> var string`
+`func substr(val s: string, start: int, end:int)-> val string`
+We need to write two exactly same implementations for substr function.
+Or a function which finds something in a list/graph/...
+Can this happen for functions with multiple inputs?
+What if I want to declare a new variable of type var/val depending on the input type?
+or a function that accepts a Point and returns some part of it. output var/val depends on input.
+or add function for two complex numbers.
+`func add(var/val  a: complex, var/val b: complex)-> var/val complex`
+solution 1: write multiple functions
+solution 2: generics
+solution 3: if output type is not mentioned, it will be same as type of first input.
+`func substr[T: var/val](T s: string, start: int, end:int)-> T string`
+- We can say, if function output is not var/val, it must be the same as input with the same type.
+`func substr(s: string, start: int, end:int)-> string`
+`func add(a: complex, b: complex)-> complex`
+So if function input/output is not mentioned, you can pass var/val to it.
+But what if inside the function I need to allocate a variable. Should I use var or val?
+Maybe we can use forwarding for this.
+`func substr[T](T s: string, start: int, end:int)-> T string`
+`func substr(val s: string, start: int, end:int)-> val string`
+another solution: generic argument can be var/val.
+How does this affect protocol, specialization,...
+protocol definition is a type which does not use this concept.
+generic parameters which are used for var/var cannot be bound to a protocol.
+Maybe we can declare `V` generic argument specifically for this.
+`func substr[V](V s: string, start: int, end:int)-> V string`
+`func add[V](V a: complex, V b: complex)->V complex`
+Or maybe a notation like `*`.
+`func add[*](* a: complex, * b: complex)->* complex`
+What if we need more than one of these? e.g. a function which accepts two inputs which can be var/val but output is same as the first input.
+`func check[*1,*2](*1 a: complex, *2 b: complex)->*1 complex`
+`func check[VA1,VA2](VA1 a: complex, VA2 b: complex)->VA1 complex`
+`func substr[VA](VA s: string, start: int, end:int)-> VA string { VA result = ... return result}`
+Or if a template argument starts with `$`, it is solely applicable for var/val situation.
+`func check[$1,$2]($1 a: complex, $2 b: complex)->$1 complex`
+Or maybe just use normal template arguments:
+`func check[T,U](T a: complex, U b: complex)->T complex`
+**Summary**
+- A function can determine whether is expects var or val inputs. Caller must send exactly the same type.
+- A function can state it's output var/val. A caller must store it's output in exactly the same type and function must return exactly the same type.
+- Assignment makes a copy for var/val assignment (because it has to), var primitives (because it is expected and is cheap) and label-only unions. For other cases, it will ref-assign.
+- closure capturing: It captures outside vars and vals. Can change vars.
+- If an array is var, all it's elements are var. Same for hash and tuple. This means const is deep and transitive.
+- You can use generics to specify cases where function is agnostic to var/val. For example when adding two complex numbers:
+`func add[V](V a: complex, V b: complex)->V complex` You can use `V x:int` to declare a variable same as input but you cannot modify it's value because it can be val.
 
-? - Shall we have assignment make a copy for label-only unions?
+N - Problem with var/val for local variables, function input and output
+1. strchr problem
+2. everywhere, var/val should be specified
 
-? - We can cnosider hash and array of tuple type.
+N - Problems with everything immutable + special case classes
+1. Is confusing and not general.
 
-? - if `@` is only for types, how do we support `select` statement? we should support it too.
+N - A shortcut to clone and cast to the type on the left side
+`int x = @@(strVar)`
+
+Y - Is it ok to assign `a|b` to a variable of type `a|b|c|d`?
+This depends on whether we assign by ref or copy.
+`var a: int|string = "A"`
+`var b: int|string|float = a` this will ref-assign
+`b=1.9` this should be valid, but a cannot handle that.
+if we write `a=b`.
+we can have: `myShape = myCircle` so any update on myShape will affect myCircle and will work fine.
+then: `myIntOrFloat = myIntFloatString` is similar to above and is valid. but `myCircle = myShape` or `myIntFloatString = myIntOrFloat` are both invalid.
+But if we clone, `myIntOrFloat = @int|float(myIntFloatString)` is invalid because the variable can contain string.
+`myShape = @Shape(myCircle)` is fine, but we will loose some information.
+suppose that we have `myIntOrFloat = myIntFloatString`
+what happens if I then write `myIntFloatString = "AAA"`? What will be `myIntOrFloat` pointing to?
+This is super-confusing. Let's force user to cast.
+You can have `myIntOrFloat = 12` or `myIntOrFloat = floatVar` as long as type or rvalue is included in union type.
+
+Y - can we write `myInt = myIntOrFloat`?
+Of course not. because there is a chance that right side is float.
+`myInt = @int(myIntOrFloat)`. You cannot do this because you don't knwo if right side is int or float.
+`if ( myIntOrFloat @ var x:int)`
+
+N - We can use `@x` for shortcut to clone.
+
+Y - Now we cannot have `func process(var x:int) -> x+1` because we need to specify type of output (val/var).
+solution: by default everything is val. so if it's not mentioned, output is val.
+
+Y - Shall we have assignment make a copy for label-only unions?
+
+N - We can consider hash and array of tuple type.
+
+Y - if `@` is only for types, how do we support `select` statement? we should support it too.
 so `@` is cast, clone and match.
 
+Y - Can we write `var x,y = process()` where process returns a tuple? If so, can we ignore an output by `_` like go/scala? 
+No. Using `_` is a bad practice.
 
-
-? - Can we write `var x,y = process()` where process returns a tuple? If so, can we ignore an output by `_` like go/scala?
-
-? - Is it ok to assign `a|b` to a variable of type `a|b|c|d`?
-note that this will be an assignment by reference.
-This depends on whether we assign by ref or copy.
-
-? - we can do casting with match:
+N - we can do casting with match:
 ```g match {
   case g2: Graphics2D => g2
   case _ => throw new ClassCastException
 }```
 
-? - How can a function re-assign to a var input?
+N - How can a function re-assign to a var input? if it is defined as var, it can re-assign.
 
-? - Can we use convention for var/val. Like on variable name?
+N - Can we use convention for var/val. Like on variable name? then we cannot use generics for var/val strchr problem.
+
+Y - Shall we say, user must explicitly use `@` to clone when assigning?
+Then we only have copy on assignment for primitives.
+
+N - Isn't it confusing:
+`var x = 12`
+`var y = 19`
+`var pt: Point = {x=x, y=y}`
+It is confusing because of choice of names not because of the language.
+
+Y - Can we simplify `=` and say var-val will create a clone and everything else will ref-assign?
+This means `int=int` and `label-only-union=lou` will ref-assign.
+This means that even primitives need to be implemented using pointers.
+For label-only-union this is fine and acceptable.
+For primitives: `var t:int = x`
+`loop(var x <- {1..10000})` each assignment here, will mean: read value of x, write new counter to [x].
+which makes loop slow. `int`, `char`, `float`, `bool`,
+
+? - What about types with duplicate name?
+For functions it's ok as long as they have different types. We just call `process(x,y)` and the appropriate impl will be chosen. But what about type? Suppose that we have two Stack types in two modules that I have imported.
+`import /core/mod1`
+`import /code/mod2`
+`var t: Stack` what if Stack is defined in both locations?
+
+
+? - How does using generics for var/val affect current specification?
+protocols, phantom types, specialization, ...
+lambda. generics lambda.
+
