@@ -3984,6 +3984,102 @@ So let's review how does option 3 address our concens:
 3. Handle large data. Yes. Just declare them as var and you don't need to duplicate it.
 Effect on the language: You have the option to declare function input/output as var/val. by default it is val. So for function input, if nothing is mentioned, you can pass anything. For function output, if nothing is mentioned, you must be val to capture output. If something is declared either for input or output, you must match the same.
 Another option: val by default, just use var to indicate you need to change. Problem: what about function output? if I accept a val can user send a normal var? If so, I can share that with a thread and there will be shared mutable state without user knowing about it. 
+**Summary**
+- A function determines whether it accepts a var or val. For val you can send var or val (pass by ref). For var you must send a var (pass by ref)
+- If function output is marked with val, it can either return var or val. For var, it must return a var.
+- `val` can only have one `=`. They can only appear on the left side of `=` whey they are born (declared).
+- Cloning: `x=y` will clone y into x, instead of reference assignment. except for val/val.
+`val=val` ok no need to clone. ref copy.
+`val=var` must clone
+`var=val` must clone
+`primitive var=var` must clone (we already have this)
+`union var=var` clone makes sense
+`array var=var` - clone makes sense. If you don't want clone, just re-use rvalue
+`hash var=var` - clone makes sense
+`tuple var=var` - like array and hash
+- closure capturing: It captures outside vars. Can change vars.
+- parameter passing: Based on what the function declares.
+- assignment: we can assign anything to anything except if target is val, which can be assigned only once. it creates a copy.
+q: Does this mean we have value-types and not reference types? Like C++ vs C#?
+```
+var h: map[int, string]
+h.[1] = "A"
+h.[2] = "B"
+val g: map[int, string] = {1: "A", 2: "B"}
+g.[3] = "C" ;compiler error!
+func process(var x: int) -> x=12
+var t:int = 19
+process(t)
+;is t=12 now? yes. in C++ this means:
+func process(int* x) -> *x=12
+int t;
+process(&t)
+```
+var means function will receive a point to that variable.
+val means function should work with a copy to that value. In practice it won't be a copy but function cannot change any part of it.
+A literal, can be either val or var depending on the context. Compiler handles that.
+if we have:
+`var pt: Point = {x=10,y=20}`
+can I send `pt.x` as a val? you can.
+if we have:
+`val pt: Point = {x=10, y=20}`
+can I send pt.x as a val? you can.
+can I send pt.x as a var? No. For a val, everything inside is a val and same for var.
+So parts of a val tuple are val.
+Same for map:
+`var pop: map[string, int] = {...}`
+map does not have "parts".If I write: `var g:int = pop["us"]` it will give me a copy of what's inside the map.
+`val g:int = pop.["us"]` it is const. I will get a copy. Because the map is `var` so it can change (maybe later we change value of `pop.["us"]`. 
+A var union, can accept only vars:
+`var p := int | float` -> `val x:int = 12` -> `p = x` error! x is val but p is var.
+When you match with var, it must be same type as original:
+`var p:= int|float` -> `if p @ var o:int` this is correct. p is var so it's components are var too.
+Can I for val send var or val to a function?
+If function expects val, can I send a var? In C++ you can. But if I do this, it will cause problem regarding shared mutable state. This val can be shared with other threads. They expect it to be the same. But it can change because I have a var reference to it.
+So generally, we can say, var to val conversion can never happen unless by making a copy. 
+**Summary**
+- A function determines whether it accepts a var or val. If it expects var, you must send var. If val, you must send val.
+- If function output is marked with val, it must return val, for var it must return var.
+Actually when getting result of a function, we use `x=func1(y,z,t)` so `=` will make a copy. But what if func output is a very large array marked with var? (for val, we can safely assume val to val assignment does not make a copy).
+`var t = readLargeFile()` does this duplicate the array? It does because we assumed `=` will make a copy.
+What if we say `=` makes a copy for primitive and ref assign for everything else?
+`val=val` ref assignment. no duplication.
+`val=var` must clone
+`var=val` must clone
+`primitive var=var` must clone (we already have this)
+`union var=var` maybe union contains a very big data structure. ref-assign unless for only-label unions.
+`array var=var` - ref assign
+`hash var=var` - ref assign
+`tuple var=var` - ref assign
+So assign across var/val or for primitives or for label-only unions will make a clone.
+For every other case (val-to-val, or var-to-var for tuple, hash and array and union) it will ref-assign.
+- If a tuple/hash/... is defined as var/val all it's internal components follow the same. So if you assign a value inside a val map to a var, it will cause clone.
+**Summary**
+- A function can determine whether is expects var or val inputs. Caller must send exactly the same type.
+- A function can state it's output var/val. A caller must store it's output in exactly the same type and function must return exactly the same type.
+- Assignment makes a copy for var/val assignment (because it has to), var primitives (because it is expected and is cheap) and label-only unions. For other cases, it will ref-assign.
+- If an array is var, all it's elements are var. Same for hash and tuple.
+- closure capturing: It captures outside vars and vals. Can change vars.
+- We can use `@` to force clone.
+```
+val x: array[int] = {1,2,3}
+var y = x.[0] ;correct but will make a copy
+val y = x.[0] ;correct, will ref-assign
+var x: array[int] = {1, 2, 3}
+val y = x.[0] ;makes a copy
+var y = x.[0] ;correct. makes a copy because it is primitive
+var h: map[string, int] = {"A":1, "B":2}
+var g = h.["A"] ;makes a copy
+val h = h.["A"] ;makes a copy
+var h: map[int, Point] = ...
+var g = h.["A"] ;get reference, we can change
+val h: map[int, Point] = ...
+var g = h.["A"] ;makes a copy
+```
+
+? - Shall we have assignment make a copy for label-only unions?
+
+? - We can cnosider hash and array of tuple type.
 
 ? - if `@` is only for types, how do we support `select` statement? we should support it too.
 so `@` is cast, clone and match.
@@ -4001,3 +4097,7 @@ This depends on whether we assign by ref or copy.
   case g2: Graphics2D => g2
   case _ => throw new ClassCastException
 }```
+
+? - How can a function re-assign to a var input?
+
+? - Can we use convention for var/val. Like on variable name?
