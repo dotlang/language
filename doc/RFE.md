@@ -4201,7 +4201,17 @@ For functions it's ok as long as they have different types. We just call `proces
 `import /core/mod1`
 `import /code/mod2`
 `var t: Stack` what if Stack is defined in both locations?
+one solution: type keyword
+`type Stack1 := /core/mode1/Stack`
+`type Stack2 := /code/mode2/Stack`
+using Fully qualified name to alias a type. but this will be a totally different type because it's not an alias only.
+`import /code/mode1 {Stack => Stack_mod1}`
+`var t: Stack_mod1`
+Can we use this notation to map functions too?
 
+? - Can we have a more distinct notation for `@`?
+`@{x}`? clash with casting tuple/array/map literals.
+`@[x]`? clas with generics.
 
 ? - How does using generics for var/val affect current specification?
 protocols, phantom types, specialization, ...
