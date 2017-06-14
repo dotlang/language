@@ -17,6 +17,12 @@ potent
 brute
 jumpstate - Simple and powerful state management for Redux.
 dotlang.org is free, dot is a short and simple word and a dot is a simple notation which is also powerful because it is used everywhere.
+Exception handling is borrowed from Go.
+Notations from Go.
+var/val from C++.
+sum type and matching from Haskell.
+generics from C++.
+GC and polymorphism from Java. 
 
 N - A notation to join two arrays.
 In Haskell we have:
@@ -4196,6 +4202,10 @@ For primitives: `var t:int = x`
 `loop(var x <- {1..10000})` each assignment here, will mean: read value of x, write new counter to [x].
 which makes loop slow. `int`, `char`, `float`, `bool`,
 
+N - Can we have a more distinct notation for `@`?
+`@{x}`? clash with casting tuple/array/map literals.
+`@[x]`? clas with generics.
+
 ? - What about types with duplicate name?
 For functions it's ok as long as they have different types. We just call `process(x,y)` and the appropriate impl will be chosen. But what about type? Suppose that we have two Stack types in two modules that I have imported.
 `import /core/mod1`
@@ -4206,14 +4216,52 @@ one solution: type keyword
 `type Stack2 := /code/mode2/Stack`
 using Fully qualified name to alias a type. but this will be a totally different type because it's not an alias only.
 `import /code/mode1 {Stack => Stack_mod1}`
+`import /code/mode2 {Stack => Stack_mod2}`
 `var t: Stack_mod1`
-Can we use this notation to map functions too?
-
-? - Can we have a more distinct notation for `@`?
-`@{x}`? clash with casting tuple/array/map literals.
-`@[x]`? clas with generics.
+Can we use this notation to map functions too? we don't need that.
+Another option: `alias` keyword.
+Another option: use `type` with similar notation to define named alias.
+`type Stack_mod1 := /code/mode1/Stack`
 
 ? - How does using generics for var/val affect current specification?
 protocols, phantom types, specialization, ...
 lambda. generics lambda.
 
+? - Can we simplify generics for var/val?
+like D's inout? maybe `var/val`.
+
+? - Can we extend generics to accept number, string, float and other literals too?
+
+? - val is like a memory cell with a lock on it.
+var is like a memory cell without lock.
+If you want to use val as var, you must clone the memory cell.
+
+? - We may even be able to define map using normal language constructs.
+About array:
+`type array[T] = (size:int, data: binary)`
+then `binary` type will be an allocated area of memory of a given size.
+```
+func get[T,V](V arr: array[T], index: int) -> V T {
+    return getOffset[T, V](arr.data, index*sizeof[T]())
+}
+```
+`binary` is like a buffer which we can have access using core functions like `getOffset` to read part of it.
+Advantage: It helps unify type system.
+q: how can we handle var/val here?
+If array is var, we must return var.
+If array is val, we must return val.
+But we cannot return a pointer to that position because user is supposed to use `set` to manipulate array.
+But anyway, they can use `get` to read elements and manipulate that element, if array is var. 
+For example for a var array of Point. `get(arr, 10)` should return a Point object which points to that specific part of the internal buffer.
+But what about int? it will be ok as `=` operator will make a copy.
+`val x:int = get(myArray, 10)` - even if it is val, we make a copy because it is primitive.
+`var x:int = get(myArray, 10)` - we know that x cannot control inside the array. `=` makes a copy.
+`var x: Point = get(myArray, 10)` - `get` will return a var which points to appropriate position inside the array.
+`val x: Point = get(myArray, 10)` - `get` will return a val point tuple pointing to that position inside array.
+a call to `getOffset` can cast the result to any type. This is a feature provided by core.
+So we need another primitive data type which is `binary`. It is primitive in the sense that it is low level. But should it be copied with `=`?
+`var x:array[int] = {1, 2, 3}`
+`var y:array[int] = x` this will ref-assign
+`var z: binary = x.data` it is better to ref-assign here. User can clone if he wants.
+For int/float/char we have to make a copy on assignment because this is the exception of many developers.
+I really like to unify it's behavior so it "ALWAYS" ref-assigns. When developer needs a copy, uses `@`.
