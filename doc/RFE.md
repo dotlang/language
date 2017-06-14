@@ -3894,7 +3894,96 @@ options: like now, everything immutable, scala (optional with var/val), var/val 
 custom mutable types is not simple and easy to understand.
 like now: it wont stop shared mutable state.
 everything imm: is not efficient.
-
+Seems the best choice is everything immutable + some basic mutable structures that can power other mutable data structures.
+Also ability to convert those mutable to immutable.
+can we say a thread/closure cannot have access to those immutable data structures? it is not general.
+Let the developer decide.
+Scala has mutable: array, list, bitset, stack, queue, hashtable. bitset.
+so everything is immutable except these classes. if a tuple contains these fields, you can modify them.
+`type Customer := {name: string, age: int, data: mlist[int]}`
+`var t: Customer = {name="AA", age=12)`
+now you cannot change name or age but you can change data.
+`append(t.data, 12)`
+compiler/runtime will ensure that these are passed by reference.
+Another solution: data type specifies whether it should be var or val.
+So this automatically can only be applied to tuples.
+`type MyArray := (var elements: array[int])`
+so while variables of type MyArray will be immutable, we can re-assign and mutate their `elements`.
+`var x: MyArray -- x.elements.[0]=10`
+Scala implements mutable collections using normal var fields in the class. Haskell does it with Monad and RTS.
+Ocaml uses labels for structure fields.
+This means we will need var/val in tuple fields and function declaration. but this is complex. We want a simple solution.
+Another solution: Make eveyrhing mutable, use other mechanisms to prevent shared mutable state. That is not good too.
+So two options:
+**Option 1**: use var/val to define variables and work with them. send/receive val to/from a function.
+**Option 2**: Everything is immutable except some built-in structures like BigArray.
+1. simple and easy to read/write and maintain
+2. prevent shared mutable state
+3. efficient for large data 
+option 1: it is no so easy, I have to deal with two keywords. but it is flexible. it solved shmut. cannot handle large data well.
+option 2: it is easy, not very flexible. can handle large data.
+handling large data in option2: I need to use mutableArray data. Then to make sure shared-mut does not happen, duplicate it into a normal immutable array. this is what I do in option 1.
+Maybe I can do some kind of guarantee so compiler does not duplicate structure. I take respoisibility so the structure wont be duplicated. The creator of the data should guarantee, not the caller.
+```
+func allocate -> var array[byte] ;in core
+func fileRead() -> var array[byte] {
+    ;
+    var buf: array[byte] = allocate(10_000_000)
+    ...
+    buf[100]=19
+    ...
+    ;here I can return a var and runtime won't clone it to be assigned in the caller. because I have
+    ;guaranteed that the result can be assigned to a var. Because I promise it is not shared with another thread.
+    ;and I am the sole owner of the data.
+    return buf
+}
+func readDb() -> Database {
+    ;this is ok. I have a mutable reference to the result of fileRead.
+    ;no duplication has happened since the array is created because each part of the chain
+    ;has guaranteed that the data is not shared with another thread
+    var result = fileRead()
+    val val_result = result
+    start_thread(val_result) ;this works, you cannot pass result to the thread
+    ;make lots of changes to the result
+    return result
+}
+...
+;I need to assign output to val because readDb does not have this guarantee. Maybe it's result is shared with another thread. ;I need to have an immutable reference so that I won't be changing a data which is possibly shared with another thread
+val data = readDb() 
+```
+Can we extend this notation to function input? a var input will change while val won't. I can send var/val as val function argument. But for var function argument, I can only send var.
+It is more flexible. Things like pushing to a stack, becom much more easier. puts developer in charge. but needs more attention.
+So if a function indicates its output is var, it means the caller can change it. but if it is val, caller must obtain an immutable reference to it and do not change it.
+Won't this cause confusion? For example a LinkedList. If it is val how can I change it?
+if it is a var, I can simply change it manually or call any function.
+But what about val? Does it mean it cannot be mutated unless we clone it into a var and then make the change?
+- q1: Does it make sense to allow var function input? Golang has this. 
+adv: Developer will be responsible. Go and C++ have this. C# has this with ref. Java has this with references.
+dis: Code will be difficult to reason and test.
+```
+func process(var ll: List) -> { ll.x=9 }
+```
+C# uses this in TryParse.
+```
+func tryParseInt(s: string, var result: int) -> bool { ... }
+```
+We can say, default is val. But I think var/val option for function input is the natural result (?) of var/val in the code.
+Maybe not. Another option is to assume every function input is a val. But what if I pass a var? We can make a convention encofrce by compiler, that function cannot modify it's input.
+So how can I write this function?
+`func insertAt(x: LinkedList, data: int, position: int)` if the LinkedList is very big? Even if I declare function output as var, I need to duplicate a lot of nodes in the input linked list. 
+So we have:
+**Option 1**: use var/val to define variables and work with them. send/receive val to/from a function.
+**Option 2**: Everything is immutable except some built-in structures like BigArray.
+**Option 3**: val/val everywhere including code, function input and function output.
+So for example when appending something to a linked list, I can either write a method which accepts val and do some magic to append and return a new reference, or accept var and do an ordinary code.
+what about string or array in general? if var, can I append? No. Array size is fixed. append = new allocation but with var you can just re-assign it. var means inout in D.
+how does it affect lambda capture? lambda can capture all variables. change var and read val.
+So let's review how does option 3 address our concens:
+1. simple: It is explicit, make code a bit more messy but simple to read.
+2. prevent shared mutable state: It gives you tools to do that.
+3. Handle large data. Yes. Just declare them as var and you don't need to duplicate it.
+Effect on the language: You have the option to declare function input/output as var/val. by default it is val. So for function input, if nothing is mentioned, you can pass anything. For function output, if nothing is mentioned, you must be val to capture output. If something is declared either for input or output, you must match the same.
+Another option: val by default, just use var to indicate you need to change. Problem: what about function output? if I accept a val can user send a normal var? If so, I can share that with a thread and there will be shared mutable state without user knowing about it. 
 
 ? - if `@` is only for types, how do we support `select` statement? we should support it too.
 so `@` is cast, clone and match.
@@ -3906,3 +3995,9 @@ so `@` is cast, clone and match.
 ? - Is it ok to assign `a|b` to a variable of type `a|b|c|d`?
 note that this will be an assignment by reference.
 This depends on whether we assign by ref or copy.
+
+? - we can do casting with match:
+```g match {
+  case g2: Graphics2D => g2
+  case _ => throw new ClassCastException
+}```
