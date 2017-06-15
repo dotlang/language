@@ -4666,3 +4666,18 @@ N - Can we model sum type using a tuple?
 `type IntOrFloat := int|float`
 `type IntOrFloat := (x: int + f: float)`
 No. not elegant.
+
+N - Is it possible that compiler infers `var/val` from function body and applies it at compile time?
+So I can define local variables using var/val notation but when sending them to a function I just send them.
+And function is like `func process(x: int, y:int) -> float`. If I send inappropriate argument, compiler will complain.
+Same for function output.
+Same can be applied for local variables. So compiler will choose most appropriate and efficient storage for the data.
+I define everything with `var`.
+But the point about var/val is protocol. Function declares it will not change value of a data.
+Instead of always worrying about what the best type for a variable is, I just look at the functions I want to call.
+This reasoning is like the way people defend dynamic typing.
+Just like the way a function indicates it accepts int, it can indicate it won't change the value.
+
+? - Other good features to write maintainable code:
+https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Rp-compile-time
+- static assert
