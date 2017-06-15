@@ -110,8 +110,8 @@ The most primitive type is `binary` which denotes a consecutive allocated memory
 `type array[T] = (size:int, data: binary)` binary means a buffer with size specified at runtime.
 `type array[T, N] = (size:int, data: binary[N])` `binary[N]` means N bytes allocated.
 ```
-func get[T,V](V arr: array[T], index: int) -> V T {
-    return getOffset[T, V](arr.data, index*sizeof[T]())
+func get[V: var|val, T](V arr: array[T], index: int) -> V T {
+    return getOffset[V,T](arr.data, index*sizeof[T]())
 }
 ```
 If we use `get` to read data as `var` from an array which contains value types, we won't have direct access to inside the array. We will receive a copy.
@@ -640,8 +640,10 @@ func process(c: Circle) -> int {
 # Generics
 - You can pass literals of primitive types (int, float, char) to a generic. Like `type int := binary[8]`
 - You can use generics to specify cases where function is agnostic to var/val. For example when adding two complex numbers:
-`func add[V](V a: complex, V b: complex)->V complex` You can use `V x:int` to declare a variable same as input but you cannot modify it's value because it can be val.
-
+`func add[V: var|val](V a: complex, V b: complex)->V complex` You can use `V x:int` to declare a variable same as input but you cannot modify it's value because it can be val.
+- You can use `|` to denote possible identifiers. 
+For example: `func add[T: int|float]...`
+`type array[N:int, T] := ...` You can accept literals of primitive types in generics.
 
 - When defining types, you can append `[A, B, C, ...]` to the type name to indicate it is a generic type. You can then use these symbols inside type definition.
 - When defining functions, if input or output are of generic type, you must append `[A,B,C,...]` to the function name to match required generic types for input/output. 
@@ -1101,4 +1103,5 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Debugger and plugins for Editors
 - Atomic operations
 - Testing
+- Define a notation to access a location inside a binary and sizeof function
 
