@@ -4326,7 +4326,222 @@ So options can be any litearl?
 `type MyType[N: Point]= array[int, N.x]` allocate an int array of size of x of given point
 so generic arguments can be either a type name or a literal. 
 
-? - Now that array is just a normal tuple, shall we enable user to override `.[]` operator for it's types?
+N - a bintype is duplicated when it is assigned or sent to a function.
+No. If a bin-type is assigned, it is copied but when sent to a function a reference will be sent.
+
+Y - For valtypes, it does not matter whether function input/output is var or val because it is copied.
+But for reftypes it is important.
+`func add(x:int, y:int)->int`
+`func add(val x:int, val y:int)->val int`
+these two are the same and if you define both of them, compiler will complain.
+But for reftype:
+`func add(val x: Point)->val Point`
+`fnuc add(var x: Point)->var Point`
+These two are different.
+Can we make this simpler? So we don't need to pay attention whether something is var/val and what does the function say.
+What about making everything var, and when you want to start a thread, send them a copy?
+solution1: Everything becomes a ref. So val/var has a real meaning even for int, float, ...
+solution2: Remove val. Everything is var. Function cannot modify it's input. Writing a Stack becomes difficult.
+`func process(val x:int)` you can call this only with a val int. in implementation nothing changes.
+`func process(var x:int)` you can call this only with a var int. in implementation, we will pass a pointer to the int.
+So can we say `val x:int` is valtype and stack allocated while `var x:int` is reftype and heap-allocated?
+What about other objects? Can we say val means stack allocation and call by value (or maybe val-ref).
+And var means heap allocation and call by reference (so function can change it)?
+So when I write `var x: Point` runtime will put a reference to a Point object into x.
+When I write `val x: Point`, runtime can either put a reference or just make `x` the Point.
+- When I want to call a function which has val argument, runtime will send a copy for small objects and ref for larger ones. But this is completely transparent from the code. Because it is not supposed to change the object. So it doesn't matter how the function has a read-only access. As long as rules are consistent and runtime can handle access it will be fine.
+- When I want to call a function which has var argument, this means function will need to modify that object. So I need to send a reference. Even when it is a small variable like int, runtime has to send a pointer.
+So runtime should handle var/val, cloning and related things.
+BUT in terms of the code, it will have a meaning to have `val x:int`. And it is different from `var x:int`.
+What about local variables?
+`var x:int = 12` will this create a reference?
+`var y:int = x` is y a clone of x? or a reference to x?
+Clearly there are four different concepts here: mutable, immutable and send-by-ref vs. send-by-val.
+`var y: int = x` this should duplicate x. because x is value-type
+`val y: int = x` assuming x is val, this will also duplicate because int is value-type
+`process(xvar)` this will send a reference to x.
+`process(xval)` this will send a reference to x because x is not going to change.
+So clearly, a local var is different from argument var. A local var, is a piece of data which is value-type and copied upon assignment. But a var function argument, is a reference.
+Can we say that function arguments are all references? Because for val, it is fine and for var, it must be ref so function can make changes.
+But for local variable definition, ref-types are references and val-types are values. Assignment for ref-type will copy the ref, but for val-type will duplicate the whole variable.
+Can we make this more clear? Like by adding a new keyword?
+But I think it will make things more confusing. we can write `var x:int` and `val y:int` in function arguments. Do these differ? According to the notations, I expect them to differ. I expect to be able to change x and caller should see my changes immediately. `var` is like a pointer.
+BUT in local variables, var does not need to be pointer. For performance reasons, it can be a value. 
+The originator of a var, if it's type it primitive, may choose to use val-type implementation. When a data is going to be escaped from current function, we may need to send a pointer to it, instead of it's value.
+So we cannot say a valtype is duplicated when sent to a function. It may be referenced.
+inside a function suppose I have `var x:int = localVarInt`. x will receive a copy? It should. Because local int cannot be a reference. But function argument int, can be a reference.
+So `=` will always data-copy for bin-type and ref-copy for ref-type.
+But sending something to a function is not the same:
+- for bin-type, val will send a copy. var will send a reference.
+- for ref-type, val will send a reference. var will send a reference.
+So function arguments will be always passed by a reference except for val-bin-type. 
+Why we don't send val-bin-type by reference? Because there might be a lot of reads to it and as it is not supposed to be big, it's better if we copy it to prevent redirection inside function code.
+But for var we have to send a reference.
+For ref-type we have to send a reference.
+So now `var/val` are part of function signature:
+`func add(var x:int)`
+`func add(val x:int)` they are different functions.
+This will also affect method dispatch. If I am sending vals, some candidates may be rejected because they accept var.
+BUT:
+`var x:int = 12`
+`var y:int = x` this will duplicate
+`func process(var x:int)`
+`process(x)` this will send a reference.
+This is a bit confugins.
+When I write `var x` I mean this is something I will change.
+A function can have a reference or a copy of the data. But it shouldn't matter for the function.
+The only thing that a function and it's caller care about is whether function wants to change the argument contents or no.
+If it wants to make changes, it needs a reference.
+It it doesn't want to make a change, it doesn't matter. Give him a copy of the data or a reference.
+`func process(const x:int)` x is a const. I won't change it's value and I don't care whether I get a reference to it or a copy of it. Runtime will send a reference or maybe duplicate value for bin-type.
+`func pceoss(ref x:int)` x is a reference. So I may change it's value. Runtime must send a reference. Even if it is int, I shall get a reference.
+This notation is more explicit and clear.
+What about function output? `func process(const x:int)->const int` my output is an int but should not be changed. You can make a copy of it or get a reference. It doesn't matter.
+`func process()->ref int` I will return a pointer to an int. You must grab it into a pointer and will be able to change it's value.
+What about local variables?
+`const x:int` this replaces val.
+`ref x:int` this replaces var?
+const/ref should be orthogonal to bintype, reftype.
+const bintype -> ref-copy on assignment, data-copy on function call
+const reftype -> ref-copy on function call, ref-copy on assignment
+ref bintype -> ref-copy on function call, ref-copy on assignment
+ref reftype -> ref-copy on function call, ref-copy on assignment
+Problem: How can I define an int which is not ref and not const?
+I think we should have val/val/ref/const.
+Or maybe change var to ref for function.
+functions have ref/const identifier which denotes whether they want to change the input or no.
+local variables have var/val which indicates they are modifiable or no.
+you can pass var for ref.
+you can pass val for const.
+The whole point is, when you send int to a function, it may be sent as a pointer. This happens if function wants to change that argument.
+`ref bin-type` send a reference
+`const bin-type` send a copy
+`ref ref-type` send the reference
+`const ref-type` send the reference, it won't be changed
+`var y:int = x` make a copy
+`const y:int = x` make a copy.
+`var x: Point = y` ref-assign
+`const x: Point = y` ref-assign.
+Still confusing. It must be clear, concise, simple and easy to understand.
+The original problem: `func process(var x:int)` does not make sense because int is bin-type and sent by copy.
+`func process(var x:Point)` makes sense.
+So instead we write:
+`func process(ref x:int)`
+`func process(ref x:Point)` now these make sense that x will be a pointer not a copy of the original data.
+original confusion was because `var x:int` does not denote x is a pointer. It will be bin-type.
+```
+func process(ref x:int) - a pointer is received
+func process(ref x:Point) - a pointer to Point is received
+func process(val x:int) - a copy is received
+func process(val x:Point) - a pointer is received but compiler makes sure it's not changed
+var x: int = y - x will have a copy of y's value
+val x: int = y - x will have a copy of y's value
+var x: Point = y - x will point to the same location y is pointing to
+val x: Point = y - x will point to the same location y is pointing to
+```
+Can I define a ref local variable? There are three concepts involved: I want a reference, I want a constant, I want a local variable which is not constant and is not reference.
+C++ has reference type and const type and normal type (stack allocated).
+there are two things: shall this be allocated on stack or heap?
+shall this be modifiable or no?
+stack-mod: `int x`
+stack-const: `const int x`
+heap-mod: `int* x`
+heap-const: `const int* x`
+So we have `*` and `const`. But here because of notation, we need also `var`.
+Here we don't want to worry about allocation of the data. Language rules specify that.
+In local variables, ref does not make much sense. if is is bin-type it shouldn't be ref. If it is ref-type it must be ref.
+But in function arguments, it matters. function can expect a reference to a bintype or reftype.
+Or it can expect const to bintype or reftype.
+So in local variables I can have var/val.
+In function arguments I can have ref/val. I can have `var/val` but this may make things more clear.
+I think adding a third variable will make things more confusing.
+`var` in function signature is like `&` reference modifier in C++. It makes sure you get a modifiable reference to the data, no matter that type it is (bin or ref).
+```
+func process1(var x:int) ; a pointer is received
+    var x:int = 12 -- process1(x), a pointer to x it sent 
+func process2(var x:Point) ; a pointer to Point is received
+    var x: Point = {a=11} -- process2(x)
+func process3(val x:int) ; a copy is received
+    val x:int = 19 -- process3(x)
+func process4(val x:Point) ; a pointer is received but compiler makes sure it's not changed
+    val x: Point={a=11} -- process4(x)
+var x: int = y ; x will have a copy of y's value
+val x: int = y ; x will have a copy of y's value
+var x: Point = y ; x will point to the same location y is pointing to
+val x: Point = y ; x will point to the same location y is pointing to
+func process() -> var int ;will return a reference to an integer
+var x: int = process() is x a bin-type or a ref-type? this is source of confusion.
+```
+reference means heap allocation. when a function returns `var int` it is supposed to return a reference to an int. 
+but there is a conflict here.
+What if I want to send int value which is not const and not ref, to a function?
+In C++, you can write `process(int& x)` and it will get a reference to x.
+If a C++ function returns `int&` it cannot simply return a local `int`.
+if a function returns `ref int`, we cannot simply assign it to an int. Because we need to keep track of it's memory consumption.
+- If you have a function which want a var int but not a pointer, declare input as var int and make a copy in local variable.
+Maybe we need to have `int` as a bin-type integer and `ref int` as a ref-type integer.
+But then ref won't be applicable to tuple. unless we say developer should decide about allocation!
+Everything is allocated on stack with bin-type except if it is ref type. This may make things less confusing and more clear, simple and explicit. OTOH developer needs to make lots of decisions.
+And all this will be combined with const.
+`ref x: int` - mutable reference to int
+`val x: int` - const of int
+`ref x: Point` - mutable reference to point
+`val x: Point` - const Point
+`const ref x: int` - immutable reference to int
+`const val x: int` - ...
+`const ref x: Point`
+`const val x: Point`
+This might be explicit but is super confusing.
+There should be few rules and keywords. Maybe a function should not be able to return a var.
+If function returns bin-type, result will be copied. If it is returning reftype, result will be ref-assigned.
+But what about shared mutable state? What if function wants to make sure outside world cannot change it's output.
+For example if it is returning a Point and expects no one change it.
+Or: a function can return `var` for reftype. or `val` for bin-type and ref-type.
+a function can accept `var` for reftype, `val` for bin-type and ref-type.
+Or in other words: A function cannot accept or return var bin-type.
+`func process(var x: int)` invalid!
+`func process() -> var int` invalid!
+Another option: We can have `int` which is an integer or a reference to an integer behind the scene. We call this second type a refint. `func process() -> var int` will return refint. But this will hit performance. Each time we want to do math we need to check if this is real int or refint.
+First, JVM can stack-allocate some ordinary objects allocated by new by
+means of escape analysis.
+A loop of 1 billion times which does `{ x++, y*=2, if y>1.. y=1}` took 2.85 vs 3.25 for int vs `int*` in C which is 14% slower.
+So what about this: Everything is ref type. if it is defined with `var` you can modify it. otherwise you cannot.
+for assignment, bin-types will be value copied upon assignment. Other types will be ref assigned.
+If we want to be able to return `var int` or accept `var int` we have to define `int` as referenceable.
+Compiler can enhance and stack-allocate some data if they are only used inside the function.
+OTOH we can say int is always stack-allocated but when sent to a function, a pointer it sent. but it will be confusing.
+So let's say, int, float, char, union, binary, array, tuple is a reference to an allocated space, possibly in heap.
+`func process(var x:int)` this will receive the reference
+`func process() -> var int` this will return a reference to a local var (possibly)
+`var x:int = y` assign makes a copy of y, for x. 
+Assignment semantic: bin-types are assigned by copying their value.
+When you pass var or val to a function, the reference it being sent and compiler makes sure vals are not changed.
+when a function returns var/val it returns a reference to a locally allocated data.
+
+Y - Find a better name for val-type. It mixes with `val`.
+bin-type: binary type which is value only and small in size. Like int, float, or user can define his own bin-type
+ref-type: reference type like a tuple or a union which has tuples.
+
+Y - What about types with duplicate name?
+For functions it's ok as long as they have different types. We just call `process(x,y)` and the appropriate impl will be chosen. But what about type? Suppose that we have two Stack types in two modules that I have imported.
+`import /core/mod1`
+`import /code/mod2`
+`var t: Stack` what if Stack is defined in both locations?
+one solution: type keyword
+`type Stack1 := /core/mode1/Stack`
+`type Stack2 := /code/mode2/Stack`
+using Fully qualified name to alias a type. but this will be a totally different type because it's not an alias only.
+`import /code/mode1 {Stack => Stack_mod1}`
+`import /code/mode2 {Stack => Stack_mod2}`
+`var t: Stack_mod1`
+Can we use this notation to map functions too? we don't need that.
+Another option: `alias` keyword.
+Another option: use `type` with similar notation to define named alias.
+`type Stack_mod1 := /code/mode1/Stack`
+or like Go 1.9 use `=`:
+`type MyInt = int` this is an alias and exactly the same as int.
+
+Y - Now that array is just a normal tuple, shall we enable user to override `.[]` operator for it's types?
 C++, D, Scala have this.
 C# has it.
 Java does't have this.
@@ -4358,22 +4573,26 @@ What about assignment? `myArray(10) = 20` ?
 `arr(10)` if as lvalue, is mapped to `opCall(arr, 10, rvalue)`
 `func opCall[T](x: array[T], index: int, rValue: T)`
 
+Y - what about array slice?
+`var p: array[int] = x.[:]`
+`var u: array[int] = x.[:1]`
+`var z: array[int] = x.[4:]`
+`type ptr := int`
+slice is a meta-array. `type slice[T] = (length: int, start: ptr)`
+start is an int but in fact it contains a pointer to a place in array buffer.
+Everything is provided by core functions (read `*ptr` ...)
+now about the notation:
+`func opCall[T](s: array[T], start: int, end: int) -> slice[T]`
+means: `myArray(10,20)` will return a slice while `myArray(10)` will return a single element.
 
-? - What about types with duplicate name?
-For functions it's ok as long as they have different types. We just call `process(x,y)` and the appropriate impl will be chosen. But what about type? Suppose that we have two Stack types in two modules that I have imported.
-`import /core/mod1`
-`import /code/mod2`
-`var t: Stack` what if Stack is defined in both locations?
-one solution: type keyword
-`type Stack1 := /core/mode1/Stack`
-`type Stack2 := /code/mode2/Stack`
-using Fully qualified name to alias a type. but this will be a totally different type because it's not an alias only.
-`import /code/mode1 {Stack => Stack_mod1}`
-`import /code/mode2 {Stack => Stack_mod2}`
-`var t: Stack_mod1`
-Can we use this notation to map functions too? we don't need that.
-Another option: `alias` keyword.
-Another option: use `type` with similar notation to define named alias.
-`type Stack_mod1 := /code/mode1/Stack`
+? - Assignment semantic is a bit not general. Can we simplify/unify it?
+- Assignment makes a copy for bin-types (those who have binary as their underlying type). This includes primitives, label-only unions and unions with label and primitives and maybe other custom types. For other cases, it will ref-assign: meaning `a=b` will make a point to the same memory call as b is. If left and right are val/var, user must use `@` to clone:
+`myVar=@(myVal)`
 
-? - a valtype is duplicated when it is assigned or sent to a function.
+? - The fact that we need to declare bound template arguments before unbound, makes array definition weird. Can we fix this?
+`type array[N: int, T]`
+`var t: array[10, int]` -> `var t: array[int, 10]`
+
+? - For slice we need a pointer. We do this:
+`type ptr := int`
+Is this idiomatic/elegant?
