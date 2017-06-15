@@ -4585,13 +4585,31 @@ now about the notation:
 `func opCall[T](s: array[T], start: int, end: int) -> slice[T]`
 means: `myArray(10,20)` will return a slice while `myArray(10)` will return a single element.
 
-? - Assignment semantic is a bit not general. Can we simplify/unify it?
-- Assignment makes a copy for bin-types (those who have binary as their underlying type). This includes primitives, label-only unions and unions with label and primitives and maybe other custom types. For other cases, it will ref-assign: meaning `a=b` will make a point to the same memory call as b is. If left and right are val/var, user must use `@` to clone:
-`myVar=@(myVal)`
-
-? - The fact that we need to declare bound template arguments before unbound, makes array definition weird. Can we fix this?
+Y - The fact that we need to declare bound template arguments before unbound, makes array definition weird. Can we fix this?
 `type array[N: int, T]`
 `var t: array[10, int]` -> `var t: array[int, 10]`
+`type array[T, N: int]` what about protocols with multiple arguments?
+If I want to use my own order, it may completely conflict with protocols.
+So best choice is to repeat definition another time to specify protocols:
+`func process[S,T,X: prot1, N,M: prot2, T,N: prot3, P, Q]`
+`func process[S, X, N, M, Q, P, T where S,T,X: prot1, N,M: prot2, T,N: prot3, P, Q]`
+If template has only one argument, you can write: `func process[X: protocol](...)`
+`func process[S, X, N, M, Q, P, T where S,T,X: prot1, N,M: prot2, T,N: prot3, P, Q]`
+
+N - Assignment semantic is a bit not general. Can we simplify/unify it?
+- Assignment makes a copy for bin-types (those who have binary as their underlying type). This includes primitives, label-only unions and unions with label and primitives and maybe other custom types. For other cases, it will ref-assign: meaning `a=b` will make a point to the same memory call as b is. If left and right are val/var, user must use `@` to clone:
+`myVar=@(myVal)`
+solution 1: When declaring the type, we specify assignment semantic. But this can be done using the convention.
+
+Y - Do we still need clone?
+`val x: int = 12`
+`val y: int = x` copy-value is ok but for val compiler may choose to ref-copy
+`var z: int = @(x)` compiler can take care whether we need to clone or no. we can also decide to make it explicit.
+`val t: int = @(z)` here also compiler can handle, if we need to clone. clone is also ok.
+`var x: Point = ...`
+`var y: Point = x` var to var, ref-copy (same for val to val)
+`val z: Point = @(x)` cannot do ref-copy. clone is mandatory
+`var g: Point = @(z)` cannot ref-copy. must clone.
 
 ? - For slice we need a pointer. We do this:
 `type ptr := int`
