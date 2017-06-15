@@ -4304,6 +4304,61 @@ Y - with binary user can implement a tiny int or 4 byte int. Let's add a core fu
 
 Y - Based on these definitions, slice is not the same as array type.
 
+Y - Can we simplify generics for var/val?
+like D's inout? maybe `var/val`.
+```
+func get[V: var|val, T](V arr: array[T], index: int) -> V T {
+    return getOffset[T, V](arr.data, index*sizeof[T]())
+}
+```
+Maybe we can use `|` for other arguments too (to keep gen).
+`:` is used for protocol, literal and var/val.
+`V: protocol1|protocol2` does not make sense.
+`func add[T: int|float]...`
+
+N - How does using generics for var/val affect current specification?
+protocols, phantom types, specialization, ...
+lambda. generics lambda.
+
+Y - Regarding genrics, shall we use protocol notation to denote if an argument is a literal?
+`type array[N:int, T] := ...`
+So options can be any litearl?
+`type MyType[N: Point]= array[int, N.x]` allocate an int array of size of x of given point
+so generic arguments can be either a type name or a literal. 
+
+? - Now that array is just a normal tuple, shall we enable user to override `.[]` operator for it's types?
+C++, D, Scala have this.
+C# has it.
+Java does't have this.
+Haskell has this. Smalltalk has this.
+Python has this and Swift.
+Pro: more generality, how can we explain `+` for string or `.[]`? Opertors to check if something exists in an array, 
+Con: precedence, which notations can be used for unary, which for binary
+Opertors that we have for numbers: `+-*/^% %%`
+other operators: `.[]`,`!`, `++`, `--`, `~`, `>>`, `<<`,
+comparison operators: `==`, `>`, `<`
+I see not much gain here. This can be clearly implemented using functions.
+About lack of generality. we have `+` for int. The same way we can have `.[]` for array or hash.
+But considering the fact that array/hash are now normal tuples with their fields, providing `.[]` by compiler is very inappropriate.
+BUT the question is: what is the limit? Either we should allow "everything" to be custoimizeable, or nothing.
+what about a mapping? `map .[] on MyPoint to mypointGetData`.
+Question is: How can we efficiently and elegantly limit the available opertors for overload?
+Other option: convert all these operators to methods.
+we have `.[]` so `myArray.[5]`. Can't this be mapped to a function call?
+or maybe we can have: `myArray(5)` but it will be confusing with functions.
+But then again, it can be a way to model operator and providing only specific notations.
+every type can have a function for when it is used as a function.
+`func opCall(x: array[int], y:int)` is called when we have `myArrayInt(50)`.
+So we don't need to explain or justify why we don't support overloading `+` or `<<` or `==`.
+Because there is only one way to call this and we are not talking about operators.
+so we write `opCall` for array and hash. Any other type can use it for their purpose.
+Advantage: Elegant way to make array and hash indxing a normal part of the language. get rid of `.[]` notation. let `[]` be solely for generics.
+What about assignment? `myArray(10) = 20` ?
+`arr(10)` if as rvalue, is mapped to `opCall(arr, 10)`
+`arr(10)` if as lvalue, is mapped to `opCall(arr, 10, rvalue)`
+`func opCall[T](x: array[T], index: int, rValue: T)`
+
+
 ? - What about types with duplicate name?
 For functions it's ok as long as they have different types. We just call `process(x,y)` and the appropriate impl will be chosen. But what about type? Suppose that we have two Stack types in two modules that I have imported.
 `import /core/mod1`
@@ -4321,17 +4376,4 @@ Another option: `alias` keyword.
 Another option: use `type` with similar notation to define named alias.
 `type Stack_mod1 := /code/mode1/Stack`
 
-? - How does using generics for var/val affect current specification?
-protocols, phantom types, specialization, ...
-lambda. generics lambda.
-
-? - Can we simplify generics for var/val?
-like D's inout? maybe `var/val`.
-
-? - Now that array is just a normal tuple, shall we enable user to override `.[]` operator for it's types?
-
-? - Regarding genrics, shall we use protocol notation to denote if an argument is a literal?
-`type array[N:int, T] := ...`
-So options can be any litearl?
-`type MyType[N: Point]= array[int, N.x]` allocate an int array of size of x of given point
-so generic arguments can be either a type name or a literal. 
+? - a valtype is duplicated when it is assigned or sent to a function.
