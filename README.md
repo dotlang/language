@@ -104,6 +104,24 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 
 # Type System
 ## Rules
+val is like a memory cell with a lock on it.
+var is like a memory cell without lock.
+The most primitive type is `binary` which denotes a consecutive allocated memory buffer.
+`type array[T] = (size:int, data: binary)` binary means a buffer with size specified at runtime.
+`type array[T, N] = (size:int, data: binary[N])` `binary[N]` means N bytes allocated.
+```
+func get[T,V](V arr: array[T], index: int) -> V T {
+    return getOffset[T, V](arr.data, index*sizeof[T]())
+}
+```
+If we use `get` to read data as `var` from an array which contains value types, we won't have direct access to inside the array. We will receive a copy.
+`type int := binary[8]` allocate 8 bytes as a binary buffer for int
+`type binary := native`
+`type binary[N] := native`
+We have two categories of types: value-type (or valtype) and reference-type (or reftype). binary is the only valtype. Any named type with binary underlying type is valtype. Every other type (tuple or union with tuples) is reftype.
+Union which has only labels (called enum) or has labels and other valtypes, is a valtype, because compiler uses int or a binary buffer to implement it. If it has tuples, it is reftype.
+`function` type is a valtype. Underlying, it is a pointer to a memory location. It is implemented as `int`.
+
 There are two categories of types: Named and unnamed. An unnamed type is defined using existing language constructs.
 For example these are some unnmaed types: `int, array[string], {x:int, y:float}, int|string`.
 A named type is defined using `type` statement: `type MyInt := int`. 
@@ -160,6 +178,8 @@ type string := array[char]
 ```
 
 ## Array
+- Type of slice is different from array.
+
 - If an array is var, all it's elements are var. Same for hash and tuple. This means const is deep and transitive.
 Arrays are a special built-in type. They are defined using generics. Compiler provides some syntax sugars to work with them.
 ```
@@ -618,6 +638,7 @@ func process(c: Circle) -> int {
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Generics
+- You can pass literals of primitive types (int, float, char) to a generic. Like `type int := binary[8]`
 - You can use generics to specify cases where function is agnostic to var/val. For example when adding two complex numbers:
 `func add[V](V a: complex, V b: complex)->V complex` You can use `V x:int` to declare a variable same as input but you cannot modify it's value because it can be val.
 
@@ -1041,6 +1062,7 @@ A set of core packages will be included in the language which provide basic and 
 - Serialization and Deserialization
 - Dump an object
 - RegEx operators and functions
+- Cast binary to unsigned number
 
 Generally, anything that cannot be written in atomlang will be placed in this package.
 
