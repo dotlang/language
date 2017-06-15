@@ -186,7 +186,10 @@ type string := array[char]
 `func opCall[T](x: array[T], index: int) -> T`
 
 `type ptr := int`
+- You cannot use a val ptr to change memory: `func setValue[T](var p: ptr, value: T)`
+- for ptr type, val means two things: it cannot be changed and it cannot be used to change memory.
 slice is a meta-array. `type slice[T] = (length: int, start: ptr)`
+- Upon initial value setting, operation is handled by the compiler, without calling opCall. Because opCall cannot set any value for a val array.
 
 `func opCall[T](s: array[T], start: int, end: int) -> slice[T]`
 means: `myArray(10,20)` will return a slice while `myArray(10)` will return a single element.
@@ -244,6 +247,8 @@ mySlice = createValues()
 ```
 
 ## Map
+- Upon initial value setting, operation is handled by the compiler, without calling opCall. Because opCall cannot set any value for a val map.
+
 `myMap(10)` is translated to this function call: `opCall(myMap, 10)`
 `myMap(10) = 19` is translated to: `opCall(myMap, 10, 19)`
 `func opCall[K, V](x: map[K, V], index: K, rValue: V)`
@@ -500,7 +505,8 @@ How can I pass a Dot to process function? You need to write a proxy function:
 - When you pass var or val to a function, the reference it being sent and compiler makes sure vals are not changed.
 - when a function returns var/val it returns a reference to a locally allocated data.
 - A function can state it's output var/val. A caller must store it's output in exactly the same type and function must return exactly the same type.
-by default everything is val. so if it's not mentioned, output is val.
+by default output is val. so if it's not mentioned, output is val.
+- If function input does not have val/var modified, it can accept either of them but will only be able to read that argument. If it wants to modify, function signature must be changed to use `var`.
 `func add(x:int, y:int)->int`
 `func add(val x:int, val y:int)->val int`
 These two definitions are different. var/val are part of function.
