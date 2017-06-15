@@ -197,7 +197,7 @@ This function is overriden to support optional end.
 
 - If an array is var, all it's elements are var. Same for hash and tuple. This means const is deep and transitive.
 Arrays are a special built-in type. They are defined using generics. Compiler provides some syntax sugars to work with them.
-`[0, 1, ..., 3]` means `[0, 1, 2, 3]`
+`[0, ..., 3]` means `[0, 1, 2, 3]`
 `[2, 4, ... , 100]` step=2, can be negative
 `[0, 0, ... , 0x100]` repeat 0 for 100 times.
 
