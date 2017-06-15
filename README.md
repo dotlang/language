@@ -15,7 +15,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for range generation, introduced `val` and it's effect in function and variable declaration
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples, change chaining operator, changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for range generation, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, 
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -104,11 +104,12 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 
 # Type System
 ## Rules
+Every type is allocated and a reference is put inside the variable. Compiler may optimize this for cases when a local variable like an int, is not sent outside.
 val is like a memory cell with a lock on it.
 var is like a memory cell without lock.
-The most primitive type is `binary` which denotes a consecutive allocated memory buffer.
+The most primitive type is `binary` which denotes an allocated memory buffer.
 `type array[T] = (size:int, data: binary)` binary means a buffer with size specified at runtime.
-`type array[T, N] = (size:int, data: binary[N])` `binary[N]` means N bytes allocated.
+`type array[N: int, T] = (size:int, data: binary[N])` `binary[N]` means N bytes allocated.
 ```
 func get[V: var|val, T](V arr: array[T], index: int) -> V T {
     return getOffset[V,T](arr.data, index*sizeof[T]())
@@ -179,6 +180,17 @@ type string := array[char]
 
 ## Array
 - Type of slice is different from array.
+`myArray(10)` is translated to this function call: `opCall(myArray, 10)`
+`myArray(10) = 19` is translated to: `opCall(myArray, 10, 19)`
+`func opCall[T](x: array[T], index: int, rValue: T)`
+`func opCall[T](x: array[T], index: int) -> T`
+
+`type ptr := int`
+slice is a meta-array. `type slice[T] = (length: int, start: ptr)`
+
+`func opCall[T](s: array[T], start: int, end: int) -> slice[T]`
+means: `myArray(10,20)` will return a slice while `myArray(10)` will return a single element.
+This function is overriden to support optional end.
 
 - If an array is var, all it's elements are var. Same for hash and tuple. This means const is deep and transitive.
 Arrays are a special built-in type. They are defined using generics. Compiler provides some syntax sugars to work with them.
@@ -187,10 +199,10 @@ Arrays are a special built-in type. They are defined using generics. Compiler pr
 var numbers: array[int] = {1, 2, 3, 4}
 
 ;t will be 1
-var t:int = numbers.[0]   
+var t:int = numbers(0)   
 
 ;this will change '2' to '3'
-numbers.[1]++             
+numbers(1)++             
 
 ;syntax sugar to create a range of values (inclusive)
 var months: array[int] = {1..12} 
@@ -211,10 +223,10 @@ var x: TwoDimArray
 var x: array[int] = {11, 12, 13, 14, 15, 16, 17}
 
 ;defining a slice containintg '12' and '13'
-var y: array[int] = x.[1:2]
+var y: array[int] = x({1:2})
 
 ;this will make '12' change to '22'
-y.[0]+=10
+y(0)+=10
 
 ;start and end are optional and if ommitted will default to beginning/end of the array
 ;here z will contain '15', '16' and '17'
@@ -232,18 +244,23 @@ mySlice = createValues()
 ```
 
 ## Map
+`myMap(10)` is translated to this function call: `opCall(myMap, 10)`
+`myMap(10) = 19` is translated to: `opCall(myMap, 10, 19)`
+`func opCall[K, V](x: map[K, V], index: K, rValue: V)`
+`func opCall[K, V](x: map[K, V], index: K) -> V`
+
 Maps, hashtables or associative arrays are a data structure to keep a set of keys and their corresponding values.
 ```
 ;defining and initializing a map
 var y: map[string, int] = {"a": 1, "b": 2}
 
 ;read/write from/to a map
-y.["a"] = 100
-var t: int = y.["b"]
+y("a") = 100
+var t: int = y("b")
 ```
 - If you query a map for something which does not exist, it will return `Nothing`. Below shows two ways to read data from a map:
-`if ( var t = my_map.["key1"], t @ var x:int )`
-`if ( var t = my_map.["key1"], t !@ Nothing )`
+`if ( var t = my_map("key1"), t @ var x:int )`
+`if ( var t = my_map("key1"), t !@ Nothing )`
 
 ## Tuple
 A tuple is a collection of variables combined together under a single type. This is similar to an array but with different data types for fields. 
@@ -386,6 +403,13 @@ Note that there is no support for implicit casting functions. If you need a cust
 - `@Type()` without input creates a default instance of the given type.
 - When doing cast to a generic type, you can ignore type if it can be deduced. 
 
+## Alias
+You can use `type MyInt = int` to define a type alias.
+Type alias is exactly the same as what comes on the right side. There is absolutely no difference.
+This can be used to resolve conflict types when importing modules.
+`type Stack1 = /core/mode1/Stack`
+`type Stack2 = /code/mode2/Stack`
+
 ## Variables
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
 Reasons for including type at the end:
@@ -473,8 +497,15 @@ How can I pass a Dot to process function? You need to write a proxy function:
 
 # Functions
 - A function can determine whether is expects var or val inputs. Caller must send exactly the same type.
+- When you pass var or val to a function, the reference it being sent and compiler makes sure vals are not changed.
+- when a function returns var/val it returns a reference to a locally allocated data.
 - A function can state it's output var/val. A caller must store it's output in exactly the same type and function must return exactly the same type.
 by default everything is val. so if it's not mentioned, output is val.
+`func add(x:int, y:int)->int`
+`func add(val x:int, val y:int)->val int`
+These two definitions are different. var/val are part of function.
+Compiler/runtime will handle whether to send a ref or a copy, for val arguments.
+
 
 function inputs must be named.
 - Function output can be any type. Even a tuple or a tuple with unnamed fields.
@@ -828,9 +859,9 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `equals` functions is used for equality check.
 - You can have multiple assignments at once: `x,y=1,2`
 - `+` can be used to merge two arrays. This can be used for string concatenation, because string is an array of chars.
-- Assignment makes a copy for var primitives (because it is expected and is cheap) and label-only unions. For other cases, it will ref-assign: meaning `a=b` will make a point to the same memory call as b is. If left and right are val/var, user must use `@` to clone:
+- Assignment makes a copy for bin-types (those who have binary as their underlying type). This includes primitives, label-only unions and unions with label and primitives and maybe other custom types. For other cases, it will ref-assign: meaning `a=b` will make a point to the same memory call as b is. If left and right are val/var, user must use `@` to clone:
 `myVar=@(myVal)`
-
+- Each type can implement `opCall` function which will be called when the type is used like a function. This function can be implemented in two ways: rvalue (to get data) and lvalue (to set data). This is used for handling get/set operations for array and map.
 
 
 ### Special Syntax
@@ -838,7 +869,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `|` sum types
 - `:` tuple declaration, array slice, protocol
 - `:=` custom type definition
-- `.[]` access array/map elements
+- `=` type alias
 - `..` range generator
 - `<-` loop
 - `->` function declaration
