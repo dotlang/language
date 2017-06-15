@@ -4176,10 +4176,12 @@ Y - Can we write `var x,y = process()` where process returns a tuple? If so, can
 No. Using `_` is a bad practice.
 
 N - we can do casting with match:
-```g match {
+```
+g match {
   case g2: Graphics2D => g2
   case _ => throw new ClassCastException
-}```
+}
+```
 
 N - How can a function re-assign to a var input? if it is defined as var, it can re-assign.
 
