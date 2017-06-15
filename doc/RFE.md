@@ -4661,3 +4661,8 @@ Y - Shall we define range notation in array literal?
 Y - `type string := array[char]`
 If some function is defined for array of char, and we call them with a string, they should be invoked.
 If no function is defined for a named type but for it's underlying type, that one will be called.
+
+N - Can we model sum type using a tuple?
+`type IntOrFloat := int|float`
+`type IntOrFloat := (x: int + f: float)`
+No. not elegant.
