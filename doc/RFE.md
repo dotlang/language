@@ -4652,7 +4652,7 @@ We can say `{}` is for code block and tuple (definition and literal).
 Also map literal will not be confused with tuple definition.
 
 Y - Shall we define range notation in array literal?
-`[0, 1, ..., 3]` means `[0, 1, 2, 3]`
+`[0, ..., 3]` means `[0, 1, 2, 3]`
 `[2, 4, ... , 100]` step=2, can be negative
 `[0, 0, ... , 0x100]` repeat 0 for 100 times.
 
