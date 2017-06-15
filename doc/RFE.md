@@ -4623,3 +4623,39 @@ func opCall[T](arr: array[T], index: int) -> T {
     return coreRead[T](address)
 }
 ```
+
+Y - If nothing is specified for function input, it can be either var or val. In this case, function can only read the value. Because if it wants to mutate the value, it must be defined as var.
+
+N - How do we model a variable size binary?
+`type binary := native`
+`type binary[N] := native`
+we use non-generic binary and use core allocate methods.
+
+Y - A pointer might be used to mutate an immutable variable!
+For example an array, we can get a pointer to it.
+solution1: Core's setValue will only accept `var` pointers. `func setValue[T](var p: ptr, value: T)`
+`func getPtr(var x: binary)->var ptr`
+`func getPtr(val x: binary)->val ptr`
+for ptr type, val means two things: it cannot be changed and it cannot be used to change memory.
+even if array is val, the initial assignment needs to write. this is handled by the compiler without calling opCall.
+`val x: array[int] = {1, 2, 3}`
+if we make 3 calls to opCall, it cannot do anything because array it val.
+
+Y - `{}` is used for code block, tuple definition, tuple/array/hash literal. 
+Can we make use of `[]` here? Let's let `[]` be only for generics.
+We can use `[]` inside a function. It can be confusing.
+`var t: array[int] = [1, 2, 3]`
+`var g: map[int, int] = [1:1, 2:2, 3:3]`
+Using `{}` for 5 purposes is also confusing.
+We can say `{}` is for code block and tuple (definition and literal).
+`[]` is for array and map literal.
+Also map literal will not be confused with tuple definition.
+
+Y - Shall we define range notation in array literal?
+`[0, 1, ..., 3]` means `[0, 1, 2, 3]`
+`[2, 4, ... , 100]` step=2, can be negative
+`[0, 0, ... , 0x100]` repeat 0 for 100 times.
+
+Y - `type string := array[char]`
+If some function is defined for array of char, and we call them with a string, they should be invoked.
+If no function is defined for a named type but for it's underlying type, that one will be called.
