@@ -4678,6 +4678,42 @@ Instead of always worrying about what the best type for a variable is, I just lo
 This reasoning is like the way people defend dynamic typing.
 Just like the way a function indicates it accepts int, it can indicate it won't change the value.
 
-? - Other good features to write maintainable code:
+N - Other good features to write maintainable code:
 https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Rp-compile-time
-- static assert
+- static assert: What do we have at compile time? types. functions.
+make sure a variable is/is not of a specific type. `assert x @ int`, `assert x !@ float`
+make sure there is a function with specific signature. but this is supposed to be done by protocol.
+Also assert can be enforced in function signature.
+
+Y - We will need to have lots of val/var everywhere. Is it possible to make it more expressive?
+yes. var can sit where a val is expected.
+
+N - What are areas for simplification?
+- binary
+- opCall
+- var/val
+- Everything is ref
+- Assignment semantics
+
+Y - `val` can have two semantics: 
+1) I won't change it's value even if it's possible
+2) it should be immutable
+if we pick (1) we can send var as a val. C++ has this.
+But then how can we prevent shared mutable state? 
+Maybe through core, encourage sending only vals.
+if we pick 1:
+- you can send var for function that expects val.
+- you can assign var output to a val.
+- function argument without modifier means it can accept val but you can send var too.
+- if function really wants to make sure it's val won't ever change, it can make a copy.
+as a result function inputs are all val except if function really needs to change them.
+by default, function input is immutable. `val`
+`func process(var x: int, var y:int, val z: int)`
+`func process(var x: int, var y:int, z: int)`
+`func strchr(s: string, index: int) -> string`
+
+N - Or maybe we can simplify this a bit. use `const` when function does not want to change.
+or other way around: use `ref` when you want to change argument. so no var/var in function signature. everything is immutable except arguments marked with ref. `func process(ref x: int, y:int) -> ref int`
+but it is a bit confusing having 3 different keywords.
+let's do this: var/val is required in function signature. for val input, you can send a var too.
+for var input, you must send var. for var output, you can assign it to val, if you don't plan to change it.
