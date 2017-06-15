@@ -4611,6 +4611,15 @@ Y - Do we still need clone?
 `val z: Point = @(x)` cannot do ref-copy. clone is mandatory
 `var g: Point = @(z)` cannot ref-copy. must clone.
 
-? - For slice we need a pointer. We do this:
+N - For slice we need a pointer. We do this:
 `type ptr := int`
 Is this idiomatic/elegant?
+core has functions like this:
+`func read[T](x: ptr)->T` which compiler will inline for performance.
+also in array's get:
+```
+func opCall[T](arr: array[T], index: int) -> T {
+    var address: int = arr.start + index*sizeof(T)
+    return coreRead[T](address)
+}
+```
