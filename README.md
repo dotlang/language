@@ -674,7 +674,7 @@ func process(c: Circle) -> int {
 `func add[V: var|val](V a: complex, V b: complex)->V complex` You can use `V x:int` to declare a variable same as input but you cannot modify it's value because it can be val.
 - You can use `|` to denote possible identifiers. 
 For example: `func add[T: int|float]...`
-`type array[N:int, T] := ...` You can accept literals of primitive types in generics.
+`type array[T, N where N: int] := ...` You can accept literals of primitive types in generics.
 
 - When defining types, you can append `[A, B, C, ...]` to the type name to indicate it is a generic type. You can then use these symbols inside type definition.
 - When defining functions, if input or output are of generic type, you must append `[A,B,C,...]` to the function name to match required generic types for input/output. 
@@ -728,9 +728,10 @@ If someone calls a generic function with some user-defined type, they really don
 When writing a generic function, you may have expectations regarding behavior of the type T. These expectations can be defined using a protocol. When you call this function with a concrete type, compiler makes sure the protocol is satisfied.
 General definition of function with protocol:
 ;S,T,X must comply with prot1, N,M with prot2, P,Q are free
-`func process[S,T,X: prot1, N,M: prot2, P, Q]`
+`func process[S, T, X, N, M, P, Q where S,T,X: prot1, N,M: prot2]`
 Note that one type can be part of more than one protocol:
-`func process[S,T,X: prot1, N,M: prot2, T,N: prot3, P, Q]`
+`func process[S, X, N, M, Q, P, T where S,T,X: prot1, N,M: prot2, T,N: prot3, P, Q]`
+If template has only one argument, you can write: `func process[X: protocol1](...)`
 
 When defining a protocol, argument names is optional.
 ```
@@ -747,7 +748,7 @@ func equals(x: Point, y: Point)->bool { ... }
 func notEquals(x: Point, y: Point)->bool { ... }
 
 ;just like the way we define type for variables, we can define protocol for generic types
-func isInArray[T: Eq] (x:T, y:T[], z: Eq[T], g: Writer) -> bool {
+func isInArray[T: Eq] (x:T, y:T[]) -> bool {
     if ( z.equals(x, y[0])...
 }
 ;call:
@@ -861,6 +862,14 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `+` can be used to merge two arrays. This can be used for string concatenation, because string is an array of chars.
 - Assignment makes a copy for bin-types (those who have binary as their underlying type). This includes primitives, label-only unions and unions with label and primitives and maybe other custom types. For other cases, it will ref-assign: meaning `a=b` will make a point to the same memory call as b is. If left and right are val/var, user must use `@` to clone:
 `myVar=@(myVal)`
+- When assigning between var and val, you must clone rvalue.
+`var x: Point = ...`
+`val z: Point = @(x)`
+`var g: Point = @(z)`
+bin-type example:
+`val x: int = 12`
+`var z: int = @(x)`
+`val t: int = @(z)`
 - Each type can implement `opCall` function which will be called when the type is used like a function. This function can be implemented in two ways: rvalue (to get data) and lvalue (to set data). This is used for handling get/set operations for array and map.
 
 
@@ -878,11 +887,11 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `()` function call
 - `.` access tuple fields
 
-Keywords: `import`, `func`, `var`, `val`, `type`, `defer`, `native`, `loop`, `break`, `continue`, `protocol`
+Keywords: `import`, `func`, `var`, `val`, `type`, `defer`, `native`, `loop`, `break`, `continue`, `protocol`, `where`
 semi-Keywords: `if`, `else` (used in syntax sugar)
 Operators: 
 Primitive data types: `int`, `float`, `char` (int is signed and 64 bit, char is unsigned)
-Helper data types: `bool`, `string`, `Array`, `Map`, `Nothing`
+Helper data types: `bool`, `string`, `array`, `map`, `nothing`
 - `bool` is a simple sum type
 - `string` is a named type based on char array.
 
