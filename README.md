@@ -111,7 +111,7 @@ The most primitive type is `binary` which denotes an allocated memory buffer.
 `type array[T] = (size:int, data: binary)` binary means a buffer with size specified at runtime.
 `type array[N: int, T] = (size:int, data: binary[N])` `binary[N]` means N bytes allocated.
 ```
-func get[V: var|val, T](V arr: array[T], index: int) -> V T {
+func get[V,T where V: var|val](V arr: array[T], index: int) -> V T {
     return getOffset[V,T](arr.data, index*sizeof[T]())
 }
 ```
@@ -197,9 +197,13 @@ This function is overriden to support optional end.
 
 - If an array is var, all it's elements are var. Same for hash and tuple. This means const is deep and transitive.
 Arrays are a special built-in type. They are defined using generics. Compiler provides some syntax sugars to work with them.
+`[0, 1, ..., 3]` means `[0, 1, 2, 3]`
+`[2, 4, ... , 100]` step=2, can be negative
+`[0, 0, ... , 0x100]` repeat 0 for 100 times.
+
 ```
 ;define an array of integer number and initialize
-var numbers: array[int] = {1, 2, 3, 4}
+var numbers: array[int] = [1, 2, 3, 4]
 
 ;t will be 1
 var t:int = numbers(0)   
@@ -208,7 +212,7 @@ var t:int = numbers(0)
 numbers(1)++             
 
 ;syntax sugar to create a range of values (inclusive)
-var months: array[int] = {1..12} 
+var months: array[int] = [1..12] 
 
 ;you can use core function to allocate array
 var allocated: array[int] = allocate[int](100)
@@ -223,7 +227,7 @@ var x: TwoDimArray
 - **Slice**: You can use slicing notation to create a virtual array which is pointing to a location inside another array. You use `array_var[start:end]` notation to create a slice.
 ```
 ;a normal array
-var x: array[int] = {11, 12, 13, 14, 15, 16, 17}
+var x: array[int] = [11, 12, 13, 14, 15, 16, 17]
 
 ;defining a slice containintg '12' and '13'
 var y: array[int] = x({1:2})
@@ -257,7 +261,7 @@ mySlice = createValues()
 Maps, hashtables or associative arrays are a data structure to keep a set of keys and their corresponding values.
 ```
 ;defining and initializing a map
-var y: map[string, int] = {"a": 1, "b": 2}
+var y: map[string, int] = ["a": 1, "b": 2]
 
 ;read/write from/to a map
 y("a") = 100
@@ -592,6 +596,8 @@ func process(x: int) -> process(x, 10, 0)
 `func process() -> x:int `
 
 ## Method call resolution
+If no function is defined for a named type but for it's underlying type, that one will be called.
+
 Method call is done using full dynamic match. Developer has to define appropriate functions or forwarding functions. This will impose a bit of burden on developer but will simplify compiler, increase method call performance and make code more clear and understandable. No unexpected method call.
 To define forwarding function you define a function signature without body, with `-> Target` for the types you want to forward:
 You can have multiple forwading in the same definition and use sum type to group multiple functions.
@@ -882,14 +888,14 @@ bin-type example:
 ### Special Syntax
 - `@` casting/clone/type check
 - `|` sum types
-- `:` tuple declaration, array slice, protocol
+- `:` tuple declaration, generic bounds
 - `:=` custom type definition
 - `=` type alias
 - `..` range generator
 - `<-` loop
 - `->` function declaration
-- `[]` generics
-- `{}` code block, tuple definition and tuple/array/map literal
+- `[]` generics, array and map literals
+- `{}` code block, tuple definition and tuple literal
 - `()` function call
 - `.` access tuple fields
 
@@ -1012,8 +1018,8 @@ func process() -> x:int {
 
 ###loop, break, continue
 You can use `loop` keyword with an array, hash, predicate or any type that has an iterator.
-`loop(x <- {0..10})` or `loop({0..10})`
-`loop(x <- {a..b})`
+`loop(x <- [0..10])` or `loop([0..10])`
+`loop(x <- [a..b])`
 `loop(x <- my_array)`
 `loop(k <- my_hash)`
 `loop(n <- x>0)` or `loop(x>0)`
