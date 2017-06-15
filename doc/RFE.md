@@ -4206,37 +4206,13 @@ N - Can we have a more distinct notation for `@`?
 `@{x}`? clash with casting tuple/array/map literals.
 `@[x]`? clas with generics.
 
-? - What about types with duplicate name?
-For functions it's ok as long as they have different types. We just call `process(x,y)` and the appropriate impl will be chosen. But what about type? Suppose that we have two Stack types in two modules that I have imported.
-`import /core/mod1`
-`import /code/mod2`
-`var t: Stack` what if Stack is defined in both locations?
-one solution: type keyword
-`type Stack1 := /core/mode1/Stack`
-`type Stack2 := /code/mode2/Stack`
-using Fully qualified name to alias a type. but this will be a totally different type because it's not an alias only.
-`import /code/mode1 {Stack => Stack_mod1}`
-`import /code/mode2 {Stack => Stack_mod2}`
-`var t: Stack_mod1`
-Can we use this notation to map functions too? we don't need that.
-Another option: `alias` keyword.
-Another option: use `type` with similar notation to define named alias.
-`type Stack_mod1 := /code/mode1/Stack`
-
-? - How does using generics for var/val affect current specification?
-protocols, phantom types, specialization, ...
-lambda. generics lambda.
-
-? - Can we simplify generics for var/val?
-like D's inout? maybe `var/val`.
-
-? - Can we extend generics to accept number, string, float and other literals too?
-
-? - val is like a memory cell with a lock on it.
+Y - val is like a memory cell with a lock on it.
 var is like a memory cell without lock.
 If you want to use val as var, you must clone the memory cell.
 
-? - Add `binary` type.
+Y - Can we extend generics to accept number, string, float and other literals too?
+
+Y - Add `binary` type.
 Advantage: It helps unify type system. it can be used to describe almost all other types.
 Advantage: Makes language more powerful. if anyone needs a raw buffer, it can use this type.
 We may even be able to define map using normal language constructs.
@@ -4274,8 +4250,7 @@ For int/float/char we have to make a copy on assignment because this is the exce
 `var buffer: binary[x]` allocate x bytes from memory. No. generic is supposed to be resolved at compile time. 
 if we get a var int as a result of get, we don't have access to the original location of the array because int should be copy-value on assign.
 
-
-? - I really like to unify it's behavior so it "ALWAYS" ref-assigns. When developer needs a copy, uses `@`.
+N - I really like to unify it's behavior so it "ALWAYS" ref-assigns. When developer needs a copy, uses `@`.
 problem1: developer expectations
 problem2: performance. 
 `loop({1..1000}) {...}` this will repeat 1000 times and there is no need to use any variable.
@@ -4305,3 +4280,58 @@ runtime can use normal integer and make it pointer when it needs to.
 Running `x++` and `(*y)++` 1 billion times in two different executables, shows the ptr version is almost the same as normal var (sometimes even faster).
 This article discusses why we should have primitives.
 http://www.javaworld.com/article/2150208/java-language/a-case-for-keeping-primitives-in-java.html
+C# and C++ and go have struct/class duality which is used to define value type. 
+option1: developer should not be concerned about using ref or value type. Language should handle that.
+option2: There are cases where using a value type can help performance (e.g. when there are lots of reads). developer can take advantage of such capabilities. Also this will simplify assignment semantics: value types are assigned by value, ref types are assigned by reference.
+
+Y - Make it clear what value types are and what ref types.
+int, float, char and unions without tuple are value type.
+tuples are ref type.
+
+Y - shall we enable developer to define custom value types?
+C# and C++ and go and Scala have struct/class duality which is used to define value type. 
+option1: developer should not be concerned about using ref or value type. Language should handle that.
+option2: There are cases where using a value type can help performance (e.g. when there are lots of reads). developer can take advantage of such capabilities. Also this will simplify assignment semantics: value types are assigned by value, ref types are assigned by reference.
+option 1: define rules for value/ref type. and developer cannot define custom value types. 
+option 2: everything ref type, even integers
+option 3: let developer decide: have a pointer notation (Go, C++) or a rule (C#). it makes language much more complicated.
+option 4: let developer decide a type should be value or ref type.
+for example: we can say, binary is value type. it is assigned by value. but tuple is not.
+so if developer really needs value type, he can use either int, float, char or a custom binary.
+we have performance, we have flexibility. and we have simplicity.
+
+Y - with binary user can implement a tiny int or 4 byte int. Let's add a core function to enable him interpret a binary as unsigned.
+
+Y - Based on these definitions, slice is not the same as array type.
+
+? - What about types with duplicate name?
+For functions it's ok as long as they have different types. We just call `process(x,y)` and the appropriate impl will be chosen. But what about type? Suppose that we have two Stack types in two modules that I have imported.
+`import /core/mod1`
+`import /code/mod2`
+`var t: Stack` what if Stack is defined in both locations?
+one solution: type keyword
+`type Stack1 := /core/mode1/Stack`
+`type Stack2 := /code/mode2/Stack`
+using Fully qualified name to alias a type. but this will be a totally different type because it's not an alias only.
+`import /code/mode1 {Stack => Stack_mod1}`
+`import /code/mode2 {Stack => Stack_mod2}`
+`var t: Stack_mod1`
+Can we use this notation to map functions too? we don't need that.
+Another option: `alias` keyword.
+Another option: use `type` with similar notation to define named alias.
+`type Stack_mod1 := /code/mode1/Stack`
+
+? - How does using generics for var/val affect current specification?
+protocols, phantom types, specialization, ...
+lambda. generics lambda.
+
+? - Can we simplify generics for var/val?
+like D's inout? maybe `var/val`.
+
+? - Now that array is just a normal tuple, shall we enable user to override `.[]` operator for it's types?
+
+? - Regarding genrics, shall we use protocol notation to denote if an argument is a literal?
+`type array[N:int, T] := ...`
+So options can be any litearl?
+`type MyType[N: Point]= array[int, N.x]` allocate an int array of size of x of given point
+so generic arguments can be either a type name or a literal. 
