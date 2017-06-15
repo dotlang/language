@@ -511,11 +511,11 @@ How can I pass a Dot to process function? You need to write a proxy function:
 - A function can state it's output var/val. A caller must store it's output in exactly the same type and function must return exactly the same type.
 by default output is val. so if it's not mentioned, output is val.
 - If function input does not have val/var modified, it can accept either of them but will only be able to read that argument. If it wants to modify, function signature must be changed to use `var`.
+- If function output type misses `var/val` modifier, it will be assumed `val`.
 `func add(x:int, y:int)->int`
 `func add(val x:int, val y:int)->val int`
 These two definitions are different. var/val are part of function.
 Compiler/runtime will handle whether to send a ref or a copy, for val arguments.
-
 
 function inputs must be named.
 - Function output can be any type. Even a tuple or a tuple with unnamed fields.
@@ -1024,12 +1024,13 @@ You can use `loop` keyword with an array, hash, predicate or any type that has a
 `loop(k <- my_hash)`
 `loop(n <- x>0)` or `loop(x>0)`
 `loop(x <- IterableType) { ... }`
+`loop { ... }` infinite loop
 - `break` and `continue` are supported like C.
 - If expression inside loop evaluates to a value, `loop` can be used as an expression:
 `var t:int[] = loop(var x <- {0..10}) x` or simply `var t:int[] = loop({0..10})` because a loop without body will evaluate to the counter, same as `var t:array[int] = {0..10}`
 - Like if, you can have a variable declaration before main part. These varsiables will only be available inside loop block.
 `loop(var t=getData(), t>0)...`
-`loop(var t=getList(), x <- t)...
+`loop(var t=getList(), x <- t)...`
 
 ## import
 You can import a source code file using below statement. Note that import, will add symbols (functions and types) inside that source code to the current symbol table:
