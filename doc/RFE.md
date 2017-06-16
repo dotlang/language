@@ -4800,3 +4800,32 @@ N - Can we use type alias for fwd or thing like that?
 `func process2...`
 `type a := dsad`
 `type a = b`
+
+N - Another option: instead of having ptr type, getOffset will return the type you want.
+`getOffset[int](buffer, 1)` will return an int which is pointing to the start of buffer + 1 byte.
+But we need ptr type at least for slice.
+
+N - 2D array with opCall seems a bit weird and not high performance:
+```
+var t: array[array[int, 5], 5]
+var x: int = t(0)(0)
+```
+a call to `t(0)(0)` will first call `opCall(t, 0)` to fetch first array inside t, then it will call `opCall(tempResult, 0)` to get the integer. it is not very efficient. isn't it?
+`opCall` returns `@T(ptr)` where ptr is calculated based on start address + given index.
+The only overhead I can think of is method call and stack-frame. But if function is inlined, it would be fine:
+`func opCall[T, va: var|val](va a: array[T], vax i: index) -> @va(getOffset[T](a, i*sizeof[T]))` 
+
+Y - `@val@int(x)` instead of `@val(@int(x))`?
+
+N - Add vax keyword to denote input can either be var or val.
+`func process(x: int)` `process(varInt)` `varInt++`
+`func process[vax: var|val](vax x: int)` `process(varInt)` `varInt++`
+
+N - denote you can use expresion in casting or clone?
+`var t: int = @int(x+y)`
+`var t: int = @(y*2)` for clone it does not make sense
+Also for cast, type of expression is 
+
+Y - Eliminate `()` when function does not have input. It helps make code more readable.
+Also maybe a shortcut for methods that have one input.
+Con: May result in confusion with local variables, compiler will throw error in this case.
