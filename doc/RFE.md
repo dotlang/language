@@ -4829,3 +4829,62 @@ Also for cast, type of expression is
 Y - Eliminate `()` when function does not have input. It helps make code more readable.
 Also maybe a shortcut for methods that have one input.
 Con: May result in confusion with local variables, compiler will throw error in this case.
+
+Y - 
+`var t: int = myArray(10)`
+This will actually give me a reference to inside the array.
+But I cannot change array by that way because assignment semantic is copy-value for int:
+`t = 19` will re-assign 19 to t.
+It is not like `(*t)=19` in C.
+What if I want ref-copy semantic for int? you can use core functions.
+`pt = pt2` will make pt point to the same location as pt2
+`t = y` will copy value of y into t.
+But still, if t is var, `t=y` or `t=19` will change inside the array.
+So maybe we don't need to second notation for opCall.
+`arr(10) = 199` will copy 199 into array (of course it must be var).
+`arr(10) = t` will copy value of t to the array
+
+Y - Can we unify assignment semantic?
+`x=y` can have two meanings: copy value of y into x so x won't be bound to y
+or:
+make x point to the same location as y.
+In terms of C:
+`x=y` can be `ptr1=ptr2` (reference copy)
+`x=y` can be `*x=*y` (value copy)
+Now that everything is a reference, reference copy makes sense but for int and similar types, it is hard to get used to it.
+`arr(1) = x` with ref semantic, `x++` will increase value inside the array.
+solutio 1: let developer write assignment operator. then assignment operator for int, float, ... will be defined to copy data.
+solution 2: `=` always ref-assigns. `:=` or another notation, can be used to assign value.
+`x = y` will make x point to the same location as y
+`x := y` will copy y contents into x
+`arr(1) = x` will make second element in array, point to x
+`arr(1) := x` will copy value of x into second element of the array
+`myPoint := x` will duplicate data inside x into myPoint without reference assignment.
+This makes sense. 
+`x = y`
+`x <- y`?
+`x <= y`?
+the new notation must be very lightweight and easy to read and understand and notice.
+This will affect compiler de-referencing, template?, var/val?,
+`x /= y`
+`x \= y`
+`x = @y` clone? why not re-use existing notation.
+with current assignment semantic vs. cloning:
+`int1=int2` -> load `*int2` into AX, write AX into `*int1`
+`int1=@int2` -> load `*int2` into AX, write AX into `temp`, load `*temp` into AX, write AX into `*int1`.
+two solutions:
+solution1: compiler gets smart and removes temp
+solution2: `=@` operator.
+solution1 is better.
+So:
+1. everything is a reference (compiler may optimize this)
+2. `x=y` will make x point to the same memory location as y. so any change on x will update y too.
+3. `x=@y` will duplicate y into x. So changes on x won't affect y.
+
+`val x:int = @u` ok. must do
+`val x:int = u` if u is var, will throw error, must be `val x: int = @val(u)`
+`var x: int = @u` safe
+`var x: int = u` if u is val, will throw error. 
+
+
+? - can `+` merge any array?
