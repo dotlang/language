@@ -11,7 +11,7 @@ N - can result of an expression be val?
 
 Y - `=>` should be same as `>=` and also `<=` ~ `=<`
 
-Y - Can developer write his own "byte" data type?
+N - Can developer write his own "byte" data type?
 
 N - `x=literal` will copy-value because litearl is not reference type.
 
