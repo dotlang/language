@@ -4775,3 +4775,28 @@ So @ can be used to: cast, clone, var/val, type check.
 `var x = y @ int`
 
 N - There is more room for enhancement for binary.
+
+N - Function chaining:
+`f(m, g(j, h(x,y),z),t)`
+If we want to do it with gen and orth, it will become too complex.
+
+Y - Is it possible to allocate 16 bytes and treat it like two integers?
+And (assuming it is var), can I return an int which points to part of this buffer?
+```
+var x: buffer = allocate(16)
+var p1: ptr = getOffset(buffer, 0)
+var p2: ptr = getOffset(buffer, 8)
+;you can use @ to cast a pointer to the type you want
+;if buffer was defined as val, you could only create val here.
+var i1: int = @int(p1)
+var i2: int = @int(p2)
+val i3: int = @val(@int(p1)) ;?
+```
+Casting from Circle to shape can be done with this technique.
+But to prevent complexity, these techniques are only applicable on binary type.
+
+N - Can we use type alias for fwd or thing like that?
+`func process(...) { ... }`
+`func process2...`
+`type a := dsad`
+`type a = b`
