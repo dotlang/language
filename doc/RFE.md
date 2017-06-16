@@ -4886,5 +4886,18 @@ So:
 `var x: int = @u` safe
 `var x: int = u` if u is val, will throw error. 
 
-
-? - can `+` merge any array?
+Y - can `+` merge any array?
+`str1 + str2` or `x+y` in general calls `opCat`?
+`func opCat[T](a: array[T], b: array[T])->array[T]`
+advantage: `+` will be consistent and general. user can even implement `+` for his own types
+con: why not `-`? or `*`?
+Let's use another notation: `~`?
+`str1(str2)`? this is gen but not intuitive.
+but the plan is to use `~` for regex. maybe `$`?
+`var str: string = "Hello " $ "world"`
+`var str: string = "Hello " ~ "world"`
+`var str: string = format("{1}{2}", "Hello", "World")`
+`var str: string = ["Hello ", str2, "World!"]`
+string is an array. So like the way compiler handles literals for array and map:
+`var str: string = ["Hello ", str2, "World!"]`
+`var str: string = [str1, str2]`
