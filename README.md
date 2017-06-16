@@ -122,6 +122,17 @@ If we use `get` to read data as `var` from an array which contains value types, 
 We have two categories of types: value-type (or valtype) and reference-type (or reftype). binary is the only valtype. Any named type with binary underlying type is valtype. Every other type (tuple or union with tuples) is reftype.
 Union which has only labels (called enum) or has labels and other valtypes, is a valtype, because compiler uses int or a binary buffer to implement it. If it has tuples, it is reftype.
 `function` type is a valtype. Underlying, it is a pointer to a memory location. It is implemented as `int`.
+- You can manage inside a binary buffer and use it as differetn variables.
+```
+var x: buffer = allocate(16)
+var p1: int = getOffset[int](buffer, 0)
+var p2: int = getOffset[int](buffer, 8)
+;you can use @ to cast a pointer to the type you want
+;if buffer was defined as val, you could only create val here.
+var i1: int = @int(p1)
+var i2: int = @int(p2)
+val i3: int = @val(@int(p1)) ;you can combine @ and remove paren: @val@int(x)
+```
 
 There are two categories of types: Named and unnamed. An unnamed type is defined using existing language constructs.
 For example these are some unnmaed types: `int, array[string], {x:int, y:float}, int|string`.
@@ -185,6 +196,7 @@ type string := array[char]
 `func opCall[T](x: array[T], index: int, rValue: T)`
 `func opCall[T](x: array[T], index: int) -> T`
 
+Ptr type is similar to a pointer in C. It can be used to access inside a binary buffer.
 `type ptr := int`
 - You cannot use a val ptr to change memory: `func setValue[T](var p: ptr, value: T)`
 - for ptr type, val means two things: it cannot be changed and it cannot be used to change memory.
@@ -505,23 +517,23 @@ How can I pass a Dot to process function? You need to write a proxy function:
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Functions
-- A function can determine whether is expects var or val inputs.
-- var/val qualifier is mandatory for function input/output.
-- You can use generics to indicate you are open to both var and val (for input or output):
-`func process[vax: var|val](var x:int, val y:int, vax z: int)`
+- A function can determine whether is expects var or val inputs. If function wants to promise it won't change the input but caller can send anything, it can do so with eliminating qualifier: `func process(x: int)`. If function wants to promise immutability and ask to be given an immutable input: `func process(val x:int)` so caller cannot send var in this case.
+- var/val qualifier is optional for function input/output. if missing caller can send either val or var.
+- You can use generics to establish relations between var/val of input or outputs:
 `func process[vax: var|val](var x:int, vax y:int) -> vax int`
 - You can use `@` in shortcut functions to indicate output type:
 `func process(val x:int, var y:int) -> @var(x+y+1)`
 - When you pass var or val to a function, the reference is being sent and compiler makes sure vals are not changed.
 - when a function returns var/val it returns a reference to a locally allocated data.
-- A function can state it's output var/val. 
-by default output is val. so if it's not mentioned, output is val.
+- A function can state it's output var/val. if qualifier is missing, function can return either var or val but caller can only assign the result to a val.
+- So missing qualifier: either var or val.
 - function inputs must have val/var modifier so it won't be ambiguous whether something is potential for shared mutable state. If input modifier is missing, it is assumed to be val.
 - If function output type misses `var/val` modifier, it will be assumed `val`.
 `func add(x:int, y:int)->int`
 `func add(val x:int, val y:int)->val int`
 These two definitions are different. var/val are part of function.
 Compiler/runtime will handle whether to send a ref or a copy, for val arguments.
+- You can omit `()` in function call if there is no local variable or argument with same name and function has no input. If there is local var with same name, compiler will issue warning: `var t:int = sizeof[int]`
 
 function inputs must be named.
 - Function output can be any type. Even a tuple or a tuple with unnamed fields.
@@ -889,6 +901,7 @@ bin-type example:
 `val x: int = 12`
 `var z: int = @(x)`
 `val t: int = @(z)`
+- `val t:int = @val(x)`
 - Each type can implement `opCall` function which will be called when the type is used like a function. This function can be implemented in two ways: rvalue (to get data) and lvalue (to set data). This is used for handling get/set operations for array and map.
 
 
