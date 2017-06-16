@@ -1200,16 +1200,17 @@ Java without maven has a packaging but not a dependency management system. For d
 C# has dll method which is contains byte-code of the source package. DLL has a version metadata but no dep management. For dep it has NuGet.
 
 ## ToDo
-- Add native concurrency and communication tools (green thread, channels) and async i/o
+- Add native concurrency and communication tools (green thread, channels, spinlock, STM, mutex) and async i/o, 
 - Introduce caching of function output
 - Build, versioning, packaging and distribution
 - Dependency definition and management 
 - Plugin system to load/unload libraries at runtime
 - Debugger and plugins for Editors
-- Atomic operations
+- Atomic operations, mutex and other locking features.
 - Testing
 - Define a notation to access a location inside a binary and sizeof function
 - Actor/Message passing helpers for concurrency.
 - Helper functions to work with binary (memcpy, memmove, ...)
 - Details of inline assembly flags and their values (OS, CPU, ...)
+- Distributed processing: Moving code to another machine and running there (Actor model + channel)
 
