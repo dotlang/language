@@ -4717,3 +4717,61 @@ or other way around: use `ref` when you want to change argument. so no var/var i
 but it is a bit confusing having 3 different keywords.
 let's do this: var/val is required in function signature. for val input, you can send a var too.
 for var input, you must send var. for var output, you can assign it to val, if you don't plan to change it.
+
+N - Now that we plan to use message-passing to handle concurrency, can we revert to the "everything mutable" idea?
+what is the goal? to have pure functions?
+- this will affect var/val, everything-ref, assignment semantic, cloning and arg passing, binary.
+what about modelling a mutable structure as a number of layers? layer 0 is the original data. layer 1 includes some modifications. layer 2 more modifications ...
+So upon each modification, we create a new instance which includes n+1 layers. first n layers reference old data, layer n+1 is generated using new data.
+primary goals of the language: simple, powerful, fast.
+two models: everything immutable, custom mutability.
+everything immutable: simpler (no need for different keywords) but sometimes more difficult (changing an array element needs a lot of work), less powerful, faster
+custom mutability: a bit harder to write because you need to decide about mutability or clone data, but sometimes simpler to write (e.g. cases with a lot of small changes on the data), more powerful, a bit slower
+everything imm: Haskell
+custom mutability: Scala, C#, Java, Go, C++
+Let's go with custom mutability.
+
+Y - One thing that still bothers is the fact that we can send var when a val is needed. As we are sending a reference, there is a chance that it is passed to a thread, and my var becomes a stat which is shared with some other threads where I can change it's value.
+```
+var data: int = 12
+func startThread(val data: int)
+startThread(data)
+startthread(data)
+startthread(data)
+data++
+```
+- There are two types of commitment: commitment from function that it won't change the data
+commitment from outside which it won't change the data.
+When a function has val input, it makes the first type of commitment.
+But maybe outside does not make this: by sending a val.
+There should be a difference.
+Maybe we can say: if qualifier is missing you can pass either var or val and function should treat it like a val which may change from outside. but if qualifier says val, it must be a val.
+In other words:
+`func process(var x: int, val y: int, var/val z: int)`
+maybe we should enforce val to accept only val and let developer handle var->val with generics.
+`func process[V: var|val](var x:int, val y:int, V z: int)`
+Now at least process knows that there is a chance that z is a var. Although because of using the same function body, it cannot change the value. Explicit is better than implicit!
+But using generics may make it a bit more complicated and hard to read. shall we add a new keyword? like `varl`. which means I don't care. It can be either var or val.
+Another solution: Write both functions but redirect non-const to const by casting to const. But this needs cloning which I don't want to do.
+`func process(val x:int)`
+`func process(var x:int) -> process(@val(x))`
+`func process[vax: var|val](var x:int, val y:int, vax z: int)`
+What about function return value? we can use generics too.
+`func process[vax: var|val](var x:int, vax y:int) -> vax`.
+
+Y - How can we have shortcuts when varval is mandatory for output?
+`func process(val x:int, var y:int) -> @var(x+y+1)`
+
+Y - Using clone for val/var conversion is a bit unreadable and confusing.
+`func process(var x:int)`
+`func process(val x:int)`
+`process(@myDataInt)` which one should be called?
+solution: `var x = @var(y)`
+`varl x = @val(y)`
+So @ can be used to: cast, clone, var/val, type check.
+`var x = @(y)` clone
+`var x = @int(y)` cast
+`var x = @var(y)` var/val
+`var x = y @ int`
+
+N - There is more room for enhancement for binary.
