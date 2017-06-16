@@ -4901,3 +4901,6 @@ but the plan is to use `~` for regex. maybe `$`?
 string is an array. So like the way compiler handles literals for array and map:
 `var str: string = ["Hello ", str2, "World!"]`
 `var str: string = [str1, str2]`
+
+N - pauseless GC?
+Every reference is a number pointing to a big map. value of the map is the real location of the data. 
