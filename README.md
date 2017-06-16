@@ -505,12 +505,18 @@ How can I pass a Dot to process function? You need to write a proxy function:
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Functions
-- A function can determine whether is expects var or val inputs. Caller must send exactly the same type.
-- When you pass var or val to a function, the reference it being sent and compiler makes sure vals are not changed.
+- A function can determine whether is expects var or val inputs.
+- var/val qualifier is mandatory for function input/output.
+- You can use generics to indicate you are open to both var and val (for input or output):
+`func process[vax: var|val](var x:int, val y:int, vax z: int)`
+`func process[vax: var|val](var x:int, vax y:int) -> vax int`
+- You can use `@` in shortcut functions to indicate output type:
+`func process(val x:int, var y:int) -> @var(x+y+1)`
+- When you pass var or val to a function, the reference is being sent and compiler makes sure vals are not changed.
 - when a function returns var/val it returns a reference to a locally allocated data.
-- A function can state it's output var/val. A caller must store it's output in exactly the same type and function must return exactly the same type.
+- A function can state it's output var/val. 
 by default output is val. so if it's not mentioned, output is val.
-- If function input does not have val/var modified, it can accept either of them but will only be able to read that argument. If it wants to modify, function signature must be changed to use `var`.
+- function inputs must have val/var modifier so it won't be ambiguous whether something is potential for shared mutable state. If input modifier is missing, it is assumed to be val.
 - If function output type misses `var/val` modifier, it will be assumed `val`.
 `func add(x:int, y:int)->int`
 `func add(val x:int, val y:int)->val int`
@@ -556,6 +562,7 @@ new_array = map(my_array , (x:int) -> {x+1})
 `var b = @(a)`
 `var h = map[string, int] = {"A": 1, "B":2}`
 `var g = @(h)`
+- You can use `@var` and `@val` to cast to var/val: `var x = @var(y)`. If you use this to convert from val to val or var to var, it will become a reference assignment. Otherwise, it will clone. You can have an expression inside `@var` or `@val`.
 - You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
 - `rest` is a normal array which is created by compiler for each call to `print` function.
 - Functions are not allowed to change (directly or indirectly) any of their inputs.
@@ -886,7 +893,7 @@ bin-type example:
 
 
 ### Special Syntax
-- `@` casting/clone/type check
+- `@` casting/clone/type check/var,val conversion
 - `|` sum types
 - `:` tuple declaration, generic bounds
 - `:=` custom type definition
@@ -1157,4 +1164,6 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Atomic operations
 - Testing
 - Define a notation to access a location inside a binary and sizeof function
+- Actor/Message passing helpers for concurrency.
+- Helper functions to work with binary (memcpy, memmove, ...)
 
