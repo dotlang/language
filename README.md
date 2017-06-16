@@ -15,7 +15,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, added inline assembly,
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -69,7 +69,7 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 
 ## General rules
 - **Encoding**: Source code files are encoded in UTF-8 format.
-- **Whitespace**: Any instance of space(' '), tab(`\t`), newline(`\r` and `\n`) are whitespace and will be ignored.
+- **Whitespace**: Any instance of space(' '), tab(`\t`), newline(`\r` and `\n`) are whitespace and will be ignored. Indentation must be done using spaces, not tabs.
 - **Comments**: `;` is used to denote comment. It must be either first character of the line or follow a whitespace.
 - **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0b0101011101` binary number. You can separate digits using undescore: `1_000_000`.
 - **Terminator**: Each statement must be in a separate line and must not end with semicolon.
@@ -104,6 +104,10 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 
 # Type System
 ## Rules
+variables are initialized upon declaration. for val you must assign value, for var, compiler will set default value (everything zero, empty, ...)
+`var x: array[int]` will create an empty array
+
+Note that `val` can only appear on the left side of `=` when it is being declared. What comes on the right side of `=` must be either another val or made val using `@val` or a literal
 Every type is allocated and a reference is put inside the variable. Compiler may optimize this for cases when a local variable like an int, is not sent outside.
 val is like a memory cell with a lock on it.
 var is like a memory cell without lock.
@@ -200,10 +204,11 @@ type string := array[char]
 `func opCall[T](x: array[T], index: int) -> T`
 
 Ptr type is similar to a pointer in C. It can be used to access inside a binary buffer.
-`type ptr := int`
+`type ptr[T] := int`
 - You cannot use a val ptr to change memory: `func setValue[T](var p: ptr, value: T)`
 - for ptr type, val means two things: it cannot be changed and it cannot be used to change memory.
 slice is a meta-array. `type slice[T] = (length: int, start: ptr)`
+- The only way to create a valid value (not made up), for a ptr type is by applying it on a binary type. You cannot have a pointer on any other data type.
 - Upon initial value setting, operation is handled by the compiler, without calling opCall. Because opCall cannot set any value for a val array.
 
 `func opCall[T](s: array[T], start: int, end: int) -> slice[T]`
@@ -318,6 +323,11 @@ var x,y = myCar
 - You can cast a tuple literal to a specific type. `var g = @MyTuple({field=10, field2=20})`
 
 ## Union
+`type MaybeInt := int | Nothing`
+Labels define a new type which has only one value with the same notation (or use them).
+`type UnionType := Type1 | Type2 | Type3 | ...`
+`type Nothing` - defines a type which has only one valid value: Nothing
+
 Union is a specific data type which defines a set of possible other types it can contain. Variables of union type, can only contain one of their possible types at any time. You use `|` to separate different possible types.
 
 ```
@@ -434,6 +444,7 @@ This can be used to resolve conflict types when importing modules.
 `type Stack2 = /code/mode2/Stack`
 
 ## Variables
+Variables will be initialized upon declaration either by developer or compiler.
 Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
 Reasons for including type at the end:
 - Due to type inference, type is optional and better not to be first part of the definition.
@@ -519,6 +530,24 @@ How can I pass a Dot to process function? You need to write a proxy function:
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Functions
+- You can write body of a function using assembly: use `{| ... |}` notation. If you want your assembly to be inlined, use `{|| ... ||}`. You can use `(A=B)` or `(A!=B)` notation to do conditional compilation based on OS and hardware.
+```
+func process(x:int) -> int 
+{|
+   (OS == WIN)
+   {
+     mov ax, 10
+     mov bx, 20
+     add ax, bx
+   }
+   (CPU != Intel)
+   {
+      mov ax, 12
+   }
+|}
+```
+
+- There must be a single space between func and function name.
 - A function can determine whether is expects var or val inputs. If function wants to promise it won't change the input but caller can send anything, it can do so with eliminating qualifier: `func process(x: int)`. If function wants to promise immutability and ask to be given an immutable input: `func process(val x:int)` so caller cannot send var in this case.
 - var/val qualifier is optional for function input/output. if missing caller can send either val or var.
 - You can use generics to establish relations between var/val of input or outputs:
@@ -884,7 +913,7 @@ func openDoor(x: Door[Closed]) -> Door[Open]
 # Notations
 
 ## Operators
-- Conditional: `and or not == != >= <=`
+- Conditional: `and or not == != >= <= => =<`
 - Math: `+ - * % %% (is divisible) ++ -- **`
 The math operators can be combined with `=` to do the calculation and assignment in one statement.
 - `=` operator: copies only for primitive type, makes a variable refer to the same object as another variable for any other type. If you need a copy, you have to clone the variable. 
@@ -893,7 +922,8 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `equals` functions is used for equality check.
 - You can have multiple assignments at once: `x,y=1,2`
 - Assignment semantics: `x=y` will make x point to the same location as y. so any change on x will update y too.
-`x=@y` will duplicate y into x. So changes on x won't affect y.
+`x=@y` will duplicate y into x. So changes on x won't affect y. But if rvalue is a literal, it will do copy-value because there is no reference on the right side.
+- Comparison semantics: `x==y` will compare data of the references for comparison. If you need to compare the references themselves for comparison you can use core function's ref: `ref(x) == ref(y)`
 - Assignment: If left and right are val/var, user must use `@val/var` to cast.
 `myVar=@var(myVal)` (clone if needed)
 - When assigning between var and val, you must clone rvalue.
@@ -1181,4 +1211,5 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Define a notation to access a location inside a binary and sizeof function
 - Actor/Message passing helpers for concurrency.
 - Helper functions to work with binary (memcpy, memmove, ...)
+- Details of inline assembly flags and their values (OS, CPU, ...)
 
