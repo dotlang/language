@@ -94,7 +94,7 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 9. **Variable**: `var location: Point = { x=10, y=20, data: 1.19 }`
 10. **Import**: `import /core/std/Queue`
 11. **Immutability**: Only function local variables are mutable. Everything else is immutable.
-12. **Assignment**: Primitives are assigned by value, other types are assigned by reference.
+12. **Assignment**: 
 13. **Cloning**: `var population = @(country_population)`
 14. **Casting**: `var pt = @Point[int]({ x=10, y=20, data=1.11 })`
 15. **Lambda**: `var adder: func(int,int)->int = (x:int, y:int) -> x+y`
@@ -164,10 +164,11 @@ var x: int = 12
 var y: int = 19
 x=y  ;valid
 ```
-Assignment operator `=` for primitives and extended primitives, makes a copy of the right side. For every other type, assignment if done by copying the reference.
+Assignment operator `=` will copy reference from right side to left side. So any change on the left side will affect right side. If you need value assignment, use `@` to clone.
+
 ```
 var t: int = 12
-var g: int = t    ;g has a copy of 't', any change on g does not affect 't'
+var g: int = @t    ;g has a copy of 't', any change on g does not affect 't'
 
 var p: Point = {x=10, y=20}
 var q: Point = p
@@ -191,9 +192,7 @@ type string := array[char]
 
 ## Array
 - Type of slice is different from array.
-`myArray(10)` is translated to this function call: `opCall(myArray, 10)`
-`myArray(10) = 19` is translated to: `opCall(myArray, 10, 19)`
-`func opCall[T](x: array[T], index: int, rValue: T)`
+`myArray(10)` is translated to this function call: `opCall(myArray, 10)`. If it returns `var int` you can assign another value to it: `myArray(1) = g` will copy value of g to the array.
 `func opCall[T](x: array[T], index: int) -> T`
 
 Ptr type is similar to a pointer in C. It can be used to access inside a binary buffer.
@@ -267,7 +266,6 @@ mySlice = createValues()
 
 `myMap(10)` is translated to this function call: `opCall(myMap, 10)`
 `myMap(10) = 19` is translated to: `opCall(myMap, 10, 19)`
-`func opCall[K, V](x: map[K, V], index: K, rValue: V)`
 `func opCall[K, V](x: map[K, V], index: K) -> V`
 
 Maps, hashtables or associative arrays are a data structure to keep a set of keys and their corresponding values.
@@ -568,7 +566,7 @@ new_array = map(my_array , (x:int) -> {x+1})
 - Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability) for parameters passed by reference.
 - Parent is required when calling a function, even if there is no input.
 - You can clone the data but have to do it manually using `@` special function. Note that assignment makes a clone for primitives, so you need cloning only for tuple, array and hash.
-- Cloning: `var x = @(p)`
+- Cloning: `var x = @(p)` or `var x = @p`
 `var x: Point = @(original_var)`
 `var a = [1,2,3]`
 `var b = @(a)`
@@ -891,19 +889,20 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `equals` functions is used for equality check.
 - You can have multiple assignments at once: `x,y=1,2`
 - `+` can be used to merge two arrays. This can be used for string concatenation, because string is an array of chars.
-- Assignment makes a copy for bin-types (those who have binary as their underlying type). This includes primitives, label-only unions and unions with label and primitives and maybe other custom types. For other cases, it will ref-assign: meaning `a=b` will make a point to the same memory call as b is. If left and right are val/var, user must use `@` to clone:
-`myVar=@(myVal)`
+- Assignment semantics: `x=y` will make x point to the same location as y. so any change on x will update y too.
+`x=@y` will duplicate y into x. So changes on x won't affect y.
+- Assignment: If left and right are val/var, user must use `@val/var` to cast.
+`myVar=@var(myVal)` (clone if needed)
 - When assigning between var and val, you must clone rvalue.
 `var x: Point = ...`
-`val z: Point = @(x)`
-`var g: Point = @(z)`
+`val z: Point = @val(x)`
+`var g: Point = @var(z)`
 bin-type example:
 `val x: int = 12`
 `var z: int = @(x)`
 `val t: int = @(z)`
-- `val t:int = @val(x)`
-- Each type can implement `opCall` function which will be called when the type is used like a function. This function can be implemented in two ways: rvalue (to get data) and lvalue (to set data). This is used for handling get/set operations for array and map.
-
+- `val t:int = @val(x)`. `@val` will make sure result is val (clone if needed).
+- Each type can implement `opCall` function which will be called when the type is used like a function. If this function returns a `var` result, it's result can be used as an lvalue to do assignment.
 
 ### Special Syntax
 - `@` casting/clone/type check/var,val conversion
