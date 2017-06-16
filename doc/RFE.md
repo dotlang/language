@@ -88,3 +88,48 @@ func process(x:int) -> int
    }
 |}
 ```
+
+? - Why not have everything value and compiler converts them to references when it needs to? Won't it make things simpler for the developer?
+
+? - Let `=` and `==` act as if data is data and not a reference.
+Currencylt `==` acts this way. Compares real data, not references. But there are functions to compare ref.
+`x=y` should copy data of y into x. So if rvalue is a temp variable (e.g. `x=1+y`), it will be a ref-assign handled by the compiler. if you want x to reference to place where y is pointing to, you must use another notation.
+`x << y`
+`var x: point = y` will copy all the data inside y to x
+`var x: point => y` x will point to the same location as y.
+`var x: point = ref(y)` but this is not intuitive.
+`var x: point = @ptr[point](y)`
+when we write `x=y` we expect x and y be the same thing. if x points to y we have achieved this, but then x and y will be bound together.
+for a newbie this might be confusing:
+```
+var x: Point = {a=10, b=20}
+var y: Point = x
+y.a++
+print x.a ;will print 11!
+```
+OTOH, if we say `=` will copy data, above code will print 10 which is what we put into x initially.
+in copy semantics: there might be cases where a `=` will be expensive (large data)
+in ref-assign semantics: there might be cases where a `=` will be confusing (non-primitive data).
+which case is more common? using large data or using non-primitives? I think non-primitives are used much more. so we should focus on those cases: we should prevent confusing behavior in ref-assign semantics. So we should use copy semantics. And in rare cases where a very large data variable is being used, the developer is responsible to ref-assign.
+But we do our best not to involve developer into reference vs. data confusion. In eyes of the developer everything should be what it seems to be. `int` is an integer number not a reference number, although compiler/runtime will handle it as a reference to make other language features (e.g. var) work.
+So when he writes `x=y` it expects y be copied into x.
+to do ref-assign we should use either a special notation or a core function. using `=` will cause confusion.
+`var x:BigBuffer = y` this is expensive! we should prevent it.
+`var x: BigBuffer = &y` like C but it is confusing. left side is BigBuffer and then what is type of right side? How do you define `&y`?
+`var x: BigBuffer := y` this is intuitive and makes sense but might be confused with type declaration.
+Anyway, it is more consistent with type declaration concept. If we write `type MyInt := int` it will be some kind of assignment as a reference. MyInt is a reference to int type.
+`x := y` will make x point to the same thing as y. 
+`val x = otherVal` copy or ref-assign due to optimization
+`var x = otherVar` copy
+`val x = otherVar` copy (compiler may choose to ref-assign here to optimize)
+`var x = otherVal` copy 
+`= = = = = = = = = = =`
+`val x := otherVal` ref-assign
+`var x := otherVar` ref-assign
+`val x := otherVar` invalid. You cannot have a const reference to a memory cell which is already var
+`var x := otherVal` invalid. You cannot have a var pointer to a val memory area.
+I think this model makes more sense and is more intuitive. `=` copies right side into left side.
+`:=` makes left side reference to the place right side is referncing. Of course both left and right must be consistent (var-var or val-val).
+Now, do we still need cloning notation? `x=@y` -> `x=y`
+this will affect: slice, array, binary, `@val/var`, cloning, parameter passing and return.
+I think we still need `@var/@val` notation. Especially in shortcut functions.
