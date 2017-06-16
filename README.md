@@ -29,7 +29,7 @@ Three main objectives are pursued in the design of this language:
 
 1. **Simple**: The code written in dotLang should be consistent, easy to learn, read, write and understand. There has been a lot of effort to make sure there are as few exceptions as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
 2. **Powerful**: It should enable (a team of) developers to organise, develop, test, maintain and operate a large and complex software project, with relative ease. This means a comprehensive standard library in addition to language rules.
-3. **Fast**: The compiler will compile to native code which will bring high performance.
+3. **Fast**: The compiler will compile to native code which will bring high performance. We try to do as much as possible during compilation (optimizations, type checking, ...) so during runtime, there is not much to be done except for GC.
 
 Achieving all of above goals at the same time is something impossible so there will definitely be trade-offs and exceptions.
 The underlying rules of design of this language are 
