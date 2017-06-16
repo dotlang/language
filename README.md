@@ -191,6 +191,10 @@ type string := array[char]
 ```
 
 ## Array
+- `string` is an array and like an array, compiler handles literals and string concatenation:
+`var str: string = ["Hello ", str2, "World!"]`
+`var str: string = [str1, str2]`
+
 - Type of slice is different from array.
 `myArray(10)` is translated to this function call: `opCall(myArray, 10)`. If it returns `var int` you can assign another value to it: `myArray(1) = g` will copy value of g to the array.
 `func opCall[T](x: array[T], index: int) -> T`
@@ -888,7 +892,6 @@ The math operators can be combined with `=` to do the calculation and assignment
 - We don't have operators for bitwise operations. They are covered in core functions. 
 - `equals` functions is used for equality check.
 - You can have multiple assignments at once: `x,y=1,2`
-- `+` can be used to merge two arrays. This can be used for string concatenation, because string is an array of chars.
 - Assignment semantics: `x=y` will make x point to the same location as y. so any change on x will update y too.
 `x=@y` will duplicate y into x. So changes on x won't affect y.
 - Assignment: If left and right are val/var, user must use `@val/var` to cast.
