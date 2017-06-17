@@ -191,13 +191,27 @@ Y - The `:=` is a very powerful operator. But in what cases do we need it?
 - For internals of array and slice. (we can use native and implement in compiler or use core functions to get address and get/set operations, we can even use ptr type).
 - When output of a function is a large data structure: `var x = getLargeBuffer()` will duplicate the buffer which is expensive.
 
-? - function chaining: `=>` and `<=`.
+N - Better encapsulation.
+So if I change something, I may need to update 100s of places.
+It is nature of fp.
+
+N - function chaining: `=>` and `<=`.
 Advantage: less paren.
 `finalize_operation(1,9,4, $_) <= get_customers <= (1,9)`
 `calculate(data) => print => save`
 `data => calculate => print => save`
 `data => calculate(_) => print(_) => save(_)`
 `string => contains(':')`
+simplicity: makes reading some code easier but more things to learn
+power: no specific 
+performance: no effect
+Later
 
-? - Better encapsulation.
-So if I change something, I may need to update 100s of places.
+N - Provide features to implement more of the language inside the language.
+Maybe extend assembly support.
+What can be implemented using assembly notation?
+`if x then y else z`
+`loop`
+This will need something more than usual function inputs.
+Maybe it's too much to do in the language considering the fact that we want to keep gen and orth.
+This can be done with macro but it's not good.
