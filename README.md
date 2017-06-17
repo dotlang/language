@@ -1207,4 +1207,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Helper functions to work with binary (memcpy, memmove, ...)
 - Details of inline assembly flags and their values (OS, CPU, ...)
 - Distributed processing: Moving code to another machine and running there (Actor model + channel)
-
+- possible add notation for function chaining
