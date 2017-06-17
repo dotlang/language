@@ -190,3 +190,14 @@ Y - The `:=` is a very powerful operator. But in what cases do we need it?
 - When I want to have a val view on a var. But if function has val, I can simply send var to it.
 - For internals of array and slice. (we can use native and implement in compiler or use core functions to get address and get/set operations, we can even use ptr type).
 - When output of a function is a large data structure: `var x = getLargeBuffer()` will duplicate the buffer which is expensive.
+
+? - function chaining: `=>` and `<=`.
+Advantage: less paren.
+`finalize_operation(1,9,4, $_) <= get_customers <= (1,9)`
+`calculate(data) => print => save`
+`data => calculate => print => save`
+`data => calculate(_) => print(_) => save(_)`
+`string => contains(':')`
+
+? - Better encapsulation.
+So if I change something, I may need to update 100s of places.
