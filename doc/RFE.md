@@ -184,3 +184,9 @@ C++ can do this: The only thing special about a pointer-to-const is that you can
 So basically, `val x = var1` is ok and possible.
 
 Y - Clarify single space in type definition and protocol too.
+
+Y - The `:=` is a very powerful operator. But in what cases do we need it?
+`x := y`. 
+- When I want to have a val view on a var. But if function has val, I can simply send var to it.
+- For internals of array and slice. (we can use native and implement in compiler or use core functions to get address and get/set operations, we can even use ptr type).
+- When output of a function is a large data structure: `var x = getLargeBuffer()` will duplicate the buffer which is expensive.
