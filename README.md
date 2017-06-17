@@ -905,7 +905,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `equals` functions is used for equality check.
 - You can have multiple assignments at once: `x,y=1,2`
 - Assignment semantics: `x=y` will duplicate contents of y into x (same as `*x=*y` in C++). So if rvalue is a temp variable (e.g. `x=1+y`), it will be a ref-assign handled by the compiler. If you want to ref-assign you should use `:=` notation.
-- Ref-Assignment: This is mostly used to work with very large data structures where assignment by copy is expensive: `var x = getLargeBuffer()` -> `var x := getLargeBuffer()`. Other use cases: working with binary data, array and slice implementation.
+- Ref-Assignment: This is mostly used to work with very large data structures where assignment by copy is expensive: `var x = getLargeBuffer()` -> `var x := getLargeBuffer()`. Other use cases: working with binary data, array and slice implementation, re-use an existing val.
 - Almost everywhere, we deal with values not references. So `x=y+1` means increase value of y by one and copy the result into the memory location to which x is pointing to. `x:=y+1` means increase value of y by one and store the result in a memory location and make x point to that memory location. If you want to work with addresses you should use core functions.
 `val x = otherVal` copy (or ref-assign due to optimization)
 `var x = otherVar` copy
@@ -933,7 +933,7 @@ bin-type example:
 ### Special Syntax
 - `@` casting/type check
 - `|` sum types
-- `:` tuple declaration, generic bounds
+- `:` tuple declaration, generic bounds, variable type declaration, hash literal
 - `:=` custom type definition, reference assignment
 - `=` type alias
 - `..` range generator
