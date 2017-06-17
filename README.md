@@ -15,7 +15,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, added inline assembly,
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, added inline assembly, introduces `:=` ref-assign operator and make `=` data-copy operator
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
@@ -95,7 +95,6 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 10. **Import**: `import /core/std/Queue`
 11. **Immutability**: Only function local variables are mutable. Everything else is immutable.
 12. **Assignment**: 
-13. **Cloning**: `var population = @(country_population)`
 14. **Casting**: `var pt = @Point[int]({ x=10, y=20, data=1.11 })`
 15. **Lambda**: `var adder: func(int,int)->int = (x:int, y:int) -> x+y`
 16. **Protocols**: `protocol Comparable[T] := { func compare(x:T, y:T)->int }`, `func sort[T: Comparable](x:array[T])`
@@ -104,6 +103,8 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 
 # Type System
 ## Rules
+- There must be a single space between `type` keyword and type name.
+- You can have a read-only view of a read-write memory cell: `val x := otherVar`
 variables are initialized upon declaration. for val you must assign value, for var, compiler will set default value (everything zero, empty, ...)
 `var x: array[int]` will create an empty array
 
@@ -115,8 +116,9 @@ The most primitive type is `binary` which denotes an allocated memory buffer.
 `type array[T] = (size:int, data: binary)` binary means a buffer with size specified at runtime.
 `type array[N: int, T] = (size:int, data: binary[N])` `binary[N]` means N bytes allocated.
 ```
-func get[V,T where V: var|val](V arr: array[T], index: int) -> V T {
-    return getOffset[V,T](arr.data, index*sizeof[T]())
+func get[vax, T where vax: var|val](vax arr: array[T], index: int) -> vax T {
+    vax T result := arr.data + index*sizeof[T]
+    return result ;we cannot shortcut this by writing something like "return *(arr.data + index*a)"
 }
 ```
 If we use `get` to read data as `var` from an array which contains value types, we won't have direct access to inside the array. We will receive a copy.
@@ -168,16 +170,7 @@ var x: int = 12
 var y: int = 19
 x=y  ;valid
 ```
-Assignment operator `=` will copy reference from right side to left side. So any change on the left side will affect right side. If you need value assignment, use `@` to clone.
 
-```
-var t: int = 12
-var g: int = @t    ;g has a copy of 't', any change on g does not affect 't'
-
-var p: Point = {x=10, y=20}
-var q: Point = p
-q.x++ ;this will increase p.x too! if you don't want this, you must clone 'p'
-```
 - If function expects a named type, you cannot pass an equivalent unnamed type. 
 - Similarly, when a function expects an unnamed type, you cannot pass a named type with same underlying type. 
 - We never do implicit casts like int to float.
@@ -202,15 +195,8 @@ type string := array[char]
 - Type of slice is different from array.
 `myArray(10)` is translated to this function call: `opCall(myArray, 10)`. If it returns `var int` you can assign another value to it: `myArray(1) = g` will copy value of g to the array.
 `func opCall[T](x: array[T], index: int) -> T`
-
-Ptr type is similar to a pointer in C. It can be used to access inside a binary buffer.
-`type ptr[T] := int`
-- You cannot use a val ptr to change memory: `func setValue[T](var p: ptr, value: T)`
-- for ptr type, val means two things: it cannot be changed and it cannot be used to change memory.
-slice is a meta-array. `type slice[T] = (length: int, start: ptr)`
-- The only way to create a valid value (not made up), for a ptr type is by applying it on a binary type. You cannot have a pointer on any other data type.
+slice is a meta-array. `type slice[T] = (length: int, start: T)`
 - Upon initial value setting, operation is handled by the compiler, without calling opCall. Because opCall cannot set any value for a val array.
-
 `func opCall[T](s: array[T], start: int, end: int) -> slice[T]`
 means: `myArray(10,20)` will return a slice while `myArray(10)` will return a single element.
 This function is overriden to support optional end.
@@ -345,8 +331,6 @@ var fl: float = @float(f)
 var g: IntOrFloat = f
 ;this will change value of 'f' too
 g = 66
-;clone f
-g = @(f)
 ;this won't change value of f:
 g = 99
 ;You can define 'labels' for valid values of a union:
@@ -457,7 +441,7 @@ var y : int = 19
 var t = 12  ;imply type from 12
 ```
 A function which has no input and returns `T` is treated like a variable of type `T`. This can be used to have lazy evaluation. So if you send the function/lambda to another function, to the outside world, it is int variable. inside they carry a lambda.
-Cloning, passing, assigning to other vars does not change or evaluate the variable. But as soon as you have something like: `x=lazy_var+1` then function is being called.
+passing, assigning to other vars does not change or evaluate the variable. But as soon as you have something like: `x=lazy_var+1` then function is being called.
 - As soon as you declare a variable it will have some value. Even if it is a tuple, it will have all fields set to default value.
 - You can define local variables using `var` keyword.
 `var x: int = 19; x= 11 ;ok - can re-assign`
@@ -548,15 +532,20 @@ func process(x:int) -> int
 ```
 
 - There must be a single space between func and function name.
-- A function can determine whether is expects var or val inputs. If function wants to promise it won't change the input but caller can send anything, it can do so with eliminating qualifier: `func process(x: int)`. If function wants to promise immutability and ask to be given an immutable input: `func process(val x:int)` so caller cannot send var in this case.
-- var/val qualifier is optional for function input/output. if missing caller can send either val or var.
+- A function can determine whether is expects var or val inputs. If function wants to promise it won't change the input but caller can send either var or val, it can do so with eliminating qualifier or using val: `func process(x: int)`.
+- var/val qualifier is optional for function input/output. if missing, it is considered val and caller can send either val or var.
 - You can use generics to establish relations between var/val of input or outputs:
 `func process[vax: var|val](var x:int, vax y:int) -> vax int`
-- You can use `@` in shortcut functions to indicate output type:
+- You can use `@var/val` in shortcut functions to explicitly indicate output type:
 `func process(val x:int, var y:int) -> @var(x+y+1)`
+- If function output does not have a qualifier, it will be val.
+`func process(var x:int) -> x` return is a val
+- If function wants to return a var and use shortcut:
+`func process(val x:int) -> var int x+1`
+`func process(val x:int) -> var x+1`
 - When you pass var or val to a function, the reference is being sent and compiler makes sure vals are not changed.
 - when a function returns var/val it returns a reference to a locally allocated data.
-- A function can state it's output var/val. if qualifier is missing, function can return either var or val but caller can only assign the result to a val.
+- A function can state it's output var/val. if qualifier is missing, it is val, function can return either var or val but caller can only assign the result to a val.
 - So missing qualifier: either var or val.
 - function inputs must have val/var modifier so it won't be ambiguous whether something is potential for shared mutable state. If input modifier is missing, it is assumed to be val.
 - If function output type misses `var/val` modifier, it will be assumed `val`.
@@ -598,13 +587,6 @@ new_array = map(my_array , (x:int) -> {x+1})
 ```
 - Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability) for parameters passed by reference.
 - Parent is required when calling a function, even if there is no input.
-- You can clone the data but have to do it manually using `@` special function. Note that assignment makes a clone for primitives, so you need cloning only for tuple, array and hash.
-- Cloning: `var x = @(p)` or `var x = @p`
-`var x: Point = @(original_var)`
-`var a = [1,2,3]`
-`var b = @(a)`
-`var h = map[string, int] = {"A": 1, "B":2}`
-`var g = @(h)`
 - You can use `@var` and `@val` to cast to var/val: `var x = @var(y)`. If you use this to convert from val to val or var to var, it will become a reference assignment. Otherwise, it will clone. You can have an expression inside `@var` or `@val`.
 - You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
 - `rest` is a normal array which is created by compiler for each call to `print` function.
@@ -782,9 +764,9 @@ For generic functions, any call to a function which does not rely on the generic
 
 ## Protocols
 
+- There must be a single space between `protocol` keyword and the protocol name.
 - So if a function plans to accept inputs which are not native array, it can be defined like this:
 `func process[T](x: T, arrayFuncs: ArrAccessors[T])` which means `x` input will have appropriate methods to be accessed like an array. Then inside `process` function it can use `x[0]` and other methods to work with x.
-
 
 If someone calls a generic function with some user-defined type, they really don't know what they should implement until they see the compiler error or the source code. Protocols are used to document this.
 When writing a generic function, you may have expectations regarding behavior of the type T. These expectations can be defined using a protocol. When you call this function with a concrete type, compiler makes sure the protocol is satisfied.
@@ -916,32 +898,43 @@ func openDoor(x: Door[Closed]) -> Door[Open]
 - Conditional: `and or not == != >= <= => =<`
 - Math: `+ - * % %% (is divisible) ++ -- **`
 The math operators can be combined with `=` to do the calculation and assignment in one statement.
-- `=` operator: copies only for primitive type, makes a variable refer to the same object as another variable for any other type. If you need a copy, you have to clone the variable. 
+- `=` operator: copies data.
+- `:=` opreator will make left side point to right-side variable or result of evaluation of the right-side expression.
 - `x == y` will call `opEquals` functions is existing, by default compares field-by-field values. But you can override.
 - We don't have operators for bitwise operations. They are covered in core functions. 
 - `equals` functions is used for equality check.
 - You can have multiple assignments at once: `x,y=1,2`
-- Assignment semantics: `x=y` will make x point to the same location as y. so any change on x will update y too.
+- Assignment semantics: `x=y` will duplicate contents of y into x (same as `*x=*y` in C++). So if rvalue is a temp variable (e.g. `x=1+y`), it will be a ref-assign handled by the compiler. If you want to ref-assign you should use `:=` notation.
+- Ref-Assignment: This is mostly used to work with very large data structures where assignment by copy is expensive: `var x = getLargeBuffer()` -> `var x := getLargeBuffer()`. Other use cases: working with binary data, array and slice implementation.
+- Almost everywhere, we deal with values not references. So `x=y+1` means increase value of y by one and copy the result into the memory location to which x is pointing to. `x:=y+1` means increase value of y by one and store the result in a memory location and make x point to that memory location. If you want to work with addresses you should use core functions.
+`val x = otherVal` copy (or ref-assign due to optimization)
+`var x = otherVar` copy
+`val x = otherVar` copy (or ref-assign due to optimization)
+`var x = otherVal` copy 
+`= = = = = = = = = = =`
+`val x := otherVal` ref-assign
+`var x := otherVar` ref-assign
+`val x := otherVar` ref-assign
+`var x := otherVal` invalid. You cannot have a var pointer to a val memory area.
+- `a:=b+c+d+8` add right side values, store result somewhere and make a point to that location.
+- what comes on the right side of `:=` is any expression. The address of that expression will be copied onto the left side.
 `x=@y` will duplicate y into x. So changes on x won't affect y. But if rvalue is a literal, it will do copy-value because there is no reference on the right side.
 - Comparison semantics: `x==y` will compare data of the references for comparison. If you need to compare the references themselves for comparison you can use core function's ref: `ref(x) == ref(y)`
 - Assignment: If left and right are val/var, user must use `@val/var` to cast.
 `myVar=@var(myVal)` (clone if needed)
 - When assigning between var and val, you must clone rvalue.
 `var x: Point = ...`
-`val z: Point = @val(x)`
-`var g: Point = @var(z)`
 bin-type example:
 `val x: int = 12`
 `var z: int = @(x)`
 `val t: int = @(z)`
-- `val t:int = @val(x)`. `@val` will make sure result is val (clone if needed).
 - Each type can implement `opCall` function which will be called when the type is used like a function. If this function returns a `var` result, it's result can be used as an lvalue to do assignment.
 
 ### Special Syntax
-- `@` casting/clone/type check/var,val conversion
+- `@` casting/type check
 - `|` sum types
 - `:` tuple declaration, generic bounds
-- `:=` custom type definition
+- `:=` custom type definition, reference assignment
 - `=` type alias
 - `..` range generator
 - `<-` loop
@@ -1085,6 +1078,7 @@ You can use `loop` keyword with an array, hash, predicate or any type that has a
 `loop(var t=getList(), x <- t)...`
 
 ## import
+- There must be a single space between `import` keyword and it's contents.
 You can import a source code file using below statement. Note that import, will add symbols (functions and types) inside that source code to the current symbol table:
 - You can only import one module in each import statement (No wildcard).
 
