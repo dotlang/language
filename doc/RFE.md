@@ -215,3 +215,40 @@ What can be implemented using assembly notation?
 This will need something more than usual function inputs.
 Maybe it's too much to do in the language considering the fact that we want to keep gen and orth.
 This can be done with macro but it's not good.
+
+Y - can we remove continue and break? yes!
+
+N - Can we simplify while considering the case that at the end of hash or array, the get operation will return nothing?
+loop will continue until it gets false or nothing as the variable or result of iteration.
+`loop(x <- [0..10])` or `loop([0..10])`
+`loop(x <- [a..b])`
+`loop(x <- my_array)`
+`loop(k <- my_hash)`
+`loop(n <- x>0)` or `loop(x>0)`
+`loop(x <- IterableType) { ... }`
+no it becomes very unreadable an confusing.
+
+Y - infinite loop can be written as `loop(true)`.
+
+Y - force return to be last statement of the function and maybe simplify based on it.
+the fact that we can define named output is a bit confusing with return.
+why do we need function output? for reading/for writing.
+for writing -> use return
+for reading -> ?why?
+if we use a notation for function output, we can have implicit single return and also defer can use it.
+user is expected not to have complex and big functions. So one return statement makes sense.
+```
+func process() -> x:int {
+    defer {
+        var maybeException = catch() ;returns Exception|Nothing
+        ;in case of an exception, return value should be 19
+        if ( maybeException @ Exception ) x = 19
+    }
+```
+let's allow multiple returns.
+what about defer?
+can we add a condition to defer? like if?
+naming function output is werid.
+if we don't name function output, how can I change it? use another return.
+
+N - Create a compiler which does basic things (expression parsing, generics, ...) then implement the rest on dot, possibly with even re-write of original parts.
