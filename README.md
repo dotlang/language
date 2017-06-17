@@ -1,4 +1,9 @@
-# Dotlang Programming Language Reference
+# dot Programming Language Reference
+
+Make it as simple as possible, but not simpler. (A. Einstein) 
+
+Perfection is finally attained not when there is no longer anything to add, but when there is no longer anything to take away. (Antoine de Saint-Exupéry, translated by Lewis Galantière.)
+
 Version 0.98
 
 June 2, 2017
@@ -15,7 +20,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, added inline assembly, introduced `:=` ref-assign operator and make `=` data-copy operator
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, added inline assembly, introduced `:=` ref-assign operator and make `=` data-copy operator, removed `break` and `continue`
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
@@ -834,7 +839,7 @@ func safeDiv[T: Failable](x: double, y: double) -> T[double] {
     return win(x/y)
 }
 ;when calling above function, you must provide type of function
-var t = safeDiv[Maybe](x, y)
+var t: Maybe[double] = safeDiv[Maybe](x, y)
 
 ---
 protocol Factory[T] := {
@@ -944,7 +949,7 @@ bin-type example:
 - `()` function call
 - `.` access tuple fields
 
-Keywords: `import`, `func`, `var`, `val`, `type`, `defer`, `native`, `loop`, `break`, `continue`, `protocol`, `where`
+Keywords: `import`, `func`, `var`, `val`, `type`, `defer`, `native`, `loop`, `protocol`, `where`
 semi-Keywords: `if`, `else` (used in syntax sugar)
 Operators: 
 Primitive data types: `int`, `float`, `char` (int is signed and 64 bit, char is unsigned)
@@ -955,9 +960,8 @@ Helper data types: `bool`, `string`, `array`, `map`, `nothing`
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Keywords
-- `@` is an operator which can be used in three ways:
+- `@` is an operator which can be used in two ways:
 - with a type and a value to cast value to this type: `var t = @int(12.0)`
-- with a value, to clone: `var t = @(pt)`
 - As a binary infix operator to check for type matching.
 - You can use `!@` to check for not matching.
 
@@ -1042,15 +1046,16 @@ var g: int|exception = func1()   ;this is valid
 - We don't even need a special exception type. Go panic and recover work with `interface{}`.
 - `assert` will throw an exception. This exception can only be caught in a defer block.
 - You can get current exception (if any) using a call to `catch`.
-- You can change function output in a defer block, if it is named.
+- You can change function output in a defer block using return statement.
 ```
-func process() -> x:int {
+func process() -> int {
     defer {
         var maybeException = catch() ;returns Exception|Nothing
         ;in case of an exception, return value should be 19
-        if ( maybeException @ Exception ) x = 19
+        if ( maybeException @ Exception ) return 19
     }
 ```
+- Same as above: `defer if ( var x = catch(), x !@ nothing ) { return 19 }` 
 - `Exception` is a simple tuple defined in core.
 - You can assert inside a defer block, which if fulfilled, will continue throwing the exception.
 - `assert` and `catch` are two functions defined in core. 
@@ -1061,7 +1066,7 @@ func process() -> x:int {
 - **Nothing**: Nothing is a sum type with only one value: `nothing`.
  You can use it's type for return value of a function.
 
-###loop, break, continue
+### loop
 You can use `loop` keyword with an array, hash, predicate or any type that has an iterator.
 `loop(x <- [0..10])` or `loop([0..10])`
 `loop(x <- [a..b])`
@@ -1069,7 +1074,7 @@ You can use `loop` keyword with an array, hash, predicate or any type that has a
 `loop(k <- my_hash)`
 `loop(n <- x>0)` or `loop(x>0)`
 `loop(x <- IterableType) { ... }`
-`loop { ... }` infinite loop
+`loop(true) { ... }` infinite loop
 - `break` and `continue` are supported like C.
 - If expression inside loop evaluates to a value, `loop` can be used as an expression:
 `var t:int[] = loop(var x <- {0..10}) x` or simply `var t:int[] = loop({0..10})` because a loop without body will evaluate to the counter, same as `var t:array[int] = {0..10}`
