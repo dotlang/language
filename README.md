@@ -15,21 +15,21 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, added inline assembly, introduces `:=` ref-assign operator and make `=` data-copy operator
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, added inline assembly, introduced `:=` ref-assign operator and make `=` data-copy operator
 
 # Introduction
-After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is both simple and powerful.
+After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
 
-That's why I am creating a new programming language: dotLang (or dot for short). 
+That's why I am creating a new programming language: dot (or dotLang). 
 
-dotLang programming language is an imperative, static-typed general-purpose language based on author's experience and doing research on many languages (namely Java, C\#, C, C++, Rust, Go, Scala, Objective-C, Python, Perl, Smalltalk, Ruby, Swift, Haskell, Clojure, Eiffel, Falcon, Julia, F\# and Oberon-2). 
+dotLang programming language is an imperative, static-typed general-purpose language based on author's experience and doing research on many languages (namely Java, C\#, C, C++, Go, Scala, Rust, Objective-C, Python, Perl, Smalltalk, Ruby, Swift, Haskell, Clojure, Eiffel, Falcon, Julia, F\# and Oberon-2). 
 I call the paradigm of this language "Data-oriented". This is a combination of Object-Oriented and Functional approach and it is designed to work with data. There are no objects or classes. Only data types and functions. But most useful features of the OOP (encapsulation, abstraction, inheritance and polymorphism) are provided to some extent. On the other hand, we have first-class and higher-order functions borrowed from functional approach.
 
-Three main objectives are pursued in the design of this language:
+Three main objectives are pursued in the design of this programming language:
 
-1. **Simple**: The code written in dotLang should be consistent, easy to learn, read, write and understand. There has been a lot of effort to make sure there are as few exceptions as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
-2. **Powerful**: It should enable (a team of) developers to organise, develop, test, maintain and operate a large and complex software project, with relative ease. This means a comprehensive standard library in addition to language rules.
-3. **Fast**: The compiler will compile to native code which will bring high performance. We try to do as much as possible during compilation (optimizations, type checking, ...) so during runtime, there is not much to be done except for GC.
+1. **Simplicity**: The code written in dotLang should be consistent, easy to learn, read, write and understand. There has been a lot of effort to make sure there are as few exceptions as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
+2. **Expressiveness**: It should give enough facilities to the developer to produce readable and maintainable code. This requires a comprehensive standard library in addition to language rules.
+3. **Performance**: The compiler will compile to native code which will result in high performance. We try to do as much as possible during compilation (optimizations, de-refrencing, type checking, ...) so during runtime, there is not much to be done except for GC. The standard library functions will be implemented in the assembly language where the performance is the main concern.
 
 Achieving all of above goals at the same time is something impossible so there will definitely be trade-offs and exceptions.
 The underlying rules of design of this language are 
@@ -37,15 +37,15 @@ The underlying rules of design of this language are
 [KISS rule](https://en.wikipedia.org/wiki/KISS_principle) and
 [DRY rule](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  There are functions and types. Each function gets one or more input (of different types) and gives an output. Types include primitive data types, tuple, union types and a general type alias. Polymorphism, templates, lambda expression and exception handling are also supported.
+As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  There are functions and types, nothing else. Each function receives input and gives an output. Types include primitive data types, tuple, union types and a general type alias. Polymorphism, templates, lambda expression and exception handling are also supported.
 
 ## Comparison with other languages
 
-**Compared to C**: dotLang is C language + Garabage collector + first-class functions + template programming + sum data types + module system + composition and powerful polymorphism + simple and powerful standard library + immutability + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + multiple dispatch + sane defaults - ambiguities - pointers - macros - header files.
+**Compared to C**: dotLang is C language + Garabage collector + first-class functions + template programming + sum data types + module system + powerful polymorphism + simple and powerful standard library + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + multiple dispatch + sane defaults - ambiguities - pointers - macros - header files.
 
-**Compared to Scala**: Scala + better loops + multiple dispatch - dependency on JVM - cryptic syntax - trait - custom operators - variance.
+**Compared to Scala**: Scala + multiple dispatch + better loops - dependency on JVM - cryptic syntax - trait - custom operators - variance.
 
-**Compared to Go**: Go + generics + immutability + multiple dispatch + sum types + sane defaults + better orthogonality (e.g. creating maps) + simpler primitives + more readable syntax - pointers - interfaces - global variables.
+**Compared to Go**: Go + generics + immutability + multiple dispatch + sum types + sane defaults + better orthogonality (e.g. creating maps) + simpler primitives - pointers - interfaces - global variables.
 
 ## Subsystems
 
@@ -55,7 +55,7 @@ As a 10,000 foot view of the language, code is written in files (called modules)
 
 ## Code organization
 
-- **Module**: Source code is written inside files which are called "Modules". Each module can reference other modules to call their functions or use their data structures.
+- **Module**: Source code is written inside files which are called "Modules". Modules contain definitions of data structures and functions. Each module can reference other modules to call their functions or use their data structures.
 - **Package**: Modules are organized into directories which are called packages. Each package is represented by a directory in the file-system. Packages have a hierarchical structure:
 ```
 core  
@@ -65,39 +65,39 @@ core
 |-----|-----tcp  
 ```
 In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages.
-- Unlike many other languages, modules are stateless. Meaning there is no variable or static code defined in a module.
+- Unlike many other languages, modules are stateless. Meaning there is no variable or static code defined in a module-level.
 
 ## General rules
 - **Encoding**: Source code files are encoded in UTF-8 format.
-- **Whitespace**: Any instance of space(' '), tab(`\t`), newline(`\r` and `\n`) are whitespace and will be ignored. Indentation must be done using spaces, not tabs.
+- **Whitespace**: Any instance of space(' '), tab(`\t`), newline(`\r` and `\n`) are whitespace and will be ignored. - **Indentation**: Indentation must be done using spaces, not tabs. 
 - **Comments**: `;` is used to denote comment. It must be either first character of the line or follow a whitespace.
 - **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0b0101011101` binary number. You can separate digits using undescore: `1_000_000`.
 - **Terminator**: Each statement must be in a separate line and must not end with semicolon.
-- **Order**: Each source code file contains 3 sections: import, definitions and function. The order of the contents of source code file matters: `import` section must come first, then type and protocol declarations and functions come at the end. If the order is not met, compiler will give warnings.
+- **Order**: Each source code file contains 3 sections: import, definitions and function. The order of the contents of source code file matters: `import` section must come first, then type and protocol declarations and then functions come at the end. If the order is not met, compiler will give warnings.
 - Import section is used to reference other modules that are being used in this module.
 - Definitions section is used to define data types and protocols.
-- Function section is used to define functions.
-- **Adressing**: Functions are called using `function_name(input1, input2, input3)` notation. Fields of a tuple are addressed using `tuple_name.field_name` notation. Modules are addressed using `/` notation (e.g. `/code/st/net/create_socket`).
+- Function section is used to define function bodies.
+- **Adressing**: Modules are addressed using `/` notation (e.g. `/code/st/net/create_socket`). Where `/` denotes include path.
 - **Encapsulation**: If a name (of a type, protocol or function) starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
-- **Immutability**: Only local variables of a function are mutable. Everything else is immutable.
 - **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Primitives (int, float, char), and types defined in core (bool, array, map, string, exception) are only exceptions to naming rules.
 
 ## Language in a nutshell
-1. **Primitives**: `int`, `float`, `char` (extended primitives: `bool`, `string`)
-2. **Tuple**: `type Point := {x: int, y:int, data: float}`
-3. **Inheritance**: Only for tuples, `type Circle := (Shape, radius: float)` 
-4. **Array**: `type JobQueue := array[int] = {0, 1, 2, 3}`
-5. **Generics**: `type Stack[T] := { data: array[T], info: int }`
-6. **Union**: `type Tree[T] := Empty | T | { data: T, left: Tree[T], right: Tree[T] }`
-7. **Map**: `type CountryPopulation := map[string,int] = { "US": 300, "CA": 180, "UK":80 }`
-8. **Function**: `func calculate(x: int, y: string) -> float { return if ( x > 0 ) 1.0 else 2.0  }`
-9. **Variable**: `var location: Point = { x=10, y=20, data: 1.19 }`
-10. **Import**: `import /core/std/Queue`
-11. **Immutability**: Only function local variables are mutable. Everything else is immutable.
-12. **Assignment**: 
-14. **Casting**: `var pt = @Point[int]({ x=10, y=20, data=1.11 })`
-15. **Lambda**: `var adder: func(int,int)->int = (x:int, y:int) -> x+y`
-16. **Protocols**: `protocol Comparable[T] := { func compare(x:T, y:T)->int }`, `func sort[T: Comparable](x:array[T])`
+1. **Primitives**: `binary` (extended primitives: `int`, `float`, `char`, `string`, `bool`).
+2. **Tuple**: `type Point := {x: int, y:int, data: float}`.
+3. **Variable**: `var location: Point = { x=10, y=20, data: 1.19 }`.
+4. **Inheritance**: By embedding (only for tuples), `type Circle := {Shape, radius: float}`.
+5. **Array**: `var JobQueue: array[int] = {0, 1, 2, 3}`.
+6. **Generics**: `type Stack[T] := { data: array[T], info: int }`.
+7. **Union**: `type Tree[T] := Empty | T | { root: T, left: Tree[T], right: Tree[T] }`.
+8. **Map**: `var CountryPopulation: map[string,int] = { "US": 300, "CA": 180, "UK":80 }`.
+9. **Function**: `func calculate(x: int, y: string) -> float { return if ( x > 0 ) 1.0 else 2.0  }`.
+10. **Import**: `import /core/std/Queue`.
+11. **Immutability**: `val x: int = 12`, no change or re-assignment to `x` is allowed.
+12. **Assignment**: Copies right-side data to left-side: `var myArray: array[int] = otherArray`
+13. **Reference assignment**: Assigns left-side to the data of the right side: `var x: int := y`.
+14. **Casting**: `var pt = @Point[int]({ x=10, y=20, data=1.11 })`.
+15. **Lambda**: `var adder: func(int,int)->int = (x:int, y:int) -> x+y`.
+16. **Protocols**: `protocol Comparable[T] := { func compare(x:T, y:T)->int }`, `func sort[T: Comparable](x:array[T])`.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
