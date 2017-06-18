@@ -277,3 +277,12 @@ Does this give people access to inside a tuple?
 `var x:int := @int(myPointTuple, 4)`? at least in syntax this should be possible, while if we use functions, we can simply enforce only binary input.
 `func readBinary[T](x: binary, offset: int) -> T`
 To be decided later.
+
+? - Why do we need a separate `nothing` type? It should just be part of a Maybe type.
+
+? - unify types: Mark all types based on `MyDataType`.
+
+? - Can we remove protocol?
+protocol is used to abstract over a behavior. I say I can accept any type as long as it has this specific behavior. I don't care what that type is. Because I only need that specific behavior.
+q: can we document the laws of protocol in the code? e.g. in Ord, it should be transitive
+q: What if a type implements a protocol in more than one way? e.g. type int, implements Ord in different ways using different functions.
