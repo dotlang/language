@@ -252,3 +252,28 @@ naming function output is werid.
 if we don't name function output, how can I change it? use another return.
 
 N - Create a compiler which does basic things (expression parsing, generics, ...) then implement the rest on dot, possibly with even re-write of original parts.
+
+? - Doesn't it make more sense if I write `x:=y+1` to address byte after y?
+No it is super confusing, even though we are using a different notation `:=`.
+`x := getAddress(y)+1` makes more sense
+`x := getOffset(y, 1)` is good too.
+to be more formal in `x:=y`, right side must be of type `ptr`. And you cannot create ptr. you must ask core.
+So `x:=y` should not make sense! because y might be int, not ptr. Also adding ptr makes things more confusing.
+So what comes to the right side of the `:=`? It is a single variable or expression.
+`x:=y` makes x point to y.
+So when I am working in slice or array, and want to get to a specific index in the array:
+`result := getBufferOffset(myBuffer, offset)`. This is a bit confusing.
+right side of `:=` is an expression. it is result of a function call. this function returns an int (or any other type) which is sitting inside a binary. So can I just call it normally to have a copy?
+`var t:int = getInsideBuffer(myBuffer, 10)`? should be ok. but I should choose a better name.
+This can be seen as a cast with an offset.
+`var x:int = @int(y)` cast y to int.
+`var x:int = @int(myBuffer, 10)` you can cast a buffer to another type (whole or from a specific index).
+`var x:int := @int(myBuffer, 10)` now x++ will update inside the buffer.
+But cast is suppose to make a copy! `var x = @int(maybeInt)`. isn't it?
+We can say that cast can make a copy or not. if type is matching, it won't create a copy.
+`var x:int = @int(otherInt)` this won't create a copy!
+this is more intuitive than calling another function. 
+Does this give people access to inside a tuple?
+`var x:int := @int(myPointTuple, 4)`? at least in syntax this should be possible, while if we use functions, we can simply enforce only binary input.
+`func readBinary[T](x: binary, offset: int) -> T`
+To be decided later.
