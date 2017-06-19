@@ -253,7 +253,7 @@ if we don't name function output, how can I change it? use another return.
 
 N - Create a compiler which does basic things (expression parsing, generics, ...) then implement the rest on dot, possibly with even re-write of original parts.
 
-? - Doesn't it make more sense if I write `x:=y+1` to address byte after y?
+N - Doesn't it make more sense if I write `x:=y+1` to address byte after y?
 No it is super confusing, even though we are using a different notation `:=`.
 `x := getAddress(y)+1` makes more sense
 `x := getOffset(y, 1)` is good too.
@@ -277,12 +277,123 @@ Does this give people access to inside a tuple?
 `var x:int := @int(myPointTuple, 4)`? at least in syntax this should be possible, while if we use functions, we can simply enforce only binary input.
 `func readBinary[T](x: binary, offset: int) -> T`
 To be decided later.
+But the syntax for `:=` is similar to C: `int* x = &y`. You cannot write `int* x = &(y+1)` it does not make sense.
+C uses `&` so it is more intuitive that we cannot write `&(y+1)`. But here `:=` implies a more extended notation.
+`x := y`, `x := variable`, `x := process(...)`
 
-? - Why do we need a separate `nothing` type? It should just be part of a Maybe type.
+Y - Why do we need a separate `nothing` type? It should just be part of a Maybe type.
 
-? - unify types: Mark all types based on `MyDataType`.
+N - unify types: Mark all types based on `MyDataType`.
+`binary, int, char, float, array, map, bool, string`
+
+N - Note that generics are resolved using static type not dynamic type.
+
+N - When iterating through a custom type, what if it returns `maybe<int>`?
+
+Y - Put map, array and other non-language things in a separate section. First explain the core language. Then constructs which are built based on them.
+Just say array and map are part of core and explain about syntax sugars that compiler provides.
+
+Y - Remove phantom types. They can be easily implemented with named types.
+`type Sha1Hash := string`
+`type Md5Hash := string`
+
+N - Replace sum type with a tuple which we can only set one field's value.
+Does this help with inheritance in sum types? type matching? enum? error handling?
+What about adding a tuple where all fields have the same name:
+`type IntFloat := {x:int, x:float}`
+Or better yet: An unnamed tuple!
+`type IntFloat := {int, float}`
+`type Maybe[T] := {T, Nothing}`
+How are we then going to represent the fact that it can only have one value?
+`;`? This is a union so these fields are all stacked on top of each other.
+What do we want to simplify?
+maybe a normal tuple with flag:
+`type IntFloat := {i: int, f: float, status: int}`. if status is 1 then i has value, if it is 0 then f is valid.
+Sum type can be simulated with tuple but needs more code: set status when you write something.  check status when you read something back to know which field is valid. 
+Advantage: We won't need `@` for that, the rules about not-overlap in sum type won't be needed anymore (`type s := Circle | Shape`).
+Maybe we can solve the overlap problem with tagging, like Haskell:
+`data EitherIntInt = Left Int | Right Int`
+Then how can we read/write values? It is not intuitive.
+`type intOrFloat := int | float`
+`var x: IntOrFloat = 1 ;or =2.233`
+The overlap problem can be detected at runtime. But anyway, maybe we can accept that, based on the dynamic type of the variable. So if we assign circle to `shape|circle` it will be there as a circle not a shape.
+Can we think of dynamic/static type like a sum type?
+
+N - Dave Cheney: Most programming languages start out aiming to be simple, but end up just settling for being powerful.
+Something which is simple may take a little longer, it may be a little more verbose, but it will be more comprehensible.
+limit the number of semantic conveniences
+The 90% solution, a language that remains orthogonal while recognizing some things are not possible.
+= 
+About the simplicity, I think the core of dot is about "guarantees". When I declare a typed int variable, I have a guarantee that it won't have a string. Same for optional/Maybe (I have a guarantee that variables will be one of these two).
+Also about generics, I have a guarantee the it will act acording to the protocol I have specified.
+For val, I have a guarantee that it will be immutable.
 
 ? - Can we remove protocol?
 protocol is used to abstract over a behavior. I say I can accept any type as long as it has this specific behavior. I don't care what that type is. Because I only need that specific behavior.
 q: can we document the laws of protocol in the code? e.g. in Ord, it should be transitive
 q: What if a type implements a protocol in more than one way? e.g. type int, implements Ord in different ways using different functions.
+other option: make method names anonymous and let type explicitly state which protocols it implements and what is the name of corresponding methods.
+
+? - Can we replace subtyping with functions?
+and maybe use protocols?
+```
+protocol SubShape[T] := {
+ func getShape(T)->Shape
+}
+
+;this function can act on any type that "claims" to be a shape (claim = implement appropriate function)
+func processShape[T: SubShape](s: T) { 
+  var x: Shape = getShape(s);
+}
+func getShape(x: Circle)->Shape { return x.shape }
+```
+If caller uses `:=` it can mutate inside the parent type by having a pointer of child type.
+`var x: Shape := createShape()` x will have static type as Shape but dynamic type may be different.
+What parts of subtyping causes a change in the language/syntax/semantics: 
+1. automatic conversion from child to parent when needed: `process(myCircle)` fwd to shape
+2. ability to store data of type child in variables of type parent: `var s: Shape := createCircle()`
+for 1, we already have forwarding methods: `func process(x: Circle->Shape, y:float)` to make it explicit.
+`var s: Shape := createCircle().Shape`. But for performance reasons, the parent should be unnamed.
+
+? - Now that everything is ref and `=` is to copy value, whenever I am working with tuples, I have to keep in mind to use `:=`. which is a bit hard because people forget things.
+
+? - Can we remove polymorphism or simplify it? or method dispatch?
+
+? - If caller can send a var to a function as val, it can change its value and it can be cause of race.
+
+? - What is the main source of complexity now?
+template?
+polymorphism and subtyping?
+sum types? no.
+protocol?
+immutability?
+
+? - Can we make the special behavior of compiler toward array and hash literals, not special?
+Maybe by calling `opCall` on a temporary mutable instance?
+
+N - Problem with templates in C++:
+- makes code unreadable, difficult to maintain
+can we replace them with something like `constexpr` in c++?
+
+? - Remove/simplify generics:
+If everything is supposed to be a reference, maybe generics can be simplified into a normal generic type with `voi*` or similar. then `anything` type is actually just a pointer.
+on option: only use generic to specify output type of a function (which means automatic casting only). In this case, maybe we can use a simpler notation rather than `[]`: `int x = pop!int(stack1)`
+So `f!T(x,y,z)` is just a shortcut for: `@T(f(x,y,z))`.
+We define `anything` as something like `interface{}` or `void*` or `Object`.
+issue: Then array will be just a set of pointers. So array of 3 integers will be 3 pointers to 3 integer -> waste memory space.
+how can we implement array without generics and with anything/binary?
+`func array(size:int)`
+ 
+? - remove `defer`
+RAII like C++ can help us remove `defer`.
+applications of defer: close db/net connection, close file, unlock mutex
+con of defer: make code unreadable, what if defer inside defer?, what if I want to change output in defer, what if I run a new thread in defer, what if there is an exception inside defer?, what if I defer x.close and return x? what is order of defers? how/when are defer argument evaluated?
+
+? - remove exceptions
+What can be a good use case for exceptions? Now that we have maybe?
+Thsi can remove catch, throw and maybe defer.
+e.g. in SerDe when format is incorrect, something is missing, cannot cast.
+use case: prevent a plugin or thread crashes the whole app.
+option: when you load a plugin, you can get control of it's lifecycle. same when you create a thread or green thread. You can define a result/output to be updated when thread or goroutine calls "system_exit" to end the process.
+
+? - binary can be parent type of all non-tuples and `{}` parent of all tuples.
