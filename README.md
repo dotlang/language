@@ -20,7 +20,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, added inline assembly, introduced `:=` ref-assign operator and make `=` data-copy operator, removed `break` and `continue`
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, added inline assembly, introduced `:=` ref-assign operator and make `=` data-copy operator, removed `break` and `continue`, removed Phantom types setion as they can be implemented with named types
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
@@ -84,7 +84,7 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 - Function section is used to define function bodies.
 - **Adressing**: Modules are addressed using `/` notation (e.g. `/code/st/net/create_socket`). Where `/` denotes include path.
 - **Encapsulation**: If a name (of a type, protocol or function) starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
-- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Primitives (int, float, char), and types defined in core (bool, array, map, string, exception) are only exceptions to naming rules.
+- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Primitives (binary, int, float, char), and types defined in core (bool, array, map, string) are the only exceptions to naming rules.
 
 ## Language in a nutshell
 1. **Primitives**: `binary` (extended primitives: `int`, `float`, `char`, `string`, `bool`).
@@ -191,95 +191,6 @@ There are two named types which are called "Extended Primitives" because of thei
 type bool := true | false
 type string := array[char]
 ```
-
-## Array
-- `string` is an array and like an array, compiler handles literals and string concatenation:
-`var str: string = ["Hello ", str2, "World!"]`
-`var str: string = [str1, str2]`
-
-- Type of slice is different from array.
-`myArray(10)` is translated to this function call: `opCall(myArray, 10)`. If it returns `var int` you can assign another value to it: `myArray(1) = g` will copy value of g to the array.
-`func opCall[T](x: array[T], index: int) -> T`
-slice is a meta-array. `type slice[T] = (length: int, start: T)`
-- Upon initial value setting, operation is handled by the compiler, without calling opCall. Because opCall cannot set any value for a val array.
-`func opCall[T](s: array[T], start: int, end: int) -> slice[T]`
-means: `myArray(10,20)` will return a slice while `myArray(10)` will return a single element.
-This function is overriden to support optional end.
-
-- If an array is var, all it's elements are var. Same for hash and tuple. This means const is deep and transitive.
-Arrays are a special built-in type. They are defined using generics. Compiler provides some syntax sugars to work with them.
-`[0, ..., 3]` means `[0, 1, 2, 3]`
-`[2, 4, ... , 100]` step=2, can be negative
-`[0, 0, ... , 0x100]` repeat 0 for 100 times.
-
-```
-;define an array of integer number and initialize
-var numbers: array[int] = [1, 2, 3, 4]
-
-;t will be 1
-var t:int = numbers(0)   
-
-;this will change '2' to '3'
-numbers(1)++             
-
-;syntax sugar to create a range of values (inclusive)
-var months: array[int] = [1..12] 
-
-;you can use core function to allocate array
-var allocated: array[int] = allocate[int](100)
-
-;multi-dimensional arrays are created using nested generic type
-var x: array[array[int]]
-
-;note that you can use 'type' to simplify cases where type name is complicated
-type TwoDimArray := array[array[int]]
-var x: TwoDimArray
-```
-- **Slice**: You can use slicing notation to create a virtual array which is pointing to a location inside another array. You use `array_var[start:end]` notation to create a slice.
-```
-;a normal array
-var x: array[int] = [11, 12, 13, 14, 15, 16, 17]
-
-;defining a slice containintg '12' and '13'
-var y: array[int] = x({1:2})
-
-;this will make '12' change to '22'
-y(0)+=10
-
-;start and end are optional and if ommitted will default to beginning/end of the array
-;here z will contain '15', '16' and '17'
-var z: array[int] = x.[4:]
-
-;here u will contain '11' and '12'
-var u: array[int] = x.[:1]
-
-;you can make slice a clone of original array by eliminating both start and end
-var p: array[int] = x.[:]
-
-;you can use a slice on the left side of an assignment
-;it will put result of right side of '=' into the original array
-mySlice = createValues()
-```
-
-## Map
-- Upon initial value setting, operation is handled by the compiler, without calling opCall. Because opCall cannot set any value for a val map.
-
-`myMap(10)` is translated to this function call: `opCall(myMap, 10)`
-`myMap(10) = 19` is translated to: `opCall(myMap, 10, 19)`
-`func opCall[K, V](x: map[K, V], index: K) -> V`
-
-Maps, hashtables or associative arrays are a data structure to keep a set of keys and their corresponding values.
-```
-;defining and initializing a map
-var y: map[string, int] = ["a": 1, "b": 2]
-
-;read/write from/to a map
-y("a") = 100
-var t: int = y("b")
-```
-- If you query a map for something which does not exist, it will return `Nothing`. Below shows two ways to read data from a map:
-`if ( var t = my_map("key1"), t @ var x:int )`
-`if ( var t = my_map("key1"), t !@ Nothing )`
 
 ## Tuple
 A tuple is a collection of variables combined together under a single type. This is similar to an array but with different data types for fields. 
@@ -857,44 +768,6 @@ Protocols can embed other protocols to include their functions.
 You can define and implement a protocol for a type outside your codebase, that's why you dont need to specify which protocols are implemented by a type upon declaration.
 - Note that although a protocol may require a specific function, but actual function to be called is determined at runtime based on dynamic type.
 
-## Phantom types
-Phantom are compile-time label/state attached to a type. You can use these labels to do some compile-time checks and validations. Here labels are implemented using generic types which are not used for data allocation.
-For example we have a string which is result of md5 hash and another for sha-1. We should not be comparing these two although they are both strings. So how can we mark them?
-```
-type HashType := MD5 | SHA1
- ;when generic type is not used on the right side, it will be only for compile time check
-type HashStr[T] := string     
-type Md5Hash := HashStr[MD5] 
-;Md5Hash type can be easily cast to string, but if in the code a string
-;is expected to be of type Sha1Hash you cannot pass Md5Hash
-type Sha1Hash := HashStr[SHA1]
-func md5(s: string)->Md5Hash {
-    var result: string = "ddsadsadsad"
-    return %Md5Hash(result)  ;create a new string of type md5-hash
-}
-func sha1(s: string)->Sha1Hash
-var t: Md5Hash  = sha1("A")  ;will give compiler error because output of sha1 is Sha1Hash
-func testMd5(s: string, t: Md5Hash) -> md5(s) == t
-
-;if there is only one case, you can simply use named type
-type SafeString := string
-func processString(s: string)->SafeString
-func work(s: SafeString)
-
-;another example: expressions
-type ExpType := INT | STR
-type Expression[T] := (token: string)
-func readIntExpression(...) -> Expression[INT]
-func plus(left: Expression[INT], right: Expression[INT])...
-func concat(left: Expression[STR], right: Expression[STR])...
-
-;door
-type DoorState := Open | Closed
-type Door[T] := (string)
-func closeDoor(x: Door[Open]) -> Door[Closed]
-func openDoor(x: Door[Closed]) -> Door[Open]
-```
-
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Notations
@@ -910,7 +783,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `equals` functions is used for equality check.
 - You can have multiple assignments at once: `x,y=1,2`
 - Assignment semantics: `x=y` will duplicate contents of y into x (same as `*x=*y` in C++). So if rvalue is a temp variable (e.g. `x=1+y`), it will be a ref-assign handled by the compiler. If you want to ref-assign you should use `:=` notation.
-- Ref-Assignment: This is mostly used to work with very large data structures where assignment by copy is expensive: `var x = getLargeBuffer()` -> `var x := getLargeBuffer()`. Other use cases: working with binary data, array and slice implementation, re-use an existing val.
+- Ref-Assignment: This is mostly used to work with very large data structures where assignment by copy is expensive: `var x = getLargeBuffer()` -> `var x := getLargeBuffer()`. Other use cases: working with binary data, array and slice implementation, re-use an existing val. Right side of `:=` must be a simple expression (an identifier or a function call).
 - Almost everywhere, we deal with values not references. So `x=y+1` means increase value of y by one and copy the result into the memory location to which x is pointing to. `x:=y+1` means increase value of y by one and store the result in a memory location and make x point to that memory location. If you want to work with addresses you should use core functions.
 `val x = otherVal` copy (or ref-assign due to optimization)
 `var x = otherVar` copy
@@ -953,7 +826,7 @@ Keywords: `import`, `func`, `var`, `val`, `type`, `defer`, `native`, `loop`, `pr
 semi-Keywords: `if`, `else` (used in syntax sugar)
 Operators: 
 Primitive data types: `int`, `float`, `char` (int is signed and 64 bit, char is unsigned)
-Helper data types: `bool`, `string`, `array`, `map`, `nothing`
+Helper data types: `bool`, `string`, `array`, `map`
 - `bool` is a simple sum type
 - `string` is a named type based on char array.
 
@@ -1171,6 +1044,95 @@ A set of core packages will be included in the language which provide basic and 
 - Cast binary to unsigned number
 
 Generally, anything that cannot be written in atomlang will be placed in this package.
+
+## Array
+- `string` is an array and like an array, compiler handles literals and string concatenation:
+`var str: string = ["Hello ", str2, "World!"]`
+`var str: string = [str1, str2]`
+
+- Type of slice is different from array.
+`myArray(10)` is translated to this function call: `opCall(myArray, 10)`. If it returns `var int` you can assign another value to it: `myArray(1) = g` will copy value of g to the array.
+`func opCall[T](x: array[T], index: int) -> T`
+slice is a meta-array. `type slice[T] = (length: int, start: T)`
+- Upon initial value setting, operation is handled by the compiler, without calling opCall. Because opCall cannot set any value for a val array.
+`func opCall[T](s: array[T], start: int, end: int) -> slice[T]`
+means: `myArray(10,20)` will return a slice while `myArray(10)` will return a single element.
+This function is overriden to support optional end.
+
+- If an array is var, all it's elements are var. Same for hash and tuple. This means const is deep and transitive.
+Arrays are a special built-in type. They are defined using generics. Compiler provides some syntax sugars to work with them.
+`[0, ..., 3]` means `[0, 1, 2, 3]`
+`[2, 4, ... , 100]` step=2, can be negative
+`[0, 0, ... , 0x100]` repeat 0 for 100 times.
+
+```
+;define an array of integer number and initialize
+var numbers: array[int] = [1, 2, 3, 4]
+
+;t will be 1
+var t:int = numbers(0)   
+
+;this will change '2' to '3'
+numbers(1)++             
+
+;syntax sugar to create a range of values (inclusive)
+var months: array[int] = [1..12] 
+
+;you can use core function to allocate array
+var allocated: array[int] = allocate[int](100)
+
+;multi-dimensional arrays are created using nested generic type
+var x: array[array[int]]
+
+;note that you can use 'type' to simplify cases where type name is complicated
+type TwoDimArray := array[array[int]]
+var x: TwoDimArray
+```
+- **Slice**: You can use slicing notation to create a virtual array which is pointing to a location inside another array. You use `array_var[start:end]` notation to create a slice.
+```
+;a normal array
+var x: array[int] = [11, 12, 13, 14, 15, 16, 17]
+
+;defining a slice containintg '12' and '13'
+var y: array[int] = x({1:2})
+
+;this will make '12' change to '22'
+y(0)+=10
+
+;start and end are optional and if ommitted will default to beginning/end of the array
+;here z will contain '15', '16' and '17'
+var z: array[int] = x.[4:]
+
+;here u will contain '11' and '12'
+var u: array[int] = x.[:1]
+
+;you can make slice a clone of original array by eliminating both start and end
+var p: array[int] = x.[:]
+
+;you can use a slice on the left side of an assignment
+;it will put result of right side of '=' into the original array
+mySlice = createValues()
+```
+
+## Map
+- Upon initial value setting, operation is handled by the compiler, without calling opCall. Because opCall cannot set any value for a val map.
+
+`myMap(10)` is translated to this function call: `opCall(myMap, 10)`
+`myMap(10) = 19` is translated to: `opCall(myMap, 10, 19)`
+`func opCall[K, V](x: map[K, V], index: K) -> V`
+
+Maps, hashtables or associative arrays are a data structure to keep a set of keys and their corresponding values.
+```
+;defining and initializing a map
+var y: map[string, int] = ["a": 1, "b": 2]
+
+;read/write from/to a map
+y("a") = 100
+var t: int = y("b")
+```
+- If you query a map for something which does not exist, it will return `Nothing`. Below shows two ways to read data from a map:
+`if ( var t = my_map("key1"), t @ var x:int )`
+`if ( var t = my_map("key1"), t !@ Nothing )`
 
 ## Standard package
 
