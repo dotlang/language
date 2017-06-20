@@ -20,7 +20,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, added inline assembly, introduced `:=` ref-assign operator and make `=` data-copy operator, removed `break` and `continue`, removed Phantom types setion as they can be implemented with named types
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, added inline assembly, introduced `:=` ref-assign operator and make `=` data-copy operator, removed `break` and `continue`, removed Phantom types setion as they can be implemented with named types, removed exceptions and assert and replaced `defer` with RIAA,
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
@@ -822,7 +822,7 @@ bin-type example:
 - `()` function call
 - `.` access tuple fields
 
-Keywords: `import`, `func`, `var`, `val`, `type`, `defer`, `native`, `loop`, `protocol`, `where`
+Keywords: `import`, `func`, `var`, `val`, `type`, `native`, `loop`, `protocol`, `where`
 semi-Keywords: `if`, `else` (used in syntax sugar)
 Operators: 
 Primitive data types: `int`, `float`, `char` (int is signed and 64 bit, char is unsigned)
@@ -894,47 +894,16 @@ Block  = Statement | '{' (Statement)* '}'
 These declarations will be only available inside if/else block.
 `if (var x=getResult(), x>0) ... else ...`
 `if (var x=1, x>y)...`
+- `xyz if(cond)` is also possible.
 
-###assert
-This is a fucntion in core.
-```
-AssertStmt = 'assert' condition [':' exception]
-```
-- Assert makes sure the given `condition` is satisfied. 
-- If condition is not satisfied, it will throw an exception (exception is a built-in type). This will exit current function and outer functions, until it is expected.
-- In order to keep code more readable, you can not return an exception directly.
-- There is no `throw` keyword and this is the only way to cause exception.
-- Output of any function is automatically updated with `| exception` by the compiler (if needed).
-- You can use `assert false, X` to create exception and return from current method immediately.
-```
-;inside function adder
-assert false, "Error!"  ;throw exception and exit
-;outside: catching error
-;accept and expect the exception
-var g: int|exception = func1()   ;this is valid
-```
-- You can use `defer BLOCK` to tell the runtime to run a block of code after exiting from the function. If function output is named, it will be accessible in defer block.
-- Any assert which only uses `@` with generic types, will be evaluated at compile time. You can use this to implement generic bounds.
-- About returning an exception, we don't need to do anything in lang spec. Because this is a normal feature of the language.
-- We don't even need a special exception type. Go panic and recover work with `interface{}`.
-- `assert` will throw an exception. This exception can only be caught in a defer block.
-- You can get current exception (if any) using a call to `catch`.
-- You can change function output in a defer block using return statement.
-```
-func process() -> int {
-    defer {
-        var maybeException = catch() ;returns Exception|Nothing
-        ;in case of an exception, return value should be 19
-        if ( maybeException @ Exception ) return 19
-    }
-```
-- Same as above: `defer if ( var x = catch(), x !@ nothing ) { return 19 }` 
-- `Exception` is a simple tuple defined in core.
-- You can assert inside a defer block, which if fulfilled, will continue throwing the exception.
-- `assert` and `catch` are two functions defined in core. 
-- If you call `catch` outside defer block, it will always return Nothing.
-`func throw[T](x: T)`
-`func catch[T]()->T|Nothing`
+###assert (removed)
+- If condition is not satisfied, it will return an error. 
+- We have RIAA approach. Anything which is allocated inside a function which is not part of return value will be disposed (by calling `dispose` function) when exiting the function.
+- Any assert which only uses `@` with generic types, will be evaluated at compile time. You can use this to implement generic constraints.
+- `Exception` is a simple tuple defined in core. 
+- You can use suffix if for assertion: `return xyz if !(str.length>0)`
+- To handle exceptions in a code in rare cases (calling a plugin or another thread), you can use `invoke` core function.
+`func invoke[I,O](f: func, input: I)->O|Exception`. If your function has more than one input, you should define a wrapper function or a closure which has one input of type tuple.
 
 - **Nothing**: Nothing is a sum type with only one value: `nothing`.
  You can use it's type for return value of a function.
@@ -1064,6 +1033,7 @@ Arrays are a special built-in type. They are defined using generics. Compiler pr
 `[0, ..., 3]` means `[0, 1, 2, 3]`
 `[2, 4, ... , 100]` step=2, can be negative
 `[0, 0, ... , 0x100]` repeat 0 for 100 times.
+- In fact, anywhere that compiler detects these literals, it will call `opCall` for the expected type with index and value. So you can use this type of literal for your custom types too. If type is marked with `val`, a temporary var will be created for these operations.
 
 ```
 ;define an array of integer number and initialize
@@ -1130,6 +1100,8 @@ var y: map[string, int] = ["a": 1, "b": 2]
 y("a") = 100
 var t: int = y("b")
 ```
+- In fact, anywhere that compiler detects these literals, it will call `opCall` for the expected type with key and value. So you can use this type of literal for your custom types too. If type is marked with `val`, a temporary var will be created for these operations.
+
 - If you query a map for something which does not exist, it will return `Nothing`. Below shows two ways to read data from a map:
 `if ( var t = my_map("key1"), t @ var x:int )`
 `if ( var t = my_map("key1"), t !@ Nothing )`
