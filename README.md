@@ -193,6 +193,8 @@ type string := array[char]
 ```
 
 ## Tuple
+- Tuples are translated to binary type by compiler: e.g. `type Point := {x:int, y:int}` will become:
+`type Point := binary[16], x_offset=0, y_offset=8`
 A tuple is a collection of variables combined together under a single type. This is similar to an array but with different data types for fields. 
 ```
 ;defining a named type for a tuple
@@ -225,6 +227,7 @@ var x,y = myCar
 - You can cast a tuple literal to a specific type. `var g = @MyTuple({field=10, field2=20})`
 
 ## Union
+- Also union types are translated to a binary with size=largest choice.
 - unions are types based on dynamic type so `type A := Shape | Circle` is valid.
 `type MaybeInt := int | Nothing`
 Labels define a new type which has only one value with the same notation (or use them).
