@@ -93,7 +93,7 @@ N - Why not have everything value and compiler converts them to references when 
 Because we will loose flexibility of pointer operations.
 
 Y - Let `=` and `==` act as if data is data and not a reference.
-Currencylt `==` acts this way. Compares real data, not references. But there are functions to compare ref.
+Currently `==` acts this way. Compares real data, not references. But there are functions to compare ref.
 `x=y` should copy data of y into x. So if rvalue is a temp variable (e.g. `x=1+y`), it will be a ref-assign handled by the compiler. if you want x to reference to place where y is pointing to, you must use another notation.
 `x << y`
 `var x: point = y` will copy all the data inside y to x
@@ -230,7 +230,7 @@ no it becomes very unreadable an confusing.
 
 Y - infinite loop can be written as `loop(true)`.
 
-Y - force return to be last statement of the function and maybe simplify based on it.
+N - force return to be last statement of the function and maybe simplify based on it.
 the fact that we can define named output is a bit confusing with return.
 why do we need function output? for reading/for writing.
 for writing -> use return
@@ -404,13 +404,16 @@ how can we implement array without generics and with anything/binary?
  
 N - binary can be parent type of all non-tuples and `{}` parent of all tuples.
 
-? - Can we remove protocol?
+N - can we remove `where`?
+`func get[vax, T where vax: var|val](vax arr: array[T], index: int) -> vax T`
+
+N - Can we remove protocol?
 protocol is used to abstract over a behavior. I say I can accept any type as long as it has this specific behavior. I don't care what that type is. Because I only need that specific behavior.
 q: can we document the laws of protocol in the code? e.g. in Ord, it should be transitive
 q: What if a type implements a protocol in more than one way? e.g. type int, implements Ord in different ways using different functions.
 other option: make method names anonymous and let type explicitly state which protocols it implements and what is the name of corresponding methods.
 
-? - Can we replace subtyping with functions?
+N - Can we replace subtyping with functions?
 and maybe use protocols?
 ```
 type Shape := { name: string }
@@ -462,14 +465,7 @@ can we simulate/support this notation using current tools?
 How can we model an expression parser (add, minus, ...) or a JSON file model (string, int, map, ...)?
 FP languages use sum types for this.
 
-? - Sometimes it is good to force caller of a function to use `:=`. For example when it is casting circle into Shape.
-can we make this transparent? so even if they use `=` they won't loose dynamic type.
-`var s: Shape = myCircle.Shape`
-`var s: Shape := myCircle.Shape`
-`var s: Shape = myCircle` 
-`var s: Shape := myCircle` 
-
-? - Can we remove polymorphism or simplify it? or method dispatch?
+N - Can we remove polymorphism or simplify it? or method dispatch?
 The underlying principle is Liskov substitution rule. I should be able to substitute Circle with Shape.
 Either in a function call or assignment:
 `var s: Shape = myCircle`
@@ -479,7 +475,67 @@ in OOP when we see `x.f()` we don't know which method will be called because x c
 in FP, we use type-classes so we know. `f[X](x)` indicates function of the typeclass for type X will be called.
 e.g. `area[Circle](myCircle)`.
 
-? - If caller can send a var to a function as val, it can change its value and it can be cause of race.
-
-? - Can we make generic types and protocols, more built-in and consistent?
+N - Can we make generic types and protocols, more built-in and consistent?
 `func sort[T: Ord](arr: array[T])-> array[T] { ... }`
+
+N - Sometimes it is good to force caller of a function to use `:=`. For example when it is casting circle into Shape.
+can we make this transparent? so even if they use `=` they won't loose dynamic type.
+`var s: Shape = myCircle.Shape` - copy as a shape
+`var s: Shape := myCircle.Shape` - reference to a shape
+`var s: Shape = myCircle` - copy the whole circle
+`var s: Shape := myCircle` - point to circle as a shape
+Having `s := myCircle.Shape` is dangerous because if s is returned but myCircle is not, how are we supposed to free memory?
+But this is a normal pattern. Just like having an int point to inside an array and returning that integer.
+At least this is possible in C++ and Golang, but in golang the whole structure will not be GCed until the part is valid.
+Anyway, this is more like an implementation strategy which should be handled by compiler, runtime, GC.
+You cannot force caller to use `:=` but you can use `=` before return to return a small structure.
+
+N - Like C++ move semantic
+If I write `buffer = buffer1+buffer2` result of right side is a temp var so instead of deep copy, I can run `buffer := 1+2` instead. This is implementation.
+
+N - remove `:=`?
+Can we say if function returns `var X` we must use `:=`?
+If so maybe we can fully eliminate `:=` notation.
+`var x = getVarInt()`.
+Here it does not really make sense to use `=`. It should be `:=` because rvalue is a temp var.
+Can we eliminate `:=` completely? and infer `=` or ref-assign?
+`var x:int = y` should this be `=` or `:=`?
+in many cases compiler can deduce `=` or `:=` (if it is a primitive, `=`, if it is tuple, `:=`) but in some cases it is not flexible enough. for example if a function wants to return a reference to a primitive.
+or we want to send a copy of a tuple -> solution is to clone.
+main issue is with lack of gen and orth when we have: `func process()->var int`.
+If convention is copy-value for primitives, then we cannot get the reference.
+`var p: Buffer = processData()` should this copy the whole structure?
+If processData output is val, it definitely will duplicate.
+But if processData output is var, then rvalue is a temp, then `p := processData` is better. compiler can do this optimization but what should we do with added confusion over `=` vs `:=`?
+can we remove `:=`?
+we say `=` will duplicate right-side into left-side but will ref-assign if?
+`var x = y`
+`var buffer = processData()`
+How can we elegantly and with simplicity say `=` will duplicate for primitives but ref-assign for tuples (for var-var case).
+advantage of `:=`: getting rid of cloning operator and cast to val/var (because `=` makes a copy).
+Now `=` has a consistent behavior and so does `:=`. But without `:=` we need to set rules for `=`.
+
+
+N - If caller can send a var to a function as val, it can change its value and it can be cause of race.
+A race condition occurs when two or more threads can access shared data and they try to change it at the same time.
+if a method wants an input but does not care whether it is var or val it can use generics.
+But if it wants to use that variable in concurrency situation and wants to make sure it will be `val` it must declare parameter as `val`.
+Why not default to var/val if input argument has no qualifier?
+So if function input does not have a qualifier, it can be var or val but function should treat it as read-only/immutable.
+what about output type?
+if output qualifier is missing, function can return var or val, but caller should treat it like a val.
+Is this correct? `val x = var1`. No. `val` is not a "read-only view" of a memory cell. It should be a real read-only memory cell to which only vals are pointing.
+
+Y - this should be forbidden: `val x := otherVar`
+
+? - What are the problems with generics?
+
+? - What are the problems with subtyping and polymorphism?
+
+? - Make it easier to check for errors?
+`var x = process()`
+`if ( x @ error ) ...`
+`if ( var x = process(), x @ error ) ... else ...`
+`var x = if ( var temp = process(), temp @ error ) -1 else t`
+Is it possible to use monad to call a series of functions and return error as soon as any of them returns error?
+
