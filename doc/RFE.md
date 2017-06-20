@@ -323,10 +323,21 @@ N - Dave Cheney: Most programming languages start out aiming to be simple, but e
 Something which is simple may take a little longer, it may be a little more verbose, but it will be more comprehensible.
 limit the number of semantic conveniences
 The 90% solution, a language that remains orthogonal while recognizing some things are not possible.
-= 
 About the simplicity, I think the core of dot is about "guarantees". When I declare a typed int variable, I have a guarantee that it won't have a string. Same for optional/Maybe (I have a guarantee that variables will be one of these two).
 Also about generics, I have a guarantee the it will act acording to the protocol I have specified.
 For val, I have a guarantee that it will be immutable.
+
+N - Problem with templates in C++:
+- makes code unreadable, difficult to maintain
+can we replace them with something like `constexpr` in c++?
+
+N - Now that everything is ref and `=` is to copy value, whenever I am working with tuples, I have to keep in mind to use `:=`. which is a bit hard because people forget things.
+
+N - Can we drop generics and keep protocol?
+`type array := anything`
+`protocol getIndex := ...`
+`func sort(x: anything + getIndex + Ord) ...`
+`func getIndex(x: array)...`
 
 ? - Can we remove protocol?
 protocol is used to abstract over a behavior. I say I can accept any type as long as it has this specific behavior. I don't care what that type is. Because I only need that specific behavior.
@@ -337,15 +348,20 @@ other option: make method names anonymous and let type explicitly state which pr
 ? - Can we replace subtyping with functions?
 and maybe use protocols?
 ```
-protocol SubShape[T] := {
- func getShape(T)->Shape
+type Shape := { name: string }
+type Circle := { shape: Shape, rad: float }
+
+protocol ShapeChild[T] := {
+ func toShape(T)->Shape
+ func fromShape(Shape)->T
 }
 
 ;this function can act on any type that "claims" to be a shape (claim = implement appropriate function)
-func processShape[T: SubShape](s: T) { 
-  var x: Shape = getShape(s);
+func processShape[T: ShapeChild](s: T) { 
+  var x: Shape := toShape(s)
+  x.name += "A"
 }
-func getShape(x: Circle)->Shape { return x.shape }
+func toShape(x: Circle)->Shape { return x.shape }
 ```
 If caller uses `:=` it can mutate inside the parent type by having a pointer of child type.
 `var x: Shape := createShape()` x will have static type as Shape but dynamic type may be different.
@@ -354,10 +370,19 @@ What parts of subtyping causes a change in the language/syntax/semantics:
 2. ability to store data of type child in variables of type parent: `var s: Shape := createCircle()`
 for 1, we already have forwarding methods: `func process(x: Circle->Shape, y:float)` to make it explicit.
 `var s: Shape := createCircle().Shape`. But for performance reasons, the parent should be unnamed.
-
-? - Now that everything is ref and `=` is to copy value, whenever I am working with tuples, I have to keep in mind to use `:=`. which is a bit hard because people forget things.
+subtyping and generics are two important tools to support for polymorphism.
+why do we want to remove subtyping?
+problem 1: sometimes we want B based on A but it should not behave like A.
 
 ? - Can we remove polymorphism or simplify it? or method dispatch?
+The underlying principle is Liskov substitution rule. I should be able to substitute Circle with Shape.
+Either in a function call or assignment:
+`var s: Shape = myCircle`
+`process(myCircle)` where process expects a Shape.
+what if the developer can explicitly indicate he wants a variable which can hold both static and dynamic type?
+in OOP when we see `x.f()` we don't know which method will be called because x can be anything.
+in FP, we use type-classes so we know. `f[X](x)` indicates function of the typeclass for type X will be called.
+e.g. `area[Circle](myCircle)`.
 
 ? - If caller can send a var to a function as val, it can change its value and it can be cause of race.
 
@@ -371,12 +396,8 @@ immutability?
 ? - Can we make the special behavior of compiler toward array and hash literals, not special?
 Maybe by calling `opCall` on a temporary mutable instance?
 
-N - Problem with templates in C++:
-- makes code unreadable, difficult to maintain
-can we replace them with something like `constexpr` in c++?
-
 ? - Remove/simplify generics:
-If everything is supposed to be a reference, maybe generics can be simplified into a normal generic type with `voi*` or similar. then `anything` type is actually just a pointer.
+If everything is supposed to be a reference, maybe generics can be simplified into a normal generic type with `void*` or similar. then `anything` type is actually just a pointer.
 on option: only use generic to specify output type of a function (which means automatic casting only). In this case, maybe we can use a simpler notation rather than `[]`: `int x = pop!int(stack1)`
 So `f!T(x,y,z)` is just a shortcut for: `@T(f(x,y,z))`.
 We define `anything` as something like `interface{}` or `void*` or `Object`.
@@ -395,5 +416,11 @@ Thsi can remove catch, throw and maybe defer.
 e.g. in SerDe when format is incorrect, something is missing, cannot cast.
 use case: prevent a plugin or thread crashes the whole app.
 option: when you load a plugin, you can get control of it's lifecycle. same when you create a thread or green thread. You can define a result/output to be updated when thread or goroutine calls "system_exit" to end the process.
+For these special cases we can have something like: `invoke` which will return `T|Error` where T is output of the function.
 
 ? - binary can be parent type of all non-tuples and `{}` parent of all tuples.
+
+? - Is there a way to model a general function? 
+For example to define `invoke` function to run another function in parallel or with an exit/exception handler.
+
+? - Can we make generic types and protocols, more built-in and consistent?
