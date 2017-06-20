@@ -561,6 +561,13 @@ So forwarding function is automatically generated for `func process(x: Shape|int
 For `func process(x: Shape|int, y: Color|float)` forwarding is generated for cases where either x is int or y is float.
 `func process(x: Circle->Shape, y:float)`
 `func process(x:int, y:SolidColor->Color)`
+- Suppose that we have `binary -> Shape -> Polygon -> Square` types.
+and: `type MyType := Square`
+then: `MyType -> MyChild -> MyGrandChild`
+then if a variabe of type MyGrandChild is passed to a function.
+For static candaidate this is the ordered list: MGC, MC, MT, Square, Polygon, Shape, binary
+if for example dynamic type of the variable is `MyGrandChild` and there is `func process(MyGrandChild)` it will be called (note that this can be a fwd function).
+It not found, the static candidate will be called.
 
 ## Matching
 `func add(x:int, y:int, z:int) ...`
@@ -800,7 +807,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 `var x := otherVal` invalid. You cannot have a var pointer to a val memory area.
 - `a:=b+c+d+8` add right side values, store result somewhere and make a point to that location.
 - what comes on the right side of `:=` is any expression. The address of that expression will be copied onto the left side.
-`x=@y` will duplicate y into x. So changes on x won't affect y. But if rvalue is a literal, it will do copy-value because there is no reference on the right side.
+`x=y` will duplicate y into x. So changes on x won't affect y. 
 - Comparison semantics: `x==y` will compare data of the references for comparison. If you need to compare the references themselves for comparison you can use core function's ref: `ref(x) == ref(y)`
 - Assignment: If left and right are val/var, user must use `@val/var` to cast.
 `myVar=@var(myVal)` (clone if needed)
@@ -828,12 +835,10 @@ bin-type example:
 - `.` access tuple fields
 
 Keywords: `import`, `func`, `var`, `val`, `type`, `native`, `loop`, `protocol`, `where`
-semi-Keywords: `if`, `else` (used in syntax sugar)
-Operators: 
-Primitive data types: `int`, `float`, `char` (int is signed and 64 bit, char is unsigned)
-Helper data types: `bool`, `string`, `array`, `map`
-- `bool` is a simple sum type
-- `string` is a named type based on char array.
+Semi-Keywords: `if`, `else`
+Special functions: `opCall` , `dispose`
+Primitive data types: `binary`, `int`, `float`, `char`
+Extended data types: `bool`, `string`, `array`, `map`
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
