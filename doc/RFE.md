@@ -623,3 +623,8 @@ It not found, the static candidate will be called.
 
 ? - What are the problems with subtyping and polymorphism?
 
+? - For every non-tuple type, compiler should be able to detect their type at compile time.
+for tuples: each pointer contains an extra block before actual data which indicates the dynamic type.
+It is updated when a value is assigned to the variable.
+So maybe variable is Shape but it's memory block indicates it is a Circle.
+method call resolution will happen using this information + default candidate specified at compile time.
