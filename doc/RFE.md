@@ -515,7 +515,6 @@ How can we elegantly and with simplicity say `=` will duplicate for primitives b
 advantage of `:=`: getting rid of cloning operator and cast to val/var (because `=` makes a copy).
 Now `=` has a consistent behavior and so does `:=`. But without `:=` we need to set rules for `=`.
 
-
 N - If caller can send a var to a function as val, it can change its value and it can be cause of race.
 A race condition occurs when two or more threads can access shared data and they try to change it at the same time.
 if a method wants an input but does not care whether it is var or val it can use generics.
@@ -528,14 +527,67 @@ Is this correct? `val x = var1`. No. `val` is not a "read-only view" of a memory
 
 Y - this should be forbidden: `val x := otherVar`
 
-? - What are the problems with generics?
-
-? - What are the problems with subtyping and polymorphism?
-
-? - Make it easier to check for errors?
+Y - Make it easier to check for errors?
 `var x = process()`
 `if ( x @ error ) ...`
 `if ( var x = process(), x @ error ) ... else ...`
 `var x = if ( var temp = process(), temp @ error ) -1 else t`
 Is it possible to use monad to call a series of functions and return error as soon as any of them returns error?
+Better if we provide a general mechanism so it can be used with other cases too.
+```
+func bind(input: Maybe[double], f: func(Maybe[double])->Maybe[double])->Maybe[double] 
+{
+  if ( input == None ) return None
+  return f(input)
+}
+func try[T](input: T|Exception, f: func(T)->T|Exception)->T|Exception
+{
+  return input @ {
+      e: Exception -> e,
+      t: T -> f(t)
+  }
+}
+var result = do(do(do(x, process1), process2), process3)
+;or
+var result = (x, process1) |> do |> (_, process2) |> do |> (_, process3)
+;which is completely unreadable
+var result = do do do x, process1, process2, process3
+;or: input |> func
+var result = (x, process1) >> do >> 
+             (_, process2) >> do >> 
+             (_, process3) >> do
+;maybe we can use loop:
+var input: Maybe[int] = 5
+input = loop(var x <- [process1, process2, process3]) { input = do(input, x) }
+;but this is not very readable. user cannot read the flow of execution.
+var result = try(x, process1) >> 
+             try(_, process2) >> 
+             try(_, process3)
+;better than other choices but still we need >>             
+var result = try { (x, process1) >> (_, process2) >> (_, process3) }
+;above is not readable
+;can we use opCall? for example on a Maybe?
+var input: Maybe[int] = 5
+input(process1)(process2)(process3)
+;opCall on maybe will receive a function, apply it on the maybe and return another maybe
+var finalResult: Maybe[int] = input(check1)(check2)(check3)
+;advantage1: no more nested paren
+;advantage2: We have used existing mechanisms
+;advantage3: no need to add a new chaining operator
+;advantage4: it is readable
+func opCall[T](m: Maybe[T], f: func(T)->Maybe[T])
+;what if function has more than one input?
+var finalResult: Maybe[int] = input(check1(5, _))(check2(_, "A"))(check3(1,2,_))
+;original method:
+var finalResult: Maybe[int] = do(do(do(input, check1(5, _)), check2(_, "A")), check3(1,2,_))
+;which is way longer than opCall approach. We just need _ to create a lambda on the fly.
+```
+- Add notation of `_` to create a lambda from an existing function. This is readable and short and can be used in other places.
+- You can use opCall to chain a set of method calls and handle an error in-between.
+If we have an existing function f with n arguments: `f(a1, a2, _, a4, a5, _)` will create a lambda expression with two inputs which will call `f` with given argument values. q: when are `ai` values evaluate? what if we have `n=f(x, _)` and value of x changes later before we call n? they will be evaluated at call time.
+`var t = f(a1, a2, _)` is same as `var t: func(int)->int = (x:int) -> f(a1, a2, x)`
+
+? - What are the problems with generics?
+
+? - What are the problems with subtyping and polymorphism?
 
