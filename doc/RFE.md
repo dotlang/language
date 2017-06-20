@@ -339,6 +339,71 @@ N - Can we drop generics and keep protocol?
 `func sort(x: anything + getIndex + Ord) ...`
 `func getIndex(x: array)...`
 
+Y - remove `defer`
+RAII like C++ can help us remove `defer`.
+applications of defer: close db/net connection, close file, unlock mutex
+con of defer: make code unreadable, what if defer inside defer?, what if I want to change output in defer, what if I run a new thread in defer, what if there is an exception inside defer?, what if I defer x.close and return x? what is order of defers? how/when are defer argument evaluated?
+
+Y - remove exceptions
+What can be a good use case for exceptions? Now that we have maybe?
+Thsi can remove catch, throw and maybe defer.
+e.g. in SerDe when format is incorrect, something is missing, cannot cast.
+use case: prevent a plugin or thread crashes the whole app.
+option: when you load a plugin, you can get control of it's lifecycle. same when you create a thread or green thread. You can define a result/output to be updated when thread or goroutine calls "system_exit" to end the process.
+For these special cases we can have something like: `invoke` which will return `T|Error` where T is output of the function.
+
+Y - What happens to assert then?
+option 1: if it is failed, exit the process. As this is a real exception, dedicating a keyword for it does not make sense.
+option 2: a shortcut for returning error.
+`assert str.length>0, xyz` if condition is not satisfied, return xyz
+`assert str.length>0, xyz` -> `return xyz if !(str.length>0)`. We can use postfix if instead!
+remove assert and replace with if/return.
+
+N - What is the main source of complexity now?
+template?
+polymorphism and subtyping?
+sum types? no.
+protocol?
+immutability?
+
+Y - Can we make the special behavior of compiler toward array and hash literals, not special?
+Maybe by calling `opCall` on a temporary mutable instance?
+`var x: array[int] = [1, 2, 3]`
+`var y: map[int, string] = [1:"A", 2:"B", ...]`
+anywhere compile sees `[a,b,c,d,...]` or `[a:b, c:d, ...]` it will call `opCall` for the expected type with index and value or key and value. So this is a general behavior. `[a..b]` means `[a, a+1, ..., b]` and other syntax sugars.
+
+Y - Is there a way to model a general function? 
+For example to define `invoke` function to run another function in parallel or with an exit/exception handler.
+`type function[A,B,C,O] := func(A)->O | func(A,B)->O | func(A,B,C)->O`
+maybe we can call every function with an unnamed tuple matching it's inputs.
+`func process(x:int, y:string)`
+`var g = {1, "A"}`
+`process(g)`
+`func process(g: {int, string})`
+solution 1: variadic templates
+solution 2: sum types
+`func invoke[A,B,C,O](f: function[A,B,C,O], input: {A,B,C})->O|Exception`
+What is the difference between these two?
+`func process(x:int, y:string)`
+`func process(g: {int, string})`
+can we do a recursive definition?
+`type function[I,O] := func(I)->function[I, O]`. no it's too confusing.
+the question is: how can we model the input of any function as a specific type? the only viable solution is a tuple. 
+we can say for each function `func process(x:int, y:string)` compiler defined another function with a tuple input.
+`func process($: {x: int, y:string})->process($.x, $.y)`. So every function can be called with a tuple with appropriate types.
+or put it another way: the invoke works with functions with single input. if your function has multiple inputs, simply write a wrapper function or a closure. Anything that compiler does behind the scene can be source of confusion.
+
+N - Remove/simplify generics:
+If everything is supposed to be a reference, maybe generics can be simplified into a normal generic type with `void*` or similar. then `anything` type is actually just a pointer.
+on option: only use generic to specify output type of a function (which means automatic casting only). In this case, maybe we can use a simpler notation rather than `[]`: `int x = pop!int(stack1)`
+So `f!T(x,y,z)` is just a shortcut for: `@T(f(x,y,z))`.
+We define `anything` as something like `interface{}` or `void*` or `Object`.
+issue: Then array will be just a set of pointers. So array of 3 integers will be 3 pointers to 3 integer -> waste memory space.
+how can we implement array without generics and with anything/binary?
+`func array(size:int)`
+ 
+N - binary can be parent type of all non-tuples and `{}` parent of all tuples.
+
 ? - Can we remove protocol?
 protocol is used to abstract over a behavior. I say I can accept any type as long as it has this specific behavior. I don't care what that type is. Because I only need that specific behavior.
 q: can we document the laws of protocol in the code? e.g. in Ord, it should be transitive
@@ -362,6 +427,16 @@ func processShape[T: ShapeChild](s: T) {
   x.name += "A"
 }
 func toShape(x: Circle)->Shape { return x.shape }
+
+var ss: array[Shape] = [toShape(createCircle()), toShape(createSquare()), toShape(createTriangle())]
+loop(s: Shape <- ss) processShape(s)
+
+;when you define a function with protocol, you are stating that you can call this function with any type that 
+;satisfies this protocol.
+;for variable declaration, you say you can put anything inside this array if it is providing this protocol.
+var s: array[T: ShapeChild] = [createCircle(), createSquare(), createTriangle()]
+func getItem[T](arr: array[T], index: int) -> T { ... }
+when you call getItem(s), the result will be `T:ShapeChild`. But this is not how an array should behave.
 ```
 If caller uses `:=` it can mutate inside the parent type by having a pointer of child type.
 `var x: Shape := createShape()` x will have static type as Shape but dynamic type may be different.
@@ -373,6 +448,26 @@ for 1, we already have forwarding methods: `func process(x: Circle->Shape, y:flo
 subtyping and generics are two important tools to support for polymorphism.
 why do we want to remove subtyping?
 problem 1: sometimes we want B based on A but it should not behave like A.
+- Just like the way we do not automatically cast MyInt to int, we also don't cast Circle to Shape.
+- What if you cannot put a Circle inside a Shape variable unless you cast by calling function?
+- Real example: A logger utility where there are different loggers: FileLogger, NetLogger, ConsoleLogger, ...
+`type FileLogger := ...`
+`type ConsoleLogger := ...`
+`protocol Logger[T] := { func doLog(params: T, data: string) }`
+`func process[T: Logger](logger: T) { doLog(logger, "Starting...") ... }`
+What do we mean when we say "remove subtyping"? 
+`var s: Shape = createShape(parameters)`.
+Is the notation that a variable can be of type Shape but hold a Circle, a good/accepted thing?
+can we simulate/support this notation using current tools? 
+How can we model an expression parser (add, minus, ...) or a JSON file model (string, int, map, ...)?
+FP languages use sum types for this.
+
+? - Sometimes it is good to force caller of a function to use `:=`. For example when it is casting circle into Shape.
+can we make this transparent? so even if they use `=` they won't loose dynamic type.
+`var s: Shape = myCircle.Shape`
+`var s: Shape := myCircle.Shape`
+`var s: Shape = myCircle` 
+`var s: Shape := myCircle` 
 
 ? - Can we remove polymorphism or simplify it? or method dispatch?
 The underlying principle is Liskov substitution rule. I should be able to substitute Circle with Shape.
@@ -386,41 +481,5 @@ e.g. `area[Circle](myCircle)`.
 
 ? - If caller can send a var to a function as val, it can change its value and it can be cause of race.
 
-? - What is the main source of complexity now?
-template?
-polymorphism and subtyping?
-sum types? no.
-protocol?
-immutability?
-
-? - Can we make the special behavior of compiler toward array and hash literals, not special?
-Maybe by calling `opCall` on a temporary mutable instance?
-
-? - Remove/simplify generics:
-If everything is supposed to be a reference, maybe generics can be simplified into a normal generic type with `void*` or similar. then `anything` type is actually just a pointer.
-on option: only use generic to specify output type of a function (which means automatic casting only). In this case, maybe we can use a simpler notation rather than `[]`: `int x = pop!int(stack1)`
-So `f!T(x,y,z)` is just a shortcut for: `@T(f(x,y,z))`.
-We define `anything` as something like `interface{}` or `void*` or `Object`.
-issue: Then array will be just a set of pointers. So array of 3 integers will be 3 pointers to 3 integer -> waste memory space.
-how can we implement array without generics and with anything/binary?
-`func array(size:int)`
- 
-? - remove `defer`
-RAII like C++ can help us remove `defer`.
-applications of defer: close db/net connection, close file, unlock mutex
-con of defer: make code unreadable, what if defer inside defer?, what if I want to change output in defer, what if I run a new thread in defer, what if there is an exception inside defer?, what if I defer x.close and return x? what is order of defers? how/when are defer argument evaluated?
-
-? - remove exceptions
-What can be a good use case for exceptions? Now that we have maybe?
-Thsi can remove catch, throw and maybe defer.
-e.g. in SerDe when format is incorrect, something is missing, cannot cast.
-use case: prevent a plugin or thread crashes the whole app.
-option: when you load a plugin, you can get control of it's lifecycle. same when you create a thread or green thread. You can define a result/output to be updated when thread or goroutine calls "system_exit" to end the process.
-For these special cases we can have something like: `invoke` which will return `T|Error` where T is output of the function.
-
-? - binary can be parent type of all non-tuples and `{}` parent of all tuples.
-
-? - Is there a way to model a general function? 
-For example to define `invoke` function to run another function in parallel or with an exit/exception handler.
-
 ? - Can we make generic types and protocols, more built-in and consistent?
+`func sort[T: Ord](arr: array[T])-> array[T] { ... }`
