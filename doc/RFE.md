@@ -587,6 +587,38 @@ var finalResult: Maybe[int] = do(do(do(input, check1(5, _)), check2(_, "A")), ch
 If we have an existing function f with n arguments: `f(a1, a2, _, a4, a5, _)` will create a lambda expression with two inputs which will call `f` with given argument values. q: when are `ai` values evaluate? what if we have `n=f(x, _)` and value of x changes later before we call n? they will be evaluated at call time.
 `var t = f(a1, a2, _)` is same as `var t: func(int)->int = (x:int) -> f(a1, a2, x)`
 
+N - What are the problems with immutability?
+
+N - remove var/val keywords and replace with with prefix to variable names.
+`val` -> no prefix.
+`var` -> `$` prefix.
+What about function inputs without qualifier?
+`x:int = 12`
+`x=12`
+no! variable declaration should be explicit.
+
+Y - We can say that compiler will translate each tuple to a named type on top of `binary[N:int]`. So every possible type is a binary.
+`type Point := {x:int, y:int}`
+is translated to:
+`type Point := binary[16], x_offset=0, y_offset=8`
+Also union types are translated to a binary with size=largest choice.
+How does named types work with subtyping?
+what is order of resolution?
+`type MyCircle := Circle`
+`type X := {MyCircle, ... }`
+first the type hierarchy is tried (from T1 to it's parent ... up to empty tuple).
+If no choice is found, will switch to the underlying type.
+But is that possible that no choice is found in the type hierarchy of the T1? If so, how come compiler permits this?
+Maybe we can say `process(T1)` is ok with compiler if there is at least one `process` function which accepts an input which is super-type of T1. This can be it's static type, parent type, empty tuple, it's underlying type, or at the end, binary type.
+I think compiler should choose a static-candidate at compile time and at runtime, the runtime system should either find a full dynamic type match or call this candidate.
+Suppose that we have `binary -> Shape -> Polygon -> Square` types.
+and: `type MyType := Square`
+then: `MyType -> MyChild -> MyGrandChild`
+then if a variabe of type MyGrandChild is passed to a function.
+For static candaidate this is the ordered list: MGC, MC, MT, Square, Polygon, Shape, binary
+for dynamic candidate same path will be available. if for example dynamic type of the variable is `MyGrandChild` and there is `func process(MyGrandChild)` it will be called (note that this can be a fwd function).
+It not found, the static candidate will be called.
+
 ? - What are the problems with generics?
 
 ? - What are the problems with subtyping and polymorphism?
