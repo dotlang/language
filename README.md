@@ -109,7 +109,7 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 # Type System
 ## Rules
 - There must be a single space between `type` keyword and type name.
-- You can have a read-only view of a read-write memory cell: `val x := otherVar`
+- You can not have a read-only view of a read-write memory cell: `val x := otherVar` is invalid!
 variables are initialized upon declaration. for val you must assign value, for var, compiler will set default value (everything zero, empty, ...)
 `var x: array[int]` will create an empty array
 
@@ -449,7 +449,7 @@ func process(x:int) -> int
 
 - There must be a single space between func and function name.
 - A function can determine whether is expects var or val inputs. If function wants to promise it won't change the input but caller can send either var or val, it can do so with eliminating qualifier or using val: `func process(x: int)`.
-- var/val qualifier is optional for function input/output. if missing, it is considered val and caller can send either val or var.
+- var/val qualifier is optional for function input/output. if missing, it is considered val and caller can send either val or var. But if it is `val`, caller can only send vals.
 - You can use generics to establish relations between var/val of input or outputs:
 `func process[vax: var|val](var x:int, vax y:int) -> vax int`
 - You can use `@var/val` in shortcut functions to explicitly indicate output type:
@@ -461,9 +461,9 @@ func process(x:int) -> int
 `func process(val x:int) -> var x+1`
 - When you pass var or val to a function, the reference is being sent and compiler makes sure vals are not changed.
 - when a function returns var/val it returns a reference to a locally allocated data.
-- A function can state it's output var/val. if qualifier is missing, it is val, function can return either var or val but caller can only assign the result to a val.
-- So missing qualifier: either var or val.
-- function inputs must have val/var modifier so it won't be ambiguous whether something is potential for shared mutable state. If input modifier is missing, it is assumed to be val.
+- A function can state it's output var/val. if qualifier is missing, function can return either var or val but caller can only assign the result to a val (unless it is making a copy). But if output is marked with `val`, function can only return a val.
+- So missing qualifier: either var or val can be used by sender but receiver should assume val.
+- function inputs should have val/var modifier so it won't be ambiguous whether something is potential for shared mutable state. If input modifier is missing, it is assumed to be var or val.
 - If function output type misses `var/val` modifier, it will be assumed `val`.
 `func add(x:int, y:int)->int`
 `func add(val x:int, val y:int)->val int`
@@ -792,7 +792,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 `= = = = = = = = = = =`
 `val x := otherVal` ref-assign
 `var x := otherVar` ref-assign
-`val x := otherVar` ref-assign
+`val x := otherVar` invalid. val cannot point to var.
 `var x := otherVal` invalid. You cannot have a var pointer to a val memory area.
 - `a:=b+c+d+8` add right side values, store result somewhere and make a point to that location.
 - what comes on the right side of `:=` is any expression. The address of that expression will be copied onto the left side.
