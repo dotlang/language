@@ -439,6 +439,8 @@ How can I pass a Dot to process function? You need to write a proxy function:
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Functions
+- `var/val` of the function output is part of singature (but not output type). And you must capture a functin output.
+`process/int/var.int/val.float/val` is a condensed view of the signature of the funtion: `func process(var x:int, val y: float)->val string`.
 - You can write body of a function using assembly: use `{| ... |}` notation. If you want your assembly to be inlined, use `{|| ... ||}`. You can use `(A=B)` or `(A!=B)` notation to do conditional compilation based on OS and hardware.
 ```
 func process(x:int) -> int 
