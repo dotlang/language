@@ -708,6 +708,20 @@ just like how strchr works.
 `func strchr(x: string)->string` return is val.
 Let it be like that. user will need to write two functions, he can write once and call it in the other case + duplicate.
 
+Y - can functions be overloaded based on return type or val/var?
+1. `func process()->int`
+2. `func process()->var int`
+3. `func process()->val int`
+1 and 3 are the same. so they are not allowed with each other.
+but 2 is ok. `var g = process()` will call 2.
+what if user does not collect function output? it should be banned.
+but if we use `var/val` without type, it will cause problem.
+`func process()->var int`
+`func process()->var float`
+`var x = process()` which one to call?
+So var/val of return type is part of signature but not the return type. Because it will be possible to infer type from method call. 
+`process/int/var.int/val.float/val` is a condensed view of the signature of the funtion.
+
 ? - What are the problems with generics?
 
 ? - What are the problems with subtyping and polymorphism?
@@ -720,11 +734,3 @@ func process() -> var int native {
 ;bitcode
 }
 ```
-
-? - can functions be overloaded based on return type or val/var?
-1. `func process()->int`
-2. `func process()->var int`
-3. `func process()->val int`
-1 and 3 are the same. so they are not allowed with each other.
-but 2 is ok. `var g = process()` will call 2.
-what if user does not collect function output? it should be banned.
