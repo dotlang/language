@@ -619,12 +619,112 @@ For static candaidate this is the ordered list: MGC, MC, MT, Square, Polygon, Sh
 for dynamic candidate same path will be available. if for example dynamic type of the variable is `MyGrandChild` and there is `func process(MyGrandChild)` it will be called (note that this can be a fwd function).
 It not found, the static candidate will be called.
 
-? - What are the problems with generics?
+N - if we want to eliminate templates, what would happen to array?
+`type array := `?
 
-? - What are the problems with subtyping and polymorphism?
+N - Is it possible to treat template types just like normal arguments but with special notation?
+`func max[T](x: T, y:T) -> return x if x>y else y`
+`func max(~T, x: T, y: T)-> return x if x>y else y`
+`var t = max(int, x, y)`
+what about types? `var array[T]`
 
-? - For every non-tuple type, compiler should be able to detect their type at compile time.
+Y - To prevent substitution failure: indicate template arguments can either be a type, identifier or a literal.
+
+N - using `:=` with a var output of a function does not make sense.
+`var x := getPtr()` is same as `var x = getPtr()`?
+consider a `var int` 
+`var x:int = 19` we have this: `119:[100]-----------------> 100:[19]`. where 100 is the memory address which contains the value. the actual value inside x is 119, because it is a pointer.
+`x=11` means write `11` into the memory x is pointing to (100). so we will have:
+`x:119:[100]-----------------> 100:[11]`
+support we also have: `var y:int = 13`
+`x:119:[100]-----------------> 100:[11]`
+`y:120:[101]-----------------> 101:[13]`
+then `x := y` means writing 101 into address part of x.
+`x:119:[101]---------------|`
+`y:120:[101]---------------|-> 101:[13]`
+so when I have `func getPtr()->var int` calling it will give me this:
+`temp:130[102]------------------->102: [311]`
+then `var g := getPtr()` means:
+`temp:130[102]-----------------|->102: [311]`
+`g: 131[102]-------------------|`
+and `var g = getPtr()` means:
+`temp:130[102]------------------->102: [311]`
+`g: 131[103]--------------------->103: [311]`
+don't focus on `var/val`. everything is a reference. the point is: do you want to have access to the original data? if so, use `:=` else use `=` which will duplicate the original data for you.
+so there are two points: 1)to what is this variable pointing to 2)is it possible to change it?
+this may be a bit confusing. can it be made simpler?
+assigning a var function to another var using `=` is like:
+`int* p; *p = *getdata()` in C. it does not make much sense but making it forbidden is not good for consistency.
+
+Y - Note that you can use `getOffset` to map a whole tuple on top of a binary. Although this is a hack but can be sometimes useful for performance.
+
+Y - We can use `allocate[int](100)` for fixed size allocation. So let's remove literals for template args.
+`type int := binary[8]` -> `type int := binary` and compiler will write appropriate `allocate` call.
+
+N - What if we have multiple implementations for a protocol?
+`protocol Ord[T] := { func compare(T,T)->int }`
+`func sort[T: Ord](arr: array[T])-> array[T]`
+sort expects existing function `compare` for any given type T. Suppose that I have a Customer class.
+Sometimes I want to sort them by name and sometimes by their id.
+`sort(customerList) ;sort by id`
+`sort(customerList) ;sort by name`
+How can I do this?
+solution1:
+`protocol Ord2[T] := { func compare(T,T)->compareById(T,T) }`
+`sort[Customer: Ord2](customerList)`
+So when I call the function, I explicitly specify the type for the template + a similar protocol name.
+`process[int, string, Customer where Customer: Ord2, int,string: Ord3](...)`
+similar protocol: protocol Q is similar to P if: Q has all the methods of P with possibly redirection to another method.
+But this does not make much sense.
+Solution 2: Implement with a function pointer to compare
+Another solution: write everything normally. But inside the sort function decide how to sort.
+Another solution: Use subtyping. define the protocol function for subtype.
+```
+protocol Ord[T] := { func compare(T,T)->int }
+func compare(Customer, Customer) ...
+type CustomerSortId := Customer
+func compare(CustomerSortId, CustomerSortId)...
+```
+
+Y - Applications of casting `@`:
+cast between named type and underlying
+cast between elements of union and union type
+cast between subtype and suprtype
+cast anonymous tuple to typed
+cast int to float
+
+N - For every non-tuple type, compiler should be able to detect their type at compile time.
 for tuples: each pointer contains an extra block before actual data which indicates the dynamic type.
 It is updated when a value is assigned to the variable.
 So maybe variable is Shape but it's memory block indicates it is a Circle.
 method call resolution will happen using this information + default candidate specified at compile time.
+
+Y - Can we solve var/val issue with something else (non-generic). So generics will only have type arguments (int, float, ...)
+e.g. get element from var/val array or add two numbers.
+`func add(a: BigInt, b: BigInt)->BigInt` this will accept var or val and return result as a val. 
+Add does not count. The only case is where, function returns "part" of it's input as output. in this case, if input is var output will be var, same for val.
+If input is taken from parts of two inputs, then this does not count.
+just like how strchr works.
+`func strchr(x: string)->string` return is val.
+Let it be like that. user will need to write two functions, he can write once and call it in the other case + duplicate.
+
+? - What are the problems with generics?
+
+? - What are the problems with subtyping and polymorphism?
+
+? - If we use LLVM, then assembly code and os/cpu filter won't be needed.
+But we may need to write bitcode inside the code and indicate it needs to be inlines (macro).
+But not a general macro system for the language.
+```
+func process() -> var int native {
+;bitcode
+}
+```
+
+? - can functions be overloaded based on return type or val/var?
+1. `func process()->int`
+2. `func process()->var int`
+3. `func process()->val int`
+1 and 3 are the same. so they are not allowed with each other.
+but 2 is ok. `var g = process()` will call 2.
+what if user does not collect function output? it should be banned.
