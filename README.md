@@ -20,7 +20,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, added inline assembly, introduced `:=` ref-assign operator and make `=` data-copy operator, removed `break` and `continue`, removed Phantom types setion as they can be implemented with named types, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, added inline assembly, introduced `:=` ref-assign operator and make `=` data-copy operator, removed `break` and `continue`, removed Phantom types setion as they can be implemented with named types, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
@@ -380,7 +380,8 @@ Type alias is exactly the same as what comes on the right side. There is absolut
 This can be used to resolve conflict types when importing modules.
 `type Stack1 = /core/mode1/Stack`
 `type Stack2 = /code/mode2/Stack`
-
+`type S[T] = Stack[T]`
+`type ST = Stack[int]`
 
 
 ## Inheritance and Polymorphism
@@ -715,9 +716,10 @@ If someone calls a generic function with some user-defined type, they really don
 When writing a generic function, you may have expectations regarding behavior of the type T. These expectations can be defined using a protocol. When you call this function with a concrete type, compiler makes sure the protocol is satisfied.
 General definition of function with protocol:
 ;S,T,X must comply with prot1, N,M with prot2, P,Q are free
-`func process[S, T, X, N, M, P, Q where S,T,X: prot1, N,M: prot2]`
+`func process[S, T, X, N, M, P, Q] prot1[S,T,X] prot2[N,M]`
 Note that one type can be part of more than one protocol:
-`func process[S, X, N, M, Q, P, T where S,T,X: prot1, N,M: prot2, T,N: prot3, P, Q]`
+`func process[S, X, N, M, Q, P, T]  prot1[S,T,X] prot2[N,M] prot3[T,N]`
+
 If template has only one argument, you can write: `func process[X: protocol1](...)`
 
 When defining a protocol, argument names is optional.
@@ -794,6 +796,22 @@ this will invoke `func item()->int` to provide value for this argument.
 Protocols can embed other protocols to include their functions.
 You can define and implement a protocol for a type outside your codebase, that's why you dont need to specify which protocols are implemented by a type upon declaration.
 - Note that although a protocol may require a specific function, but actual function to be called is determined at runtime based on dynamic type.
+```
+;we can overload protocols
+func sort[T] Ord[T](...)
+func sort[T] StrictOrd[T](...)
+```
+If we call sort function, compiler will decide which protocl best matches.
+- You can also define protocols for types:
+For example you can define a set only for types which are comparable. We cannot define `Set[adder_function]`
+`type Set[T] := comprbl[T] array[T]`
+`type BinaryTree[T] := comparable[T] ...`
+`type map[K,V] := Hashable[K] ...`
+- If Circle[T] inherits from Shape[T], re-declaring protocols on Shape is optional but they will be enforced by the compiler.
+- if a protocol has a default implementation for a function and generic type does not implement that function, the default implementation will be used. This can be used to check data of a generic type:
+`protocol HasId[T] := { func getId[T](x: T)->x.id }`?
+`func process[T] HasId[T]` you can only pass tuples that have `id` field (or simulate it with your own functions).
+
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
@@ -850,7 +868,7 @@ bin-type example:
 - `()` function call
 - `.` access tuple fields
 
-Keywords: `import`, `func`, `var`, `val`, `type`, `native`, `loop`, `protocol`, `where`
+Keywords: `import`, `func`, `var`, `val`, `type`, `native`, `loop`, `protocol`
 Semi-Keywords: `if`, `else`
 Special functions: `opCall` , `dispose`
 Primitive data types: `binary`, `int`, `float`, `char`
