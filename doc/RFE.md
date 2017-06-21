@@ -807,3 +807,68 @@ func process() -> var int native {
 ;bitcode
 }
 ```
+
+? - Can we replace protocol with a compile-time function?
+```
+protocol Ord[T] := { func compare(T,T)->int }
+;protocol is a function which returns a bool
+;
+func Ord[T]() -> bool {
+    ::Compare(T,T)
+}
+```
+pro: it's using existing features
+pro: it's more expressive, maybe we can later add other things too
+pro: embedding will be translated to function call which is more intuitive
+pro: expressive in terms of function input and it's contents
+q: how can we ensure relationships? `!=` should be inverse of `==`? this needs calling a function which is not possible at compile time. 
+in protocol definition for comparable we can say: `!=` is inverse of `==` and provide a default implementation.
+this is called axiom in C++ concepts or default methods. But axiom is more flexible.
+The things is, axiom is mostly used to document type and it cannot be enforced by compiler.
+https://akrzemi1.wordpress.com/2012/01/11/concept-axioms-what-for/:
+Axioms are meant to express semantic requirements or assumptions about template arguments. 
+Unlike syntactic requirements (e.g., requiring operator==), semantic requirements expressed with axioms cannot be validated by the compiler when matching a model against the concept. So axioms only express how we would like the models to behave, but the there is no way to force the models to implement the required semantics.
+C++ Axiom uses `and, or, =>, <=>` to express relationships.
+can we check axioms at runtime? it is dangerous, can have side effects and make code slower.
+But the notation for compile-time function should be different. So for example they cannot define variables.
+```
+protocol Ord[T] := { func compare(T,T)->int }
+;protocol is a function which returns a bool
+;:= means it is compile time
+;we can use `=` for inline maybe
+;if a compile time function has inputs, they must be literals, in this case it will be more like constexpt
+func Ord[T]() -> bool := {
+    ::Compare(T,T)
+}
+```
+We need a syntax to check a function exists.
+And to define an axiom.
+```
+;to make it simpler, it cannot have any input
+func SerDe[T] -> bool := {
+    ::serialize(T)->val string
+    ::deserialize(string)->var T
+    ::deserialize(serialize(T)) => T   
+}
+```
+- If we can make this more intuitive
+- This type of task that is assigned here does not match with definition of a function. We seem to be trying to make a cat look like a dog. We need to define notation for checking function exists, axiom, remove function input, add `:=` notation, ...
+all to eliminate `protocol` keyword.
+```
+protocol SerDe[T] := {
+    func ser(T)->string
+    func des(string)->T
+    func reflectivity(x: T) -> des(ser(x)) == x
+}
+protocol Eq[T] := {
+    func equals(T,T)->bool
+    func identity(x: T) -> equals(x,x)
+    func reflectivity(x: T, y:T) -> equals(x,y) <=> equals(y,x)
+    func transitivity(x,y,z: T) -> equals(x,y) and equals(y,z) => equals(x,z)
+}
+```
+
+? - can we use `=` to force inline?
+`func process() = { ... }`
+it is like a variable. so everytime process is called, it will be replaced with right side of `=`.
+No. The syntax for inline should be inside function body. Nothing should be changed from outside.
