@@ -121,15 +121,14 @@ The most primitive type is `binary` which denotes an allocated memory buffer.
 `type array[T] = (size:int, data: binary)` binary means a buffer with size specified at runtime.
 `type array[N: int, T] = (size:int, data: binary[N])` `binary[N]` means N bytes allocated.
 ```
-func get[vax, T where vax: var|val](vax arr: array[T], index: int) -> vax T {
+func get[T](val arr: array[T], index: int) -> val T {
     vax T result := arr.data + index*sizeof[T]
     return result ;we cannot shortcut this by writing something like "return *(arr.data + index*a)"
 }
 ```
 If we use `get` to read data as `var` from an array which contains value types, we won't have direct access to inside the array. We will receive a copy.
-`type int := binary[8]` allocate 8 bytes as a binary buffer for int
+`type int := binary` compiler will allocate 8 bytes as a binary buffer for int
 `type binary := native`
-`type binary[N] := native`
 We have two categories of types: value-type (or valtype) and reference-type (or reftype). binary is the only valtype. Any named type with binary underlying type is valtype. Every other type (tuple or union with tuples) is reftype.
 Union which has only labels (called enum) or has labels and other valtypes, is a valtype, because compiler uses int or a binary buffer to implement it. If it has tuples, it is reftype.
 `function` type is a valtype. Underlying, it is a pointer to a memory location. It is implemented as `int`.
@@ -144,7 +143,7 @@ var i1: int = @int(p1)
 var i2: int = @int(p2)
 val i3: int = @val(@int(p1)) ;you can combine @ and remove paren: @val@int(x)
 ```
-
+- Note that you can even use `getOffset` to place a whole tuple on top of a binary. This might be useful in some performance cases.
 There are two categories of types: Named and unnamed. An unnamed type is defined using existing language constructs.
 For example these are some unnmaed types: `int, array[string], {x:int, y:float}, int|string`.
 A named type is defined using `type` statement: `type MyInt := int`. 
@@ -328,6 +327,12 @@ If types are compatible (e.g. long and int) you can cast them using: `TypeName(x
 For example in return statement `return Circle(radius=1)`.
 - Note that you cannot define your own casting function using `@TypeName(x)` name. Here `x` is a code block which will evaluate to something we want to cast. You can write cast functions using a standard name, however.
 - You can use casting syntax to cast between named and unnamed types, downcast (from Circle to Shape) or cast a sum type to one of it's elements or a compatible sum type.
+- Applications of casting:
+cast between named type and underlying
+cast between elements of union and union type
+cast between subtype and suprtype
+cast anonymous tuple to typed
+cast int to float
 - Casting examples:
 `@int(x)`
 `@string(x)`
@@ -454,8 +459,6 @@ func process(x:int) -> int
 - There must be a single space between func and function name.
 - A function can determine whether is expects var or val inputs. If function wants to promise it won't change the input but caller can send either var or val, it can do so with eliminating qualifier or using val: `func process(x: int)`.
 - var/val qualifier is optional for function input/output. if missing, it is considered val and caller can send either val or var. But if it is `val`, caller can only send vals.
-- You can use generics to establish relations between var/val of input or outputs:
-`func process[vax: var|val](var x:int, vax y:int) -> vax int`
 - You can use `@var/val` in shortcut functions to explicitly indicate output type:
 `func process(val x:int, var y:int) -> @var(x+y+1)`
 - If function output does not have a qualifier, it will be val.
@@ -643,13 +646,9 @@ If we have `func f(int,int,int)->int` then:
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Generics
-- You can pass literals of primitive types (int, float, char) to a generic. Like `type int := binary[8]`
-- You can use generics to specify cases where function is agnostic to var/val. For example when adding two complex numbers:
-`func add[V: var|val](V a: complex, V b: complex)->V complex` You can use `V x:int` to declare a variable same as input but you cannot modify it's value because it can be val.
-- You can use `|` to denote possible identifiers. 
+- Generic arguments should types.
+- You can use `|` to denote possible types instead of a protocol. 
 For example: `func add[T: int|float]...`
-`type array[T, N where N: int] := ...` You can accept literals of primitive types in generics.
-
 - When defining types, you can append `[A, B, C, ...]` to the type name to indicate it is a generic type. You can then use these symbols inside type definition.
 - When defining functions, if input or output are of generic type, you must append `[A,B,C,...]` to the function name to match required generic types for input/output. 
 - When you define a variable or another type, you can refer to a generic type using it's name and concrete values for their types. Like `Type{int, string]`
