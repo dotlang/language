@@ -20,7 +20,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, added inline assembly, introduced `:=` ref-assign operator and make `=` data-copy operator, removed `break` and `continue`, removed Phantom types setion as they can be implemented with named types, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, added inline assembly, introduced `:=` ref-assign operator and make `=` data-copy operator, removed `break` and `continue`, removed Phantom types setion as they can be implemented with named types, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
@@ -48,9 +48,10 @@ As a 10,000 foot view of the language, code is written in files (called modules)
 
 **Compared to C**: dotLang is C language + Garabage collector + first-class functions + template programming + sum data types + module system + powerful polymorphism + simple and powerful standard library + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + multiple dispatch + sane defaults - ambiguities - pointers - macros - header files.
 
-**Compared to Scala**: Scala + multiple dispatch + better loops - dependency on JVM - cryptic syntax - trait - custom operators - variance.
+**Compared to Scala**: Scala + multiple dispatch - dependency on JVM - cryptic syntax - trait - custom operators - variance and implicit.
 
 **Compared to Go**: Go + generics + immutability + multiple dispatch + sum types + sane defaults + better orthogonality (e.g. creating maps) + simpler primitives - pointers - interfaces - global variables.
+
 
 ## Subsystems
 
@@ -91,23 +92,51 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 2. **Tuple**: `type Point := {x: int, y:int, data: float}`.
 3. **Variable**: `var location: Point = { x=10, y=20, data: 1.19 }`.
 4. **Inheritance**: By embedding (only for tuples), `type Circle := {Shape, radius: float}`.
-5. **Array**: `var JobQueue: array[int] = {0, 1, 2, 3}`.
+5. **Array**: `var JobQueue: array[int] = [0, 1, 2, 3]`.
 6. **Generics**: `type Stack[T] := { data: array[T], info: int }`.
 7. **Union**: `type Tree[T] := Empty | T | { root: T, left: Tree[T], right: Tree[T] }`.
-8. **Map**: `var CountryPopulation: map[string,int] = { "US": 300, "CA": 180, "UK":80 }`.
+8. **Map**: `var CountryPopulation: map[string,int] = [ "US": 300, "CA": 180, "UK":80 ]`.
 9. **Function**: `func calculate(x: int, y: string) -> float { return if ( x > 0 ) 1.0 else 2.0  }`.
 10. **Import**: `import /core/std/Queue`.
 11. **Immutability**: `val x: int = 12`, no change or re-assignment to `x` is allowed.
-12. **Assignment**: Copies right-side data to left-side: `var myArray: array[int] = otherArray`
-13. **Reference assignment**: Assigns left-side to the data of the right side: `var x: int := y`.
+12. **Assignment**: `A=B` makes a copy of B's data into A.
+13. **Reference assignment**: `A:=B` makes A point to the same things that B is pointing to.
 14. **Casting**: `var pt = @Point[int]({ x=10, y=20, data=1.11 })`.
-15. **Lambda**: `var adder: func(int,int)->int = (x:int, y:int) -> x+y`.
+15. **Lambda**: `var adder: func(var int,var int)->val int = (x,y) -> x+y`.
 16. **Protocols**: `protocol Comparable[T] := { func compare(x:T, y:T)->int }`, `func sort[T: Comparable](x:array[T])`.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Type System
+
+## Variabe definition
+- Every variable must have a type. You define variables using `var` keyword: `var x: int` (This defined a new variable named `x` which is an integer number).
+- Each variable must have a value upon declaration. Either you assign a value explicitly or compiler will set default value of that type.
+
+## Immutability
+
+## Assignment
+
+## Primitives
+
+## Extended primitives
+
+## Tuple
+
+## Polymorphism
+
+## Union
+
+## Type alias
+
+## Named type
+
+## Variables
+
+========================================
+
 ## Rules
+- Note that you cannot re-assign `val` to something else with `=`. Because other parts of the code may have a copy of it and re-assign may change their data: `val x = 12, process(x), x=19` this will change what x points to. so any thread inside process will have a value which point to 19 instad of 12.
 - There must be a single space between `type` keyword and type name.
 - You can not have a read-only view of a read-write memory cell: `val x := otherVar` is invalid!
 variables are initialized upon declaration. for val you must assign value, for var, compiler will set default value (everything zero, empty, ...)
@@ -352,25 +381,7 @@ This can be used to resolve conflict types when importing modules.
 `type Stack1 = /core/mode1/Stack`
 `type Stack2 = /code/mode2/Stack`
 
-## Variables
-Variables will be initialized upon declaration either by developer or compiler.
-Variables are defined using `var name : type`. If you assign a value to the variable, you can omit the type part (type can be implied).
-Reasons for including type at the end:
-- Due to type inference, type is optional and better not to be first part of the definition.
-- More consistent with function declaration.
-- Even C has `auto x = int{4}` declaration
-- More readable and parseable
-```
-var x:int
-var y : int = 19
-var t = 12  ;imply type from 12
-```
-A function which has no input and returns `T` is treated like a variable of type `T`. This can be used to have lazy evaluation. So if you send the function/lambda to another function, to the outside world, it is int variable. inside they carry a lambda.
-passing, assigning to other vars does not change or evaluate the variable. But as soon as you have something like: `x=lazy_var+1` then function is being called.
-- As soon as you declare a variable it will have some value. Even if it is a tuple, it will have all fields set to default value.
-- You can define local variables using `var` keyword.
-`var x: int = 19; x= 11 ;ok - can re-assign`
-- You can define consts using functions: `func PI -> 3.14`
+
 
 ## Inheritance and Polymorphism
 - Tuples can inherit from a single other tuple by having it as their first field and defined as anonymous.
@@ -439,6 +450,7 @@ How can I pass a Dot to process function? You need to write a proxy function:
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Functions
+- You can define consts using functions: `func PI -> 3.14`
 - `var/val` of the function output is part of singature (but not output type). And you must capture a functin output.
 `process/int/var.int/val.float/val` is a condensed view of the signature of the funtion: `func process(var x:int, val y: float)->val string`.
 - You can write body of a function using assembly: use `{| ... |}` notation. If you want your assembly to be inlined, use `{|| ... ||}`. You can use `(A=B)` or `(A!=B)` notation to do conditional compilation based on OS and hardware.
