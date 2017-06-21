@@ -722,6 +722,79 @@ but if we use `var/val` without type, it will cause problem.
 So var/val of return type is part of signature but not the return type. Because it will be possible to infer type from method call. 
 `process/int/var.int/val.float/val` is a condensed view of the signature of the funtion.
 
+
+Y - Can we simplify where?
+`func process[S, X, N, M, Q, P, T where S,T,X: prot1, N,M: prot2, T,N: prot3, P, Q]`
+shortcut: list expected func = operator to check existence
+- move it inside function to make it more readable (still compile time)
+as this is only valid for compile time, not being part of function definition should not matter much.
+a protocol is like a function which returns a bool.
+q: can we specialize protocol for a specific type? no it does not make sense. But we can have different funnctions with same name and signature but different protocols.
+q: what about lambda and closure?
+putting it inside the function body does not also make sense. It should only be for runtime.
+```
+protocol Ord[T] := {
+    func compare(x:T, y:T)->int
+}
+func sort[T] Ord[T] (x:T[])
+func process[S, X, N, M, Q, P, T]  prot1[S,T,X] prot2[N,M] prot3[T,N]
+```
+This makes more sense. After `[]` in function declaration we can list of protocols that we expect. It is a bit similar to generic function definition but should be fine as it clearly follows the actual function declaration.
+```
+;we can overload protocols
+func sort[T] Ord[T](...)
+func sort[T] StrictOrd[T](...)
+```
+If we call sort function, compiler will decide which protocl best matches.
+
+N - Now that there is no assert, how can we check for types? 
+We said `@` expressions are evaluated at compile time. just use if
+
+Y - How to define alias for generic types?
+`type A = int`
+`type S[T] = Stack[T]`
+`type ST = Stack[int]`
+
+Y - Just like the way function can determine protocol of generic, can a type determine data of a generic argument?
+can those generic arguments form a relation with each other? like the way we have with functions?
+```
+;this does not make any sense. Type does not have anything to do with behavior defined for a specific type
+type Stack[T] proto1[T] := {...}
+;Set can be defined only on types that can be compared.
+type Set[T] comparable[T] := { ... }
+```
+- Maybe a type can also depend on protocol definitions for it's arguments.
+- What about data? sort, graph, tree, queue, list, hash, pair, 
+Type does not have any behavior so it cannot read/write or check the data aspect of it's generic type.
+but the same way we use concepts in C++ for class, we should be able to use protocols for both function and types. 
+```
+;do we need to repeat protocol for type and functions?
+type Set[T] comprbl[T] := array[T]
+func add[T] comprbl[T] (s: Set[T])->...
+func get[T] comprbl[T] (
+```
+Maybe we should not worry about behavior of the data when defining generic types over them.
+Let set accept any type it wants. related functions will have protocols in place (we definitely need protocols for functions).
+but if a protocol is defined for a type, functions working with that type can omit that protocol.
+If set has comparable protocol, read/write functions dont need to define it twice.
+But in some cases like Stringer, there is no specific type that should define a protocol. In these cases functions define the protocol constraint.
+`type Complex[T,U,V] prot1[U,V] prot2[T, V] prot3[T, U, V] = { ... }`
+So you cannot even create a Set with something which is not comparable -> more strict and explicit type system.
+`type Set[T] comprbl[T] := array[T]`
+`type Set[T] := comprbl[T] array[T]`
+`type Customer[T] := serializable[T] { name: string, ...}`
+This can affect subtyping. If parent type has a protocol constraint, child does not need to define it again?
+`type Shape[T] := prot1[T] { ... }`
+`type Circle[T] := { Shape[T], ...}`
+No child does not need to, but the protocol will be enforced by the compiler.
+Some examples on why we need protocol for type definition:
+- Set[T] can only be used with types which are comparable. We cannot define `Set[adder_function]`
+- BinaryTree[T] can only be used with comparable types so we can do search on the tree.
+- Bloomfilter can be only used with types which have hash defined.
+
+Y - Can we enforce data fields using a protocol?
+`protocol HasId[T] := { func getId[T](x: T)->x.id }`?
+
 ? - What are the problems with generics?
 
 ? - What are the problems with subtyping and polymorphism?
