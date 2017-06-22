@@ -20,7 +20,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, added inline assembly, introduced `:=` ref-assign operator and make `=` data-copy operator, removed `break` and `continue`, removed Phantom types setion as they can be implemented with named types, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, update protocol enforcement syntax and extend it to types with addition of axioms
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, introduced `:=` ref-assign operator and made `=` data-copy operator, removed `break` and `continue`, removed Phantom types section as they can be implemented with named types, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
@@ -110,6 +110,7 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 # Type System
 
 ## Variabe definition
+- Storage class, type: `storage_class var_name: type = rvalue`
 - Every variable must have a type. You define variables using `var` keyword: `var x: int` (This defined a new variable named `x` which is an integer number).
 - Each variable must have a value upon declaration. Either you assign a value explicitly or compiler will set default value of that type.
 
@@ -157,7 +158,7 @@ func get[T](val arr: array[T], index: int) -> val T {
 ```
 If we use `get` to read data as `var` from an array which contains value types, we won't have direct access to inside the array. We will receive a copy.
 `type int := binary` compiler will allocate 8 bytes as a binary buffer for int
-`type binary := native`
+`type binaty := binary` this is just for documentation. right side same as left side, means it is a native type.
 We have two categories of types: value-type (or valtype) and reference-type (or reftype). binary is the only valtype. Any named type with binary underlying type is valtype. Every other type (tuple or union with tuples) is reftype.
 Union which has only labels (called enum) or has labels and other valtypes, is a valtype, because compiler uses int or a binary buffer to implement it. If it has tuples, it is reftype.
 `function` type is a valtype. Underlying, it is a pointer to a memory location. It is implemented as `int`.
@@ -333,6 +334,7 @@ var x: S = t ;error
 - You must initialize sum type variables upon initialization.
 
 ## Named Types
+There must be a single space between `type` and name.
 You can use `type` to define new type based on an existing type. 
 You can also use it to define a type alias.
 
@@ -452,34 +454,21 @@ How can I pass a Dot to process function? You need to write a proxy function:
 
 # Functions
 - You can define consts using functions: `func PI -> 3.14`
-- `var/val` of the function output is part of singature (but not output type). And you must capture a functin output.
+- Storage class: `var/val` of the function output is part of singature (but not output type). And you must capture a functin output.
 `process/int/var.int/val.float/val` is a condensed view of the signature of the funtion: `func process(var x:int, val y: float)->val string`.
-- You can write body of a function using assembly: use `{| ... |}` notation. If you want your assembly to be inlined, use `{|| ... ||}`. You can use `(A=B)` or `(A!=B)` notation to do conditional compilation based on OS and hardware.
-```
-func process(x:int) -> int 
-{|
-   (OS == WIN)
-   {
-     mov ax, 10
-     mov bx, 20
-     add ax, bx
-   }
-   (CPU != Intel)
-   {
-      mov ax, 12
-   }
-|}
-```
+
 
 - There must be a single space between func and function name.
 - A function can determine whether is expects var or val inputs. If function wants to promise it won't change the input but caller can send either var or val, it can do so with eliminating qualifier or using val: `func process(x: int)`.
 - var/val qualifier is optional for function input/output. if missing, it is considered val and caller can send either val or var. But if it is `val`, caller can only send vals.
 - You can use `@var/val` in shortcut functions to explicitly indicate output type:
-`func process(val x:int, var y:int) -> @var(x+y+1)`
+`func process(val x:int, var y:int) -> var (x+y+1)`
 - If function output does not have a qualifier, it will be val.
 `func process(var x:int) -> x` return is a val
+`func process(var x:int) -> int x` return is a val
+`func process(var x:int) -> val:int x` return is a val
 - If function wants to return a var and use shortcut:
-`func process(val x:int) -> var int x+1`
+`func process(val x:int) -> var:int x+1`
 `func process(val x:int) -> var x+1`
 - When you pass var or val to a function, the reference is being sent and compiler makes sure vals are not changed.
 - when a function returns var/val it returns a reference to a locally allocated data.
@@ -488,7 +477,7 @@ func process(x:int) -> int
 - function inputs should have val/var modifier so it won't be ambiguous whether something is potential for shared mutable state. If input modifier is missing, it is assumed to be var or val.
 - If function output type misses `var/val` modifier, it will be assumed `val`.
 `func add(x:int, y:int)->int`
-`func add(val x:int, val y:int)->val int`
+`func add(val x:int, val y:int)->val:int`
 These two definitions are different. var/val are part of function.
 Compiler/runtime will handle whether to send a ref or a copy, for val arguments.
 - You can omit `()` in function call if there is no local variable or argument with same name and function has no input. If there is local var with same name, compiler will issue warning: `var t:int = sizeof[int]`
@@ -630,7 +619,7 @@ var rr = (x: int, y:int) -> x + y  ;return type can be inferred
 var rr = { x + y } ;WRONG! - input is not specified
 var f1 = (x: int, y:int) -> int { return x+y } ;the most complete definition
 
-type adder := (x: int, y:int) -> int
+type adder := (x: int, val y:int) -> var:int
 var rr: adder = (a:int, b:int) -> { a + b } ;when you have a type, you can define new names for input
 var rr: adder = (x,y) -> x + y   ;when you have a type, you can also omit input
 var rr: adder = (x,y) -> int { return x + y }      ;and also func keyword, but {} is mandatory
@@ -707,11 +696,15 @@ var yy: string = magic(y)
 For generic functions, any call to a function which does not rely on the generic type, will be checked by compiler even if there is no call to that generic function. Any call to another function relying on generic argument, will be checked by compiler to be defined.
 
 ## Protocols
+- You can also include storage class in a function signature in a protocol:
+`protocol Stringer[T] := { func toString(val:T) }`
+
 - A type definition can require a protocol without input type which implies that protocol is enforced with the parent type meaning there are functions based on that protocol for the given type:
 ```
 protocol Disposable[T] := { func dispose(T) }
 type FileHandle := +Disposable int
 ```
+But this is not mandatory.
 - Syntax to enforce protocol:
 `protocol Eq[T] := +Ord[T] { ... }`
 `func isInArray[T](x:T, y:array[T]) +Eq[T] -> bool { loop(var n: T <- y) {if ( equals(x,n) ) return true} return false }`
@@ -888,7 +881,7 @@ bin-type example:
 - `()` function call
 - `.` access tuple fields
 
-Keywords: `import`, `func`, `var`, `val`, `type`, `native`, `loop`, `protocol`
+Keywords: `import`, `func`, `var`, `val`, `type`, `loop`, `protocol`
 Semi-Keywords: `if`, `else`
 Special functions: `opCall` , `dispose`
 Primitive data types: `binary`, `int`, `float`, `char`
@@ -1018,9 +1011,8 @@ Also you can call a function or refer to a type with fully qualified name:
 `import /core/std/{ab, cd, ef}` to import multiple modules
 
 ### native
-`type Map[K,V] := native` ;same for array
 Denotes function is implemented by runtime or external libraries.
-`native func file_open(path: string) -> File;`
+`func file_open(path: string) -> File {...}`
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
@@ -1215,3 +1207,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Details of inline assembly flags and their values (OS, CPU, ...)
 - Distributed processing: Moving code to another machine and running there (Actor model + channel)
 - possible add notation for function chaining
+- Define notation to write low-level (Assembly or IR) code in a function body and also force inline.
