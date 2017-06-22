@@ -110,6 +110,7 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 # Type System
 
 ## Variabe definition
+- ref-assignment for val is only possible upon declaration. A val, after declaration cannot be on the left side of `=` or `:=`.
 - Storage class, type: `storage_class var_name: type = rvalue`
 - Every variable must have a type. You define variables using `var` keyword: `var x: int` (This defined a new variable named `x` which is an integer number).
 - Each variable must have a value upon declaration. Either you assign a value explicitly or compiler will set default value of that type.
