@@ -920,6 +920,47 @@ type FileHandle := +Disposable int
 this makes things messy. maybe we should use notation?
 using `def` makes things confusing with Python but we don't care about Python here.
 `def x: var int = 1`
+we are doing this (attach mutability qualifier to the type name) in function output! so let's make it consistent.
+`func process() -> var int`
+So we can have 3 types: var, val and no qualified (used in function I/O, indicating it can be either val or var but should be treated val).
+`var int` -> `int&`
+`val int` -> `int!`
+`int` -> `int`
+But note that when calling a function or creating a type with template which need a type, you must not pass `int&`. because it will make everything super messy. a mutable array of immutable int, an immutable stack of mutable floats..
+What about this?
+`func process[T](var x:T)`
+how can we translate this to the new model?
+`func process[T](x: var T)`
+so types used as generic arguments cannot include mutability qualifier. Maybe we should not use notation and use keywords.
+`var int`
+`val int`
+problem is: it makes code messy and hard to read:
+`var x:int` -> `def x: var int`
+pro: explicit is better
+pro: only 5 characters more.
+pro: will not cause confusion with templates.
+`def x: var int = y`
+another option: notations like `$`
+`$ x: var int`
+what about type inference?
+old: `var x = process()`
+now: `def x: var = process()`?
+for type inference: right side of `=` or `:=` has its type and var/val. If we just want to use it we can simply write:
+`def x = process()`. If we want to state a qualifier:
+`def x: var = process()`
+or most explicit one:
+`def x: var int = process()`.
+can we say, if no qualifier it is immutable. if var it is mutable? this may be more consistent with function definition.
+`def x: int = 12` x is immutable
+`def x: var int = 11` x is mutable
+`def x: var = process()` x is mutable of type output of process
+`def x = process()` type and imm same as output of process
+`func process(x: int, y: var int)` x is immutable. y is mutable. but how can sender send mutable variables for x?
+maybe we should simply state `x:int` in function input means you must send immutble variable. if you have a mutable you should make a copy.
+pro: variable definition becomes cleaner.
+con: functions become less flexible. previously we have 3 options (var, val, no qualifier) but now we only have two (var, no qualifier).
+how can we have both? flexibility in function where we can state we accept immutable or mutable or anything. and clean syntax to define variables without needing to type var/val/def all over the place?
+
 
 ? - What are the problems with generics?
 
