@@ -20,7 +20,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, added inline assembly, introduced `:=` ref-assign operator and make `=` data-copy operator, removed `break` and `continue`, removed Phantom types setion as they can be implemented with named types, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, remove anything type, change notation for inference, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, added inline assembly, introduced `:=` ref-assign operator and make `=` data-copy operator, removed `break` and `continue`, removed Phantom types setion as they can be implemented with named types, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, update protocol enforcement syntax and extend it to types with addition of axioms
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
@@ -657,13 +657,12 @@ func process(c: Circle) -> int {
 - You can use `_` as a shortcut to define a lambda:
 If we have `func f(int,int,int)->int` then:
 `var t = f(a1, a2, _)` is same as `var t: func(int)->int = (x:int) -> f(a1, a2, x)`
+- Lambdas can also use protocols in their type or their value definition.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Generics
 - Generic arguments should types.
-- You can use `|` to denote possible types instead of a protocol. 
-For example: `func add[T: int|float]...`
 - When defining types, you can append `[A, B, C, ...]` to the type name to indicate it is a generic type. You can then use these symbols inside type definition.
 - When defining functions, if input or output are of generic type, you must append `[A,B,C,...]` to the function name to match required generic types for input/output. 
 - When you define a variable or another type, you can refer to a generic type using it's name and concrete values for their types. Like `Type{int, string]`
@@ -707,7 +706,19 @@ var yy: string = magic(y)
 For generic functions, any call to a function which does not rely on the generic type, will be checked by compiler even if there is no call to that generic function. Any call to another function relying on generic argument, will be checked by compiler to be defined.
 
 ## Protocols
+- A type definition can require a protocol without input type which implies that protocol is enforced with the parent type meaning there are functions based on that protocol for the given type:
+```
+protocol Disposable[T] := { func dispose(T) }
+type FileHandle := +Disposable int
+```
+- Syntax to enforce protocol:
+`protocol Eq[T] := +Ord[T] { ... }`
+`func isInArray[T](x:T, y:array[T]) +Eq[T] -> bool { loop(var n: T <- y) {if ( equals(x,n) ) return true} return false }`
+`type Set[T] := +comprbl[T] +prot2[T] array[T]`
 
+- Bodyless functions in a protocol, imply they must be implemented by the developer. Functions that have a body, must have bool output and are called axioms. They are called to explain the semantics of the protocol.
+- You can inherit from another protocol:
+`protocol Eq[T] := +Ord[T] { ... }`
 - There must be a single space between `protocol` keyword and the protocol name.
 - So if a function plans to accept inputs which are not native array, it can be defined like this:
 `func process[T](x: T, arrayFuncs: ArrAccessors[T])` which means `x` input will have appropriate methods to be accessed like an array. Then inside `process` function it can use `x[0]` and other methods to work with x.
@@ -716,19 +727,21 @@ If someone calls a generic function with some user-defined type, they really don
 When writing a generic function, you may have expectations regarding behavior of the type T. These expectations can be defined using a protocol. When you call this function with a concrete type, compiler makes sure the protocol is satisfied.
 General definition of function with protocol:
 ;S,T,X must comply with prot1, N,M with prot2, P,Q are free
-`func process[S, T, X, N, M, P, Q] prot1[S,T,X] prot2[N,M]`
+`func process[S, T, X, N, M, P, Q] (x: T) +prot1[S,T,X] +prot2[N,M] -> {...}`
 Note that one type can be part of more than one protocol:
-`func process[S, X, N, M, Q, P, T]  prot1[S,T,X] prot2[N,M] prot3[T,N]`
+`func process[S, X, N, M, Q, P, T] (x:int) +prot1[S,T,X] +prot2[N,M] +prot3[T,N] -> { ... }`
 
-If template has only one argument, you can write: `func process[X: protocol1](...)`
-
-When defining a protocol, argument names is optional.
+When defining a protocol, argument names shoud be eliminated.
 ```
 ;Also we can initialize tuple members, we have embedding
 ;Note that if T is a sum type, each function here can be multiple implemented functions
 protocol Eq[T] := {
-    func equals(x: T, y:T)->bool
-    func notEquals(x: Eq, y:Eq) -> !equals(x,y)  ;you can provide default impl
+    func equals(T,T)->bool
+    func notEquals(T,T)->bool
+    func default(x: T, y: T) -> equals(x,y) => not notEquals(x,y)
+    func identity(x: T) -> equals(x,x)
+    func reflectivity(x: T, y:T) -> equals(x,y) => equals(y,x)
+    func transitivity(x,y,z: T) -> (equals(x,y) and equals(y,z)) => equals(x,z)
 }
 type Point := {x:int, y:int}
 ;here we are implementing protocol Eq[Point]
@@ -737,8 +750,8 @@ func equals(x: Point, y: Point)->bool { ... }
 func notEquals(x: Point, y: Point)->bool { ... }
 
 ;just like the way we define type for variables, we can define protocol for generic types
-func isInArray[T: Eq] (x:T, y:T[]) -> bool {
-    if ( z.equals(x, y[0])...
+func isInArray[T] (x:T, y:T[]) +Eq[T] -> bool {
+    if ( equals(x, y[0])...
 }
 ;call:
 isInArray(x, arr)
@@ -753,9 +766,10 @@ protocol Stringer[T] := {
 }
 func dump[T: Stringer](x:T)->string
 ---
-protocol Serializer[T] := {
-    func serialize(x:T)->string
-    func deserialize(x:string)->T
+protocol SerDe[T] := {
+    func serialize(T)->string
+    func deserialize(string)->T
+    func reflectivity(x: T) -> des(ser(x)) <=> x
 }
 func process[T: Serializer](x: T) -> ...
 ---
@@ -805,7 +819,7 @@ If we call sort function, compiler will decide which protocl best matches.
 - You can also define protocols for types:
 For example you can define a set only for types which are comparable. We cannot define `Set[adder_function]`
 `type Set[T] := comprbl[T] array[T]`
-`type BinaryTree[T] := comparable[T] ...`
+`type BinaryTree[T] := comparable[T] { ... }`
 `type map[K,V] := Hashable[K] ...`
 - If Circle[T] inherits from Shape[T], re-declaring protocols on Shape is optional but they will be enforced by the compiler.
 - if a protocol has a default implementation for a function and generic type does not implement that function, the default implementation will be used. This can be used to check data of a generic type:
@@ -819,6 +833,10 @@ For example you can define a set only for types which are comparable. We cannot 
 
 ## Operators
 - Conditional: `and or not == != >= <= => =<`
+- Logical: `=>` (implication) and `<=>` (equivalence of behavior/computation). mostly used in axioms.
+`t=x<=>y` means `t=x iff y`
+`var t = x=>y` implies operator, means `t=if x then y else true`
+
 - Math: `+ - * % %% (is divisible) ++ -- **`
 The math operators can be combined with `=` to do the calculation and assignment in one statement.
 - `=` operator: copies data.
@@ -855,11 +873,12 @@ bin-type example:
 
 ### Special Syntax
 - `@` casting/type check
+- `+` protocol enforcement
 - `|` sum types
 - `_` placeholder for lambda
-- `:` tuple declaration, generic bounds, variable type declaration, hash literal
+- `:` tuple declaration, variable type declaration, hash literal
 - `:=` custom type definition, reference assignment
-- `=` type alias
+- `=` type alias, copy value
 - `..` range generator
 - `<-` loop
 - `->` function declaration
