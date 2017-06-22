@@ -1002,9 +1002,143 @@ developer won't notice anything. but runtime will handle this.
 but it will complicate processing. we need to check for that bit all the time.
 But if we use a convention (val int is sent by value not reference), which is agreed upon both on caller and callee side, it would be simpler and faster. But if someone write another compiler, they will need to follow this convention.
 
+N - Can we assign nothing to all types? What is it exactly and where is it used?
+You cannot. Nothing is it's own type you cannot assign Nothing to an integer.
+
+N - If a lambda has no input and output can I just write: `{ code }`?
+This is basically like a code block (but cannot return).
+Maybe explicit is better here. 
+`loop(10, { printf("Hello world" })`
+
+N - What are the problems with generics?
+
+N - What are the problems with subtyping and polymorphism?
+
+N - What can be removed to make language simpler?
+`..` notation?
+- `@` casting/type check
+- `+` protocol enforcement
+- `|` sum types
+- `_` placeholder for lambda
+- `:` tuple declaration, variable type declaration, hash literal
+- `:=` custom type definition, reference assignment
+- `=` type alias, copy value
+- `..` range generator
+- `<-` loop
+- `->` function declaration
+- `[]` generics, array and map literals
+- `{}` code block, tuple definition and tuple literal
+- `()` function call
+- `.` access tuple fields
+
+N - How can I define a custom type which needs 20 bytes of memory?
+`type MyType := binary`
+`func createMyType() -> MyType { return llocate(20) }`
+
 ? - Can we implement loop with recursion and provide it as a function in core?
+- problem: we won't be able to return from within loop.
+- access to local variables will be provided.
+- Something which is simple may take a little longer, be a little more verbose, but it will be more comprehensible
+easiest type: repeat some code for 10 times
+```
+loop(10, () -> { printf("Hello world" })
+loop([2..10], () -> { printf("Hello world" })
+loop([2..10], (x:int) -> { printf("Hello world" })
+loop(my_array, (s: string) -> ...)
+loop(my_hash, (key: int) -> ...)
+loop(x>0, () -> { ... }) ;if x is var, the loop body can change it
+loop(my_iteratable, (iterator: int) -> ...)
+loop(true () -> { ... })` infinite loop
+;to return something:
+;we can return explicitly to simulate break: return false means break outside the loop
+;return true means continue to the next iteartion
+loop([1..100], ()-> { if ( ... ) return false })
+;to force return from inside loop: set a var outside
+var result = 0
+loop(... , () -> { if ( ... ) { result = 88; return false; })
+```
+- We need to behave hash and array just like any normal iterable. They should provide functions for iteration and support iterable protocol.
+- This can remove a keyword `loop` and a notation `<-` and corresponding section.
+- a new section in core will be added (besides array and map) to exaplain loop.
 
-? - What are the problems with generics?
+? - introduce label types
+How can we define a tag type? (one bit)
+`type true := ?`
+`type true`?
+if we have a good definition for label types, it should be fine.
+label type: types that only have one value which has same notation as the type.
+`type ABC`
+`var g: ABC = 1` wrong
+`var g: ABC = ABC`
+`if(g==ABC)` true
+`if ( typeof(g) == typeof(ABC) )...`
+`if ( g @ ABC )` true
 
-? - What are the problems with subtyping and polymorphism?
+? - define sum types using variant template
+`type bool := true|false`
+`type boolx := true|false|error`
+then can I write: `myBoolx = bool`?
+Isn't it better to previously define labels explicitly?
+This is like `Nothing` type. It is a label (type which has only one value which is the type itself).
+But how is variant defined?
+we can say it is handled like a tuple: compiler will assign.
+`type variant := variant`. It will act just as the documentation. compiler will handle allocations.
+`type variant := binary`. And compiler will handle the reset.
+But if we have a bool, can this make sense?
+`type bool := variant[true, false]`
+`var myBool: bool = true`?
+`if ( myBool == true)`?
+`type IntOrFloat := variant[int, float]`?
+`type IntOrFloat := variant[int, float]`
+`type Maybe[T] := Variant[Nothing, T]`?
 
+
+? - Review block notation for `@`
+this can affect matching `@` operator: `if ( x @ var t:int)`
+`if ( var t = my_map("key1"), t @ var x:int )`
+map's get will return `maybe[t]` which will be `variant[nothing, t]`.
+- better and shorter name than `variant`.
+pro: type system will be more consistent
+con: we will add yet another built-in type
+other possible names:
+`sum`
+`or`
+`union`, `tagged`, `joint`
+- How does this affect binary `@` operator?
+`if ( g @ ABC )` true
+`if ( var t = my_map("key1"), t @ var x:int )`
+we can say `@` can be used either to cast or check something can be casted.
+`a @ int` will return true if it can be casted to int.
+`var g = @int(x)`
+`if (x @ int ) y=@int(x)`
+`if (int @ x ) y=@int(x)`
+`if ( var t = my_map("key1"), t @ var x:int )`
+how can we combine these two?
+`if (@int(x) ) y=@int(x)`
+`if (x @ int ) y=@int(x)`
+combining them into one operator is a bit inconsistent.
+For example: `if (x @ var y:int ) ;y has int of x`
+In the above, there is no assignment or `:=` so how does y get it's value?
+`if (var y:int = @int(x) ) ;y has int of x`
+the only way to assign something to a variable is `=` or `:=`. We are adding a new notation.
+OTOH maybe assignment is not possible. so we have assignment and also check for assignability.
+`if (x @ int and var y:int = @int(x) ) ;y has int of x`
+`if ( var t = my_map("key1"), t @ int and var x:int = @int(t) )`
+this is longer but consistent with previous notations.
+So we have `@` act as cast and check if it can be casted.
+What happens to the block type?
+- In this case we may need to make `if/else` keywords.
+- or maybe just make `if` keyword and `else` a semi-keyword handled by the compiler.
+`if(c) {A} else {B}`
+`x=c; if (x) {A} if ( !x) {B}`
+can we make two cases of `@` more similar to each other?
+
+? - If we remove block mode from `@` then we may need a switch.
+https://github.com/golang/go/wiki/Switch
+`@` working for both type and values is a bit confusing.
+```
+if ( x == ) {
+0 -> 
+1 -> 
+}
+```
