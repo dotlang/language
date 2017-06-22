@@ -795,20 +795,7 @@ Some examples on why we need protocol for type definition:
 Y - Can we enforce data fields using a protocol?
 `protocol HasId[T] := { func getId[T](x: T)->x.id }`?
 
-? - What are the problems with generics?
-
-? - What are the problems with subtyping and polymorphism?
-
-? - If we use LLVM, then assembly code and os/cpu filter won't be needed.
-But we may need to write bitcode inside the code and indicate it needs to be inlines (macro).
-But not a general macro system for the language.
-```
-func process() -> var int native {
-;bitcode
-}
-```
-
-? - Can we replace protocol with a compile-time function?
+Y - Can we replace protocol with a compile-time function?
 ```
 protocol Ord[T] := { func compare(T,T)->int }
 ;protocol is a function which returns a bool
@@ -858,17 +845,91 @@ all to eliminate `protocol` keyword.
 protocol SerDe[T] := {
     func ser(T)->string
     func des(string)->T
-    func reflectivity(x: T) -> des(ser(x)) == x
+    func reflectivity(x: T) -> des(ser(x)) <=> x
 }
 protocol Eq[T] := {
     func equals(T,T)->bool
+    func notEquals(T,T)->bool
+    func default(x: T, y: T) -> equals(x,y) => not notEquals(x,y)
     func identity(x: T) -> equals(x,x)
-    func reflectivity(x: T, y:T) -> equals(x,y) <=> equals(y,x)
-    func transitivity(x,y,z: T) -> equals(x,y) and equals(y,z) => equals(x,z)
+    func reflectivity(x: T, y:T) -> equals(x,y) => equals(y,x)
+    func transitivity(x,y,z: T) -> (equals(x,y) and equals(y,z)) => equals(x,z)
 }
 ```
+we can say, functions without body are to be checked by compiler to be defined.
+Functions with a body, are merely for formal documentation of properties of that protocol.
+protocol inheritance: `protocol SerDe[T] := Eq[T] { ... }` 
+- We can add `=>` notation as an operator which means logical `if`.
+`var t = x=>y` implies operator, means `t=if x then y else true`
+- `<=>` equivalence of behavior/computation. `t=x<=>y` means `t=x iff y`.
+if we have `if` only defined for boolean type, then `<=>` is same as `==`.
+- `<=>` is extra?
+`x + 5 == y + 2  <=>  x + 3 == y`. might be useful and make axiom more readable.
 
-? - can we use `=` to force inline?
+N - can we use `=` to force inline?
 `func process() = { ... }`
 it is like a variable. so everytime process is called, it will be replaced with right side of `=`.
 No. The syntax for inline should be inside function body. Nothing should be changed from outside.
+
+Y - We can have protocol inheritance just like the way we define protocol for a type.
+
+Y - Can we make this more readable? same for protocol inheritance and protocols in type definition.
+`protocol Eq[T] := Ord[T] { ... }`
+`func process[S, X, N, M, Q, P, T]  prot1[S,T,X] prot2[N,M] prot3[T,N]`
+`type Set[T] := comprbl[T] array[T]`
+the syntax for define protocol is exactly like function or type definition. 
+Why not use embedding for protocols too?
+`protocol Eq[T] := { Ord[T] ... }`
+for function, use `:prot` to "enforce" it.
+`func process[T,U]  :prot1[T,U] :prot2[T] :prot3[U] (x:T, y:U) {...}`
+but `:` is not clear for type declaration. 
+`type Set[T] := :comprbl[T] array[T]`
+Another solution to make it clear: protocol names should start with a specific character.
+`protocol $Eq[T] := { $Ord[T] ... }`
+`func process[T,U]  $prot1[T,U] (x:T, y:U) {...}`
+`type Set[T] := $comprbl[T] array[T]`
+but this is not very beautiful.
+`protocol Eq[T] := { Ord[T] ... }`
+`func process[T,U] (x:T, y:U) prot1[T,U] {...}`
+`type Set[T] := $comprbl[T] array[T]`
+- maybe it's better to place protocol name after function inputs, so function signature order is not changed.
+- we have to declaration: protocol definition and protocol enforcement. 
+for definition we don't need to do anything.
+for enforcement of a protocol on a function input or type, maybe using a different notation is better to make it more explicit. `=:`? or maybe use protocol name as a pseudo function? no.
+or use a keyword like `requires`, `assert`, `assume`, `promise`, `where`, `with`.
+q: How do we handle inheritance for protocols? what about conflicts? let's not make this too complicated.
+a protocol can ask for enforcement of another protocol. If there is any conflict, it is developer's responsibility to solve it. We won't add any extra notion to handle these exceptional cases.
+`protocol Eq[T] := +Ord[T] { ... }`
+`func isInArray[T](x:T, y:array[T]) +Eq[T] -> bool { loop(var n: T <- y) {if ( equals(x,n) ) return true} return false }`
+`type Set[T] := +comprbl[T] +prot2[T] array[T]`
+
+Y - What about protocols with lambda?
+`var f1 = func(x: T, y:int) +prot1[T] -> int { return x+y }`
+`type adder[T] := +prot1[T] func(x: T, y:int) -> int`
+`var rr: adder[T] = (x,y) -> x + y`
+
+Y - Shall we explicitly indicate if a type is disposable (has dispose function)? What about other such requirements?
+I think this is another application of protocols. If we want to indicate (for the developer or documentation) that a type confirms to a specific behavior, we use a protocol without argument which implies the argument is the type itself. This is not applicable for functions. Similarly we can explicitly indicate that a type has `equals` function.
+```
+protocol Disposable[T] := { func dispose(T) }
+type FileHandle := +Disposable int
+```
+
+? - Why not add var/val to the type?
+`let x: var int = 1`
+this makes things messy. maybe we should use notation?
+using `def` makes things confusing with Python but we don't care about Python here.
+`def x: var int = 1`
+
+? - What are the problems with generics?
+
+? - What are the problems with subtyping and polymorphism?
+
+? - If we use LLVM, then assembly code and os/cpu filter won't be needed.
+But we may need to write bitcode inside the code and indicate it needs to be inlines (macro).
+But not a general macro system for the language.
+```
+func process() -> var int native {
+;bitcode
+}
+```
