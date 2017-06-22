@@ -159,7 +159,7 @@ func get[T](val arr: array[T], index: int) -> val T {
 ```
 If we use `get` to read data as `var` from an array which contains value types, we won't have direct access to inside the array. We will receive a copy.
 `type int := binary` compiler will allocate 8 bytes as a binary buffer for int
-`type binaty := binary` this is just for documentation. right side same as left side, means it is a native type.
+`type binary := binary` this is just for documentation. right side same as left side, means it is a native type.
 We have two categories of types: value-type (or valtype) and reference-type (or reftype). binary is the only valtype. Any named type with binary underlying type is valtype. Every other type (tuple or union with tuples) is reftype.
 Union which has only labels (called enum) or has labels and other valtypes, is a valtype, because compiler uses int or a binary buffer to implement it. If it has tuples, it is reftype.
 `function` type is a valtype. Underlying, it is a pointer to a memory location. It is implemented as `int`.
@@ -611,7 +611,7 @@ Each function call will be dispatched to the implementation with highest priorit
 
 ## Lambda expression
 - closure capturing: It captures outside vars and vals. Can change vars.
-
+- Even if a lambda has no input/output you should write other parts: `() -> { printf("Hello world" }`
 You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too, also  `func` keyword is not needed. The essential part is input and `->`.
 If you use `{}` for the body, you must specify output type and use return keyword.
 ```
@@ -697,6 +697,7 @@ var yy: string = magic(y)
 For generic functions, any call to a function which does not rely on the generic type, will be checked by compiler even if there is no call to that generic function. Any call to another function relying on generic argument, will be checked by compiler to be defined.
 
 ## Protocols
+- Protocol functions which have a body, don't need to be implemented
 - You can also include storage class in a function signature in a protocol:
 `protocol Stringer[T] := { func toString(val:T) }`
 
@@ -764,7 +765,7 @@ func dump[T: Stringer](x:T)->string
 protocol SerDe[T] := {
     func serialize(T)->string
     func deserialize(string)->T
-    func reflectivity(x: T) -> des(ser(x)) <=> x
+    func reflectivity(x: T) -> des(ser(x)) == x
 }
 func process[T: Serializer](x: T) -> ...
 ---
@@ -828,8 +829,7 @@ For example you can define a set only for types which are comparable. We cannot 
 
 ## Operators
 - Conditional: `and or not == != >= <= => =<`
-- Logical: `=>` (implication) and `<=>` (equivalence of behavior/computation). mostly used in axioms.
-`t=x<=>y` means `t=x iff y`
+- Logical: `=>` (implication) mostly used in axioms.
 `var t = x=>y` implies operator, means `t=if x then y else true`
 
 - Math: `+ - * % %% (is divisible) ++ -- **`
@@ -884,7 +884,7 @@ bin-type example:
 
 Keywords: `import`, `func`, `var`, `val`, `type`, `loop`, `protocol`
 Semi-Keywords: `if`, `else`
-Special functions: `opCall` , `dispose`
+Special functions: `opCall`
 Primitive data types: `binary`, `int`, `float`, `char`
 Extended data types: `bool`, `string`, `array`, `map`
 
@@ -1091,9 +1091,7 @@ This function is overriden to support optional end.
 
 - If an array is var, all it's elements are var. Same for hash and tuple. This means const is deep and transitive.
 Arrays are a special built-in type. They are defined using generics. Compiler provides some syntax sugars to work with them.
-`[0, ..., 3]` means `[0, 1, 2, 3]`
-`[2, 4, ... , 100]` step=2, can be negative
-`[0, 0, ... , 0x100]` repeat 0 for 100 times.
+`[0..3]` means `[0, 1, 2, 3]`
 - In fact, anywhere that compiler detects these literals, it will call `opCall` for the expected type with index and value. So you can use this type of literal for your custom types too. If type is marked with `val`, a temporary var will be created for these operations.
 
 ```
