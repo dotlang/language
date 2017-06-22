@@ -915,7 +915,7 @@ protocol Disposable[T] := { func dispose(T) }
 type FileHandle := +Disposable int
 ```
 
-? - Why not add var/val to the type?
+N - Why not add var/val to the type?
 `let x: var int = 1`
 this makes things messy. maybe we should use notation?
 using `def` makes things confusing with Python but we don't care about Python here.
@@ -960,13 +960,21 @@ maybe we should simply state `x:int` in function input means you must send immut
 pro: variable definition becomes cleaner.
 con: functions become less flexible. previously we have 3 options (var, val, no qualifier) but now we only have two (var, no qualifier).
 how can we have both? flexibility in function where we can state we accept immutable or mutable or anything. and clean syntax to define variables without needing to type var/val/def all over the place?
+There are two orthogonal concepts regarding variables: storage class and type.
+template is about type.
 
+Y - storage class can be val or var.
+`storage_class var_name: type = rvalue`
+only for function output, there is no var_name so we omit it.
+`func process() -> val:int { ... }`
+`func process() -> int {...}`
+`func process() -> var:int {...}`
 
-? - What are the problems with generics?
+Y - `native` is a trivial keyword. Can we replace it with something else?
+`func assemblyAdd(x: int, y:int) -> int {...}`
+`type binaty := binary`
 
-? - What are the problems with subtyping and polymorphism?
-
-? - If we use LLVM, then assembly code and os/cpu filter won't be needed.
+Y - If we use LLVM, then assembly code and os/cpu filter won't be needed.
 But we may need to write bitcode inside the code and indicate it needs to be inlines (macro).
 But not a general macro system for the language.
 ```
@@ -974,3 +982,28 @@ func process() -> var int native {
 ;bitcode
 }
 ```
+
+? - Can we implement loop with recursion and provide it as a function in core?
+
+? - What are the problems with generics?
+
+? - What are the problems with subtyping and polymorphism?
+
+? - If we have `val x = 12` another assignment to x is forbidden.
+But what about ref-assign? `val x = 12` and `x := y` where y is val.
+This should be ok I think.
+To check: behavior when it is used elsewhere in a thread.
+Technically it is possible to ref-assign a val. but if we allow this for local variables and ban it for function inputs it will be source of confusion.
+Let's say we are pass-by-value. so value of a variable is the address of the memory cell which contains actual data.
+So it won't make sense for function to ref-assign it's input.
+
+
+? - can a function ref-assign a val input?
+if no, for sake of consistency we should ban it for local variables too.
+
+? - Maybe we can use the rightmost bit of references as an indicator.
+if 0, it is a reference.
+if 1, it is a value.
+developer won't notice anything. but runtime will handle this.
+but it will complicate processing. we need to check for that bit all the time.
+But if we use a convention (val int is sent by value not reference), which is agreed upon both on caller and callee side, it would be simpler and faster. But if someone write another compiler, they will need to follow this convention.
