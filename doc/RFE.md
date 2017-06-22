@@ -983,27 +983,28 @@ func process() -> var int native {
 }
 ```
 
-? - Can we implement loop with recursion and provide it as a function in core?
-
-? - What are the problems with generics?
-
-? - What are the problems with subtyping and polymorphism?
-
-? - If we have `val x = 12` another assignment to x is forbidden.
+Y - If we have `val x = 12` another assignment to x is forbidden.
 But what about ref-assign? `val x = 12` and `x := y` where y is val.
 This should be ok I think.
 To check: behavior when it is used elsewhere in a thread.
 Technically it is possible to ref-assign a val. but if we allow this for local variables and ban it for function inputs it will be source of confusion.
 Let's say we are pass-by-value. so value of a variable is the address of the memory cell which contains actual data.
 So it won't make sense for function to ref-assign it's input.
+ref-assignment for val is only possible upon declaration.
 
-
-? - can a function ref-assign a val input?
+N - can a function ref-assign a val input? No.
 if no, for sake of consistency we should ban it for local variables too.
 
-? - Maybe we can use the rightmost bit of references as an indicator.
+N - Maybe we can use the rightmost bit of references as an indicator.
 if 0, it is a reference.
 if 1, it is a value.
 developer won't notice anything. but runtime will handle this.
 but it will complicate processing. we need to check for that bit all the time.
 But if we use a convention (val int is sent by value not reference), which is agreed upon both on caller and callee side, it would be simpler and faster. But if someone write another compiler, they will need to follow this convention.
+
+? - Can we implement loop with recursion and provide it as a function in core?
+
+? - What are the problems with generics?
+
+? - What are the problems with subtyping and polymorphism?
+
