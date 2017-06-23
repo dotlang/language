@@ -1060,6 +1060,28 @@ loop(... , () -> { if ( ... ) { result = 88; return false; })
 - We need to behave hash and array just like any normal iterable. They should provide functions for iteration and support iterable protocol.
 - This can remove a keyword `loop` and a notation `<-` and corresponding section.
 - a new section in core will be added (besides array and map) to exaplain loop.
+How do we treat break and continue and break/continue in multiple levels?
+
+? - Now that everything is a reference, returning a tuple just to return more than one thing might be inefficient.
+let developer return multiple items: `return x,y` (2 refs) instead of `return {x,y}` (3 refs)
+the only reason would be efficiency. 
+this makes sense. what would be affected?
+method dispatch
+would it be possible to return a var and a val? yes. what should the caller do then?
+`func process()-> var:int, val:int`
+`? = process()`
+it define result separately:
+```
+var x:int
+val y:int
+x,y = process
+```
+but this is a bit strange because we define val and then assign to it.
+`var x, val y = process()` this is better. we declare and assign in a single statement.
+`var x, val y := process()`
+you can even write: `var x,y = 1,2`
+`var x, val y = 1,2`
+
 
 ? - introduce label types
 How can we define a tag type? (one bit)
@@ -1073,6 +1095,7 @@ label type: types that only have one value which has same notation as the type.
 `if(g==ABC)` true
 `if ( typeof(g) == typeof(ABC) )...`
 `if ( g @ ABC )` true
+you can define multiple label types at once: `type A,B,C`
 
 ? - define sum types using variant template
 `type bool := true|false`
@@ -1090,20 +1113,28 @@ But if we have a bool, can this make sense?
 `if ( myBool == true)`?
 `type IntOrFloat := variant[int, float]`?
 `type IntOrFloat := variant[int, float]`
-`type Maybe[T] := Variant[Nothing, T]`?
-
-
-? - Review block notation for `@`
-this can affect matching `@` operator: `if ( x @ var t:int)`
-`if ( var t = my_map("key1"), t @ var x:int )`
-map's get will return `maybe[t]` which will be `variant[nothing, t]`.
+`type Maybe[T] := Variant[Nothing, T]`
+`type OptionalInt := Variant[Nothing, int]`
 - better and shorter name than `variant`.
 pro: type system will be more consistent
 con: we will add yet another built-in type
 other possible names:
 `sum`
 `or`
-`union`, `tagged`, `joint`
+`union`, `tagged`, `joint` -> **`union` is chosen.**
+**`type bool := union[true, false]`**
+
+
+? - How can we define DayOfWeek type now?
+`type SAT, SUN, ... `
+`type DayOfWeek := union[SAT, SUN, ...]`
+`var x: DayOfWeek = SAT`
+`if ( @x == @SAT )...` we can use SAT both as a type and as a value, because SAT is a label type
+
+? - Review block notation for `@`
+this can affect matching `@` operator: `if ( x @ var t:int)`
+`if ( var t = my_map("key1"), t @ var x:int )`
+map's get will return `maybe[t]` which will be `variant[nothing, t]`.
 - How does this affect binary `@` operator?
 `if ( g @ ABC )` true
 `if ( var t = my_map("key1"), t @ var x:int )`
@@ -1132,6 +1163,43 @@ What happens to the block type?
 `if(c) {A} else {B}`
 `x=c; if (x) {A} if ( !x) {B}`
 can we make two cases of `@` more similar to each other?
+this is not very readable and intuitive: `if ( var t = my_map("key1"), t @ int and var x:int = @int(t) )`
+this is more intuitive:                  `if ( var t = my_map("key1"), @t == @int and var x:int = @int(t) )`
+least surprise?
+`@` is supposed to be with types. 
+also and is supposed to work with booleans: `x:int = @int(t)` is not boolean.
+defining a new variable inside if condition part!
+```
+var intCast = 0
+if ( var t = my_map("key1"), @int(t, intCast) )
+```
+`@int(x)` will cast x to int.
+`@int(x, y)` will try to cast x to y and return true if it succeeded, false if it failed.
+- add notation to define variable inside function call: `process(var result: int)` NO!
+`if ( var t = my_map("key1"), t @ int and var x:int = @int(t) )`
+`if ( var t = my_map("key1"), @t == @int and var x:int = @int(t) )`
+`if ( var t = my_map("key1"), var x:int, @int(t, x) )`
+what if I want to store result in a val?
+now that everything is a reference, we have a `nil` reference. maybe we can use it here. but it is dangerous to let developer care about this. this is supposed to be transparent.
+`if ( var t = my_map("key1"), var x:int, @int(t, x) )`
+Go way:
+`if ( var t, found = my_map("key1"), found )`
+`var t, _ = my_map("key1")` ?
+we can do the same for casting:
+`var i, success = @int(x)`
+**so: `@int(x)` will return result + success**
+**`@T` will return type-id.**
+this might cause problem when assigning to hash: `if ( var t, found = my_map("key1"), found )`
+`if ( var t = my_map("key1"), var i, success = @int(t), success )`
+Let's make hash get data, return single item: `optiona[keytype]`
+but make `@` return two items in the result.
+**`var value = my_map("key1") if ( var i, success = @int(value), success )`**
+** `_` as variable name means compiler define a temp var as we don't care about this var **
+** `_` as function input means value will be provided later **
+
+? - can't we replace optional with multiple return values?
+no! sum type is not only optional. what about intorFloat type?
+
 
 ? - If we remove block mode from `@` then we may need a switch.
 https://github.com/golang/go/wiki/Switch
@@ -1144,3 +1212,28 @@ if ( x == ) {
 ```
 maybe we can implement this with a function. using a map literal?
 q: how popular is switch?
+not very popular.
+```
+;when result of x is not boolean
+y = if ( x ) {
+    1 -> "G",
+    2 -> "H",
+    3 -> "N",
+    else => "X"
+}
+y = if ( @x ) {
+    @int -> "G",
+    @string -> "H",
+    @float -> "N",
+    else => "X"
+}
+```
+what about type checks? for example check if maybe[int] is nothing or no?
+`@` with one identifier, returns type-id of given variable of type.
+
+? - update naming with protocol naming convention
+
+? - if we support return multiple types, maybe we should change this notation:
+`var x,y = func1()` where func1 returns a tuple of two items.
+
+? - can compiler simplify `union[int, floatOrString]` to `union[int, float, string]`?
