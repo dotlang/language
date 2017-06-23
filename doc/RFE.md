@@ -1411,14 +1411,211 @@ Y - Shall we maky syntax for tuple initialization more explicit?
 `var x: Point = Point{x=10, y=20}`
 can we use `@` here? to cast a literal?
 
-? - Shall we initialize vars automatically or give compiler warning if developer has not init them.
+Y - Shall we initialize vars automatically or give compiler warning if developer has not init them.
 In go everything is zeroed but as a result pointers will be `nil` which we don't want to have.
 proposal: instead of thinking instead of the developer, let him assign values and issue compiler error if using un-init value.
 
-? - What should be default value for a union?
+N - What should be default value for a union? Nothing! Let the developer decide.
 
-? - Make sure `@` is only used to cast and type-id. nothgin else. 
+Y - Make sure `@` is only used to cast and type-id. nothgin else. 
 What about literals?
 
+Y - You can have tuple literals without name:
+`var x: Point = {1,10}`
 
+N - Applications of casting:
+cast between named type and underlying
+cast between elements of union and union type
+cast between subtype and super-type
+cast int to float.
+Do all of them need success flag?
+Maybe we should have different notation for casting that can fail and other casts.
+casting that can fail: union to it's elements
+Every other cast is fine and cannot fail (if there a chance of fail, it will be caught by the compiler)
 
+Y - Clarifications about `@` opertor and its uses.
+Can we say in `@T` T must always be a type?
+And for type-id use another symbol? Does it make things simpler?
+There are some similar but different concepts here:
+1. General casting of data (literal to typed tuple, int to float, to supertype, to underlying type) which I call them static casting because they can be verified by the compiler.
+2. Union check and extract type: Check if a union has type T and get it's T value. This is dynamic type check and extract.
+For 1, we can continue to use `@` notation as a function: `var x = @type(y)`
+For 2: maybe we should use a function. adding a new notation can be a bit confusing.
+we already have `@^&*`. candidates for notation: `$%`.
+We can use same operator: as binary it will check if union X has type Y: `x $ y`.
+- does union X has type Y? 
+- cast value of union to type X.
+maybe for 2 we can use `@`: `var x:int = @int(intOrFloat)`. but in this case there is chance of failure. what should we do?
+either define `@` to return two outputs all the time which will be useless for named type, primitives, ...
+or add a new notation: `%`? `var x,y = %int(intOrFloat)` will return result and success flag.
+Also to check inner type of a union, still we cannot use same notation as others. Because type-id operator can either mean type of the union or type of it's internal data.
+`::`?
+proposal: to make things simpler and dont force people to learn 100 notations, re-use `@` with this definition that it works differently for union types.
+`@T` returns type-id of data inside the union, dynamic type of tuple, and static type for everything else.
+another solution: use dot operator for them. but this is not good as it will be confusing with tuples. User should know it is a tuple as soon as he sees dot.
+`var result, success = extract[int](intOrFloat)`
+If `@` returns two inputs, we always have to ignore success flag when doing cast to other types. And this is not a cast. This is reading a binary data and parsing as a specific type which must be a member of valid types of the union.
+`var result, success = extract[int](intOrFloat)`
+`var result, success = @int(intOrFloat)`
+`var result, success = $int(intOrFloat)`
+let's choose this: `var result, success = %int(intOrFloat)`
+`if ( intOrFloat % int )` check if union has a specific type.
+So we don't need to use `@` for check type-id of data inside union.
+shall we simplify `@` as type-id? The only use case is to find actual type of a tuple variable. which is not very much needed. So let's replace it with a core function.
+So **`x = @T(y)` will be used to static cast: underlying type, supertype and some primitives.**
+Go has type assertion because it has `interface{}` but we don't have such a thing.
+We can define type assertion for unions. So type assertion operator will check and return result + success.
+**union type check**: using `%` operator (type assertion). `union_var % type` returns true if union_var has data of given type.
+`var result, success = %int(intOrFloat)`.
+how can we use this in `if` with multiple results? `%union_var` will return type-id of data inside union.
+`type(x)` function returns actual type of the data inside x. this is different than static type for tuple and unions.
+```
+y = if ( type(x) ) {
+    int -> "G",
+    string -> "H",
+    float -> "N",
+    else -> "X"
+}
+if ( type(u) == int) ...
+```
+we need two things: type assertion (dynamic, for union) and type cast (static, for other cases).
+type assertion: get me int inside x or error.
+assertion: `var myInt, success = @int(intOrFloat)`
+cast:      `var myInt = @int(myFloat)`
+can't we use the same notation? for union, it will return two outputs. for other types one output (function overloading based on input type is accepted).
+it is simpler. we can also do the same with binary operator `@`!
+`x@T` returns true if x is of type T (Applicable only for union and tuple, for other types it is naive).
+`@x` and `@T` will return type-id.
+
+N - How to cast to a pointer? Is that even possible?
+`var t = @^int(g)`
+It can be valid if a union as pointers or when underlying type is pointer.
+`type MyPtr := ^int`
+`var x: ^int = @^int(myPtr)`
+`var x: int = *@^int(&myPtr)`
+
+Y - Can we simplify array and map assignment notations?
+now to assign to array:
+`*arr(0)=88`
+opCall for array type will return `val:^T` or `var:^T`.
+and for map:
+`map1("1") = 4`
+can we simplify it?
+```
+var x: map[int, string] = [1:"A", 2:"B"]
+*x(3) = "C" ;x(3) will return ^string
+```
+the syntax for assigning to array or map does not seem intuitive.
+solution 1: add reference type like C
+solution 2: new notation for shortcut: `*ptr = val`. To replace `*` maybe.
+maybe we can use `:=`? :-D
+```
+var x: ^int;
+x = &y
+x <= z ;copy z value to the address x is pointing to
+```
+Previously we could just write: `arr(0) = 10`
+Let's say `=` does both. if rvalue is `&` it assigns to x else assigns to `*x`.
+```
+var x: ^int
+x = &y  ;x will point to y
+x = 10  ;*x will be set to 10
+```
+Because `&` is clearly different from other notations.
+Similarly in Golans, `x->field` is replaced with `x.field` because it can be clearly inferred that left of dot is a pointer or a normal structure. So they did not add a new notation.
+what if rvalue is a pointer?
+```
+var x: ^int
+x = &y  ;x will point to y
+x = 10  ;*x will be set to 10
+var z: ^int
+z=x   ;= will ref-assign if rvalue is &expression or a pointer of the same type
+z=10  ;= will value-assign if rvalue is internal type.
+```
+in `x=y` if x is pointer, if y is it's internal value, it will assign value else it will assign ref.
+But this is not readable. it should be explicit from the source.
+Maybe we should change the notation of Opcall to be like this:
+`func opCall[T](x:array[T], i: index, value:T)`
+`arr(0, 10)`
+solution: make `^` like reference type and we cannot have `^^`. `^` is a reference to another var so you cannot write:
+`var x: ^int = 12` maybe compiler can help about this.
+if they need ref to ref, they can define a tuple to contain a ref and define a ref to that tuple.
+```
+var z:int = 12
+var r1: ^int := z ;ref
+var r2: ^int := r1 ;ref
+r1 = 19 ;set value
+arr(0) = 100
+arr(0) := 10 ;not working unless array contains int references
+```
+pro: we no longer need `*` and `&`
+con `:=` still confusion!
+pro: array and map value assignment is easier to read now.
+maybe we can use `&` for ref-type like C++:
+```
+var z:int = 12
+var r1: &int := z ;ref
+var r2: &int := r1 ;ref
+r1 = 19 ;set value
+arr(0) = 100
+```
+so what has changed since when we had `=` for data copy and `:=` for ref-copy?
+Now you can only `:=` for ref-types. Everything is not ref!
+q: how can we stress a litearl is `&int` or `val:&int`?
+by lvalue type or function output type. If cannot be inferred, define a temp variable with type.
+`var x: &int = 11`
+in C++ you cannot re-assign a reference, but here with using `:=` notation we can do it (of course if it is var).
+`val x: &int = z` z must be val. 
+But what is use of a reference to a val? for gen. and sometimes we have to return a reference.
+e.g. array read.
+if array is val, return the element itself.
+if array is var, return a mutable reference.
+we have reference to val for generality. Although it might not be very useful but just like `@` for integer.
+```
+val x: int = 12
+val y: &int := x
+;both x and y point to the same immutable thing
+val x: LargeBuffer = {...} ;10MB data
+val y: &LargeBuffer := x
+```
+if everything is value type, then ref to val may become useful. We would like to return a reference to a big buffer rather than the buffer itself. so reference to val is also useful.
+
+Y - What this should do?
+`var x: &int = ...`
+`var y: &int = x`?
+`var y: &int := x` 
+Operator `X := Y` lvalue must be a reference type to type T and rvalue must be of type T.
+`var y: &int = x` this is valid. rvalue and lvalue are of the same type. y will point to the same location as x.
+`var y: &int := x` this is not valid. if lvalue if `&int` then rvalue must be int.
+`X=Y` if X is reference type to int, and Y is int?
+`X=Y` if X is reference type to int, and Y is `&int`?
+===================
+`refint = refint` - copy rvalue's target into lvalue's target
+`int = int` - normal code, copy value
+`int = refint` - copy rvalue's target into lvalue
+`refint = int` - copy rvalue into target of lvalue
+`refint := refint` - make lvalue and rvalue point to the same thing (we cannot have ref to ref)
+`refint := int` - lvalue will point to rvalue
+`=` makes a copy. if it is given a normal type, copies it's value. if it has a reference type, copies it's target value.
+the copies data will be pasted on the location of lvalue. if it is a reference, will be copied to it's target.
+`:=` only accepts ref as lvalue. will get a reference to rvalue (if it is already a ref, it will take itself) and assign it to lvalue. So lvalue will point to rvalue (or it's target).
+When dealing with `=` think of reference as `*pointer` in C.
+when dealing with `:=` think of it as `=` with C pointers and non-reference on rvalue as `&x` in C.
+
+? - Can we specify `&` in a template?
+`func process[T](x:int)->&T`
+this is what happens when a type is split into two parts.
+Maybe we should use language built-in features like template:
+instead of `&int` use `ref[int]`. but how to prevent `ref[ref[int]]`?
+`func process[T](x:int)->ref[T]`
+`process[ref[int]](10)`???
+solution1: make `&` non separable. so `&T` does not have a meaning if T is template arg.
+But this is not feasible. Sometimes we have T, but want to return a reference to T.
+`func opCall[T](x: array[T], index: int) -> &T`
+how can we return a reference without temp var (like in shortcut function)?
+references are not as flexible as pointers.
+`func getRef(x:int) -> ???`
+`func getPtr(x:int) -> &x`
+But with pointers we have the problem of assigning to array and hash.
+I think pointer is more general and orthoronal. With reference we have to add more and more exceptions. This is permitted that is not...
+we need a notatin which is flexible (little or no exception) and can help us write array and maps indexers.
