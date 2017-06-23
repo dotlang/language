@@ -1035,7 +1035,7 @@ N - How can I define a custom type which needs 20 bytes of memory?
 `type MyType := binary`
 `func createMyType() -> MyType { return llocate(20) }`
 
-? - Can we implement loop with recursion and provide it as a function in core?
+Y - Can we implement loop with recursion and provide it as a function in core?
 - problem: we won't be able to return from within loop.
 - access to local variables will be provided.
 - Something which is simple may take a little longer, be a little more verbose, but it will be more comprehensible
@@ -1062,7 +1062,7 @@ loop(... , () -> { if ( ... ) { result = 88; return false; })
 - a new section in core will be added (besides array and map) to exaplain loop.
 How do we treat break and continue and break/continue in multiple levels?
 
-? - Now that everything is a reference, returning a tuple just to return more than one thing might be inefficient.
+Y - Now that everything is a reference, returning a tuple just to return more than one thing might be inefficient.
 let developer return multiple items: `return x,y` (2 refs) instead of `return {x,y}` (3 refs)
 the only reason would be efficiency. 
 this makes sense. what would be affected?
@@ -1082,8 +1082,7 @@ but this is a bit strange because we define val and then assign to it.
 you can even write: `var x,y = 1,2`
 `var x, val y = 1,2`
 
-
-? - introduce label types
+Y - introduce label types
 How can we define a tag type? (one bit)
 `type true := ?`
 `type true`?
@@ -1097,7 +1096,7 @@ label type: types that only have one value which has same notation as the type.
 `if ( g @ ABC )` true
 you can define multiple label types at once: `type A,B,C`
 
-? - define sum types using variant template
+Y - define sum types using variant template
 `type bool := true|false`
 `type boolx := true|false|error`
 then can I write: `myBoolx = bool`?
@@ -1124,14 +1123,13 @@ other possible names:
 `union`, `tagged`, `joint` -> **`union` is chosen.**
 **`type bool := union[true, false]`**
 
-
-? - How can we define DayOfWeek type now?
+Y - How can we define DayOfWeek type now?
 `type SAT, SUN, ... `
 `type DayOfWeek := union[SAT, SUN, ...]`
 `var x: DayOfWeek = SAT`
 `if ( @x == @SAT )...` we can use SAT both as a type and as a value, because SAT is a label type
 
-? - Review block notation for `@`
+Y - Review block notation for `@`
 this can affect matching `@` operator: `if ( x @ var t:int)`
 `if ( var t = my_map("key1"), t @ var x:int )`
 map's get will return `maybe[t]` which will be `variant[nothing, t]`.
@@ -1197,11 +1195,10 @@ but make `@` return two items in the result.
 ** `_` as variable name means compiler define a temp var as we don't care about this var **
 ** `_` as function input means value will be provided later **
 
-? - can't we replace optional with multiple return values?
+N - can't we replace optional with multiple return values?
 no! sum type is not only optional. what about intorFloat type?
 
-
-? - If we remove block mode from `@` then we may need a switch.
+Y - If we remove block mode from `@` then we may need a switch.
 https://github.com/golang/go/wiki/Switch
 `@` working for both type and values is a bit confusing.
 ```
@@ -1219,21 +1216,47 @@ y = if ( x ) {
     1 -> "G",
     2 -> "H",
     3 -> "N",
-    else => "X"
+    else -> "X"
 }
 y = if ( @x ) {
     @int -> "G",
     @string -> "H",
     @float -> "N",
-    else => "X"
+    else -> "X"
 }
 ```
 what about type checks? for example check if maybe[int] is nothing or no?
 `@` with one identifier, returns type-id of given variable of type.
 
-? - update naming with protocol naming convention
+Y - update naming with protocol naming convention
 
-? - if we support return multiple types, maybe we should change this notation:
+Y - if we support return multiple types, maybe we should change this notation:
 `var x,y = func1()` where func1 returns a tuple of two items.
 
-? - can compiler simplify `union[int, floatOrString]` to `union[int, float, string]`?
+Y - can compiler simplify `union[int, floatOrString]` to `union[int, float, string]`?
+
+Y - `@T` it T is a union. Does it return type id of `union[int,float]` or type id of `int` (if union has an int)?
+With having templates, we should not care much about dynamic type of something.
+We have two use cases where we need to know actual type: dynamic type (is this Shape a Circle)? and union.
+In all other cases, the type is evident.
+```
+y = if ( @x ) {
+    @int -> "G",
+    @string -> "H",
+    @float -> "N",
+    else -> "X"
+}
+```
+So it does not make sense to use `@r` for any other type, although it is allowed.
+`@T` will return static type for everything except tuples (will return their dynamic type).
+what about unions then? Let's say union has a static type (which is defined in the source code) and dynamic type (it's actual type).
+Let's say `@T` returns the type of actual data inside the variable T. For tuple and union this can be different.
+
+Y - How to assign and ref-assign in one statement?
+`var x=, y:= process()`?
+First ref-assign then do `=` in another statement.
+
+Y - How can we model a function which doesn't return anything? 
+Nothing?
+`type NoReturnFunc[T] := func(T)`
+`func process() -> { ... no return ...}`
