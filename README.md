@@ -20,7 +20,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, introduced `:=` ref-assign operator and made `=` data-copy operator, removed `break` and `continue`, removed Phantom types section as they can be implemented with named types, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed Phantom types section as they can be implemented with named types, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, some clarifications about `opCall`, introduced reference type and removed `:=` ref-assign operator
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
@@ -109,6 +109,23 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 
 # Type System
 
+## Reference type
+You can define a reference type using `^` notation. The only valid operations on a reference type is assigning, referencing and de-referencing.
+```
+var x1:int = 12
+var x2: ^int= &x1
+*x2 = 110 ;this will update x1's value
+val v:int = 19
+val x3: ^int = &v 
+```
+If the reference is to a function, you can invoke it using `()` notation.
+If the reference is to a tuple, you can refer to the fields of the target data using `.` notation.
+There is no support for pointer arithmetic.
+`var x1: Point = Point{x=10, y=20}`
+`var x2: ^Point = &x1`
+`var x3: ^Point = &Point{x=10, y=20}`
+
+
 ## Variabe definition
 - ref-assignment for val is only possible upon declaration. A val, after declaration cannot be on the left side of `=` or `:=`.
 - Storage class, type: `storage_class var_name: type = rvalue`
@@ -124,6 +141,7 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 ## Extended primitives
 
 ## Tuple
+- Recursive data structures which use non-reference to refer to themselves is not allowed.
 
 ## Polymorphism
 
@@ -235,20 +253,23 @@ type string := array[char]
 ```
 
 ## Tuple
+- You can prefix a type with a tuple literal to explicitly state it's type. This is not required if type of the variable is stated in the code. 
+`var s = Point{x=10, t=20}`
+`var s: Point = {x=10, y=20}`
 - Tuples are translated to binary type by compiler: e.g. `type Point := {x:int, y:int}` will become:
 `type Point := binary[16], x_offset=0, y_offset=8`
 A tuple is a collection of variables combined together under a single type. This is similar to an array but with different data types for fields. 
 ```
 ;defining a named type for a tuple
-type Car := { color: int, age: int }
+type Car := Car{ color: int, age: int }
 ;defining variables of 'Car' type, initialized with default values
-var x: Car = {}
+var x: Car = Car{}
 ;if you omit {} part, variable will be initialized with default values automatically
 var d: Car
 ;But you can assign values upon declaration:
-var y: Car = { color:100, age=11 }
+var y: Car = Car{ color:100, age=11 }
 ;you can cast an anonymous tuple to a specific type
-var z = @Car({age=121})
+var z = Car{age=121}
 ;you can define an anonymous tuple
 var t1 : {field1: int, field2: string} = {1, "A"}
 ;field name is optional for anonymous tuples
@@ -824,6 +845,7 @@ For example you can define a set only for types which are comparable. We cannot 
 `var t = x=>y` implies operator, means `t=if x then y else true`
 
 - Math: `+ - * % %% (is divisible) ++ -- **`
+- Note that `++` and `--` are statements which will update their operand and won't return anything. So you cannot use them in another statement or expression. Also these are only allowed as suffix.
 The math operators can be combined with `=` to do the calculation and assignment in one statement.
 - `=` operator: copies data.
 - `:=` opreator will make left side point to right-side variable or result of evaluation of the right-side expression.
@@ -853,15 +875,18 @@ bin-type example:
 `val x: int = 12`
 `var z: int = @(x)`
 `val t: int = @(z)`
-- Each type can implement `opCall` function which will be called when the type is used like a function. If this function returns a `var` result, it's result can be used as an lvalue to do assignment.
+- Each type (except function and function reference) can implement `opCall` function which will be called when the type is used like a function. If this function returns a `var` result, it's result can be used as an lvalue to do assignment.
 - Type operator (`@`): `@int(x)` will return result + success, `@T` will return type-id of the actual data inside T variable. This can be dynamic type of a tuple or union and static type for everything else. If T is a type name, it will return type-id of that type. So it is only useful for varibles of type tuple and union.
 
 ### Special Syntax
+- `^` declare reference type
+- `&` capture a reference
+- `*` convert a reference to underlying data
 - `@` casting/type check
 - `+` protocol enforcement
 - `_` placeholder for lambda or unknown variable
 - `:` tuple declaration, variable type declaration, hash literal
-- `:=` custom type definition, reference assignment
+- `:=` custom type definition
 - `=` type alias, copy value
 - `..` range generator
 - `->` function declaration, block-if
