@@ -20,7 +20,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, introduced `:=` ref-assign operator and made `=` data-copy operator, removed `break` and `continue`, removed Phantom types section as they can be implemented with named types, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, introduced `:=` ref-assign operator and made `=` data-copy operator, removed `break` and `continue`, removed Phantom types section as they can be implemented with named types, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
@@ -85,7 +85,7 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 - Function section is used to define function bodies.
 - **Adressing**: Modules are addressed using `/` notation (e.g. `/code/st/net/create_socket`). Where `/` denotes include path.
 - **Encapsulation**: If a name (of a type, protocol or function) starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
-- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Primitives (binary, int, float, char), and types defined in core (bool, array, map, string) are the only exceptions to naming rules.
+- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeType`, `MyProtocol`, `my_package_or_module`. If these are not met, compiler will give warnings. Primitives (binary, int, float, char), and types defined in core (bool, array, map, string) are the only exceptions to naming rules.
 
 ## Language in a nutshell
 1. **Primitives**: `binary` (extended primitives: `int`, `float`, `char`, `string`, `bool`).
@@ -133,7 +133,19 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 
 ## Named type
 
+## Label types
+Label types are types that have only one value: Their name. These types can be used as part of enum or a union.
+`type ABC`
+`var g: ABC = ABC`
+`if(g==ABC)` true
+`if ( g @ ABC )` true
+you can define multiple label types at once: `type A,B,C`
+
 ## Variables
+- You can declare and assign multiple variables in a single statement:
+`var x,y = 1,2`
+`var x, val y=1,2`
+`var x:int, val y:float = 10, 1.12`
 
 ========================================
 
@@ -247,8 +259,6 @@ t2.1 = "AG"
 type Car := { color: int, age: int=100 }
 
 var myCar: Car = {color=100, age=20}
-;compiler will handle this regarding type inference and assignment
-var x,y = myCar
 ```
 - Fields that start with underscore are considered internal state of the tuple and better not to be used outside the module that defines the type. If you do so, compiler will issue a warning.
 - You can define a tuple literal using `{}` notation: `var t = {field1=10, field2=20}`.
@@ -257,63 +267,32 @@ var x,y = myCar
 - You can cast a tuple literal to a specific type. `var g = @MyTuple({field=10, field2=20})`
 
 ## Union
-- Also union types are translated to a binary with size=largest choice.
-- unions are types based on dynamic type so `type A := Shape | Circle` is valid.
-`type MaybeInt := int | Nothing`
-Labels define a new type which has only one value with the same notation (or use them).
-`type UnionType := Type1 | Type2 | Type3 | ...`
-`type Nothing` - defines a type which has only one valid value: Nothing
+- `union[int, floatOrString]` will be simplified to `union[int, float, string]`
+`type union := binary` for documentation
+- These types are defined using `union` primitive type.
+- Label types are useful for defining special cases or tags in a union.
+`type bool := union[true, false]`
+`type OptionalInt := union[Nothing, int]`
+- unions are types based on dynamic type so `type A := union[Shape, Circle]` is valid.
+`type MaybeInt := union[int, Nothing]`
+`type SAT, SUN, ... `
+`type DayOfWeek := union[SAT, SUN, ...]`
+`var x: DayOfWeek`
+`if ( @x == @SAT )` or `if ( x == SAT )`
+- compiler will handle allocations for union types based on binary type.
+- You can use `@` to cast a union or check it's actual type.
+`var i, success = @int(x)`
+`if ( @t == @int )`
 
-Union is a specific data type which defines a set of possible other types it can contain. Variables of union type, can only contain one of their possible types at any time. You use `|` to separate different possible types.
-
+`type Tree := union[Empty, {node: int, left: Tree, right: Tree}]`
+To match type, you can use if with `@`:
 ```
-type IntOrFloat := int | float
-var f: IntOrFloat
-;you can assign an int to f
-f = 1
-;or a floating point number
-f = 3.59
-;note that you cannot assign f to a floating point variable, even if it has a float, you must cast
-var fl: float = f  ;wrong!
-var fl: float = @float(f)
-
-;note that for union and other non-primitive types, assignment is by reference
-var g: IntOrFloat = f
-;this will change value of 'f' too
-g = 66
-;this won't change value of f:
-g = 99
-;You can define 'labels' for valid values of a union:
-type MaybeInt := int | Nothing
-var t: MaybeInt
-t = Nothing
-t = 12
-```
-- A union variable can accept values of any of it's valid types.
-- You cannot assign a union value to another one, without casting, even if their types match:
-```
-var a: int| string = 12
-a = "A"
-var b: int | string | float
-```
-You can have `myIntOrFloat = 12` or `myIntOrFloat = floatVar` as long as type or rvalue is included in union type.
-But for anything else, you must cast.
-
-To cast union to it's internal types: `if ( myIntOrFloat @ var x:int)`
-
-You can pass int or string or float or `int|string` or `int|float` or `string|float` variables to it.
-
-
-When defining a sum type, you specify different types and labels that it can accept. Label can be any valid identifier. Labels can be thought of as a special type which has only one valid value: The label itself. 
-`type Tree := Empty | int | (node: int, left: Tree, right: Tree)`
-`type OptionalInt := None | int`
-To match type, you can use match expression:
-```
-  result = my_tree :: {
-    Empty -> 0
-    int -> 1+int(my_tree)
-    NormalTree -> ...
-  }
+y = if ( @x ) {
+    @int -> "G",
+    @string -> "H",
+    @float -> "N",
+    else -> "X"
+}
 ```
 
 You can define an enum using sum types.
@@ -454,6 +433,17 @@ How can I pass a Dot to process function? You need to write a proxy function:
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Functions
+- `type NoReturnFunc[T] := func(T)`
+- You can use `_` to ignore a function output: `var t, _ = my_map("key1")`
+- A function can return multiple outputs:
+```
+func process()-> var:int, val:int
+var x:int
+val y:int
+x,y = process
+var x, val y = process()
+var x, val y := process()
+```
 - You can define consts using functions: `func PI -> 3.14`
 - Storage class: `var/val` of the function output is part of singature (but not output type). And you must capture a functin output.
 `process/int/var.int/val.float/val` is a condensed view of the signature of the funtion: `func process(var x:int, val y: float)->val string`.
@@ -484,7 +474,7 @@ Compiler/runtime will handle whether to send a ref or a copy, for val arguments.
 - You can omit `()` in function call if there is no local variable or argument with same name and function has no input. If there is local var with same name, compiler will issue warning: `var t:int = sizeof[int]`
 
 function inputs must be named.
-- Function output can be any type. Even a tuple or a tuple with unnamed fields.
+- Function output can be any type and any count. Even a tuple or a tuple with unnamed fields.
 Function is a piece of code which accepts a series of inputs and can return a single value. 
 If you use `{}` for the body, you must specify output type and use return keyword.
 
@@ -552,6 +542,7 @@ func process(x: int, y:int, z:int) -> ...
 func process(x: int) -> process(x, 10, 0)
 ```
 - This is a function that accepts an input of any type and returns any type: `type Function[I,O] := func(I)->O`.
+- This is a type for functions that don't return anything: `type NoReturnFunc[T] := func(T)`
 - Functions can name their output. In this case, you can assign to it like a local variable and use empty return.
 `func process() -> x:int `
 
@@ -856,37 +847,34 @@ The math operators can be combined with `=` to do the calculation and assignment
 - what comes on the right side of `:=` is any expression. The address of that expression will be copied onto the left side.
 `x=y` will duplicate y into x. So changes on x won't affect y. 
 - Comparison semantics: `x==y` will compare data of the references for comparison. If you need to compare the references themselves for comparison you can use core function's ref: `ref(x) == ref(y)`
-- Assignment: If left and right are val/var, user must use `@val/var` to cast.
-`myVar=@var(myVal)` (clone if needed)
-- When assigning between var and val, you must clone rvalue.
+- When assigning between var and val, you must clone rvalue. You cannot ref-assign.
 `var x: Point = ...`
 bin-type example:
 `val x: int = 12`
 `var z: int = @(x)`
 `val t: int = @(z)`
 - Each type can implement `opCall` function which will be called when the type is used like a function. If this function returns a `var` result, it's result can be used as an lvalue to do assignment.
+- Type operator (`@`): `@int(x)` will return result + success, `@T` will return type-id of the actual data inside T variable. This can be dynamic type of a tuple or union and static type for everything else. If T is a type name, it will return type-id of that type. So it is only useful for varibles of type tuple and union.
 
 ### Special Syntax
 - `@` casting/type check
 - `+` protocol enforcement
-- `|` sum types
-- `_` placeholder for lambda
+- `_` placeholder for lambda or unknown variable
 - `:` tuple declaration, variable type declaration, hash literal
 - `:=` custom type definition, reference assignment
 - `=` type alias, copy value
 - `..` range generator
-- `<-` loop
-- `->` function declaration
+- `->` function declaration, block-if
 - `[]` generics, array and map literals
 - `{}` code block, tuple definition and tuple literal
 - `()` function call
 - `.` access tuple fields
 
-Keywords: `import`, `func`, `var`, `val`, `type`, `loop`, `protocol`
-Semi-Keywords: `if`, `else`
+Keywords: `import`, `func`, `var`, `val`, `type`, `protocol`, `if`, `else`
 Special functions: `opCall`
-Primitive data types: `binary`, `int`, `float`, `char`
-Extended data types: `bool`, `string`, `array`, `map`
+Base type: `binary` (which is underlying type of all other types)
+Primitive data types: `int`, `float`, `char`, `union`
+Extended data types: `bool`, `array`, `string`, `map`
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
@@ -898,33 +886,20 @@ Extended data types: `bool`, `string`, `array`, `map`
 
 ### match
 ```
-MatchExp = '(' tuple ')' @ '{' (CaseStmt)+ '}'
+;when result of x is not boolean
+y = if ( x ) {
+    1 -> "G",
+    2 -> "H",
+    3 -> "N",
+    else -> "X"
+}
+y = if ( @x ) {
+    @int -> "G",
+    @string -> "H",
+    @float -> "N",
+    else -> "X"
+}
 ```
-- This is an expression. It is used to check if two variables can be matched according to matching rules.
-- First case which is matching will be executed and others will be skipped.
-- Case match can be based on value or type (used for sum types).
-- Each match case is a lambda without parentheses for input. The first case that can accept the value inside match will be executed.
-- Mechanism of match is the same as a function call is dispatched to an implementation. Each candidate will be examind against match input for type and values. The first one that can be matched will be invoked.
-- The cases for match must cover all possible inputs or else there will be errors.
-```
-  result = my_tree @
-  {
-    {int, int} -> ...;this will match if input has two ints 
-    5 -> 11,
-    "A" -> 19,
-    local_var -> 22, ;check equality with a local variable's value
-    Empty -> 0,
-    int -> 1,
-    var y:float -> y,
-    NormalTree -> { return 1+z },
-    else -> { -1 } ;this is default because it matches with anything
-  }
-  ;You can shorten this definition in one line:
-  result = my_tree @ 5 -> 11, 6-> 12, Empty -> 0, x:int -> x, any -> -1
-```
-- Simple form: You can use `@` without `->` too to check for types which returns a bool: `if ( x @ int)`. In this format, you can check for a type or a literal.
-- `if ( x @ var t:int)` inside if block you have a local variable `t` which is `int` value of `x`.
-- `if ( x @ y )` is invalid. Right side of match can either be a literal (e.g. 5) or a type (e.g. int) or a new variable with it's own type (e.g. `a:int`).
 
 ###if, else
 - You can use `if/else` block as an expression.
@@ -967,24 +942,9 @@ These declarations will be only available inside if/else block.
 `var input = 10`
 `var finalResult: Maybe[int] = input(check1(5, _))(check2(_, "A"))(check3(1,2,_))`
 
-- **Nothing**: Nothing is a sum type with only one value: `nothing`.
+- **Nothing**: Nothing is a label type with only one value: `nothing`.
  You can use it's type for return value of a function.
 
-### loop
-You can use `loop` keyword with an array, hash, predicate or any type that has an iterator.
-`loop(x <- [0..10])` or `loop([0..10])`
-`loop(x <- [a..b])`
-`loop(x <- my_array)`
-`loop(k <- my_hash)`
-`loop(n <- x>0)` or `loop(x>0)`
-`loop(x <- IterableType) { ... }`
-`loop(true) { ... }` infinite loop
-- `break` and `continue` are supported like C.
-- If expression inside loop evaluates to a value, `loop` can be used as an expression:
-`var t:int[] = loop(var x <- {0..10}) x` or simply `var t:int[] = loop({0..10})` because a loop without body will evaluate to the counter, same as `var t:array[int] = {0..10}`
-- Like if, you can have a variable declaration before main part. These varsiables will only be available inside loop block.
-`loop(var t=getData(), t>0)...`
-`loop(var t=getList(), x <- t)...`
 
 ## import
 - There must be a single space between `import` keyword and it's contents.
@@ -1162,8 +1122,31 @@ var t: int = y("b")
 - In fact, anywhere that compiler detects these literals, it will call `opCall` for the expected type with key and value. So you can use this type of literal for your custom types too. If type is marked with `val`, a temporary var will be created for these operations.
 
 - If you query a map for something which does not exist, it will return `Nothing`. Below shows two ways to read data from a map:
-`if ( var t = my_map("key1"), t @ var x:int )`
-`if ( var t = my_map("key1"), t !@ Nothing )`
+`var value = my_map("key1") if ( var i, success = @int(value), success )`
+`var value = my_map("key1") if ( @value == @int )`
+`var t, _ = my_map("key1")`
+
+### loop
+You can use `loop` function with an array, hash, predicate or any type that has an iterator.
+```
+loop(10, () -> { printf("Hello world" })
+loop([2..10], () -> { printf("Hello world" })
+loop([2..10], (x:int) -> { printf("Hello world" })
+loop(my_array, (s: string) -> ...)
+loop(my_hash, (key: int) -> ...)
+loop(x>0, () -> { ... }) ;if x is var, the loop body can change it
+loop(my_iteratable, (iterator: int) -> ...)
+loop(true () -> { ... })` infinite loop
+;to return something:
+;we can return explicitly to simulate break: return false means break outside the loop
+;return true means continue to the next iteartion
+loop([1..100], ()-> { if ( ... ) return false })
+;to force return from inside loop: set a var outside
+var result = 0
+loop(... , () -> { if ( ... ) { result = 88; return false; })
+```
+- If expression inside loop evaluates to a value, `loop` can be used as an expression:
+`var t:int[] = loop(var x <- {0..10}) x` or simply `var t:int[] = loop({0..10})` because a loop without body will evaluate to the counter, same as `var t:array[int] = {0..10}`
 
 ## Standard package
 
