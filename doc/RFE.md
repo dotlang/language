@@ -1142,3 +1142,5 @@ if ( x == ) {
 1 -> 
 }
 ```
+maybe we can implement this with a function. using a map literal?
+q: how popular is switch?
