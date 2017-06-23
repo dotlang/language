@@ -1260,3 +1260,165 @@ Y - How can we model a function which doesn't return anything?
 Nothing?
 `type NoReturnFunc[T] := func(T)`
 `func process() -> { ... no return ...}`
+
+N - So now, we should define tree like this?
+`type tree := {data:int, next: ref[tree] }`
+if we define a recursive data structure which refers to itself in non-ref type, what should be the value of that field?
+`type tree := {data:int, next: tree}`
+when I create a tree, storage needs to be allocated infinitely.
+
+N - What will be the difference between these two:
+```
+var x: func(int)->int = myProcess
+var x: ptr[func(int)->int] = &myProcess
+```
+because we have first-class functions, this is not very useful.
+
+Y - Can we remove `:=`?
+Sure we need to keep the concept of ref-assignment but `=` and `:=` make things a bit confusing.
+Example: `var x,y = process()` if we want to assign x and ref-assign y it would be impossible or too complicated.
+```
+C only uses `=` for both assignments.
+int intVar = 12
+int* q = intPtr
+int* q; *q = intVar
+===============================
+1. update q itself, 2. update *q
+int intVar = 12
+int q = intVar
+int q = intPtr
+```
+In C, assuming everything is a pointer, ref-assign is done with `=`, val-assign is with `*x=*y`.
+We want to reverse. `=` for value assignment (because it is easier and more intutive)
+but for ref-assignment we need a separate notation. AND we prefer to still use `=`.
+So we will need to prefix-suffix something.
+`x=y`
+`*x=*y`
+`x:=y` means copy y.ptr to x.ptr
+each variable can be considered to have two internal parts: ptr and val.
+`var x:int` `x.ptr` is the pointer and `x.val` is the value
+`x=9` means `x.val = 9`
+`x:=y` means `x.ptr = y.ptr`
+we won't be using ptr and val in the language because it will be confusing. Just for clarity here.
+`x=y` -> `x.val = y.val`
+`x:=y` -> `x.ptr = y.ptr`
+now we say `T.val` is same as we write `T`.
+`T.ptr` will be indicated with `&`?
+`x:=y` -> `&x = &y`. `&T` will return T.ptr which means the address that T is pointing to.
+`x` variable has a value (stored in RAM) and also address of that RAM cell.
+if you want to assign vaue: `x=y` means copy value of y into value of x
+`&x=&y` means copy address of y into address of x.
+`$x = $y`
+`$x` is an integer representing the address of the location which stores the value of x.
+`x=9` means writing 9 into the memory cell at `$x`.
+`$x` is similar to `addressOf(x)` but it can be either as lvalue or rvalue.
+also it implies that we cannot write `$(x+1)` but with `:=` we could write: `x := y+1`
+this will affect: function call, var/val definition and assignment, parameter pass and receive, generics?
+Note that `$` is not part of a type. It is a built-in operator to get address of a memory cell which stores value of a variable.
+If compiler makes optimizations, and make a `val:int` non-reference, still `$x` will point to the address of x itself.
+function call: `func process(x:int, y:int)`
+`process(x,y)` no change here unless
+- This will give developer ability to "fetch" address of any variable as an integer number. But to make things safe we can do two things:
+- it won't be int. it will be some type defined in core. But this is not good as we are mixing built-in operators with core types. Let's say `$x` will return something which is not int!
+- developer cannot do anything with that except assigning it to another address. 
+What happens if user writes: `var g:string=$t`?
+`$t` must have a type. let's call it `ptr`. And we can either define `type ptr := int` or make it a completely new type (so it cannot be misused).
+`var x:ptr = $y`
+`$y = x`
+in every other language, there are two types: regular and pointer. But here we want to make everything pointer.
+defining a ptr type also makes things confusing.
+proposal: define `ptr[T]` data type and make everything else value type.
+then what happens if a fuction returns `var:int`?
+we can say function should either return val or var of ptr type.
+There is a relation between var and ref. for local vars, they are independant but for function return, var implies ref.
+pro: having a ptr type is confusing a little but, but having `=` and `:=` is also confusing.
+we have var and val, also ptr and nont-ptr
+there are 4 combinations:
+`var:int`- an integer which you can change, one memory cell allocated for the data
+`val:int`- a fixed integer which you cannot change, one memory cell
+`var:ptr` - a pointer to an integer, you can change both value and the pointer (2 memory cells) 
+`val:ptr` - a pointer to an integer, you cannot change vale or the pointer (2 memory cells)
+- if a function returns `var:int` the caller will receive a mutable copy of the variable. It will not be a pointer.
+- if a function returns a var pointer, it can be used in the caller to change values which might be used elsewhere.
+- the only case where we can have race/conflict is function returning a `var:ptr` which is also sent to a thread. It can be used to modify data.
+```
+var x:int = 12
+var x: ^int= &x
+val v:int = 19
+val x: ^int = &v 
+```
+we can remove `:=` but: we need ptr buit-in type and `&` operator and `*` operator.
+we can use `=` to assign between ptrs.
+The only things that we can do with a ptr type variable: 
+1. assignment: set it's value to another ptr of the same type: `ptr1 = ptr2`
+2. referencing: set it's value to pointer to another variable of it's internal type: `ptr1 = &otherInt`
+3. assignment: read it's ptr value for assignment to another ptr of the same type: `ptr1 = ptr2`
+4. derefrencing: read it's indirect value (like `*x` in C): `intVar = *ptr1`
+5. invoke ptr if it is pointing to a function: `ptr(1,2)`
+con: we can have `ptr[ptr[int]]`. For gen yes we can have it.
+q: what about pointer to function? `type pf := ptr[func(int)->int]` `var gg: pf = &myProcessFunction` `gg()`
+q: multiple variable of ptr and non-ptr decl in same stmt. `var x,y = process()` - in process: `return 10, ptr2`
+q: how to solve initial issue? solution: there is no longer ref-assignment. we only have `=`.
+q: what is new semantics for `=`? Same as before. copy value. for ptr, it will be the pointer itself.
+q: what about ptr arithm? how will array work now? ptr arith is not allowed. we will provide core functions.
+q: ref instead of ptr. `ref1 = &myInt`, `myInt = *ref1`. I think `ref` is more intuitive for non-C developers.
+q: how does it combine with templates? `var g: Stack[ptr[int]]`
+q: how to we initialize pointer and non-pointers? for example for a tuple?
+`var x: Point = {x=10, y=20}`
+`var x: ^Point = &x`
+`var x: ^Point = &{x=10, y=20}`
+q: do we have null pointer now? what about un-initialized ref? No we shouldn't have
+if we change name to `ref` it will mean it is referencing to something.
+
+q: can `*ptr1` be lvalue? yes if the ptr is var.
+q: if `ptr1` is a pointer to Point, how can I access tuple fields? can I still use dot notation? can we extend dot notation to act the same for ptr[T] as for T? (Like Go) yes. the ref itself is not a struct so `.` is not used for it. Of course if it is a ref to non-tuple, you cannot use `.`.
+q: what if someone writes `opCall` for function pointer? shall we disallow this? it's better not to.
+q: why not disallow call on ptr type. So user has to de-reference and then call. we should keep places where `()` is used on non-function to minimum.
+q: can we have nothing for ref type? no. it will open the door for a lot of abuse. Like C# we can prevent in compilation, if a ref (or any other variable) is not assigned to.
+
+Y - where is `opCall` used? can we change/remove it?
+- array and slice
+- map
+- maybe type to handle errors and chain calls
+- function pointer invoke
+problem: it will be confusing as developer can easily define custom `()`.
+Let's say developer cannot override `()` for above cases.
+To make everything consistent, let's say `()` will invoke opCall for all types except function names and function types and function pointers?
+
+Y - Shall we make ptr part of the notation?
+Like: `var x: ref[int]`
+`var x: $int`. Because ptr is really part of the type.
+How do we represent pointer to a pointer? `var t: $$int`
+```
+var g : $int = &x
+var t: $$int = &g
+```
+or: `^int`
+`var g: ^int`
+`var g: \int`
+`var g: ~int`.
+this is better: `func process(x: ^int, val y: ^int) -> ^Point[int]`
+`func process(x: $int, val y: $int) -> $Point[int]`
+
+Y - disallow prefix `++` and `--` and add these to operators.
+and make it statement, not expression. so they cannot be used inside another expression:
+`arr1(x++)`?
+
+Y - We should ban recursive data types which use non-ref to refer to themselves. 
+
+Y - Shall we maky syntax for tuple initialization more explicit?
+`var x: Point = {x=10, y=20}`
+`var x: Point = Point{x=10, y=20}`
+can we use `@` here? to cast a literal?
+
+? - Shall we initialize vars automatically or give compiler warning if developer has not init them.
+In go everything is zeroed but as a result pointers will be `nil` which we don't want to have.
+proposal: instead of thinking instead of the developer, let him assign values and issue compiler error if using un-init value.
+
+? - What should be default value for a union?
+
+? - Make sure `@` is only used to cast and type-id. nothgin else. 
+What about literals?
+
+
+
