@@ -20,7 +20,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed Phantom types section as they can be implemented with named types, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, some clarifications about `opCall`, introduced reference type and removed `:=` ref-assign operator
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed Phantom types section as they can be implemented with named types, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, some clarifications about `opCall`, introduced reference type and `:=` ref-assign operator
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
@@ -101,30 +101,47 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 11. **Immutability**: `val x: int = 12`, no change or re-assignment to `x` is allowed.
 12. **Assignment**: `A=B` makes a copy of B's data into A.
 13. **Reference assignment**: `A:=B` makes A point to the same things that B is pointing to.
-14. **Casting**: `var pt = @Point[int]({ x=10, y=20, data=1.11 })`.
+14. **Casting**: `var pt = Point[int]({ x=10, y=20, data=1.11 })`.
 15. **Lambda**: `var adder: func(var int,var int)->val int = (x,y) -> x+y`.
 16. **Protocols**: `protocol Comparable[T] := { func compare(x:T, y:T)->int }`, `func sort[T: Comparable](x:array[T])`.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Type System
+- Every variable declaration must be initialized by the developer. If they use uninitialized data, compiler will issue an error.
 
-## Reference type
-You can define a reference type using `^` notation. The only valid operations on a reference type is assigning, referencing and de-referencing.
+## Reference type
+
+You can define a reference type using `&` notation. The only valid operations on a reference type is assigning, referencing.
+Value of a reference type is the value of location it refers to which can be duplicated using `=` operator.
+- Note that you cannot have a reference to reference.
 ```
 var x1:int = 12
-var x2: ^int= &x1
-*x2 = 110 ;this will update x1's value
+var x2: &int := x1 ;make x2 point to x1
+x2 = 110 ;this will update x1's value
+var z: int = x2 ;make a copy of value of x2 into z (as = is supposed to behave)
+var g: &int := x2 ;g will point to the same location as g
 val v:int = 19
-val x3: ^int = &v 
+val x3: &int := v 
 ```
 If the reference is to a function, you can invoke it using `()` notation.
 If the reference is to a tuple, you can refer to the fields of the target data using `.` notation.
-There is no support for pointer arithmetic.
+There is no support for pointer/reference arithmetic.
 `var x1: Point = Point{x=10, y=20}`
-`var x2: ^Point = &x1`
-`var x3: ^Point = &Point{x=10, y=20}`
+`var x2: &Point := x1`
+`var x3: &Point := Point{x=10, y=20}`
 
+`refint = refint` - copy rvalue's target into lvalue's target
+`int = int` - normal code, copy value
+`int = refint` - copy rvalue's target into lvalue
+`refint = int` - copy rvalue into target of lvalue
+`refint := refint` - make lvalue and rvalue point to the same thing (we cannot have ref to ref)
+`refint := int` - lvalue will point to rvalue
+`=` makes a copy. if it is given a normal type, copies it's value. if it has a reference type, copies it's target value.
+the copies data will be pasted on the location of lvalue. if it is a reference, will be copied to it's target.
+`:=` only accepts ref as lvalue. will get a reference to rvalue (if it is already a ref, it will take itself) and assign it to lvalue. So lvalue will point to rvalue (or it's target).
+When dealing with `=` think of reference as `*pointer` in C.
+when dealing with `:=` think of it as `=` with C pointers and non-reference on rvalue as `&x` in C.
 
 ## Variabe definition
 - ref-assignment for val is only possible upon declaration. A val, after declaration cannot be on the left side of `=` or `:=`.
@@ -141,6 +158,7 @@ There is no support for pointer arithmetic.
 ## Extended primitives
 
 ## Tuple
+- You can have tuple literals without name: `var x: Point = {1,10}`
 - Recursive data structures which use non-reference to refer to themselves is not allowed.
 
 ## Polymorphism
@@ -156,7 +174,7 @@ Label types are types that have only one value: Their name. These types can be u
 `type ABC`
 `var g: ABC = ABC`
 `if(g==ABC)` true
-`if ( g @ ABC )` true
+`if ( @g == @ABC )` true
 you can define multiple label types at once: `type A,B,C`
 
 ## Variables
@@ -196,13 +214,13 @@ Union which has only labels (called enum) or has labels and other valtypes, is a
 - You can manage inside a binary buffer and use it as differetn variables.
 ```
 var x: buffer = allocate(16)
-var p1: int = getOffset[int](buffer, 0)
-var p2: int = getOffset[int](buffer, 8)
-;you can use @ to cast a pointer to the type you want
+var p1: &int = getPointer[int](buffer, 0)
+var p2: &int = getPointer[int](buffer, 8)
 ;if buffer was defined as val, you could only create val here.
-var i1: int = @int(p1)
-var i2: int = @int(p2)
-val i3: int = @val(@int(p1)) ;you can combine @ and remove paren: @val@int(x)
+var i1: int = p1
+var i2: int = p2
+;convert var to val with assignment
+val i3: int = p2
 ```
 - Note that you can even use `getOffset` to place a whole tuple on top of a binary. This might be useful in some performance cases.
 There are two categories of types: Named and unnamed. An unnamed type is defined using existing language constructs.
@@ -285,7 +303,7 @@ var myCar: Car = {color=100, age=20}
 - You can define a tuple literal using `{}` notation: `var t = {field1=10, field2=20}`.
 - If a function expects a specific input type, you can pass a tuple literal, if field order, names and types match.
 - If function expects a specific input type and tuple uses unnamed fields, you can use tuple if order and types match.
-- You can cast a tuple literal to a specific type. `var g = @MyTuple({field=10, field2=20})`
+- You can cast a tuple literal to a specific type. `var g = MyTuple{field=10, field2=20}`
 
 ## Union
 - `union[int, floatOrString]` will be simplified to `union[int, float, string]`
@@ -358,12 +376,10 @@ Note that when using type for alias to a function, you have to specify input nam
 If types are compatible (e.g. long and int) you can cast them using: `TypeName(x)` notation. Note that this notation can also be used to specify type of a literal when we can't or don't want to do it using normal notation:
 For example in return statement `return Circle(radius=1)`.
 - Note that you cannot define your own casting function using `@TypeName(x)` name. Here `x` is a code block which will evaluate to something we want to cast. You can write cast functions using a standard name, however.
-- You can use casting syntax to cast between named and unnamed types, downcast (from Circle to Shape) or cast a sum type to one of it's elements or a compatible sum type.
 - Applications of casting:
 cast between named type and underlying
 cast between elements of union and union type
-cast between subtype and suprtype
-cast anonymous tuple to typed
+cast between subtype and super-type
 cast int to float
 - Casting examples:
 `@int(x)`
@@ -374,8 +390,6 @@ cast int to float
 `@Point[int]({x:10, y:20})` -- casting combined with type specialization
 Casting to a tuple, can accept either a tuple literal or tuple variable or an exploded tuple.
 Note that there is no support for implicit casting functions. If you need a custom cast, write a separate function and explicitly call it.
-- `@Type()` without input creates a default instance of the given type.
-- When doing cast to a generic type, you can ignore type if it can be deduced. 
 
 ## Alias
 You can use `type MyInt = int` to define a type alias.
@@ -449,11 +463,12 @@ type Point := { data: string, x: int }
 func process(p: Dot) ...
 ```
 How can I pass a Dot to process function? You need to write a proxy function:
-`func process(p: Point) -> process(@Dot(p.x))`
+`func process(p: Point) -> process(Dot{p.x})`
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Functions
+- Note that sending or receiving a non-reference mutable data to/from a function has no effect.
 - `type NoReturnFunc[T] := func(T)`
 - You can use `_` to ignore a function output: `var t, _ = my_map("key1")`
 - A function can return multiple outputs:
@@ -473,8 +488,6 @@ var x, val y := process()
 - There must be a single space between func and function name.
 - A function can determine whether is expects var or val inputs. If function wants to promise it won't change the input but caller can send either var or val, it can do so with eliminating qualifier or using val: `func process(x: int)`.
 - var/val qualifier is optional for function input/output. if missing, it is considered val and caller can send either val or var. But if it is `val`, caller can only send vals.
-- You can use `@var/val` in shortcut functions to explicitly indicate output type:
-`func process(val x:int, var y:int) -> var (x+y+1)`
 - If function output does not have a qualifier, it will be val.
 `func process(var x:int) -> x` return is a val
 `func process(var x:int) -> int x` return is a val
@@ -508,7 +521,6 @@ func my_func3(x: int, y: int) -> x/y  ;you can omit {} if its a single expressio
 func my_func7() -> int { return 10;} ;fn has no input but () is mandatory
 func my_func7() -> 10  ;when function has just a return statement, there is a shortcut
 func my_func8() -> (int, int) { return 10,20 } ;function can return multiple values
-(x,y) = @my_func8()
 func myFunc9(x:int) -> {y:int} {y=12} ;you can have named output
 
  ;below function receives an array + a function and returns a function
@@ -526,7 +538,6 @@ new_array = map(my_array , (x:int) -> {x+1})
 ```
 - Everything is passed by reference but the callee cannot change any of its input arguments (implicit immutability) for parameters passed by reference.
 - Parent is required when calling a function, even if there is no input.
-- You can use `@var` and `@val` to cast to var/val: `var x = @var(y)`. If you use this to convert from val to val or var to var, it will become a reference assignment. Otherwise, it will clone. You can have an expression inside `@var` or `@val`.
 - You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
 - `rest` is a normal array which is created by compiler for each call to `print` function.
 - Functions are not allowed to change (directly or indirectly) any of their inputs.
@@ -873,20 +884,20 @@ The math operators can be combined with `=` to do the calculation and assignment
 `var x: Point = ...`
 bin-type example:
 `val x: int = 12`
-`var z: int = @(x)`
-`val t: int = @(z)`
 - Each type (except function and function reference) can implement `opCall` function which will be called when the type is used like a function. If this function returns a `var` result, it's result can be used as an lvalue to do assignment.
-- Type operator (`@`): `@int(x)` will return result + success, `@T` will return type-id of the actual data inside T variable. This can be dynamic type of a tuple or union and static type for everything else. If T is a type name, it will return type-id of that type. So it is only useful for varibles of type tuple and union.
+- Type operator (`@`): This can be used in 4 models:
+1. `@x` and `@T` will return type-id of T or actual data inside x (usefull only for tuple and union)
+2. `x@T` returns true if x is of type T (Applicable only for union and tuple, for other types it is naive).
+3. cast:      `var myInt = @int(myFloat)` for non-union types. 
+4. type assertion: `var myInt, success = @int(intOrFloat)`
 
 ### Special Syntax
-- `^` declare reference type
-- `&` capture a reference
-- `*` convert a reference to underlying data
-- `@` casting/type check
+- `@` casting/type-id
+- `&` declare reference type
 - `+` protocol enforcement
 - `_` placeholder for lambda or unknown variable
 - `:` tuple declaration, variable type declaration, hash literal
-- `:=` custom type definition
+- `:=` custom type definition, reference assignment
 - `=` type alias, copy value
 - `..` range generator
 - `->` function declaration, block-if
@@ -902,12 +913,6 @@ Primitive data types: `int`, `float`, `char`, `union`
 Extended data types: `bool`, `array`, `string`, `map`
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
-
-# Keywords
-- `@` is an operator which can be used in two ways:
-- with a type and a value to cast value to this type: `var t = @int(12.0)`
-- As a binary infix operator to check for type matching.
-- You can use `!@` to check for not matching.
 
 ### match
 ```
@@ -941,12 +946,6 @@ Block  = Statement | '{' (Statement)* '}'
 
 ```
   if ( exp1 and exp2 ) 11 else -1
-  ;it is same as below:
-  result = ( exp1 and exp2 ) @
-  {
-    true -> 11,
-    false -> { -1 } 
-  }
 ```
 - You can have one variable declarations before the condition.
 These declarations will be only available inside if/else block.
@@ -957,13 +956,13 @@ These declarations will be only available inside if/else block.
 ### assert (removed)
 - If condition is not satisfied, it will return an error. 
 - We have RIAA approach. Anything which is allocated inside a function which is not part of return value will be disposed (by calling `dispose` function) when exiting the function.
-- Any assert which only uses `@` with generic types, will be evaluated at compile time. You can use this to implement generic constraints.
+
 - `Exception` is a simple tuple defined in core. 
 - You can use suffix if for assertion: `return xyz if !(str.length>0)`
 - To handle exceptions in a code in rare cases (calling a plugin or another thread), you can use `invoke` core function.
 `func invoke[I,O](f: func, input: I)->O|Exception`. If your function has more than one input, you should define a wrapper function or a closure which has one input of type tuple.
 - In order to handle possible errors in a chain of function calls, you can use `opCall` on a type (e.g. Maybe). 
-`func opCall[T](m: Maybe[T], f: func(T)->Maybe[T]) -> { return if m @ Nothing None else f(m) }`
+`func opCall[T](m: Maybe[T], f: func(T)->Maybe[T]) -> { return if (@m == @Nothing) None else f(m) }`
 `var input = 10`
 `var finalResult: Maybe[int] = input(check1(5, _))(check2(_, "A"))(check3(1,2,_))`
 
@@ -1215,3 +1214,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Distributed processing: Moving code to another machine and running there (Actor model + channel)
 - possible add notation for function chaining
 - Define notation to write low-level (Assembly or IR) code in a function body and also force inline.
+- Function to get dynamic type of a tuple variable
