@@ -1706,38 +1706,38 @@ So we can say in all communications `=`, send arg, return arg copies will be mad
 - we must obey function signature when sending data. But when receiving result, we may other var/val and copy will be made if it does not match with function output.
 If we can get this right (consistent and efficient), we can remove `:=` and reference type (`*&^`) and a lot of headache and the language will be much simpler.
 The common cases:
-1. **send var:int to function**: reference
-2. **send var:Buf to function**: reference
-3. **send val:int to function**: data-copy
-4. **send val:Buf to function**: reference
-5. **recv var:int fr function**: reference
-6. **recv var:Buf fr function**: reference
-7. **recv val:int fr function**: data-copy
-8. **recv val:Buf fr function**: reference
-9. **define local var:int**: reference if it is going to escape, else data
-10.**define local var:Buf**: reference
-11.**define local val:int**: data
-12.**define local val:Buf**: reference
-13.**var:int=var:int**: data-copy
-14.**var:Buf=var:Buf**: data-copy (`=` is supposed to make a copy of the data, unless ref-assignment can be done trnsprntly)
-15.**val:int=val:int**: data-copy
-16.**val:Buf=val:Buf**: reference
-17.**return function var:int input**: return the received reference
-18.**return function var:Buf input**: return the received reference
-19.**return function val:int input**: return a copy of the received copy
-20.**return function val:Buf input**: return the recived reference
-21.**var:int = arr(0)**: reference
-22.**var:Buf = arr(0)**: reference
-23.**val:int = arr(0)**: copy
-24.**val:Buf = arr(0)**: reference
-25.**arr(0)=var:int** data-copy
-26.**arr(0)=val:int** data-copy
-27.**arr(0)=var:buf** data-copy
-28.**arr(0)=val:buf** reference
-29.**var:int=getPointer\[int\](binry, 0)**: reference
-30.**var:Buf=getPointer\[Buf\](binry, 0)**: reference
-31.**val:int=getPointer\[int\](binry, 0)**: data-copy
-32.**val:Buf=getPointer\[Buf\](binry, 0)**: reference
+1.  **send var:int to function**: reference
+2.  **send var:Buf to function**: reference
+3.  **send val:int to function**: data-copy
+4.  **send val:Buf to function**: reference
+5.  **recv var:int fr function**: reference
+6.  **recv var:Buf fr function**: reference
+7.  **recv val:int fr function**: data-copy
+8.  **recv val:Buf fr function**: reference
+9.  **define local var:int**: reference if it is going to escape, else data
+10. **define local var:Buf**: reference
+11. **define local val:int**: data
+12. **define local val:Buf**: reference
+13. **var:int=var:int**: data-copy
+14. **var:Buf=var:Buf**: data-copy (`=` is supposed to make a copy of the data, unless ref-assignment can be done trnsprntly)
+15. **val:int=val:int**: data-copy
+16. **val:Buf=val:Buf**: reference
+17. **return function var:int input**: return the received reference
+18. **return function var:Buf input**: return the received reference
+19. **return function val:int input**: return a copy of the received copy
+20. **return function val:Buf input**: return the recived reference
+21. **var:int = arr(0)**: reference
+22. **var:Buf = arr(0)**: reference
+23. **val:int = arr(0)**: copy
+24. **val:Buf = arr(0)**: reference
+25. **arr(0)=var:int** data-copy
+26. **arr(0)=val:int** data-copy
+27. **arr(0)=var:buf** data-copy
+28. **arr(0)=val:buf** reference
+29. **var:int=getPointer\[int\](binry, 0)**: reference
+30. **var:Buf=getPointer\[Buf\](binry, 0)**: reference
+31. **val:int=getPointer\[int\](binry, 0)**: data-copy
+32. **val:Buf=getPointer\[Buf\](binry, 0)**: reference
 `=` is supposed to make a copy of the data, unless ref-assignment can be done trnsprntly (in cases where rvalue is a temp like result of a function call which is mutable or big-immutable).
 **Rule 1**: When communicating with a function, everything is sent as a reference except for small immutable data.
 **Rule 2**: when defining local variables, everything is a reference except small immutable data or small mutable data which is not going to escape.
