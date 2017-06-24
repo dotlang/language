@@ -153,6 +153,7 @@ dotLang support different types of data and almost all of them are implemented u
 1. You can define immutability status of local variables, function inputs and function outputs.
 2. For function input and output, the immutability specification is optional. If it is missing, it means it can accept either a `var` or a `val` but should be treated like a `val`.
 3. It is encouraged to use immutable data specially in concurrent applications.
+4. If you send or receive a mutable data to or from a function, it will be a reference to the original data.
 
 ## Assignment
 
@@ -319,6 +320,8 @@ dotLang support different types of data and almost all of them are implemented u
 3. `type Point := {x: int, y: int}`
 4. `type bool := union[true, false]`
 5. `var x: Point = {10, 20}`
+6. `var t1:int = 12`, `var t2: MyInt = t1` - compiler error!
+
 
 **Notes**
 
@@ -326,7 +329,7 @@ dotLang support different types of data and almost all of them are implemented u
 2. Example number 4, is the standard definition of `bool` extended primitive type based on `union` and label types.
 3. In above examples (like example number 1), note that although their binary data representation is the same, `MyInt` and `int` are two separate types. This will affect function dispatch. Please refer to corresponding section for more information.
 4. You can use casting operator to convert between a named type and it's underlying type. Please refer to corresponding section.
-
+5. In example number 6, you cannot assign `int` to `MyInt` as they are completely different types.
 
  
 
@@ -340,46 +343,8 @@ dotLang support different types of data and almost all of them are implemented u
 ========================================
 
 ## Rules
-- There must be a single space between `type` keyword and type name.
-`var x: array[int]` will create an empty array
 
-`type array[T] = (size:int, data: binary)` binary means a buffer with size specified at runtime.
-`type array[N: int, T] = (size:int, data: binary[N])` `binary[N]` means N bytes allocated.
-```
-func get[T](val arr: array[T], index: int) -> val T {
-    vax T result := arr.data + index*sizeof[T]
-    return result ;we cannot shortcut this by writing something like "return *(arr.data + index*a)"
-}
-```
-If we use `get` to read data as `var` from an array which contains value types, we won't have direct access to inside the array. We will receive a copy.
-`type int := binary` compiler will allocate 8 bytes as a binary buffer for int
-`type binary := binary` this is just for documentation. right side same as left side, means it is a native type.
-Union which has only labels (called enum) or has labels and other valtypes, is a valtype, because compiler uses int or a binary buffer to implement it. If it has tuples, it is reftype.
-- You can manage inside a binary buffer and use it as differetn variables.
-```
-var x: buffer = allocate(16)
-var p1: int = getPointer[int](buffer, 0)
-var p2: int = getPointer[int](buffer, 8)
-;if buffer was defined as val, you could only create val here.
-var i1: int = p1
-var i2: int = p2
-;convert var to val with assignment
-val i3: int = p2
-```
-- Note that you can even use `getPointer` to place a whole tuple on top of a binary. This might be useful in some performance cases.
-There are two categories of types: Named and unnamed. An unnamed type is defined using existing language constructs.
-For example these are some unnmaed types: `int, array[string], {x:int, y:float}, int|string`.
-A named type is defined using `type` statement: `type MyInt := int`. 
-Underlying type is the internal structure of a type. For unnamed types, their underlying type is the same as themselves but for named types, their underlying type is what comes after `:=` in their declaration.
-There are 4 kinds of unnamed types: primitive, function, tuple and union. These will be explained in next sections.
-```
-;you can define a new named type using type keyword
-type MyInt := int
-;you can define a variable using var keyword
-var x: MyInt
-var y: int
-var z: string
-```
+
 
 A named type is completely different from it's underlying type and the only similarity is their internal memory representation.
 ```
@@ -1063,6 +1028,21 @@ A set of core packages will be included in the language which provide basic and 
 Generally, anything that cannot be written in atomlang will be placed in this package.
 
 ## Array
+- You can manage inside a binary buffer and use it as differetn variables.
+```
+var x: buffer = allocate(16)
+var p1: int = getPointer[int](buffer, 0)
+var p2: int = getPointer[int](buffer, 8)
+;if buffer was defined as val, you could only create val here.
+var i1: int = p1
+var i2: int = p2
+;convert var to val with assignment
+val i3: int = p2
+```
+
+If we use `get` to read data as `var` from an array which contains value types, we won't have direct access to inside the array. We will receive a copy.
+
+`type array[T] = (size:int, data: binary)`
 - `string` is an array and like an array, compiler handles literals and string concatenation:
 `var str: string = ["Hello ", str2, "World!"]`
 `var str: string = [str1, str2]`
