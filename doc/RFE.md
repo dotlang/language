@@ -111,7 +111,7 @@ print x.a ;will print 11!
 OTOH, if we say `=` will copy data, above code will print 10 which is what we put into x initially.
 in copy semantics: there might be cases where a `=` will be expensive (large data)
 in ref-assign semantics: there might be cases where a `=` will be confusing (non-primitive data).
-which case is more common? using large data or using non-primitives? I think non-primitives are used much more. so we should focus on those cases: we should prevent confusing behavior in ref-assign semantics. So we should use copy semantics. And in rare cases where a very large data variable is being used, the developer is responsible to ref-assign.
+which case is more common? using large data or using non-primitives? I think non-primitives are used much more. so we should focus on those cases: we should prevent confusion behavior in ref-assign semantics. So we should use copy semantics. And in rare cases where a very large data variable is being used, the developer is responsible to ref-assign.
 But we do our best not to involve developer into reference vs. data confusion. In eyes of the developer everything should be what it seems to be. `int` is an integer number not a reference number, although compiler/runtime will handle it as a reference to make other language features (e.g. var) work.
 So when he writes `x=y` it expects y be copied into x.
 to do ref-assign we should use either a special notation or a core function. using `=` will cause confusion.
@@ -1602,7 +1602,12 @@ the copies data will be pasted on the location of lvalue. if it is a reference, 
 When dealing with `=` think of reference as `*pointer` in C.
 when dealing with `:=` think of it as `=` with C pointers and non-reference on rvalue as `&x` in C.
 
-? - Can we specify `&` in a template?
+N - can a pointer to Shape, point to a Circle?
+
+N - If we want to have pointer, how do we specify end of a linked list?
+`type List[T] = {data: T, next: union[Nothing, List[T]]}`
+
+Y - Can we specify `&` in a template?
 `func process[T](x:int)->&T`
 this is what happens when a type is split into two parts.
 Maybe we should use language built-in features like template:
@@ -1619,3 +1624,128 @@ references are not as flexible as pointers.
 But with pointers we have the problem of assigning to array and hash.
 I think pointer is more general and orthoronal. With reference we have to add more and more exceptions. This is permitted that is not...
 we need a notatin which is flexible (little or no exception) and can help us write array and maps indexers.
+===
+Let's have reference type based on generics: `var g: ref[int]`
+by default it has a temp allocated data.
+It can be set to reference to some data using `:=`: `g := t` in C we write: `g = &t`
+We can change it's internal value using `=`: `g=5` in C we write: `*g = 5`
+What if a ref type appears as rvalue?
+rvalue of `=` means it's internal data: `var r: int = g`. but this does not make sense. `=` is supposed to work with direct type.
+Let's say `=` assigns reference and `:=` assigns internal value.
+`var i = 12`
+`var p1: ref[int] := i`
+`var p2: ref[int] = p1` p2 will point to i too
+the `&` and `*` notations are more expressive.
+for example if I want to `++` the internal value of a reference, with `:=` notation it is really difficult.
+`var i = 12`
+`var p1: ref[int] = &i`
+`var p2: ref[int] = p1`
+`(*p2)++`
+`p3=p4`
+`&T` will return address of variable T as a `ref[t]` which can be rvalue.
+`*T` will return a variable of type t which can be lvalue or rvalue.
+now, the problem: we need a better syntax to set array or hash members.
+`*arr(0) = 12`
+`*map("A") = 19`
+`var p1: int = *arr(0)`
+`var p2: int = *map("A")`
+`var p3: ref[int] = arr(0)`
+`var p4: ref[int] = map("A")`
+solution 1: have two opCalls. one for rvalue and one for lvalue.
+solution 2: `type ref[T] := {ptr: ptr[T], val: T}` and runtime handles access to val and ptr.
+con for 2: syntax can become really annoying.
+`func opCall[T](subject: array[T], index: int)`
+`func opCall[T](subject: array[T], index: int, rvalue: T)` - should this be T or `ref[T]`? **source of ambiguity**
+- Note: Maybe we should change `*` notation as it would be confusing with multiplication.
+`var i = 12`
+`var p1: ref[int] = &i` - `&` operator creates a ref tuple.
+`var j = p1.value`
+This is because of the fact that we want to have both reference and immutability as orthogonals.
+C++ has both of them but with exceptions.
+Go has only reference.
+Scala has only immutability.
+Rust has both but with a more complicated model.
+Now we have to pick which one do we want. Each has it's own flexibilities and problems.
+If the goals is Simplicity, we should compare them based on how simple/complex they are.
+```
+          |  value-type | ref-type |
+------------------------------------
+  mutable |  var:int    | var:int* |
+------------------------------------
+immutable |  val:int    | val:int* | 
+```
+- I think this can never be fully orth because:
+1. for a function I/O, it does not make sense to return or accept `var:mutable`. If it is a small data, being var is useless and if it is a large buffer, being var is waste of memory and performance. Because `var` has some kind of `ref-type` in it's concept. We expect to have a reference to something, if we want to be able to change it (var).
+2. For local variables, being `val:reference` does not make sense. Why waste space by adding redirection if we don't want to modify the data? 
+So if we want to have all 4 cases orthogonal, we will need to deal with these inefficiencies. And the developer needs to always think about whether he should define a case as ref or as immutable or not.
+Two general options to reduce this problem: 1. remove/reduce one or both of these factors, 2. let compiler decide
+**compiler decide**: developer only specifies immutability of the data. Compiler will handle and decide whether somethings needs to be sent/received as reference or value. 
+problem 1: We need to tell whether in an assignment, we want to dupliate rvalue into lvalue or make lvalue point to rvalue.
+problem 2: `var x:BigBuffer = y` this is expensive! we should prevent it -> notation of `:=`
+if we assume `=` will be handled by the compiler but it's semantic will be rvalue same as lvalue.
+problem 3: `var x: BigBuffer = process()` if output of process is immutable, this must make a copy. if output of process is mutable, this can be a reference assignment to save space.
+`var x: int = process2()` if output is val, this makes a duplicate. if it is var, it will ref-assign.
+`var x: BigBuffer = process()` if output is val, it will duplicate. if it is var, it will ref-assign.
+we need to formalize compiler rules to make sure they make sense and are consistent (when it will duplicate and when ref-assign, 
+can we say `var` means reference and `val` means value or reference?
+`val x = otherVal` ref-assign if it is big, copy if it is small
+`var x = otherVar` ref-assign if it is big, copy if it is small
+`val x = otherVar` make a copy
+`var x = otherVal` make a copy
+`process(var1)` send a reference. so inside the function, var means reference for arguments. but for local variables it may have other meanings.
+`var1 = process()` inside process, it must define it's output as reference (compiler should do that). So var means reference behind the scene, unless data is not outbound (sent to another function, received from outside or returned to caller).
+`process(val1)` send a copy if small, reference if big.
+`val1 = process()` if func output is val: make a copy if small, get reference if big, else make a copy.
+So we might have `var x:int` and `var y:int` inside a function. but runtime handled x as a value type while y is a reference type (pointer), because y is returned to the caller. developer does not need to worry about this. compiler/runtime will take care of this and make sure that the most efficient implementation is used.
+what if I want to make sure a reference is sent to a function and not a copy? if it is val, the question does not make sense so it must be var. if it is var:int, function will receive a reference. 
+Function will receive or send a reference when communicating with outside world using mutable types. Otherwise, it may be working on reference or on a duplicated value.
+1. `func process(var x:int)->int { var y:int = x; return y }` does y contain a copy of x or a reference? 
+2. `func process(var x: Buffer)->Buffer { var y: Buffer = x; return y}` what about this case?
+So function should hold reference when communicating with outside world using refs. But if two communications collide: get var from outside, return var inside. It should make a copy.
+So we can say in all communications `=`, send arg, return arg copies will be made except when the data is var (both source and destination).
+- we must obey function signature when sending data. But when receiving result, we may other var/val and copy will be made if it does not match with function output.
+If we can get this right (consistent and efficient), we can remove `:=` and reference type (`*&^`) and a lot of headache and the language will be much simpler.
+The common cases:
+1. **send var:int to function**: reference
+2. **send var:Buf to function**: reference
+3. **send val:int to function**: data-copy
+4. **send val:Buf to function**: reference
+5. **recv var:int fr function**: reference
+6. **recv var:Buf fr function**: reference
+7. **recv val:int fr function**: data-copy
+8. **recv val:Buf fr function**: reference
+9. **define local var:int**: reference if it is going to escape, else data
+10.**define local var:Buf**: reference
+11.**define local val:int**: data
+12.**define local val:Buf**: reference
+13.**var:int=var:int**: data-copy
+14.**var:Buf=var:Buf**: data-copy (`=` is supposed to make a copy of the data, unless ref-assignment can be done trnsprntly)
+15.**val:int=val:int**: data-copy
+16.**val:Buf=val:Buf**: reference
+17.**return function var:int input**: return the received reference
+18.**return function var:Buf input**: return the received reference
+19.**return function val:int input**: return a copy of the received copy
+20.**return function val:Buf input**: return the recived reference
+21.**var:int = arr(0)**: reference
+22.**var:Buf = arr(0)**: reference
+23.**val:int = arr(0)**: copy
+24.**val:Buf = arr(0)**: reference
+25.**arr(0)=var:int** data-copy
+26.**arr(0)=val:int** data-copy
+27.**arr(0)=var:buf** data-copy
+28.**arr(0)=val:buf** reference
+29.**var:int=getPointer\[int\](binry, 0)**: reference
+30.**var:Buf=getPointer\[Buf\](binry, 0)**: reference
+31.**val:int=getPointer\[int\](binry, 0)**: data-copy
+32.**val:Buf=getPointer\[Buf\](binry, 0)**: reference
+`=` is supposed to make a copy of the data, unless ref-assignment can be done trnsprntly (in cases where rvalue is a temp like result of a function call which is mutable or big-immutable).
+**Rule 1**: When communicating with a function, everything is sent as a reference except for small immutable data.
+**Rule 2**: when defining local variables, everything is a reference except small immutable data or small mutable data which is not going to escape.
+**Rule 3**: when doing assignment to another item, everything is data-copy except for large immutable data.
+**Rule 4**: when a function returns one of it's inputs, it will return the same thing except for immutable small data.
+**Rule 5**: array and map getter is treated like receiving data from a normal function call.
+**Rule 6**: array and map setter is treated like function call + assignment using `=`
+**Rule 7**: The special function `getPointer` which is used to point to binary buffer, is trated just like a normal function.
+And the compiler should keep track of a variable to know if it is a ref or not.
+So let's make these changes: Remove the concept of pointer or reference + all it's related notations.
+
