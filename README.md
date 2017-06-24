@@ -27,28 +27,28 @@ After having worked with a lot of different languages (C\#, Java, Perl, Javascri
 
 That's why I am creating a new programming language: dot (or dotLang). 
 
-dotLang programming language is an imperative, static-typed general-purpose language based on author's experience and doing research on many languages (namely Java, C\#, C, C++, Go, Scala, Rust, Objective-C, Python, Perl, Smalltalk, Ruby, Swift, Haskell, Clojure, Eiffel, Falcon, Julia, F\# and Oberon-2). 
-I call the paradigm of this language "Data-oriented". This is a combination of Object-Oriented and Functional approach and it is designed to work with data. There are no objects or classes. Only data types and functions. But most useful features of the OOP (encapsulation, abstraction, inheritance and polymorphism) are provided to some extent. On the other hand, we have first-class and higher-order functions borrowed from functional approach.
+dot programming language (or dotLang for short) is an imperative, static-typed, general-purpose language based on author's experience and doing research on many programming languages (namely Go, Java, C\#, C, C++, Scala, Rust, Objective-C, Python, Perl, Smalltalk, Ruby, Swift, Haskell, Clojure, Eiffel, Falcon, Julia, F\# and Oberon-2). 
+I call the paradigm of this language "Data-oriented". This is a combination of Object Oriented and Functional approach and it is designed to work with data. There are no objects or classes. Only data types and functions. But most useful features of the OOP (encapsulation, abstraction, inheritance and polymorphism) are provided to some extent. On the other hand, we have first-class and higher-order functions borrowed from functional approach.
 
 Three main objectives are pursued in the design of this programming language:
 
-1. **Simplicity**: The code written in dotLang should be consistent, easy to learn, read, write and understand. There has been a lot of effort to make sure there are as few exceptions as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
-2. **Expressiveness**: It should give enough facilities to the developer to produce readable and maintainable code. This requires a comprehensive standard library in addition to language rules.
-3. **Performance**: The compiler will compile to native code which will result in high performance. We try to do as much as possible during compilation (optimizations, de-refrencing, type checking, ...) so during runtime, there is not much to be done except for GC. The standard library functions will be implemented in the assembly language where the performance is the main concern.
+1. **Simplicity**: The code written in dotLang should be consistent, easy to learn, write, read and understand. There has been a lot of effort to make sure there are as few exceptions and rules as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
+2. **Expressiveness**: It should give enough tools to the developer to produce readable and maintainable code. This requires a comprehensive standard library in addition to language notations.
+3. **Performance**: The compiler will compile to native code which will result in high performance. We try to do as much as possible during compilation (optimizations, de-refrencing, type checking, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in standard library will be implemented with a lower level language.
 
-Achieving all of above goals at the same time is something impossible so there will definitely be trade-offs and exceptions.
+Achieving all of above goals at the same time is impossible so there will definitely be trade-offs and exceptions.
 The underlying rules of design of this language are 
 [Principle of least astonishment](https://en.wikipedia.org/wiki/Principle_of_least_astonishment), 
 [KISS rule](https://en.wikipedia.org/wiki/KISS_principle) and
 [DRY rule](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  There are functions and types, nothing else. Each function receives input and gives an output. Types include primitive data types, tuple, union types and a general type alias. Polymorphism, templates, lambda expression and exception handling are also supported.
+As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  There are functions and types, nothing else. Each function acts on a set of inputs and gives one or more outputs. Type system includes primitive data types, tuple, union, array and map. Polymorphism, template programming and lambda expression are also provided.
 
 ## Comparison with other languages
 
-**Compared to C**: dotLang is C language + Garabage collector + first-class functions + template programming + sum data types + module system + powerful polymorphism + simple and powerful standard library + exception handling + lambda expressions + closure + powerful built-in data types (hash, string,...) + multiple dispatch + sane defaults - ambiguities - pointers - macros - header files.
+**Compared to C**: dotLang is C language + Garabage collector + first-class functions + template programming + better union data types + module system + powerful polymorphism + simple and powerful standard library + lambda expressions + closure + powerful built-in data types (map, string,...) + multiple dispatch + sane defaults + better immutability - ambiguities - pointers - macros - header files.
 
-**Compared to Scala**: Scala + multiple dispatch - dependency on JVM - cryptic syntax - trait - custom operators - variance and implicit.
+**Compared to Scala**: Scala + multiple dispatch + custom immutability - dependency on JVM - cryptic syntax - trait - custom operators - variance - implicit.
 
 **Compared to Go**: Go + generics + immutability + multiple dispatch + sum types + sane defaults + better orthogonality (e.g. creating maps) + simpler primitives - pointers - interfaces - global variables.
 
@@ -848,7 +848,7 @@ The math operators can be combined with `=` to do the calculation and assignment
 - `.` access tuple fields
 
 Keywords: `import`, `func`, `var`, `val`, `type`, `protocol`, `if`, `else`
-Special functions: `opCall`
+Special functions: `opCall`, `dispose`
 Base type: `binary` (which is underlying type of all other types)
 Primitive data types: `int`, `float`, `char`, `union`
 Extended data types: `bool`, `array`, `string`, `map`
