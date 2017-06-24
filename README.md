@@ -176,24 +176,93 @@ dotLang support different types of data and almost all of them are implemented u
 
 ## Primitives
 
-**Semantics**: Provide basic tools to define 
-Primitive data types: `int`, `float`, `char`, `union`
+**Semantics**: Provide basic tools to define most commonly used data types.
 
+**Syntax**: `int`, `float`, `char`, `union`
+
+**Examples**
+
+1. `var x:int = 12`
+2. `var x:float = 1.918`
+3. `var x:char = 'c'`
+4. `var intFloat: union[int, float] = 11.192`
+5. `var maybe_int: union[int, Nothing]`
+6. `var day_of_week: union[SAT, SUN, MON, TUE, WED, THU, FRI]`
+
+**Notes**:
+1. `int` type is a signed 8-byte integer data type.
+2. `float` is double-precision 8-byte floating point number.
+3. `char` is a single character, represented as an unsigned byte.
+4. `union` is a meta-type which can take form of different data types. It uses generic programming features which are explained in corresponding section.
+5. `union[int, floatOrString]` will be simplified to `union[int, float, string]`
+6. The identifiers used in example number 5 and 6 are called "label types" and are explained in the corresponding section.
+7. You should use type-opertor `@` to work with union types. Refer to corresponding section for more information.
+8. Compiler will convert a union data type to corresponding `binary` type with appropriate tagging.
 
 ## Extended primitives
-Extended data types: `bool`, `array`, `string`, `map`
 
+**Semantics**: Built on top of primitives and built-in language features, provide more advanced data types.
+
+**Syntax**: `bool`, `array`, `string`, `map`
+
+**Examples**
+
+1. `var x: bool = true`
+2. `var arr: array[int] = [1, 2, 3]`
+3. `var x: string = 'Hello world!'`
+4. `var my_map: map[string, int] = ["A":1, "B":2, "C":3]`
+5. `arr(0) = 11`
+6. `my_map("A") = 2`
+
+**Notes**
+
+1. All extended primitives are defined using language features and based on primitives and `binary` data type.
+2. `string` is defined as an array of `char` data type. The conversion from/to string literals is handled by the compiler.
+3. The initialization of array and map with literals is handled by the compiler by calling appropriate `opCall` functions. Pease refer to corresponding section.
+4. These types are part of `core` package. Please refer to this package documentation for more information about how they work.
 
 ## Tuple
-- You can have tuple literals without name: `var x: Point = {1,10}`
+
+**Semantice**: As a product type, this data type is used to defined a set of coherent variables of different types.
+
+**Syntax**: 
+1. For declaration: `{field1: type1, field2: type2, field3: type3, ...}` 
+2. For literals: `Type{field1=value1, field2=value2, field3=value3, ...}`
+
+**Examples**
+
+1. `var point: {x: int, y:int} = {x=100, y=200}`
+2. `var point_x: int = point.x`
+3. `point.y = point.x + 10`
+4. `var another_point = Point{x=100, y=200}`
+5. `var third_point = Point{200, 400}`
+6. `var fourth_point: {x:int, y:int=123} = {300}`
+
+**Notes**
+
+1. Tuple literal does not need to include type name, if the type can be inferred from the context.
+2. In examples number 4 and 5, we have used `Point` as a type name. Refer to corresponding section for more information about named types.
+3. Compiler will translate tuples to `binary` type with appropriate size.
+4. The example number 6, uses default value for `y` field.
+
+- Fields that start with underscore are considered internal state of the tuple and better not to be used outside the module that defines the type. If you do so, compiler will issue a warning.
+- You can define a tuple literal using `{}` notation: `var t = {field1=10, field2=20}`.
+- If a function expects a specific input type, you can pass a tuple literal, if field order, names and types match.
+- If function expects a specific input type and tuple uses unnamed fields, you can use tuple if order and types match.
+- You can cast a tuple literal to a specific type. `var g = MyTuple{field=10, field2=20}`
 
 ## Polymorphism
+- unions are types based on dynamic type so `type A := union[Shape, Circle]` is valid.
+
 
 ## Union
 
 ## Type alias
 
 ## Named type
+`type bool := union[true, false]`
+
+
 
 ## Label types
 Label types are types that have only one value: Their name. These types can be used as part of enum or a union.
@@ -215,10 +284,6 @@ you can define multiple label types at once: `type A,B,C`
 - There must be a single space between `type` keyword and type name.
 `var x: array[int]` will create an empty array
 
-Note that `val` can only appear on the left side of `=` when it is being declared. What comes on the right side of `=` must be either another val or made val using `@val` or a literal
-val is like a memory cell with a lock on it.
-var is like a memory cell without lock.
-The most primitive type is `binary` which denotes an allocated memory buffer.
 `type array[T] = (size:int, data: binary)` binary means a buffer with size specified at runtime.
 `type array[N: int, T] = (size:int, data: binary[N])` `binary[N]` means N bytes allocated.
 ```
@@ -230,9 +295,7 @@ func get[T](val arr: array[T], index: int) -> val T {
 If we use `get` to read data as `var` from an array which contains value types, we won't have direct access to inside the array. We will receive a copy.
 `type int := binary` compiler will allocate 8 bytes as a binary buffer for int
 `type binary := binary` this is just for documentation. right side same as left side, means it is a native type.
-We have two categories of types: value-type (or valtype) and reference-type (or reftype). binary is the only valtype. Any named type with binary underlying type is valtype. Every other type (tuple or union with tuples) is reftype.
 Union which has only labels (called enum) or has labels and other valtypes, is a valtype, because compiler uses int or a binary buffer to implement it. If it has tuples, it is reftype.
-`function` type is a valtype. Underlying, it is a pointer to a memory location. It is implemented as `int`.
 - You can manage inside a binary buffer and use it as differetn variables.
 ```
 var x: buffer = allocate(16)
@@ -281,98 +344,17 @@ x=y  ;valid
 - We never do implicit casts like int to float.
 - Assigning a value of one named type to variable of a different named type is forbidden, even if the underlying type is the same. 
 
-## Primitive
-There are three primitive data types: `int`, `char` and `float`.
-- **int**: Represents signed integer numbers with 64-bits of data (or 32-bits in 32-bit systems)
-- **float**: Represents a double-precision floating point number (64-bits)
-- **char**: Represents a single character or an unsigned integer number (0 to 255).
 There are two named types which are called "Extended Primitives" because of their internal role in the lagnuage: `bool` and `string`:
 ```
 type bool := true | false
 type string := array[char]
 ```
+`if ( @x == @SAT )` or `if ( x == SAT )`
+
 
 ## Tuple
-- You can prefix a type with a tuple literal to explicitly state it's type. This is not required if type of the variable is stated in the code. 
-`var s = Point{x=10, t=20}`
-`var s: Point = {x=10, y=20}`
-- Tuples are translated to binary type by compiler: e.g. `type Point := {x:int, y:int}` will become:
-`type Point := binary[16], x_offset=0, y_offset=8`
-A tuple is a collection of variables combined together under a single type. This is similar to an array but with different data types for fields. 
-```
-;defining a named type for a tuple
-type Car := Car{ color: int, age: int }
-;defining variables of 'Car' type, initialized with default values
-var x: Car = Car{}
-;if you omit {} part, variable will be initialized with default values automatically
-var d: Car
-;But you can assign values upon declaration:
-var y: Car = Car{ color:100, age=11 }
-;you can cast an anonymous tuple to a specific type
-var z = Car{age=121}
-;you can define an anonymous tuple
-var t1 : {field1: int, field2: string} = {1, "A"}
-;field name is optional for anonymous tuples
-var t2 : {int, string} = {1, "A"}
-;you can use dot notation to assign value for unnamed tuple fields
-t2.1 = "AG"
-;You can specify default values for tuple
-type Car := { color: int, age: int=100 }
 
-var myCar: Car = {color=100, age=20}
-```
-- Fields that start with underscore are considered internal state of the tuple and better not to be used outside the module that defines the type. If you do so, compiler will issue a warning.
-- You can define a tuple literal using `{}` notation: `var t = {field1=10, field2=20}`.
-- If a function expects a specific input type, you can pass a tuple literal, if field order, names and types match.
-- If function expects a specific input type and tuple uses unnamed fields, you can use tuple if order and types match.
-- You can cast a tuple literal to a specific type. `var g = MyTuple{field=10, field2=20}`
 
-## Union
-- `union[int, floatOrString]` will be simplified to `union[int, float, string]`
-`type union := binary` for documentation
-- These types are defined using `union` primitive type.
-- Label types are useful for defining special cases or tags in a union.
-`type bool := union[true, false]`
-`type OptionalInt := union[Nothing, int]`
-- unions are types based on dynamic type so `type A := union[Shape, Circle]` is valid.
-`type MaybeInt := union[int, Nothing]`
-`type SAT, SUN, ... `
-`type DayOfWeek := union[SAT, SUN, ...]`
-`var x: DayOfWeek`
-`if ( @x == @SAT )` or `if ( x == SAT )`
-- compiler will handle allocations for union types based on binary type.
-- You can use `@` to cast a union or check it's actual type.
-`var i, success = @int(x)`
-`if ( @t == @int )`
-
-`type Tree := union[Empty, {node: int, left: Tree, right: Tree}]`
-To match type, you can use if with `@`:
-```
-y = if ( @x ) {
-    @int -> "G",
-    @string -> "H",
-    @float -> "N",
-    else -> "X"
-}
-```
-
-You can define an enum using sum types.
-```
-type DoW := SAT | SUN | ...
-```
-- Note that types inside a union type must not completely overlap (e.g. `Shape | Circle`) is not a valid type.
-- If you try to use a value as a sum type which covers more than one of it's choices there will be an error.
-```
-type First := (x:int)
-type Second := (y: string)
-type S := First | Second ;this is valid because F and S do not overlap
-var t : (x:int, y: string) = (1, "G")
-;t is satisfying both First and Second
-if ( t :: First ) ... true
-if ( t :: Second ) ... true
-var x: S = t ;error
-```
-- You must initialize sum type variables upon initialization.
 
 ## Named Types
 There must be a single space between `type` and name.
@@ -892,6 +874,15 @@ The math operators can be combined with `=` to do the calculation and assignment
 2. `x@T` returns true if x is of type T (Useful only for union and tuple, for other types it is naive).
 3. cast:      `var myInt = @int(myFloat)` for non-union types. 
 4. type assertion: `var myInt, success = @int(intOrFloat)` for union type.
+To match type, you can use if with `@`:
+```
+y = if ( @x ) {
+    @int -> "G",
+    @string -> "H",
+    @float -> "N",
+    else -> "X"
+}
+```
 
 ### Special Syntax
 - `@` casting/type-id
