@@ -252,25 +252,84 @@ dotLang support different types of data and almost all of them are implemented u
 - You can cast a tuple literal to a specific type. `var g = MyTuple{field=10, field2=20}`
 
 ## Polymorphism
-- unions are types based on dynamic type so `type A := union[Shape, Circle]` is valid.
 
+**Semantics**: To be able to substitute tuple type A in place of tuple type B, A must subtype B.
 
-## Union
+**Syntax**: `{ParentType, field1: type1, field2: type2, ...}`
+
+**Examples**
+
+1. `type Shape := { id:int }`
+2. `type Circle := { Shape, radius: float}`
+3. `var my_circle: Circle = {id=100, radius=1.45}`
+
+**Notes**
+1. In the above example, `Shape` is the parent type and `Circle` is derived (or child) type.
+2. Only single inheritance is supported and only tuples can inherit from other tuples.
+3. You can use `my_circle` (which is of type `Circle`) where a `Shape` type is needed. In this case, it will look like it is a `Shape` but in fact it is a `Circle`. So any further processing which can also accept `Circle` will detect this.
+4. You can define a union type which accepts both `Shape` and `Circle`. It will detect the actual type.
+5. Because of polymorphism, each tuple variable has two types: static type defined upon declaration and dynamic type which is specified at runtime.
+6. Polymorphism is tightly related to function dispatch. Please see corresponding section for more infromation.
+7. Note that polymorphism does not apply to generics. So `array[Circle]` cannot substitute `array[Shape]`.
+8. You can embed as many tuples as you want in your tuple, but the first field will be parent.
 
 ## Type alias
 
-## Named type
-`type bool := union[true, false]`
+**Semantics**: To define alternative names for a type
 
+**Syntax**: `type NewName = CurrentName`
 
+**Examples**
+
+1. `type MyInt = int`
+
+**Notes**
+
+1. In the above example, `MyInt` will be exactly same as `int`, without any difference.
+2. This can be used in refactoring process or when there is a name conflict between types imported from different modules. See `import` section for more information.
 
 ## Label types
-Label types are types that have only one value: Their name. These types can be used as part of enum or a union.
-`type ABC`
-`var g: ABC = ABC`
-`if(g==ABC)` true
-`if ( @g == @ABC )` true
-you can define multiple label types at once: `type A,B,C`
+
+**Semantics**: To define types that have only one value: Their name. These types are useful as part of enum or a union.
+
+**Syntax**: `type LabelName`
+
+**Examples**
+
+1. `type true`
+2. `type false`
+3. `type Saturday, Sunday, Monday`
+4. `type Nothing`
+4. `var g: Nothing = Nothing`
+
+**Notes**
+
+1. You can define multiple label types at once (Example number 3).
+
+## Named type
+
+**Semantics**: To introduce new, different types based on existing types (called underlying type).
+
+**Syntax**: `type NewType := UnderlyingType`
+
+**Examples**
+
+1. `type MyInt := int`
+2. `type IntArray := array[int]`
+3. `type Point := {x: int, y: int}`
+4. `type bool := union[true, false]`
+5. `var x: Point = {10, 20}`
+
+**Notes**
+
+1. There must be a single space between `type` and name.
+2. Example number 4, is the standard definition of `bool` extended primitive type based on `union` and label types.
+3. In above examples (like example number 1), note that although their binary data representation is the same, `MyInt` and `int` are two separate types. This will affect function dispatch. Please refer to corresponding section for more information.
+4. You can use casting operator to convert between a named type and it's underlying type. Please refer to corresponding section.
+
+
+ 
+
 
 ## Variables
 - You can declare and assign multiple variables in a single statement:
@@ -352,85 +411,20 @@ type string := array[char]
 `if ( @x == @SAT )` or `if ( x == SAT )`
 
 
-## Tuple
 
 
 
-## Named Types
-There must be a single space between `type` and name.
-You can use `type` to define new type based on an existing type. 
-You can also use it to define a type alias.
-
-```
-type point := int[]
-type x := int    ;x will be an alias for int type
-var a: x  ;=var a: int;
-```
-To use a type:
-```
-var pt: point = (1, 10);
-;you can alias it again
-type mypt := point;
-var xx: mypt = (1, 2);
-```
-You can define functions based on `int` and `X` where `type X := int` and they will be different functions.
-
-Note that when using type for alias to a function, you have to specify input names too.
-`type comparer := func (x:int, y:int) -> bool;`
-If types are compatible (e.g. long and int) you can cast them using: `TypeName(x)` notation. Note that this notation can also be used to specify type of a literal when we can't or don't want to do it using normal notation:
-For example in return statement `return Circle(radius=1)`.
-- Note that you cannot define your own casting function using `@TypeName(x)` name. Here `x` is a code block which will evaluate to something we want to cast. You can write cast functions using a standard name, however.
-- Applications of casting:
-cast between named type and underlying
-cast between elements of union and union type
-cast between subtype and super-type
-cast int to float
-- Casting examples:
-`@int(x)`
-`@string(x)`
-`@OptionalInt(x)`
-`@Point(var)`
-`@Point({x:10, y:20})` --cast a tuple literal
-`@Point[int]({x:10, y:20})` -- casting combined with type specialization
-Casting to a tuple, can accept either a tuple literal or tuple variable or an exploded tuple.
-Note that there is no support for implicit casting functions. If you need a custom cast, write a separate function and explicitly call it.
-
-## Alias
-You can use `type MyInt = int` to define a type alias.
-Type alias is exactly the same as what comes on the right side. There is absolutely no difference.
-This can be used to resolve conflict types when importing modules.
-`type Stack1 = /core/mode1/Stack`
-`type Stack2 = /code/mode2/Stack`
-`type S[T] = Stack[T]`
-`type ST = Stack[int]`
 
 
-## Inheritance and Polymorphism
-- Tuples can inherit from a single other tuple by having it as their first field and defined as anonymous.
-`type Circle := (Shape, ...)`
-- You can define functions on types and specialize them for special subtypes. This gives polymorphic behavior.
-`func paint(o:Shape) {}`
-`func paint(o:any){}`
-`func paint(o:Circle)...`
-`func paint(o:Square)...`
-- Any variable has two types: Static (what is visible in the source code), and dynamic.
-`var c: Shape = createCircle()` - static type is Shape but dynamic type is Circle. 
-- We can keep a list of shapes in an array/collection of type Shape: `var o: Shape[] = [myCircle, mySquare];`
-- You can iterate over shapes in `o` array defined above, and call `paint` on them. With each call, appropriate `paint` method will be called (this appropriate method is identified using 3 dispatch rules explained below).
-- Visible type (or static type), is the type of the variable which can be seen in the source code. Actual type or dynamic type, is it's type at runtime. For example:
-`func create(x:type)->Shape { if ( type == 1 ) return Circle{}; else return Square{}; }`
-Then `var x: Shape = create(y);` static type of `x` is Shape because it's output of `create` but it's dynamic type can be either `Circle` or `Square`.
-Note that this binding is for an explicit function call. when we assign function to a variable, the actual function to be used, is determined at runtime with dynamic dispatch. so `var x = paint` where type of x is `func(Circle, Color)` will find a paint function body with matching input. you can have x of type `func(Shape, Color)` and assign a value to it and expect it to do dynamic dispatch when called at runtime. 
-So if we have this:
-`func paint(o: Square, c: SolidColor)`
-`type Shape := (name: string)`
-`type Circle := (x: Shape)`
-`type Square := (x:Shape)`
-`type Color := ();`
-`type SolidColor := (Color, )`
-a call to paint function with some inputs, will use above 3 rules to dispatch.
-- suppose we have `Base` type and `Derived` types. Two methods `add` and `addAll` are implemented for both of them.
-if `addAll(Derived)` calls `addAdd(Base)` which in turn calls `add(Base)` then a call to `addAll(Derived)` will NOT call `add(Derived)` but will call `add(Base)`. When `addAll(Base)` is called, it has a reference to `Base` not a `Derived`. 
+
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
+
+# Functions
+- If you want dispatch with static type, cast the argument to static type.
+If a function expects `x: Stack[Shape]` you cannot send `Stack[Circle]`.
+
+explain relation with subtyping
 Example about inheritance, polymorphism and subtyping:
 ```
 type Shape := {}
@@ -456,22 +450,15 @@ for(Hobby h: all) Draw(h,1,"")
 var t: Shape = myOtherShape
 var r: BasicShape = myCircle ;automatic casting - because Circle inherits from BasicShape
 ```
-if a function expects `f: func()->Shape` you can send a function which returns a Circle, because there are implicitly castable.
-If a function expects `x: Stack[Shape]` you cannot send `Stack[Circle]`.
-- You can embed as many types as you want in your tuple, but the first field will be parent.
-- To redirect a function to another one with types in the same hierarchy, you need to cast the argument.
-`func process(Circle, SolidColor) -> process(%Shape{c}, %Color{sc})`
-```
-type Dot := { x: int }
-type Point := { data: string, x: int }
-func process(p: Dot) ...
-```
-How can I pass a Dot to process function? You need to write a proxy function:
-`func process(p: Point) -> process(Dot{p.x})`
 
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
+- section: function pointer. state it's binding is explicit without dynamic dispatch.
+- You can define functions on types and specialize them for special subtypes. This gives polymorphic behavior.
+`func paint(o:Shape) {}`
+`func paint(o:any){}`
+`func paint(o:Circle)...`
+`func paint(o:Square)...`
 
-# Functions
+
 - `type NoReturnFunc[T] := func(T)`
 - You can use `_` to ignore a function output: `var t, _ = my_map("key1")`
 - A function can return multiple outputs:
@@ -579,6 +566,7 @@ func process(x: int) -> process(x, 10, 0)
 `func process() -> x:int `
 
 ## Method call resolution
+- explain named and underlying type role indispatch
 If no function is defined for a named type but for it's underlying type, that one will be called.
 
 Method call is done using full dynamic match. Developer has to define appropriate functions or forwarding functions. This will impose a bit of burden on developer but will simplify compiler, increase method call performance and make code more clear and understandable. No unexpected method call.
@@ -883,6 +871,21 @@ y = if ( @x ) {
     else -> "X"
 }
 ```
+- Applications of casting:
+cast between named type and underlying
+cast between elements of union and union type
+cast between subtype and super-type
+cast int to float
+- Casting examples:
+`@int(x)`
+`@string(x)`
+`@OptionalInt(x)`
+`@Point(var)`
+`@Point({x:10, y:20})` --cast a tuple literal
+`@Point[int]({x:10, y:20})` -- casting combined with type specialization
+Casting to a tuple, can accept either a tuple literal or tuple variable or an exploded tuple.
+Note that there is no support for implicit casting functions. If you need a custom cast, write a separate function and explicitly call it.
+
 
 ### Special Syntax
 - `@` casting/type-id
@@ -963,6 +966,14 @@ These declarations will be only available inside if/else block.
 
 
 ## import
+
+This can be used to resolve conflict types when importing modules.
+`type Stack1 = /core/mode1/Stack`
+`type Stack2 = /code/mode2/Stack`
+`type S[T] = Stack[T]`
+`type ST = Stack[int]`
+
+- Exaplein how type alias can be used.
 - There must be a single space between `import` keyword and it's contents.
 You can import a source code file using below statement. Note that import, will add symbols (functions and types) inside that source code to the current symbol table:
 - You can only import one module in each import statement (No wildcard).
