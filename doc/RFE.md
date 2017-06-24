@@ -1757,3 +1757,19 @@ Then how can we fetch the second case?
 ? - what is the difference between single and double quote string literals?
 
 ? - can we use `@` to cast from literal tuple to typed?
+or an untyped tuple to typed?
+
+? - can child type re-defined parent type fields?
+
+? - do we have fragile base class problem?
+```
+func inc1(s:Shape) -> inc2(s)
+func inc2(s:Shape) -> s.counter++
+
+func inc2(c: Circle) -> inc1(c)
+```
+No. Parent can enforce dispatch using static type.
+
+? - Note that when using type for alias to a function, you have to specify input names too.
+`type comparer := func (x:int, y:int) -> bool;`
+?
