@@ -1749,3 +1749,11 @@ The common cases:
 And the compiler should keep track of a variable to know if it is a ref or not.
 So let's make these changes: Remove the concept of pointer or reference + all it's related notations.
 
+
+? - Can a union contain unnamed types?
+`type A := union[int, {x:int, y:int}]`?
+Then how can we fetch the second case?
+
+? - what is the difference between single and double quote string literals?
+
+? - can we use `@` to cast from literal tuple to typed?
