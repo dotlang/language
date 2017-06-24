@@ -114,14 +114,20 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 dotLang support different types of data and almost all of them are implemented using `binary` data type. `binary` type represents a buffer allocated in memory. Although in some cases compiler provides syntax sugar for primitive types (e.g. defining an `int` variable will allocate 8 bytes of `binary` type), but you can directly use `binary` type to implement your own custom data types (instead of using existing pre-defined types).
 
 ## Variabe declaration
+
 **Semantic**: Used to pre-declare the memory you need to store result of computations.
+
 **Syntax**: `(var|val) IDENTIFIER (':' type | ':' type '=' exp | '=' exp)`
+
 **Examples**:
+
 1. `var x:int = 12`
 2. `val y:string = 'Hello world!'`
 3. `var g = 19`
 4. `var count : int`
+
 **Notes**
+
 - You cannot use an uninitialized variable. If you do, you will receive a compiler error.
 - Every variable must have a type either explicitly specified or implicitly inferred from assignment.
 - `var` or `val` are storage qualifiers and are explained in `Immutability` section.
