@@ -46,18 +46,21 @@ As a 10,000 foot view of the language, code is written in files (called modules)
 
 ## Comparison with other languages
 
-**Compared to C**: dotLang is C language + Garabage collector + first-class functions + template programming + better union data types + module system + powerful polymorphism + simple and powerful standard library + lambda expressions + closure + powerful built-in data types (map, string,...) + multiple dispatch + sane defaults + better immutability - ambiguities - pointers - macros - header files.
+**Compared to C**: dotLang is C language + Garabage collector + first-class functions + template programming + better union data types + module system + powerful polymorphism + simple and powerful standard library + lambda expressions + closure + powerful built-in data types (map, string,...) + multiple dispatch + sane defaults + better immutability + concepts and axioms - ambiguities - pointers - macros - header files.
 
-**Compared to Scala**: Scala + multiple dispatch + custom immutability - dependency on JVM - cryptic syntax - trait - custom operators - variance - implicit.
+**Compared to Scala**: Scala + multiple dispatch + custom immutability + concepts and axioms  - dependency on JVM - cryptic syntax - trait - custom operators - variance - implicit.
 
-**Compared to Go**: Go + generics + immutability + multiple dispatch + sum types + sane defaults + better orthogonality (e.g. creating maps) + simpler primitives - pointers - interfaces - global variables.
+**Compared to Go**: Go + generics + immutability + multiple dispatch + sum types + sane defaults + better orthogonality (e.g. creating maps) + simpler primitives + concepts and axioms  - pointers - interfaces - global variables.
 
 
-## Subsystems
+## Components
 
-- Runtime system: Responsible for memory allocation and management, interaction with the Operating System and other external libraries and handling concurrency.
-- Core: This package is used to implement some basic, low-level features which can not be simply implemented using pure dotLang language.
-- Std: A layer above runtime and `core` which contains some general-purpose and common functions and data structures.
+dotLang consists of these components:
+1. The language specification (this document)
+2. A command line tool to compile, debug and package applications
+3. Runtime system: Responsible for memory allocation and management, interaction with the Operating System and other external libraries and handling concurrency.
+4. Core library: This package is used to implement some basic, low-level features which can not be simply implemented using pure dotLang language.
+5. Standard library: A layer above runtime and `core` which contains some general-purpose and common functions and data structures.
 
 ## Code organization
 
@@ -70,16 +73,17 @@ core
 |-----|-----http  
 |-----|-----tcp  
 ```
-In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages.
+In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages.
 - Unlike many other languages, modules are stateless. Meaning there is no variable or static code defined in a module-level.
 
 ## General rules
-- **Encoding**: Source code files are encoded in UTF-8 format.
-- **Whitespace**: Any instance of space(' '), tab(`\t`), newline(`\r` and `\n`) are whitespace and will be ignored. - **Indentation**: Indentation must be done using spaces, not tabs. 
-- **Comments**: `;` is used to denote comment. It must be either first character of the line or follow a whitespace.
+- **Encoding**: Modules are encoded in UTF-8 format.
+- **Whitespace**: Any instance of space(' '), tab(`\t`), newline(`\r` and `\n`) are whitespace and will be ignored. 
+- **Indentation**: Indentation must be done using spaces, not tabs. Using 4 spaces is advised but not mandatory.
+- **Comments**: `;` is used to start a comment. It must be either first character of the line or follow a whitespace.
 - **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0b0101011101` binary number. You can separate digits using undescore: `1_000_000`.
 - **Terminator**: Each statement must be in a separate line and must not end with semicolon.
-- **Order**: Each source code file contains 3 sections: import, definitions and function. The order of the contents of source code file matters: `import` section must come first, then type and protocol declarations and then functions come at the end. If the order is not met, compiler will give warnings.
+- **Order**: Each source code file contains 3 sections: import, definitions and function. The order of the contents of source code file matters: `import` section must come first, then declarations and then functions come at the end. If the order is not met, compiler will give errors.
 - Import section is used to reference other modules that are being used in this module.
 - Definitions section is used to define data types and protocols.
 - Function section is used to define function bodies.
@@ -88,34 +92,43 @@ In the above examples `/core/sys, /core/net, /core/net/http, /core/net/tcp` are 
 - **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeType`, `MyProtocol`, `my_package_or_module`. If these are not met, compiler will give warnings. Primitives (binary, int, float, char), and types defined in core (bool, array, map, string) are the only exceptions to naming rules.
 
 ## Language in a nutshell
-1. **Primitives**: `binary` (extended primitives: `int`, `float`, `char`, `string`, `bool`).
+1. **Primitives**: `int`, `float`, `char`, `union` (Extended primitives: `bool`, `array`, `string`, `map`).
 2. **Tuple**: `type Point := {x: int, y:int, data: float}`.
-3. **Variable**: `var location: Point = { x=10, y=20, data: 1.19 }`.
+3. **Variable**: `var location: Point = { x=10, y=20, data=1.19 }`.
 4. **Inheritance**: By embedding (only for tuples), `type Circle := {Shape, radius: float}`.
 5. **Array**: `var JobQueue: array[int] = [0, 1, 2, 3]`.
 6. **Generics**: `type Stack[T] := { data: array[T], info: int }`.
-7. **Union**: `type Tree[T] := Empty | T | { root: T, left: Tree[T], right: Tree[T] }`.
+7. **Union**: `type Optional[T] := union[Nothing, T]`.
 8. **Map**: `var CountryPopulation: map[string,int] = [ "US": 300, "CA": 180, "UK":80 ]`.
 9. **Function**: `func calculate(x: int, y: string) -> float { return if ( x > 0 ) 1.0 else 2.0  }`.
 10. **Import**: `import /core/std/Queue`.
-11. **Immutability**: `val x: int = 12`, no change or re-assignment to `x` is allowed.
+11. **Immutability**: `val x: int = 12` (no change or re-assignment to `x` is allowed).
 12. **Assignment**: `A=B` makes a copy of B's data into A.
-14. **Casting**: `var pt = Point[int]({ x=10, y=20, data=1.11 })`.
-15. **Lambda**: `var adder: func(var int,var int)->val int = (x,y) -> x+y`.
-16. **Protocols**: `protocol Comparable[T] := { func compare(x:T, y:T)->int }`, `func sort[T: Comparable](x:array[T])`.
+14. **Casting**: `var pt = @Shape(myCircle)`.
+15. **Lambda**: `var adder: func(var:int,var:int)->val:int = (x,y) -> x+y`.
+16. **Protocols**: `protocol Comparable[T] := { func compare(T, T)->int }`, `func sort[T](x:array[T]) +Comparable`.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Type System
-- Every variable declaration must be initialized by the developer. If they use uninitialized data, compiler will issue an error.
+dotLang support different types of data and almost all of them are implemented using `binary` data type. `binary` type represents a buffer allocated in memory. Although in some cases compiler provides syntax sugar for primitive types (e.g. defining an `int` variable will allocate 8 bytes of `binary` type), but you can directly use `binary` type to implement your own custom data types (instead of using existing pre-defined types).
 
-## Variabe definition
-- The devloper simply defines whether data is mutable or no. The compiler will handle cases where keeping a reference is needed/more efficient than the data.
-- Storage class, type: `storage_class var_name: type = rvalue`
-- Every variable must have a type. You define variables using `var` keyword: `var x: int` (This defined a new variable named `x` which is an integer number).
-- Each variable must have a value upon declaration. Either you assign a value explicitly or compiler will set default value of that type.
+## Variabe declaration
+**Semantic**: Used to pre-declare the memory you need to store result of computations.
+**Syntax**: `(var|val) IDENTIFIER (':' type | ':' type '=' exp | '=' exp)`
+**Examples**:
+1. `var x:int = 12`
+2. `val y:string = 'Hello world!'`
+3. `var g = 19`
+4. `var count : int`
+**Notes**
+- You cannot use an uninitialized variable. If you do, you will receive a compiler error.
+- Every variable must have a type either explicitly specified or implicitly inferred from assignment.
+- `var` or `val` are storage qualifiers and are explained in `Immutability` section.
+- `exp` is an expression which means it can either be a literal, function call, another variable or a complex expression.
 
 ## Immutability
+
 
 ## Assignment
 
