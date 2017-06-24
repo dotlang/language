@@ -119,12 +119,13 @@ dotLang support different types of data and almost all of them are implemented u
 
 **Syntax**: `(var|val) IDENTIFIER (':' type | ':' type '=' exp | '=' exp)`
 
-**Examples**:
+**Examples**
 
 1. `var x:int = 12`
 2. `val y:string = 'Hello world!'`
 3. `var g = 19`
 4. `var count : int`
+5. `var:int`
 
 **Notes**
 
@@ -132,15 +133,56 @@ dotLang support different types of data and almost all of them are implemented u
 - Every variable must have a type either explicitly specified or implicitly inferred from assignment.
 - `var` or `val` are storage qualifiers and are explained in `Immutability` section.
 - `exp` is an expression which means it can either be a literal, function call, another variable or a complex expression.
+- There must be a single space between `var` or `val` keyword and the idenfitier (if there is an identifier).
+- Example number 5 represents a case where only immutability and type is important. More explanation in `protocol` and `function` section.
 
 ## Immutability
 
+**Semantics**: To declare whether a piece of data is modifiable or not.
+
+**Syntax**: `(var|val) identifier : type`
+
+**Examples**
+
+1. `var x = 12`, `x++` - increase value of x to hold `13`
+2. `val x = 12`, `x++` - compiler error!
+3. `val x = 12`, `x=19` - compiler error
+
+**Notes**
+
+1. You can define immutability status of local variables, function inputs and function outputs.
+2. For function input and output, the immutability specification is optional. If it is missing, it means it can accept either a `var` or a `val` but should be treated like a `val`.
+3. It is encouraged to use immutable data specially in concurrent applications.
 
 ## Assignment
 
+**Semantics**: To make a copy of a piece of data (called rvalue) and put it somewhere else (called lvalue).
+
+**Syntax**: `lvalue = rvalue`
+
+**Examples**
+
+1. `x = 10`
+2. `x = y`
+3. `x = y + 10 - z`
+4. `x = func1(y) + func2(z) - 10`
+5. `x,y = 1,2`
+
+**Notes**:
+
+1. `lvalue` is the identifier which is on the left side of assignment operator `=`. It must be a single identifier.
+2. If assignment is done in a variable declaration statement, lvalue can be an immutable variable. Otherwise lvalue must be mutable.
+3. In case rvalue is a temporary variable (a variable created during a computation which is transparent from the developer), compiler may decide to re-use that temporary variable to save space and increase performance.
+
 ## Primitives
 
+**Semantics**: Provide basic tools to define 
+Primitive data types: `int`, `float`, `char`, `union`
+
+
 ## Extended primitives
+Extended data types: `bool`, `array`, `string`, `map`
+
 
 ## Tuple
 - You can have tuple literals without name: `var x: Point = {1,10}`
@@ -170,7 +212,6 @@ you can define multiple label types at once: `type A,B,C`
 ========================================
 
 ## Rules
-- Note that you cannot re-assign `val` to something else with `=`. Because other parts of the code may have a copy of it and re-assign may change their data: `val x = 12, process(x), x=19` this will change what x points to. so any thread inside process will have a value which point to 19 instad of 12.
 - There must be a single space between `type` keyword and type name.
 `var x: array[int]` will create an empty array
 
