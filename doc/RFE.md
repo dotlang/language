@@ -1983,13 +1983,11 @@ N - Can a union contain unnamed types?
 `type A := union[int, {x:int, y:int}]`?
 Then how can we fetch the second case? No!
 
-? - Make notation for protocol usage cleaner.
-
+Y - Make notation for protocol usage cleaner.
 `protocol Eq[T] := +Ord[T] { func compare(T,T)->bool }`
 `func isInArray[T](x:T, y:array[T]) +Eq[T] -> bool { loop(var n: T <- y) {if ( equals(x,n) ) return true} return false }`
 `type Set[T] := +comprbl[T] +prot2[T] array[T]`
 `type T1[T,U,V] := +prot1[T] +prot2[T] +prot3[T,U] +prot4[T,V] ...`
-
 `T:protocol` is the shortcut for cases where there is only one generic type.
 `protocol Eq[T:Ord] := { func compare(T,T)->bool }`
 `protocol Eq[T: T+Ord] := { func compare(T,T)->bool }`
@@ -2001,13 +1999,14 @@ we can say no need to define protocol for types. Instead define them on function
 So set is: `type Set[T] := array[T]`. and in related functions, we make sure
 `func addToSet[T: Ord](s: Set[T], x: T)...`
 But adding it like implicit arg will make things complicated. It is optional and we need to add some more rules regarding order of arguments.
-`protocol Eq[T:Ord] := { func compare(T,T)->bool }`
-`protocol Eq[T: Ord(T)] := { func compare(T,T)->bool }`
+`protocol Eq[T:Ord1, Ord2] := { func compare(T,T)->bool }`
+`protocol Eq[T: Ord(T), Ord2(T)] := { func compare(T,T)->bool }`
 `func isInArray[T,V: Eq(T), prot2(T,V)](x:T, y:array[T]) -> bool { ... }`
 `type Set[T,V : comprbl(T), prot2(T), prot3(T,V)] := array[T,V]`
-`type T1[T,UV, : prot1(T), prot2(T), prot3(T,U), prot4(T,V)] := ...`
+`type T1[T,U, V, : prot1(T), prot2(T), prot3(T,U), prot4(T,V)] := ...`
+`func isInArray[T,V: Eq(T), prot2(T,V), T.Field1](x:T, y:array[T]) -> bool { ... }`
 
-? - Is this the best syntax for union with all types conforming to X?
+Y - Is this the best syntax for union with all types conforming to X?
 `union[+ShpProtocol]`
 What about a union with all types that have a specific field or property?
 union of all types that embed Shape?
@@ -2024,8 +2023,36 @@ this is super confusing! `and, or` , multiple protocol, combining protocol and d
 `type u2 := union[T: ShpProtocol]`
 `type u3 := union[T: ShpProtocol(T, int), OtherProt(float, T)]`
 `type u4 := union[T: T.ParentTuple1, T.ParentTuple2]` all types that embed these two parents
-`type u5 := union[T: Prot1(T), T.Tuple1]` combine both
+`type u5 := union[T: Prot1(T), T.Tuple1]` combine both.
+We define a union like a protocol.
+Why not use the same syntax for protocol? type must have this field?
+Then the restrction will be unified for protocol, type, function and union.
 
+Y - General structure for generic parameters constraint. Applicable when defining a protocol, type, function or union.
+`[T1,T2,T3,... : Cons1, Cons2, Cons3, ...]`
+`Consi = ProtocolCons | FieldCons`
+`ProtocolCont = ProtocolName(T1, T2, T3, ...)`
+`FieldCons = T1.Field1`
+For protocol, constraint specifies the which types can implement this protocol (pre-requirements).
+For function, it specifies which types can be used to call this function.
+For types, it specifies which types can be used to instantiate this type.
+For union, it specifies which types are possible options for this union.
+Constraint: General selection syntax to filter specific types.
+Simplest constraint: `T` which means all possible types. `union[T]` means every possible type?
+Type filter is a better name.
 
-? - with the new notation for contain and delegate, what happens to automatically fwd methods by compiler?
+N - Type filter for protocol can be mistaken with function call.
+But I don't want to re-use `[]` because it will be confusing.
+
+Y - Add a section for phantom types and explain it can be implemented using named types or unused generic vars.
+
+Y - with the new notation for contain and delegate, what happens to automatically fwd methods by compiler?
 Shall we do that? or let developer write them?
+`func process(s: Shape)...`
+`func process(c: Circle->Shape)`? automatic? No. must be manual.
+
+Y - Note that when I call `process(myIntOrFloat)` with union, it implies that there must be functions for both int and union (or a func with union type).
+
+? - Implement STM. Everything immutable except inside a function. remove `var` and `val`.
+can this simplify the language?
+This will affect: keywords, all definitions for protocol and func, 
