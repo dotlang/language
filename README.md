@@ -20,7 +20,7 @@ June 2, 2017
 - **Version 0.9**: May 8 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
 - **Version 0.95**: May 23 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.98**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed Phantom types section as they can be implemented with named types, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, some clarifications about `opCall`, removed concept of reference/pointer and handle references behind the scene.
+- **Version 0.99**: ??? ??? ???? - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, defined `opCall` to support indexing array and hash, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed Phantom types section as they can be implemented with named types, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, some clarifications about `opCall`, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically)
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
@@ -418,6 +418,7 @@ type string := array[char]
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Functions
+- Note that when I call `process(myIntOrFloat)` with union, it implies that there must be functions for both int and union (or a func with union type).
 - explain fwd functions
 - We solve expression problem by using open functions.
 - If you want dispatch with static type, cast the argument to static type.
@@ -578,12 +579,7 @@ Above means, any call to `process` with any of `Polygon, Square, Circle` and any
 You can mix forwarded arguments with normal arguments:
 `func process(float, Polygon|Square|Circle->Shape, string, int, GradientColor|SolidColor->Color, int)`
 Note that any argument can only be forwarded to a parent type.
-- For functions that have only one input of type tuple, forwarding functions are automatically generated by the compiler.
-e.g. `func process(Circle->Shape)`.
-So forwarding function is automatically generated for `func process(x: Shape|int, y: float)`.
-For `func process(x: Shape|int, y: Color|float)` forwarding is generated for cases where either x is int or y is float.
-`func process(x: Circle->Shape, y:float)`
-`func process(x:int, y:SolidColor->Color)`
+- No forwarding function is automatically generated.
 - Suppose that we have `binary -> Shape -> Polygon -> Square` types.
 and: `type MyType := Square`
 then: `MyType -> MyChild -> MyGrandChild`
@@ -712,6 +708,9 @@ var yy: string = magic(y)
 
 For generic functions, any call to a function which does not rely on the generic type, will be checked by compiler even if there is no call to that generic function. Any call to another function relying on generic argument, will be checked by compiler to be defined.
 
+## Phantom types
+Explain about usage + can also be implemented using named types.
+
 ## Protocols
 - You can use this notation to define a union which can accept any type that confirms to `ShpProtocol`: `type Shapes := union[+ShpProtocol]`. Compiler will generate list of types.
 - There can be no impl on a protocol.
@@ -829,6 +828,28 @@ For example you can define a set only for types which are comparable. We cannot 
 - if a protocol has a default implementation for a function and generic type does not implement that function, the default implementation will be used. This can be used to check data of a generic type:
 `protocol HasId[T] := { func getId[T](x: T)->x.id }`?
 `func process[T] HasId[T]` you can only pass tuples that have `id` field (or simulate it with your own functions).
+
+## Type filter
+You can use type filter expression when specifying generic arguments (in protocol, function, type or union) to filter possible types that can be used.
+You can use type filter to restrict valid generic types based on protocol or fields they have (for tuples) or being tuple.
+General syntax: `[T1,T2,T3,... : Filter_1 + Filter_2 + Filter_3, ...]`
+`Ti` are generic type names.
+`Filter_i` are type filters.
+`Filter_i = ProtocolFilter | FieldFilter | TupleFilter`
+`ProtocolFilter = ProtocolName(T1, T2, T3, ...)` if there is only one type can be shortcut to: `ProtocolName`
+`FieldFilter = T1.Field1`
+`TupleFilter = T1.`
+Note that for union you can only use one type.
+For protocol, type filter specifies which types can implement this protocol (pre-requirements).
+For function, it specifies which types can be used to call this function.
+For types, it specifies which types can be used to instantiate this type.
+For union, it specifies which types are possible options for this union.
+Examples:
+`type u5 := union[T: Prot1 + T.Tuple1]` 
+`protocol Eq[T:Ord1, Ord2] := { func compare(T,T)->bool }`
+`type Set[T,V : comprbl(T), prot2(T), prot3(T,V)] := array[T,V]`
+`func isInArray[T,V: Eq(T), prot2(T,V), T.Field1](x:T, y:array[T]) -> bool { ... }`
+
 
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
@@ -1210,7 +1231,7 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Plugin system to load/unload libraries at runtime
 - Debugger and plugins for Editors
 - Atomic operations, mutex and other locking features.
-- Testing
+- Testing facilities
 - Define a notation to access a location inside a binary and sizeof function
 - Actor/Message passing helpers for concurrency.
 - Helper functions to work with binary (memcpy, memmove, ...)
