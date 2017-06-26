@@ -186,19 +186,48 @@ dotLang support different types of data and almost all of them are implemented u
 1. `var x:int = 12`
 2. `var x:float = 1.918`
 3. `var x:char = 'c'`
-4. `var intFloat: union[int, float] = 11.192`
-5. `var maybe_int: union[int, Nothing]`
-6. `var day_of_week: union[SAT, SUN, MON, TUE, WED, THU, FRI]`
+4. `var day_of_week: union[SAT, SUN, MON, TUE, WED, THU, FRI]`
 
 **Notes**:
+
 1. `int` type is a signed 8-byte integer data type.
 2. `float` is double-precision 8-byte floating point number.
 3. `char` is a single character, represented as an unsigned byte.
-4. `union` is a meta-type which can take form of different data types. It uses generic programming features which are explained in corresponding section.
-5. `union[int, floatOrString]` will be simplified to `union[int, float, string]`
-6. The identifiers used in example number 5 and 6 are called "label types" and are explained in the corresponding section.
-7. You should use type-opertor `@` to work with union types. Refer to corresponding section for more information.
-8. Compiler will convert a union data type to corresponding `binary` type with appropriate tagging.
+4. The identifiers used in example number 4 is called "label types" and are explained in the corresponding section.
+5. Character literals should be enclosed in single-quote.
+6. For `union` type, refer to the next section.
+
+## Union
+
+**Semantics**: A primitive meta-type to provide same interface which can contain different types
+
+**Syntax**: `union[type1, type2, ...]`
+
+**Examples**
+
+1. `var maybe_int: union[int, Nothing]`
+2. `var int_or_float: unon[int, float]`
+3. `int_or_float = 12`
+4. `int_or_float = 1.212`
+5. `var has_int: bool = int_or_float.(int)`
+6. `var int_value, success = int_or_float.(int)`
+7. 
+```
+var stringed = if ( int_or_float ) {
+    (int) -> ["int" , toString(int_or_float)],  ;inside this block, int_or_float is automatically treated like an int
+    else -> "Not_int"
+}
+```
+
+**Notes**
+
+1. `union` is a meta-type which can take form of different data types. It uses generic programming features which are explained in corresponding section. For more information refer to the next section.
+2. Types inside union definition must be named types. Refer to corresponding section.
+3. `union[int, floatOrString]` will be simplified to `union[int, float, string]`
+4. Compiler will convert a union data type to corresponding `binary` type with appropriate tagging.
+5. Example 5: In a boolean or single-var context, `x.(type)` evaluates to a bool indicating true if `x` contains given type.
+6. Example 6: If `x.(int)` is used otherwise it evaluate to an integer and a boolean indicating desired type and a flag for whether casting is successfull or no.
+7. You can use `x.(type)` notation in a block-if (Example 7). Refer to corresponding section for more information about `if`.
 
 ## Extended primitives
 
@@ -221,6 +250,8 @@ dotLang support different types of data and almost all of them are implemented u
 2. `string` is defined as an array of `char` data type. The conversion from/to string literals is handled by the compiler.
 3. The initialization of array and map with literals is handled by the compiler by calling appropriate `opCall` functions. Pease refer to corresponding section.
 4. These types are part of `core` package. Please refer to this package documentation for more information about how they work.
+5. String literals should be enclosed in double quotes. 
+6. String litearls enclosed in backtick can be multi-line and escape character `\` will not be processed in them.
 
 ## Tuple
 
@@ -251,12 +282,14 @@ dotLang support different types of data and almost all of them are implemented u
 - If a function expects a specific input type, you can pass a tuple literal, if field order, names and types match.
 - If function expects a specific input type and tuple uses unnamed fields, you can use tuple if order and types match.
 - You can cast a tuple literal to a specific type. `var g = MyTuple{field=10, field2=20}`
+- You can use cast operator to cast a variable initialized with tuple literal to a specific type.
 
-## Polymorphism
 
-**Semantics**: To be able to substitute tuple type A in place of tuple type B, A must subtype B.
+## Composition
 
-**Syntax**: `{ParentType, field1: type1, field2: type2, ...}`
+**Semantics**: To be able to re-use data defined in another tuple.
+
+**Syntax**: `{Parent1Type, field1: type1, field2: type2, Parent2Type, ...}`
 
 **Examples**
 
@@ -265,14 +298,13 @@ dotLang support different types of data and almost all of them are implemented u
 3. `var my_circle: Circle = {id=100, radius=1.45}`
 
 **Notes**
-1. In the above example, `Shape` is the parent type and `Circle` is derived (or child) type.
-2. Only single inheritance is supported and only tuples can inherit from other tuples.
-3. You can use `my_circle` (which is of type `Circle`) where a `Shape` type is needed. In this case, it will look like it is a `Shape` but in fact it is a `Circle`. So any further processing which can also accept `Circle` will detect this.
+1. In the above example, `Shape` is the contained type and `Circle` is container type.
+2. The language provides pure "contain and delegate" for a limited form of subtyping.
+3. A tuple can embed as many other tuples as it wants and forward function calls to itself to functions to other embedded tuples. Refer to function section for more information about forwarding functions.
 4. You can define a union type which accepts both `Shape` and `Circle`. It will detect the actual type.
-5. Because of polymorphism, each tuple variable has two types: static type defined upon declaration and dynamic type which is specified at runtime.
-6. Polymorphism is tightly related to function dispatch. Please see corresponding section for more infromation.
-7. Note that polymorphism does not apply to generics. So `array[Circle]` cannot substitute `array[Shape]`.
-8. You can embed as many tuples as you want in your tuple, but the first field will be parent.
+5. To have dynamic polymorphism, you can use `union`: `var result: union[Circle, Square] = createShape()`
+6. Note that polymorphism does not apply to generics. So `array[Circle]` cannot substitute `array[Shape]`.
+7. We use closed recursion to dispatch function calls. This means if a function call is forwarded from `Circle` to `Shape` and inside that function another second function is called which has candidates for both `Circle` and `Shape` the one for `Shape` will be called.
 
 ## Type alias
 
@@ -386,6 +418,8 @@ type string := array[char]
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Functions
+- explain fwd functions
+- We solve expression problem by using open functions.
 - If you want dispatch with static type, cast the argument to static type.
 If a function expects `x: Stack[Shape]` you cannot send `Stack[Circle]`.
 
@@ -531,6 +565,8 @@ func process(x: int) -> process(x, 10, 0)
 `func process() -> x:int `
 
 ## Method call resolution
+- We can have dynamic dispatch by using union. When I call `process(intOrFloat)` based on the type inside union, either process for int or the one for float will be called.
+- There will be no dynamic type. When you write `var s: Shape = createCircle()` you have only a Shape. Because `=` is supposed to make a data-copy. If you need to support both use union. For example for array storage define array of type `union[Circle, Square]`.
 - explain named and underlying type role indispatch
 If no function is defined for a named type but for it's underlying type, that one will be called.
 
@@ -586,6 +622,10 @@ add(y=19)
 Each function call will be dispatched to the implementation with highest priority according to matching rules. 
 
 ## Lambda expression
+A function type should not include parameter name because they are irrelevant.
+A lambda variable can omit types because they can be inferred: `var x: comparer = (x,y) -> ...`
+A function literal which does not have a type in the code, must include argument name and type. `(x:int)->int { return x+1 }(10)` or `var fp = (x:int)->int { return x+1}`
+
 - closure capturing: It captures outside vars and vals. Can change vars.
 - Even if a lambda has no input/output you should write other parts: `() -> { printf("Hello world" }`
 You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too, also  `func` keyword is not needed. The essential part is input and `->`.
@@ -673,22 +713,18 @@ var yy: string = magic(y)
 For generic functions, any call to a function which does not rely on the generic type, will be checked by compiler even if there is no call to that generic function. Any call to another function relying on generic argument, will be checked by compiler to be defined.
 
 ## Protocols
-- Protocol functions which have a body, don't need to be implemented
+- You can use this notation to define a union which can accept any type that confirms to `ShpProtocol`: `type Shapes := union[+ShpProtocol]`. Compiler will generate list of types.
+- There can be no impl on a protocol.
+- If there is common behavior, use protocol. If there is common data, use composition.
 - You can also include storage class in a function signature in a protocol:
 `protocol Stringer[T] := { func toString(val:T) }`
 
-- A type definition can require a protocol without input type which implies that protocol is enforced with the parent type meaning there are functions based on that protocol for the given type:
-```
-protocol Disposable[T] := { func dispose(T) }
-type FileHandle := +Disposable int
-```
-But this is not mandatory.
-- Syntax to enforce protocol:
+- Syntax to enforce protocol (for protocol, function and type):
 `protocol Eq[T] := +Ord[T] { ... }`
 `func isInArray[T](x:T, y:array[T]) +Eq[T] -> bool { loop(var n: T <- y) {if ( equals(x,n) ) return true} return false }`
 `type Set[T] := +comprbl[T] +prot2[T] array[T]`
 
-- Bodyless functions in a protocol, imply they must be implemented by the developer. Functions that have a body, must have bool output and are called axioms. They are called to explain the semantics of the protocol.
+- Bodyless functions in a protocol, imply they must be implemented by the developer.
 - You can inherit from another protocol:
 `protocol Eq[T] := +Ord[T] { ... }`
 - There must be a single space between `protocol` keyword and the protocol name.
@@ -710,10 +746,6 @@ When defining a protocol, argument names shoud be eliminated.
 protocol Eq[T] := {
     func equals(T,T)->bool
     func notEquals(T,T)->bool
-    func default(x: T, y: T) -> equals(x,y) => not notEquals(x,y)
-    func identity(x: T) -> equals(x,x)
-    func reflectivity(x: T, y:T) -> equals(x,y) => equals(y,x)
-    func transitivity(x,y,z: T) -> (equals(x,y) and equals(y,z)) => equals(x,z)
 }
 type Point := {x:int, y:int}
 ;here we are implementing protocol Eq[Point]
@@ -817,30 +849,19 @@ The math operators can be combined with `=` to do the calculation and assignment
 - We don't have operators for bitwise operations. They are covered in core functions. 
 - `equals` functions is used for equality check.
 - You can have multiple assignments at once: `x,y=1,2`
-- Assignment semantics: `x=y` will duplicate contents of y into x (same as `*x=*y` in C++). So if rvalue is a temp variable (e.g. `x=1+y`), it will be a ref-assign handled by the compiler. If you want to ref-assign you should use `:=` notation.
+- Assignment semantics: `x=y` will duplicate contents of y into x (same as `*x=*y` in C++). So if rvalue is a temp variable (e.g. `x=1+y`), it will be a ref-assign handled by the compiler. If you want to ref-assign you should use `:=` notation. Note that for assignment lvalue and rvalue must be of the same type. You cannot assign circle to Shape because as copy is done, data will be lost (you can refer to `.Shape` field in the Circle).
 - Ref-Assignment: This is mostly used to work with very large data structures where assignment by copy is expensive: `var x = getLargeBuffer()` -> `var x := getLargeBuffer()`. Other use cases: working with binary data, array and slice implementation, re-use an existing val. Right side of `:=` must be a simple expression (an identifier or a function call).
 `x=y` will duplicate y into x. So changes on x won't affect y. 
 - Comparison semantics: `x==y` will compare data of the references for comparison. If you need to compare the references themselves for comparison you can use core function's ref: `ref(x) == ref(y)`
 - Each type (except function pointer) can implement `opCall` function which will be called when the type is used like a function. If this function returns a `var` result, it's result can be used as an lvalue to do assignment.
-- Type operator (`@`): This can be used in 4 models:
-1. `@x` and `@T` will return type-id of T or actual data inside x (usefull only for tuple and union)
-2. `x@T` returns true if x is of type T (Useful only for union and tuple, for other types it is naive).
-3. cast:      `var myInt = @int(myFloat)` for non-union types. 
-4. type assertion: `var myInt, success = @int(intOrFloat)` for union type.
-To match type, you can use if with `@`:
-```
-y = if ( @x ) {
-    @int -> "G",
-    @string -> "H",
-    @float -> "N",
-    else -> "X"
-}
-```
+
+- Type operator (`@`): This can be used to cast: `var myInt = @int(myFloat)`. 
 - Applications of casting:
 cast between named type and underlying
 cast between elements of union and union type
 cast between subtype and super-type
 cast int to float
+cast from an untyped tuple variable to a specific type.
 - Casting examples:
 `@int(x)`
 `@string(x)`
@@ -853,7 +874,7 @@ Note that there is no support for implicit casting functions. If you need a cust
 
 
 ### Special Syntax
-- `@` casting/type-id
+- `@` casting
 - `+` protocol enforcement
 - `_` placeholder for lambda or unknown variable
 - `:` tuple declaration, variable type declaration, hash literal
@@ -1043,7 +1064,6 @@ val i3: int = p2
 If we use `get` to read data as `var` from an array which contains value types, we won't have direct access to inside the array. We will receive a copy.
 
 `type array[T] = (size:int, data: binary)`
-- `string` is an array and like an array, compiler handles literals and string concatenation:
 `var str: string = ["Hello ", str2, "World!"]`
 `var str: string = [str1, str2]`
 
@@ -1199,3 +1219,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - possible add notation for function chaining
 - Define notation to write low-level (Assembly or IR) code in a function body and also force inline.
 - Function to get dynamic type of a tuple variable
+- Add notation for axioms and related operators like `=>` to protocol to be able to define semantics of a protocol.
