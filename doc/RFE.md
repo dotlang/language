@@ -2053,6 +2053,83 @@ Shall we do that? or let developer write them?
 
 Y - Note that when I call `process(myIntOrFloat)` with union, it implies that there must be functions for both int and union (or a func with union type).
 
+Y - Change syntax for map literal from `:` to `=>`. because `:` is used in many other different places.
+Can we use a less strange and more consistent notation?
+`var y: map[string, int] = ["a" => 1, "b" => 2]`?
+
 ? - Implement STM. Everything immutable except inside a function. remove `var` and `val`.
 can this simplify the language?
 This will affect: keywords, all definitions for protocol and func, 
+pro: it will simplify notations and language. no need to specify var/val everywhere.
+con: STM may not be a good choice. how to prevent race conditions? if caller changes a parameter sent to a thread?
+How can I modify array element now?
+`arr(0) = 10`? No it no longer will work.
+`set(arr, 0, 10)` no.
+Clojure has a function which makes a copy of array with modifications.
+In we cannot use `opCall` for array and map the only remaining use case will be for `Maybe` to support transparent error handling. Maybe we can eliminate that too and get rid of `opCall` completely.
+In Cljure all types are references.
+3 major problems in concurr and parall:
+1. shared mutable state r/w with multiple threads
+2. having exclusive access to a resource (write a file by multiple threads)
+3. deadlock
+Clojure uses promise, delay and future to tackle the first two issues.
+Maybe we can even have optional stm (like a generic STM type which supports this).
+Clojure has atoms which are data with changes done atomically (synchronized under the hood).
+To modify atom you `swap` it with output of a function (so it can retry behind the scene). `swap(x, process(1,2))`.
+Clojure: For mutable state you have these options: atom (atomic ref in java), ref (use STM) and agent.
+Clojure has support for transient data which are mutable but must be kept inside a thread.
+How can we have mutable local variables? tuple, union, array, map, primitives, ...
+`tuple.field = x`
+`var = x`
+`union1 = y`
+`array = [1,2,3]`
+`map = [1,2,3]`
+`array`
+This will affect: array and map impl, ...
+solution 1: a special keyword or function like `set`. But how can we make sure data is not shared with another thread?
+Maybe we should define the data in a specific way like: `mutable[T]`. Then work with it. When done, we can unbox it and return it.
+`var x: Mutable[array[int]]`
+Another solution: Everything immutable, provide good and efficient immutable data structures.
+In which cases do we need mutation? Big array, big hashtable. what else?
+compiler can optimize behind the scene and use normal mutable int if data is not escaped from the function.
+We can define a transient generic with some core functions to mutate it. 
+```
+var x: transient[array[int]]
+transient_set(x, 0, 100)
+...
+var y: array[int] = transient_unbox(x)
+```
+Let's make transient more transparent. It is set by default for all local arguments.
+Those functions can be achieved using dot notation and `=`.
+The only problem will be array and map. I think they should become native types instead of built types.
+So we won't have binary data type.
+`var x: array[int]`
+syntax to get/set? we don't want to use `[]`. and we don't want to call a function because it will break rule of local only is mutable.
+`x![0] = 2`?
+`map1!["A"] = 10`
+- so we will loose binary type, getptrOffset, and all related things.
+- Function input is immutable. you cannot change or re-assign it. But you can change local variables:
+```
+var i:int = 12
+i=13
+var s: string = "AAA"
+s = "BBB"
+var p: Point
+p.x = 100
+p.x = 200
+var arr: array[int]
+arr(0) = 100
+var mp: map[string, int]
+mp("A") = 100
+```
+- Changes: remove `binary` and related methods, `array` and `map` are native types, new notation to set map and array. remove `val` keyword. function inputs are immutable. local variables are mutable. 
+- closure has read-only access to parent block.
+- What about loop? make it a keyword?
+- What happens to `opCall`? later
+
+
+? - What needs to change to handle monadic errors.
+`func opCall[T](m: Maybe[T], f: func(T)->Maybe[T]) -> { return if (@m == @Nothing) None else f(m) }`
+`var input = 10`
+`var finalResult: Maybe[int] = input(check1(5, _))(check2(_, "A"))(check3(1,2,_))`
+so we can remove `opCall`?
