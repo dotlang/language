@@ -112,30 +112,27 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Type System
-dotLang support different types of data and almost all of them are implemented using `binary` data type. `binary` type represents a buffer allocated in memory. Although in some cases compiler provides syntax sugar for primitive types (e.g. defining an `int` variable will allocate 8 bytes of `binary` type), but you can directly use `binary` type to implement your own custom data types (instead of using existing pre-defined types).
 
 ## Variabe declaration
 
 **Semantic**: Used to pre-declare the memory you need to store result of computations.
 
-**Syntax**: `(var|val) IDENTIFIER (':' type | ':' type '=' exp | '=' exp)`
+**Syntax**: `var Identifier (':' type | ':' type '=' exp | '=' exp)`
 
 **Examples**
 
 1. `var x:int = 12`
-2. `val y:string = 'Hello world!'`
-3. `var g = 19`
-4. `var count : int`
-5. `var:int`
+2. `var g = 19`
+3. `var count : int`
 
 **Notes**
 
-- You cannot use an uninitialized variable. If you do, you will receive a compiler error.
-- Every variable must have a type either explicitly specified or implicitly inferred from assignment.
-- `var` or `val` are storage qualifiers and are explained in `Immutability` section.
-- `exp` is an expression which means it can either be a literal, function call, another variable or a complex expression.
-- There must be a single space between `var` or `val` keyword and the idenfitier (if there is an identifier).
-- Example number 5 represents a case where only immutability and type is important. More explanation in `protocol` and `function` section.
+1. Example 1 defines a variable called `x` which is of type `integer` and stores value of `12` in it.
+2. You cannot use an uninitialized variable. If you do, you will receive a compiler error.
+3. Every variable must have a type either explicitly specified or implicitly inferred from assignment.
+4. `exp` is an expression which means it can either be a literal, function call, another variable or a complex expression.
+5. There must be a single space between `var` keyword and the idenfitier.
+
 
 ## Assignment
 
@@ -154,77 +151,114 @@ dotLang support different types of data and almost all of them are implemented u
 **Notes**:
 
 1. `lvalue` is the identifier which is on the left side of assignment operator `=`. It must be a single identifier.
-2. If assignment is done in a variable declaration statement, lvalue can be an immutable variable. Otherwise lvalue must be mutable.
-3. In case rvalue is a temporary variable (a variable created during a computation which is transparent from the developer), compiler may decide to re-use that temporary variable to save space and increase performance.
+2. `lvalue` cannot be a function argument because they are immutable. More exaplanation in the Functions section.
+3. Note that you cannot re-use lvalues on rvalue section (`a,b=b,a` is invalid).
 
 ## Primitives
 
 **Semantics**: Provide basic tools to define most commonly used data types.
 
-**Syntax**: `int`, `float`, `char`, `union`
+**Syntax**: `int`, `float`, `char`, `union`, `array`, `slice`, `map`
 
 **Examples**
 
 1. `var x:int = 12`
 2. `var x:float = 1.918`
 3. `var x:char = 'c'`
-4. `var day_of_week: union[SAT, SUN, MON, TUE, WED, THU, FRI]`
 
 **Notes**:
 
 1. `int` type is a signed 8-byte integer data type.
 2. `float` is double-precision 8-byte floating point number.
 3. `char` is a single character, represented as an unsigned byte.
-4. The identifiers used in example number 4 is called "label types" and are explained in the corresponding section.
-5. Character literals should be enclosed in single-quote.
-6. For `union` type, refer to the next section.
+4. Character literals should be enclosed in single-quote.
+5. For `union`, `array` and `map` types, refer to the following sections.
 
 ## Union
 
-**Semantics**: A primitive meta-type to provide same interface which can contain different types
+**Semantics**: A primitive meta-type to provide same interface which can contain different types.
 
 **Syntax**: `union[type1, type2, ...]`
 
 **Examples**
 
-1. `var maybe_int: union[int, Nothing]`
-2. `var int_or_float: unon[int, float]`
-3. `int_or_float = 12`
-4. `int_or_float = 1.212`
-5. `var has_int: bool = int_or_float.(int)`
-6. `var int_value, success = int_or_float.(int)`
-7. 
+1. `var int_or_float: unon[int, float]`
+2. `int_or_float = 12`
+3. `int_or_float = 1.212`
+4. `var has_int: bool = int_or_float.(int)`
+5. `var int_value, success = int_or_float.(int)`
+6. 
 ```
 var stringed = if ( int_or_float ) {
     (int) -> ["int" , toString(int_or_float)],  ;inside this block, int_or_float is automatically treated like an int
     else -> "Not_int"
 }
 ```
+7. `var day_of_week: union[SAT, SUN, MON, TUE, WED, THU, FRI]`
+
 
 **Notes**
+4. The identifiers used in example number 6 are called "label types" and are explained in the corresponding section.
 
 1. `union` is a meta-type which can take form of different data types. It uses generic programming features which are explained in corresponding section. For more information refer to the next section.
 2. Types inside union definition must be named types. Refer to corresponding section.
-3. `union[int, floatOrString]` will be simplified to `union[int, float, string]`
-4. Compiler will convert a union data type to corresponding `binary` type with appropriate tagging.
-5. Example 5: In a boolean or single-var context, `x.(type)` evaluates to a bool indicating true if `x` contains given type.
-6. Example 6: If `x.(int)` is used otherwise it evaluate to an integer and a boolean indicating desired type and a flag for whether casting is successfull or no.
-7. You can use `x.(type)` notation in a block-if (Example 7). Refer to corresponding section for more information about `if`.
+3. `union[int, union[float, string]]` will be simplified to `union[int, float, string]`
+4. Example 4: In a boolean context, `x.(type)` evaluates to a bool indicating true if `x` contains given type.
+5. Example 5: If `x.(int)` is used otherwise it evaluates to an integer and a boolean indicating desired type and a flag for whether casting is successfull or no.
+7. You can use `x.(type)` notation in a block-if (Example 6). Refer to corresponding section for more information about `if`.
+
+## Array
+
+**Semantics**: Define a fixed-size consecutive sequence of element of the same type
+
+**Syntax**: `array[type]`
+
+**Examples**
+
+1. `var arr: array[int] = [1, 2, 3]`
+2. `arr(0) = 11`
+3. `var x:int = arr(1)`
+4. `var arr2: array[int] = [0..10]`
+5. `var arr3: array[int] = array(10)`
+6. `var twod = array[array[int]] = array(10,10)`
+7. `twod(0)(2) = 100`
+
+**Notes**
+1. Above example 1 through 3 shows definition and read/write from/to an array.
+2. Example 4 shows using range operator `..` to initialize array. More in Operators section.
+3. Example 5 and 6 show initializing a 1-D and 2-D array with default values using `array` core function.
+
+## Slice
+
+**Semantices**: Simulate an array which maps to a view into an existing array
+
+**Syntax**: `array(start, end)`
+
+**Examples**
+
+1. `var arr: array[int] = [0..9]`
+2. `var slice1: array[int] = arr(1, 2)`
+3. `var slice2: array[int] = arr(0, -1)`
+4. `slice1(0)++`
+5. `slice1 = calculateValues()`
+
+**Notes**
+
+1. Example 2 will give a slice which contains `1,2`.
+2. Example 3 will give a slice which contains all elements. End parameter can be negative which is counted from end of the array (`-1` means last element). Same for start.
+3. Example 4 will change `arr` array's value at index 1 from 1 to 2.
+4. You can use a slice as an lvalue in assignment (Example 5).
 
 ## Extended primitives
 
-**Semantics**: Built on top of primitives and built-in language features, provide more advanced data types.
+**Semantics**: Built on top of primitives, these types provide more advanced data types.
 
-**Syntax**: `bool`, `array`, `string`, `map`
+**Syntax**: `bool`, `string`
 
 **Examples**
 
 1. `var x: bool = true`
-2. `var arr: array[int] = [1, 2, 3]`
 3. `var x: string = 'Hello world!'`
-4. `var my_map: map[string, int] = ["A":1, "B":2, "C":3]`
-5. `arr(0) = 11`
-6. `my_map("A") = 2`
 
 **Notes**
 
@@ -390,71 +424,12 @@ type string := array[char]
 
 
 
-## Array
-This is a built-in data type:
-`type array[T] := {...}`
-```
-var x:array[int] = [1,2,3]
-x(0) = 100
-x(1) = x(0)+1
-```
-- Type of slice is different from array.
-slice is a meta-array. `type slice[T] = (length: int, start: T)`
 
-- If an array is var, all it's elements are var. Same for hash and tuple. This means const is deep and transitive.
-Arrays are a special built-in type. They are defined using generics. Compiler provides some syntax sugars to work with them.
-`[0..3]` means `[0, 1, 2, 3]`
-
-```
-;define an array of integer number and initialize
-var numbers: array[int] = [1, 2, 3, 4]
-
-;t will be 1
-var t:int = numbers(0)   
-
-;this will change '2' to '3'
-numbers(1)++             
-
-;syntax sugar to create a range of values (inclusive)
-var months: array[int] = [1..12] 
-
-;you can use core function to allocate array
-var allocated: array[int] = allocate[int](100)
-
-;multi-dimensional arrays are created using nested generic type
-var x: array[array[int]]
-
-;note that you can use 'type' to simplify cases where type name is complicated
-type TwoDimArray := array[array[int]]
-var x: TwoDimArray
-```
-- **Slice**: You can use slicing notation to create a virtual array which is pointing to a location inside another array. You use `array_var[start:end]` notation to create a slice.
-```
-;a normal array
-var x: array[int] = [11, 12, 13, 14, 15, 16, 17]
-
-;defining a slice containintg '12' and '13'
-var y: array[int] = x({1:2})
-
-;this will make '12' change to '22'
-y(0)+=10
-
-;start and end are optional and if ommitted will default to beginning/end of the array
-;here z will contain '15', '16' and '17'
-var z: array[int] = x.[4:]
-
-;here u will contain '11' and '12'
-var u: array[int] = x.[:1]
-
-;you can make slice a clone of original array by eliminating both start and end
-var p: array[int] = x.[:]
-
-;you can use a slice on the left side of an assignment
-;it will put result of right side of '=' into the original array
-mySlice = createValues()
-```
 
 ## Map
+4. `var my_map: map[string, int] = ["A":1, "B":2, "C":3]`
+6. `my_map("A") = 2`
+
 `type map[K,V] := {...}`
 ```
 var m:map[string, int] = ["A" => 1, "B"=>2]
@@ -1105,6 +1080,8 @@ Also you can call a function or refer to a type with fully qualified name:
 `import /core/std/{ab, cd, ef}` to import multiple modules
 
 ### native
+`type array[T] := {...}`
+
 Denotes function is implemented by runtime or external libraries.
 `func file_open(path: string) -> File {...}`
 `type Test := {...}`
