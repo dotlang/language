@@ -1749,19 +1749,157 @@ The common cases:
 And the compiler should keep track of a variable to know if it is a ref or not.
 So let's make these changes: Remove the concept of pointer or reference + all it's related notations.
 
+Y - to solve fragile base class:
+1. mark type cannot be inherited?
+2. child class can only override base class methods that dont have body.
+we can switch to a pure "contain and delegate" method to replace inheritance (then we can support multiple inheritance too).
+but what about polymorphism?
+In Go, polymorphism only applies to interfaces. So if Class A contains B which contains C, A cannot be used instead of B. but if it supports interface I, it can be used for that.
+Like Go: When you embed Shape in Circle, you can access Shape inside the Circle by `.Shape` but you cannot use Circle in place of Shape.
+But we have protocol which is similar to interface in Go. Maybe we can use it.
+interface is supposed to have no code but we have put axioms inside protocol.
+this will affect: method dispatch, polymorphism and subtyping, single or multiple inheritance, fwd methods, axioms, generics, dynamic and static type, union with shape and circle
 
-? - Can a union contain unnamed types?
-`type A := union[int, {x:int, y:int}]`?
-Then how can we fetch the second case?
+```
+protocol General[T] := {
+    func draw[T]()
+}
+type Shape := {}
+func draw(s: Shape)...
 
-? - what is the difference between single and double quote string literals?
+type Circle := {Shape, ...}
+func draw(c: Circle)...
 
-? - can we use `@` to cast from literal tuple to typed?
-or an untyped tuple to typed?
+func process(c: Circle)... ;this can only receive a circle and not a shape
+func process(c: Circle->Shape) ;manually fwd but compiler can also help
+func process[T](x: T) +Prot1[T]... ;this means i expect a set of specific methods to be defined for type T. In practice this can be called for a Shape or Circle or any other type which conforms to this protocol.
+Why we cannot have: `process(x: Prot1)`? Because functions and protocols are inherently multi-parameter. So it is possible to define a protocol based on multiple types.
 
-? - can child type re-defined parent type fields?
+...
+process(myCircle) ;this will call process for Circle and not Shape. If for any reason no function for Circle, we will have compiler error.
+```
+1. There is no dynamic dispatch except for protocols. So f(Circle) cannot be dispatched to f(Shape) automatically.
+But if we have a variable of type `prot1` calling `process(prot1)` may be redirected to any type that implementes that protocol.
+2. protocols have no data (like interfaces) but can have default implementations (e.g. axioms).
+3. So when a function has `Shape` input, it will always have a Shape. But for protocol type, it is not known at compile time.
+4. If data is important for your function, define input with correct type, if behavior is important, define generic with that protocol.
+5. To prevent fragile base class issue, we also should implement closed recursiob. Design patterns which rely on abstract methods like Template method, should use function pointer instead.
+6. Protocol can have impl. They have no field, so they can only call themselves and possible other functions.
 
-? - do we have fragile base class problem?
+4. How does this affect virtual method overriding? When process(myCircle) is called and Circle does not have perform, then process(Shape) will be called -> not automatically but by using fwd methods.
+If now, perform(Shape) calls another function like `final` which has candidates for both Shape and Circle, if we call the one for Shape, it is closed recursion. If we call the one for Circle, it is open recursion and can cause fragile base class problem.
+How do we define fwd method?
+`func process(Circle->Shape)`
+Go has closed recursion. 
+Go uses automatic promotion because it is not multiple dispatch. We have to use manual promotion except for special cases.
+`=` can only assign same type so you cannot assign circle to shape.
+whenever we use template, we should be able to specify protocol even in function output or local variable decl.
+So we can not define `array[Shape]` and store Circle in it. 
+The array should be define general with protocol which is implemented by both Shape and Circle.
+There is no point in specifying both type and protocol because with a fixed type, protocol is irrelevant.
+1. So everything will be a static pointer and nothing else without dynamic type. Except for protocols?
+But protocols are supposed to be resolved at compile time.
+So inside a function, I want to have an array to store different shapes.
+`var arr: array[T] +Shaper = [getCircle(), getSquare()]`
+`var arr: array[T+Shaper] = [getCircle(), getSquare()]`
+What if function is not generic? 
+```
+func process() {
+    var arr: array[T+Shaper] = {getCircle(), getSquare()}
+    ;for each element in arr, do this and that
+}
+```
+What if we let protocol be a type itself? So we will have data-types and behavior-types.
+Each function can specify one of these and not both. 
+But what about multi-parameter protocols?
+This should be simple and straight forward.
+And if we allow protocol as types then:
+`func process(x:+Shaper, y:+OtherProt, z: dsdsad)` 
+Then we will have the problem of multiple dispatch again! There can be multiple candidates for a function call.
+**problem** We cannot have array `array[T+Shaper]` because we are treatng protocol like a type (what if I get first element of this array?) and also `T` may not be present in the function signature.
+What about allowing for polymorphism from base type to child type?
+`var s: Shape = myCircle`
+Then **problem**: Meaning of `=` will be confusing (what if for any reason `=` is implemented with data-copy?). It is supposed to copy data so if I change properties of `s` it should not affect `myCircle`!
+what about polymorphism in function call and not assignment?
+`var arr: array[Shape]`
+`arr(0) = myCircle` what should this do?
+Seems the only solution is to define protocol as a type:
+`type Stringer[T] := +{ func toString(T) }`
+And we can use this type whenever a type is needed:
+`var arr: array[+Stringer]` We can use any type of data which has appropriate methods.
+Maybe then we can remove `+` and treat protocols just like normal type (but without data, only behavior).
+we can explicitly indicate a type conforms to a protocol: `type FileHandle := +Disposable int`
+`type Set[T: comprbl, prot2] := +comprbl[T] +prot2[T] array[T]`
+we can specify multiple protocols for a variable or generic type
+`func process(x: Stringer+Dieposable)` 
+What about multi-argument protocols?
+`func process[S,T,X]+Adder[S,T,X] (x: S, y:T)->X { return add(x,y) }`
+`func process[T]+Stringer+Disposable(x: T)` 
+`var arr: array[Stringer]` this array can store any data type as long as it conforms to this protocol
+This of protocol as a generic interface which is a pointer to another type supporting provided functions.
+We use normal types for variables and function arguments and interface type for generic arguments.
+HOW can we have an array which contains circle and square?
+I think we should not be treating interface like a normal type.
+can I write this? `var x: Stringer = getCircle()`?
+The whole point of polymorphism is to solve expression problem. What if we solve it in another way?
+Define a union of valid types: `type ShapeTypes := union[Circle, Square]`
+Then: `var x: array[ShapeTypes]`. Problem solved. You can store any shape inside this array.
+BUT here comes the expression problem: What if someone adds a new Shape like Triangle.
+Maybe we can re-define this union as: `type ShapeTypes2 := union[ShapeTypes, Triangle]`
+But what about all those functions?
+`func process(x: ShapeType)...`
+Now I have added a Triangle, I can write fwd function: `func process(x: Triangle)...`
+So if we accept the expression problem and try to solve it in another way:
+0. open methods (what we already have) is used to solve exp problem.
+1. We treat protocol different than type.
+2. You cannot declare an array of a protocoo.
+3. `=` will copy data, so `var s: Shape = myCircle` will loose data.
+4. dispatch will be based on static type or union internal type.
+5. we use open functions to handle expression problem.
+5. polymorphism? almost none?
+we have open functions (functions that can be extended with new pattern-matches). So we can add a new function for each type of shape. 
+q: write example for exp prob for extension of type and functions and make sure we are handling cases.
+q: clarify method dispatch again.
+for polymorphism.
+6. What about recursion? Open or closd? maybe closed!
+```
+type Circle :=
+type Triangle :=
+func area(Circle)->double...
+func area(Square)->double...
+func permi(Circle)->
+...
+```
+Add-hoc poly -> function overloading
+parametric poly -> template
+subtyping -> embed and fwd
+7. developer can do subtyping and simulate is-a relationship with embedding and writing fwd methods. As a result, types can embed as many other types as they want.
+8. to have a polym array: `var x: array[union[...]]`
+9. to get output of a polym function: `var result: union[Circle, Square] = createShape(config)`.
+10. pure "contain and delegate" for inheritance and subtyping
+11. If there is common behavior, use protocol. If there is common data, use composition.
+
+Y - Move axiom and `=>` notation to ToDo of the document. For now, protocol can only have bodyless functions.
+```
+;Also we can initialize tuple members, we have embedding
+;Note that if T is a sum type, each function here can be multiple implemented functions
+protocol Eq[T] := {
+    func equals(T,T)->bool
+    func notEquals(T,T)->bool
+    func default(x: T, y: T) -> equals(x,y) => not notEquals(x,y)
+    func identity(x: T) -> equals(x,x)
+    func reflectivity(x: T, y:T) -> equals(x,y) => equals(y,x)
+    func transitivity(x,y,z: T) -> (equals(x,y) and equals(y,z)) => equals(x,z)
+}
+```
+
+Y - can we use `@` to cast from literal tuple to typed?
+or an untyped tuple to typed? No. If literal wants a type, specify it at the time of declaration.
+What if we have an untyped variable? No. This is not needed really. but prohibitinh it is not natural.
+
+N - can child type re-defined parent type fields?
+
+N - do we have fragile base class problem?
 ```
 func inc1(s:Shape) -> inc2(s)
 func inc2(s:Shape) -> s.counter++
@@ -1770,6 +1908,124 @@ func inc2(c: Circle) -> inc1(c)
 ```
 No. Parent can enforce dispatch using static type.
 
-? - Note that when using type for alias to a function, you have to specify input names too.
-`type comparer := func (x:int, y:int) -> bool;`
-?
+Y - In Go I can write `var x: Interface1 = method1()` to have dynamic type. How is that possible here?
+`var result: union[Circle, Square] = createShape(config)`?
+maybe a special union is the key.
+How can I have minimum change but a dynamic union which covers any conforming type?
+suppose we have 100s of shapes! How can I define a union then?
+`var result: union[Circle, Square, Triangle, Rectangle, Oval, Polygon, ...] = createShape(config)`
+What about this notation?
+`type Shapes := union[+ShpProtocol]`
+`var x: Shapes = createCircle()`
+`if ( x @ Circle ) ...`
+The type definition is a normal union but instead of writing all possible types, we ask compiler to fill in that place. There is nothing involved in the runtime. Just a syntax sugar to help us not write all the implementation types.
+
+N - Suppose that I hve written a method for complex processing on Circle and Square.
+Now I have a triangle. How can I re-use it?
+Solution is to write method based on a protocol or Shape. And fwd it for circle, square and triangle.
+
+Y - Something being optional is not a good thing:
+```
+protocol Disposable[T] := { func dispose(T) }
+type FileHandle := +Disposable int
+```
+User can later write his own protocol and functions and make my type implement another protocol. so this definition would be incomplete!
+
+Y - what is the difference between single and double quote string literals?
+we can say: single quote -> char, double quote -> string,  backtick for multi-line, raw string.
+
+Y - Note that when using type for alias to a function, you have to specify input names too.
+`type comparer := func (int, int) -> bool;`
+`var x: comparer = func(x: int, y:int) -> ...`
+How can we define a function literal and call it?
+`(x:int)->int { return x+1 }(10)`
+A function type should not include parameter name because they are irrelevant.
+A lambda variable can omit types because they can be inferred: `var x: comparer = (x,y) -> ...`
+A function literal which does not have a type in the code, must include argument name and type. `(x:int)->int { return x+1 }(10)` or `var fp = (x:int)->int { return x+1}`
+
+Y - Can we simplify union with virtual `.x` fields?
+currently we use `@` to see what is inside a union: `if (intOrFloat @ int)...`
+But now that there is no dynamic type, `@` can not be used for tuple's actual type because it is the static type.
+`var myInt, success = @int(intOrFloat)`
+`var value = my_map("key1") if ( var i, success = @int(value), success )`
+`@` is used for 4 purposes:
+1. get type inside union
+2. check if union is of type `X`
+3. cast A to B
+4. item 1 + check for success
+only 3 is general. 1 and 2 and 4 are only for tuple.
+`var x: intOrFloat = 1`
+`if ( @x == @int ) ...` -> `if ( x.type == typeof(int) )`
+`if ( x @ int ) ...` -> `if ( x.(int) )`
+above two are almost the same. except for block-if.
+`if ( var i, success = x.(int), success )...`
+block-if: 
+```
+y = if ( @x ) {
+    @int -> "G",
+    @string -> "H",
+    @float -> "N",
+    else -> "X"
+}
+```
+```
+y = if ( x ) {
+    (int) -> "G",
+    (string) -> "H",
+    (float) -> "N",
+    else -> "X"
+}
+```
+if `x.(int)` is used in a boolean or single-var context, it evaluates to a bool indicating true if union has int.
+Else it will return two output: result and success.
+
+N - Can a union contain unnamed types?
+`type A := union[int, {x:int, y:int}]`?
+Then how can we fetch the second case? No!
+
+? - Make notation for protocol usage cleaner.
+
+`protocol Eq[T] := +Ord[T] { func compare(T,T)->bool }`
+`func isInArray[T](x:T, y:array[T]) +Eq[T] -> bool { loop(var n: T <- y) {if ( equals(x,n) ) return true} return false }`
+`type Set[T] := +comprbl[T] +prot2[T] array[T]`
+`type T1[T,U,V] := +prot1[T] +prot2[T] +prot3[T,U] +prot4[T,V] ...`
+
+`T:protocol` is the shortcut for cases where there is only one generic type.
+`protocol Eq[T:Ord] := { func compare(T,T)->bool }`
+`protocol Eq[T: T+Ord] := { func compare(T,T)->bool }`
+`func isInArray[T,V: T+Eq, (T,V)+prot2](x:T, y:array[T]) -> bool { ... }`
+`type Set[T,V+T.comprbl+T.prot2+(T,V).prot3] := array[T,V]`
+`type T1[T,U,V+T.prot1+T.prot2+(T,U).prot3+(T,V).prot4] := ...`
+What if we declare protocol as real parameters? Will it be more readable? What about types?
+we can say no need to define protocol for types. Instead define them on functions that work with that type.
+So set is: `type Set[T] := array[T]`. and in related functions, we make sure
+`func addToSet[T: Ord](s: Set[T], x: T)...`
+But adding it like implicit arg will make things complicated. It is optional and we need to add some more rules regarding order of arguments.
+`protocol Eq[T:Ord] := { func compare(T,T)->bool }`
+`protocol Eq[T: Ord(T)] := { func compare(T,T)->bool }`
+`func isInArray[T,V: Eq(T), prot2(T,V)](x:T, y:array[T]) -> bool { ... }`
+`type Set[T,V : comprbl(T), prot2(T), prot3(T,V)] := array[T,V]`
+`type T1[T,UV, : prot1(T), prot2(T), prot3(T,U), prot4(T,V)] := ...`
+
+? - Is this the best syntax for union with all types conforming to X?
+`union[+ShpProtocol]`
+What about a union with all types that have a specific field or property?
+union of all types that embed Shape?
+Can we define a more general form for unions? because now it is the main tool for polymorphism.
+We can define a union with a pattern. This pattern will be evaluated at compile time to specify set of types inside the union definition.
+`type u1 := union[int, float, string, char]`
+`type u2 := int, float, string, char`? no.
+`type u3 := union[ShpProtocol($, int), OtherProt(float, $)]`
+`type u4 := union[ShpProtocol2($)]`
+`type u5 := union[Protocol2]` or `union[Protocol2($)]`
+`type u6 := union[$.ParentTuple]`
+this is super confusing! `and, or` , multiple protocol, combining protocol and data constraints, multi-arg protocols, ....
+`type u1 := union[T: ShpProtocol(T)]` all types that conform to this protocol
+`type u2 := union[T: ShpProtocol]`
+`type u3 := union[T: ShpProtocol(T, int), OtherProt(float, T)]`
+`type u4 := union[T: T.ParentTuple1, T.ParentTuple2]` all types that embed these two parents
+`type u5 := union[T: Prot1(T), T.Tuple1]` combine both
+
+
+? - with the new notation for contain and delegate, what happens to automatically fwd methods by compiler?
+Shall we do that? or let developer write them?
