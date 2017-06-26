@@ -2057,7 +2057,7 @@ Y - Change syntax for map literal from `:` to `=>`. because `:` is used in many 
 Can we use a less strange and more consistent notation?
 `var y: map[string, int] = ["a" => 1, "b" => 2]`?
 
-? - Implement STM. Everything immutable except inside a function. remove `var` and `val`.
+Y - Implement STM. Everything immutable except inside a function. remove `var` and `val`.
 can this simplify the language?
 This will affect: keywords, all definitions for protocol and func, 
 pro: it will simplify notations and language. no need to specify var/val everywhere.
@@ -2126,10 +2126,61 @@ mp("A") = 100
 - closure has read-only access to parent block.
 - What about loop? make it a keyword?
 - What happens to `opCall`? later
+- What about `=` semantics? for local it mutatets and copies value.
+- For function arguments, we cannot have them as lvalue.
+- lvalue can only be local variable. local=local or local=arg or local=literal.
+- it should copy data.
+- function input may or may not be pointers, compiler can optimize, if a function returns a very large buffer, compiler will return a reference to it.
+- if a closure can see function's local variables, it can be source of race condition but let's have the developer worry about this. We provide tools to prevent that such as atoms.
+- We have immutability for function args. So if developer starts a thread by calling a function, it will have no access to mutable data. but this may not be true.
+```
+var x = 12
+startThread(() -> myFunc(x))
+x++
+```
+Another way: everything which is sent to a thread function must be a copy or an instance of `atomic`.
+General rule: Only local variables can come on the left side of `=`.
+To solve the problem with closure and race: What if closure does not have any type of access to local variables of the function? only to it's inputs. Doesn't matter because there is a single thread (parent function) which can write and another which reads. There can be conflicts. Another solution: STM.
+What if function does not have local variables? Only functions that have no local variable can start a thread -> Still the provider of function arguments has write access.
+solution: atomic and lock and ....
 
 
-? - What needs to change to handle monadic errors.
+N - Do we need to make `loop` a keyword? I don't think so.
+
+Y - What needs to change to handle monadic errors.
 `func opCall[T](m: Maybe[T], f: func(T)->Maybe[T]) -> { return if (@m == @Nothing) None else f(m) }`
 `var input = 10`
 `var finalResult: Maybe[int] = input(check1(5, _))(check2(_, "A"))(check3(1,2,_))`
 so we can remove `opCall`?
+`func chain(m: Maybe[T], f: func(T)->Maybe[T]) -> Maybe[T] ...`
+`var finalResult: Maybe[int] = chain( chain( chain(input, check1(5, _)) , check2(_, "A")) , check3(1,2,_))`
+`var finalResult: Maybe[int] = input >> check1(5, _) >> check2(_, "A") >> check3(1,2,_)`
+`func opChain(m: Maybe[T], f: func(T)->Maybe[T]) -> Maybe[T] ...`
+This means infix function call. Shall we allow this exception?
+`func >>(m: Maybe[T], f: func(T)->Maybe[T]) -> Maybe[T] ...`
+`var finalResult: Maybe[int] = input >> check1(5, _) >> check2(_, "A") >> check3(1,2,_)`
+Let's have a normal function like chain: 
+`func opChain(m: Maybe[T], f: func(T)->Maybe[T]) -> Maybe[T] ...`
+Then define an alternate syntax to calling it when it is infix.
+Like: `func opChain $>>$(m: Maybe[T], f: func(T)->Maybe[T]) -> Maybe[T] { ... }`
+Function must have only two inputs.
+`func opChain(m: Maybe[T], f: func(T)->Maybe[T]) -> Maybe[T] { ... }`
+define function alias
+`func >> := opChain`
+`func opChain(m: Maybe[T], f: func(T)->Maybe[T]) -> Maybe[T] { ... }=|>>|`
+Let's just have this chain as a special case. If a type wants to define special behavior for chaining just write `opChain` function. And `>>` will be used for chaining.
+`A >> f` means `f(A)` by default.
+purpose: make code more readable: `f(x)` becomes `x >> f`
+`f(f(f(x)))` becomes `x >> f >> f >> f`
+`f(g(h(x)))` becomes `x >> h >> g >> f`
+`f(g(x))` becomes `x >> g >> f`
+`input >> check1(5, _) >> check2 >> check3`
+Maybe we can use `|` which is similar to bash.
+`var finalResult: Maybe[int] = input | check1(5, _) | check2(_, "A") | check3(1,2,_)`
+We use `or` for conditions so this is not used elsewhere.
+Another solution: return a tuple with a single function pointer.
+`var finalResult = chain(input)(check1(5, _))(check2(_, "A"))(check3(1,2,_))`
+`var finalResult = input | check1(5, _) | check2(_, "A") | check3(1,2,_)`
+
+
+
