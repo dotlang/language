@@ -34,7 +34,7 @@ Three main objectives are pursued in the design of this programming language:
 
 1. **Simplicity**: The code written in dotLang should be consistent, easy to learn, write, read and understand. There has been a lot of effort to make sure there are as few exceptions and rules as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
 2. **Expressiveness**: It should give enough tools to the developer to produce readable and maintainable code. This requires a comprehensive standard library in addition to language notations.
-3. **Performance**: The compiler will compile to native code which will result in high performance. We try to do as much as possible during compilation (optimizations, de-refrencing, type checking, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in standard library will be implemented with a lower level language.
+3. **Performance**: The compiler will compile to native code which will result in high performance. We try to do as much as possible during compilation (optimizations, de-refrencing, type checking, type filters, phantom types, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in standard library will be implemented with a lower level language.
 
 Achieving all of above goals at the same time is impossible so there will definitely be trade-offs and exceptions.
 The underlying rules of design of this language are 
@@ -709,7 +709,43 @@ var yy: string = magic(y)
 For generic functions, any call to a function which does not rely on the generic type, will be checked by compiler even if there is no call to that generic function. Any call to another function relying on generic argument, will be checked by compiler to be defined.
 
 ## Phantom types
-Explain about usage + can also be implemented using named types.
+Phantom are compile-time label/state attached to a type. You can use these labels to do some compile-time checks and validations. Here labels are implemented using generic types which are not used for data allocation. For example we have a string which is result of md5 hash and another for sha-1. We should not be comparing these two although they are both strings. So how can we mark them?
+
+```
+type HashType := MD5 | SHA1
+ ;when generic type is not used on the right side, it will be only for compile time check
+type HashStr[T] := string     
+type Md5Hash := HashStr[MD5] 
+;Md5Hash type can be easily cast to string, but if in the code a string
+;is expected to be of type Sha1Hash you cannot pass Md5Hash
+type Sha1Hash := HashStr[SHA1]
+func md5(s: string)->Md5Hash {
+    var result: string = "ddsadsadsad"
+    return %Md5Hash(result)  ;create a new string of type md5-hash
+}
+func sha1(s: string)->Sha1Hash
+var t: Md5Hash  = sha1("A")  ;will give compiler error because output of sha1 is Sha1Hash
+func testMd5(s: string, t: Md5Hash) -> md5(s) == t
+
+;if there is only one case, you can simply use named type
+type SafeString := string
+func processString(s: string)->SafeString
+func work(s: SafeString)
+
+;another example: expressions
+type ExpType := INT | STR
+type Expression[T] := (token: string)
+func readIntExpression(...) -> Expression[INT]
+func plus(left: Expression[INT], right: Expression[INT])...
+func concat(left: Expression[STR], right: Expression[STR])...
+
+;door
+type DoorState := Open | Closed
+type Door[T] := (string)
+func closeDoor(x: Door[Open]) -> Door[Closed]
+func openDoor(x: Door[Closed]) -> Door[Open]
+```
+
 
 ## Protocols
 - You can use this notation to define a union which can accept any type that confirms to `ShpProtocol`: `type Shapes := union[+ShpProtocol]`. Compiler will generate list of types.
@@ -831,14 +867,13 @@ For example you can define a set only for types which are comparable. We cannot 
 
 ## Type filter
 You can use type filter expression when specifying generic arguments (in protocol, function, type or union) to filter possible types that can be used.
-You can use type filter to restrict valid generic types based on protocol or fields they have (for tuples) or being tuple.
+You can use type filter to restrict valid generic types based on protocol or fields they have (for tuples).
 General syntax: `[T1,T2,T3,... : Filter_1 + Filter_2 + Filter_3, ...]`
 `Ti` are generic type names.
 `Filter_i` are type filters.
-`Filter_i = ProtocolFilter | FieldFilter | TupleFilter`
+`Filter_i = ProtocolFilter | FieldFilter`
 `ProtocolFilter = ProtocolName(T1, T2, T3, ...)` if there is only one type can be shortcut to: `ProtocolName`
 `FieldFilter = T1.Field1`
-`TupleFilter = T1.`
 Note that for union you can only use one type.
 For protocol, type filter specifies which types can implement this protocol (pre-requirements).
 For function, it specifies which types can be used to call this function.
@@ -858,8 +893,6 @@ Examples:
 
 ## Operators
 - Conditional: `and or not == != >= <= => =<`
-- Logical: `=>` (implication) mostly used in axioms.
-`var t = x=>y` implies operator, means `t=if x then y else true`
 
 - Math: `+ - * % %% (is divisible) ++ -- **`
 - Note that `++` and `--` are statements which will update their operand and won't return anything. So you cannot use them in another statement or expression. Also these are only allowed as suffix.
@@ -896,11 +929,12 @@ Note that there is no support for implicit casting functions. If you need a cust
 
 ### Special Syntax
 - `@` casting
-- `+` protocol enforcement
+- `+` type filter
 - `_` placeholder for lambda or unknown variable
-- `:` tuple declaration, variable type declaration, hash literal
+- `:` declaration for tuple, variable type and type filter
 - `:=` custom type definition
 - `=` type alias, copy value
+- `=>` map literals
 - `..` range generator
 - `->` function declaration, block-if
 - `[]` generics, array and map literals
@@ -925,10 +959,9 @@ y = if ( x ) {
     3 -> "N",
     else -> "X"
 }
-y = if ( @x ) {
-    @int -> "G",
-    @string -> "H",
-    @float -> "N",
+y = if ( x ) {
+    (int) -> "G",
+    (string) -> "H",
     else -> "X"
 }
 ```
@@ -960,7 +993,7 @@ These declarations will be only available inside if/else block.
 - We have RIAA approach. Anything which is allocated inside a function which is not part of return value will be disposed (by calling `dispose` function) when exiting the function.
 
 - `Exception` is a simple tuple defined in core. 
-- You can use suffix if for assertion: `return xyz if !(str.length>0)`
+- You can use suffix if for assertion: `return xyz if not (str.length>0)`
 - To handle exceptions in a code in rare cases (calling a plugin or another thread), you can use `invoke` core function.
 `func invoke[I,O](f: func, input: I)->O|Exception`. If your function has more than one input, you should define a wrapper function or a closure which has one input of type tuple.
 - In order to handle possible errors in a chain of function calls, you can use `opCall` on a type (e.g. Maybe). 
