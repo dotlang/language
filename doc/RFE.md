@@ -1,4 +1,5 @@
- 
+N - `x=literal` will copy-value because litearl is not reference type.
+
 Y - Note that `val` can only appear on the left side of `=` when it is being declared. What comes on the right side of `=` must be either another val or made val using `@val` or a literal. This notation will duplicate it's input if needed.
 There is no need to force clone a val with `@val(@t))` notation. because cloning is used when we want to detach left side of assignment from right side. but for val, there is no attachment.
 
@@ -2510,3 +2511,51 @@ then for higher order combine them.
 `x: matrix[array[int]]` - 3d array, .... not unified.
 
 ? - if we use `:=` for var assignment, can we use `=` for comparison?
+
+? - Make block-if syntax similar to hash.
+```
+y = (x)[
+    1 => "G",
+    2 => "H",
+    3 => "N",
+]
+```
+if map does not have that key, y will be `Nothing`.
+`if ( y.(Nothing) ) y=default`
+1. we should be able to reverse order in `map(key)` to `(key)map`
+2. so basically, if is a syntax sugar over a map literal.
+
+```
+y = (x)[
+    1 => "G",
+    2 => "H",
+    3 => "N",
+] | "default"
+```
+we write `opChain` for `maybe[T]` and `T` to return second arg if first is Nothing.
+q: in if order is important but in a hash it is not.
+q: what about normal if?
+the above syntax is for block-if for values and types.
+```
+y = ( x )
+[
+    (int) => "G",
+    (string) => "H",
+] | "X"
+```
+- we still have normal conditioned if.
+
+
+? - Disallow writing `opChain` for developer. Just define it's behavior based on expectation.
+for example 
+`maybe[T] | default(5,)` will return 5 if first is nothing.
+`A | f(T)` will return `f(A)` if T is of type of A
+`maybe[T] | f(T)` will return first if it cannot be sent to f, `f(first)`.
+
+`func default(y:T, x:maybe[T]) -> T {return y if  x.(Nothing) else x.(T)}`
+
+?- No need to use `_` in pipe if pipe is sent to last argument.
+`x | f(a,_)` can be written: `x | f(a,)`
+use empty comma to indicate place of pipe.
+`f(x,_,y)` -> `f(x,,y)`
+maybe we can get rid of `_` totally.
