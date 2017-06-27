@@ -924,8 +924,8 @@ For union, it specifies which types are possible options for this union.
 Examples:
 `type u5 := union[T: Prot1 + T.Tuple1]` 
 `protocol Eq[T:Ord1, Ord2] := { func compare(T,T)->bool }`
-`type Set[T,V : comprbl(T), prot2(T), prot3(T,V)] := array[T,V]`
-`func isInArray[T,V: Eq(T), prot2(T,V), T.Field1](x:T, y:array[T]) -> bool { ... }`
+`type Set[T,V : comprbl(T) + prot2(T) + prot3(T,V)] := array[T,V]`
+`func isInArray[T,V: Eq(T) + prot2(T,V) + T.Field1](x:T, y:array[T]) -> bool { ... }`
 
 
 
@@ -966,7 +966,6 @@ cast from an untyped tuple variable to a specific type.
 Casting to a tuple, can accept either a tuple literal or tuple variable or an exploded tuple.
 Note that there is no support for implicit casting functions. If you need a custom cast, write a separate function and explicitly call it.
 - chaining: You can use `|` in the form of: `x | f` which means `f(x)`. You can customize behavior of this operator for your type by writing `opChain` function.
-
 
 ### Special Syntax
 - `@` casting
