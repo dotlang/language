@@ -2354,12 +2354,82 @@ what about function pointer type?
 Let's continue with `:=` notation which is consistent with named types concept.
 I think I will need to review the whole spec as this change (no type decl, everything imm, ...) has a huge effect. lambda, protocol, type filter, union, operators, chaining, array and map, ...
 `x,y,z := process()`
+`type u5 := union[T: Prot1 + T.Tuple1]` 
+`protocol Eq[T:Ord1, Ord2] := { func compare(T,T)->bool }`
+`type Set[T,V : comprbl(T), prot2(T), prot3(T,V)] := array[T,V]`
+`func isInArray[T,V: Eq(T), prot2(T,V), T.Field1](x:T, y:array[T]) -> bool { ... }`
+how do we initialize a variable? 1. by using literals, 2. another variable 3. function call
+about union: the litearl cannot have multiple types. `f:=5` f will be int, we cannot have it `union[int, float]`
+for another variable: it will get type of the other variable
+for function: it will get output type of the function
+so we can have union typed variables but we don't need to specify that.
+problem is when we assign tuple with literal, there not much that IDE can do to help. But we specify type in the tuple literal.
+`third_point := Point{200, 400}`
+`aaa := third_point{y=102}`
+`opChain` ok.
+what if we want to share a big data structure? because everything is immutable, we can simply send a reference to the data. compiler and runtime will handle this case.
+1. everything is immutable even local variables. And you cannot re-assign.
+2. compiler will check to see if a variable can be mutable in instruction level (if it's not escaped).
+For example `arr = set(arr, 0, 10)` will be compiled into a normal mov statement.
+3. no `var` keyword. `:=` is used to declare and initialize a value and don't need to specify type for local variables.
+4. syntax to change a tuple: `myPt2 = myPt{x=myPt.x+1}`
+5. The only mechanism to handle concurrency and corrdination is channels which under the hood use fetch-and-add, cmpxchg, semaphore, mutex and ... .
+q: stack push -> will return a new stack.
+syntax to define tuple literal?
+`pt := Point{x=100, y=200}`
+`pt := Point{100, 200}`
+using `=` is not good now that we use `:=` for declsign. but here x is field name.
+`pt := Point{x:100, y:200}`
+`:` is used for type filter, tuple type declaration, and previously in var type decl `var x:int`
+6. tuple litearl uses `:` like `pt := Point{x:10, y:20}`
+what about slices?
+1. `arr := [0..9]`
+2. `slice1 := arr(1, 2)`
+3. `slice2 := arr(0, -1)`
+we should allow for more expressive syntax to init an array.
+Haskell: `sq = array (1,100) [(i, i*i) | i <- [1..100]]`
+`x:array[int]`
+`x:=[1,2,3]`
+`x:=loop((x:int)->x*2, [1..10])` here loop body returns a single int -> 1d array
+`x := (x:int)->x*2 | loop(_, [1..10])`
+`g:=x(0)`
+`y:=x[0=>10]`
+2d array:
+`x2: array[array[int]]`
+`x2 := [[1,2], [1,3], [2,2]]`
+`x2:=loop((x:int)->[1, x+1, x*2], [1..10])` here loop body returns a list -> 2d array
+`g:=x2(0,0)`
+`y2 :=x2[0,0=>102]`
+what about loop with condition?
+`loop(x>0, () -> { ... })`
+`loop((x:int)-> {x>0} , () -> int { code to return new value for loop condition })`
+`var result := (x:int)-> {x>0} | loop( _ , currentVar, () -> int { code to return new value for loop condition })`
+`func loop[T,X](pred: func(T)->bool, initial: T, body: func(T)->X)->array[X]`
+
+? - can we say that all functions must return something even if Nothing. so all functions can be modelled as `func(I)->O`.
+
+? - Do we still need to return multiple outputs?
+`return x,y`
+`return {x,y}`
+`x,y := process()`
+`{x,y} := process()`
+if all functions return a single thing, modelling generics which work functions can be easier.
+`{t, found} := my_map("key1")`
+`{t, _} := my_map("key1")`
+we can create temporary tuple and assign it's components to actual values.
 
 
 ? - maybe we can use `:=` for map and array too.
 `arr := [1,2,3]`
 `arr2 := arr[1]` append
-`arr3 := arr[0:1]`?
+`arr3 := arr[0 => 1]`?
 `map2 := map1[2 => "A"] ;add or update`
+how to set 2d array?
+`arr3 := arr[0,4 => 1]`
+`twod = array[array[int]] = array(10,10)`
+we can define matrix for 2d array.
+`x: matrix[int]`
+then for higher order combine them.
+`x: matrix[array[int]]` - 3d array, .... not unified.
 
 ? - if we use `:=` for var assignment, can we use `=` for comparison?
