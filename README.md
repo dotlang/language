@@ -450,7 +450,7 @@ var t: int = y("b")
 `var value = my_map("key1") if ( var i, success = @int(value), success )`
 `var value = my_map("key1") if ( @value == @int )`
 `var value = my_map("key1") if ( value @ int )`
-`var t, _ = my_map("key1")`
+`var t, found = my_map("key1")`
 
 
 
