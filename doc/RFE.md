@@ -2371,7 +2371,7 @@ what if we want to share a big data structure? because everything is immutable, 
 1. everything is immutable even local variables. And you cannot re-assign.
 2. compiler will check to see if a variable can be mutable in instruction level (if it's not escaped).
 For example `arr = set(arr, 0, 10)` will be compiled into a normal mov statement.
-3. no `var` keyword. `:=` is used to declare and initialize a value and don't need to specify type for local variables.
+3. no `var` keyword. `:=` is used to declare and initialize a value and don't need to specify type for local variables. but we need to specify type in type decl and functions and protocols.
 4. syntax to change a tuple: `myPt2 = myPt{x=myPt.x+1}`
 5. The only mechanism to handle concurrency and corrdination is channels which under the hood use fetch-and-add, cmpxchg, semaphore, mutex and ... .
 q: stack push -> will return a new stack.
@@ -2398,13 +2398,88 @@ Haskell: `sq = array (1,100) [(i, i*i) | i <- [1..100]]`
 `x2: array[array[int]]`
 `x2 := [[1,2], [1,3], [2,2]]`
 `x2:=loop((x:int)->[1, x+1, x*2], [1..10])` here loop body returns a list -> 2d array
-`g:=x2(0,0)`
+`g:=x2(0)(0)`
 `y2 :=x2[0,0=>102]`
 what about loop with condition?
 `loop(x>0, () -> { ... })`
 `loop((x:int)-> {x>0} , () -> int { code to return new value for loop condition })`
 `var result := (x:int)-> {x>0} | loop( _ , currentVar, () -> int { code to return new value for loop condition })`
 `func loop[T,X](pred: func(T)->bool, initial: T, body: func(T)->X)->array[X]`
+what should we call them now? what we used to call variables. value? 
+
+? - remove `--` and `++` they are mutating.
+
+? - Are these still valid?
+- Applications of casting:
+yes. cast between named type and underlying. `type MyInt := int`
+no. cast between elements of union and union type
+no. cast between subtype and super-type
+no. use core functions. cast int to float
+no. there is no untyped tuple. cast from an untyped tuple variable to a specific type.
+So we only need to cast from named to underlying. 
+`type MyInt := int`
+`x := getMyInt()`
+`y := @int(x)`
+can we simplify this and get rid of `@`?
+like the way we handle tuples.
+`y := int{x}` if type before `{}` is not tuple, it is a cast from named to underlying type.
+Is named type still relevant/needed? yes it should be.
+
+? - can we use type alias in union?
+`type MyInt = int`
+`type x := union[MyInt, int]` -- error definitely
+`type x := union[MyInt, float]`
+`if ( x.(int) )` or `if ( x.(MyInt) )` are the same.
+
+
+? - `==` compares field by field, datawise. If you want custom comparison, write your own function. So there is no `opCompare`. 
+
+? - Remove "You can have multiple assignments at once: `x,y=1,2`"
+What is use of this? for function call result, it will return tuple and we will use `{x,y}` syntax.
+
+? - make calling dispose function explicit. let types declare they implement a protocol.
+add `=` to alias functions. If a type marks to implement `Disposable` any value of it's type must call it's dispose method or any of it's aliases. `=` is used for type and function alias.
+`dispose`. Why not call it explicitly?
+when writing defer you must explicitly state the code. The only advantage is that when there are multiple returns you can write one defer.
+problem is `dispose` is called implicitly which is against our philosophy.
+Shall we return `defer` keyword?
+`s := createSocket(....)`
+`s := expression & release_expression` how to initialize this expression and how to finalise it when exiting the function.
+`f := openFile("A.txt") & closeFile`
+`g := openSocket(...) & closeSocket(1, _)`
+`identifier := exp & closure` closure will be executed upon exiting the function.
+How can we mark types as "resource" so user must use `&` notation to release them?
+we need to indicate if a type implements a protocol. 
+`type FileHandle := {handle: int} +prot2`
+So if a type is marked with protocol `Disposable` it must have a `dispose` method and whenever we have a value of it's type we must use `&` after declsign.
+If function name is known, maybe we don't need `&` notation. but it is a shortcut to write it only once.
+`f := openFile(...) & closeFile`
+developer even does not need to write function name. it is specified in the protocol.
+we just need a mechanism to make calling it explicit but don't mention it's name. Why don't mention? 
+Let's make calling it explicit. So it will be more readable, and also user can use it for other purposes mayne.
+can we make `Disposable` protocol empty? So if a value is defined of type X which is marked with Disposable, developer must add `& function_call` to dispose. but it won't be clean.
+`f := openFile(...) & closeFile` vs `f := openFile(...) & dispose` 
+We want to have different names. 
+We need to specify "HOW" a protocol is implemented for a type.
+so when defining a type we can specify that:
+`type FileHandle := {handle: int} +prot2{dipose => closeFile}`
+Means FileHandle implements prot2 protocol but with this name: `closeFile`.
+`func closeFile(x:int)->bool { ... } = dispose` dispose is another name for this function. so we are implementing Disposable protocol for this type. so we have `dispose(x)` and `closeFile(x)` which are the same thing.
+`func closeFile(x:int)->bool { ... } = dispose`
+`func dispose(x:int) = closeFile` dispose is another name for closeFile. So our type has implemented disposable protocol but with it's own function name.
+`func A(t1,t2,...) = B` is used to define alias for functions.
+maybe we want to run dispose on another line?
+for exampe: `acquire_lock(x) & release_lock(x)` this is not pure! acqlock should return something as a handle the resource.
+`x := acquire_lock() & release_lock`
+`func dispose(lock) = release_lock`
+
+? - can we make chain operator paren-free? no need to use paren when it is combined with other expressions.
+`x := gg | process(_,1))`
+`x := {gg, xx} | process(_,_,1)`
+`x := 1 | process(_,2) + 5`????
+`x := 1.process(_,2) + 5`
+`x := 1.process(_,2).f2(_,5)`
+but dot can be confused with tuple accessor.
 
 ? - can we say that all functions must return something even if Nothing. so all functions can be modelled as `func(I)->O`.
 
@@ -2423,7 +2498,9 @@ we can create temporary tuple and assign it's components to actual values.
 `arr := [1,2,3]`
 `arr2 := arr[1]` append
 `arr3 := arr[0 => 1]`?
+`arr3 := arr[0 => 1, 1=> 9, 3 => 10]`?
 `map2 := map1[2 => "A"] ;add or update`
+`map2 := map1[2 => "A", 3 => "B"] ;add or update`
 how to set 2d array?
 `arr3 := arr[0,4 => 1]`
 `twod = array[array[int]] = array(10,10)`
