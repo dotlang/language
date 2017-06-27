@@ -2182,5 +2182,184 @@ Another solution: return a tuple with a single function pointer.
 `var finalResult = chain(input)(check1(5, _))(check2(_, "A"))(check3(1,2,_))`
 `var finalResult = input | check1(5, _) | check2(_, "A") | check3(1,2,_)`
 
+N - for union definition do not use `:` but use `|` which `T|F` implies all T if F.
+No. this concept applies to type and function and protocol too. let's just use `:`
+
+? - Unified immutability everywhere. Makes things simpler to read and write. And the optimizations will be done by compiler.
+Then we can get rid of `var` keyword as everything is immutable. re-assignment can be disallowed.
+Then how can we define type? Do we need to?
+Everything immutable except special types which cannot be sent to other functions.
+maybe a binary data type?
+```
+var x:binary = swap(largeBuffer)
+;now largebuffer is empty and does not point to anything
+x[100]=200
+```
+- hashtable uses a linked list or array + linked-list internalls. 
+- edit = edit a node in linked-list
+- add = add to linked-list
+for linked-list we can implement it using a number of list-chunks. each chunk is a small linked-list (~10 nodes) and chunks are connected to each other. So an edit in one of them needs only updating the other chunk. 
+- implement array as chunks too. a root table includes list of chunks.
+- let's implement everything as immutable. if compiler is sure some data is not shared with other threads, it can optimize changes.
+- if the function does not start a new thread, it's local variables can be mutated.
+- maybe we should change array and map write notation. for reading it is fine to use `()` but for writing we should use functions.
+```
+func readFile() -> buffer
+{
+    var b: buffer = allocate(1024)
+    b = fread("a.txt")
+    set(b, 10, "A")
+    set(b, 20, "B")
+    ...
+    return b
+}
+```
+in this case, a call to `set` will modify in-place and return same reference.
+this is done with escape analysis and check if function is starting a new thread.
+so summary:
+1. everything is immutable even local variables.
+2. we provide functions in core to create new instance on mutations of array and ...
+3. compiler will check and if function is not creating a new thread and a variable is not escaped, calls to core functions to create a new instance can be optimized to in-place mutations.
+For example `arr = set(arr, 0, 10)` will be compiled into a normal mov statement.
+or `tuple1 = {tuple1.a, tuple1.b, tuple1.c+1}` will be compiled into add statement.
+Haskell compiler also does that:
+https://stackoverflow.com/questions/27754801/when-does-ghc-internally-mutate-immutable-values
+4. change `var` keyword to something else.
+5. we need a syntax to change a tuple. we cannot use `tup.x = 10`
+for int, float, char, string as a whole and union we simply use `=`.
+we can use `=` for tuple too but it would be difficult to rewrite all fields
+`myPt = {myPt.x+1, myPt.y}`
+`myPt = myPt{x=myPt.x+1}`
+
+another solution is to provide synchronized functions. These functions can modify any data without worrying about immutability because they cannot be called from two threads. but this does not solve the problem as the problem is not with the function but with the data strcutre. in OOP they compose data structure inside a class with appropriate methods but here we don't have that feature.
+Maybe we can define a set of functions who have exclusive access to the data inside a tuple. 
+But the whole point of immutability is making sure data structures are all thread-safe.
+solution: channels like Go, atomic types, mutex and lock, future, promise.
+6. There are tools in the core for handling concurrency: channels, mutex, atomics, ... . but they are only for concurrency purposes and not for general data structures. 
+```
+var x: mutex
+acquire(x)
+x=x+1
+release(x)
+```
+we can define `atomic` as a native type and only core functions would be able to work with it. normal code does not have access to the integer inside `atomic[int]`.
+But it seems that when everything is immutable we no longer need mutex, lock and semaphore. except for things like db connection. I think we can use channels for that.
+`var db = channel_receive()`
+in the pool:
+`pool, dbc = getConnection(pool) -- channel_send(dbc)`
+advantage of message passing: we can easily migrate the other thread to another machine.
+actor, mutex, CAS, lock, semaphore.
+The most primitive one is CAS which also has hardware support.
+`var result: bool = cas myInt, oldInt, newInt`
+this will check if myInt=oldInt, it will copy newInt into myInt and return true. else false.
+`var done = myInt = (oldInt => newInt)`
+if we aloow for re-assignment, then it will be like mutable shared state!
+In Sclala, you cannot re-assign to a `val`.
+We can define a special type which is like int but you can only work with it using specific functions.
+```
+var x: cas = casSet(100)
+var done = compareSwap(x, 100, 200)
+;now x is 200
+;so you must know that x is a mutable variable. BUT it can only be mutated using `compareSwap` function.
+;you cannot write x=101
+```
+this can be used to implement mutex or semaphore or lock.
+Semaphore can be simulated with channels: http://www.golangpatterns.info/concurrency/semaphores
+Mutex also: https://stackoverflow.com/questions/3952061/how-can-we-use-channels-in-google-go-in-place-of-mutex
+Go channels use lock, mutex, semaphore and as a result cmpxchg.
+So it seems that channels can be the unified mechanism to handle concurrency in an efficient manner. 
+Compiler will definitely try to optimize code by converting immutable data to mutable if it is safe.
+Can we re-assign? in Haskell and Clojure are declarative so they don't have `=`.
+In scala and rust you cannot re-assign to a mutable.
+The only problem is closures! because they have access to outside variables. Even if we disallow re-assignment, it will not be simple and clear.
+But why? If I write `print x` inside a closure and x is defined outside, I am quite sure that x value won't change (if we disallow re-assignment). Clojure allows re-assignment for atomics.
+cpu has also atomic fetch-and-add in addition to cmpxchg.
+
+1. everything is immutable even local variables. And you cannot re-assign.
+2. compiler will check to see if a variable can be mutable in instruction level (if it's not escaped).
+For example `arr = set(arr, 0, 10)` will be compiled into a normal mov statement.
+or `tuple1 = {tuple1.a, tuple1.b, tuple1.c+1}` will be compiled into add statement.
+3. change `var` keyword to something else. maybe a notation.
+4. we need a syntax to change a tuple. we cannot use `myPt2 = myPt{x=myPt.x+1}`
+5. The only mechanism to handle concurrency and corrdination is channels which under the hood use fetch-and-add, cmpxchg, semaphore, mutex and ... .
+variable types: int, string, char, union, tuple, array, map.
+```
+x = 12
+y = x+1
+str1 = "DSADAS"
+str2 = [str1, "DS"]
+un1:union[int, float] = 1
+pt1 = {100,200}
+pt2 = pt1{x=101}
+arr1 = [1,2,3]
+set(arr1, 0, 22)
+map1 = [1=>"A", 2=> "B"]
+set(map1, 1, "G")
+```
+maybe we should bring type before the variable name!!!!?!?!?!??!?!?!?!?????
+then what about type inference?
+Golang does it like this:
+```
+var i int
+var c = true
+int k := 3
+```
+maybe we should not use `=` anymore!
+`<-`. But `=` is more intuitive for imperative code.
+`x = 3`
+we should disallow variable declaration without assignment.
+so variable declaration and assignment are the same thing. we call declsign.
+now we have two types of declsign: with explicit type or without.
+do we need to specify type?
+int - no
+float - no
+string - no
+array and map - no
+bool - no 
+union - ?
+the only case is union because it can have multiple possible types which are not specified at declsign.
+`f = 1` maybe f is a int, float union. but does it matter? we are assigning value to f and we cannot change it later.
+so basically it does not make sense to "define" a variable of type union. except for function input!
+for label type unions like bool, it can be inferred.
+it does not make sense to define variable of type union while disallow re-assignment.
+what about function input? 
+1.`func process(x:int, y: float)->union[int, float]`?
+2.`func process(x: union[int, float])->int`
+what if I want to use output of the first process function? I have to define it's type as union.
+why? I can omit type and it will be whatever output of the function is.
+So basically for local variable we don't need type decl but for function input and output we do.
+`func process(x:int, y:string, z: union[string, float])->union[a,b,c,d]`
+so `=` is used for declaration and assignment and type inference.
+```
+var i int -> invalid
+var c = true -> var does not make sense.
+int k := 3 -> no need for type
+```
+```
+x = 10
+y = 1.12
+z = "Hello"
+a = [1,2,3]
+m = [1=>2, 3=>4]
+bb = true
+cf = 1.23
+gh = process(1, cf, 12)
+```
+It is better to be more explicit. Although it is not required but better to make finding new variables easier.
+`let`, `:=`, `<-`
+what about function pointer type?
+`type pred := func(int)->bool`
+`g := (x:int)->bool { x>0 }`
+
+Let's continue with `:=` notation which is consistent with named types concept.
+I think I will need to review the whole spec as this change (no type decl, everything imm, ...) has a huge effect. lambda, protocol, type filter, union, operators, chaining, array and map, ...
+`x,y,z := process()`
 
 
+? - maybe we can use `:=` for map and array too.
+`arr := [1,2,3]`
+`arr2 := arr[1]` append
+`arr3 := arr[0:1]`?
+`map2 := map1[2 => "A"] ;add or update`
+
+? - if we use `:=` for var assignment, can we use `=` for comparison?
