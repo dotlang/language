@@ -21,7 +21,21 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`
-- **Version 0.96**: ?? ??? ???? - 
+- **Version 0.98**: ?? ??? ???? - 
+remove `++` and `--`
+implicit type inference in variable declaration
+
+Universal immutability + compiler optimization regarding re-use
+new notation to change tuple, array and map
+`@` is now type-id operator
+functions can return one output
+new semantics for chain operator and no `opChain`
+no `opEquals`
+New notation for function alias and dispose protocol
+Nothing as built-in type
+Dual notation to read from array or map and it's usage for block-if
+Closure variable capture and compiler re-assignment detection
+
 
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
@@ -113,17 +127,21 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 # Type System
 
+We have universal immutability. Everything is immutable. You can however re-assign a variable to a new value.
+Compiler will detect local variable updates which are not escape and optimize them to use mutable variable (for example for numerical calculations which happens only inside a function).
+Channels are the main tool for concurrency and coordination.
+
 ## Variabe declaration
 
-**Semantic**: Used to pre-declare the memory you need to store result of computations.
+**Semantic**: Used to declare and assign a value to a variable.
 
-**Syntax**: `var Identifier (':' type | ':' type '=' exp | '=' exp)`
+**Syntax**: `Identifier '=' exp`
 
 **Examples**
 
-1. `var x:int = 12`
-2. `var g = 19`
-3. `var count : int`
+1. `x = 12`
+2. `g = 19`
+3. `count = 100`
 
 **Notes**
 
@@ -135,6 +153,9 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 
 ## Assignment
+
+An assignment does not mutate a variable. It creates a new memory cell containing result of right side of `=` and re-assigns left-side variable to that memory address.
+You must re-assign a variable to a new value which is of the same type of the variable.
 
 **Semantics**: To make a copy of a piece of data (called rvalue) and put it somewhere else (called lvalue).
 
@@ -159,12 +180,13 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 **Semantics**: Provide basic tools to define most commonly used data types.
 
 **Syntax**: `int`, `float`, `char`, `union`, `array`, `slice`, `map`
+`nothing`
 
 **Examples**
 
-1. `var x:int = 12`
-2. `var x:float = 1.918`
-3. `var x:char = 'c'`
+1. `x = 12`
+2. `x = 1.918`
+3. `x = 'c'`
 
 **Notes**:
 
@@ -205,9 +227,16 @@ var stringed = if ( int_or_float ) {
 3. `union[int, union[float, string]]` will be simplified to `union[int, float, string]`
 4. Example 4: In a boolean context, `x.(type)` evaluates to a bool indicating true if `x` contains given type.
 5. Example 5: If `x.(int)` is used otherwise it evaluates to an integer and a boolean indicating desired type and a flag for whether casting is successfull or no.
-7. You can use `x.(type)` notation in a block-if (Example 6). Refer to corresponding section for more information about `if`.
+7. You can use `type(x)` notation in a block-if (Example 6). Refer to corresponding section for more information about `if`.
 
 ## Array
+To read from array: `x = arr(0)` or `x = (0)arr`
+To update array: `arr = arr[0=>10, 2=>20]`
+define array literal: `arr = [1,2,3]` or `arr=[0=>1, 1=>2, 2=>4]`
+multi-d array:
+
+`g:=x2(0)(0)`
+`y2 :=x2[0,0=>102]`
 
 **Semantics**: Define a fixed-size consecutive sequence of element of the same type
 
@@ -274,7 +303,9 @@ var stringed = if ( int_or_float ) {
 
 **Syntax**: 
 1. For declaration: `{field1: type1, field2: type2, field3: type3, ...}` 
-2. For literals: `Type{field1=value1, field2=value2, field3=value3, ...}`
+2. For literals: `Type{field1:value1, field2:value2, field3:value3, ...}` 
+or `Type{value1, value2, ...}`
+3. For update: `OtherVar{field1:value1, field2:value2, field3:value3, ...}`
 
 **Examples**
 
@@ -427,7 +458,15 @@ type string := array[char]
 
 
 ## Map
-4. `var my_map: map[string, int] = ["A":1, "B":2, "C":3]`
+To read from map: `x = map(0)` or `x = (0)map`
+To update map: `map1 = map1[0=>10, 2=>20]`
+define map literal: `map = [0=>1, 1=>2, 2=>4]`
+reading from map will return maybe. 
+`value := my_map("key1")` normally map query will return a maybe[T]
+`value := my_map("key1") | 0` --if does not exist, set value to 0
+
+
+4. `var my_map: map[string, int] = ["A"=>1, "B"=>2, "C"=>3]`
 6. `my_map("A") = 2`
 
 `type map[K,V] := {...}`
@@ -460,6 +499,9 @@ var t: int = y("b")
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Functions
+- You can use `=` to define function alias:
+`func a(x:int, y:int)->float = b` means a is same as b. Any call to a, will be redirected to b and b must have same signature as a.
+- All functions return something. If they don't, compiler will set their return type to `nothing`.
 - Function inputs are immutable. Only local variables can appear on the left side of `=`.
 - Note that when I call `process(myIntOrFloat)` with union, it implies that there must be functions for both int and union (or a func with union type).
 - explain fwd functions
@@ -502,16 +544,13 @@ var r: BasicShape = myCircle ;automatic casting - because Circle inherits from B
 `func paint(o:Square)...`
 
 
-- `type NoReturnFunc[T] := func(T)`
-- You can use `_` to ignore a function output: `var t, _ = my_map("key1")`
-- A function can return multiple outputs:
+- You can use `_` to ignore a function output: `{t, _} = my_map("key1")`
+- A function can only return one output:
 ```
-func process()-> var:int, val:int
+func process()-> {int, int}
 var x:int
 val y:int
-x,y = process
-var x, val y = process()
-var x, val y := process()
+{x,y} = process
 ```
 - You can define consts using functions: `func PI -> 3.14`
 - Storage class: `var/val` of the function output is part of singature (but not output type). And you must capture a functin output.
@@ -661,6 +700,7 @@ add(y=19)
 Each function call will be dispatched to the implementation with highest priority according to matching rules. 
 
 ## Lambda expression
+- If a lambda is accessing varirables in the parent function, they cannot be re-assigned. Compiler will detect this and issue error if they are re-assigned. This is to prevent possible data race in which case, a data is modified outside a thread (which is the closure) while the code inside the thread is reading it. Use channels to communicate between threads.
 A function type should not include parameter name because they are irrelevant.
 A lambda variable can omit types because they can be inferred: `var x: comparer = (x,y) -> ...`
 A function literal which does not have a type in the code, must include argument name and type. `(x:int)->int { return x+1 }(10)` or `var fp = (x:int)->int { return x+1}`
@@ -936,78 +976,66 @@ Examples:
 ## Operators
 - Conditional: `and or not == != >= <= => =<`
 
-- Math: `+ - * % %% (is divisible) ++ -- **`
-- Note that `++` and `--` are statements which will update their operand and won't return anything. So you cannot use them in another statement or expression. Also these are only allowed as suffix.
-The math operators can be combined with `=` to do the calculation and assignment in one statement.
+- Math: `+ - * % %% (is divisible) **`
+- There is no `++` and `--` operators.
+- The math operators can be combined with `=` to do the calculation and assignment in one statement.
 - `=` operator: copies data.
 - `:=` opreator will make left side point to right-side variable or result of evaluation of the right-side expression.
-- `x == y` will call `opEquals` functions is existing, by default compares field-by-field values. But you can override.
+- `x == y` will compare two variables field by field.
 - We don't have operators for bitwise operations. They are covered in core functions. 
-- `equals` functions is used for equality check.
-- You can have multiple assignments at once: `x,y=1,2`
 - Assignment semantics: `x=y` will duplicate contents of y into x (same as `*x=*y` in C++). So if rvalue is a temp variable (e.g. `x=1+y`), it will be a ref-assign handled by the compiler. If you want to ref-assign you should use `:=` notation. Note that for assignment lvalue and rvalue must be of the same type. You cannot assign circle to Shape because as copy is done, data will be lost (you can refer to `.Shape` field in the Circle).
 `x=y` will duplicate y into x. So changes on x won't affect y. 
-- Comparison semantics: `x==y` will compare data of the references for comparison. If you need to compare the references themselves for comparison you can use core function's ref: `ref(x) == ref(y)`
-
-- Type operator (`@`): This can be used to cast: `var myInt = @int(myFloat)`. 
-- Applications of casting:
-cast between named type and underlying
-cast between elements of union and union type
-cast between subtype and super-type
-cast int to float
-cast from an untyped tuple variable to a specific type.
-- Casting examples:
-`@int(x)`
-`@string(x)`
-`@OptionalInt(x)`
-`@Point(var)`
-`@Point({x:10, y:20})` --cast a tuple literal
-`@Point[int]({x:10, y:20})` -- casting combined with type specialization
-Casting to a tuple, can accept either a tuple literal or tuple variable or an exploded tuple.
-Note that there is no support for implicit casting functions. If you need a custom cast, write a separate function and explicitly call it.
-- chaining: You can use `|` in the form of: `x | f` which means `f(x)`. You can customize behavior of this operator for your type by writing `opChain` function.
+- Comparison semantics: `x==y` will compare data.
+- Type-id (`@`): returns type-id of a type: `@int`
+- To cast from named to unnamed type you can use: `Type{value}` notation: `y = int{x}`
+- For union: `x=union[int,float]{12}`
+- chaining: `x | f` if f is a closure, will evaluate to `f(x)`. 
+`a | b` if b is not a closure, will evaluate to `a` if it is not, `nothing`, else it will evaluate to `b`.
 
 ### Special Syntax
-- `@` casting
+- `@` type-id
 - `|` chaining
 - `+` type filter
 - `_` placeholder for lambda or unknown variable
-- `:` declaration for tuple, variable type and type filter
+- `:` declaration for tuple, tuple literal and type filter
 - `:=` custom type definition
-- `=` type alias, copy value
-- `=>` map literals
+- `=` type alias, copy value, function alias
+- `=>` map/array literals
 - `..` range generator
-- `->` function declaration, block-if
+- `->` function declaration
 - `[]` generics, array and map literals
 - `{}` code block, tuple definition and tuple literal
 - `()` function call, modify array and map
 - `.` access tuple fields
 
-Keywords: `import`, `func`, `var`, `type`, `protocol`, `if`, `else`
-Special functions: `dispose`, `opChain`
+Keywords: `import`, `func`, `type`, `protocol`
+Semi-keywords: `if`, `else`
 Primitive data types: `int`, `float`, `char`, `union`, `array`, `map`
-Extended data types: `bool`, `string`
+Extended data types: `bool`, `string`, `nothing`
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
-### match
+### block-if, match
+We use map literals to do block-if.
 ```
-;when result of x is not boolean
-y = if ( x ) {
-    1 -> "G",
-    2 -> "H",
-    3 -> "N",
-    else -> "X"
-}
-y = if ( x ) {
-    (int) -> "G",
-    (string) -> "H",
-    else -> "X"
-}
+y = (x)[
+    1 => "G",
+    2 => "H",
+    3 => "N",
+] | "default"
+```
+To type match for a union:
+```
+y = ( type(x) )
+[
+    @int => "G" + int{x},
+    @string => "H",
+] | "X"
 ```
 
 ###if, else
 - You can use `if/else` block as an expression.
+- Compiler will convert if/else to a call on a map literal like block-if with only two options: true and false.
 ```
 IfElse = 'if' '(' condition ')' Block ['else' (IfElse | Block)]
 Block  = Statement | '{' (Statement)* '}'
@@ -1029,8 +1057,13 @@ These declarations will be only available inside if/else block.
 - `xyz if(cond)` is also possible.
 
 ### assert (removed)
-- If condition is not satisfied, it will return an error. 
-- We have RIAA approach. Anything which is allocated inside a function which is not part of return value will be disposed (by calling `dispose` function) when exiting the function.
+- If a type indicates explicitly that is implements `Disposable` protocol any assignment of that type must be accompanied with `& dispose` to dispose resource after function is finished.
+```
+type FileHandle := {handle: int} +Disposable
+func closeFile(x:FileHandle)->bool { ... }
+func dispose(x: FileHandle) = closeFile
+f = openFile(...) & closeFile
+```
 
 - `Exception` is a simple tuple defined in core. 
 - You can use suffix if for assertion: `return xyz if not (str.length>0)`
@@ -1039,7 +1072,8 @@ These declarations will be only available inside if/else block.
 - In order to handle possible errors in a chain of function calls, you can use `opChain` on a type (e.g. Maybe). 
 `func opChain[T](m: Maybe[T], f: func(T)->Maybe[T]) -> { return if (@m == @Nothing) None else f(m) }`
 `var input = 10`
-`var finalResult: Maybe[int] = input | check1(5, _) | check2(_, "A") | check3(1,2,_)`
+`func bind[T](x:T, f:func(T)->T)...`
+`var finalResult: Maybe[int] = input | bind(_, check1(5, _)) | bind(_, check2(_, "A")) | bind(_, check3(1,2,_))`
 
 - **Nothing**: Nothing is a label type with only one value: `nothing`.
  You can use it's type for return value of a function.
@@ -1166,7 +1200,7 @@ var result = 0
 loop(... , () -> { if ( ... ) { result = 88; return false; })
 ```
 - If expression inside loop evaluates to a value, `loop` can be used as an expression:
-`var t:int[] = loop(var x <- {0..10}) x` or simply `var t:int[] = loop({0..10})` because a loop without body will evaluate to the counter, same as `var t:array[int] = {0..10}`
+??? `var t:int[] = loop(var x <- {0..10}) x` or simply `var t:int[] = loop({0..10})` because a loop without body will evaluate to the counter, same as `var t:array[int] = {0..10}`
 
 ## Standard package
 
