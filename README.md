@@ -21,20 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`
-- **Version 0.98**: ?? ??? ???? - 
-remove `++` and `--`
-implicit type inference in variable declaration
-
-Universal immutability + compiler optimization regarding re-use
-new notation to change tuple, array and map
-`@` is now type-id operator
-functions can return one output
-new semantics for chain operator and no `opChain`
-no `opEquals`
-New notation for function alias and dispose protocol
-Nothing as built-in type
-Dual notation to read from array or map and it's usage for block-if
-Closure variable capture and compiler re-assignment detection
+- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, Nothing as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration
 
 
 # Introduction
@@ -95,7 +82,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 - **Encoding**: Modules are encoded in UTF-8 format.
 - **Whitespace**: Any instance of space(' '), tab(`\t`), newline(`\r` and `\n`) are whitespace and will be ignored. 
 - **Indentation**: Indentation must be done using spaces, not tabs. Using 4 spaces is advised but not mandatory.
-- **Comments**: `;` is used to start a comment. It must be either first character of the line or follow a whitespace.
+- **Comments**: `//` is used to start a comment.
 - **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0b0101011101` binary number. You can separate digits using undescore: `1_000_000`.
 - **Terminator**: Each statement must be in a separate line and must not end with semicolon.
 - **Order**: Each source code file contains 3 sections: import, definitions and function. The order of the contents of source code file matters: `import` section must come first, then declarations and then functions come at the end. If the order is not met, compiler will give errors.
@@ -135,13 +122,13 @@ Channels are the main tool for concurrency and coordination.
 
 **Semantic**: Used to declare and assign a value to a variable.
 
-**Syntax**: `Identifier '=' exp`
+**Syntax**: `Identifier ':=' exp`
 
 **Examples**
 
-1. `x = 12`
-2. `g = 19`
-3. `count = 100`
+1. `x := 12`
+2. `g := 19`
+3. `count := 100`
 
 **Notes**
 
@@ -153,6 +140,7 @@ Channels are the main tool for concurrency and coordination.
 
 
 ## Assignment
+Variable must be declared before.
 
 An assignment does not mutate a variable. It creates a new memory cell containing result of right side of `=` and re-assigns left-side variable to that memory address.
 You must re-assign a variable to a new value which is of the same type of the variable.
@@ -212,7 +200,7 @@ You must re-assign a variable to a new value which is of the same type of the va
 6. 
 ```
 var stringed = if ( int_or_float ) {
-    (int) -> ["int" , toString(int_or_float)],  ;inside this block, int_or_float is automatically treated like an int
+    (int) -> ["int" , toString(int_or_float)],  //inside this block, int_or_float is automatically treated like an int
     else -> "Not_int"
 }
 ```
@@ -386,6 +374,8 @@ or `Type{value1, value2, ...}`
 1. You can define multiple label types at once (Example number 3).
 
 ## Named type
+You can indicate protocol implementation for a type using `+` notation: `type FileHandle := {handle: int} +Disposable`
+
 
 **Semantics**: To introduce new, different types based on existing types (called underlying type).
 
@@ -427,9 +417,9 @@ or `Type{value1, value2, ...}`
 A named type is completely different from it's underlying type and the only similarity is their internal memory representation.
 ```
 type MyInt := int
-;in a function
-var t: int = 12   ;define a variable of type int and named 't'
-var y: MyInt = t  ;wrong! You have to cast 't'
+//in a function
+var t: int = 12   //define a variable of type int and named 't'
+var y: MyInt = t  //wrong! You have to cast 't'
 ```
 
 Two variables of same named types, have the same type. Two variables of unnamed types which is structurally similar, have the same type (e.g. `array[int]` vs `array[int]`).
@@ -438,7 +428,7 @@ Assignment between different variables is only possible if they have the same ty
 ```
 var x: int = 12
 var y: int = 19
-x=y  ;valid
+x=y  //valid
 ```
 
 - If function expects a named type, you cannot pass an equivalent unnamed type. 
@@ -477,7 +467,7 @@ m("C") = 12
 
 Maps, hashtables or associative arrays are a data structure to keep a set of keys and their corresponding values.
 ```
-;defining and initializing a map
+//defining and initializing a map
 var y: map[string, int] = ["a": 1, "b": 2]
 
 ;read/write from/to a map
@@ -499,8 +489,6 @@ var t: int = y("b")
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Functions
-- You can use `=` to define function alias:
-`func a(x:int, y:int)->float = b` means a is same as b. Any call to a, will be redirected to b and b must have same signature as a.
 - All functions return something. If they don't, compiler will set their return type to `nothing`.
 - Function inputs are immutable. Only local variables can appear on the left side of `=`.
 - Note that when I call `process(myIntOrFloat)` with union, it implies that there must be functions for both int and union (or a func with union type).
@@ -969,6 +957,7 @@ Examples:
 
 
 
+
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Notations
@@ -998,8 +987,8 @@ Examples:
 - `+` type filter
 - `_` placeholder for lambda or unknown variable
 - `:` declaration for tuple, tuple literal and type filter
-- `:=` custom type definition
-- `=` type alias, copy value, function alias
+- `:=` custom type definition, variable declaration
+- `=` type alias, copy value
 - `=>` map/array literals
 - `..` range generator
 - `->` function declaration
@@ -1036,6 +1025,8 @@ y = ( type(x) )
 ###if, else
 - You can use `if/else` block as an expression.
 - Compiler will convert if/else to a call on a map literal like block-if with only two options: true and false.
+`a=if x y else z`
+`a=(x)[true=>y, false=>z]`
 ```
 IfElse = 'if' '(' condition ')' Block ['else' (IfElse | Block)]
 Block  = Statement | '{' (Statement)* '}'
@@ -1050,18 +1041,15 @@ Block  = Statement | '{' (Statement)* '}'
 ```
   if ( exp1 and exp2 ) 11 else -1
 ```
-- You can have one variable declarations before the condition.
-These declarations will be only available inside if/else block.
-`if (var x=getResult(), x>0) ... else ...`
-`if (var x=1, x>y)...`
-- `xyz if(cond)` is also possible.
+- `a=xyz if(cond)` is also possible.
+`a=(cond)[true=>xyz, false=>a]`
 
 ### assert (removed)
 - If a type indicates explicitly that is implements `Disposable` protocol any assignment of that type must be accompanied with `& dispose` to dispose resource after function is finished.
 ```
 type FileHandle := {handle: int} +Disposable
 func closeFile(x:FileHandle)->bool { ... }
-func dispose(x: FileHandle) = closeFile
+func dispose(x: FileHandle) -> closeFile(x)
 f = openFile(...) & closeFile
 ```
 
