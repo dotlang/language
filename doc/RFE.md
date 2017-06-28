@@ -2425,6 +2425,7 @@ can we simplify this and get rid of `@`?
 like the way we handle tuples.
 `y := int{x}` if type before `{}` is not tuple, it is a cast from named to underlying type.
 Is named type still relevant/needed? yes it should be.
+But we still need `@` as indicator of type-id of types.
 
 ? - can we use type alias in union?
 `type MyInt = int`
@@ -2512,7 +2513,12 @@ then for higher order combine them.
 
 ? - if we use `:=` for var assignment, can we use `=` for comparison?
 
-? - Make block-if syntax similar to hash.
+? - declare `nothing` a primitive type. Because we refer to it in the definition of `|`
+
+? - Say that we can use `(x)array` to read from map or array.
+and array literal can be define like a hash literal with sequential keys as index.
+
+? - Make block-if syntax similar to hash and re-define chain operator without relying on `opChain`.
 ```
 y = (x)[
     1 => "G",
@@ -2544,18 +2550,114 @@ y = ( x )
 ] | "X"
 ```
 - we still have normal conditioned if.
+- we call declare `(T)` an operator which returns type-id of a type. so `x == (T)` will check if type of x is T. but how can we cast x? below is no longer valid if we cannot reutrn multiple items:
+`var int_value, success = int_or_float.(int)`
+Let's say `type(x)` will return type-id of x which can be compared to `int`. but it's not good to treat `int` like a value.
+`{_, has_int} := int_or_float(int)`
+`int_or_zero := int_or_float(int)`
+`{int_or_zero,isInt} := int_or_float(int)`
+reading from maps:
+`{intVal, found} := my_map("key1")` `if(found) ...`
+```
+y = ( x )
+[
+    (int) => "G",
+    (string) => "H",
+] | "X"
+```
+**Summary**: chain operator has two functions: `A|B` is B is a closure, it will evaluate to `B(A)`.
+If B is a value, if A is Nothing, it will evaluate to B else to A.
+q: How can we check for type of data inside a union? we say:
 
+**summary**: type function returns type-id of a value and `@T` returns type-id of a type.
+```
+y = ( type(x) )
+[
+    @int => "G" + int{x},
+    @string => "H",
+] | "X"
+```
+or:
+```
+y = ( type(x) )
+[
+    @int => "G" + int{x},
+    @string => "H",
+] | "X"
+```
+`value := my_map("key1")` normally map query will return a maybe[T]
+`value := my_map("key1") | 0` --if does not exist, set value to 0
 
-? - Disallow writing `opChain` for developer. Just define it's behavior based on expectation.
+? - chain operator has two functions: `A|B` is B is a closure, it will evaluate to `B(A)`.
+If B is a value, if A is Nothing, it will evaluate to B else to A.
+Disallow writing `opChain` for developer. Just define it's behavior based on expectation.
 for example 
 `maybe[T] | default(5,)` will return 5 if first is nothing.
 `A | f(T)` will return `f(A)` if T is of type of A
 `maybe[T] | f(T)` will return first if it cannot be sent to f, `f(first)`.
-
 `func default(y:T, x:maybe[T]) -> T {return y if  x.(Nothing) else x.(T)}`
+Still I think it is not clear and consistent.
+OTOH writing `opChain` and calling it with `|` is not very readaable. what if I write `bind` function and call it like this:
+`func bind[T](x:T, f:func(T)->T)...`
+`x | bind(,f)`
+`x | default("A",)`
+`(x)[1=>2, 3=>4] | default(0,)`
 
 ?- No need to use `_` in pipe if pipe is sent to last argument.
 `x | f(a,_)` can be written: `x | f(a,)`
 use empty comma to indicate place of pipe.
 `f(x,_,y)` -> `f(x,,y)`
 maybe we can get rid of `_` totally.
+I think `_` is needed when we don't need part of output of a function.
+why not re-use it here?
+
+? - What changes in var assignments in if and loop?
+`if (var x=1, x>y)...`
+Maybe it's not very useful.
+
+? - Now that everything is named, aren't we moving toward lazy evaluation?
+`x := f(1)`
+`y := g(x)`
+first line is just a call to a pure function which has no side-effct. so compiler can run it when evaluating `y` or even later.
+BUT functions can have side-effects here. They can write to file or network or ... .
+
+? - Can't we re-assign variables? and do something else for threads and race and ...?
+For example a thread, has read-only access to outside vars but communicates through a channel.
+what is the problem with re-assignment?
+What if we disallow access to outside values? 
+we use closure in block-if and loop. they should have access.
+```
+x = 1
+start_thread({loop(true, process(x)}))
+```
+if later we change value of `x` there might be a race condition. 
+which one is more important? avoiding potential race condition or letting user re-assign values?
+This does not happen only for closures?
+```
+x = 1
+process_in_thread(x)
+x=x+1
+```
+if we say, calling a function, sends a copy of the data or a reference which `x=x+1` will renew, then it will be fine.
+so `x=x+1` we must make sure that x is assigned to a new location on memory. as a result the thread's x variable won't be changed.
+```
+func process_in_thread(x: Point) { ... }; I am sure that x won't ever be changed. even if caller re-assigns it, it will be a new thing.
+```
+so the only problem is race condition for closure. Maybe we can accept that and let developer handle those cases by using channels. 
+Java only allows access to final variables in a closure. Final variables are not re-assignable.
+what if closure gets a copy or immutable copy of the variable?
+```
+z = 1
+closure1 := (x:int) -> x+z
+```
+C++ syntax:
+```
+z = 1
+;z is captured by value
+closure1 := [z](x:int) -> x+z
+```
+can't we just send z like a normal argument without changing signature of the function?
+`closure1 := ((x:int, z:int) -> x+z)(_, z)` but this is too long
+`closure1 := (x:int, z:int) -> x+z`
+
+? - How can runtime memoize a function? Maybe function has a side-effect.
