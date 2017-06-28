@@ -2682,8 +2682,71 @@ What if I want x to have `union[int, float]` type?
 then I can write `x := 1.5`
 `x := 1`
 
-? - What changes in var assignments in if and loop?
+N - Can we extende/insert into array using new notation?
+`arr = arr[100=>102]` updates.
+no insert unless using a function.
+
+Y - Can't we just remove function alias? it is redundant and only added to support implement protocol with functions with different name.
+```
+type FileHandle := {handle: int} +Disposable
+func closeFile(x:FileHandle)->bool { ... }
+func dispose(x: FileHandle) -> closeFile(x)
+f = openFile(...) & closeFile
+```
+compiler will detect `closeFile` is same as dispose for this type.
+
+N - Shall array access return maybe to handle index-out-of-bounds?
+it may cause confusion:
+`g=[f(x)->5->5]`
+key of a map (and array index) cannot be function type or lambda expression.
+`g=g[f(x)->5]`
+`g=g["A"->(x: int, y:int) -> int { return x+y }]`
+It can be confusing!
+
+N - What happens if I modify a slice?
+It will modify underlying array. No. There is no mutation.
+```
+var arr: array[int] = [0..9]
+var slice1: array[int] = arr(1, 2)
+```
+Y - if cannot declare variable.
+What changes in var assignments in if and loop?
 `if (var x=1, x>y)...`
 Maybe it's not very useful.
+`if (x := 1, x>y)...`
+But we are going to convert if to a map lookup. So how will var be translated?
 
-? - Shall array access return maybe to handle index-out-of-bounds?
+N - Can we simplify type filter? instead of `prot1+prot2` combine them in a new protocol and just include that one?
+`func isInArray[T,V: Eq(T) + prot2(T,V) + T.Field1](x:T, y:array[T]) -> bool { ... }`
+becomes:
+`protocol pp[T,V] := Eq[T] + prot2[T,V] + T.Field1`
+`func isInArray[T,V: pp](x:T, y:array[T]) -> bool { ... }`
+`type u5 := union[T: Prot1 + T.Tuple1]`
+We do not specify multiple types for a variable. So why multiple conditions for a template argument?
+`func process(x:int, y:float, z:string)`
+similarly:
+`func process[T:prot1, U:prot2, V: prot3](...)`
+but protocols can be multi-parameter.
+`func process[T,U,V :prot1(T,V) + prot2(T,U) + prot3(U)](...)`
+what about using paren when refering to protocols?
+`protocol comprbl[T] := ...`
+`type Set[T,V : comprbl(T) + prot2(T) + prot3(T,V)] := array[T,V]`
+
+Y - We are not using `var` keyword because we won't be assigning type and so it is redundant.
+but `x=f(dasadsa)` seems a bit weird.
+specially now that we can re-assign, `=` does not necessarily indicate declaration.
+maybe `def` or `let`
+or use `:=` for the first time which means assign and declare.
+`:=` use to do declaration and initilization at the same time
+What happens if I write `:=` twice? error.
+
+Y - use `//` for comments and get rid of `;` completely.
+
+? - Can we simplify this syntax more?
+`var finalResult: Maybe[int] = input | bind(_, check1(5, _)) | bind(_, check2(_, "A")) | bind(_, check3(1,2,_))`
+`func bind[T](x:T, f:func(T)->T)...`
+Used to transparently handle exceptions?
+`var finalResult: Maybe[int] = input | check1(5, _)) | check2(_, "A") | check3(1,2,_)`
+solution 1: add a new operator
+solution 2: custom opChain or custom operators
+`a|b` if a is exception do not call `b(a)` but return a. if a is not exception, return `b(a)`
