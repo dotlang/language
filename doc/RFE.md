@@ -2186,7 +2186,7 @@ Another solution: return a tuple with a single function pointer.
 N - for union definition do not use `:` but use `|` which `T|F` implies all T if F.
 No. this concept applies to type and function and protocol too. let's just use `:`
 
-? - Unified immutability everywhere. Makes things simpler to read and write. And the optimizations will be done by compiler.
+Y - Unified immutability everywhere. Makes things simpler to read and write. And the optimizations will be done by compiler.
 Then we can get rid of `var` keyword as everything is immutable. re-assignment can be disallowed.
 Then how can we define type? Do we need to?
 Everything immutable except special types which cannot be sent to other functions.
@@ -2408,9 +2408,9 @@ what about loop with condition?
 `func loop[T,X](pred: func(T)->bool, initial: T, body: func(T)->X)->array[X]`
 what should we call them now? what we used to call variables. value? 
 
-? - remove `--` and `++` they are mutating.
+Y - remove `--` and `++` they are mutating.
 
-? - Are these still valid?
+Y - Are these still valid?
 - Applications of casting:
 yes. cast between named type and underlying. `type MyInt := int`
 no. cast between elements of union and union type
@@ -2427,19 +2427,18 @@ like the way we handle tuples.
 Is named type still relevant/needed? yes it should be.
 But we still need `@` as indicator of type-id of types.
 
-? - can we use type alias in union?
+N - can we use type alias in union?
 `type MyInt = int`
 `type x := union[MyInt, int]` -- error definitely
 `type x := union[MyInt, float]`
 `if ( x.(int) )` or `if ( x.(MyInt) )` are the same.
 
+Y - `==` compares field by field, datawise. If you want custom comparison, write your own function. So there is no `opCompare`. 
 
-? - `==` compares field by field, datawise. If you want custom comparison, write your own function. So there is no `opCompare`. 
-
-? - Remove "You can have multiple assignments at once: `x,y=1,2`"
+Y - Remove "You can have multiple assignments at once: `x,y=1,2`"
 What is use of this? for function call result, it will return tuple and we will use `{x,y}` syntax.
 
-? - make calling dispose function explicit. let types declare they implement a protocol.
+Y - make calling dispose function explicit. let types declare they implement a protocol.
 add `=` to alias functions. If a type marks to implement `Disposable` any value of it's type must call it's dispose method or any of it's aliases. `=` is used for type and function alias.
 `dispose`. Why not call it explicitly?
 when writing defer you must explicitly state the code. The only advantage is that when there are multiple returns you can write one defer.
@@ -2475,7 +2474,7 @@ for exampe: `acquire_lock(x) & release_lock(x)` this is not pure! acqlock should
 `x := acquire_lock() & release_lock`
 `func dispose(lock) = release_lock`
 
-? - can we make chain operator paren-free? no need to use paren when it is combined with other expressions.
+N - can we make chain operator paren-free? no need to use paren when it is combined with other expressions.
 `x := gg | process(_,1))`
 `x := {gg, xx} | process(_,_,1)`
 `x := 1 | process(_,2) + 5`????
@@ -2483,9 +2482,9 @@ for exampe: `acquire_lock(x) & release_lock(x)` this is not pure! acqlock should
 `x := 1.process(_,2).f2(_,5)`
 but dot can be confused with tuple accessor.
 
-? - can we say that all functions must return something even if Nothing. so all functions can be modelled as `func(I)->O`.
+Y - can we say that all functions must return something even if Nothing. so all functions can be modelled as `func(I)->O`.
 
-? - Do we still need to return multiple outputs?
+Y - Do we still need to return multiple outputs?
 `return x,y`
 `return {x,y}`
 `x,y := process()`
@@ -2496,7 +2495,8 @@ if all functions return a single thing, modelling generics which work functions 
 we can create temporary tuple and assign it's components to actual values.
 
 
-? - maybe we can use `:=` for map and array too.
+Y - 
+maybe we can use `:=` for map and array too.
 `arr := [1,2,3]`
 `arr2 := arr[1]` append
 `arr3 := arr[0 => 1]`?
@@ -2511,14 +2511,14 @@ we can define matrix for 2d array.
 then for higher order combine them.
 `x: matrix[array[int]]` - 3d array, .... not unified.
 
-? - if we use `:=` for var assignment, can we use `=` for comparison?
+N - if we use `:=` for var assignment, can we use `=` for comparison?
 
-? - declare `nothing` a primitive type. Because we refer to it in the definition of `|`
+Y - declare `nothing` a primitive type. Because we refer to it in the definition of `|`
 
-? - Say that we can use `(x)array` to read from map or array.
+Y - Say that we can use `(x)array` to read from map or array.
 and array literal can be define like a hash literal with sequential keys as index.
 
-? - Make block-if syntax similar to hash and re-define chain operator without relying on `opChain`.
+Y - Make block-if syntax similar to hash and re-define chain operator without relying on `opChain`.
 ```
 y = (x)[
     1 => "G",
@@ -2565,7 +2565,7 @@ y = ( x )
     (string) => "H",
 ] | "X"
 ```
-**Summary**: chain operator has two functions: `A|B` is B is a closure, it will evaluate to `B(A)`.
+Y **Summary**: chain operator has two functions: `A|B` is B is a closure, it will evaluate to `B(A)`.
 If B is a value, if A is Nothing, it will evaluate to B else to A.
 q: How can we check for type of data inside a union? we say:
 
@@ -2588,7 +2588,7 @@ y = ( type(x) )
 `value := my_map("key1")` normally map query will return a maybe[T]
 `value := my_map("key1") | 0` --if does not exist, set value to 0
 
-? - chain operator has two functions: `A|B` is B is a closure, it will evaluate to `B(A)`.
+Y - chain operator has two functions: `A|B` is B is a closure, it will evaluate to `B(A)`.
 If B is a value, if A is Nothing, it will evaluate to B else to A.
 Disallow writing `opChain` for developer. Just define it's behavior based on expectation.
 for example 
@@ -2603,7 +2603,7 @@ OTOH writing `opChain` and calling it with `|` is not very readaable. what if I 
 `x | default("A",)`
 `(x)[1=>2, 3=>4] | default(0,)`
 
-?- No need to use `_` in pipe if pipe is sent to last argument.
+N - No need to use `_` in pipe if pipe is sent to last argument.
 `x | f(a,_)` can be written: `x | f(a,)`
 use empty comma to indicate place of pipe.
 `f(x,_,y)` -> `f(x,,y)`
@@ -2611,17 +2611,26 @@ maybe we can get rid of `_` totally.
 I think `_` is needed when we don't need part of output of a function.
 why not re-use it here?
 
-? - What changes in var assignments in if and loop?
-`if (var x=1, x>y)...`
-Maybe it's not very useful.
-
-? - Now that everything is named, aren't we moving toward lazy evaluation?
+N - Now that everything is named, aren't we moving toward lazy evaluation?
 `x := f(1)`
 `y := g(x)`
 first line is just a call to a pure function which has no side-effct. so compiler can run it when evaluating `y` or even later.
 BUT functions can have side-effects here. They can write to file or network or ... .
 
-? - Allow variable re-assignment and prevent data racing in closure capture by compiler detecting re-assigned captured vars.
+N - Shall we omit return type from function declaration?
+For function type, the return type should be mentioned but for declr do we need it?
+
+N - How can runtime memoize a function? Maybe function has a side-effect.
+maybe developer should handle it by adding a struct and a general function which calls target function and has a cache.?
+
+Y - Now that we can re-assign, shall we use `=` instead of `:=`?
+And `==` for comparison as expected.
+`=` makes a copy as expected.
+
+N - We are not looking to have pure functions. Our functions can have (and will have) side effects like IO and network.
+We want to have functions that work on immutable data. 
+
+Y - Allow variable re-assignment and prevent data racing in closure capture by compiler detecting re-assigned captured vars.
 Can't we re-assign variables? and do something else for threads and race and ...?
 For example a thread, has read-only access to outside vars but communicates through a channel.
 what is the problem with re-assignment?
@@ -2673,12 +2682,8 @@ What if I want x to have `union[int, float]` type?
 then I can write `x := 1.5`
 `x := 1`
 
-? - Shall we omit return type from function declaration?
-For function type, the return type should be mentioned but for declr do we need it?
+? - What changes in var assignments in if and loop?
+`if (var x=1, x>y)...`
+Maybe it's not very useful.
 
-? - How can runtime memoize a function? Maybe function has a side-effect.
-maybe developer should handle it by adding a struct and a general function which calls target function and has a cache.?
-
-? - Now that we can re-assign, shall we use `=` instead of `:=`?
-And `==` for comparison as expected.
-`=` makes a copy as expected.
+? - Shall array access return maybe to handle index-out-of-bounds?
