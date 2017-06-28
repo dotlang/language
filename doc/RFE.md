@@ -2621,7 +2621,8 @@ Maybe it's not very useful.
 first line is just a call to a pure function which has no side-effct. so compiler can run it when evaluating `y` or even later.
 BUT functions can have side-effects here. They can write to file or network or ... .
 
-? - Can't we re-assign variables? and do something else for threads and race and ...?
+? - Allow variable re-assignment and prevent data racing in closure capture by compiler detecting re-assigned captured vars.
+Can't we re-assign variables? and do something else for threads and race and ...?
 For example a thread, has read-only access to outside vars but communicates through a channel.
 what is the problem with re-assignment?
 What if we disallow access to outside values? 
@@ -2659,5 +2660,25 @@ closure1 := [z](x:int) -> x+z
 can't we just send z like a normal argument without changing signature of the function?
 `closure1 := ((x:int, z:int) -> x+z)(_, z)` but this is too long
 `closure1 := (x:int, z:int) -> x+z`
+or we can say closure can only access primitives. but its not good.
+another solution: closure can access but it cannot be re-assigned: compiler can detect this.
+and we allow re-assigning for all other variables (of course it will bind a new identity to a value).
+Java compiler can detect that: "A variable or parameter whose value is never changed after it is initialized is effectively final.".
+If we re-assign, it should be to the same type.
+`x := 1`
+`x := 5`
+it is consistent with unions?
+What if I want x to have `union[int, float]` type?
+`x := union[int,float]{1}` for explicit typing.
+then I can write `x := 1.5`
+`x := 1`
+
+? - Shall we omit return type from function declaration?
+For function type, the return type should be mentioned but for declr do we need it?
 
 ? - How can runtime memoize a function? Maybe function has a side-effect.
+maybe developer should handle it by adding a struct and a general function which calls target function and has a cache.?
+
+? - Now that we can re-assign, shall we use `=` instead of `:=`?
+And `==` for comparison as expected.
+`=` makes a copy as expected.
