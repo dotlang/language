@@ -2742,11 +2742,138 @@ What happens if I write `:=` twice? error.
 
 Y - use `//` for comments and get rid of `;` completely.
 
-? - Can we simplify this syntax more?
+Y - check loop syntax now that we have full mutability and closure syntax and it is a function.
+```
+loop(10, () -> { printf("Hello world" })
+loop([2..10], () -> { printf("Hello world" })
+loop([2..10], (x:int) -> { printf("Hello world" })
+loop(my_array, (s: string) -> ...)
+loop(my_hash, (key: int) -> ...)
+loop(my_iteratable, (iterator: int) -> ...)
+loop(true () -> { ... })` infinite loop
+;to return something:
+;we can return explicitly to simulate break: return false means break outside the loop
+;return true means continue to the next iteartion
+loop([1..100], ()-> { if ( ... ) return false })
+;to force return from inside loop: set a var outside
+var result = 0
+loop(... , () -> { if ( ... ) { result = 88; return false; })
+```
+`loop(x, (x:int) -> x>0, (x:int) -> { print(x), x++, return x }) ;if x is var, the loop body can change it`
+
+N - What should be initial state for a socket or db connection? all zero.
+
+Y - `return 1 if (x)` how is it translated to map lookup?
+
+N - if `=` duplicates data, what if i `=` a file-handle or db connection or thread?
+it will duplicate the variable but the resource will be the same.
+
+N - How can I keep data imm and close a file? What should the file descriptor be?
+`f := openFile()`
+`g := closeFile(f)`
+f won't be usable anymore.
+g will point to a closed file.
+
+N - An easy solution to put multiple commands in the same line specially for closures.
+it is against simplicity.
+
+Y - Better syntax
+`f = openFile(...) & closeFile`
+Can we make this more general?
+can we do this for other variables? yes.
+`x:=12 & print(x)`
+```
+func process() {
+  x:=12 & print(_)
+  print(100)
+}
+```
+will print 100 then 12.
+What if I pass the file to a thread?
+- Change the notation of declaring variables which are disposable.
+so if T is disposable type: 
+`x := createT()`
+right-side cannot be another variable or literal.
+the resource release should be handled by the runtime behind the scene.
+It needs to be done by runtime but I want it to be explicit that "THIS" variable is disposable.
+Maybe we can force a naming notation for these? But its not general. What about custom notations? what about user-defined notations? If we ban it is against orth, if we allow it will be messy.
+maybe use a keyword like `resource`:
+`resource g := fdsfdsf`
+is it that important?
+or maybe we can make it explicit and force user call that method somewhere in the code. but it cannot be tracked. because handle may be sent to a channel or another thread.
+Disposable is used to define a destructor. Java instead has `finally` keyword and makes it explicit.
+what if I write `g := fileHandle1` and pass g to a thread?
+Dispose happens based on the actual resource. so if method containing fileHandle1 is finished but the thread that has g is not, the resource won't be released.
+We can use something like `using` C# or `scope` in D but I don't want to enforce an indentation level. It makes reading the code difficult. The `defer` method in Go is beautiful but I also don't want to add another keyword.
+Maybe I should just ignore the case where something is passed to another function. 
+Even if we make close file transparent, user can call it explicitly and pass the file handle to another method. 
+So let's just delegate this to the developer to be careful not to use a closed resource.
+But I would like to make it explicit and mandatory to close or release resources. 
+What if I want to open a resource, pass it to a thread and let it be open even if current function is finished?
+But what if someone passes a resource to multiple threads and cause a conflict?
+It will cause data racing and conflicts. Resources can only be owned by a single thread (or function) at the same time.
+`x := openFile()`
+`processInNewThread(x)`
+`write(x, "A")`
+we can say if a type is marked with `Resource` protocol, you cannot send it to another function. If you do, you will loose control over it. Because it must have exclusive owner. compiler can enforce this.
+If a type is marked with `Disposable` you must either call `dispose` on it in the function explicitly (compiler can enforce this because there is no exceptions) or pass it to another function.
+But it is difficuly for compiler to check if dispose is called. because it can be nested inside an `if`. But similar to the way we check if unused variable is being used, we can check if `dispose` is called.
+Can we merge resource and disposable? if something is a resource, it must be disposed. if something is disposable we can also mark it as resource. So we can define `ExclusiveResource` which means a type is exclusive to the function which created it and it should call `dispose` on it or pass it to another function.
+A function that accepts an exclusive-resource must either dispose it or pass it to another function.
+And if it passed it to another function, it cannot use it afterwards.
+And dispose is like this: `func dispose(T)->T` it will return an empties instance so you must call it like:
+`x = dispose(x)`.
+Example: file handles, socket, database connection, anything that relates to the outside world.
+sending something through channel delegates the responsibility to the receiver side.
+Other solution: let the developer do it and handle such cases. but it's not good.
+What if a closure thread accesses that resource? it shoudn't.
+
+Y - `5 | nothing` returns 5
+`nothing | 4` is like `nothing | func(x:nothing)->4` so `f(nothing)` will just return 4.
+does that help to make `|` semantics more clear?
+
+Y - Can we simplify this syntax more?
 `var finalResult: Maybe[int] = input | bind(_, check1(5, _)) | bind(_, check2(_, "A")) | bind(_, check3(1,2,_))`
 `func bind[T](x:T, f:func(T)->T)...`
 Used to transparently handle exceptions?
 `var finalResult: Maybe[int] = input | check1(5, _)) | check2(_, "A") | check3(1,2,_)`
 solution 1: add a new operator
 solution 2: custom opChain or custom operators
-`a|b` if a is exception do not call `b(a)` but return a. if a is not exception, return `b(a)`
+`a|b` if a is exception do not call `b(a)` but return a. if a is not exception, return `b(a)`.
+`var finalResult: Maybe[int] = input | bind(_, check1(5, _)) | bind(_, check2(_, "A")) | bind(_, check3(1,2,_))`.
+`var a: union[T1,T2,T3,...] = x | y | z`
+`|` can act as an unwrapper too. if x is `maybe[int]` and y closure expects int and internal type of x is similar, then unwraps it.
+so if you write `a = Nothing | 5` 5 will be returned as this is value.
+`a = x | f(_)` if x applicable to f, then return f(x), else return x.
+`finalResult := input | check1(5, _) | check2(_, "A") | check3(1,2,_)`
+for values: it will return the first item which is not nothing.
+for closures: it will return the first result which cannot advance to the next step.
+`x | f` if f is a closure, will evaluate to `f(x)` if f can accept data of type `x`, else it will evaluate to `x`. 
+`a | b` if b is not a closure, will evaluate to `a` if it is not `nothing`, else it will evaluate to `b`.
+`a|b` ~ `a|default(_,b)`
+`func default[T](x:T, def: T) { return if ( type(x) == @nothing ) y else x`
+deciding based on whether `b` is a closure or not is a bit confusing. We can have variables of type function pointer. What about them?
+`data | function` will return `function(data)` if it is applicable else data.
+
+Y - What if resource is in maybe? compiler cannot detect that.
+`x := maybeOpenFile()`
+`x:=getFileOrIntOrString(...)`
+can we say, exclusive resources cannot be part of a union?
+We are adding more and more rules and exceptions!
+We should simplify.
+Let developer worry about sharing them with other threads and functions.
+He can either call dispose function explicitly or just let runtime do it.
+Problem is for all other data, we just duplicate them so there is no mutation.
+But these are "exclusive" resource. There is only one of them behind the scene. So even if I write:
+`g := myFile` it does not create two files.
+So duplicating or passing to another function is like a shared mutable state.
+It is inherently mutable (you write to file or socket).
+So let's prevent sharing it.
+That's why it is marked with `exclusive` protocol. It is not supposed to be shared.
+`x:=getFileOrIntOrString(...)`
+compiler cannot detect whether it is an exclusive resource or no.
+solution 1: they cannot be part of a union. function can return a tuple in case they need union with them.
+the main problem is `dispose`. How can I call dispose for a union type which has a resource as one of it's valid types?
+solution: if you want a `union[nothing, File]` you must have two dispose functions: `dispose(file)` and `dispose(nothing)`.
+And so you must call `dispose(x)` which will at runtime redirect to one of these.
+So add required dispose functions and use the resource inside a union.
