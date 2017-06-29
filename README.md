@@ -25,7 +25,7 @@ June 26, 2017
 
 
 # Introduction
-After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
+After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions to keep in mind. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
 
 That's why I am creating a new programming language: dot (or dotLang). 
 
@@ -34,17 +34,17 @@ I call the paradigm of this language "Data-oriented". This is a combination of O
 
 Three main objectives are pursued in the design of this programming language:
 
-1. **Simplicity**: The code written in dotLang should be consistent, easy to learn, write, read and understand. There has been a lot of effort to make sure there are as few exceptions and rules as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
+1. **Simplicity**: The code written in dotLang should be consistent, easy to write, read and understand. There has been a lot of effort to make sure there are as few exceptions and rules as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
 2. **Expressiveness**: It should give enough tools to the developer to produce readable and maintainable code. This requires a comprehensive standard library in addition to language notations.
-3. **Performance**: The compiler will compile to native code which will result in high performance. We try to do as much as possible during compilation (optimizations, de-refrencing, in-place mutation, sending by copy of reference, type checking, type filters, phantom types, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in standard library will be implemented with a lower level language.
+3. **Performance**: The compiler will compile to native code which will result in high performance. We try to do as much as possible during compilation (optimizations, de-refrencing, in-place mutation, sending by copy or reference, type checking, type filters, phantom types, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in standard library will be implemented with a lower level language.
 
-Achieving all of above goals at the same time is impossible so there will definitely be trade-offs and exceptions.
+Achieving all of the above goals at the same time is impossible so there will definitely be trade-offs and exceptions.
 The underlying rules of design of this language are 
 [Principle of least astonishment](https://en.wikipedia.org/wiki/Principle_of_least_astonishment), 
 [KISS rule](https://en.wikipedia.org/wiki/KISS_principle) and
 [DRY rule](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  There are functions and types, nothing else. Each function acts on a set of inputs and gives one or more outputs. Type system includes primitive data types, tuple, union, array and map. Polymorphism, template programming and lambda expression are also provided.
+As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  We have functions and types. Each function acts on a set of inputs and gives an output. Type system includes primitive data types, tuple, union, array and map. Polymorphism, template programming and lambda expression are also provided and everything is immutable.
 
 ## Comparison with other languages
 
