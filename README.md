@@ -18,10 +18,10 @@ June 26, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8, 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
+- **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
-- **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`
-- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource
+- **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
+- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`
 
 
 # Introduction
@@ -226,6 +226,7 @@ define array literal: `arr = [1,2,3]`
 multi-d array:
 `g:=x2(0)(0)`
 `y2 :=x2[0,0=>102]`
+Array read returns `Maybe[T]` so if index is incorrect it will return `nothing`.
 
 **Semantics**: Define a fixed-size consecutive sequence of element of the same type
 
@@ -454,7 +455,7 @@ To update map: `map1 = map1[0=>10, 2=>20]`
 define map literal: `map = [0=>1, 1=>2, 2=>4]`
 reading from map will return maybe. 
 `value := my_map("key1")` normally map query will return a maybe[T]
-`value := my_map("key1") | 0` --if does not exist, set value to 0
+`value := my_map("key1") >> def(_, 0)` --if does not exist, set value to 0
 
 
 4. `var my_map: map[string, int] = ["A"=>1, "B"=>2, "C"=>3]`
@@ -490,6 +491,7 @@ var t: int = y("b")
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Functions
+- `func process|x:int|->int`
 - All functions return something. If they don't, compiler will set their return type to `nothing`.
 - Function inputs are immutable. Only local variables can appear on the left side of `=`.
 - Note that when I call `process(myIntOrFloat)` with union, it implies that there must be functions for both int and union (or a func with union type).
@@ -508,7 +510,7 @@ type BasicShape := (x: string)              ; a normal type
 func Draw(x: BasicShape, y:int)             ; Now BasicShape is compatible with Shape type
 
 type Circle := (BasicShape, name: string)   ; another type which inherits from BasicShape
-func Draw(x: Circle, y:int)                 ; It has it's own impl of Draw which hides Human implementation
+func Draw|x: Circle, y:int|                 ; It has it's own impl of Draw which hides Human implementation
 
 type Square := (BasicShape, age: int)       ; another type which embeds BasicShape.
 ;calling Draw on Square will call BasicShape version
@@ -536,7 +538,7 @@ var r: BasicShape = myCircle ;automatic casting - because Circle inherits from B
 - You can use `_` to ignore a function output: `{t, _} = my_map("key1")`
 - A function can only return one output:
 ```
-func process()-> {int, int}
+func process||-> {int, int}
 var x:int
 val y:int
 {x,y} = process
@@ -691,15 +693,15 @@ Each function call will be dispatched to the implementation with highest priorit
 ## Lambda expression
 - If a lambda is accessing varirables in the parent function, they cannot be re-assigned. Compiler will detect this and issue error if they are re-assigned. This is to prevent possible data race in which case, a data is modified outside a thread (which is the closure) while the code inside the thread is reading it. Use channels to communicate between threads.
 A function type should not include parameter name because they are irrelevant.
-A lambda variable can omit types because they can be inferred: `var x: comparer = (x,y) -> ...`
-A function literal which does not have a type in the code, must include argument name and type. `(x:int)->int { return x+1 }(10)` or `var fp = (x:int)->int { return x+1}`
+A lambda variable can omit types because they can be inferred: `var x: comparer = |x,y| -> ...`
+A function literal which does not have a type in the code, must include argument name and type. `|x:int|->int { return x+1 }(10)` or `var fp = |x:int|->int { return x+1}`
 
 - closure capturing: It captures outside vars and vals. Can change vars.
 - Even if a lambda has no input/output you should write other parts: `() -> { printf("Hello world" }`
 You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too, also  `func` keyword is not needed. The essential part is input and `->`.
 If you use `{}` for the body, you must specify output type and use return keyword.
 ```
-var f1 = (x: int, y:int) -> int { return x+y } ;the most complete definition
+var f1 = |x: int, y:int| -> int { return x+y } ;the most complete definition
 var rr = (x: int, y:int) -> x + y  ;return type can be inferred
 var rr = { x + y } ;WRONG! - input is not specified
 var f1 = (x: int, y:int) -> int { return x+y } ;the most complete definition
@@ -937,26 +939,23 @@ For example you can define a set only for types which are comparable. We cannot 
 `func process[T] HasId[T]` you can only pass tuples that have `id` field (or simulate it with your own functions).
 
 ## Type filter
+- `ProtocolName(x,y,z)` will invoke a protocol at compile time to find all matching types in a typeset.
 You can use type filter expression when specifying generic arguments (in protocol, function, type or union) to filter possible types that can be used.
 You can use type filter to restrict valid generic types based on protocol or fields they have (for tuples).
-General syntax: `[T1,T2,T3,... : Filter_1 + Filter_2 + Filter_3, ...]`
+General syntax: `[T1,T2,T3,... :: ProtocolFilter_1, ProtocolFilter_2, ProtocolFilter_3, ...]`
 `Ti` are generic type names.
-`Filter_i` are type filters.
-`Filter_i = ProtocolFilter | FieldFilter`
 `ProtocolFilter = ProtocolName(T1, T2, T3, ...)` if there is only one type can be shortcut to: `ProtocolName`
-`FieldFilter = T1.Field1`
 Note that for union you can only use one type.
 For protocol, type filter specifies which types can implement this protocol (pre-requirements).
 For function, it specifies which types can be used to call this function.
 For types, it specifies which types can be used to instantiate this type.
 For union, it specifies which types are possible options for this union.
 Examples:
-`type u5 := union[T: Prot1 + T.Tuple1]` 
-`protocol Eq[T:Ord1, Ord2] := { func compare(T,T)->bool }`
-`type Set[T,V : comprbl(T) + prot2(T) + prot3(T,V)] := array[T,V]`
-`func isInArray[T,V: Eq(T) + prot2(T,V) + T.Field1](x:T, y:array[T]) -> bool { ... }`
-
-
+`type u5 := union[T :: Prot1]` This union can accept all types that match `Prot1`.
+`protocol Eq[T :: Ord1, Ord2] := { func compare(T,T)->bool }`
+`type Set[T,V :: comprbl(T), prot2(T), prot3(T,V)] := array[T,V]`
+`func isInArray[T,V :: Eq(T), prot2(T,V)](x:T, y:array[T]) -> bool { ... }`
+- There should be at least a blank space before and after `::`.
 
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
@@ -976,18 +975,18 @@ Examples:
 - Assignment semantics: `x=y` will duplicate contents of y into x (same as `*x=*y` in C++). So if rvalue is a temp variable (e.g. `x=1+y`), it will be a ref-assign handled by the compiler. If you want to ref-assign you should use `:=` notation. Note that for assignment lvalue and rvalue must be of the same type. You cannot assign circle to Shape because as copy is done, data will be lost (you can refer to `.Shape` field in the Circle).
 `x=y` will duplicate y into x. So changes on x won't affect y. 
 - Comparison semantics: `x==y` will compare data.
-- Type-id (`@`): returns type-id of a type: `@int`
+- Type-id (`@`): returns type-id of a named or primitive type: `@int`
 - To cast from named to unnamed type you can use: `Type{value}` notation: `y = int{x}`
 - For union: `x=union[int,float]{12}`
 - chaining: 
-`data | function` will return `function(data)` if it is applicable (functin can accept that data) else data.
-To provide default case in map lookup: `x := map1["A"] | def(_, 5)`
+`data >> function` will return `function(data)` if it is applicable (functin can accept that data) else data.
+To provide default case in map lookup: `x := map1["A"] >> def(_, 5)`
 `def` function in core will return second argument if first one is nothing. if `map["A"]` is not nothing, the expression will evaluate to `map["A"]`
 
 ### Special Syntax
 - `@` type-id
-- `|` chaining
-- `+` type filter
+- `>>` chaining
+- `::` type filter
 - `_` placeholder for lambda or unknown variable
 - `:` declaration for tuple, tuple literal and type filter
 - `:=` custom type definition, variable declaration
@@ -998,6 +997,7 @@ To provide default case in map lookup: `x := map1["A"] | def(_, 5)`
 - `[]` generics, array and map literals
 - `{}` code block, tuple definition and tuple literal
 - `()` function call, modify array and map
+- `||` function and lambda declaration
 - `.` access tuple fields
 
 Keywords: `import`, `func`, `type`, `protocol`, `if`, `else`
@@ -1053,7 +1053,7 @@ These types have some properties which are enforced by the compiler:
 1. Any function which creates them, has to either call dispose on them or pass them to another function.
 2. Any function that has an input of their type, must either call dispose or pass it to another function.
 3. Any use of them after being passed to another function is forbidden.
-4. Closures cannot capture them.
+4. Closures cannot capture them (but you can pass resources to them).
 ```
 type FileHandle := {handle: int} +Disposable
 func closeFile(x:FileHandle)->bool { ... }
@@ -1068,7 +1068,7 @@ closeFile(f)
 - You can use suffix if for assertion: `return xyz if not (str.length>0)`
 - To handle exceptions in a code in rare cases (calling a plugin or another thread), you can use `invoke` core function.
 `func invoke[I,O](f: func, input: I)->O|Exception`. If your function has more than one input, you should define a wrapper function or a closure which has one input of type tuple.
-`var finalResult: Maybe[int] = input | check1(5, _) | check2(_, "A") | check3(1,2,_)`
+`var finalResult: Maybe[int] = input >> check1(5, _) >> check2(_, "A") >> check3(1,2,_)`
 
 - **Nothing**: Nothing is a label type with only one value: `nothing`.
  You can use it's type for return value of a function. If a function does not return anything, it returns `nothing`.
@@ -1236,7 +1236,7 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Helper functions to work with binary (memcpy, memmove, ...)
 - Details of inline assembly flags and their values (OS, CPU, ...)
 - Distributed processing: Moving code to another machine and running there (Actor model + channel)
-- possible add notation for function chaining
 - Define notation to write low-level (Assembly or IR) code in a function body and also force inline.
 - Function to get dynamic type of a tuple variable
 - Add notation for axioms and related operators like `=>` to protocol to be able to define semantics of a protocol.
+- Vet to format code based on the standard (indentation, spacing, warning about namings, ...). And force it before compilation.
