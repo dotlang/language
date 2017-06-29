@@ -2877,3 +2877,147 @@ the main problem is `dispose`. How can I call dispose for a union type which has
 solution: if you want a `union[nothing, File]` you must have two dispose functions: `dispose(file)` and `dispose(nothing)`.
 And so you must call `dispose(x)` which will at runtime redirect to one of these.
 So add required dispose functions and use the resource inside a union.
+
+? - Simplify this.
+`type u5 := union[T: Prot1 + T.Tuple1]` 
+`protocol Eq[T:Ord1 + Ord2] := { func compare(T,T)->bool }`
+`type Set[T,V : comprbl(T) + prot2(T) + prot3(T,V)] := array[T,V]`
+`func isInArray[T,V: Eq(T) + prot2(T,V) + T.Field1](x:T, y:array[T]) -> bool { ... }`
+specially for union the syntax is confusing.
+`type u5 := union[A, B, C, ...]`
+result of a type-filter is a set of types which conform to a specific protocol or has a specific field.
+we call this: `typeset` which is a compile-time thing.
+Now we can define a union with that typeset which means that union can store a value of any of those types.
+we can define a protocol and limit it's type with a typeset: only those types are allowed to implement this protocol.
+we can define a generic type with that typeset: it can be instantiated only with those types.
+we can define a generic function with a typeset. the function can only be called with those types.
+`typeset`?
+`typeset TS2(T) := Eq[T] Ord[T]`
+`typeset TS3(T,U) := prot2[T,V] T.Shape V.Data`
+`typeset TS3(T, U, V) := prot2[T,V] + T.{Shape} + V.{Data}` ?
+
+`func isInArray[T,V: TS3](x:T, y:array[T]) -> bool { ... }`
+or maybe we should combine all of these into protocols. so protocols will be typesets.
+protocol specify a set of types based on their requirements. These requirements can be either on functions or fields of types.
+`protocol P1[T] := Ord1 + Ord2`
+`protocol P2[T,V] := Eq[T] + prot2[T,V] + T.Field1`
+```
+protocol P2[T,V] := {
+    Eq[T],
+    prot2[T,V],
+    prot3[V],
+    func process(T,V)->int,
+    T.Field1
+}
+```
+`func isInArray[T,V :: P2](x:T, y:array[T]) -> bool { ... }`
+Why do we need filter based on fields? to write a function which can act on all children of Shape.
+Suppose that we have `Shape` and it's children: `Square, Circle, Triangle, Rectangle, Oval, ...`.
+I want to write a function to accept all of those, in one decl:
+`func process[T: T.Shape](x: T) ...`
+But why not write a normal function for Shape and redirect when I need to? it is more difficult but more flexible.
+using protocol, defines 20 functions for all those types and I will be stuck with them. I cannot override them because compiler will complain about confusing decl.
+So let's just remove fields.
+```
+protocol P2[T,V] := {
+    Eq[T],
+    prot2[T,V],
+    prot3[V],
+    func process(T,V)->int,
+}
+```
+`func isInArray[N,R :: P2](x:T, y:array[T]) -> bool { ... }`
+`N,R :: P2` means `P2(N,R)` must hold.
+`func isInArray[N,R :: P2](x:T, y:array[T]) -> bool { ... }`
+what about single-arg protocols?
+`func isInArray[N: P2, R](x:T, y:array[T]) -> bool { ... }`
+current: 
+`func isInArray[T,V :: Eq(T), prot2(T,V)](x:T, y:array[T]) -> bool { ... }`
+`type u5 := union[T :: Prot1]`
+`type Set[T,V :: comprbl(T), prot2(T), prot3(T,V)] := array[T,V]`
+`protocl_name(A,B,C)` invokes protocol to get the matching typeset.
+
+Y - Shall array access return maybe to handle index-out-of-bounds?
+
+N - In block-if we have a lambda syntax. So it cannot re-assign function variables.
+It's ok. They are not supposed to be very long codes.
+
+N - Force functions that have side-effect return a special return type.
+`func writeFile`
+`func sendOnNetwork`
+There are specific functions in core that have side-effects. Compiler knos them and the functions that call them. So it can deduce those functions + every function that calls something outside (C code)
+
+N - `func isType[T](x: T, type: int) -> typeof(x) == type`
+`if ( isType(x, @int) )`
+`if ( typeof(x) == @int )`
+`func isNothing[T](x: T) -> typeof(x) == @nothing`
+
+N - In block-if, what if key is an expression?
+```
+(f(x,y,z,t)) [
+@int => ...
+@float => ...
+]
+```
+solution: store it in a variable. No need to make syntax more complex.
+
+Y - Scala: 
+`userList.sortBy(_.active)`
+here:
+`sort(users, (x:User)->x.active)`
+It's ok. We are not aiming to have shortest possible syntax.
+The only shortcut we accept in this regard is `_` for closure
+Scala: `ps.filter(_.score < 50).filter(_.active).map(_.copy(active = false))`
+When passing lambda as argument, we have nested paren. Can we eliminate that?
+`result := ps | filter(_, (x:User) -> x.score < 50) | filter(_, (x:User)->x.active) | map(_, (x:User)-> not x.active)`
+Maybe we can use different notation for function decl (used also for lambda) than function call?
+`func process(x:int)->...`
+`process(12)`
+say we use `/args/`?
+`func process(x:int)->...`
+`process/12/`
+`result := ps | filter/_, (x:User) -> x.score < 50/ | filter/_, (x:User)->x.active/ | map/_, (x:User)-> not x.active/`
+We definitely need some notation to make code readable and explicit and specify argument bounds.
+`{}` is used for code-block and tuple definition and tuple litearl.
+`[]` for generic and array/map literals.
+`()` for function declaration.
+`<>`?
+`result := ps | filter<_, (x:User) -> x.score < 50> | filter<_, (x:User)->x.active> | map<_, (x:User)-> not x.active>`
+It's better to keep lambda decl same as function decl because they are same things.
+So: `x := (g:int) -> g+1`
+But for function call, maybe another notation is better
+`f:x,y,z:`
+`f(x,y,z)` current notation
+`f!x,y,z!`
+`f x y z`
+`f x,y,z` cannot compose
+`f/x,y,z/` pro: no need to press shift
+`f\x,y,z\`
+`f/x,y,z\`
+`f<<x,y,z>>` too long
+`f<:x,y,z:>`
+`f/x,y,z;`
+`f;x,y,z;`
+`f,x,y,z`
+it should be easy to nest because we may nest function calls:
+`f/x,y,g/1,2,3//`
+Maybe we should act other way around: change function declaration syntax:
+`func process/x:int, y:int/` because inside function declaration we won't be nesting.
+`func process/x:int, y:int/ -> int`
+`func process/x:int, y:int/ -> int { x+y }`
+`x := /x:int/ -> x+y`
+`result := ps | filter(_, /x:User/ -> x.score < 50/ | filter(_, /x:User/->x.active) | map(_, /x:User/-> not x.active)`
+or `|`?
+`func process|x:int, y:int| -> int { x+y }`
+`x := |x:int| -> x+y`
+`result := ps >> filter(_, |x:User| -> x.score < 50/ >> filter(_, |x:User|->x.active) >> map(_, |x:User|-> not x.active)`
+proposal: use `>>` for chain and `|x,y,z|` for function/lambda declaration (Like Rust).
+`func process[T,V :: prot1(T,V)] |x:T, y: U| -> { ... }`
+Scala: `primes.filter(_ > 100).take(5).toList`
+`t := primes >> filter(_, |x:int| -> x>100)) >> take(_, 5) >> toList(_)`
+
+N - Current notation to fallback for map nothing:
+`value := my_map("key1") >> def(_, 0)`
+
+N - functions record assumptions. How?
+
