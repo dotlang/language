@@ -2878,7 +2878,7 @@ solution: if you want a `union[nothing, File]` you must have two dispose functio
 And so you must call `dispose(x)` which will at runtime redirect to one of these.
 So add required dispose functions and use the resource inside a union.
 
-? - Simplify this.
+Y - Simplify this.
 `type u5 := union[T: Prot1 + T.Tuple1]` 
 `protocol Eq[T:Ord1 + Ord2] := { func compare(T,T)->bool }`
 `type Set[T,V : comprbl(T) + prot2(T) + prot3(T,V)] := array[T,V]`
