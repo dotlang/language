@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (^ and %)
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`
-- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, Nothing as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration
+- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource
 
 
 # Introduction
@@ -29,14 +29,14 @@ After having worked with a lot of different languages (C\#, Java, Perl, Javascri
 
 That's why I am creating a new programming language: dot (or dotLang). 
 
-dot programming language (or dotLang for short) is an imperative, static-typed, general-purpose language based on author's experience and doing research on many programming languages (namely Go, Java, C\#, C, C++, Scala, Rust, Objective-C, Python, Perl, Smalltalk, Ruby, Swift, Haskell, Clojure, Eiffel, Falcon, Julia, F\# and Oberon-2). 
+dot programming language (or dotLang for short) is an imperative, static-typed, general-purpose language based on author's experience and doing research on many programming languages (namely Go, Java, C\#, C, C++, Scala, Rust, Objective-C, Python, Perl, Smalltalk, Ruby, Swift, Haskell, Clojure, Eiffel, Elm, Falcon, Julia, F\# and Oberon-2). 
 I call the paradigm of this language "Data-oriented". This is a combination of Object Oriented and Functional approach and it is designed to work with data. There are no objects or classes. Only data types and functions. But most useful features of the OOP (encapsulation, abstraction, inheritance and polymorphism) are provided to some extent. On the other hand, we have first-class and higher-order functions borrowed from functional approach.
 
 Three main objectives are pursued in the design of this programming language:
 
 1. **Simplicity**: The code written in dotLang should be consistent, easy to learn, write, read and understand. There has been a lot of effort to make sure there are as few exceptions and rules as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
 2. **Expressiveness**: It should give enough tools to the developer to produce readable and maintainable code. This requires a comprehensive standard library in addition to language notations.
-3. **Performance**: The compiler will compile to native code which will result in high performance. We try to do as much as possible during compilation (optimizations, de-refrencing, type checking, type filters, phantom types, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in standard library will be implemented with a lower level language.
+3. **Performance**: The compiler will compile to native code which will result in high performance. We try to do as much as possible during compilation (optimizations, de-refrencing, in-place mutation, sending by copy of reference, type checking, type filters, phantom types, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in standard library will be implemented with a lower level language.
 
 Achieving all of above goals at the same time is impossible so there will definitely be trade-offs and exceptions.
 The underlying rules of design of this language are 
@@ -113,6 +113,8 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Type System
+
+Note that using `=` for resources (like threads or files) will not create new resource. Just create new variables pointing to the same resource.
 
 We have universal immutability. Everything is immutable. You can however re-assign a variable to a new value.
 Compiler will detect local variable updates which are not escape and optimize them to use mutable variable (for example for numerical calculations which happens only inside a function).
@@ -220,9 +222,8 @@ var stringed = if ( int_or_float ) {
 ## Array
 To read from array: `x = arr(0)` or `x = (0)arr`
 To update array: `arr = arr[0=>10, 2=>20]`
-define array literal: `arr = [1,2,3]` or `arr=[0=>1, 1=>2, 2=>4]`
+define array literal: `arr = [1,2,3]`
 multi-d array:
-
 `g:=x2(0)(0)`
 `y2 :=x2[0,0=>102]`
 
@@ -978,8 +979,10 @@ Examples:
 - Type-id (`@`): returns type-id of a type: `@int`
 - To cast from named to unnamed type you can use: `Type{value}` notation: `y = int{x}`
 - For union: `x=union[int,float]{12}`
-- chaining: `x | f` if f is a closure, will evaluate to `f(x)`. 
-`a | b` if b is not a closure, will evaluate to `a` if it is not, `nothing`, else it will evaluate to `b`.
+- chaining: 
+`data | function` will return `function(data)` if it is applicable (functin can accept that data) else data.
+To provide default case in map lookup: `x := map1["A"] | def(_, 5)`
+`def` function in core will return second argument if first one is nothing. if `map["A"]` is not nothing, the expression will evaluate to `map["A"]`
 
 ### Special Syntax
 - `@` type-id
@@ -989,7 +992,7 @@ Examples:
 - `:` declaration for tuple, tuple literal and type filter
 - `:=` custom type definition, variable declaration
 - `=` type alias, copy value
-- `=>` map/array literals
+- `=>` map literals and block-if
 - `..` range generator
 - `->` function declaration
 - `[]` generics, array and map literals
@@ -997,8 +1000,7 @@ Examples:
 - `()` function call, modify array and map
 - `.` access tuple fields
 
-Keywords: `import`, `func`, `type`, `protocol`
-Semi-keywords: `if`, `else`
+Keywords: `import`, `func`, `type`, `protocol`, `if`, `else`
 Primitive data types: `int`, `float`, `char`, `union`, `array`, `map`
 Extended data types: `bool`, `string`, `nothing`
 
@@ -1011,7 +1013,7 @@ y = (x)[
     1 => "G",
     2 => "H",
     3 => "N",
-] | "default"
+] | def(_, "default")
 ```
 To type match for a union:
 ```
@@ -1019,14 +1021,13 @@ y = ( type(x) )
 [
     @int => "G" + int{x},
     @string => "H",
-] | "X"
+] | def(_, "X")
 ```
 
 ###if, else
 - You can use `if/else` block as an expression.
-- Compiler will convert if/else to a call on a map literal like block-if with only two options: true and false.
-`a=if x y else z`
-`a=(x)[true=>y, false=>z]`
+- If/else are keywords so their blocks can freely access and re-assign local variables.
+- You can use if/else as an expression: `a=if(cond) 1 else 2`
 ```
 IfElse = 'if' '(' condition ')' Block ['else' (IfElse | Block)]
 Block  = Statement | '{' (Statement)* '}'
@@ -1043,29 +1044,34 @@ Block  = Statement | '{' (Statement)* '}'
 ```
 - `a=xyz if(cond)` is also possible.
 `a=(cond)[true=>xyz, false=>a]`
+- But if `if` is used as a suffix to a statement, it won't be translated to map lookup:
+`return 1 if (x)`
 
-### assert (removed)
-- If a type indicates explicitly that is implements `Disposable` protocol any assignment of that type must be accompanied with `& dispose` to dispose resource after function is finished.
+### Exclusive resource
+If some data type represents a resource which needs to be handled only by one function or thread at time, it's type must be marked with `ExclusiveResource` protocol (for example file handle, db connection, network socket, ...). These types are not supposed to be shared because of their inherent mutability. This protocol has a single `dispose` function to release the resource.
+These types have some properties which are enforced by the compiler:
+1. Any function which creates them, has to either call dispose on them or pass them to another function.
+2. Any function that has an input of their type, must either call dispose or pass it to another function.
+3. Any use of them after being passed to another function is forbidden.
+4. Closures cannot capture them.
 ```
 type FileHandle := {handle: int} +Disposable
 func closeFile(x:FileHandle)->bool { ... }
-func dispose(x: FileHandle) -> closeFile(x)
-f = openFile(...) & closeFile
+f = openFile(...) 
+...
+closeFile(f)
 ```
+- If the resource is part of a union, there must be appropriate `dispose` function for other types in the union, so that a call to `dispose` on that union will be guaranteed to work.
 
+### assert (removed)
 - `Exception` is a simple tuple defined in core. 
 - You can use suffix if for assertion: `return xyz if not (str.length>0)`
 - To handle exceptions in a code in rare cases (calling a plugin or another thread), you can use `invoke` core function.
 `func invoke[I,O](f: func, input: I)->O|Exception`. If your function has more than one input, you should define a wrapper function or a closure which has one input of type tuple.
-- In order to handle possible errors in a chain of function calls, you can use `opChain` on a type (e.g. Maybe). 
-`func opChain[T](m: Maybe[T], f: func(T)->Maybe[T]) -> { return if (@m == @Nothing) None else f(m) }`
-`var input = 10`
-`func bind[T](x:T, f:func(T)->T)...`
-`var finalResult: Maybe[int] = input | bind(_, check1(5, _)) | bind(_, check2(_, "A")) | bind(_, check3(1,2,_))`
+`var finalResult: Maybe[int] = input | check1(5, _) | check2(_, "A") | check3(1,2,_)`
 
 - **Nothing**: Nothing is a label type with only one value: `nothing`.
- You can use it's type for return value of a function.
-
+ You can use it's type for return value of a function. If a function does not return anything, it returns `nothing`.
 
 ## import
 
@@ -1176,7 +1182,7 @@ loop([2..10], () -> { printf("Hello world" })
 loop([2..10], (x:int) -> { printf("Hello world" })
 loop(my_array, (s: string) -> ...)
 loop(my_hash, (key: int) -> ...)
-loop(x>0, () -> { ... }) ;if x is var, the loop body can change it
+loop(x, (x:int) -> x>0, (x:int) -> { print(x), x++, return x }) ;if x is var, the loop body can change it
 loop(my_iteratable, (iterator: int) -> ...)
 loop(true () -> { ... })` infinite loop
 ;to return something:
