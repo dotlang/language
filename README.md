@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens
+- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot
 
 
 # Introduction
@@ -848,13 +848,27 @@ func openDoor(x: Door[Closed]) -> Door[Open]
 - To cast from named to unnamed type you can use: `Type{value}` notation: `y = int{x}`
 - For union: `x=union[int,float]{12}`
 - chaining: 
-`data >> function` will return `function(data)` if it is applicable (functin can accept that data) else data.
-To provide default case in map lookup: `x := map1["A"] >> def(_, 5)`
-`def` function in core will return second argument if first one is nothing. if `map["A"]` is not nothing, the expression will evaluate to `map["A"]`
+`A.F(_)` will be translated to `F(A)`. If right side of dot operator is not a closure, it will be processed as a field reference.
+`finalResult := pipe(input, check1(5,_)).pipe(_, check3(1,2,_)).pipe(_, check5(8,_,1))`
+`finalResult := {input, check1(5, _)}.pipe(_,_).pipe(_, check3(1,2,_)).pipe(_, check5(8,_,1))`
+`g := (5,9).add(_, _)`
+`g := 5.add(_, 9)`
+`{1,2}.processTwoData(_, _)` calling function with two inputs (1 and 2).
+`{1,2}.processTuple(_)` calling function with a single argument of type tuple.
+`data := array1(10).default(_, 0)`
+`data := circle.process(_)` ~ `process(circle)`
+`data := circle.process()` calling a function pointer which is a field inside circle tuple
+`data := circle.process` accessing `process` field inside `circle` tuple
+`default` function in core will return second argument if first one is nothing. if `map["A"]` is not nothing, the expression will evaluate to `map["A"]`
+on the right side of dot, you can have a tuple with underscore which will be filled based on the left side.
+`{1,2}.{_, _, 5}` will be `{1, 2, 5}`
+`{1,2}.{_, 5}` will be `{ {1, 2} , 5}`
+`{1,2}.{_, _, 5}.process(_,_,_)` will become `process(1,2,5)`.
+`{1,2}.{_, _, 5}.process(_,_)` is error. left of dot we have a tuple with 3 elements. So on the right side we should either have one or three expected inputs.
+
 
 ### Special Syntax
 - `@` type-id, type-check
-- `>>` chaining
 - `_`  placeholder for lambda or unknown variable in assignments
 - `:`  type declaration for tuple and function input
 - `:=` custom type definition, variable declaration, tuple literal
@@ -862,13 +876,11 @@ To provide default case in map lookup: `x := map1["A"] >> def(_, 5)`
 - `=>` map literals and block-if
 - `..` range generator
 - `->` function declaration
-- `<-` loop
 - `[]` generics, array and map literals
 - `{}` code block, tuple definition and tuple literal
 - `()` function call, read from array and map
 - `||` function and lambda declaration
-- `.`  access tuple fields
-- `+-` update map
+- `.`  access tuple fields, function chaining
 
 Keywords: `import`, `func`, `type`, `if`, `then`, `else`, `loop`, `do`
 Primitive data types: `int`, `float`, `char`, `union`, `array`, `map`
@@ -1055,10 +1067,10 @@ var must not declared before. it will be declared here and only valid inside loo
 ```
 loop x>0 do printf(x)
 loop true do ...
-loop x     <- [2..10] do printf("Hello world")
-loop item  <- my_array do printf(item)
-loop g     <- my_iterable do ...
-loop {x,y} <- [2..10], [1..9] do printf("Hello world " +x +y)
+loop x     := [2..10] do printf("Hello world")
+loop item  := my_array do printf(item)
+loop g     := my_iterable do ...
+loop {x,y} := [2..10], [1..9] do printf("Hello world " +x +y)
 ```
 You can also use iterator type with loop:
 ```
