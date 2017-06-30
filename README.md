@@ -36,7 +36,7 @@ Three main objectives are pursued in the design of this programming language:
 
 1. **Simplicity**: The code written in dotLang should be consistent, easy to write, read and understand. There has been a lot of effort to make sure there are as few exceptions and rules as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them. Very few things are done implicitly and transparently by the compiler or runtime system. Also I tried to reduce need for nested blocks and parentheses as much as possible.
 2. **Expressiveness**: It should give enough tools to the developer to produce readable and maintainable code. This requires a comprehensive standard library in addition to language notations.
-3. **Performance**: The compiler will compile to native code which will result in high performance. We try to do as much as possible during compilation (optimizations, de-refrencing, in-place mutation, sending by copy or reference, type checking, type filters, phantom types, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in standard library will be implemented with a lower level language.
+3. **Performance**: The compiler will compile to native code which will result in high performance. We try to do as much as possible during compilation (optimizations, de-refrencing, in-place mutation, sending by copy or reference, type checking, phantom types, inlining, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in standard library will be implemented in a lower level language.
 
 Achieving all of the above goals at the same time is impossible so there will definitely be trade-offs and exceptions.
 The underlying rules of design of this language are 
@@ -48,12 +48,11 @@ As a 10,000 foot view of the language, code is written in files (called modules)
 
 ## Comparison with other languages
 
-**Compared to C**: dotLang is C language + Garabage collector + first-class functions + template programming + better union data types + module system + powerful polymorphism + simple and powerful standard library + lambda expressions + closure + powerful built-in data types (map, string,...) + multiple dispatch + sane defaults + better immutability + concepts and axioms - ambiguities - pointers - macros - header files.
+**Compared to C**: C language + Garabage collector + first-class functions + template programming + better union data types + module system + flexible polymorphism + simple and powerful standard library + lambda expressions + closure + powerful built-in data types (map, string,...) + simpler primitives + multiple dispatch + sane defaults + full immutability - ambiguities - pointers - macros - header files.
 
-**Compared to Scala**: Scala + multiple dispatch + custom immutability + concepts and axioms  - dependency on JVM - cryptic syntax - trait - custom operators - variance - implicit.
+**Compared to Scala**: Scala + multiple dispatch + full immutability + simpler primitives - dependency on JVM - cryptic syntax - trait - custom operators - variance - implicit.
 
-**Compared to Go**: Go + generics + immutability + multiple dispatch + sum types + sane defaults + better orthogonality (e.g. creating maps) + simpler primitives + concepts and axioms  - pointers - interfaces - global variables.
-
+**Compared to Go**: Go + generics + full immutability + multiple dispatch + union types + sane defaults + better orthogonality (e.g. creating maps) + simpler primitives - pointers - interfaces - global variables.
 
 ## Components
 
@@ -87,28 +86,26 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 - **Terminator**: Each statement must be in a separate line and must not end with semicolon.
 - **Order**: Each source code file contains 3 sections: import, definitions and function. The order of the contents of source code file matters: `import` section must come first, then declarations and then functions come at the end. If the order is not met, compiler will give errors.
 - Import section is used to reference other modules that are being used in this module.
-- Definitions section is used to define data types and protocols.
+- Definitions section is used to define data types.
 - Function section is used to define function bodies.
 - **Adressing**: Modules are addressed using `/` notation (e.g. `/code/st/net/create_socket`). Where `/` denotes include path.
-- **Encapsulation**: If a name (of a type, protocol or function) starts with underscore, means that it is private to the module. If not, it is public. This applies to functions and types.
-- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeType`, `MyProtocol`, `my_package_or_module`. If these are not met, compiler will give warnings. Primitives (binary, int, float, char), and types defined in core (bool, array, map, string) are the only exceptions to naming rules.
+- **Encapsulation**: If a name (of a type or function) starts with underscore, means that it is private to the module. If not, it is public.
+- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Primitive data types and basic types defined in core (`bool`, `string` and `nothing`) are the only exceptions to naming rules.
 
 ## Language in a nutshell
-1. **Primitives**: `int`, `float`, `char`, `union` (Extended primitives: `bool`, `array`, `string`, `map`).
-2. **Tuple**: `type Point := {x: int, y:int, data: float}`.
-3. **Variable**: `var location: Point = { x=10, y=20, data=1.19 }`.
-4. **Inheritance**: By embedding (only for tuples), `type Circle := {Shape, radius: float}`.
-5. **Array**: `var JobQueue: array[int] = [0, 1, 2, 3]`.
-6. **Generics**: `type Stack[T] := { data: array[T], info: int }`.
-7. **Union**: `type Optional[T] := union[Nothing, T]`.
-8. **Map**: `var CountryPopulation: map[string,int] = [ "US": 300, "CA": 180, "UK":80 ]`.
-9. **Function**: `func calculate(x: int, y: string) -> float { return if ( x > 0 ) 1.0 else 2.0  }`.
+01. **Primitives**: `int`, `float`, `char`, `union`, `array`, `map` (Extended primitives: `bool`, `string`, `nothing`).
+02. **Tuple**: `type Point := {x: int, y:int, data: float}`.
+03. **Values**: `location := Point{ x:=10, y:=20, data:=1.19 }` (Everything is immutable).
+04. **Inheritance**: By embedding (only for tuples), `type Circle := {Shape, radius: float}`.
+05. **Array**: `jobQueue := [0, 1, 2, 3]` (type is `array[int]`).
+06. **Generics**: `type Stack[T] := { data: array[T], info: int }`.
+07. **Union**: `type Maybe[T] := union[nothing, T]`.
+08. **Map**: `countryPopulation := [ "US" => 300, "CA" => 180, "UK" =>80 ]` (type is `map[string, int]`).
+09. **Function**: `func calculate(x: int, y: string) -> float { return if x > 0 then 1.5 else 2.5  }`.
 10. **Import**: `import /core/std/Queue`.
-11. **Immutability**: `val x: int = 12` (no change or re-assignment to `x` is allowed).
-12. **Assignment**: `A=B` makes a copy of B's data into A.
-14. **Casting**: `var pt = @Shape(myCircle)`.
-15. **Lambda**: `var adder: func(var:int,var:int)->val:int = (x,y) -> x+y`.
-16. **Protocols**: `protocol Comparable[T] := { func compare(T, T)->int }`, `func sort[T](x:array[T]) +Comparable`.
+12. **Assignment**: `A = expression` makes a fresh copy of expression's result into `A` (`A` must be declared before).
+14. **Casting**: `pt := Shape{myCircle}`, `intValue := int{1.23}`.
+15. **Lambda**: `adder := |x:int, y:int| -> x+y`.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
@@ -221,7 +218,7 @@ var stringed = if ( int_or_float ) {
 7. You can use `type(x)` notation in a block-if (Example 6). Refer to corresponding section for more information about `if`.
 
 ## Array
-To read from array: `x = arr(0)` or `x = (0)arr`
+To read from array: `x = arr(0)` 
 define array literal: `arr = [1,2,3]`
 multi-d array:
 `g:=x2(0)(0)`
@@ -288,6 +285,7 @@ Update using `set` function.
 6. String litearls enclosed in backtick can be multi-line and escape character `\` will not be processed in them.
 
 ## Tuple
+`x,y := myPoint` or to destruct a tuple into it's elements
 A tuple literal must be either prefixed with it's type or `$` symbol.
 Tuple fields must be named because they are the only way to access their internal data. You can only used unnamed tuple literal when names are specified in the context.
 **Semantice**: As a product type, this data type is used to defined a set of coherent variables of different types.
@@ -300,7 +298,7 @@ Tuple fields must be named because they are the only way to access their interna
 
 **Examples**
 
-1. `point := {x:=100, y:=200}` free tuple litearl (no type associated)
+1. `point := ${x:=100, y:=200}` free tuple litearl (no type associated)
 1. `point := Point{x:=100, y:=200}` typed
 2. `var point_x: int = point.x`
 3. `point.y = point.x + 10`
@@ -450,7 +448,7 @@ type string := array[char]
 
 
 ## Map
-To read from map: `x = map(0)` or `x = (0)map`
+To read from map: `x = map(0)`
 define map literal: `map = [0=>1, 1=>2, 2=>4]`
 reading from map will return maybe. 
 `value := my_map("key1")` normally map query will return a maybe[T]
@@ -490,6 +488,7 @@ var t: int = y("b")
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Functions
+`x,y := getTuple()` you can use this notation to capture a tuple output from a function
 `func process() -> {x:int, y:int} ... { ...return {x:=12, y:=91} }`
 - `func process(x:int)->int`
 - All functions return something. If they don't, compiler will set their return type to `nothing`.
@@ -849,9 +848,11 @@ func openDoor(x: Door[Closed]) -> Door[Open]
 - To cast from named to unnamed type you can use: `Type{value}` notation: `y = int{x}`
 - For union: `x=union[int,float]{12}`
 - chaining: 
-`A.F(_)` will be translated to `F(A)`. If right side of dot operator is not a closure, it will be processed as a field reference.
-`finalResult := pipe(input, check1(5,_)).pipe(_, check3(1,2,_)).pipe(_, check5(8,_,1))`
-`finalResult := {input, check1(5, _)}.pipe(_,_).pipe(_, check3(1,2,_)).pipe(_, check5(8,_,1))`
+`A . F(_)` (not to spaces around the dot) will be translated to `F(A)`. right side of dot must be either a closure or a tuple with underscores for substitition.
+`${x,y,z} . ${_,_,_}` becomes `${x,y,z}`
+`finalResult := pipe(input, check1(5,_)) . pipe(_, check3(1,2,_)) . pipe(_, check5(8,_,1))`
+`finalResult := {input, check1(5, _)} . pipe(_,_) . pipe(_, check3(1,2,_)) . pipe(_, check5(8,_,1))`
+`finalResult := ${input, check1(5, _)} . pipe(_,_) . ${_, check3(1,2,_)} . pipe(_, _) . ${_, check5(8,_,1) } . pipe(_,_)`
 `g := (5,9).add(_, _)`
 `g := 5.add(_, 9)`
 `{1,2}.processTwoData(_, _)` calling function with two inputs (1 and 2).
