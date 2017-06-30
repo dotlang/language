@@ -3233,3 +3233,50 @@ We want something which indicates variable is being declared AND is not `:=` and
 `<:=` no.
 `x := @array` no new notation. only one notation should be used.
 Can't we just say, if x is not declared before, it will be?
+
+N - `process(1,2,_)` what does this mean?
+what if we have two process functions with 3 arguments and third one are different?
+I think third argument should be a union
+
+N - Is there a feature which can only be used in some situations and not always?
+
+N - If I use typed literal, I can omit name:
+`x := Point{12, 13}`
+`x := Point{x:=12, y:=13}`
+
+N - We have two ways to declare a variable. `:=` and `<-`.
+```
+loop x     := [2..10] do printf("Hello world")
+loop item  := my_array do printf(item)
+loop g     := my_iterable do ...
+```
+java: 
+```
+for (String item : someList) {
+    System.out.println(item);
+}
+```
+No problem. Let's have two notations. Because `:=` makes no sense for this case.
+
+Y - How to remove a key from map?
+`map1 := ["A"=>1, "B"=>2]`
+`map1 = map1["C" => 5]`
+`map1 = map1["A" => nothing]`?
+or maybe use `+` and `-`?
+`map1 = map1 + ["N"=>8]`
+`map1 = map1 - ["B"]`
+but what about array?
+`array := [1,2,3]`
+`array += [1]`? we cannot add to an array
+`set(array, 1, 7)`
+`set(array, [1,2,3], [5,5,5])`
+`y2 :=arr[0,0=>102]`
+Scala uses functions.
+For reading you can use `()` but for update you must use `set` function.
+
+Y - We can use `if ( x == SAT )` notation for type checking with label types.
+So can we just eliminate binary `@`?
+
+? - simplify `>>`?
+How is Monad defined in Java or Kotlin or Python?
+How can we more natively simulate it?
