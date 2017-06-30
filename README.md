@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`
+- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens
 
 
 # Introduction
@@ -34,7 +34,7 @@ I call the paradigm of this language "Data-oriented". This is a combination of O
 
 Three main objectives are pursued in the design of this programming language:
 
-1. **Simplicity**: The code written in dotLang should be consistent, easy to write, read and understand. There has been a lot of effort to make sure there are as few exceptions and rules as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them.
+1. **Simplicity**: The code written in dotLang should be consistent, easy to write, read and understand. There has been a lot of effort to make sure there are as few exceptions and rules as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them. Very few things are done implicitly and transparently by the compiler or runtime system. Also I tried to reduce need for nested blocks and parentheses as much as possible.
 2. **Expressiveness**: It should give enough tools to the developer to produce readable and maintainable code. This requires a comprehensive standard library in addition to language notations.
 3. **Performance**: The compiler will compile to native code which will result in high performance. We try to do as much as possible during compilation (optimizations, de-refrencing, in-place mutation, sending by copy or reference, type checking, type filters, phantom types, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in standard library will be implemented with a lower level language.
 
@@ -288,21 +288,22 @@ Array read returns `Maybe[T]` so if index is incorrect it will return `nothing`.
 6. String litearls enclosed in backtick can be multi-line and escape character `\` will not be processed in them.
 
 ## Tuple
-
+Tuple fields must be named because they are the only way to access their internal data. You can only used unnamed tuple literal when names are specified in the context.
 **Semantice**: As a product type, this data type is used to defined a set of coherent variables of different types.
 
 **Syntax**: 
 1. For declaration: `{field1: type1, field2: type2, field3: type3, ...}` 
-2. For literals: `Type{field1:value1, field2:value2, field3:value3, ...}` 
-or `Type{value1, value2, ...}`
+2. For literals: `Type{field1:=value1, field2:=value2, field3:=value3, ...}` 
+2. For literals: `{field1:=value1, field2:=value2, field3:=value3, ...}` 
 3. For update: `OtherVar{field1:value1, field2:value2, field3:value3, ...}`
 
 **Examples**
 
-1. `var point: {x: int, y:int} = {x=100, y=200}`
+1. `point := {x:=100, y:=200}` free tuple litearl (no type associated)
+1. `point := Point{x:=100, y:=200}` typed
 2. `var point_x: int = point.x`
 3. `point.y = point.x + 10`
-4. `var another_point = Point{x=100, y=200}`
+4. `var another_point = Point{x:=100, y:=200}`
 5. `var third_point = Point{200, 400}`
 6. `var fourth_point: {x:int, y:int=123} = {300}`
 
@@ -322,6 +323,7 @@ or `Type{value1, value2, ...}`
 
 
 ## Composition
+`type shapes := union[Shape]` union includes all tuples that embed Shape type.
 
 **Semantics**: To be able to re-use data defined in another tuple.
 
@@ -491,6 +493,7 @@ var t: int = y("b")
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Functions
+`func process || -> {x:int, y:int} ... { ...return {x:=12, y:=91} }`
 - `func process|x:int|->int`
 - All functions return something. If they don't, compiler will set their return type to `nothing`.
 - Function inputs are immutable. Only local variables can appear on the left side of `=`.
@@ -640,6 +643,8 @@ func process(x: int) -> process(x, 10, 0)
 
 ## Method call resolution
 - We can have dynamic dispatch by using union. When I call `process(intOrFloat)` based on the type inside union, either process for int or the one for float will be called.
+- If you don't want to define function with union but still have dynamic dispatch, you will need to write delegation (or forwarding) functions: `func process(float, union[Shape]->Shape, string, int, GradientColor|SolidColor->Color, int)`
+
 - There will be no dynamic type. When you write `var s: Shape = createCircle()` you have only a Shape. Because `=` is supposed to make a data-copy. If you need to support both use union. For example for array storage define array of type `union[Circle, Square]`.
 - explain named and underlying type role indispatch
 If no function is defined for a named type but for it's underlying type, that one will be called.
@@ -650,7 +655,7 @@ You can have multiple forwading in the same definition and use sum type to group
 `func process(Polygon|Square|Circle->Shape, GradientColor|SolidColor->Color)`
 Above means, any call to `process` with any of `Polygon, Square, Circle` and any of `GradientColor, SolidColor` will be redirected to `process(Shape, Color)`.
 You can mix forwarded arguments with normal arguments:
-`func process(float, Polygon|Square|Circle->Shape, string, int, GradientColor|SolidColor->Color, int)`
+`func process(float, union[Shape]->Shape, string, int, GradientColor|SolidColor->Color, int)`
 Note that any argument can only be forwarded to a parent type.
 - No forwarding function is automatically generated.
 - Suppose that we have `binary -> Shape -> Polygon -> Square` types.
@@ -691,7 +696,12 @@ add(y=19)
 Each function call will be dispatched to the implementation with highest priority according to matching rules. 
 
 ## Lambda expression
-- If a lambda is accessing varirables in the parent function, they cannot be re-assigned. Compiler will detect this and issue error if they are re-assigned. This is to prevent possible data race in which case, a data is modified outside a thread (which is the closure) while the code inside the thread is reading it. Use channels to communicate between threads.
+- If a lambda needs varirables in the parent function, it should capture them first by assigning them to local variables:
+```
+x = 12
+|| -> { y := x, process(y) }
+```
+they cannot be re-assigned. Compiler will detect this and issue error if they are re-assigned. This is to prevent possible data race in which case, a data is modified outside a thread (which is the closure) while the code inside the thread is reading it. Use channels to communicate between threads.
 A function type should not include parameter name because they are irrelevant.
 A lambda variable can omit types because they can be inferred: `var x: comparer = |x,y| -> ...`
 A function literal which does not have a type in the code, must include argument name and type. `|x:int|->int { return x+1 }(10)` or `var fp = |x:int|->int { return x+1}`
@@ -738,6 +748,7 @@ If we have `func f(int,int,int)->int` then:
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Generics
+- Compiler will scan body of generic functions and extract their expected methods. If you call them with inappropriate types, it will give you list of required methods to implement.
 - Note that a generic function can only have generic types. About immutability or mutability, it cannot be generic. The function signature is responsible about defining whether an argument should be immutable or mutable or doesn't care. Also same for types. You cannot have mutability or immutability as a generic argument.
 - Generic arguments can only be types.
 - When defining types, you can append `[A, B, C, ...]` to the type name to indicate it is a generic type. You can then use these symbols inside type definition.
@@ -820,144 +831,6 @@ func closeDoor(x: Door[Open]) -> Door[Closed]
 func openDoor(x: Door[Closed]) -> Door[Open]
 ```
 
-## Protocols
-- You can use this notation to define a union which can accept any type that confirms to `ShpProtocol`: `type Shapes := union[+ShpProtocol]`. Compiler will generate list of types.
-- There can be no impl on a protocol.
-- If there is common behavior, use protocol. If there is common data, use composition.
-- You can also include storage class in a function signature in a protocol:
-`protocol Stringer[T] := { func toString(val:T) }`
-
-- Syntax to enforce protocol (for protocol, function and type):
-`protocol Eq[T] := +Ord[T] { ... }`
-`func isInArray[T](x:T, y:array[T]) +Eq[T] -> bool { loop(var n: T <- y) {if ( equals(x,n) ) return true} return false }`
-`type Set[T] := +comprbl[T] +prot2[T] array[T]`
-
-- Bodyless functions in a protocol, imply they must be implemented by the developer.
-- You can inherit from another protocol:
-`protocol Eq[T] := +Ord[T] { ... }`
-- There must be a single space between `protocol` keyword and the protocol name.
-- So if a function plans to accept inputs which are not native array, it can be defined like this:
-`func process[T](x: T, arrayFuncs: ArrAccessors[T])` which means `x` input will have appropriate methods to be accessed like an array. Then inside `process` function it can use `x[0]` and other methods to work with x.
-
-If someone calls a generic function with some user-defined type, they really don't know what they should implement until they see the compiler error or the source code. Protocols are used to document this.
-When writing a generic function, you may have expectations regarding behavior of the type T. These expectations can be defined using a protocol. When you call this function with a concrete type, compiler makes sure the protocol is satisfied.
-General definition of function with protocol:
-;S,T,X must comply with prot1, N,M with prot2, P,Q are free
-`func process[S, T, X, N, M, P, Q] (x: T) +prot1[S,T,X] +prot2[N,M] -> {...}`
-Note that one type can be part of more than one protocol:
-`func process[S, X, N, M, Q, P, T] (x:int) +prot1[S,T,X] +prot2[N,M] +prot3[T,N] -> { ... }`
-
-When defining a protocol, argument names shoud be eliminated.
-```
-;Also we can initialize tuple members, we have embedding
-;Note that if T is a sum type, each function here can be multiple implemented functions
-protocol Eq[T] := {
-    func equals(T,T)->bool
-    func notEquals(T,T)->bool
-}
-type Point := {x:int, y:int}
-;here we are implementing protocol Eq[Point]
-func equals(x: Point, y: Point)->bool { ... }
-;this one is not necessary because it has a default implementation
-func notEquals(x: Point, y: Point)->bool { ... }
-
-;just like the way we define type for variables, we can define protocol for generic types
-func isInArray[T] (x:T, y:T[]) +Eq[T] -> bool {
-    if ( equals(x, y[0])...
-}
-;call:
-isInArray(x, arr)
----
-protocol Ord[T] := {
-    func compare(x:T, y:T)->int
-}
-func sort[T: Ord](x:T[])
----
-protocol Stringer[T] := {
-    func toString(x:T)->string
-}
-func dump[T: Stringer](x:T)->string
----
-protocol SerDe[T] := {
-    func serialize(T)->string
-    func deserialize(string)->T
-    func reflectivity(x: T) -> des(ser(x)) == x
-}
-func process[T: Serializer](x: T) -> ...
----
-protocol Adder[S,T,X] := {
-    func add(x: S, y:T)->X
-}
-func process[S,T,X: Adder](x: S, y:T)->X { return add(x,y) }
----
-protocol Failable[T, U] := {
-    func oops() -> T[U]
-    func pick(T[U], T[U])->T[U]
-    func win(U)->T[U]
-}
-type Maybe[U] := U | Nothing
-func oops[U]()->Maybe[U] { return Nothing }
-func pick[U](x: Maybe[U], y: Maybe[U])-> Maybe[U]
-func win[U](x: U) -> Maybe[U] { return x }
-
-func safeDiv[T: Failable](x: double, y: double) -> T[double] {
-    if ( y == 0 ) return oops
-    return win(x/y)
-}
-;when calling above function, you must provide type of function
-var t: Maybe[double] = safeDiv[Maybe](x, y)
-
----
-protocol Factory[T] := {
-    func create()->T
-}
-func create()->int { return 5 }
-func create()->string { return "A" }
-func generalCreate[T: Factory]() -> T { return create() }
-;here we have to specify type because it cannot be inferred
-var r = generalCreate[string]() ;will result "A"
-var y = generalCreate[int]() ;will result 5
-```
-this will invoke `func item()->int` to provide value for this argument.
-Protocols can embed other protocols to include their functions.
-You can define and implement a protocol for a type outside your codebase, that's why you dont need to specify which protocols are implemented by a type upon declaration.
-- Note that although a protocol may require a specific function, but actual function to be called is determined at runtime based on dynamic type.
-```
-;we can overload protocols
-func sort[T] Ord[T](...)
-func sort[T] StrictOrd[T](...)
-```
-If we call sort function, compiler will decide which protocl best matches.
-- You can also define protocols for types:
-For example you can define a set only for types which are comparable. We cannot define `Set[adder_function]`
-`type Set[T] := comprbl[T] array[T]`
-`type BinaryTree[T] := comparable[T] { ... }`
-`type map[K,V] := Hashable[K] ...`
-- If Circle[T] inherits from Shape[T], re-declaring protocols on Shape is optional but they will be enforced by the compiler.
-- if a protocol has a default implementation for a function and generic type does not implement that function, the default implementation will be used. This can be used to check data of a generic type:
-`protocol HasId[T] := { func getId[T](x: T)->x.id }`?
-`func process[T] HasId[T]` you can only pass tuples that have `id` field (or simulate it with your own functions).
-
-## Type filter
-- `ProtocolName(x,y,z)` will invoke a protocol at compile time to find all matching types in a typeset.
-You can use type filter expression when specifying generic arguments (in protocol, function, type or union) to filter possible types that can be used.
-You can use type filter to restrict valid generic types based on protocol or fields they have (for tuples).
-General syntax: `[T1,T2,T3,... :: ProtocolFilter_1, ProtocolFilter_2, ProtocolFilter_3, ...]`
-`Ti` are generic type names.
-`ProtocolFilter = ProtocolName(T1, T2, T3, ...)` if there is only one type can be shortcut to: `ProtocolName`
-Note that for union you can only use one type.
-For protocol, type filter specifies which types can implement this protocol (pre-requirements).
-For function, it specifies which types can be used to call this function.
-For types, it specifies which types can be used to instantiate this type.
-For union, it specifies which types are possible options for this union.
-Examples:
-`type u5 := union[T :: Prot1]` This union can accept all types that match `Prot1`.
-`protocol Eq[T :: Ord1, Ord2] := { func compare(T,T)->bool }`
-`type Set[T,V :: comprbl(T), prot2(T), prot3(T,V)] := array[T,V]`
-`func isInArray[T,V :: Eq(T), prot2(T,V)](x:T, y:array[T]) -> bool { ... }`
-- There should be at least a blank space before and after `::`.
-
-
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Notations
@@ -976,6 +849,7 @@ Examples:
 `x=y` will duplicate y into x. So changes on x won't affect y. 
 - Comparison semantics: `x==y` will compare data.
 - Type-id (`@`): returns type-id of a named or primitive type: `@int`
+- Type-check `@` as binary operator (left side is a union and right side is a type), returns true if type matches.
 - To cast from named to unnamed type you can use: `Type{value}` notation: `y = int{x}`
 - For union: `x=union[int,float]{12}`
 - chaining: 
@@ -984,25 +858,26 @@ To provide default case in map lookup: `x := map1["A"] >> def(_, 5)`
 `def` function in core will return second argument if first one is nothing. if `map["A"]` is not nothing, the expression will evaluate to `map["A"]`
 
 ### Special Syntax
-- `@` type-id
+- `@` type-id, type-check
 - `>>` chaining
-- `::` type filter
-- `_` placeholder for lambda or unknown variable
-- `:` declaration for tuple, tuple literal and type filter
-- `:=` custom type definition, variable declaration
-- `=` type alias, copy value
+- `_`  placeholder for lambda or unknown variable
+- `:`  declaration for tuple, tuple literal and type filter
+- `:=` custom type definition, variable declaration, tuple literal
+- `=`  type alias, copy value
 - `=>` map literals and block-if
 - `..` range generator
 - `->` function declaration
-- `[]` generics, array and map literals
+- `<-` loop
+- `[]` generics, array and map modification and literals
 - `{}` code block, tuple definition and tuple literal
-- `()` function call, modify array and map
+- `()` function call, read from array and map
 - `||` function and lambda declaration
-- `.` access tuple fields
+- `.`  access tuple fields
 
-Keywords: `import`, `func`, `type`, `protocol`, `if`, `else`
+Keywords: `import`, `func`, `type`, `if`, `then`, `else`, `loop`, `do`
 Primitive data types: `int`, `float`, `char`, `union`, `array`, `map`
-Extended data types: `bool`, `string`, `nothing`
+Pre-defined types: `bool`, `string`, `nothing`
+Important concepts: ExclusiveResource
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
@@ -1013,7 +888,7 @@ y = (x)[
     1 => "G",
     2 => "H",
     3 => "N",
-] | def(_, "default")
+] >> def(_, "default")
 ```
 To type match for a union:
 ```
@@ -1021,15 +896,16 @@ y = ( type(x) )
 [
     @int => "G" + int{x},
     @string => "H",
-] | def(_, "X")
+] >> def(_, "X")
 ```
+In this case, the value of the map for that key is evaluated and if result is not nothing, it will be stored on the lvalue.
 
 ###if, else
-- You can use `if/else` block as an expression.
+- You can use `if/then/else` block as an expression.
 - If/else are keywords so their blocks can freely access and re-assign local variables.
-- You can use if/else as an expression: `a=if(cond) 1 else 2`
+- You can use if/else as an expression: `a=if cond then 1 else 2`
 ```
-IfElse = 'if' '(' condition ')' Block ['else' (IfElse | Block)]
+IfElse = 'if' '(' condition ')' then Block ['else' (IfElse | Block)]
 Block  = Statement | '{' (Statement)* '}'
 ```
 - Semantics of this keywords are same as other mainstream languages.
@@ -1037,25 +913,26 @@ Block  = Statement | '{' (Statement)* '}'
 - Note that condition must be a boolean expression.
 - You can use any of available operators for condition part. 
 - Also you can use a simple boolean variable (or a function with output of boolean) for condition.
-`var max = if (x > y) x else y`
+`var max = if x > y then x else y`
 
 ```
-  if ( exp1 and exp2 ) 11 else -1
+  if exp1 and exp2 then 11 else -1
 ```
 - `a=xyz if(cond)` is also possible.
 `a=(cond)[true=>xyz, false=>a]`
 - But if `if` is used as a suffix to a statement, it won't be translated to map lookup:
-`return 1 if (x)`
+`return 1 if x`
 
 ### Exclusive resource
-If some data type represents a resource which needs to be handled only by one function or thread at time, it's type must be marked with `ExclusiveResource` protocol (for example file handle, db connection, network socket, ...). These types are not supposed to be shared because of their inherent mutability. This protocol has a single `dispose` function to release the resource.
+ every tuple that embeds `ExclusiveResource` is treated like an exclusive resource.
+If some data type represents a resource which needs to be handled only by one function or thread at time, it's type must embed with `ExclusiveResource` (for example file handle, db connection, network socket, ...). These types are not supposed to be shared because of their inherent mutability. This protocol has a single `dispose` function to release the resource.
 These types have some properties which are enforced by the compiler:
 1. Any function which creates them, has to either call dispose on them or pass them to another function.
 2. Any function that has an input of their type, must either call dispose or pass it to another function.
 3. Any use of them after being passed to another function is forbidden.
 4. Closures cannot capture them (but you can pass resources to them).
 ```
-type FileHandle := {handle: int} +Disposable
+type FileHandle := {ExclusiveResource, handle: int}
 func closeFile(x:FileHandle)->bool { ... }
 f = openFile(...) 
 ...
@@ -1175,24 +1052,25 @@ Generally, anything that cannot be written in atomlang will be placed in this pa
 
 
 ### loop
-You can use `loop` function with an array, hash, predicate or any type that has an iterator.
+This is a keyword:
+`loop var <- exp do block`
+var must not declared before. it will be declared here and only valid inside loop block.
+
 ```
-loop(10, () -> { printf("Hello world" })
-loop([2..10], () -> { printf("Hello world" })
-loop([2..10], (x:int) -> { printf("Hello world" })
-loop(my_array, (s: string) -> ...)
-loop(my_hash, (key: int) -> ...)
-loop(x, (x:int) -> x>0, (x:int) -> { print(x), x++, return x }) ;if x is var, the loop body can change it
-loop(my_iteratable, (iterator: int) -> ...)
-loop(true () -> { ... })` infinite loop
-;to return something:
-;we can return explicitly to simulate break: return false means break outside the loop
-;return true means continue to the next iteartion
-loop([1..100], ()-> { if ( ... ) return false })
-;to force return from inside loop: set a var outside
-var result = 0
-loop(... , () -> { if ( ... ) { result = 88; return false; })
+loop x>0 do printf(x)
+loop true do ...
+loop x <- [2..10] do printf("Hello world")
+loop item <- my_array do printf(item)
+loop g <- my_iterable do ...
+loop {x,y} <- [2..10], [1..9] do printf("Hello world " +x +y)
 ```
+You can also use iterator type with loop:
+```
+type Iterator[T] := {...}
+iterator := getIterator(myBitSet)
+loop g <- iterator do ...
+```
+there is no break or continue. You should implement them as condition inside loop block or inside loop exp.
 - If expression inside loop evaluates to a value, `loop` can be used as an expression:
 ??? `var t:int[] = loop(var x <- {0..10}) x` or simply `var t:int[] = loop({0..10})` because a loop without body will evaluate to the counter, same as `var t:array[int] = {0..10}`
 
