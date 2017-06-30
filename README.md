@@ -872,8 +872,8 @@ on the right side of dot, you can have a tuple with underscore which will be fil
 - `@`  type-id
 - `$`  tuple literal
 - `_`  placeholder for lambda or unknown variable in assignments
-- `:`  type declaration for tuple and function input
-- `:=` custom type definition, variable declaration, tuple literal
+- `:`  type declaration for tuple and function input, switch
+- `:=` custom type definition, variable declaration, tuple literal, for
 - `=`  type alias, copy value
 - `=>` map literals and block-if
 - `..` range generator
@@ -884,7 +884,7 @@ on the right side of dot, you can have a tuple with underscore which will be fil
 - `||` lambda declaration
 - `.`  access tuple fields, function chaining
 
-Keywords: `import`, `func`, `type`, `if`, `then`, `else`, `for`, `do`, `switch`, `while`
+Keywords: `import`, `func`, `return`, `type`, `if`, `then`, `else`, `for`, `do`, `switch`, `while`
 Primitive data types: `int`, `float`, `char`, `union`, `array`, `map`
 Pre-defined types: `bool`, `string`, `nothing`
 Important concepts: ExclusiveResource
