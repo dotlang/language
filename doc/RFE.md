@@ -3021,3 +3021,215 @@ N - Current notation to fallback for map nothing:
 
 N - functions record assumptions. How?
 
+Y - Can't compiler just deduce the required functions from body of the template functions?
+The original purpos for C++ concept was to make compiler error messages more meaningful.
+From https://isocpp.org/blog/2016/02/a-bit-of-background-for-concepts-and-cpp17-bjarne-stroustrup:
+The lack of well-specified interfaces led to the spectacularly bad error messages we saw over the years. 
+How does this affect the failable example?
+what about unions? how can we make it abstract with regards to child types like circle and square?
+worst case: compiler can generate it at compile time for us.
+q: what about disposable protocol? we can use a convention or some empty tuple to be included.
+q: how to provide substitutability for types? keep a variable which can accept any of children of Shape?
+easiest solution: define the type in the code manually. problem: if we extend to a new subtype, we must update that part too.
+??? `type u5 := union[T :: Prot1]` This union can accept all types that match `Prot1`.
+not needed: `protocol Eq[T :: Ord1, Ord2] := { func compare(T,T)->bool }`
+not needed - functions enforce this: `type Set[T,V :: comprbl(T), prot2(T), prot3(T,V)] := array[T,V]`
+not needed: `func isInArray[T,V :: Eq(T), prot2(T,V)](x:T, y:array[T]) -> bool { ... }`
+`x := createShape()` type of x can be anything?
+`draw(x)`
+1. `type shapes := union[Shape]` union includes all tuples that embed Shape type.
+2. every tuple that embeds `ExclusiveResource` is treated like an exclusive resource.
+
+Y - In closure, another solution is to assign captured vars before using them.
+http://docs.scala-lang.org/sips/pending/spores.html
+```
+x = 12
+|| -> { y := x, process(x) }
+```
+
+N - (included in another one) How can we define a loop for multiple array or maps?
+```
+loop([users, servers, permissions], 
+|input: {u: User, s: Server, p: Permission} | -> { if (hasPermission(u,s,p)) Stat{u} })
+```
+
+N - How can I run map function on an array or map or any other non-list type?
+
+Y - to reduce paren, use `then` keyword. and make loop a keyword?
+`return if a then 5 else 7`
+`g = if a then {
+...
+...
+} else {
+...
+...
+}
+```
+loop 10 do printf("Hello world")
+loop [2..10] do printf("Hello world")
+loop x>0 do printf(x)
+loop true do ...
+loop x <- [2..10] do printf("Hello world")
+loop item <- my_array do printf(item)
+loop g <- my_iterable do ...
+loop {x,y} <- [ [2..10], [1..9] ] do printf("Hello world")
+```
+continue: just include that condition inside loop body
+break: include that condition inside loop header
+
+Y - General loop: for example on a bitset which is not an array or a map.
+```
+type Iterator[T] := {...}
+iterator := getIterator(myBitSet)
+loop g <- iterator do ...
+```
+
+Y - Syntax to define tuple literals:
+`var another_point = Point{x=100, y=200}`
+`=` is not intuitive. let's use `:=`
+`another_point := Point{x:=100, y:=200}`
+can we use this to define an untyped tuple with names?
+`g := {h:=11, g:=12}`
+But we cannot use this as another type which has exactly same name and types.
+`h := MyTuple{g}` then we can use `h` as `MyTuple` type.
+But this notation will be useful when a function returns a tuple.
+`func process || -> {x:int, y:int} ... { ...return {x:=12, y:=91} }`
+
+N - matching in if-block with tuple types can be difficult.
+```
+n = (type(a))
+[
+  @Point => Point{a}.x + Point{a}.y
+]
+```
+proposal: underscore inside a hash literal when key is a type-id is translated to casted data.
+```
+n = (type(a))
+[
+  @Point => _.x + _.y
+]
+```
+```
+m := (n) [ @Point => 2 ]
+```
+- we must be using a map literal and not a stored map.
+no its not general and not simple.
+maybe we can shortcut repeated castings.
+```
+n = (a)
+[
+  @Point => Point{a} { .x + .y }
+]
+```
+instead of `A.g...A.h...A.y` write `A.{g...h....y}`?
+solution1: `A { ... }` then inside the block any `.G` will be translated to `A.G`.
+```
+n = (a)
+[
+  @Point => |q:=Point{a}| -> q.x + q.y
+]
+```
+solution2: a lambda with parameters which have values it will be evaluated on the spot
+2 is more flexible, you can combine multiple arguments and use this in other similar places.
+it can be called expression-lambda.
+But note that this is only applicable/useful for union types and only inside map literals.
+```
+n = (type(a))
+[
+  @Point => Point{a}.x + Point{a}.y
+]
+```
+Let's don't touch it. If it is needed user can open a code block and assign it to a variable.
+
+N - can we make `>>` simpler? "does not match" is not simple and clear.
+specifically when we don't specify type on lvalue.
+`x := a >> process(_) >> save(_)`
+`if ( type(x) == @exception ) ...`
+No this makes sense. 
+
+Y - Adding a shortcut for type checking.
+`if ( type(x) == @T )`
+`if ( x @ T )`
+
+N - Can we use something else instead of `{}` for tuples? it becomes confusing with code block.
+for tuple declaration it is ok. But tuple literal no.
+```
+point := /x:=100, y:=200/
+type Point := /x: int, y: int/
+
+point := ++x:=100, y:=200++
+type Point := ++x: int, y: int++
+
+point := ::x:=100, y:=200::
+type Point := ::x: int, y: int::
+
+point := #x:=100, y:=200#
+type Point := #x: int, y: int#
+
+$ is similar to S, might be mistaked
+point := $x:=100, y:=200$
+type Point := $x: int, y: int$
+
+point := //x:=100, y:=200//
+type Point := //x: int, y: int//
+= = = =
+point := #x:=100, y:=200#
+point := #100, 200#
+type Point := #x: int, y: int#
+
+/ is also used for integer divide!
+point := /x:=100, y:=200/
+point := /100, 200/
+type Point := /x: int, y: int/
+```
+```
+point := #x:=100, y:=200#
+point := #100, 200#
+type Point := #x: int, y: int#
+g := Point#x:=100,y:=200#
+g := Point#100,200# to define literal
+g := Point[int]#100,200#
+type Circle := #Shape, radius: float#
+g := Point{myUnion} to do cast
+g := int{x}
+Point[int]#100,200#.x / 5
+Point[int]#100,200#.x / Point[int]#100,200#.y
+```
+```
+point := /x:=100, y:=200/
+point := /100, 200/
+type Point := /x: int, y: int/
+g := Point/x:=100,y:=200/
+g := Point/100,200/ to define literal
+g := Point[int]/100,200/
+type Circle := /Shape, radius: float/
+g := Point{myUnion} to do cast
+g := int{x}
+Point[int]/100,200/.x / 5
+Point[int]/100,200/.x / Point[int]/100,200/.y
+func process()->/x:int, y:int/ ... return /x:=1, y:=30/
+
+Point[int]!100,200!.x / Point[int]!100,200!.y
+Point[int]&100,200}.x / Point[int]!100,200!.y
+```
+Let's keep `{}` other candidates are mostly confusing.
+
+Y - what other features are not really needed or can be easily simulated with other features?
+or can be done by the compiler?
+
+Y - Make loop syntax explicitly indicative of variable is new or not.
+loop variable must be declared. makes reading code simpler.
+```
+loop x>0 do printf(x)
+loop true do ...
+loop x := [2..10] do printf("Hello world")
+loop item := my_array do printf(item)
+loop g := my_iterable do ...
+loop {x,y} := [2..10], [1..9] do printf("Hello world " +x +y)
+```
+re-sue `:=`. pro: it is existing notation and is familiar. 
+con: we are using it for another purpose: rvaue is not a simple value.
+We want something which indicates variable is being declared AND is not `:=` and indicates iteration.
+`<:=` no.
+`x := @array` no new notation. only one notation should be used.
+Can't we just say, if x is not declared before, it will be?
