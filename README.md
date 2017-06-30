@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot
+- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, add `$` prefix for untyped tuple literals to make it more readable, added `switch` and `while` keywords, renamed `loop` to `for`
 
 
 # Introduction
@@ -288,13 +288,14 @@ Update using `set` function.
 6. String litearls enclosed in backtick can be multi-line and escape character `\` will not be processed in them.
 
 ## Tuple
+A tuple literal must be either prefixed with it's type or `$` symbol.
 Tuple fields must be named because they are the only way to access their internal data. You can only used unnamed tuple literal when names are specified in the context.
 **Semantice**: As a product type, this data type is used to defined a set of coherent variables of different types.
 
 **Syntax**: 
 1. For declaration: `{field1: type1, field2: type2, field3: type3, ...}` 
 2. For literals: `Type{field1:=value1, field2:=value2, field3:=value3, ...}` 
-2. For literals: `{field1:=value1, field2:=value2, field3:=value3, ...}` 
+2. For literals: `${field1:=value1, field2:=value2, field3:=value3, ...}` 
 3. For update: `OtherVar{field1:value1, field2:value2, field3:value3, ...}`
 
 **Examples**
@@ -489,8 +490,8 @@ var t: int = y("b")
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Functions
-`func process || -> {x:int, y:int} ... { ...return {x:=12, y:=91} }`
-- `func process|x:int|->int`
+`func process() -> {x:int, y:int} ... { ...return {x:=12, y:=91} }`
+- `func process(x:int)->int`
 - All functions return something. If they don't, compiler will set their return type to `nothing`.
 - Function inputs are immutable. Only local variables can appear on the left side of `=`.
 - Note that when I call `process(myIntOrFloat)` with union, it implies that there must be functions for both int and union (or a func with union type).
@@ -509,7 +510,7 @@ type BasicShape := (x: string)              ; a normal type
 func Draw(x: BasicShape, y:int)             ; Now BasicShape is compatible with Shape type
 
 type Circle := (BasicShape, name: string)   ; another type which inherits from BasicShape
-func Draw|x: Circle, y:int|                 ; It has it's own impl of Draw which hides Human implementation
+func Draw(x: Circle, y:int)                 ; It has it's own impl of Draw which hides Human implementation
 
 type Square := (BasicShape, age: int)       ; another type which embeds BasicShape.
 ;calling Draw on Square will call BasicShape version
@@ -708,7 +709,7 @@ You can define a lambda expression or a function literal in your code. Syntax is
 If you use `{}` for the body, you must specify output type and use return keyword.
 ```
 var f1 = |x: int, y:int| -> int { return x+y } ;the most complete definition
-var rr = (x: int, y:int) -> x + y  ;return type can be inferred
+var rr = |x: int, y:int| -> x + y  ;return type can be inferred
 var rr = { x + y } ;WRONG! - input is not specified
 var f1 = (x: int, y:int) -> int { return x+y } ;the most complete definition
 
@@ -868,7 +869,8 @@ on the right side of dot, you can have a tuple with underscore which will be fil
 
 
 ### Special Syntax
-- `@` type-id, type-check
+- `@`  type-id
+- `$`  tuple literal
 - `_`  placeholder for lambda or unknown variable in assignments
 - `:`  type declaration for tuple and function input
 - `:=` custom type definition, variable declaration, tuple literal
@@ -878,35 +880,36 @@ on the right side of dot, you can have a tuple with underscore which will be fil
 - `->` function declaration
 - `[]` generics, array and map literals
 - `{}` code block, tuple definition and tuple literal
-- `()` function call, read from array and map
-- `||` function and lambda declaration
+- `()` function declaration and call, read from array and map
+- `||` lambda declaration
 - `.`  access tuple fields, function chaining
 
-Keywords: `import`, `func`, `type`, `if`, `then`, `else`, `loop`, `do`
+Keywords: `import`, `func`, `type`, `if`, `then`, `else`, `for`, `do`, `switch`, `while`
 Primitive data types: `int`, `float`, `char`, `union`, `array`, `map`
 Pre-defined types: `bool`, `string`, `nothing`
 Important concepts: ExclusiveResource
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
-### block-if, match
-We use map literals to do block-if.
+### switch
 ```
-y = (x)[
-    1 => "G",
-    2 => "H",
-    3 => "N",
-] >> def(_, "default")
+y = switch x 
+{
+    1: "G",
+    2: "H",
+    3: "N",
+    else: "A"
+}
 ```
 To type match for a union:
 ```
-y = ( type(x) )
-[
-    @int => "G" + int{x},
-    @string => "H",
-] >> def(_, "X")
+y = switch type(x)
+{
+    @int: "G" + int{x},
+    @string: "H",
+    else: "X"
+}
 ```
-In this case, the value of the map for that key is evaluated and if result is not nothing, it will be stored on the lvalue.
 
 ###if, else
 - You can use `if/then/else` block as an expression.
@@ -1059,24 +1062,30 @@ A set of core packages will be included in the language which provide basic and 
 Generally, anything that cannot be written in atomlang will be placed in this package.
 
 
-### loop
+### for, while
 This is a keyword:
-`loop var <- exp do block`
+`loop var := exp do block`
 var must not declared before. it will be declared here and only valid inside loop block.
 
 ```
-loop x>0 do printf(x)
-loop true do ...
-loop x     := [2..10] do printf("Hello world")
-loop item  := my_array do printf(item)
-loop g     := my_iterable do ...
-loop {x,y} := [2..10], [1..9] do printf("Hello world " +x +y)
+while x>0 do printf(x)
+while x>0 do {
+...
+}
+while true do ...
+for x     := [2..10] do printf("Hello world")
+for item  := my_array do printf(item)
+for g     := my_iterable do ...
+for g     := my_iterable do {
+...
+}
+for {x,y} := [2..10], [1..9] do printf("Hello world " +x +y)
 ```
 You can also use iterator type with loop:
 ```
 type Iterator[T] := {...}
 iterator := getIterator(myBitSet)
-loop g <- iterator do ...
+for g <- iterator do ...
 ```
 there is no break or continue. You should implement them as condition inside loop block or inside loop exp.
 - If expression inside loop evaluates to a value, `loop` can be used as an expression:
