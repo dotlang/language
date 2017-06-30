@@ -23,7 +23,6 @@ June 26, 2017
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
 - **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, add `$` prefix for untyped tuple literals to make it more readable, added `switch` and `while` keywords, renamed `loop` to `for`
 
-
 # Introduction
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions to keep in mind. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
 
@@ -93,60 +92,50 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 - **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Primitive data types and basic types defined in core (`bool`, `string` and `nothing`) are the only exceptions to naming rules.
 
 ## Language in a nutshell
-01. **Primitives**: `int`, `float`, `char`, `union`, `array`, `map` (Extended primitives: `bool`, `string`, `nothing`).
-02. **Tuple**: `type Point := {x: int, y:int, data: float}`.
-03. **Values**: `location := Point{ x:=10, y:=20, data:=1.19 }` (Everything is immutable).
-04. **Inheritance**: By embedding (only for tuples), `type Circle := {Shape, radius: float}`.
-05. **Array**: `jobQueue := [0, 1, 2, 3]` (type is `array[int]`).
-06. **Generics**: `type Stack[T] := { data: array[T], info: int }`.
-07. **Union**: `type Maybe[T] := union[nothing, T]`.
-08. **Map**: `countryPopulation := [ "US" => 300, "CA" => 180, "UK" =>80 ]` (type is `map[string, int]`).
-09. **Function**: `func calculate(x: int, y: string) -> float { return if x > 0 then 1.5 else 2.5  }`.
-10. **Import**: `import /core/std/Queue`.
-12. **Assignment**: `A = expression` makes a fresh copy of expression's result into `A` (`A` must be declared before).
-14. **Casting**: `pt := Shape{myCircle}`, `intValue := int{1.23}`.
-15. **Lambda**: `adder := |x:int, y:int| -> x+y`.
+01. **Import**: `import /core/std/queue`.
+02. **Primitives**: `int`, `float`, `char`, `union`, `array`, `map` (Extended primitives: `bool`, `string`, `nothing`).
+03. **Values**: `my_var := 19` (type is automatically inferred, everything is immutable).
+04. **Named type**: `type MyInt := int`
+05. **Tuple**: `type Point := {x: int, y:int, data: float}`.
+06. **Tuple value**: `location := Point{ x:=10, y:=20, data:=1.19 }`
+07. **Composition**: By embedding (only for tuples), `type Circle := {Shape, radius: float}`.
+08. **Generics**: `type Stack[T] := { data: array[T], info: int }`.
+09. **Array**: `jobQueue := [0, 1, 2, 3]` (type is `array[int]`).
+10. **Map**: `countryPopulation := [ "US" => 300, "CA" => 180, "UK" =>80 ]` (type is `map[string, int]`).
+11. **Union**: `type Maybe[T] := union[nothing, T]`.
+12. **Function**: `func calculate(x: int, y: string) -> float { return if x > 0 then 1.5 else 2.5  }`.
+13. **Lambda**: `adder := |x:int, y:int| -> x+y`.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Type System
 
-Note that using `=` for resources (like threads or files) will not create new resource. Just create new variables pointing to the same resource.
+## Identifier declaration
 
-We have universal immutability. Everything is immutable. You can however re-assign a variable to a new value.
-Compiler will detect local variable updates which are not escape and optimize them to use mutable variable (for example for numerical calculations which happens only inside a function).
-Channels are the main tool for concurrency and coordination.
+**Semantic**: Used to declare a unique name and assign an expression to it.
 
-## Variabe declaration
-
-**Semantic**: Used to declare and assign a value to a variable.
-
-**Syntax**: `Identifier ':=' exp`
+**Syntax**: `identifier := expression`
 
 **Examples**
 
 1. `x := 12`
-2. `g := 19`
-3. `count := 100`
+2. `g := 19.8`
 
 **Notes**
 
-1. Example 1 defines a variable called `x` which is of type `integer` and stores value of `12` in it.
-2. You cannot use an uninitialized variable. If you do, you will receive a compiler error.
-3. Every variable must have a type either explicitly specified or implicitly inferred from assignment.
-4. `exp` is an expression which means it can either be a literal, function call, another variable or a complex expression.
-5. There must be a single space between `var` keyword and the idenfitier.
-
+1. `expression` can be a literal, function call, another variable or a combination.
+2. Everything is immutable.
+3. You can however re-assign a name to a new value using `=` notation (Refer to operator section).
+4. Example 1 defines a variable called `x` which is of type `integer` and stores value of `12` in it.
+5. Compiler automatically infers the type of variable from expression.
+6. (Recommendation) Put a single space around `:=`.
+7. You can explicitly state type by using `Type{expression}` syntax.
 
 ## Assignment
-Variable must be declared before.
 
-An assignment does not mutate a variable. It creates a new memory cell containing result of right side of `=` and re-assigns left-side variable to that memory address.
-You must re-assign a variable to a new value which is of the same type of the variable.
+**Semantics**: To make a copy of result of an expression and assign it to a pre-declared identifier.
 
-**Semantics**: To make a copy of a piece of data (called rvalue) and put it somewhere else (called lvalue).
-
-**Syntax**: `lvalue = rvalue`
+**Syntax**: `identifier = expression`
 
 **Examples**
 
@@ -154,26 +143,25 @@ You must re-assign a variable to a new value which is of the same type of the va
 2. `x = y`
 3. `x = y + 10 - z`
 4. `x = func1(y) + func2(z) - 10`
-5. `x,y = 1,2`
 
 **Notes**:
 
-1. `lvalue` is the identifier which is on the left side of assignment operator `=`. It must be a single identifier.
-2. `lvalue` cannot be a function argument because they are immutable. More exaplanation in the Functions section.
-3. Note that you cannot re-use lvalues on rvalue section (`a,b=b,a` is invalid).
+1. `identifier` must be previously declared using `:=` notation.
+2. Type of expression in assignment, must be the same as original type of the identifier.
+3. Note that you cannot change current value of an identifier, but you can use `=` to assign a new value to it.
+4. You can use `=` to do multiple assignment if right side is a function call which returns a tuple. See Functions section for more information.
 
 ## Primitives
 
-**Semantics**: Provide basic tools to define most commonly used data types.
+**Semantics**: Provide basic feature to define most commonly used data types.
 
-**Syntax**: `int`, `float`, `char`, `union`, `array`, `slice`, `map`
-`nothing`
+**Syntax**: `int`, `float`, `char`, `union`, `array`, `map`
 
 **Examples**
 
-1. `x = 12`
-2. `x = 1.918`
-3. `x = 'c'`
+1. `x := 12`
+2. `x := 1.918`
+3. `x := 'c'`
 
 **Notes**:
 
@@ -181,9 +169,28 @@ You must re-assign a variable to a new value which is of the same type of the va
 2. `float` is double-precision 8-byte floating point number.
 3. `char` is a single character, represented as an unsigned byte.
 4. Character literals should be enclosed in single-quote.
-5. For `union`, `array` and `map` types, refer to the following sections.
+5. For `union`, `array` and `map` types, refer to the next sections.
+
+## Label types
+
+**Semantics**: To define types that have only one value: Their name. These types are useful as part of a union.
+
+**Syntax**: `type LabelName`
+
+**Examples**
+
+1. `type true`
+2. `type false`
+3. `type Saturday, Sunday, Monday`
+4. `type nothing`
+5. `g := nothing`
+
+**Notes**
+
+1. You can define multiple label types at once (Example number 3).
 
 ## Union
+
 you can use `==` to check for label-types.
 
 **Semantics**: A primitive meta-type to provide same interface which can contain different types.
@@ -192,24 +199,23 @@ you can use `==` to check for label-types.
 
 **Examples**
 
-1. `var int_or_float: unon[int, float]`
-2. `int_or_float = 12`
-3. `int_or_float = 1.212`
-4. `var has_int: bool = int_or_float.(int)`
-5. `var int_value, success = int_or_float.(int)`
-6. 
+1. `var day_of_week: union[SAT, SUN, MON, TUE, WED, THU, FRI]`
+2. `int_or_float := unon[int, float]{11}`
+3. `int_or_float = 12.91`
+4. `int_or_float = 100`
+5. `has_int := type(int_or_float) == @int`
+6. `int_value := int{int_or_float}`
+7.
 ```
-var stringed = if ( int_or_float ) {
-    (int) -> ["int" , toString(int_or_float)],  //inside this block, int_or_float is automatically treated like an int
-    else -> "Not_int"
+stringed := switch ( type(int_or_float) ) 
+{
+    @int: ["int" , toString(1+int{int_or_float})],
+    else: "Not_int"
 }
 ```
-7. `var day_of_week: union[SAT, SUN, MON, TUE, WED, THU, FRI]`
-
 
 **Notes**
-4. The identifiers used in example number 6 are called "label types" and are explained in the corresponding section.
-
+1. Example number 1 shows usage of label types to define an enum type to represent days of week.
 1. `union` is a meta-type which can take form of different data types. It uses generic programming features which are explained in corresponding section. For more information refer to the next section.
 2. Types inside union definition must be named types. Refer to corresponding section.
 3. `union[int, union[float, string]]` will be simplified to `union[int, float, string]`
@@ -358,23 +364,7 @@ Tuple fields must be named because they are the only way to access their interna
 1. In the above example, `MyInt` will be exactly same as `int`, without any difference.
 2. This can be used in refactoring process or when there is a name conflict between types imported from different modules. See `import` section for more information.
 
-## Label types
 
-**Semantics**: To define types that have only one value: Their name. These types are useful as part of enum or a union.
-
-**Syntax**: `type LabelName`
-
-**Examples**
-
-1. `type true`
-2. `type false`
-3. `type Saturday, Sunday, Monday`
-4. `type Nothing`
-4. `var g: Nothing = Nothing`
-
-**Notes**
-
-1. You can define multiple label types at once (Example number 3).
 
 ## Named type
 You can indicate protocol implementation for a type using `+` notation: `type FileHandle := {handle: int} +Disposable`
@@ -936,6 +926,8 @@ Block  = Statement | '{' (Statement)* '}'
 `return 1 if x`
 
 ### Exclusive resource
+??? Note that using `=` for resources (like threads or files) will not create new resource. Just create new variables pointing to the same resource.
+
  every tuple that embeds `ExclusiveResource` is treated like an exclusive resource.
 If some data type represents a resource which needs to be handled only by one function or thread at time, it's type must embed with `ExclusiveResource` (for example file handle, db connection, network socket, ...). These types are not supposed to be shared because of their inherent mutability. This protocol has a single `dispose` function to release the resource.
 These types have some properties which are enforced by the compiler:
@@ -1136,3 +1128,5 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Function to get dynamic type of a tuple variable
 - Add notation for axioms and related operators like `=>` to protocol to be able to define semantics of a protocol.
 - Vet to format code based on the standard (indentation, spacing, warning about namings, ...). And force it before compilation.
+- Compiler will detect local variable updates which are not escape and optimize them to use mutable variable (for example for numerical calculations which happens only inside a function).
+- Channels are the main tool for concurrency and coordination.
