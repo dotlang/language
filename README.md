@@ -187,6 +187,7 @@ You must re-assign a variable to a new value which is of the same type of the va
 5. For `union`, `array` and `map` types, refer to the following sections.
 
 ## Union
+you can use `==` to check for label-types.
 
 **Semantics**: A primitive meta-type to provide same interface which can contain different types.
 
@@ -221,12 +222,11 @@ var stringed = if ( int_or_float ) {
 
 ## Array
 To read from array: `x = arr(0)` or `x = (0)arr`
-To update array: `arr = arr[0=>10, 2=>20]`
 define array literal: `arr = [1,2,3]`
 multi-d array:
 `g:=x2(0)(0)`
-`y2 :=x2[0,0=>102]`
 Array read returns `Maybe[T]` so if index is incorrect it will return `nothing`.
+Update using `set` function.
 
 **Semantics**: Define a fixed-size consecutive sequence of element of the same type
 
@@ -445,20 +445,16 @@ There are two named types which are called "Extended Primitives" because of thei
 type bool := true | false
 type string := array[char]
 ```
-`if ( @x == @SAT )` or `if ( x == SAT )`
-
-
-
+`if ( x == SAT )`
 
 
 ## Map
 To read from map: `x = map(0)` or `x = (0)map`
-To update map: `map1 = map1[0=>10, 2=>20]`
 define map literal: `map = [0=>1, 1=>2, 2=>4]`
 reading from map will return maybe. 
 `value := my_map("key1")` normally map query will return a maybe[T]
 `value := my_map("key1") >> def(_, 0)` --if does not exist, set value to 0
-
+Update and delete using `set`, `delete` function.
 
 4. `var my_map: map[string, int] = ["A"=>1, "B"=>2, "C"=>3]`
 6. `my_map("A") = 2`
@@ -849,7 +845,6 @@ func openDoor(x: Door[Closed]) -> Door[Open]
 `x=y` will duplicate y into x. So changes on x won't affect y. 
 - Comparison semantics: `x==y` will compare data.
 - Type-id (`@`): returns type-id of a named or primitive type: `@int`
-- Type-check `@` as binary operator (left side is a union and right side is a type), returns true if type matches.
 - To cast from named to unnamed type you can use: `Type{value}` notation: `y = int{x}`
 - For union: `x=union[int,float]{12}`
 - chaining: 
@@ -860,19 +855,20 @@ To provide default case in map lookup: `x := map1["A"] >> def(_, 5)`
 ### Special Syntax
 - `@` type-id, type-check
 - `>>` chaining
-- `_`  placeholder for lambda or unknown variable
-- `:`  declaration for tuple, tuple literal and type filter
+- `_`  placeholder for lambda or unknown variable in assignments
+- `:`  type declaration for tuple and function input
 - `:=` custom type definition, variable declaration, tuple literal
 - `=`  type alias, copy value
 - `=>` map literals and block-if
 - `..` range generator
 - `->` function declaration
 - `<-` loop
-- `[]` generics, array and map modification and literals
+- `[]` generics, array and map literals
 - `{}` code block, tuple definition and tuple literal
 - `()` function call, read from array and map
 - `||` function and lambda declaration
 - `.`  access tuple fields
+- `+-` update map
 
 Keywords: `import`, `func`, `type`, `if`, `then`, `else`, `loop`, `do`
 Primitive data types: `int`, `float`, `char`, `union`, `array`, `map`
@@ -1059,9 +1055,9 @@ var must not declared before. it will be declared here and only valid inside loo
 ```
 loop x>0 do printf(x)
 loop true do ...
-loop x <- [2..10] do printf("Hello world")
-loop item <- my_array do printf(item)
-loop g <- my_iterable do ...
+loop x     <- [2..10] do printf("Hello world")
+loop item  <- my_array do printf(item)
+loop g     <- my_iterable do ...
 loop {x,y} <- [2..10], [1..9] do printf("Hello world " +x +y)
 ```
 You can also use iterator type with loop:
