@@ -3371,3 +3371,8 @@ y = switch type(x)
     else: "X"
 }
 ```
+
+N - `type x := func(x:int)->int`
+`g := |x:int|->x+1`
+
+Y - function chaining `.` with spaces around. So we don't need to introduce rules and exceptions about tuples.
