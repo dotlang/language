@@ -3277,6 +3277,60 @@ For reading you can use `()` but for update you must use `set` function.
 Y - We can use `if ( x == SAT )` notation for type checking with label types.
 So can we just eliminate binary `@`?
 
-? - simplify `>>`?
+Y - `loop x :=: [1..10]`
+no 3 letter notations.
+`loop x := [1..10]`
+
+Y - simplify `>>`?
 How is Monad defined in Java or Kotlin or Python?
 How can we more natively simulate it?
+`var finalResult: Maybe[int] = input >> check1(5, _) >> check2(_, "A") >> check3(1,2,_) >> (|x:int| -> x >> process(_))`
+`func pipe[T, U](x: Maybe[T], f: func(T)->U)->Maybe[U]`
+`finalResult := pipe(input, check1(5, _)) >> pipe(_, check3(1,2,_)) >> pipe(_, check5(8,_,1))`
+`data := array1(10) >> default(_, 0)`
+this is simpler because there is no "if does not match".
+can we use a simpler notation? `|>` `|>` makes sense.
+can we get rid of nested paren here?
+`finalResult := pipe(input, check1(5, _)) |> pipe(_, check3(1,2,_)) |> pipe(_, check5(8,_,1))`
+what about `.` dot?
+`finalResult := pipe(input, check1(5, _)).pipe(_, check3(1,2,_)).pipe(_, check5(8,_,1))`
+`a.f(_)` means `f(a)`
+`{a,b}.f(_,_)` means `f(a,b)`
+`finalResult := {input, check1(5,_)}.pipe.{_, check3(1,2,_)}.pipe.{_, check5(8,_,1)}.pipe`
+`5.f.(_, 5).g` ~ `g(f(5),5)`
+why use braces here?
+`finalResult := (input, check1(5,_)).pipe.(_, check3(1,2,_)).pipe.(_, check5(8,_,1)).pipe`
+`finalResult := pipe(input, check1(5,_)).pipe(_, check3(1,2,_)).pipe(_, check5(8,_,1))`
+How to differentiate from tuple access?
+when accessing tuple, `tuple.member` but for chain: `a.f(...)`
+Then what if tuple has a function pointer?
+`tuple.fp(10)` it will be really confusing with chain. NO! this is calling fp function pointer which is member of tuple.
+but chaining is really useful here.
+`data := array1(10).default(_, 0)`
+Shall we put rules on invoking a function pointer?
+if `fp` is a function pointer, `fp()` is wrong.
+`myCircle.draw()` call draw function pointer which is a member of myCircle tuple
+`myCircle.draw()` call `draw` function with input `myCircle` - this is not correct. it must be a closure.
+`tuple.f()` is invocation of a function pointer.
+`tuple.f(_)` is chaining tuple to normal function f.
+`finalResult := pipe(input, check1(5,_)).pipe(_, check3(1,2,_)).pipe(_, check5(8,_,1))`
+`g := 5.add(_, 9)` g will be 14
+`g := (5,9).add(_, _)` g will be 14
+but this syntax is not consistent. What is meaning of `(5,9)`?
+left side of a dot can be a normal variable or a tuple. for chaining, tuple will chain multiple values into the function.
+But what if function needs a tuple?
+`{1,2}.processTuple(_)` if closure has one input, then left of dot is a tuple as a single argument.
+`{1,2}.processTwoData(_, _)` in this case tuple will be dispatched to two arguments.
+And of course if on the right side of dot, there is no closure (just an identifier or name without underscore) it is variable reference.
+`finalResult := pipe(input, check1(5,_)).pipe(_, check3(1,2,_)).pipe(_, check5(8,_,1))`
+`g := (5,9).add(_, _)`
+`g := 5.add(_, 9)`
+`{1,2}.processTwoData(_, _)`
+`{1,2}.processTuple(_)` 
+`data := array1(10).default(_, 0)`
+`data := circle.process(_)`
+`data := circle.process()`
+`data := circle.process`
+
+N - Better and more distinct notation for tuples?
+`/1,2/./_, _, 5/.process(_,_,_)` will become `process(1,2,5)`.
