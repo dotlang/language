@@ -3332,5 +3332,42 @@ And of course if on the right side of dot, there is no closure (just an identifi
 `data := circle.process()`
 `data := circle.process`
 
-N - Better and more distinct notation for tuples?
+Y - Better and more distinct notation for tuples?
 `/1,2/./_, _, 5/.process(_,_,_)` will become `process(1,2,5)`.
+`#1,2#.#_, _, 5#.process(_,_,_)` will become `process(1,2,5)`.
+They are not nested beautifully.
+`#1,2#4,5##` !!!
+`/1,2/4,5//`
+start and end market must be different and complementing.
+`|>1,2|>4,5<|<|` too long. 4 keys needed.
+what about a prefix?
+`$(1,2,3)` makes a tuple literal.
+`$(1,2, $(4,5))`
+`${1,2, ${5,6}}`
+`${1,2}.processTuple(_)`.
+Tuple literal which does not have a type must be prefixed with `$`.
+`point := ${x:=100, y:=200}`
+`point := Point{x:=100, y:=200}`
+`fourth_point: {x:int, y:int=123} = ${300}`
+
+Y - Now that we use these keywords, why not use for switch?
+`switch`, `else`?
+you must use braces. if it is just one or two cases, maybe its easier to use `if`.
+```
+y = switch x 
+{
+    1: "G",
+    2: "H",
+    3: "N",
+    else: "A"
+}
+```
+To type match for a union:
+```
+y = switch type(x)
+{
+    @int: "G" + int{x},
+    @string: "H",
+    else: "X"
+}
+```
