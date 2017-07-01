@@ -3408,3 +3408,7 @@ Y - Like what we did for tuple literal, shall we use symbols for array and map l
 1. `my_map := $["A"=>1, "B"=>2, "C"=>3]`
 5. `my_map := map[string,int]$["A"=>1, "B"=>2, "C"=>3]`
 
+? - To have minimum impact on the language and concepts but have protocols, we can define expected functions as a tuple with function pointers. an input of type this, can use core function to get appropriate functions from current environment.
+`func process(a:int, x: RequiredFunctions)`
+`process(10, &)`
+`process(10, ${&})`
