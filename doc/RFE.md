@@ -3376,3 +3376,35 @@ N - `type x := func(x:int)->int`
 `g := |x:int|->x+1`
 
 Y - function chaining `.` with spaces around. So we don't need to introduce rules and exceptions about tuples.
+
+N - `!` for check for nothing and different syntax for switch
+`g := arr(0) ! 5`
+`g := arr(0) || 12`
+`g := arr(0) . def(_, 5)`
+`g := if arr(0) != nothing then arr(0) else 12`
+
+Y - switch for union
+```
+switch(union1) {
+x:int -> 
+y: float ->
+nothing ->
+else ->
+}
+```
+places that we use nothing: array, map, maybe.
+
+N - what does this do?
+`x := map1(1) . ${_, 1}`
+`x := 5 . ${_, 1}`
+`x := ${5, 1}`
+how can we access inside x?
+`${a,b} := x`
+or we can simply send x.
+
+Y - Like what we did for tuple literal, shall we use symbols for array and map literals?
+1. `arr := $[1, 2, 3]`
+8. `arr := array[int]$[1, 2, 3]`
+1. `my_map := $["A"=>1, "B"=>2, "C"=>3]`
+5. `my_map := map[string,int]$["A"=>1, "B"=>2, "C"=>3]`
+
