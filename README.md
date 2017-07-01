@@ -402,7 +402,7 @@ stringed := switch ( int_or_float )
 5. Note that polymorphism does not apply to generics. So `array[Circle]` cannot substitute `array[Shape]`. But you can have `array[union[Circle, Square]]` to have a mixed array of different types.
 6. We use closed recursion to dispatch function calls. This means if a function call is forwarded from `Circle` to `Shape` and inside that function another second function is called which has candidates for both `Circle` and `Shape` the one for `Shape` will be called.
 
-# Casting
+## Casting
 
 **Semantics**: To change type of data without changing the semantics of the data
 
@@ -426,20 +426,35 @@ stringed := switch ( int_or_float )
 ===================
 
 # Functions
-`func process(x: Point)...`
-`process({1,2})` use of tuple literal without field names.
-`x,y := getTuple()` you can use this notation to capture a tuple output from a function
-`func process() -> {x:int, y:int} ... { ...return {x:=12, y:=91} }`
-- `func process(x:int)->int`
-- All functions return something. If they don't, compiler will set their return type to `nothing`.
-- Function inputs are immutable. Only local variables can appear on the left side of `=`.
-- Note that when I call `process(myIntOrFloat)` with union, it implies that there must be functions for both int and union (or a func with union type).
-- explain fwd functions
-- We solve expression problem by using open functions.
-- If you want dispatch with static type, cast the argument to static type.
-If a function expects `x: Stack[Shape]` you cannot send `Stack[Circle]`.
 
-explain relation with subtyping
+## Declaration
+
+**Semantics**: To group a set of coherent commands into a group with a specific name, input and output.
+
+**Syntax**: `func functionName(input1: type1, input2: type2, ...) -> OutputType { code block }`
+
+**Examples**
+
+1. `func log(s: string) -> { print(s) }`
+1. `func process(pt: Point)->int { return pt.x }`
+2. `func process2(pt: Point) -> ${pt.x, pt.y}`
+3. `a,b := process2(myPoint)`
+4. `_,b := process2(myPoint)`
+5. `process(int_or_float_union)`
+6. `func PI -> 3.14`
+
+**Notes**:
+
+1. Every function must return something. If it doesn't compiler marks output type as `nothing` (Example 1).
+2. A function call with union data, means there must be functions defined for all possible types in the union. See Call resolution section for more information.
+3. You can use `_` to ignore a function output (Example 4)
+4. You can define consts using functions (Example 6).
+
+
+
+## Function forwarding
+- explain fwd functions
+
 Example about inheritance, polymorphism and subtyping:
 ```
 type Shape := {}
@@ -474,15 +489,14 @@ var r: BasicShape = myCircle ;automatic casting - because Circle inherits from B
 `func paint(o:Square)...`
 
 
-- You can use `_` to ignore a function output: `{t, _} = my_map("key1")`
+
 - A function can only return one output:
 ```
-func process||-> {int, int}
+func process()-> {int, int}
 var x:int
 val y:int
 {x,y} = process
 ```
-- You can define consts using functions: `func PI -> 3.14`
 - Storage class: `var/val` of the function output is part of singature (but not output type). And you must capture a functin output.
 `process/int/var.int/val.float/val` is a condensed view of the signature of the funtion: `func process(var x:int, val y: float)->val string`.
 
@@ -576,6 +590,18 @@ func process(x: int) -> process(x, 10, 0)
 - This is a type for functions that don't return anything: `type NoReturnFunc[T] := func(T)`
 - Functions can name their output. In this case, you can assign to it like a local variable and use empty return.
 `func process() -> x:int `
+
+## Call resolution
+
+## Forwarding
+
+## Lambda and closure
+
+
+
+
+
+
 
 ## Method call resolution
 - We can have dynamic dispatch by using union. When I call `process(intOrFloat)` based on the type inside union, either process for int or the one for float will be called.
