@@ -180,18 +180,17 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 **Examples**
 
 1. `type true`
-2. `type false`
-3. `type Saturday, Sunday, Monday`
-4. `type nothing`
-5. `g := nothing`
+2. `type Saturday, Sunday, Monday`
+3. `type nothing`
+4. `g := nothing`
+5. `if ( x == nothing ) ...`
 
 **Notes**
 
 1. You can define multiple label types at once (Example number 3).
+2. Labels types are a special kind of named types which are explained in the corresponding section.
 
 ## Union
-
-you can use `==` to check for label-types.
 
 **Semantics**: A primitive meta-type to provide same interface which can contain different types.
 
@@ -203,129 +202,174 @@ you can use `==` to check for label-types.
 2. `int_or_float := unon[int, float]{11}`
 3. `int_or_float = 12.91`
 4. `int_or_float = 100`
-5. `has_int := type(int_or_float) == @int`
+5. `has_int := typeOf(int_or_float) == @int`
 6. `int_value := int{int_or_float}`
 7.
 ```
-stringed := switch ( type(int_or_float) ) 
+stringed := switch ( int_or_float ) 
 {
-    @int: ["int" , toString(1+int{int_or_float})],
+    x:int -> ["int" , toString(1+x)],
+    y:float -> "is_float",
     else: "Not_int"
 }
 ```
 
 **Notes**
-1. Example number 1 shows usage of label types to define an enum type to represent days of week.
+
 1. `union` is a meta-type which can take form of different data types. It uses generic programming features which are explained in corresponding section. For more information refer to the next section.
 2. Types inside union definition must be named types. Refer to corresponding section.
-3. `union[int, union[float, string]]` will be simplified to `union[int, float, string]`
-4. Example 4: In a boolean context, `x.(type)` evaluates to a bool indicating true if `x` contains given type.
-5. Example 5: If `x.(int)` is used otherwise it evaluates to an integer and a boolean indicating desired type and a flag for whether casting is successfull or no.
-7. You can use `type(x)` notation in a block-if (Example 6). Refer to corresponding section for more information about `if`.
+3. Example number 1 shows usage of label types to define an enum type to represent days of week.
+4. Example 2, defines a union variable with explicit type and changes it's value to other types in next two examples.
+5. Example 5, uses `typeOf` function to check if there is an integer type inside previously defined union variable.
+6. You can use the syntax in example 6 to cast a union to another type. It will throw error if cast is not possible.
+7. Example 7, uses `switch` expression to check and match for type of data inside union.
+8. `union[int, union[float, string]]` will be simplified to `union[int, float, string]`
 
 ## Array
-To read from array: `x = arr(0)` 
-define array literal: `arr = [1,2,3]`
-multi-d array:
-`g:=x2(0)(0)`
-Array read returns `Maybe[T]` so if index is incorrect it will return `nothing`.
-Update using `set` function.
 
-**Semantics**: Define a fixed-size consecutive sequence of element of the same type
+**Semantics**: Define a fixed-size sequence of elements of the same type.
 
 **Syntax**: `array[type]`
 
 **Examples**
 
-1. `var arr: array[int] = [1, 2, 3]`
-2. `arr(0) = 11`
-3. `var x:int = arr(1)`
-4. `var arr2: array[int] = [0..10]`
-5. `var arr3: array[int] = array(10)`
-6. `var twod = array[array[int]] = array(10,10)`
-7. `twod(0)(2) = 100`
+1. `arr := [1, 2, 3]`
+2. `g := arr(0)` or `g := get(arr, 0)`
+3. `new_arr := set(arr, 0, 10)`
+4. `new_arr2 := set(arr, [0,1,2], [4,4,4])`
+5. `two_d_array := [ [1,2,3], [4,5,6] ]`
+6. `p := two_d_array(0)(0)`
+7. `arr2 := [0..10]`
 
 **Notes**
-1. Above example 1 through 3 shows definition and read/write from/to an array.
-2. Example 4 shows using range operator `..` to initialize array. More in Operators section.
-3. Example 5 and 6 show initializing a 1-D and 2-D array with default values using `array` core function.
+
+1. Above examples show definition and how to read/update array.
+2. In example 7, the range operator `..` is used to generate an array literal.
 
 ## Slice
 
-**Semantices**: Simulate an array which maps to a view into an existing array
+**Semantices**: Represents an array which maps to a limited view into an existing array.
 
 **Syntax**: `array(start, end)`
 
 **Examples**
 
-1. `var arr: array[int] = [0..9]`
-2. `var slice1: array[int] = arr(1, 2)`
-3. `var slice2: array[int] = arr(0, -1)`
-4. `slice1(0)++`
-5. `slice1 = calculateValues()`
+1. `arr := [1..9]`
+2. `slice1 := arr(1, 2)`
+3. `slice2 := arr(0, -1)`
 
 **Notes**
 
-1. Example 2 will give a slice which contains `1,2`.
+1. Example 2 will give a slice which contains `2, 3`.
 2. Example 3 will give a slice which contains all elements. End parameter can be negative which is counted from end of the array (`-1` means last element). Same for start.
-3. Example 4 will change `arr` array's value at index 1 from 1 to 2.
-4. You can use a slice as an lvalue in assignment (Example 5).
+
+## Map
+
+**Semantics**: Represent a mapping from key to value.
+
+**Syntax**: `map[key, value]`
+
+**Examples**
+
+1. `my_map := ["A"=>1, "B"=>2, "C"=>3]`
+2. `item1 := my_map("A")`
+3. `map2 := set(my_map, "A", 2)`
+4. `map3 := delete(map2, "B")`
+
+**Notes**
+
+1. You need to use core functions to manipulate a map, because (like everything else), they are immutable.
+2. If you query a map for something which does not exist, it will return `nothing`.
 
 ## Extended primitives
 
 **Semantics**: Built on top of primitives, these types provide more advanced data types.
 
-**Syntax**: `bool`, `string`
+**Syntax**: `bool`, `string`, `nothing`
 
 **Examples**
 
-1. `var x: bool = true`
-3. `var x: string = 'Hello world!'`
+1. `g := true`
+3. `str := 'Hello world!'`
 
 **Notes**
 
-1. All extended primitives are defined using language features and based on primitives and `binary` data type.
-2. `string` is defined as an array of `char` data type. The conversion from/to string literals is handled by the compiler.
-4. These types are part of `core` package. Please refer to this package documentation for more information about how they work.
-5. String literals should be enclosed in double quotes. 
-6. String litearls enclosed in backtick can be multi-line and escape character `\` will not be processed in them.
+1. `string` is defined as an array of `char` data type. The conversion from/to string literals is handled by the compiler.
+2. String literals should be enclosed in double quotes. 
+3. String litearls enclosed in backtick can be multi-line and escape character `\` will not be processed in them.
+4. `nothing` is a label type which is used in union types, specially `maybe` type.
+5. `bool` type is a union of two label types: `true` and `false`.
 
+## Type alias
+
+**Semantics**: To define alternative names for a type.
+
+**Syntax**: `type NewName = CurrentName`
+
+**Examples**
+
+1. `type MyInt = int`
+
+**Notes**
+
+1. In the above example, `MyInt` will be exactly same as `int`, without any difference.
+2. This can be used in refactoring process or when there is a name conflict between types imported from different modules. See `import` section for more information.
+3. There must be a single space between `type` and alias name.
+
+
+## Named type
+
+**Semantics**: To introduce new types based on existing types (called underlying type).
+
+**Syntax**: `type NewType := UnderlyingType`
+
+**Examples**
+
+1. `type MyInt := int`
+2. `type IntArray := array[int]`
+3. `type Point := {x: int, y: int}`
+4. `type bool := union[true, false]`
+5. `x := MyInt{10}`, `y := MyInt{x}`
+
+**Notes**
+
+1. There must be a single space between `type` and type name.
+2. Example number 4, is the standard definition of `bool` extended primitive type based on `union` and label types.
+3. Although their binary data representations are the same, `MyInt` and `int` are two separate types. This will affect function dispatch. Please refer to corresponding section for more information.
+4. You can use casting operator to convert between a named type and it's underlying type (Example 5).
+ 
 ## Tuple
-`x,y := myPoint` or to destruct a tuple into it's elements
-A tuple literal must be either prefixed with it's type or `$` symbol.
-Tuple fields must be named because they are the only way to access their internal data. You can only used unnamed tuple literal when names are specified in the context.
+
 **Semantice**: As a product type, this data type is used to defined a set of coherent variables of different types.
 
 **Syntax**: 
-1. For declaration: `{field1: type1, field2: type2, field3: type3, ...}` 
-2. For literals: `Type{field1:=value1, field2:=value2, field3:=value3, ...}` 
-2. For literals: `${field1:=value1, field2:=value2, field3:=value3, ...}` 
-3. For update: `OtherVar{field1:value1, field2:value2, field3:value3, ...}`
+
+1. Type declaration: `{field1: type1, field2: type2, field3: type3, ...}` 
+2. Literal: `Type{field1:=value1, field2:=value2, field3:=value3, ...}` 
+3. Untyped literal: `${field1:=value1, field2:=value2, field3:=value3, ...}` 
 
 **Examples**
 
-1. `point := ${x:=100, y:=200}` free tuple litearl (no type associated)
-1. `point := Point{x:=100, y:=200}` typed
-2. `var point_x: int = point.x`
-3. `point.y = point.x + 10`
-4. `var another_point = Point{x:=100, y:=200}`
-5. `var third_point = Point{200, 400}`
-6. `var fourth_point: {x:int, y:int=123} = {300}`
+1. `type Point := {x:int, y:int}`
+2. `point := ${x:=100, y:=200}`
+3. `point := ${100, 200}`
+4. `point := Point{x:=100, y:=200}`
+5. `point := Point{100, 200}`
+6. `x,y := point`
+7. `x,y := ${100,200}`
+8. `another_point := point{x:=11, y:=point.y + 200}`
+9. `new_point := {a:100, b:200} //WRONG!`
 
 **Notes**
 
-1. Tuple literal does not need to include type name, if the type can be inferred from the context.
-2. In examples number 4 and 5, we have used `Point` as a type name. Refer to corresponding section for more information about named types.
-3. Compiler will translate tuples to `binary` type with appropriate size.
-4. The example number 6, uses default value for `y` field.
+1. Field names are not mandatory when defining a tuple literal.
+2. `$` prefix is used as an indicator to indicate a tuple litera without type.
+2. Example 1 defined a named type for a 2-D point and next 4 examples show how to initialise variables of that type.
+3. Examples 6 and 7 show how to destruct a tuple and extract it's data.
+4. Example 8 shows how to update a tuple and create a new tuple.
+5. Example 9 indicates names should match with the expected type.
 
-- Fields that start with underscore are considered internal state of the tuple and better not to be used outside the module that defines the type. If you do so, compiler will issue a warning.
-- You can define a tuple literal using `{}` notation: `var t = {field1=10, field2=20}`.
-- If a function expects a specific input type, you can pass a tuple literal, if field order, names and types match.
-- If function expects a specific input type and tuple uses unnamed fields, you can use tuple if order and types match.
-- You can cast a tuple literal to a specific type. `var g = MyTuple{field=10, field2=20}`
-- You can use cast operator to cast a variable initialized with tuple literal to a specific type.
-
+===================
 
 ## Composition
 `type shapes := union[Shape]` union includes all tuples that embed Shape type.
@@ -349,50 +393,11 @@ Tuple fields must be named because they are the only way to access their interna
 6. Note that polymorphism does not apply to generics. So `array[Circle]` cannot substitute `array[Shape]`.
 7. We use closed recursion to dispatch function calls. This means if a function call is forwarded from `Circle` to `Shape` and inside that function another second function is called which has candidates for both `Circle` and `Shape` the one for `Shape` will be called.
 
-## Type alias
-
-**Semantics**: To define alternative names for a type
-
-**Syntax**: `type NewName = CurrentName`
-
-**Examples**
-
-1. `type MyInt = int`
-
-**Notes**
-
-1. In the above example, `MyInt` will be exactly same as `int`, without any difference.
-2. This can be used in refactoring process or when there is a name conflict between types imported from different modules. See `import` section for more information.
 
 
 
-## Named type
-You can indicate protocol implementation for a type using `+` notation: `type FileHandle := {handle: int} +Disposable`
 
 
-**Semantics**: To introduce new, different types based on existing types (called underlying type).
-
-**Syntax**: `type NewType := UnderlyingType`
-
-**Examples**
-
-1. `type MyInt := int`
-2. `type IntArray := array[int]`
-3. `type Point := {x: int, y: int}`
-4. `type bool := union[true, false]`
-5. `var x: Point = {10, 20}`
-6. `var t1:int = 12`, `var t2: MyInt = t1` - compiler error!
-
-
-**Notes**
-
-1. There must be a single space between `type` and name.
-2. Example number 4, is the standard definition of `bool` extended primitive type based on `union` and label types.
-3. In above examples (like example number 1), note that although their binary data representation is the same, `MyInt` and `int` are two separate types. This will affect function dispatch. Please refer to corresponding section for more information.
-4. You can use casting operator to convert between a named type and it's underlying type. Please refer to corresponding section.
-5. In example number 6, you cannot assign `int` to `MyInt` as they are completely different types.
-
- 
 
 
 ## Variables
@@ -437,38 +442,6 @@ type string := array[char]
 `if ( x == SAT )`
 
 
-## Map
-To read from map: `x = map(0)`
-define map literal: `map = [0=>1, 1=>2, 2=>4]`
-reading from map will return maybe. 
-`value := my_map("key1")` normally map query will return a maybe[T]
-`value := my_map("key1") >> def(_, 0)` --if does not exist, set value to 0
-Update and delete using `set`, `delete` function.
-
-4. `var my_map: map[string, int] = ["A"=>1, "B"=>2, "C"=>3]`
-6. `my_map("A") = 2`
-
-`type map[K,V] := {...}`
-```
-var m:map[string, int] = ["A" => 1, "B"=>2]
-m("C") = 12
-```
-
-Maps, hashtables or associative arrays are a data structure to keep a set of keys and their corresponding values.
-```
-//defining and initializing a map
-var y: map[string, int] = ["a": 1, "b": 2]
-
-;read/write from/to a map
-y("a") = 100
-var t: int = y("b")
-```
-
-- If you query a map for something which does not exist, it will return `Nothing`. Below shows two ways to read data from a map:
-`var value = my_map("key1") if ( var i, success = @int(value), success )`
-`var value = my_map("key1") if ( @value == @int )`
-`var value = my_map("key1") if ( value @ int )`
-`var t, found = my_map("key1")`
 
 
 
@@ -478,6 +451,8 @@ var t: int = y("b")
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Functions
+`func process(x: Point)...`
+`process({1,2})` use of tuple literal without field names.
 `x,y := getTuple()` you can use this notation to capture a tuple output from a function
 `func process() -> {x:int, y:int} ... { ...return {x:=12, y:=91} }`
 - `func process(x:int)->int`
@@ -839,18 +814,18 @@ func openDoor(x: Door[Closed]) -> Door[Open]
 - For union: `x=union[int,float]{12}`
 - chaining: 
 `A . F(_)` (not to spaces around the dot) will be translated to `F(A)`. right side of dot must be either a closure or a tuple with underscores for substitition.
-`${x,y,z} . ${_,_,_}` becomes `${x,y,z}`
+`${x,y,z} . ${_,_,_}` becomes `${x,y,z}`. A tuple litearl without field names. You can extract it's data, use it in a chaining or send it to a function which expects a tuple with same size and type.
 `finalResult := pipe(input, check1(5,_)) . pipe(_, check3(1,2,_)) . pipe(_, check5(8,_,1))`
 `finalResult := {input, check1(5, _)} . pipe(_,_) . pipe(_, check3(1,2,_)) . pipe(_, check5(8,_,1))`
 `finalResult := ${input, check1(5, _)} . pipe(_,_) . ${_, check3(1,2,_)} . pipe(_, _) . ${_, check5(8,_,1) } . pipe(_,_)`
-`g := (5,9).add(_, _)`
-`g := 5.add(_, 9)`
-`{1,2}.processTwoData(_, _)` calling function with two inputs (1 and 2).
-`{1,2}.processTuple(_)` calling function with a single argument of type tuple.
+`g := {5,9} . add(_, _)`
+`g := 5 . add(_, 9)`
+`{1,2} . processTwoData(_, _)` calling function with two inputs (1 and 2).
+`{1,2} . processTuple(_)` calling function with a single argument of type tuple.
 `data := array1(10).default(_, 0)`
-`data := circle.process(_)` ~ `process(circle)`
-`data := circle.process()` calling a function pointer which is a field inside circle tuple
-`data := circle.process` accessing `process` field inside `circle` tuple
+`data := circle . process(_)` ~ `process(circle)`
+`data := circle . process()` calling a function pointer which is a field inside circle tuple
+`data := circle . process` accessing `process` field inside `circle` tuple
 `default` function in core will return second argument if first one is nothing. if `map["A"]` is not nothing, the expression will evaluate to `map["A"]`
 on the right side of dot, you can have a tuple with underscore which will be filled based on the left side.
 `{1,2}.{_, _, 5}` will be `{1, 2, 5}`
@@ -868,7 +843,7 @@ on the right side of dot, you can have a tuple with underscore which will be fil
 - `=`  type alias, copy value
 - `=>` map literals and block-if
 - `..` range generator
-- `->` function declaration
+- `->` function declaration, switch for union
 - `[]` generics, array and map literals
 - `{}` code block, tuple definition and tuple literal
 - `()` function declaration and call, read from array and map
@@ -894,11 +869,11 @@ y = switch x
 ```
 To type match for a union:
 ```
-y = switch type(x)
+y = switch x
 {
-    @int: "G" + int{x},
-    @string: "H",
-    else: "X"
+    g:int -> 1+g,
+    s:string -> 10,
+    else -> "X"
 }
 ```
 
