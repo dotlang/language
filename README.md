@@ -423,8 +423,6 @@ stringed := switch ( int_or_float )
 4. Similarly, when a function expects an unnamed type, you cannot pass a named type with same underlying type. 
 5. Another usage of casting is to cast between `int` and `float` and `char` (Example 1).
 
-===================
-
 # Functions
 
 ## Declaration
@@ -435,21 +433,45 @@ stringed := switch ( int_or_float )
 
 **Examples**
 
-1. `func log(s: string) -> { print(s) }`
-1. `func process(pt: Point)->int { return pt.x }`
-2. `func process2(pt: Point) -> ${pt.x, pt.y}`
-3. `a,b := process2(myPoint)`
-4. `_,b := process2(myPoint)`
-5. `process(int_or_float_union)`
-6. `func PI -> 3.14`
+1. `func myFunc(y:int, x:int) -> int { return 6+y+x }`
+2. `func log(s: string) -> { print(s) }`
+3. `func process(pt: Point)->int { return pt.x }`
+4. `func process2(pt: Point) -> ${pt.x, pt.y}`
+5. `func my_func8() -> {x:int, y:int} { return ${10,20} }`
+6. `func my_func(x:int) -> x+9`
+7. `func myFunc9(x:int) -> {int} ${12}`
+8. `func PI -> 3.14`
+
 
 **Notes**:
 
-1. Every function must return something. If it doesn't compiler marks output type as `nothing` (Example 1).
+1. Every function must return something. If it doesn't compiler marks output type as `nothing` (Example 2).
 2. A function call with union data, means there must be functions defined for all possible types in the union. See Call resolution section for more information.
-3. You can use `_` to ignore a function output (Example 4)
-4. You can define consts using functions (Example 6).
+3. You can define consts using functions (Example 6).
+4. There must be a single space between func and function name.
+5. You can omit function output type and let compiler infer it, if it has no body (Examples 4, 6 and 8).
+6. You can omit braces and `return` keyword if you only want to return an expression (Examples 4, 6, 7 and 8).
+7. Each function must have an output type. Even if it does not return anything, output type will be `nothing`.
+8. Function output can be tuple type with or without field names (Examples 5 and 7).
 
+## Invocation
+
+**Semantics**: Execute commands of a pre-declared function.
+
+**Syntax**: `output = functionName(input1, input2, ...)` or `output := ...`
+
+**Examples**
+
+1. `pi := PI()`
+2. `a,b := process2(myPoint)`
+3. `_,b := process2(myPoint)`
+4. `tuple1 := myFun9();`
+
+**Notes**
+
+1. You can use `_` to ignore a function output (Example 3).
+
+===================
 
 
 ## Function forwarding
@@ -501,41 +523,11 @@ val y:int
 `process/int/var.int/val.float/val` is a condensed view of the signature of the funtion: `func process(var x:int, val y: float)->val string`.
 
 
-- There must be a single space between func and function name.
-- A function can determine whether is expects var or val inputs. If function wants to promise it won't change the input but caller can send either var or val, it can do so with eliminating qualifier or using val: `func process(x: int)`.
-- var/val qualifier is optional for function input/output. if missing, it is considered val and caller can send either val or var. But if it is `val`, caller can only send vals.
-- If function output does not have a qualifier, it will be val.
-`func process(var x:int) -> x` return is a val
-`func process(var x:int) -> int x` return is a val
-`func process(var x:int) -> val:int x` return is a val
-- If function wants to return a var and use shortcut:
-`func process(val x:int) -> var:int x+1`
-`func process(val x:int) -> var x+1`
-- A function can state it's output var/val. if qualifier is missing, function can return either var or val but caller can only assign the result to a val (unless it is making a copy). But if output is marked with `val`, function can only return a val.
-- So missing qualifier: either var or val can be used by sender but receiver should assume val.
-- function inputs should have val/var modifier so it won't be ambiguous whether something is potential for shared mutable state. If input modifier is missing, it is assumed to be var or val.
-- If function output type misses `var/val` modifier, it will be assumed `val`.
-`func add(x:int, y:int)->int`
-`func add(val x:int, val y:int)->val:int`
-These two definitions are different. var/val are part of function.
-Compiler/runtime will handle whether to send a ref or a copy, for val arguments.
-- You can omit `()` in function call if there is no local variable or argument with same name and function has no input. If there is local var with same name, compiler will issue warning: `var t:int = sizeof[int]`
 
-function inputs must be named.
-- Function output can be any type and any count. Even a tuple or a tuple with unnamed fields.
-Function is a piece of code which accepts a series of inputs and can return a single value. 
+
 If you use `{}` for the body, you must specify output type and use return keyword.
 
 ```
-func my_func1(x: int, y: int) -> float { return x/y }
-func my_func1(y:int) -> float { return y/3 } ;you must specify input name
-func my_func(y:int, x:int) -> int { return 6+y+x } ;based on runtime arguments, one of implementations will be choosed
-func my_func(5:int) -> 9
-func my_func3(x: int, y: int) -> x/y  ;you can omit {} if its a single expression
-func my_func7() -> int { return 10;} ;fn has no input but () is mandatory
-func my_func7() -> 10  ;when function has just a return statement, there is a shortcut
-func my_func8() -> (int, int) { return 10,20 } ;function can return multiple values
-func myFunc9(x:int) -> {y:int} {y=12} ;you can have named output
 
  ;below function receives an array + a function and returns a function
 func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
@@ -574,22 +566,7 @@ func read_customer(id:int) -> Nothing | CustomerData
 `func adder(x: int, y:int)->int`
 - Normally you define general functions as abstract, and speciaize it for specific types in other functions with the same signature.
 - Function definition specifies a contract which shows input tuple and output tuple. If input tuple is named, you must pass a set of input or tuple with the exact same name or an unnamed tuple. If input is unnamed, you can pass either unnamed or named tuple.
-```
-func f(x:int, y:int) -> ...
-var g = {x:10, y:12}
-f(g) ; this is not correct. f expects x and y not a tuple with another tuple.
-f(1,9)
-f(g.x, g.y)
-```
-- Note that you cannot use optional arguments in a function signature. Although you can have multiple functions with the same name:
-```
-func process(x: int, y:int, z:int) -> ...
-func process(x: int) -> process(x, 10, 0)
-```
-- This is a function that accepts an input of any type and returns any type: `type Function[I,O] := func(I)->O`.
-- This is a type for functions that don't return anything: `type NoReturnFunc[T] := func(T)`
-- Functions can name their output. In this case, you can assign to it like a local variable and use empty return.
-`func process() -> x:int `
+
 
 ## Call resolution
 
@@ -710,6 +687,8 @@ If we have `func f(int,int,int)->int` then:
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Generics
+- This is a function that accepts an input of any type and returns any type: `type Function[I,O] := func(I)->O`.
+
 - Compiler will scan body of generic functions and extract their expected methods. If you call them with inappropriate types, it will give you list of required methods to implement.
 - Note that a generic function can only have generic types. About immutability or mutability, it cannot be generic. The function signature is responsible about defining whether an argument should be immutable or mutable or doesn't care. Also same for types. You cannot have mutability or immutability as a generic argument.
 - Generic arguments can only be types.
@@ -1106,3 +1085,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Vet to format code based on the standard (indentation, spacing, warning about namings, ...). And force it before compilation.
 - Compiler will detect local variable updates which are not escape and optimize them to use mutable variable (for example for numerical calculations which happens only inside a function).
 - Channels are the main tool for concurrency and coordination.
+- Protocol/type-class/concepts
