@@ -110,7 +110,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 # Type System
 
-## Identifier declaration
+## Declaration
 
 **Semantic**: Used to declare a unique name and assign an expression to it.
 
@@ -120,6 +120,8 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 1. `x := 12`
 2. `g := 19.8`
+3. `a,b := process()`
+4. `x := y`
 
 **Notes**
 
@@ -130,6 +132,8 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 5. Compiler automatically infers the type of variable from expression.
 6. (Recommendation) Put a single space around `:=`.
 7. You can explicitly state type by using `Type{expression}` syntax.
+8. If right side of `:=` is a tuple type, you can destruct it's type and assign it's value to different variables (Example 3). See Tuple section for more information.
+9. Declaration makes a copy of the right side if it is a simple identifier (Example 4). So any future change to `x` will not affect `y`.
 
 ## Assignment
 
@@ -143,6 +147,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 2. `x = y`
 3. `x = y + 10 - z`
 4. `x = func1(y) + func2(z) - 10`
+5. `x,y := func6()`
 
 **Notes**:
 
@@ -150,6 +155,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 2. Type of expression in assignment, must be the same as original type of the identifier.
 3. Note that you cannot change current value of an identifier, but you can use `=` to assign a new value to it.
 4. You can use `=` to do multiple assignment if right side is a function call which returns a tuple. See Functions section for more information.
+5. If right side of `:=` is a tuple type, you can destruct it's type and assign it's value to different variables (Example 5). See Tuple section for more information.
 
 ## Primitives
 
@@ -203,7 +209,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 3. `int_or_float = 12.91`
 4. `int_or_float = 100`
 5. `has_int := typeOf(int_or_float) == @int`
-6. `int_value := int{int_or_float}`
+6. `int_value, has_int := int{int_or_float}`
 7.
 ```
 stringed := switch ( int_or_float ) 
@@ -221,7 +227,7 @@ stringed := switch ( int_or_float )
 3. Example number 1 shows usage of label types to define an enum type to represent days of week.
 4. Example 2, defines a union variable with explicit type and changes it's value to other types in next two examples.
 5. Example 5, uses `typeOf` function to check if there is an integer type inside previously defined union variable.
-6. You can use the syntax in example 6 to cast a union to another type. It will throw error if cast is not possible.
+6. You can use the syntax in example 6 to cast a union to another type. It will also give a boolean to indicate if the casting was successful.
 7. Example 7, uses `switch` expression to check and match for type of data inside union.
 8. `union[int, union[float, string]]` will be simplified to `union[int, float, string]`
 
@@ -233,18 +239,21 @@ stringed := switch ( int_or_float )
 
 **Examples**
 
-1. `arr := [1, 2, 3]`
+1. `arr := $[1, 2, 3]`
 2. `g := arr(0)` or `g := get(arr, 0)`
 3. `new_arr := set(arr, 0, 10)`
 4. `new_arr2 := set(arr, [0,1,2], [4,4,4])`
 5. `two_d_array := [ [1,2,3], [4,5,6] ]`
 6. `p := two_d_array(0)(0)`
 7. `arr2 := [0..10]`
+8. `arr := array[int]$[1, 2, 3]`
 
 **Notes**
 
 1. Above examples show definition and how to read/update array.
 2. In example 7, the range operator `..` is used to generate an array literal.
+3. You can explicitly state array literal type like in example 8.
+4. A `$` sign must prefix array literals.
 
 ## Slice
 
@@ -271,15 +280,18 @@ stringed := switch ( int_or_float )
 
 **Examples**
 
-1. `my_map := ["A"=>1, "B"=>2, "C"=>3]`
+1. `my_map := $["A"=>1, "B"=>2, "C"=>3]`
 2. `item1 := my_map("A")`
 3. `map2 := set(my_map, "A", 2)`
 4. `map3 := delete(map2, "B")`
+5. `my_map := map[string,int]$["A"=>1, "B"=>2, "C"=>3]`
 
 **Notes**
 
 1. You need to use core functions to manipulate a map, because (like everything else), they are immutable.
 2. If you query a map for something which does not exist, it will return `nothing`.
+3. You can explicitly state type of a map literal like example 5.
+4. A `$` sign must prefix map literals.
 
 ## Extended primitives
 
@@ -369,86 +381,49 @@ stringed := switch ( int_or_float )
 4. Example 8 shows how to update a tuple and create a new tuple.
 5. Example 9 indicates names should match with the expected type.
 
-===================
-
 ## Composition
-`type shapes := union[Shape]` union includes all tuples that embed Shape type.
 
-**Semantics**: To be able to re-use data defined in another tuple.
+**Semantics**: To include (or embed) the data defined in another tuple type.
 
-**Syntax**: `{Parent1Type, field1: type1, field2: type2, Parent2Type, ...}`
+**Syntax**: `{Parent1Type, field1: type1, Parent2Type, field2: type2, Parent2Type, ...}`
 
 **Examples**
-
 1. `type Shape := { id:int }`
 2. `type Circle := { Shape, radius: float}`
-3. `var my_circle: Circle = {id=100, radius=1.45}`
+3. `my_circle := Circle{id=100, radius=1.45}`
+4. `type AllShapes := union[Shape]`
+5. `someShapes := AllShapes[myCircle, mySquare, myRectangle, myTriangle]`
 
 **Notes**
 1. In the above example, `Shape` is the contained type and `Circle` is container type.
-2. The language provides pure "contain and delegate" for a limited form of subtyping.
-3. A tuple can embed as many other tuples as it wants and forward function calls to itself to functions to other embedded tuples. Refer to function section for more information about forwarding functions.
-4. You can define a union type which accepts both `Shape` and `Circle`. It will detect the actual type.
-5. To have dynamic polymorphism, you can use `union`: `var result: union[Circle, Square] = createShape()`
-6. Note that polymorphism does not apply to generics. So `array[Circle]` cannot substitute `array[Shape]`.
-7. We use closed recursion to dispatch function calls. This means if a function call is forwarded from `Circle` to `Shape` and inside that function another second function is called which has candidates for both `Circle` and `Shape` the one for `Shape` will be called.
+2. The language provides pure "contain and delegate" mechanism as a limited form of polymorphism.
+3. A tuple type can embed as many other tuple types as it wants and forward function calls to embedded tuples. Refer to function section for more information about forwarding functions.
+4. You can define a union type which accepts all tuple types which embed a specific tuple type. See examples 4 and 5.
+5. Note that polymorphism does not apply to generics. So `array[Circle]` cannot substitute `array[Shape]`. But you can have `array[union[Circle, Square]]` to have a mixed array of different types.
+6. We use closed recursion to dispatch function calls. This means if a function call is forwarded from `Circle` to `Shape` and inside that function another second function is called which has candidates for both `Circle` and `Shape` the one for `Shape` will be called.
 
+# Casting
 
+**Semantics**: To change type of data without changing the semantics of the data
 
+**Syntax**: `Type{identifier}`
 
+**Examples**
 
+1. `x := int{1.91}`
+2. `int_value, has_int := int{int_or_float}`
+3. `type MyInt := int`
+4. `x := MyInt{100}`
+5. `y := int{x}`
 
+**Notes**
+1. There is no implicit and automatic casting in the language.
+2. Casting is mostly used to cast between a union and it's internal type (Example 2) or between named and equal unnamed type (Example 4 and 5).
+3. If function expects a named type, you cannot pass an equivalent unnamed type. 
+4. Similarly, when a function expects an unnamed type, you cannot pass a named type with same underlying type. 
+5. Another usage of casting is to cast between `int` and `float` and `char` (Example 1).
 
-
-## Variables
-- You can declare and assign multiple variables in a single statement:
-`var x,y = 1,2`
-`var x, val y=1,2`
-`var x:int, val y:float = 10, 1.12`
-
-========================================
-
-## Rules
-
-
-
-A named type is completely different from it's underlying type and the only similarity is their internal memory representation.
-```
-type MyInt := int
-//in a function
-var t: int = 12   //define a variable of type int and named 't'
-var y: MyInt = t  //wrong! You have to cast 't'
-```
-
-Two variables of same named types, have the same type. Two variables of unnamed types which is structurally similar, have the same type (e.g. `array[int]` vs `array[int]`).
-
-Assignment between different variables is only possible if they have the same type. Otherwise, a casting is needed.
-```
-var x: int = 12
-var y: int = 19
-x=y  //valid
-```
-
-- If function expects a named type, you cannot pass an equivalent unnamed type. 
-- Similarly, when a function expects an unnamed type, you cannot pass a named type with same underlying type. 
-- We never do implicit casts like int to float.
-- Assigning a value of one named type to variable of a different named type is forbidden, even if the underlying type is the same. 
-
-There are two named types which are called "Extended Primitives" because of their internal role in the lagnuage: `bool` and `string`:
-```
-type bool := true | false
-type string := array[char]
-```
-`if ( x == SAT )`
-
-
-
-
-
-
-
-
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
+===================
 
 # Functions
 `func process(x: Point)...`
