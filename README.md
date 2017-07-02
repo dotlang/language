@@ -441,6 +441,7 @@ stringed := switch ( int_or_float )
 6. `func my_func(x:int) -> x+9`
 7. `func myFunc9(x:int) -> {int} ${12}`
 8. `func PI -> 3.14`
+9. `func process(x: union[int,Point])->int`
 
 
 **Notes**:
@@ -449,10 +450,13 @@ stringed := switch ( int_or_float )
 2. A function call with union data, means there must be functions defined for all possible types in the union. See Call resolution section for more information.
 3. You can define consts using functions (Example 6).
 4. There must be a single space between func and function name.
-5. You can omit function output type and let compiler infer it, if it has no body (Examples 4, 6 and 8).
+5. You can omit function output type and let compiler infer it, only if it has no body (Examples 4, 6 and 8).
 6. You can omit braces and `return` keyword if you only want to return an expression (Examples 4, 6, 7 and 8).
 7. Each function must have an output type. Even if it does not return anything, output type will be `nothing`.
 8. Function output can be tuple type with or without field names (Examples 5 and 7).
+9. You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
+10. The function in example 9 will be invoked if the input is either `int` or `Point` or `union[int, Point]`.
+11. There should not be ambiguity when calling a function. So having functions on examples 9 and 3 in same compilation is invalid.
 
 ## Invocation
 
@@ -470,188 +474,61 @@ stringed := switch ( int_or_float )
 **Notes**
 
 1. You can use `_` to ignore a function output (Example 3).
+2. Parentheses are required when calling a function, even if there is no input.
+
+## Call forwarding
+
+**Semantics**: To forward a function call to another function, used to implement subtyping.
+
+**Syntax**: `func funcName(type1->type2, type3, type4->type5, ...)`
+
+**Examples**
+
+1. `func draw(Circle->Shape)`
+2. `func process(union(Polygon, Square, Circle)->Shape, union[GradientColor, SolidColor]->Color)`
+3. `func process(float, union[Shape]->Shape, string, int, union[GradientColor,SolidColor]->Color, int)`
+
+**Notes**
+
+1. Example 1, indicates any call to function `draw` with a parameter of type `Circle` must be sent to a function with the same name and `Shape` input. In this process, the argument will be converted to a `Shape`.
+2. Example 2, will forward any call to function `process` with first input of type `Polygon`, `Square` or `Circle` and second argument of `GradientColor` or `SolidColor` to the same name function with inputs `Shape` and `Color` type. All other inputs which are not forwarded are the same between original and forwarded function. This definition is for 6 functions and forwarding all of them to a single function.
+3. Example 3, is like example 2 but uses a generic union to indicate all types that embed a Shape.
+4. Note that left side of `->` must embed the type on the right side.
+
+## Function pointer
+
+**Semantics**: A special data type which can hold a reference to a function.
+
+**Syntax**: `type Fp := func(type1, type2, ...)->OutputType`
+
+**Examples**
+
+1. `type adder := func(int,int)->int`
+2. `func myAdder(x:int, y:int) -> x+y`
+3. `adderPointer := adder{myAdder}`
+4. `func sort(x: array[int], comparer: func(int,int) -> bool) -> array[int]`
+5. `func map[T, S](input: array[T], mapper: func(T) -> S) -> array[S]`
+
+**Notes**
+
+1. Example 4 indicates a function which accepts a function pointer.
+2. Example 5 indicates the definition for a mapping function. It is using template programming features introduces in the corresponding section.
+3. Value of a function pointer can be either an existing function or a lambda. Refer to corresponding section for more information.
+4. In a function type, you should not include input parameter names.
+
 
 ===================
 
+## Lambda
 
-## Function forwarding
-- explain fwd functions
+**Semantics**: Define function literals of a specific function pointer type, inside another function's body.
 
-Example about inheritance, polymorphism and subtyping:
-```
-type Shape := {}
-func Draw(Shape, int)->int
+**Syntax**: `|name1: type1, name2: type2, ...| -> expression | body`
 
-type BasicShape := (x: string)              ; a normal type
-func Draw(x: BasicShape, y:int)             ; Now BasicShape is compatible with Shape type
+**Examples**
 
-type Circle := (BasicShape, name: string)   ; another type which inherits from BasicShape
-func Draw(x: Circle, y:int)                 ; It has it's own impl of Draw which hides Human implementation
-
-type Square := (BasicShape, age: int)       ; another type which embeds BasicShape.
-;calling Draw on Square will call BasicShape version
-
-type OtherShape := {}
-function Draw(x: OtherShape, y:int)         ; OtherShape also implements Hobby
-
-var all: Shape[] = [myBasicShape, myCircle, mySquare, myOtherShape]
-for(Hobby h: all) Draw(h,1,"")
-;implicit casting to empty type. Compiler can check if this is a valid casting or no.
-;compiler can make sure that all currently defined empty functions which accept Shape
-;are defined for MyOtherShape too
-var t: Shape = myOtherShape
-var r: BasicShape = myCircle ;automatic casting - because Circle inherits from BasicShape
-```
-
-- section: function pointer. state it's binding is explicit without dynamic dispatch.
-- You can define functions on types and specialize them for special subtypes. This gives polymorphic behavior.
-`func paint(o:Shape) {}`
-`func paint(o:any){}`
-`func paint(o:Circle)...`
-`func paint(o:Square)...`
-
-
-
-- A function can only return one output:
-```
-func process()-> {int, int}
-var x:int
-val y:int
-{x,y} = process
-```
-- Storage class: `var/val` of the function output is part of singature (but not output type). And you must capture a functin output.
-`process/int/var.int/val.float/val` is a condensed view of the signature of the funtion: `func process(var x:int, val y: float)->val string`.
-
-
-
-
-If you use `{}` for the body, you must specify output type and use return keyword.
-
-```
-
- ;below function receives an array + a function and returns a function
-func sort(x: int[], comparer: func(int,int) -> bool) -> func(int, bool) {}
-
-func map<T, S>(arr: T[], f: func(T) -> S) -> S[]
-
-;these calls are all the same
-new_array = map(my_array, (x) -> x+1)
-```
-- `map` can work on any type that supports iterable.
-```
-new_array = map(my_array, (x) -> x+1) ;map will receive a tuple containing two elements: array and lambda
-new_array = map(my_array , (x:int) -> {x+1})
-```
-- Paren is required when calling a function, even if there is no input.
-- You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
-- `rest` is a normal array which is created by compiler for each call to `print` function.
-- Functions are not allowed to change (directly or indirectly) any of their inputs.
-```
-func f(x:int, y:float) -> (a: int, b: string)
-{
-  ;returning anon-tuple
-  return (a=1, b=9) ;or return (1, 9) or return 1,9
-}
-
-func read_customer(id:int) -> Nothing | CustomerData
-{
-  ;no customer was found
-  return Nothing
-  
-  ;some customer found
-  return c1
-}
-```
-- You can define a function which does not have a body. This is like an abstract method. So calling it will throw error.
-`func adder(x: int, y:int)->int`
-- Normally you define general functions as abstract, and speciaize it for specific types in other functions with the same signature.
-- Function definition specifies a contract which shows input tuple and output tuple. If input tuple is named, you must pass a set of input or tuple with the exact same name or an unnamed tuple. If input is unnamed, you can pass either unnamed or named tuple.
-
-
-## Call resolution
-
-## Forwarding
-
-## Lambda and closure
-
-
-
-
-
-
-
-## Method call resolution
-- We can have dynamic dispatch by using union. When I call `process(intOrFloat)` based on the type inside union, either process for int or the one for float will be called.
-- If you don't want to define function with union but still have dynamic dispatch, you will need to write delegation (or forwarding) functions: `func process(float, union[Shape]->Shape, string, int, GradientColor|SolidColor->Color, int)`
-
-- There will be no dynamic type. When you write `var s: Shape = createCircle()` you have only a Shape. Because `=` is supposed to make a data-copy. If you need to support both use union. For example for array storage define array of type `union[Circle, Square]`.
-- explain named and underlying type role indispatch
-If no function is defined for a named type but for it's underlying type, that one will be called.
-
-Method call is done using full dynamic match. Developer has to define appropriate functions or forwarding functions. This will impose a bit of burden on developer but will simplify compiler, increase method call performance and make code more clear and understandable. No unexpected method call.
-To define forwarding function you define a function signature without body, with `-> Target` for the types you want to forward:
-You can have multiple forwading in the same definition and use sum type to group multiple functions.
-`func process(Polygon|Square|Circle->Shape, GradientColor|SolidColor->Color)`
-Above means, any call to `process` with any of `Polygon, Square, Circle` and any of `GradientColor, SolidColor` will be redirected to `process(Shape, Color)`.
-You can mix forwarded arguments with normal arguments:
-`func process(float, union[Shape]->Shape, string, int, GradientColor|SolidColor->Color, int)`
-Note that any argument can only be forwarded to a parent type.
-- No forwarding function is automatically generated.
-- Suppose that we have `binary -> Shape -> Polygon -> Square` types.
-and: `type MyType := Square`
-then: `MyType -> MyChild -> MyGrandChild`
-then if a variabe of type MyGrandChild is passed to a function.
-For static candaidate this is the ordered list: MGC, MC, MT, Square, Polygon, Shape, binary
-if for example dynamic type of the variable is `MyGrandChild` and there is `func process(MyGrandChild)` it will be called (note that this can be a fwd function).
-It not found, the static candidate will be called.
-
-## Matching
-`func add(x:int, y:int, z:int) ...`
-`func add(x:int=15, y:int, z:int) ...`
-`func add(x:int, y:int, z:int=9)...`
-call:
-`add(x,y)` will call 3rd version
-`add(15, y)` will call 3rd version
-`add(15, y, z)` where z is not 9, will call 2nd version
-in function definition giving value to a parameters, means it should be exactly equal to that value or it should be missing.
-order of match: for (a,b,c) tuple when calling function:
-Functions with that name which have 3 or more inputs will be tested.
-- Functions with exactly 3 inputs have higher priorirty than those with 3+ inputs with optional values.
-- Functions with higher input value equal to values of a, b, c have higher priority.
-So, first search for funcciont with 3 inputs then 4 input with last one optional, then 5 inputs ...
-In each case, first check functions that have all 3 pre-set, then 2 pre-set then 1-preset then no pre-set.
-If in each step, two cancidates are found, give error.
-For example:
-`func add(x:int=9, y:int)`
-`func add(x:int, y:10)`
-calling `add(9, 10)` will result in two candidates -> runtime error.
-if input is unnamed then ok. If it is named, we have an extra condition: input names must match.
-and `(a=15, x=10, y=20)` will match `(x:int)` which is foundation of subtyping.
-With named inputs, you can ignore first or middle arguments: 
-```
-func add(x:int=10, y:int)...
-add(y=19)
-```
-Each function call will be dispatched to the implementation with highest priority according to matching rules. 
-
-## Lambda expression
-- If a lambda needs varirables in the parent function, it should capture them first by assigning them to local variables:
-```
-x = 12
-|| -> { y := x, process(y) }
-```
-they cannot be re-assigned. Compiler will detect this and issue error if they are re-assigned. This is to prevent possible data race in which case, a data is modified outside a thread (which is the closure) while the code inside the thread is reading it. Use channels to communicate between threads.
-A function type should not include parameter name because they are irrelevant.
-A lambda variable can omit types because they can be inferred: `var x: comparer = |x,y| -> ...`
-A function literal which does not have a type in the code, must include argument name and type. `|x:int|->int { return x+1 }(10)` or `var fp = |x:int|->int { return x+1}`
-
-- closure capturing: It captures outside vars and vals. Can change vars.
-- Even if a lambda has no input/output you should write other parts: `() -> { printf("Hello world" }`
-You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too, also  `func` keyword is not needed. The essential part is input and `->`.
-If you use `{}` for the body, you must specify output type and use return keyword.
-```
-var f1 = |x: int, y:int| -> int { return x+y } ;the most complete definition
-var rr = |x: int, y:int| -> x + y  ;return type can be inferred
+1. `f1 := |x: int, y:int| -> { return x+y }` ;the most complete definition
+2. `rr := |x: int, y:int| -> x + y`  ;return type can be inferred
 var rr = { x + y } ;WRONG! - input is not specified
 var f1 = (x: int, y:int) -> int { return x+y } ;the most complete definition
 
@@ -662,6 +539,22 @@ var rr: adder = (x,y) -> int { return x + y }      ;and also func keyword, but {
 var rr:adder = (x,y) -> x + 2      
 func test(x:int) -> plus2 { return (y) -> y+ x }
 var modifier = (x:int, y:int) -> x+y  ;if input/output types can be deduced, you can eliminate them
+
+
+**Notes**
+1. You should not specify output type for a lambda.
+2. If a lambda captures a value in the parent function, that value cannot be re-assigned. Compiler will detech this. This is to prevent possible data race in which case, a data is modified outside a thread (which is the closure) while the code inside the thread is reading it. Use channels to communicate between threads.
+
+
+
+A lambda variable can omit types because they can be inferred: `var x: comparer = |x,y| -> ...`
+A function literal which does not have a type in the code, must include argument name and type. `|x:int|->int { return x+1 }(10)` or `var fp = |x:int|->int { return x+1}`
+
+- closure capturing: It captures outside vars and vals. Can change vars.
+- Even if a lambda has no input/output you should write other parts: `() -> { printf("Hello world" }`
+You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too, also  `func` keyword is not needed. The essential part is input and `->`.
+If you use `{}` for the body, you must specify output type and use return keyword.
+```
 ```
 - Lambdas have read-only access to free variables in their parent semantic scope.
 - Function pointers cannot take part in method dispatch. They must point to a specific function. This is specified using their type. 
