@@ -3412,8 +3412,37 @@ Y - Like what we did for tuple literal, shall we use symbols for array and map l
 `func process(a:int, x: RequiredFunctions)`
 `process(10, &)`
 `process(10, ${&})`
+problem with protocol:
+- they are confusing we can (should) have multiple protocols for multiple arguments
+`func process[T,U,V : prot1(T), prot2(V), ...]` and reading the code becomes confusing.
+- The developer should decrypt protocol syntax to find out what functions are needed to be defined.
+- It is more readable and more powerful but causes confusion.
+- It is a new piece of different syntax in function and data type declaration.
+what about data types? How can I say a set must have these protocols? Maybe I cannot do it with tuples.
+- Protocol is more powerful because I can define multiple protocols each for a specific type and task and combine them easily and they are more readable. 
+- How to write a generic iteration function?
+
+
+
 
 ? - Provide ability to update used libraries without need to re-compile main application.
 https://github.com/apple/swift-evolution/blob/30889943910a4a4e46a800f03d17a91e11ca475f/README.md#development-major-version--swift-30
 
 
+? - Disable loop/for for array or hash and use core functions.
+con: we loose ability to return and re-assign local vars.
+con: more nesting and paren/braces because we don't have `do`.
+but loop will be simpler or maybe we can eliminate it.
+
+? - Decide on the name: Generics or template
+
+? - It can be a bit confusing between function literal and tuple. But `$` is useful here.
+
+? - Explicitly define where we should use `||` for func definition.
+
+? - Having two ways to assign `=` and `:=` is confusing.
+
+? - How can I state type of a lambda? Do I need to?
+`fp := int{|x:int|-> { return x+1}}`?
+
+-- No more changes to the spec before re-writing of spec is finished--
