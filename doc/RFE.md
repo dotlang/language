@@ -3412,3 +3412,8 @@ Y - Like what we did for tuple literal, shall we use symbols for array and map l
 `func process(a:int, x: RequiredFunctions)`
 `process(10, &)`
 `process(10, ${&})`
+
+? - Provide ability to update used libraries without need to re-compile main application.
+https://github.com/apple/swift-evolution/blob/30889943910a4a4e46a800f03d17a91e11ca475f/README.md#development-major-version--swift-30
+
+
