@@ -3408,6 +3408,84 @@ Y - Like what we did for tuple literal, shall we use symbols for array and map l
 1. `my_map := $["A"=>1, "B"=>2, "C"=>3]`
 5. `my_map := map[string,int]$["A"=>1, "B"=>2, "C"=>3]`
 
+Y - Provide ability to update used libraries without need to re-compile main application.
+https://github.com/apple/swift-evolution/blob/30889943910a4a4e46a800f03d17a91e11ca475f/README.md#development-major-version--swift-30
+
+Y - Can't we make switch statement consistent? all cases `:` or `->`?
+
+N - Disable loop/for for array or hash and use core functions.
+con: we loose ability to return and re-assign local vars.
+con: more nesting and paren/braces because we don't have `do`.
+but loop will be simpler or maybe we can eliminate it.
+q: what about nested loops?
+we can delete `for` keyword and have only `while` for condition based loops.
+
+Y - Decide on the name: Generics or template: Generics
+
+N - It can be a bit confusing between function literal and tuple. But `$` is useful here.
+
+Y - Explicitly define where we should use `||` for func definition.
+
+N - How can I state type of a lambda? Do I need to?
+`fp := int{|x:int|-> { return x+1}}`?
+No. A lambda has it's own input and output types. 
+
+N - If we disallow re-assignment, then closure's limitation can be lifted. but what about loops?
+
+Y - ban using `=` for exc resources.
+
+Y - Having two ways to assign `=` and `:=` is confusing.
+maybe add `val` or `def`?
+Then we can also add optional type with `val` and no need to cast integer to `union[int, float]`
+ `:=` custom type definition, variable declaration, tuple literal, `for`
+ `type MyInt := int`
+ `x := process()`
+ `x := {a:=1, b:=2}`
+ `for x := [1..10] do ...`
+ will become:
+ `set x = process()`
+ `set x = {a=1, b=2}`
+ `for set x <- [1..10] do ...`
+ or:
+ `def x = process()`
+ `def x = ${a=1, b=2+g}`
+ `def x = Point{a=1, b=f(x)+f(y)}`
+ `for def x <- [1..10] do ...`
+ let is used in js, rust, F#
+ `let x = process()`
+ `let x = ${a=1, b=2+g}`
+ `let x = Point{a=1, b=f(x)+f(y)}` confusion here because `a` may be name of a local variable.
+ `for let x <- [1..10] do ...`
+ `let another_point = my_point{x:=11, y:=my_point.y + 200}`
+ `let x = Point{.a=1, .b=f(x)+f(y)}` 
+ `let x,y = my_point`
+ `let x,y = ${100,200}`
+ or:
+ `var x = process()`
+ `var x = ${.a=1, .b=2+g}`  `var another_point = my_point{.x=11, .y=my_point.y + 200}`
+ `var x = Point{.a=1, .b=f(x)+f(y)}` confusion here because `a` may be name of a local variable.
+ `for var x <- [1..10] do ...`
+ `var x = Point{.a=1, .b=f(x)+f(y)}` 
+ `var x,y = my_point`
+ `var x,y = ${100,200}`
+ `var x,y: int = ${100,200}`
+ `var x: int,y: float = ${100,200}`
+ using `var` has a con: you can write `var x: int` and not assign to it.
+ but with `:=` assignment is bound to declaration.
+ objective: make things simple to write and read -> using `var` is better. It is more explicit and can easily discriminate var decl and assignments.
+We can force init upon decl.
+`var x = process()`
+`var x = ${1, 2+g}`  `var another_point = my_point{.x=11, .y=my_point.y + 200}`
+`var x = Point{.a=1, .b=f(x)+f(y)}` confusion here because `a` may be name of a local variable.
+`for var x <- [1..10] do ...`
+`var x = Point{.a=1, .b=f(x)+f(y)}` 
+`var x,y = my_point`
+`var x,y = ${100,200}`
+`var x,y: int = ${100,200}`
+`var x: int,y: float = ${100,200}`
+You cannot define a tuple literal without type and with field names. 
+Untype tuple literal can only contain values.
+
 ? - protocols?
 To have minimum impact on the language and concepts but have protocols, we can define expected functions as a tuple with function pointers. an input of type this, can use core function to get appropriate functions from current environment.
 `func process(a:int, x: RequiredFunctions)`
@@ -3424,33 +3502,3 @@ what about data types? How can I say a set must have these protocols? Maybe I ca
 - How to write a generic iteration function?with expects an interable?
 - another solution: make it easier to bind functions in the context to function pointer varialbles.
 
-
-Y - Provide ability to update used libraries without need to re-compile main application.
-https://github.com/apple/swift-evolution/blob/30889943910a4a4e46a800f03d17a91e11ca475f/README.md#development-major-version--swift-30
-
-
-? - Disable loop/for for array or hash and use core functions.
-con: we loose ability to return and re-assign local vars.
-con: more nesting and paren/braces because we don't have `do`.
-but loop will be simpler or maybe we can eliminate it.
-q: what about nested loops?
-we can delete `for` keyword and have only `while` for condition based loops.
-
-? - Decide on the name: Generics or template
-
-? - It can be a bit confusing between function literal and tuple. But `$` is useful here.
-
-? - Explicitly define where we should use `||` for func definition.
-
-? - Having two ways to assign `=` and `:=` is confusing.
-
-? - How can I state type of a lambda? Do I need to?
-`fp := int{|x:int|-> { return x+1}}`?
-
-? - If we disallow re-assignment, then closure's limitation can be lifted. but what about loops?
-
-? - ban using `=` for exc resources.
-
-? - Can't we make switch statement consistent? all cases `:` or `->`?
-
--- No more changes to the spec before re-writing of spec is finished--
