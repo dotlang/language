@@ -543,7 +543,7 @@ stringed = switch ( int_or_float )
 1. You can omit output type (Example 2 and 3).
 2. Even if lambda has no input you must include `||` (Example 4).
 3. Lambdas are closures and can capture values in the parent function (Example 4 and 5).
-4. If a lambda captures a value in the parent function, that value cannot be re-assigned. Compiler will detech this. This is to prevent possible data race in which case, a data is modified outside a thread (which is the closure) while the code inside the thread is reading it. Use channels to communicate between threads.
+4. If a lambda captures a value in the parent function, that value cannot be re-assigned. Compiler will detect this. This is to prevent possible data race in which case, a data is modified outside a thread (which is the closure) while the code inside the thread is reading it. Use channels to communicate between threads.
 5. Example 5 shows a function that returns a lambda.
 6. Example 6 shows invoking a lambda at the point of definition.
 7. You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normall call and replace the lambda inputs with `_`. Example 8 defines a lambda to call `process` functions with `x=10` but `y` and `z` will be inputs.
@@ -817,13 +817,8 @@ while x>0 do
 **Notes**
 
 1. You can use `=` to duplicate normal values in the code but for an exclusive resource, this cannt happen because the underlying resource is not cheap to be duplicated. In this case, you cannot use `=` on these resources, but you must use core functions to acquire one one of them.
-2. These types are not supposed to be shared between two threads, because of their inherent mutability. 
-3. These types have some limitations which are enforced by the compiler:
-  a. You cannot assign `=` an exclusive resource to another one or modify/re-assign an existing exclusive resource.
-  b. Any function which creates or accepts an exclusive resource, has to either call `dispose` on them, return them or pass them to another function.
-  c. Any use of them after being passed to another function is forbidden.
-  d. Closures cannot capture them (but you can pass them to a closure after which you cannot use them).
-4. If the resource is part of a union or tuple, there must be appropriate `dispose` functions for other types in the union or for the tuple type, so that a call to `dispose` on that union will be guaranteed to work.
+2. These types are not supposed to be shared between two threads, because of their inherent mutability. If this happens, runtime will throw error.
+3. Any value of type exclusive resource, must either be returned or disposed by calling `dispose` function (A function can have an exclusive resource as an input, by calling core functions or assigning).
 
 ## Exception handling
 
