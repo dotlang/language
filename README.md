@@ -349,6 +349,7 @@ stringed := switch ( int_or_float )
 2. Example number 4, is the standard definition of `bool` extended primitive type based on `union` and label types.
 3. Although their binary data representations are the same, `MyInt` and `int` are two separate types. This will affect function dispatch. Please refer to corresponding section for more information.
 4. You can use casting operator to convert between a named type and it's underlying type (Example 5).
+5. If a type is implemented in the runtime, it's definition will be `{...}`. For example `type array[T] := {...}`
  
 ## Tuple
 
@@ -433,16 +434,16 @@ stringed := switch ( int_or_float )
 
 **Examples**
 
-1. `func myFunc(y:int, x:int) -> int { return 6+y+x }`
-2. `func log(s: string) -> { print(s) }`
-3. `func process(pt: Point)->int { return pt.x }`
-4. `func process2(pt: Point) -> ${pt.x, pt.y}`
-5. `func my_func8() -> {x:int, y:int} { return ${10,20} }`
-6. `func my_func(x:int) -> x+9`
-7. `func myFunc9(x:int) -> {int} ${12}`
-8. `func PI -> 3.14`
-9. `func process(x: union[int,Point])->int`
-
+01. `func myFunc(y:int, x:int) -> int { return 6+y+x }`
+02. `func log(s: string) -> { print(s) }`
+03. `func process(pt: Point)->int { return pt.x }`
+04. `func process2(pt: Point) -> ${pt.x, pt.y}`
+05. `func my_func8() -> {x:int, y:int} { return ${10,20} }`
+06. `func my_func(x:int) -> x+9`
+07. `func myFunc9(x:int) -> {int} ${12}`
+08. `func PI -> 3.14`
+09. `func process(x: union[int,Point])->int`
+10. `func fileOpen(path: string) -> File {...}`
 
 **Notes**:
 
@@ -457,6 +458,7 @@ stringed := switch ( int_or_float )
 9. You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
 10. The function in example 9 will be invoked if the input is either `int` or `Point` or `union[int, Point]`.
 11. There should not be ambiguity when calling a function. So having functions on examples 9 and 3 in same compilation is invalid.
+12. If a function is implemented in the runtime or core sub-system, it's body will be written as `{...}`
 
 ## Invocation
 
@@ -516,9 +518,6 @@ stringed := switch ( int_or_float )
 3. Value of a function pointer can be either an existing function or a lambda. Refer to corresponding section for more information.
 4. In a function type, you should not include input parameter names.
 
-
-===================
-
 ## Lambda
 
 **Semantics**: Define function literals of a specific function pointer type, inside another function's body.
@@ -544,8 +543,6 @@ stringed := switch ( int_or_float )
 5. Example 5 shows a function that returns a lambda.
 6. Example 6 shows invoking a lambda at the point of definition.
 7. You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normall call and replace the lambda inputs with `_`. Example 8 defines a lambda to call `process` functions with `x=10` but `y` and `z` will be inputs.
-
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Generics
 
@@ -591,7 +588,7 @@ stringed := switch ( int_or_float )
 4. `type Sha1Hash := HashStr[SHA1]`
 5. `func md5(s: string)->Md5Hash { ... }`
 6. `func sha1(s: string)->Sha1Hash { ... }`
-7. `t  := Md5Hash{sha1("A")}` ERR
+7. `t  := Md5Hash{sha1("A")} //ERROR!`
 8. `type SafeString := string`
 9. `func processString(s: string)->SafeString`
 10. `func work(s: SafeString)`
@@ -603,78 +600,134 @@ stringed := switch ( int_or_float )
 **Notes**
 1. Phantom are compile-time label/state attached to a type. You can use these labels to do some compile-time checks and validations. 
 2. You can implement these labels using a named type or a generic type.
-3. Examples 1 to 7 show a et of hash functions that returns a specific type which is derived from `string`. This will prevent the developer sending a md-5 hash to a function which expects sha-1 hash.
+3. Examples 1 to 7 show a et of hash functions that returns a specific type which is derived from `string`. This will prevent the developer sending a md-5 hash to a function which expects sha-1 hash (Example 7 will give compiler error).
 4. Examples 8 to 10 indicate using named functions to represent a "sanitized string" data type. Using this named type as the input for `work` function will prevent calling it with normal strings which are not sanitized through `processString` function.
 5. Examples 11 to 14 indicate a door data type which can only be opened if it is already closed properly and vice versa.
 
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
+===================
 
-# Notations
+# Operators
 
-## Operators
-- Conditional: `and or not == != >= <= => =<`
+**Semantics**: All non-alpabetical notations operators used in the language.
 
-- Math: `+ - * % %% (is divisible) **`
-- There is no `++` and `--` operators.
-- The math operators can be combined with `=` to do the calculation and assignment in one statement.
-- `=` operator: copies data.
-- `:=` opreator will make left side point to right-side variable or result of evaluation of the right-side expression.
-- `x == y` will compare two variables field by field.
-- We don't have operators for bitwise operations. They are covered in core functions. 
-- Assignment semantics: `x=y` will duplicate contents of y into x (same as `*x=*y` in C++). So if rvalue is a temp variable (e.g. `x=1+y`), it will be a ref-assign handled by the compiler. If you want to ref-assign you should use `:=` notation. Note that for assignment lvalue and rvalue must be of the same type. You cannot assign circle to Shape because as copy is done, data will be lost (you can refer to `.Shape` field in the Circle).
-`x=y` will duplicate y into x. So changes on x won't affect y. 
-- Comparison semantics: `x==y` will compare data.
-- Type-id (`@`): returns type-id of a named or primitive type: `@int`
-- To cast from named to unnamed type you can use: `Type{value}` notation: `y = int{x}`
-- For union: `x=union[int,float]{12}`
-- chaining: 
-`A . F(_)` (not to spaces around the dot) will be translated to `F(A)`. right side of dot must be either a closure or a tuple with underscores for substitition.
-`${x,y,z} . ${_,_,_}` becomes `${x,y,z}`. A tuple litearl without field names. You can extract it's data, use it in a chaining or send it to a function which expects a tuple with same size and type.
-`finalResult := pipe(input, check1(5,_)) . pipe(_, check3(1,2,_)) . pipe(_, check5(8,_,1))`
-`finalResult := {input, check1(5, _)} . pipe(_,_) . pipe(_, check3(1,2,_)) . pipe(_, check5(8,_,1))`
-`finalResult := ${input, check1(5, _)} . pipe(_,_) . ${_, check3(1,2,_)} . pipe(_, _) . ${_, check5(8,_,1) } . pipe(_,_)`
-`g := {5,9} . add(_, _)`
-`g := 5 . add(_, 9)`
-`{1,2} . processTwoData(_, _)` calling function with two inputs (1 and 2).
-`{1,2} . processTuple(_)` calling function with a single argument of type tuple.
-`data := array1(10).default(_, 0)`
-`data := circle . process(_)` ~ `process(circle)`
-`data := circle . process()` calling a function pointer which is a field inside circle tuple
-`data := circle . process` accessing `process` field inside `circle` tuple
-`default` function in core will return second argument if first one is nothing. if `map["A"]` is not nothing, the expression will evaluate to `map["A"]`
-on the right side of dot, you can have a tuple with underscore which will be filled based on the left side.
-`{1,2}.{_, _, 5}` will be `{1, 2, 5}`
-`{1,2}.{_, 5}` will be `{ {1, 2} , 5}`
-`{1,2}.{_, _, 5}.process(_,_,_)` will become `process(1,2,5)`.
-`{1,2}.{_, _, 5}.process(_,_)` is error. left of dot we have a tuple with 3 elements. So on the right side we should either have one or three expected inputs.
+**Syntax**:
+1. Conditional operators: `and, or, not, ==, !=, >=, <=`
+2. Arithmetic: `+, -, *, /, %, %%, +=, -=, *=, /=`
+3. Assignment: `=`, `:=`
+4. Type-id: `@`
+5. Chaining: ` . `
+6. Casting `{}`
 
+**Examples**
 
-### Special Syntax
-- `@`  type-id
-- `$`  tuple literal
-- `_`  placeholder for lambda or unknown variable in assignments
-- `:`  type declaration for tuple and function input, switch
-- `:=` custom type definition, variable declaration, tuple literal, for
-- `=`  type alias, copy value
-- `=>` map literals and block-if
-- `..` range generator
-- `->` function declaration, switch for union
-- `[]` generics, array and map literals
-- `{}` code block, tuple definition and tuple literal
-- `()` function declaration and call, read from array and map
-- `||` lambda declaration
-- `.`  access tuple fields, function chaining
+01. `g := @int`
+02. `y := int{x}`
+03. `y := union[int, float]{12}`
+04. `${x,y,z} . ${_,_,_}` => `${x,y,z}`
+05. `g := {5,9} . add(_, _)` => `g := add(5,9)`
+06. `{1,2} . processTwoData(_, _)` => `processTwoData(1,2)`
+07. `{1,2} . processTuple(_)` => `processTuple(${1,2})`
+08. `6 . addTo(1, _)` => `addTo(1, 6)`
+09. `result := ${input, check1(5, _)} . pipe(_,_) . ${_, check3(1,2,_)} . pipe(_, _) . ${_, check5(8,_,1) } . pipe(_,_)`
+10. `func pipe[T, O](input: Maybe[T], handler: func(T)->Maybe[O])->Maybe[O] ...`
+11. `{1,2}.{_, _, 5}.process(_,_,_)` => `process(1,2,5)`.
 
-Keywords: `import`, `func`, `return`, `type`, `if`, `then`, `else`, `for`, `do`, `switch`, `while`
+**Notes**:
+1. `=` operator copies data from right-side value into the left-side value.
+2. `:=` operator acts same as `=` but also declares left-side value as a new value. You must declare values before using them.
+3. `==` will do comparison on a binary-level. If you need custom comparison, you can do in a custom function.
+4. Operators for bitwise operations and exponentiation are defined as functions.
+5. `@`: returns type-id of a named or primitive type as an integer number (Example 1).
+6. `{}`: To cast from named to unnamed type you can use: `Type{value}` notation (Example 2).
+7. `{}`: To cast from value to a union-type (Example 3).
+8. ` . `: Chaining opertor (Note to the spaces around the dot). `X . F(_)` will be translated to `F(X)` function call. right side of dot must be either a closure with expected inputs or a tuple with underscores for substitition. If right-side expects a single input but left side is a tuple with multiple items, it will be treated as a tuple for the single input of the function (Example 7) but if function expects multiple inputs they will be extracted from left side (Example 6). 
+9. You can also pass a single argument to right side of the chain by using non-tuple value.
+10. You can use chain operator with custom functions as a monadic processing operator. For example you can streamline calling mutiple error-prone functions without checking for error on each call (Example 9 and 10).
+
+# Syntax
+
+## Special notations
+01. `@`  type-id opertor
+02. `$`  tuple, array and map literal declaration
+03. `_`  placeholder for a lambda input or unknown variable in assignments
+04. `:`  type declaration for tuple and function input, `switch` statement
+05. `:=` custom type definition, variable declaration, tuple literal, `for`
+06. `=`  type alias, copy value
+07. `=>` map literals
+08. `..` range generator
+09. `->` function declaration, switch for union
+10. `[]` generics, array and map literals (with `$` prefix)
+11. `{}` code block, tuple definition and tuple literal (with `$` prefix)
+12. `()` function declaration and call, read from array and map
+13. `||` lambda declaration
+14. `.`  access tuple fields, function chaining (with spaces around)
+
+Keywords: `import`, `func`, `return`, `type`, `if`, `then`, `else`, `switch`, `while`, `do`, `for` 
+
 Primitive data types: `int`, `float`, `char`, `union`, `array`, `map`
+
 Pre-defined types: `bool`, `string`, `nothing`
-Important concepts: ExclusiveResource
 
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
+# Keywords
 
-### switch
+## import
+
+**Semantics**: Import public type definitions and functions from another module.
+
+**Example**
+
+1. `import /core/std/Queue`
+2. `import /core/std/{Queue, Stack, Heap}`
+3. `import /core/std/Data/`
+4. `/core/std/data/Process(1,2,3)`
+5. `x := /core/std/data/Stack{y}`
+6. `func myProcess(x: int, y:int, z:int) -> /core/std/data/process(x,y,z)`
+7. `type myStack = /core/std/data/Stack`
+8. `import git:/github.com/adsad/dsada`
+
+**Notes**
+
+1. You cannot import multiple modules using wildcards. Each one must be imported in a separate command.
+2. You can import multiple modules with same package using notation in Example 2.
+3. There must be a single space between `import` keyword and it's parameter.
+4. Import paths starting with `/` mean they are absolute path (Regarding dot's runtime import path).
+5. If an import path does not start with `/` means the module path is relative to the current module.
+6. It is an error if as a result of imports, there are two exactly similar functions (same name, input and output). In this case, none of conflicting functions will be available for call. 
+7. If you add a slash at the end of import file, it means import symbols using fully qualified name (Example 3)
+8. Functions imported with fully-qualified method won't be used in method dispatch mechanism. You must explicitly call them or use data types in the module using fully-qualified notation. (Example 4 and 5).
+9. You can use function redirection to work with FQ functions (Example 6) or use type alias to work with FQ type names (Example 7).
+10. `import` supports other systems too. By default it imports modules from local file-system. But depending on the prefix used you can import from other sources too (Example 8).
+
+## if, then, else
+
+**Semantics**: A basic control structure to execute a piece of code based on a condition.
+
+**Syntax**: `if condition then { code block } else if condition then { code block } else { code block}`
+
+**Examples**
+
+1. `x := if y>0 then 10 else 20`
+2. `if isFine and x>0 then process(x,y) else return 100`
+3. `callSystem(100) if x>100`
+
+**Notes**
+
+1. `if` is an expression so you can assign it's output to a vaue (Example 1).
+2. You can suffix any statement except declaration `:=` with `if` statement so it will only be executed if condition is met.
+3. You should not include parentheses for if argument.
+
+## switch
+
+**Semantics**: A shortcut for multiple `if`s for values or a union data type.
+
+**Syntax**: `switch expression { case1: statements, case2: statements, ..., else: statement }`
+`switch unionValue { type1 -> statements, name: type2 -> statements, ... }`
+
+**Examples**
+
+1.
 ```
-y = switch x 
+y := switch operation_result 
 {
     1: "G",
     2: "H",
@@ -682,9 +735,9 @@ y = switch x
     else: "A"
 }
 ```
-To type match for a union:
+2.
 ```
-y = switch x
+y = switch int_or_float_or_string
 {
     g:int -> 1+g,
     s:string -> 10,
@@ -692,30 +745,58 @@ y = switch x
 }
 ```
 
-###if, else
-- You can use `if/then/else` block as an expression.
-- If/else are keywords so their blocks can freely access and re-assign local variables.
-- You can use if/else as an expression: `a=if cond then 1 else 2`
-```
-IfElse = 'if' '(' condition ')' then Block ['else' (IfElse | Block)]
-Block  = Statement | '{' (Statement)* '}'
-```
-- Semantics of this keywords are same as other mainstream languages.
-- If block is a single statement in one line, you dont need braces.
-- Note that condition must be a boolean expression.
-- You can use any of available operators for condition part. 
-- Also you can use a simple boolean variable (or a function with output of boolean) for condition.
-`var max = if x > y then x else y`
+**Notes**
+1. `else` must be the laste case.
+2. In the `switch` expression for union data type, the name assigned for each type in a case will capture the internal value of the union if it has that type.
+3. You should not include parentheses for switch argument.
 
-```
-  if exp1 and exp2 then 11 else -1
-```
-- `a=xyz if(cond)` is also possible.
-`a=(cond)[true=>xyz, false=>a]`
-- But if `if` is used as a suffix to a statement, it won't be translated to map lookup:
-`return 1 if x`
+## while, do
 
-### Exclusive resource
+**Semantics**: To define a loop to be executed as long as a condition is met
+
+**Syntax**: `while condition do code-block`
+
+**Examples**
+
+1. `while true do print("Hello")`
+2. 
+```
+while x>0 do
+{
+    x = x-1
+    print(x)
+}
+```
+
+**Notes**
+1. If the code-block is just one line you can omit braces.
+2. You should not include parentheses for while condition.
+
+## for, do
+
+**Semantics**: To define an iteration loop over a value
+
+**Syntax**: `for value := iterable_value do { code-block }`
+
+**Examples**
+
+1. `for x := [2..10] do print("Hello world")`
+2. `for item := my_array do printf(item)`
+3. `for key := my_map do ...`
+4. `type Iterator[T] := {...}`
+5. `my_iterator := getIterator(myBitSet)`
+6. `for g := my_iterator do ...`
+7. `for {x,y} := [2..10], [1..9] do printf("Hello world " +x +y)`
+
+**Notes**
+
+1. You can use `for` to iterate over an array (Example 1 and 2) or a map (Example 3).
+2. `for` can also be used to iterate over any custom iterator (Example 4 to 6).
+3. You can flatten a nested `for` loop (Example 7).
+4. No `break` or `continue` keywords are defined. You should implement them as part of loop body.
+
+# Miscellaneous
+## Exclusive resource
 ??? Note that using `=` for resources (like threads or files) will not create new resource. Just create new variables pointing to the same resource.
 
  every tuple that embeds `ExclusiveResource` is treated like an exclusive resource.
@@ -744,45 +825,6 @@ closeFile(f)
 - **Nothing**: Nothing is a label type with only one value: `nothing`.
  You can use it's type for return value of a function. If a function does not return anything, it returns `nothing`.
 
-## import
-
-This can be used to resolve conflict types when importing modules.
-`type Stack1 = /core/mode1/Stack`
-`type Stack2 = /code/mode2/Stack`
-`type S[T] = Stack[T]`
-`type ST = Stack[int]`
-
-- Exaplein how type alias can be used.
-- There must be a single space between `import` keyword and it's contents.
-You can import a source code file using below statement. Note that import, will add symbols (functions and types) inside that source code to the current symbol table:
-- You can only import one module in each import statement (No wildcard).
-
-```
-;Starting a path with slash means its absolute path (relative to include path). Otherwise it is relative to the current file
-import /core/st/Socket  ;functions and types inside core/st/Socket.e file are imported and available for call/use
-import /core/st/Socket/ ;if you add slash at the end, it means import symbols using fully qualified name. This is used for refering to the functions using fully qualified names. Functions imported with this method won't be used in method dispatch mechanism.
-```
-It is an error if as a result of imports, there are two exactly similar functions (same name, input and output). In this case, none of conflicting functions will be available for call. 
-The paths in import statement are relative to the runtime path specified for libraries.
-In case of conflicting function names, you can get a function point to another function in another module without importing it.
-`func myFunc(x:int) -> /core/pack2/myFunction;`
-So when `myFunc` is called, it will call another function with name `myFunction` located in `/core/pack2` source file.
-Note that you must have imported the module before.
-Also you can call a function or refer to a type with fully qualified name:
-`var x: int = /core/pack2/myFunction(10, 20);`
-`var t: /core/pack2/myStruct;`
-- By default, `import` works on local file system but you can work on other types too:
-`import /a/b` import from local file system
-`import file:/a/b` import from local file system
-`import git:/github.com/adsad/dsada` import from github
-`import /core/std/{ab, cd, ef}` to import multiple modules
-
-### native
-`type array[T] := {...}`
-
-Denotes function is implemented by runtime or external libraries.
-`func file_open(path: string) -> File {...}`
-`type Test := {...}`
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
@@ -845,34 +887,7 @@ A set of core packages will be included in the language which provide basic and 
 Generally, anything that cannot be written in atomlang will be placed in this package.
 
 
-### for, while
-This is a keyword:
-`loop var := exp do block`
-var must not declared before. it will be declared here and only valid inside loop block.
 
-```
-while x>0 do printf(x)
-while x>0 do {
-...
-}
-while true do ...
-for x     := [2..10] do printf("Hello world")
-for item  := my_array do printf(item)
-for g     := my_iterable do ...
-for g     := my_iterable do {
-...
-}
-for {x,y} := [2..10], [1..9] do printf("Hello world " +x +y)
-```
-You can also use iterator type with loop:
-```
-type Iterator[T] := {...}
-iterator := getIterator(myBitSet)
-for g <- iterator do ...
-```
-there is no break or continue. You should implement them as condition inside loop block or inside loop exp.
-- If expression inside loop evaluates to a value, `loop` can be used as an expression:
-??? `var t:int[] = loop(var x <- {0..10}) x` or simply `var t:int[] = loop({0..10})` because a loop without body will evaluate to the counter, same as `var t:array[int] = {0..10}`
 
 ## Standard package
 
