@@ -36,7 +36,7 @@ Three main objectives are pursued in the design of this programming language:
 
 1. **Simplicity**: The code written in dotLang should be consistent, easy to write, read and understand. There has been a lot of effort to make sure there are as few exceptions and rules as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them. Very few things are done implicitly and transparently by the compiler or runtime system. Also I tried to reduce need for nested blocks and parentheses as much as possible.
 2. **Expressiveness**: It should give enough tools to the developer to produce readable and maintainable code. This requires a comprehensive standard library in addition to language notations.
-3. **Performance**: The compiler will compile to native code which will result in high performance. We try to do as much as possible during compilation (optimizations, de-refrencing, in-place mutation, sending by copy or reference, type checking, phantom types, inlining, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in standard library will be implemented in a lower level language.
+3. **Performance**: The compiler will compile to native code which will result in high performance. We try to do as much as possible during compilation (optimizations, de-refrencing, in-place mutation, sending by copy or reference, type checking, phantom types, inlining, exclusive resource handling, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in standard library will be implemented in a lower level language.
 
 Achieving all of the above goals at the same time is impossible so there will definitely be trade-offs and exceptions.
 The underlying rules of design of this language are 
@@ -44,7 +44,7 @@ The underlying rules of design of this language are
 [KISS rule](https://en.wikipedia.org/wiki/KISS_principle) and
 [DRY rule](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  We have functions and types. Each function acts on a set of inputs and gives an output. Type system includes primitive data types, tuple, union, array and map. Polymorphism, template programming and lambda expression are also provided and everything is immutable.
+As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  We have functions and types. Each function acts on a set of inputs and gives an output. Type system includes primitive data types, tuple, union, array and map. Polymorphism, generics and lambda expression are also provided and everything is immutable.
 
 ## Comparison with other languages
 
@@ -99,17 +99,17 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 01. **Import**: `import /core/std/queue`.
 02. **Primitives**: `int`, `float`, `char`, `union`, `array`, `map` (Extended primitives: `bool`, `string`, `nothing`).
-03. **Values**: `my_var := 19` (type is automatically inferred, everything is immutable).
+03. **Values**: `var my_var = 19` (type is automatically inferred, everything is immutable).
 04. **Named type**: `type MyInt := int`
 05. **Tuple**: `type Point := {x: int, y:int, data: float}`.
-06. **Tuple value**: `location := Point{ x:=10, y:=20, data:=1.19 }`
+06. **Tuple value**: `location = Point{ .x=10, .y=20, .data=1.19 }`
 07. **Composition**: By embedding (only for tuples), `type Circle := {Shape, radius: float}`.
 08. **Generics**: `type Stack[T] := { data: array[T], info: int }`.
-09. **Array**: `jobQueue := [0, 1, 2, 3]` (type is `array[int]`).
-10. **Map**: `countryPopulation := [ "US" => 300, "CA" => 180, "UK" =>80 ]` (type is `map[string, int]`).
+09. **Array**: `var jobQueue: array[int] = [0, 1, 2, 3]`.
+10. **Map**: `var countryPopulation: map[string, int] := [ "US" => 300, "CA" => 180, "UK" =>80 ]`.
 11. **Union**: `type Maybe[T] := union[nothing, T]`.
 12. **Function**: `func calculate(x: int, y: string) -> float { return if x > 0 then 1.5 else 2.5  }`.
-13. **Lambda**: `adder := |x:int, y:int| -> x+y`.
+13. **Lambda**: `var adder = |x:int, y:int| -> x+y`.
 
 
 # Type System
@@ -118,26 +118,25 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 **Semantic**: Used to declare a unique name and assign an expression to it.
 
-**Syntax**: `identifier := expression`
+**Syntax**: `var identifier : Type = expression`
 
 **Examples**
 
-1. `x := 12`
-2. `g := 19.8`
-3. `a,b := process()`
-4. `x := y`
+1. `var x: int = 12`
+2. `var g = 19.8`
+3. `var a,b = process()`
+4. `var x = y`
 
 **Notes**
 
 1. `expression` can be a literal, function call, another variable or a combination.
 2. Everything is immutable.
-3. You can however re-assign a name to a new value using `=` notation (Refer to operator section).
+3. You can however re-assign a name to a new value using assignment notation (Refer to the next section).
 4. Example 1 defines a variable called `x` which is of type `integer` and stores value of `12` in it.
-5. Compiler automatically infers the type of variable from expression.
-6. (Recommendation) Put a single space around `:=`.
-7. You can explicitly state type by using `Type{expression}` syntax.
-8. If right side of `:=` is a tuple type, you can destruct it's type and assign it's value to different variables (Example 3). See Tuple section for more information.
-9. Declaration makes a copy of the right side if it is a simple identifier (Example 4). So any future change to `x` will not affect `y`.
+5. Compiler automatically infers the type of variable from expression, so type is optional except in special cases (e.g. `unions`)
+6. There should be one space after `var` and before variable name.
+7. If right side of `=` is a tuple type, you can destruct it's type and assign it's value to different variables (Example 3). See Tuple section for more information.
+8. Declaration makes a copy of the right side if it is a simple identifier (Example 4). So any future change to `x` will not affect `y`.
 
 ## Assignment
 
@@ -151,15 +150,15 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 2. `x = y`
 3. `x = y + 10 - z`
 4. `x = func1(y) + func2(z) - 10`
-5. `x,y := func6()`
+5. `x,y = func6()`
 
 **Notes**:
 
-1. `identifier` must be previously declared using `:=` notation.
+1. `identifier` must be previously declared using `var` notation.
 2. Type of expression in assignment, must be the same as original type of the identifier.
 3. Note that you cannot change current value of an identifier, but you can use `=` to assign a new value to it.
 4. You can use `=` to do multiple assignment if right side is a function call which returns a tuple. See Functions section for more information.
-5. If right side of `:=` is a tuple type, you can destruct it's type and assign it's value to different variables (Example 5). See Tuple section for more information.
+5. If right side of `=` is a tuple type, you can destruct it's type and assign it's value to different variables (Example 5). See Tuple section for more information.
 
 ## Primitives
 
@@ -169,9 +168,9 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 **Examples**
 
-1. `x := 12`
-2. `x := 1.918`
-3. `x := 'c'`
+1. `x = 12`
+2. `x = 1.918`
+3. `x = 'c'`
 
 **Notes**:
 
@@ -192,7 +191,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 1. `type true`
 2. `type Saturday, Sunday, Monday`
 3. `type nothing`
-4. `g := nothing`
+4. `g = nothing`
 5. `if ( x == nothing ) ...`
 
 **Notes**
@@ -208,15 +207,15 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 **Examples**
 
-1. `var day_of_week: union[SAT, SUN, MON, TUE, WED, THU, FRI]`
-2. `int_or_float := unon[int, float]{11}`
-3. `int_or_float = 12.91`
-4. `int_or_float = 100`
-5. `has_int := typeOf(int_or_float) == @int`
-6. `int_value, has_int := int{int_or_float}`
+1. `type day_of_week := union[SAT, SUN, MON, TUE, WED, THU, FRI]`
+2. `var int_or_float: unon[int, float] = 11`
+3. `var int_or_float = 12.91`
+4. `var int_or_float = 100`
+5. `var has_int = typeOf(int_or_float) == @int`
+6. `var int_value, has_int = int{int_or_float}`
 7.
 ```
-stringed := switch ( int_or_float ) 
+stringed = switch ( int_or_float ) 
 {
     x:int -> ["int" , toString(1+x)],
     y:float -> "is_float",
@@ -243,14 +242,14 @@ stringed := switch ( int_or_float )
 
 **Examples**
 
-1. `arr := $[1, 2, 3]`
-2. `g := arr(0)` or `g := get(arr, 0)`
-3. `new_arr := set(arr, 0, 10)`
-4. `new_arr2 := set(arr, [0,1,2], [4,4,4])`
-5. `two_d_array := [ [1,2,3], [4,5,6] ]`
-6. `p := two_d_array(0)(0)`
-7. `arr2 := [0..10]`
-8. `arr := array[int]$[1, 2, 3]`
+1. `var arr = $[1, 2, 3]`
+2. `var g = arr(0)` or `g = get(arr, 0)`
+3. `var new_arr = set(arr, 0, 10)`
+4. `var new_arr2 = set(arr, [0,1,2], [4,4,4])`
+5. `var two_d_array = $[ [1,2,3], [4,5,6] ]`
+6. `var p = two_d_array(0)(0)`
+7. `var arr2 = $[0..10]`
+8. `var arr: array[int] = $[1, 2, 3]`
 
 **Notes**
 
@@ -267,9 +266,9 @@ stringed := switch ( int_or_float )
 
 **Examples**
 
-1. `arr := [1..9]`
-2. `slice1 := arr(1, 2)`
-3. `slice2 := arr(0, -1)`
+1. `arr = [1..9]`
+2. `slice1 = arr(1, 2)`
+3. `slice2 = arr(0, -1)`
 
 **Notes**
 
@@ -284,11 +283,11 @@ stringed := switch ( int_or_float )
 
 **Examples**
 
-1. `my_map := $["A"=>1, "B"=>2, "C"=>3]`
-2. `item1 := my_map("A")`
-3. `map2 := set(my_map, "A", 2)`
-4. `map3 := delete(map2, "B")`
-5. `my_map := map[string,int]$["A"=>1, "B"=>2, "C"=>3]`
+1. `my_map = $["A"=>1, "B"=>2, "C"=>3]`
+2. `item1 = my_map("A")`
+3. `map2 = set(my_map, "A", 2)`
+4. `map3 = delete(map2, "B")`
+5. `my_map = map[string,int]$["A"=>1, "B"=>2, "C"=>3]`
 
 **Notes**
 
@@ -305,8 +304,8 @@ stringed := switch ( int_or_float )
 
 **Examples**
 
-1. `g := true`
-3. `str := 'Hello world!'`
+1. `g = true`
+3. `str = 'Hello world!'`
 
 **Notes**
 
@@ -345,7 +344,7 @@ stringed := switch ( int_or_float )
 2. `type IntArray := array[int]`
 3. `type Point := {x: int, y: int}`
 4. `type bool := union[true, false]`
-5. `x := MyInt{10}`, `y := MyInt{x}`
+5. `var x: MyInt = 10`, `var y: MyInt = MyInt{x}`
 
 **Notes**
 
@@ -361,30 +360,30 @@ stringed := switch ( int_or_float )
 
 **Syntax**: 
 
-1. Type declaration: `{field1: type1, field2: type2, field3: type3, ...}` 
-2. Literal: `Type{field1:=value1, field2:=value2, field3:=value3, ...}` 
-3. Untyped literal: `${field1:=value1, field2:=value2, field3:=value3, ...}` 
+1. Declaration: `{field1: type1, field2: type2, field3: type3, ...}` 
+2. Literal: `Type{.field1=value1, .field2=value2, .field3=value3, ...}` 
+3. Update: `other_tuple{.field1=value1, .field2=value2, .field3=value3, ...}` 
+4. Untyped literal: `${value1 value2, value3, ...}` 
 
 **Examples**
 
 1. `type Point := {x:int, y:int}`
-2. `point := ${x:=100, y:=200}`
-3. `point := ${100, 200}`
-4. `point := Point{x:=100, y:=200}`
-5. `point := Point{100, 200}`
-6. `x,y := point`
-7. `x,y := ${100,200}`
-8. `another_point := point{x:=11, y:=point.y + 200}`
-9. `new_point := {a:100, b:200} //WRONG!`
+2. `point = ${100, 200}`
+3. `point = Point{.x=100, .y=200}`
+4. `my_point = Point{100, 200}`
+5. `x,y = point`
+6. `x,y = ${100,200}`
+7. `another_point = my_point{.x=11, .y=my_point.y + 200}`
+8. `new_point = {a:100, b:200} //WRONG!`
 
 **Notes**
 
 1. Field names are not mandatory when defining a tuple literal.
-2. `$` prefix is used as an indicator to indicate a tuple litera without type.
-2. Example 1 defined a named type for a 2-D point and next 4 examples show how to initialise variables of that type.
-3. Examples 6 and 7 show how to destruct a tuple and extract it's data.
-4. Example 8 shows how to update a tuple and create a new tuple.
-5. Example 9 indicates names should match with the expected type.
+2. `$` prefix is used as an indicator to indicate a tuple literal without type. In this case you cannot name fields.
+2. Example 1 defines a named type for a 2-D point and next 3 examples show how to initialise variables of that type.
+3. Examples 5 and 6 show how to destruct a tuple and extract it's data.
+4. Example 7 shows how to define a tuple based on another tuple.
+5. Example 8 indicates names should match with the expected type.
 
 ## Composition
 
@@ -395,9 +394,9 @@ stringed := switch ( int_or_float )
 **Examples**
 1. `type Shape := { id:int }`
 2. `type Circle := { Shape, radius: float}`
-3. `my_circle := Circle{id=100, radius=1.45}`
+3. `my_circle = Circle{id=100, radius=1.45}`
 4. `type AllShapes := union[Shape]`
-5. `someShapes := AllShapes[myCircle, mySquare, myRectangle, myTriangle]`
+5. `someShapes = AllShapes[myCircle, mySquare, myRectangle, myTriangle]`
 
 **Notes**
 1. In the above example, `Shape` is the contained type and `Circle` is container type.
@@ -415,11 +414,11 @@ stringed := switch ( int_or_float )
 
 **Examples**
 
-1. `x := int{1.91}`
-2. `int_value, has_int := int{int_or_float}`
+1. `x:int = 1.91`
+2. `int_value, has_int = int{int_or_float}`
 3. `type MyInt := int`
-4. `x := MyInt{100}`
-5. `y := int{x}`
+4. `x:MyInt = 100`
+5. `y:int = x`
 
 **Notes**
 1. There is no implicit and automatic casting in the language.
@@ -469,14 +468,14 @@ stringed := switch ( int_or_float )
 
 **Semantics**: Execute commands of a pre-declared function.
 
-**Syntax**: `output = functionName(input1, input2, ...)` or `output := ...`
+**Syntax**: `output = functionName(input1, input2, ...)`
 
 **Examples**
 
-1. `pi := PI()`
-2. `a,b := process2(myPoint)`
-3. `_,b := process2(myPoint)`
-4. `tuple1 := myFun9();`
+1. `pi = PI()`
+2. `a,b = process2(myPoint)`
+3. `_,b = process2(myPoint)`
+4. `tuple1 = myFun9();`
 
 **Notes**
 
@@ -512,14 +511,14 @@ stringed := switch ( int_or_float )
 
 1. `type adder := func(int,int)->int`
 2. `func myAdder(x:int, y:int) -> x+y`
-3. `adderPointer := adder{myAdder}`
+3. `adderPointer = adder{myAdder}`
 4. `func sort(x: array[int], comparer: func(int,int) -> bool) -> array[int]`
 5. `func map[T, S](input: array[T], mapper: func(T) -> S) -> array[S]`
 
 **Notes**
 
 1. Example 4 indicates a function which accepts a function pointer.
-2. Example 5 indicates the definition for a mapping function. It is using template programming features introduces in the corresponding section.
+2. Example 5 indicates the definition for a mapping function. It is using generics features introduces in the corresponding section.
 3. Value of a function pointer can be either an existing function or a lambda. Refer to corresponding section for more information.
 4. In a function type, you should not include input parameter names.
 
@@ -531,10 +530,10 @@ stringed := switch ( int_or_float )
 
 **Examples**
 
-1. `f1 := |x: int, y:int| -> int { return x+y }`
-2. `f1 := |x: int, y:int| -> { return x+y }` ;the most complete definition
-3. `rr := |x: int, y:int| -> x + y`  ;return type can be inferred
-4. `rr := || -> { x + y }`
+1. `f1 = |x: int, y:int| -> int { return x+y }`
+2. `f1 = |x: int, y:int| -> { return x+y }` ;the most complete definition
+3. `rr = |x: int, y:int| -> x + y`  ;return type can be inferred
+4. `rr = || -> { x + y }`
 5. `func test(x:int) -> plusFunc { return |y:int| -> y + x }`
 6. `|x:int|->int { return x+1 } (10)`
 7. `func process(x:int, y:float, z: string) -> { ... }`
@@ -548,6 +547,7 @@ stringed := switch ( int_or_float )
 5. Example 5 shows a function that returns a lambda.
 6. Example 6 shows invoking a lambda at the point of definition.
 7. You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normall call and replace the lambda inputs with `_`. Example 8 defines a lambda to call `process` functions with `x=10` but `y` and `z` will be inputs.
+8. Note that `||` notation is used for a function literal and `()` notation for function type declaration.
 
 
 # Generics
@@ -570,11 +570,11 @@ stringed := switch ( int_or_float )
 06. `func pop[T](s: Stack[T])->T...`
 07. `func length[T](s: Stack[T])->int`
 08. `func extract[T](that: BoxedValue[T])->T that.value`
-09. `x := optional[int]{12}`
-10. `x := BoxedValue[int]{1}`
-11. `y := BoxedValue[string]{value: "a"}`
-12. `xx := extract(x)`
-13. `yy := extract[string](y)`
+09. `x = optional[int]{12}`
+10. `x = BoxedValue[int]{1}`
+11. `y = BoxedValue[string]{value: "a"}`
+12. `xx = extract(x)`
+13. `yy = extract[string](y)`
 
 **Notes**:
 
@@ -594,7 +594,7 @@ stringed := switch ( int_or_float )
 4. `type Sha1Hash := HashStr[SHA1]`
 5. `func md5(s: string)->Md5Hash { ... }`
 6. `func sha1(s: string)->Sha1Hash { ... }`
-7. `t  := Md5Hash{sha1("A")} //ERROR!`
+7. `t = Md5Hash{sha1("A")} //ERROR!`
 8. `type SafeString := string`
 9. `func processString(s: string)->SafeString`
 10. `func work(s: SafeString)`
@@ -625,29 +625,28 @@ stringed := switch ( int_or_float )
 
 **Examples**
 
-01. `g := @int`
-02. `y := int{x}`
-03. `y := union[int, float]{12}`
+01. `g = @int`
+02. `y:int = x`
+03. `y:union[int, float] = 12`
 04. `${x,y,z} . ${_,_,_}` => `${x,y,z}`
-05. `g := {5,9} . add(_, _)` => `g := add(5,9)`
-06. `{1,2} . processTwoData(_, _)` => `processTwoData(1,2)`
-07. `{1,2} . processTuple(_)` => `processTuple(${1,2})`
+05. `g = ${5,9} . add(_, _)` => `g = add(5,9)`
+06. `${1,2} . processTwoData(_, _)` => `processTwoData(1,2)`
+07. `${1,2} . processTuple(_)` => `processTuple(${1,2})`
 08. `6 . addTo(1, _)` => `addTo(1, 6)`
-09. `result := ${input, check1(5, _)} . pipe(_,_) . ${_, check3(1,2,_)} . pipe(_, _) . ${_, check5(8,_,1) } . pipe(_,_)`
+09. `result = ${input, check1(5, _)} . pipe(_,_) . ${_, check3(1,2,_)} . pipe(_, _) . ${_, check5(8,_,1) } . pipe(_,_)`
 10. `func pipe[T, O](input: Maybe[T], handler: func(T)->Maybe[O])->Maybe[O] ...`
-11. `{1,2}.{_, _, 5}.process(_,_,_)` => `process(1,2,5)`.
+11. `${1,2} . ${_, _, 5} . process(_,_,_)` => `process(1,2,5)`.
 
 **Notes**:
 1. `=` operator copies data from right-side value into the left-side value.
-2. `:=` operator acts same as `=` but also declares left-side value as a new value. You must declare values before using them.
-3. `==` will do comparison on a binary-level. If you need custom comparison, you can do in a custom function.
-4. Operators for bitwise operations and exponentiation are defined as functions.
-5. `@`: returns type-id of a named or primitive type as an integer number (Example 1).
-6. `{}`: To cast from named to unnamed type you can use: `Type{value}` notation (Example 2).
-7. `{}`: To cast from value to a union-type (Example 3).
-8. ` . `: Chaining opertor (Note to the spaces around the dot). `X . F(_)` will be translated to `F(X)` function call. right side of dot must be either a closure with expected inputs or a tuple with underscores for substitition. If right-side expects a single input but left side is a tuple with multiple items, it will be treated as a tuple for the single input of the function (Example 7) but if function expects multiple inputs they will be extracted from left side (Example 6). 
-9. You can also pass a single argument to right side of the chain by using non-tuple value.
-10. You can use chain operator with custom functions as a monadic processing operator. For example you can streamline calling mutiple error-prone functions without checking for error on each call (Example 9 and 10).
+2. `==` will do comparison on a binary-level. If you need custom comparison, you can do in a custom function.
+3. Operators for bitwise operations and exponentiation are defined as functions.
+4. `@`: returns type-id of a named or primitive type as an integer number (Example 1).
+5. `{}`: To cast from named to unnamed type you can use: `Type{value}` notation (Example 2).
+6. `{}`: To cast from value to a union-type (Example 3).
+7. ` . `: Chaining opertor (Note to the spaces around the dot). `X . F(_)` will be translated to `F(X)` function call. right side of dot must be either a closure with expected inputs or a tuple with underscores for substitition. If right-side expects a single input but left side is a tuple with multiple items, it will be treated as a tuple for the single input of the function (Example 7) but if function expects multiple inputs they will be extracted from left side (Example 6). 
+8. You can also pass a single argument to right side of the chain by using non-tuple value.
+9. You can use chain operator with custom functions as a monadic processing operator. For example you can streamline calling mutiple error-prone functions without checking for error on each call (Example 9 and 10).
 
 
 # Syntax
@@ -657,19 +656,20 @@ stringed := switch ( int_or_float )
 01. `@`  type-id opertor
 02. `$`  tuple, array and map literal declaration
 03. `_`  placeholder for a lambda input or unknown variable in assignments
-04. `:`  type declaration for tuple and function input, `switch` statement
-05. `:=` custom type definition, variable declaration, tuple literal, `for`
+04. `:`  type declaration for tuple and function input and values
+05. `:=` custom type definition
 06. `=`  type alias, copy value
 07. `=>` map literals
 08. `..` range generator
-09. `->` function declaration, switch for union
-10. `[]` generics, array and map literals (with `$` prefix)
-11. `{}` code block, tuple definition and tuple literal (with `$` prefix)
-12. `()` function declaration and call, read from array and map
-13. `||` lambda declaration
-14. `.`  access tuple fields, function chaining (with spaces around)
+09. `->` function declaration, switch
+10. `<-` for/do
+11. `[]` generics, array and map literals (with `$` prefix)
+12. `{}` code block, tuple definition and tuple literal (with `$` prefix)
+13. `()` function declaration and call, read from array and map
+14. `||` lambda declaration
+15. `.`  access tuple fields, function chaining (with spaces around)
 
-Keywords: `import`, `func`, `return`, `type`, `if`, `then`, `else`, `switch`, `while`, `do`, `for` 
+Keywords: `import`, `func`, `return`, `type`, `var`, `if`, `then`, `else`, `switch`, `while`, `do`, `for` 
 
 Primitive data types: `int`, `float`, `char`, `union`, `array`, `map`
 
@@ -688,7 +688,7 @@ Pre-defined types: `bool`, `string`, `nothing`
 2. `import /core/std/{Queue, Stack, Heap}`
 3. `import /core/std/Data/`
 4. `/core/std/data/Process(1,2,3)`
-5. `x := /core/std/data/Stack{y}`
+5. `x: /core/std/data/Stack = ...`
 6. `func myProcess(x: int, y:int, z:int) -> /core/std/data/process(x,y,z)`
 7. `type myStack = /core/std/data/Stack`
 8. `import git:/github.com/adsad/dsada`
@@ -714,33 +714,33 @@ Pre-defined types: `bool`, `string`, `nothing`
 
 **Examples**
 
-1. `x := if y>0 then 10 else 20`
+1. `x = if y>0 then 10 else 20`
 2. `if isFine and x>0 then process(x,y) else return 100`
 3. `callSystem(100) if x>100`
 
 **Notes**
 
 1. `if` is an expression so you can assign it's output to a vaue (Example 1).
-2. You can suffix any statement except declaration `:=` with `if` statement so it will only be executed if condition is met.
+2. You can suffix any statement except variable declaration with `if` statement so it will only be executed if condition is met.
 3. You should not include parentheses for if argument.
 
 ## switch
 
 **Semantics**: A shortcut for multiple `if`s for values or a union data type.
 
-**Syntax**: `switch expression { case1: statements, case2: statements, ..., else: statement }`
+**Syntax**: `switch expression { case1-> statements, case2-> statements, ..., else-> statement }`
 `switch unionValue { type1 -> statements, name: type2 -> statements, ... }`
 
 **Examples**
 
 1.
 ```
-y := switch operation_result 
+y = switch operation_result 
 {
-    1: "G",
-    2: "H",
-    3: "N",
-    else: "A"
+    1 -> "G",
+    2 -> "H",
+    3 -> "N",
+    else -> "A"
 }
 ```
 2.
@@ -784,17 +784,17 @@ while x>0 do
 
 **Semantics**: To define an iteration loop over a value
 
-**Syntax**: `for value := iterable_value do { code-block }`
+**Syntax**: `for value <- iterable_value do { code-block }`
 
 **Examples**
 
-1. `for x := [2..10] do print("Hello world")`
-2. `for item := my_array do printf(item)`
-3. `for key := my_map do ...`
+1. `for var x <- [2..10] do print("Hello world")`
+2. `for var item <- my_array do printf(item)`
+3. `for var key <- my_map do ...`
 4. `type Iterator[T] := {...}`
-5. `my_iterator := getIterator(myBitSet)`
-6. `for g := my_iterator do ...`
-7. `for {x,y} := [2..10], [1..9] do printf("Hello world " +x +y)`
+5. `my_iterator = getIterator(myBitSet)`
+6. `for var g <- my_iterator do ...`
+7. `for var x,y <- [2..10], [1..9] do printf("Hello world " +x +y)`
 
 **Notes**
 
@@ -820,15 +820,16 @@ while x>0 do
 
 **Notes**
 
-1. You can use `=` to duplicate values in the code but for an exclusive resource, this cannt happen because the underlying resource is not cheap to be duplicated. In this case, result will be a duplicated tuple type but it will point to the same resource.
+1. You can use `=` to duplicate values in the code but for an exclusive resource, this cannt happen because the underlying resource is not cheap to be duplicated. In this case, you cannot use `=` on these resources.
 2. Every tuple that embeds `ExclusiveResource` is treated like an exclusive resource.
-3.These types are not supposed to be shared because of their inherent mutability. 
-4. These types have some properties which are enforced by the compiler:
-  a. Any function which creates them, has to either call `dispose` on them or pass them to another function.
-  b. Any function that has an input of their type, must either call `dispose` on them or pass them to another function.
-  c. Any use of them after being passed to another function is forbidden.
-  d. Closures cannot capture them (but you can pass them to a closure after which you cannot use them).
-5. If the resource is part of a union, there must be appropriate `dispose` function for other types in the union, so that a call to `dispose` on that union will be guaranteed to work.
+3. These types are not supposed to be shared because of their inherent mutability. 
+4. These types have some limitations which are enforced by the compiler:
+  a. You cannot assign `=` an exclusive resource to another one.
+  b. Any function which creates an exclusive resource, has to either call `dispose` on them or pass them to another function.
+  c. Any function that has an input of exclusive resource type, must either call `dispose` on them or pass them to another function or return it's input.
+  d. Any use of them after being passed to another function is forbidden.
+  e. Closures cannot capture them (but you can pass them to a closure after which you cannot use them).
+5. If the resource is part of a union, there must be appropriate `dispose` functions for other types in the union, so that a call to `dispose` on that union will be guaranteed to work.
 
 ## Exception handling
 
@@ -838,7 +839,7 @@ while x>0 do
 
 **Examples**
 
-1. `result := union[int, exception]invoke(my_function)`
+1. `result: union[int, exception] = invoke(my_function)`
 
 **Notes**
 
@@ -878,7 +879,7 @@ type Expression := union[int, RegularExpression]
 
 func eval(input: string) -> float 
 {
-  exp := parse(input)
+  exp = parse(input)
   return innerEval(exp)
 }
 
