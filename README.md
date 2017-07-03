@@ -796,74 +796,95 @@ while x>0 do
 4. No `break` or `continue` keywords are defined. You should implement them as part of loop body.
 
 # Miscellaneous
+
 ## Exclusive resource
-??? Note that using `=` for resources (like threads or files) will not create new resource. Just create new variables pointing to the same resource.
 
- every tuple that embeds `ExclusiveResource` is treated like an exclusive resource.
-If some data type represents a resource which needs to be handled only by one function or thread at time, it's type must embed with `ExclusiveResource` (for example file handle, db connection, network socket, ...). These types are not supposed to be shared because of their inherent mutability. This protocol has a single `dispose` function to release the resource.
-These types have some properties which are enforced by the compiler:
-1. Any function which creates them, has to either call dispose on them or pass them to another function.
-2. Any function that has an input of their type, must either call dispose or pass it to another function.
-3. Any use of them after being passed to another function is forbidden.
-4. Closures cannot capture them (but you can pass resources to them).
-```
-type FileHandle := {ExclusiveResource, handle: int}
-func closeFile(x:FileHandle)->bool { ... }
-f = openFile(...) 
-...
-closeFile(f)
-```
-- If the resource is part of a union, there must be appropriate `dispose` function for other types in the union, so that a call to `dispose` on that union will be guaranteed to work.
+**Semantics**: Represents a system resource (file, network socket, database connection, ...) which needs to have an exclusive owner and cannot be duplicated like normal values.
 
-### assert (removed)
-- `Exception` is a simple tuple defined in core. 
-- You can use suffix if for assertion: `return xyz if not (str.length>0)`
-- To handle exceptions in a code in rare cases (calling a plugin or another thread), you can use `invoke` core function.
-`func invoke[I,O](f: func, input: I)->O|Exception`. If your function has more than one input, you should define a wrapper function or a closure which has one input of type tuple.
-`var finalResult: Maybe[int] = input >> check1(5, _) >> check2(_, "A") >> check3(1,2,_)`
+**Syntax**: `type Resource1 := {ExclusiveResource, ...}`
 
-- **Nothing**: Nothing is a label type with only one value: `nothing`.
- You can use it's type for return value of a function. If a function does not return anything, it returns `nothing`.
+**Example**
 
+1. `type FileHandle := {ExclusiveResource, handle: int}`
+2. `func closeFile(f: FileHandle)...`
+3. `func dispose(f: FileHandle) -> closeFile(f)`
 
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
+**Notes**
 
+1. You can use `=` to duplicate values in the code but for an exclusive resource, this cannt happen because the underlying resource is not cheap to be duplicated. In this case, result will be a duplicated tuple type but it will point to the same resource.
+2. Every tuple that embeds `ExclusiveResource` is treated like an exclusive resource.
+3.These types are not supposed to be shared because of their inherent mutability. 
+4. These types have some properties which are enforced by the compiler:
+  a. Any function which creates them, has to either call `dispose` on them or pass them to another function.
+  b. Any function that has an input of their type, must either call `dispose` on them or pass them to another function.
+  c. Any use of them after being passed to another function is forbidden.
+  d. Closures cannot capture them (but you can pass them to a closure after which you cannot use them).
+5. If the resource is part of a union, there must be appropriate `dispose` function for other types in the union, so that a call to `dispose` on that union will be guaranteed to work.
 
-## Examples
-### Empty application
+## Exception handling
+
+**Semantics**: Handle unexpected and rare conditions.
+
+**Syntax**: `func process() -> union[int, exception] { ... return exception{...} }`
+
+**Examples**
+
+1. `result := union[int, exception]invoke(my_function)`
+
+**Notes**
+
+1. There is no explicit support for exceptions. You can return a specific `exception` type instead.
+2. You can use chaining opertor to streamling calling multiple functions without checking for exception output each time.
+3. If a really unrecoverable error happens, you should exit the application by calling `exit` function in core.
+4. In special cases like a plugin system, where you must control exceptions, you can use core function `invoke` which will return an error result if the function which it calls exits.
+
+# Examples
+
+## Empty application
+
 ```
 func main() -> 
 {
     return 0 
 }
 ```
-or even simper: `func main() -> 0`
+
+or even simpler: `func main() -> 0`
 
 This is a function, called `main` which returns `0` (very similar to C/C++ except `main` function has no input).
 
-### Hello world
-### Quick sort
-### Graph class
-### Expression parser
-We want to write a function which accepts a string like "2+4/3" and returns result (2)
+## Hello world
+
+## Quick sort
+## Graph class
+## Expression parser
+
+We want to write a function which accepts a string like "2+4-3" and returns result (`3`).
+
 ```
-type Expression := int | (op: char, left: Expression, right: Expression)
+type RegularExpression := {op: char, left: Expression, right: Expression}
+type Expression := union[int, RegularExpression]
+
 func eval(input: string) -> float 
 {
-  var exp: Expression = parse(input)
-  return innerEval(exp);
+  exp := parse(input)
+  return innerEval(exp)
 }
+
 func innerEval(exp: Expression) -> float 
 {
-  return exp @
+  return switch exp
   {
-    x:int -> x,
-    (op: char, left: Expression, right: Expression) -> op @
+    x: int -> x,
+    y: Expression ->
     {
-      '+' -> innerEval(left) + innerEval(right),
-      '-' -> innerEval(left) - innerEval(right),
-      '*' -> innerEval(left) * innerEval(right),
-      '/' -> innerEval(left) / innerEval(right),
+        switch y.op
+        {
+          '+': innerEval(y.left) + innerEval(y.right),
+          '-': innerEval(y.left) - innerEval(y.right),
+          '*': innerEval(y.left) * innerEval(y.right),
+          '/': innerEval(y.left) / innerEval(y.right),
+      }
     }
   }
 }
