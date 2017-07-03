@@ -3420,7 +3420,8 @@ problem with protocol:
 - It is a new piece of different syntax in function and data type declaration.
 what about data types? How can I say a set must have these protocols? Maybe I cannot do it with tuples.
 - Protocol is more powerful because I can define multiple protocols each for a specific type and task and combine them easily and they are more readable. 
-- How to write a generic iteration function?
+- How to write a generic iteration function?with expects an interable?
+- another solution: make it easier to bind functions in the context to function pointer varialbles.
 
 
 
@@ -3444,5 +3445,7 @@ but loop will be simpler or maybe we can eliminate it.
 
 ? - How can I state type of a lambda? Do I need to?
 `fp := int{|x:int|-> { return x+1}}`?
+
+? - If we disallow re-assignment, then closure's limitation can be lifted. but what about loops?
 
 -- No more changes to the spec before re-writing of spec is finished--
