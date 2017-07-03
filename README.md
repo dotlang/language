@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, add `$` prefix for untyped tuple literals to make it more readable, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization
+- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, add `$` prefix for untyped tuple literals to make it more readable, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization, added `autoBind`
 
 # Introduction
 
@@ -118,7 +118,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 **Semantic**: Used to declare a unique name and assign an expression to it.
 
-**Syntax**: `var identifier : Type = expression`
+**Syntax**: `var identifier [: Type] = expression`
 
 **Examples**
 
@@ -570,16 +570,18 @@ stringed = switch ( int_or_float )
 06. `func pop[T](s: Stack[T])->T...`
 07. `func length[T](s: Stack[T])->int`
 08. `func extract[T](that: BoxedValue[T])->T that.value`
-09. `x = optional[int]{12}`
-10. `x = BoxedValue[int]{1}`
-11. `y = BoxedValue[string]{value: "a"}`
-12. `xx = extract(x)`
-13. `yy = extract[string](y)`
+09. `func push[int](s: Stack[int], data:int)...`
+10. `x = optional[int]{12}`
+11. `x = BoxedValue[int]{1}`
+12. `y = BoxedValue[string]{value: "a"}`
+13. `xx = extract(x)`
+14. `yy = extract[string](y)`
 
 **Notes**:
 
 1. Compiler will scan body of generic functions and extract their expected methods. If you invoke those functions with inappropriate types, it will give you list of required methods to implement.
 2. When calling a generic function, you can include type specifier if it cannot be deduced from input or for purpose of documenting the code (Example 13 includes type to document that `yy` will be of type `string`).
+3. You can specialize generic functions for a specific type or types (Example 9 specializes function defined in example 5).
 
 ## Phantom types
 
@@ -810,26 +812,18 @@ while x>0 do
 
 **Semantics**: Represents a system resource (file, network socket, database connection, ...) which needs to have an exclusive owner and cannot be duplicated like normal values.
 
-**Syntax**: `type Resource1 := {ExclusiveResource, ...}`
-
-**Example**
-
-1. `type FileHandle := {ExclusiveResource, handle: int}`
-2. `func closeFile(f: FileHandle)...`
-3. `func dispose(f: FileHandle) -> closeFile(f)`
+**Syntax**: Exclusive resources are defined in core (file descriptor, thread, sockets).
 
 **Notes**
 
-1. You can use `=` to duplicate values in the code but for an exclusive resource, this cannt happen because the underlying resource is not cheap to be duplicated. In this case, you cannot use `=` on these resources.
-2. Every tuple that embeds `ExclusiveResource` is treated like an exclusive resource.
-3. These types are not supposed to be shared because of their inherent mutability. 
-4. These types have some limitations which are enforced by the compiler:
-  a. You cannot assign `=` an exclusive resource to another one.
-  b. Any function which creates an exclusive resource, has to either call `dispose` on them or pass them to another function.
-  c. Any function that has an input of exclusive resource type, must either call `dispose` on them or pass them to another function or return it's input.
-  d. Any use of them after being passed to another function is forbidden.
-  e. Closures cannot capture them (but you can pass them to a closure after which you cannot use them).
-5. If the resource is part of a union, there must be appropriate `dispose` functions for other types in the union, so that a call to `dispose` on that union will be guaranteed to work.
+1. You can use `=` to duplicate normal values in the code but for an exclusive resource, this cannt happen because the underlying resource is not cheap to be duplicated. In this case, you cannot use `=` on these resources, but you must use core functions to acquire one one of them.
+2. These types are not supposed to be shared between two threads, because of their inherent mutability. 
+3. These types have some limitations which are enforced by the compiler:
+  a. You cannot assign `=` an exclusive resource to another one or modify/re-assign an existing exclusive resource.
+  b. Any function which creates or accepts an exclusive resource, has to either call `dispose` on them, return them or pass them to another function.
+  c. Any use of them after being passed to another function is forbidden.
+  d. Closures cannot capture them (but you can pass them to a closure after which you cannot use them).
+4. If the resource is part of a union or tuple, there must be appropriate `dispose` functions for other types in the union or for the tuple type, so that a call to `dispose` on that union will be guaranteed to work.
 
 ## Exception handling
 
@@ -847,6 +841,28 @@ while x>0 do
 2. You can use chaining opertor to streamling calling multiple functions without checking for exception output each time.
 3. If a really unrecoverable error happens, you should exit the application by calling `exit` function in core.
 4. In special cases like a plugin system, where you must control exceptions, you can use core function `invoke` which will return an error result if the function which it calls exits.
+
+## autoBind
+
+**Semantics**: A compiler-level supported mechanism to fetch funcion pointers to currently defined functions and create an appropriate tuple with them.
+
+**Syntax**: `x = autoBind[Type1]()`
+
+**Examples**
+
+1. `type Comparer[T] := { compare: func(T,T)->bool }`
+2. `func sort[T](x: array[T], f: Comparer[T])->array[T] { ... }`
+3. `sort(myIntArray, autoBind())`
+4. `sort(myIntArray, autoBind[Comparer[int]]())`
+
+**Notes**
+1. Example 1 defines a general tuple which only contains function pointer fields.
+2. Example 2 defines a function to sort any given array of any type. But to do the sort, it needs a function to compare data of that type. So it defines an input of type `Comparer[T]` to include a function to do the comparison.
+3. Example 3 shows how to call `sort` function defined in example 2. You simply call `autoBind` to create appropriate tuple of appropriate types by the compiler. So `f.compare` field will contain a function pointer to a function with the same name and signature.
+4. Example 4 is same as example 3 but with explicit types. You can omit these types as compiler will infer them.
+5. You can also create your own custom tuple with appropriate function pointers to be used in sort function. `autoBind` just helps you create this set of function pointers easier.
+6. The tuple defined in example 1 is called a protocol tuple because it only contains function pointers. These tuples are just like normal tuples, so for example you can embed other tuples inside them and as long as they only contains function pointers, they will be protocol tuples.
+7. `autoBind` works only on protocol tuples.
 
 # Examples
 
@@ -965,7 +981,7 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Define notation to write low-level (Assembly or IR) code in a function body and also force inline.
 - Function to get dynamic type of a tuple variable
 - Add notation for axioms and related operators like `=>` to protocol to be able to define semantics of a protocol.
-- Vet to format code based on the standard (indentation, spacing, warning about namings, ...). And force it before compilation.
+- Vet to format code based on the standard (indentation, spacing, brace placement, warning about namings, ...). And force it before compilation.
 - Compiler will detect local variable updates which are not escape and optimize them to use mutable variable (for example for numerical calculations which happens only inside a function).
 - Channels are the main tool for concurrency and coordination.
 - Protocol/type-class/concepts
