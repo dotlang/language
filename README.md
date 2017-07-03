@@ -523,147 +523,89 @@ stringed := switch ( int_or_float )
 
 **Semantics**: Define function literals of a specific function pointer type, inside another function's body.
 
-**Syntax**: `|name1: type1, name2: type2, ...| -> expression | body`
+**Syntax**: `|name1: type1, name2: type2, ...| -> output { body }`
 
 **Examples**
 
-1. `f1 := |x: int, y:int| -> { return x+y }` ;the most complete definition
-2. `rr := |x: int, y:int| -> x + y`  ;return type can be inferred
-var rr = { x + y } ;WRONG! - input is not specified
-var f1 = (x: int, y:int) -> int { return x+y } ;the most complete definition
-
-type adder := (x: int, val y:int) -> var:int
-var rr: adder = (a:int, b:int) -> { a + b } ;when you have a type, you can define new names for input
-var rr: adder = (x,y) -> x + y   ;when you have a type, you can also omit input
-var rr: adder = (x,y) -> int { return x + y }      ;and also func keyword, but {} is mandatory
-var rr:adder = (x,y) -> x + 2      
-func test(x:int) -> plus2 { return (y) -> y+ x }
-var modifier = (x:int, y:int) -> x+y  ;if input/output types can be deduced, you can eliminate them
-
+1. `f1 := |x: int, y:int| -> int { return x+y }`
+2. `f1 := |x: int, y:int| -> { return x+y }` ;the most complete definition
+3. `rr := |x: int, y:int| -> x + y`  ;return type can be inferred
+4. `rr := || -> { x + y }`
+5. `func test(x:int) -> plusFunc { return |y:int| -> y + x }`
+6. `|x:int|->int { return x+1 } (10)`
+7. `func process(x:int, y:float, z: string) -> { ... }`
+8. `lambda1 = process(10, _, _)`
 
 **Notes**
-1. You should not specify output type for a lambda.
-2. If a lambda captures a value in the parent function, that value cannot be re-assigned. Compiler will detech this. This is to prevent possible data race in which case, a data is modified outside a thread (which is the closure) while the code inside the thread is reading it. Use channels to communicate between threads.
-
-
-
-A lambda variable can omit types because they can be inferred: `var x: comparer = |x,y| -> ...`
-A function literal which does not have a type in the code, must include argument name and type. `|x:int|->int { return x+1 }(10)` or `var fp = |x:int|->int { return x+1}`
-
-- closure capturing: It captures outside vars and vals. Can change vars.
-- Even if a lambda has no input/output you should write other parts: `() -> { printf("Hello world" }`
-You can define a lambda expression or a function literal in your code. Syntax is similar to function declaration but you can omit output type (it will be deduced from the code), and if type of expression is specified, you can omit inputs too, also  `func` keyword is not needed. The essential part is input and `->`.
-If you use `{}` for the body, you must specify output type and use return keyword.
-```
-```
-- Lambdas have read-only access to free variables in their parent semantic scope.
-- Function pointers cannot take part in method dispatch. They must point to a specific function. This is specified using their type. 
-- Another way to forward a call to another function but without loosing dynamic type:
-```
-func process(c: Circle) -> int {
-;you cannot infer type from a function name, unless there is only one function with that name
- var f: func(s: Shape) = process 
- var g = process ;this is wrong
- return f(c)
-}
-```
-
-`var g: func(x:int)->int...`
-`var g: func[T](x:T)->T...`
-`var g: func[T:Stringer](x:T)->T...`
-`g("A") g(2) g(1.2)`
-- You can use `_` as a shortcut to define a lambda:
-If we have `func f(int,int,int)->int` then:
-`var t = f(a1, a2, _)` is same as `var t: func(int)->int = (x:int) -> f(a1, a2, x)`
-- Lambdas can also use protocols in their type or their value definition.
+1. You can omit output type (Example 2 and 3).
+2. Even if lambda has no input you must include `||` (Example 4).
+3. Lambdas are closures and can capture values in the parent function (Example 4 and 5).
+4. If a lambda captures a value in the parent function, that value cannot be re-assigned. Compiler will detech this. This is to prevent possible data race in which case, a data is modified outside a thread (which is the closure) while the code inside the thread is reading it. Use channels to communicate between threads.
+5. Example 5 shows a function that returns a lambda.
+6. Example 6 shows invoking a lambda at the point of definition.
+7. You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normall call and replace the lambda inputs with `_`. Example 8 defines a lambda to call `process` functions with `x=10` but `y` and `z` will be inputs.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Generics
-- This is a function that accepts an input of any type and returns any type: `type Function[I,O] := func(I)->O`.
 
-- Compiler will scan body of generic functions and extract their expected methods. If you call them with inappropriate types, it will give you list of required methods to implement.
-- Note that a generic function can only have generic types. About immutability or mutability, it cannot be generic. The function signature is responsible about defining whether an argument should be immutable or mutable or doesn't care. Also same for types. You cannot have mutability or immutability as a generic argument.
-- Generic arguments can only be types.
-- When defining types, you can append `[A, B, C, ...]` to the type name to indicate it is a generic type. You can then use these symbols inside type definition.
-- When defining functions, if input or output are of generic type, you must append `[A,B,C,...]` to the function name to match required generic types for input/output. 
-- When you define a variable or another type, you can refer to a generic type using it's name and concrete values for their types. Like `Type{int, string]`
-- Generic functions, must make use of their type argument in their input.
-```
-type Map[K,V] := K => V
-type Stack[T] := array[T]  ;define base type for generic type
-func push[T](s: Stack[T], x: T)
-func push[int](s: Stack[int], x: int) ;specialization
-func pop[T](s: Stack[T]) -> T
-func len[T](s: Stack[T]) -> int   ;general function for all instances
-var t : Stack[int]
-var h : Map[int, string]
-push(t, 10) ;same as push[int](t, 10)
-var y = pop(t)
-x = len(t)
-```
-`type optional[T] := Nothing | T`
-`type Packet[T] :=   {status: T[], result: (x:int, y:int))`
-`type IPPacket := Packet[int]`
-`type Tree[T] := {x: T, left: Tree[T], right: Tree[T]}`
-`type ShapeTree := Tree[Shape]`
-Example:
-`func push[T](x: Stack[T], y: T)`
-`func push(x: Stack[int], y:int)`
-if we call `push(a,6)` and `a` is `Stack[int]` second function will be called because there is full match.
-if we call `stack[int](a, b)` still the second one will be called.
-- When calling a generic function, you can omit type specifier only if it can be deduced from input. If not, you must specify input.
-Example: `func process[T](x: int) -> T`
-`process(10)` is wrong. You must specify type: `var g: string = process[string](10)`
-- If some types cannot be inferred from function input, you must specify them when calling the generic function.
-```
-type DepValue[T] := (value:T)
-func magic[T](that: DepValue[T])->T that.value
-var x = %DepValue[int](1) ;x is int
-var y = %DepValue[string]("a") ;y is string
-var xx: int = magic(x)
-var yy: string = magic(y)
-```
+## Declaration
 
-For generic functions, any call to a function which does not rely on the generic type, will be checked by compiler even if there is no call to that generic function. Any call to another function relying on generic argument, will be checked by compiler to be defined.
+**Semantics**: To define a function or data type which has one or more types defined like variables. These types will get their values when the function is called or the data type is used to initialize a value.
+
+**Syntax**: 
+1. `func funcName[T1, T2, T3, ...](input1: type1, input2: T1, input3: T3, ...)->T2`
+2. `type TypeName[T1, T2, T3, ...] := { field1: int, field2: T2, field3: float, ...}`
+
+**Example**
+
+01. `type Stack[T] := array[T]`
+02. `type Tree[T] := {x: T, left: Tree[T], right: Tree[T]}`
+03. `type optional[T] := union[nothing, T]`
+04. `type BoxedValue[T] := {value:T}`
+05. `func push[T](s: Stack[T], data: T) ...`
+06. `func pop[T](s: Stack[T])->T...`
+07. `func length[T](s: Stack[T])->int`
+08. `func extract[T](that: BoxedValue[T])->T that.value`
+09. `x := optional[int]{12}`
+10. `x := BoxedValue[int]{1}`
+11. `y := BoxedValue[string]{value: "a"}`
+12. `xx := extract(x)`
+13. `yy := extract[string](y)`
+
+**Notes**:
+
+1. Compiler will scan body of generic functions and extract their expected methods. If you invoke those functions with inappropriate types, it will give you list of required methods to implement.
+2. When calling a generic function, you can include type specifier if it cannot be deduced from input or for purpose of documenting the code (Example 13 includes type to document that `yy` will be of type `string`).
 
 ## Phantom types
-Phantom are compile-time label/state attached to a type. You can use these labels to do some compile-time checks and validations. Here labels are implemented using generic types which are not used for data allocation. For example we have a string which is result of md5 hash and another for sha-1. We should not be comparing these two although they are both strings. So how can we mark them?
 
-```
-type HashType := MD5 | SHA1
- ;when generic type is not used on the right side, it will be only for compile time check
-type HashStr[T] := string     
-type Md5Hash := HashStr[MD5] 
-;Md5Hash type can be easily cast to string, but if in the code a string
-;is expected to be of type Sha1Hash you cannot pass Md5Hash
-type Sha1Hash := HashStr[SHA1]
-func md5(s: string)->Md5Hash {
-    var result: string = "ddsadsadsad"
-    return %Md5Hash(result)  ;create a new string of type md5-hash
-}
-func sha1(s: string)->Sha1Hash
-var t: Md5Hash  = sha1("A")  ;will give compiler error because output of sha1 is Sha1Hash
-func testMd5(s: string, t: Md5Hash) -> md5(s) == t
+**Semantics**: To document compile time constrcints on the data without runtime cost using generics or named types (When generic type is not used on the right side of type definition, it will be only for compile time check)
 
-;if there is only one case, you can simply use named type
-type SafeString := string
-func processString(s: string)->SafeString
-func work(s: SafeString)
+**Syntax**: Like generic data types
 
-;another example: expressions
-type ExpType := INT | STR
-type Expression[T] := (token: string)
-func readIntExpression(...) -> Expression[INT]
-func plus(left: Expression[INT], right: Expression[INT])...
-func concat(left: Expression[STR], right: Expression[STR])...
+**Examples**
+1. `type HashType := union[MD5, SHA1]`
+2. `type HashStr[T] := string`
+3. `type Md5Hash := HashStr[MD5]` 
+4. `type Sha1Hash := HashStr[SHA1]`
+5. `func md5(s: string)->Md5Hash { ... }`
+6. `func sha1(s: string)->Sha1Hash { ... }`
+7. `t  := Md5Hash{sha1("A")}` ERR
+8. `type SafeString := string`
+9. `func processString(s: string)->SafeString`
+10. `func work(s: SafeString)`
+11. `type DoorState := union[Open, Closed]`
+12. `type Door[T] := string`
+13. `func closeDoor(x: Door[Open]) -> Door[Closed]`
+14. `func openDoor(x: Door[Closed]) -> Door[Open]`
 
-;door
-type DoorState := Open | Closed
-type Door[T] := (string)
-func closeDoor(x: Door[Open]) -> Door[Closed]
-func openDoor(x: Door[Closed]) -> Door[Open]
-```
+**Notes**
+1. Phantom are compile-time label/state attached to a type. You can use these labels to do some compile-time checks and validations. 
+2. You can implement these labels using a named type or a generic type.
+3. Examples 1 to 7 show a et of hash functions that returns a specific type which is derived from `string`. This will prevent the developer sending a md-5 hash to a function which expects sha-1 hash.
+4. Examples 8 to 10 indicate using named functions to represent a "sanitized string" data type. Using this named type as the input for `work` function will prevent calling it with normal strings which are not sanitized through `processString` function.
+5. Examples 11 to 14 indicate a door data type which can only be opened if it is already closed properly and vice versa.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
