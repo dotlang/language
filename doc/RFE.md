@@ -3408,7 +3408,8 @@ Y - Like what we did for tuple literal, shall we use symbols for array and map l
 1. `my_map := $["A"=>1, "B"=>2, "C"=>3]`
 5. `my_map := map[string,int]$["A"=>1, "B"=>2, "C"=>3]`
 
-? - To have minimum impact on the language and concepts but have protocols, we can define expected functions as a tuple with function pointers. an input of type this, can use core function to get appropriate functions from current environment.
+? - protocols?
+To have minimum impact on the language and concepts but have protocols, we can define expected functions as a tuple with function pointers. an input of type this, can use core function to get appropriate functions from current environment.
 `func process(a:int, x: RequiredFunctions)`
 `process(10, &)`
 `process(10, ${&})`
@@ -3424,9 +3425,7 @@ what about data types? How can I say a set must have these protocols? Maybe I ca
 - another solution: make it easier to bind functions in the context to function pointer varialbles.
 
 
-
-
-? - Provide ability to update used libraries without need to re-compile main application.
+Y - Provide ability to update used libraries without need to re-compile main application.
 https://github.com/apple/swift-evolution/blob/30889943910a4a4e46a800f03d17a91e11ca475f/README.md#development-major-version--swift-30
 
 
@@ -3434,6 +3433,8 @@ https://github.com/apple/swift-evolution/blob/30889943910a4a4e46a800f03d17a91e11
 con: we loose ability to return and re-assign local vars.
 con: more nesting and paren/braces because we don't have `do`.
 but loop will be simpler or maybe we can eliminate it.
+q: what about nested loops?
+we can delete `for` keyword and have only `while` for condition based loops.
 
 ? - Decide on the name: Generics or template
 
@@ -3447,5 +3448,9 @@ but loop will be simpler or maybe we can eliminate it.
 `fp := int{|x:int|-> { return x+1}}`?
 
 ? - If we disallow re-assignment, then closure's limitation can be lifted. but what about loops?
+
+? - ban using `=` for exc resources.
+
+? - Can't we make switch statement consistent? all cases `:` or `->`?
 
 -- No more changes to the spec before re-writing of spec is finished--
