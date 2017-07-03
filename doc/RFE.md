@@ -3486,7 +3486,137 @@ We can force init upon decl.
 You cannot define a tuple literal without type and with field names. 
 Untype tuple literal can only contain values.
 
-? - protocols?
+N - protocols but for types? No need. Just use convention.
+I want to define a set but it's generic function must be comparable.
+`type Set[T] := array[T]???`
+one solution: enforce this type can only be created using X function. And in that function declare this.
+`type Set[T] := array[T] with func create[T]`
+So you cannot simply define a Set literal or an array literal and cast it to Set.
+`type Set[T] := array[T] with create`
+this is like a constructor. `create` means a function with this name, a single generic input and output type of `Set[T]`.
+`func create[T](...)->Set[T]`.
+Let's not create a new keyword for this.
+`type Set[T] := array[T] -> create`
+`type Set[T] := array[T] <- create`
+This can be useful for exclusive resources too. User is not supposed to create a FileHandle tuple himself.
+`type Set[T] := array[T] <- create`
+Name cannot be fixed. it can be something else, not always `create`.
+We can redirect function and like `dispose` use fixed name.
+Just like `dispose` we can have `create` function.
+AND like exclusive-resource, we can have same tuple which if embedded, means type cannot be manually created.
+`type Set[T] := {data: array[T], CustomCreate}`
+So if the tuple embeds this, it must be instantiated using `create` function.
+`dispose` is mostly for built-in types.
+Can we simplify it?
+Same for create. but create is more used because developer should not be involved in manual dispose but for create they can be.
+Can a developer define one of it's own types as an ex-res with custom dispose? Yes. Like a virtual memory buffer.
+If a developer defines a custom type as CustomCreate type, how can he write the code for create function?
+Anyway he needs to write some kind of a tuple.
+`type Point := {x:int, y:int, CustomCreate}`
+```
+func create(x:int)->Point {
+  return ${.x=x, .y=10}
+}
+```
+can users modify an exclusive-resource? They shouldn't be.
+But why not have `create` as just a convention? If user calls type with inappropriate types and arguments and creates a variable he cannot use it because functions will complain. Less limits!
+So we only need this for `ExclusiveResource`.
+
+N - Document alias methods used for dispose and create to redirect standard name to another names.
+
+N - Set a tag-line as "(almost) Go + Generics"
+
+Y - Why do we need ex-res concept? Can we simplify them?
+- What if user writes: `var otherSocket = mySocket`?
+will it be a copy of the original or a new socket? suppose `mySocket` is an open and active socket.
+Problem is we do not have notation of reference assignment. This causes problems for large data (handled by the compiler) and also for special resources like a network socket.
+Because of making assignment by copy, you cannot simply deal with these resources.
+underlying, there is only one socket or file descriptor or ... .
+Also there is not much use to give developer this ability. Because it is only limited to core.
+Maybe we can make it easiler.
+Can we think of an exclusive resource like a static function which always returns the same thing?
+- You cannot assign to a funtion.
+ex-res cannot be an lvalue. what about defining `val` which cannot be re-assigned? Too much change just for a simple concept which also won't be enough.
+Limitations:
+1. cannot be assigned.
+2. must either pass it to other func or call dispose.
+3. after passed to other func, you cannot use them.
+4. cannot be captured by closures.
+Our philosophy is that compiler/runtime should not be doning something behind the scenes. It must be indicates explicitly by the developer.
+`var f = openFile("a.txt")`
+`var g = f`
+- They cannot be re-assigned to copied to another variable.
+- User must explicitly call `dispose` function.
+what about imposing a block for them? like using?
+```
+using ( var file = fileOpen() ) {
+...
+}
+```
+`dispose` is automatically called when we exit this block.
+outside block, there is no `file` so it cannot be used. Not very beneficial.
+If ex-res is only for core level data why give developer ability to deinfine custom ex-res?
+- we can force user cannot create/generate his own ex-res values. He must call core functions. So we can prevent assign.
+- we cannot prevent re-assignment. unless as a magical rule.
+- Instead of checking for these rules let developer handle the case. `vet` utility can issue warnings for these cases but that is completely a separate topic.
+The only thing is that we have `dispose` functions for resources that are valuable. 
+Let's ban sending them to other functions or lambda or returning them. but this does not make sense. How can we implement a thread pool or db connection pool this way?
+- What about this?
+1. everything is allowed. assign, re-assign send ...
+2. If at any step, two threads make a call against an exclusive resource, runtime will exit. so developer is responsible.
+You can assign to a resource or re-assign to it.
+You can send it to another function and work with it after sending.
+Functions with input of tyep ex-res can use it or return or send or do nothing.
+What if I dispose exres and send it to another function? It's an error.
+1. Exclusive resources are just like other data tyes but internally they use access controls to make sure they are only used by the thread which has created them. 
+2. If you send an exclusive resource to another thread, and try to use it there, there will be a runtime error.
+3. You are expected to create exclusive resource by calling appropriate functions instead of initializing a literal.
+4. You are expected to call `dispose` function on exclusive resources if you don't want to rely on GC to call that.
+There are two approches:
+optimistic: Let them do whatever they like, if something goes wrong I will throw error.
+pessimistic: Don't let them cause any trouble. 
+in opt view, I need to monitor and manage each operation to make sure it is not an error. 
+in pess view, I don't need to monitor anything because the rules in-place by compiler make sure nothing goes wrong.
+opt view is easier for the developer but expensive for compiler and runtime system.
+pess view is more difficult for the developer (he has to deal with a lot of rules) but easy for compiler runtime system.
+Because of performance reasons we can choose pessimistic view and let compiler check rules.
+
+
+Y - Document that we can specialize generics:
+`func process[int](x: int)...`
+
+N - These rules (For exres) will guarantee prevention of data-race and destruction, but they are really hard to follow.
+If we can enforce them for all the types that we have we can get rid of GC and make everything mutable!!!!!!!!
+- For any var, you can modify it inside the function.
+1 - No re-assign or assign to other vars.
+2 - pass them or return them or dispose them.
+3 - if you pass, you cannot use them after that.
+4 - cannot be capture by closure.
+rule 3 is the most strange rule.
+how can I implement a loop then?
+The problem with this approach is that it makes writing and reading the code difficult.
+Advantage: no GC and no racing (Like what Rust does)
+Cost: unreadable code which is also hard to write.
+Let's just ignore it.
+
+N - Can we simplify exres?
+Why I cannot re-use a exres after passing it to another function?
+we adopt notation of copy-value in all cases with `=` but here it won't be copy-value.
+`var f = file2` invalid
+`process(file2)` then `write(file2, 1)` invalid.
+we can get rid of `dispose` and say, it can be automatically called but better to have it explicit there.
+can we hide all of these details inside some functions?
+they return a simple integer so if I assign it to another var, it will clearly be the same thing.
+```
+var fileHandler: Filedesc = openFile(...)
+var f2 = fileHandler
+fileHandler = dispose(fileHandler)
+
+```
+- To force not using after dispose, you can force `x=dispose(x)` format in the code.
+- No exres can appear on the right side of `=`.
+
+Y - protocols?
 To have minimum impact on the language and concepts but have protocols, we can define expected functions as a tuple with function pointers. an input of type this, can use core function to get appropriate functions from current environment.
 `func process(a:int, x: RequiredFunctions)`
 `process(10, &)`
@@ -3501,4 +3631,66 @@ what about data types? How can I say a set must have these protocols? Maybe I ca
 - Protocol is more powerful because I can define multiple protocols each for a specific type and task and combine them easily and they are more readable. 
 - How to write a generic iteration function?with expects an interable?
 - another solution: make it easier to bind functions in the context to function pointer varialbles.
+problem with protocol is that it can be used to make code very complicated. Anything that let's others make code bad should be eliminated unless it has very clear benefits without a good and simple alternative.
+```
+protocol Adder[S,T,X] := {
+    func add(x: S, y:T)->X
+}
+func process[S,T,X: Adder] (x: S, y:T)->X { return add(x,y) }
+s = process(x,y)
+```
 
+```
+type Adder[S,T,X] := {
+    add: func(x: S, y:T)->X,
+    sub: func(x: S, y:T)->X
+}
+func process[S,T,X] (x: S, y:T, z: Adder[S,T,X])->X { return z.add(x,y) }
+s = process(x,y, Adder{.add=add1, .sub=sub1}) //this is completely consistent with current syntax
+```
+```
+type Adder[S,T,X] := {
+    add: func(x: S, y:T)->X,
+    sub: func(x: S, y:T)->X
+}
+func process[S,T,X] (x: S, y:T, z: Adder[S,T,X])->X { return z.add(x,y) }
+s = process(x,y, autoBind[Adder[int, int, int]())
+```
+- `autoBind[T]` function in core will generate a tuple with given type. 
+Haskel's type classes have some problems: What if implementation does not have the same name as in the typeClass?
+Here we have full control over input and we can pass our own tuple with any function name we want.
+2. They don't have laws. We can implement this as a set of other tuples/functions and bind these two maybe using a convention.
+can we abstract over these tuples? Like a function which can accept different protocol tuples based on the request of the caller. with tuples we can because protocol is no longer a magical thing. 
+Also there is no need to special notation to inherit from another protocol. We already have it.
+`s = process(x, y, autoBind[Adder]())`.
+vs
+`s = process(x,y, autoBind[Adder[int, int, int]())`
+We can say `[~]` indicates compiler should infer types from the context.
+`s = process(x, y, autoBind[~]())`. In this place, process needs a tuple of type `Adder` which should be `Adder[int, int, int]`. Or maybe even `[]`.
+So:
+`func add[T](x: T, y:T]`
+can be called as: `add[](5,9)`.
+`s = process(x, y, autoBind())`
+`func autoBind[T]()->T`
+so: 
+proposal: 
+1. Define a function in core called `autoBind`. 
+2. Each function can define an input of type tuple which includes only function pointers. 
+3. Usage: In generic functions, to document requirements regarding generic types. 
+4. Caller can use `autoBind` to provide default values for that tuple fields based on it's field names and current context's functions.
+
+N - what about forcing to use `[]` so when reading the code we know which function is generic and which is not?
+`func add[T](x: T, y:T]`
+can be called as: `add[](5,9)`
+So we can have two functions with same name generic and non-generic:
+```
+func process[T](x: T)...
+func process(x:int)...
+process[](myInt) //this will call the first function
+process[int](myInt) //same as above just with explicit types
+process(myInt) //this will call the second function
+```
+It will pullote syntax without a clear benefit.
+
+? - Can we implement exres using native features of the language?
+Just like autoBind?
