@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, add `$` prefix for untyped tuple literals to make it more readable, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization, added `autoBind`
+- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, add `$` prefix for untyped tuple literals to make it more readable, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization, added `autoBind`.
 
 # Introduction
 
@@ -851,6 +851,7 @@ while x>0 do
 4. `sort(myIntArray, autoBind[Comparer[int]]())`
 
 **Notes**
+
 1. Example 1 defines a general tuple which only contains function pointer fields.
 2. Example 2 defines a function to sort any given array of any type. But to do the sort, it needs a function to compare data of that type. So it defines an input of type `Comparer[T]` to include a function to do the comparison.
 3. Example 3 shows how to call `sort` function defined in example 2. You simply call `autoBind` to create appropriate tuple of appropriate types by the compiler. So `f.compare` field will contain a function pointer to a function with the same name and signature.
@@ -885,8 +886,8 @@ This is a function, called `main` which returns `0` (very similar to C/C++ excep
 We want to write a function which accepts a string like "2+4-3" and returns result (`3`).
 
 ```
-type RegularExpression := {op: char, left: Expression, right: Expression}
-type Expression := union[int, RegularExpression]
+type NormalExpression := {op: char, left: Expression, right: Expression}
+type Expression := union[int, NormalExpression]
 
 func eval(input: string) -> float 
 {
@@ -899,7 +900,7 @@ func innerEval(exp: Expression) -> float
   return switch exp
   {
     x: int -> x,
-    y: Expression ->
+    y: NormalExpression ->
     {
         switch y.op
         {
@@ -912,6 +913,8 @@ func innerEval(exp: Expression) -> float
   }
 }
 ```
+
+# Other components
 
 ## Core package
 
@@ -929,9 +932,6 @@ A set of core packages will be included in the language which provide basic and 
 - Cast binary to unsigned number
 
 Generally, anything that cannot be written in atomlang will be placed in this package.
-
-
-
 
 ## Standard package
 
@@ -961,23 +961,14 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 
 ## ToDo
 - Add native concurrency and communication tools (green thread, channels, spinlock, STM, mutex) and async i/o, 
-- Introduce caching of function output
-- Build, versioning, packaging and distribution
-- Dependency definition and management 
-- Plugin system to load/unload libraries at runtime
+- Build, dependency management, versioning, packaging and distribution
+- Plugin system to load/unload libraries at runtime without need to re-compile
 - Debugger and plugins for Editors
-- Atomic operations, mutex and other locking features.
-- Testing facilities
-- Define a notation to access a location inside a binary and sizeof function
-- Actor/Message passing helpers for concurrency.
-- Helper functions to work with binary (memcpy, memmove, ...)
-- Details of inline assembly flags and their values (OS, CPU, ...)
+- Testing and profiling features
 - Distributed processing: Moving code to another machine and running there (Actor model + channel)
 - Define notation to write low-level (Assembly or IR) code in a function body and also force inline.
-- Function to get dynamic type of a tuple variable
-- Add notation for axioms and related operators like `=>` to protocol to be able to define semantics of a protocol.
-- Vet to format code based on the standard (indentation, spacing, brace placement, warning about namings, ...). And force it before compilation.
+- Add notation for axioms and related operators like `=>` to protocol tuples to be able to define semantics of a protocol.
+- Vet to format code based on the standard (indentation, spacing, brace placement, warning about namings, ...).
 - Compiler will detect local variable updates which are not escape and optimize them to use mutable variable (for example for numerical calculations which happens only inside a function).
 - Channels are the main tool for concurrency and coordination.
-- Protocol/type-class/concepts
-- Provide ability to update used libraries without need to re-compile main application
+- Provide ability to update used libraries without need to re-compile main application.
