@@ -3692,5 +3692,60 @@ process(myInt) //this will call the second function
 ```
 It will pullote syntax without a clear benefit.
 
-? - Can we implement exres using native features of the language?
+N - Can we implement exres using native features of the language?
 Just like autoBind?
+so developer is not forced to do or avoid doing something?
+1 - No re-assign or assign to other vars.
+2 - pass them or return them or dispose them.
+3 - if you pass, you cannot use them after that.
+4 - cannot be capture by closure.
+How can we implement these rules using functions?
+Can we add a layer on top of internal resource? So user can only work with them using those functions.
+but these items are mostly built-in features. capture or assignment.
+optimistic: Let them do whatever they like, if something goes wrong I will throw error.
+pessimistic: Don't let them cause any trouble. 
+in opt view, I need to monitor and manage each operation to make sure it is not an error. 
+in pess view, I don't need to monitor anything because the rules in-place by compiler make sure nothing goes wrong.
+opt view is easier for the developer but expensive for compiler and runtime system.
+pess view is more difficult for the developer (he has to deal with a lot of rules) but easy for compiler runtime system.
+pess view is good for runtime performance.
+opt view is good for developer work.
+performance is last goal, top goal is simplicity. 
+All these rules indicate complexity!
+So let's do it like this. 
+Minimum rules and restrictions. Let developer do whatever he likes.
+At runtime (or better at compile time), throw error if something wrong is being done.
+1 - No re-assign or assign to other vars -> can assign or even modify
+2 - pass them or return them or dispose them -> can just let them be there without pass or return or dispose.
+3 - if you pass, you cannot use them after that -> can use after passing.
+4 - cannot be capture by closure -> can captures
+Everything is like a normal integer variable.
+But at runtime we will throw error if it is shared between multiple threads.
+We can do this for all other types but it will be very expensive, which is not worth it.
+So how are we going to define this? by using something like phantom types.
+`type FileDescriptor := Resource[int]`
+`Resource` type specified exres-es.
+Anything which is based on Resource is a resource and will be checked for single-thread use at runtime.
+And let's do it like this: Each function which creates or accepts a resource, must call dispose for it.
+Runtime will count references and do the actual dispose when it has no more references. unless they are returning the resource as an output.
+1 - No re-assign or assign to other vars -> compiler checks for this and ban resource on the right side of `=`.
+2 - pass them or return them or dispose them -> just call dispose unless you return the resource.
+3 - if you pass, you cannot use them after that -> can use after passing.
+4 - cannot be capture by closure -> can capture.
+
+N - Can we prevent re-assignment in the code? maybe use `val`? NO! This solves only some of the problems but not all of them.
+What will be the use of this?
+1. Closure can only capture `val`s. No need to enforce rule: cannot re-assign it captured in closure.
+2. for exclusive resources, they must be defined as `val`.
+But isn't this like a loop? what happens when I send a `var` to a function?
+There are two complexities here: 
+1. adding `val` to the language.
+2. stating you cannot re-assign exclusive resource.
+I think 2 has less complexity for the language.
+maybe we can eliminate the rules by adding special code blocks:
+```
+var f = openFile() {
+  work with f variable without ability to re-assign it.
+} this will call dispose.
+```
+But what about returning a resource?
