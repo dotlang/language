@@ -1,4 +1,4 @@
-# dot Programming Language Reference
+# dot Programming Language (dotLang)
 
 Make it as simple as possible, but not simpler. (A. Einstein) 
 
@@ -21,9 +21,10 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, add `$` prefix for untyped tuple literals to make it more readable, added `switch` and `while` keywords, renamed `loop` to `for`
+- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, add `$` prefix for untyped tuple literals to make it more readable, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization
 
 # Introduction
+
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions to keep in mind. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
 
 That's why I am creating a new programming language: dot (or dotLang). 
@@ -49,13 +50,14 @@ As a 10,000 foot view of the language, code is written in files (called modules)
 
 **Compared to C**: C language + Garabage collector + first-class functions + template programming + better union data types + module system + flexible polymorphism + simple and powerful standard library + lambda expressions + closure + powerful built-in data types (map, string,...) + simpler primitives + multiple dispatch + sane defaults + full immutability - ambiguities - pointers - macros - header files.
 
-**Compared to Scala**: Scala + multiple dispatch + full immutability + simpler primitives - dependency on JVM - cryptic syntax - trait - custom operators - variance - implicit.
+**Compared to Scala**: Scala + multiple dispatch + full immutability + simpler primitives - *dependency on JVM* - *cryptic syntax* - trait - custom operators - variance - implicit.
 
-**Compared to Go**: Go + generics + full immutability + multiple dispatch + union types + sane defaults + better orthogonality (e.g. creating maps) + simpler primitives - pointers - interfaces - global variables.
+**Compared to Go**: Go + *generics* + full immutability + multiple dispatch + union types + sane defaults + better orthogonality (e.g. creating maps) + simpler primitives - pointers - interfaces - global variables.
 
 ## Components
 
 dotLang consists of these components:
+
 1. The language specification (this document)
 2. A command line tool to compile, debug and package applications
 3. Runtime system: Responsible for memory allocation and management, interaction with the Operating System and other external libraries and handling concurrency.
@@ -73,10 +75,12 @@ core
 |-----|-----http  
 |-----|-----tcp  
 ```
+
 In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages.
 - Unlike many other languages, modules are stateless. Meaning there is no variable or static code defined in a module-level.
 
 ## General rules
+
 - **Encoding**: Modules are encoded in UTF-8 format.
 - **Whitespace**: Any instance of space(' '), tab(`\t`), newline(`\r` and `\n`) are whitespace and will be ignored. 
 - **Indentation**: Indentation must be done using spaces, not tabs. Using 4 spaces is advised but not mandatory.
@@ -92,6 +96,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 - **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Primitive data types and basic types defined in core (`bool`, `string` and `nothing`) are the only exceptions to naming rules.
 
 ## Language in a nutshell
+
 01. **Import**: `import /core/std/queue`.
 02. **Primitives**: `int`, `float`, `char`, `union`, `array`, `map` (Extended primitives: `bool`, `string`, `nothing`).
 03. **Values**: `my_var := 19` (type is automatically inferred, everything is immutable).
@@ -106,7 +111,6 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 12. **Function**: `func calculate(x: int, y: string) -> float { return if x > 0 then 1.5 else 2.5  }`.
 13. **Lambda**: `adder := |x:int, y:int| -> x+y`.
 
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
 
 # Type System
 
@@ -424,6 +428,7 @@ stringed := switch ( int_or_float )
 4. Similarly, when a function expects an unnamed type, you cannot pass a named type with same underlying type. 
 5. Another usage of casting is to cast between `int` and `float` and `char` (Example 1).
 
+
 # Functions
 
 ## Declaration
@@ -544,6 +549,7 @@ stringed := switch ( int_or_float )
 6. Example 6 shows invoking a lambda at the point of definition.
 7. You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normall call and replace the lambda inputs with `_`. Example 8 defines a lambda to call `process` functions with `x=10` but `y` and `z` will be inputs.
 
+
 # Generics
 
 ## Declaration
@@ -604,7 +610,6 @@ stringed := switch ( int_or_float )
 4. Examples 8 to 10 indicate using named functions to represent a "sanitized string" data type. Using this named type as the input for `work` function will prevent calling it with normal strings which are not sanitized through `processString` function.
 5. Examples 11 to 14 indicate a door data type which can only be opened if it is already closed properly and vice versa.
 
-===================
 
 # Operators
 
@@ -644,9 +649,11 @@ stringed := switch ( int_or_float )
 9. You can also pass a single argument to right side of the chain by using non-tuple value.
 10. You can use chain operator with custom functions as a monadic processing operator. For example you can streamline calling mutiple error-prone functions without checking for error on each call (Example 9 and 10).
 
+
 # Syntax
 
 ## Special notations
+
 01. `@`  type-id opertor
 02. `$`  tuple, array and map literal declaration
 03. `_`  placeholder for a lambda input or unknown variable in assignments
@@ -667,6 +674,7 @@ Keywords: `import`, `func`, `return`, `type`, `if`, `then`, `else`, `switch`, `w
 Primitive data types: `int`, `float`, `char`, `union`, `array`, `map`
 
 Pre-defined types: `bool`, `string`, `nothing`
+
 
 # Keywords
 
@@ -795,6 +803,7 @@ while x>0 do
 3. You can flatten a nested `for` loop (Example 7).
 4. No `break` or `continue` keywords are defined. You should implement them as part of loop body.
 
+
 # Miscellaneous
 
 ## Exclusive resource
@@ -856,7 +865,9 @@ This is a function, called `main` which returns `0` (very similar to C/C++ excep
 ## Hello world
 
 ## Quick sort
+
 ## Graph class
+
 ## Expression parser
 
 We want to write a function which accepts a string like "2+4-3" and returns result (`3`).
