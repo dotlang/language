@@ -3749,3 +3749,19 @@ var f = openFile() {
 } this will call dispose.
 ```
 But what about returning a resource?
+
+? - Options for writing a compiler:
+1. Full hand-written compiler and parser and assembly generator and optimizer
+2. Use LLVM tools
+3. Fork an existing compiler (Go, Swift, C)
+4. Use GCC tools
+dot: `func process(x:int)->int { return x+1 }`
+Go: `func add(x int) int { return x + 1 }`
+C: `func add(int x) { return x+1 }`
+Swift: `func addTwoInts(a: Int)->Int { return a+1 }`
+Problem with Go: receiver type, interfaces, const,
+Another problem with fork: They are not written in C so it will add either another level of redirection or complexity.
+I can use their parsing and code generation parts to interact with LLVM.
+The only downside for LLVM is compilation speed. But still Go's compilation speed has been decreasing recently.
+Let's go with LLVM.
+What about the language? C or C++?
