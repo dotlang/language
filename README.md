@@ -99,14 +99,14 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 01. **Import**: `import /core/std/queue`.
 02. **Primitives**: `int`, `float`, `char`, `union`, `array`, `map` (Extended primitives: `bool`, `string`, `nothing`).
-03. **Values**: `var my_var = 19` (type is automatically inferred, everything is immutable).
+03. **Values**: `var my_var:int = 19` (type can be automatically inferred, everything is immutable).
 04. **Named type**: `type MyInt := int`
 05. **Tuple**: `type Point := {x: int, y:int, data: float}`.
 06. **Tuple value**: `location = Point{ .x=10, .y=20, .data=1.19 }`
 07. **Composition**: By embedding (only for tuples), `type Circle := {Shape, radius: float}`.
 08. **Generics**: `type Stack[T] := { data: array[T], info: int }`.
-09. **Array**: `var jobQueue: array[int] = [0, 1, 2, 3]`.
-10. **Map**: `var countryPopulation: map[string, int] := [ "US" => 300, "CA" => 180, "UK" =>80 ]`.
+09. **Array**: `var jobQueue: array[int] = $[0, 1, 2, 3]`.
+10. **Map**: `var countryPopulation: map[string, int] := $[ "US" => 300, "CA" => 180, "UK" =>80 ]`.
 11. **Union**: `type Maybe[T] := union[nothing, T]`.
 12. **Function**: `func calculate(x: int, y: string) -> float { return if x > 0 then 1.5 else 2.5  }`.
 13. **Lambda**: `var adder = |x:int, y:int| -> x+y`.
