@@ -3755,6 +3755,9 @@ But what about returning a resource?
 2. Use LLVM tools
 3. Fork an existing compiler (Go, Swift, C)
 4. Use GCC tools
+5. libjit
+6. GNU Lightning
+7. asmjit
 dot: `func process(x:int)->int { return x+1 }`
 Go: `func add(x int) int { return x + 1 }`
 C: `func add(int x) { return x+1 }`
@@ -3765,3 +3768,8 @@ I can use their parsing and code generation parts to interact with LLVM.
 The only downside for LLVM is compilation speed. But still Go's compilation speed has been decreasing recently.
 Let's go with LLVM.
 What about the language? C or C++?
+GNU lightning: provides only a low-level interface for assembling from a standardized RISC assembly language, It does not provide register allocation, data-flow or control-flow analysis, or optimization. `jit_addi(JIT_R0, JIT_R0, 1);`, last mail in list: 2016-09
+Libjit: `jit_value_t temp2 = jit_insn_add(function, temp1, z);`, last email in list: 2017-05, 
+asmjit: last commit May 2017, `a.mov(x86::eax, 1);`, 
+
+
