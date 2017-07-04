@@ -3768,8 +3768,17 @@ I can use their parsing and code generation parts to interact with LLVM.
 The only downside for LLVM is compilation speed. But still Go's compilation speed has been decreasing recently.
 Let's go with LLVM.
 What about the language? C or C++?
-GNU lightning: provides only a low-level interface for assembling from a standardized RISC assembly language, It does not provide register allocation, data-flow or control-flow analysis, or optimization. `jit_addi(JIT_R0, JIT_R0, 1);`, last mail in list: 2016-09
-Libjit: `jit_value_t temp2 = jit_insn_add(function, temp1, z);`, last email in list: 2017-05, 
-asmjit: last commit May 2017, `a.mov(x86::eax, 1);`, 
-
-
+- asmjit: last commit May 2017, `a.mov(x86::eax, 1);`, 
+- GNU lightning: provides only a low-level interface for assembling from a standardized RISC assembly language, It does not provide register allocation, data-flow or control-flow analysis, or optimization. `jit_addi(JIT_R0, JIT_R0, 1);`, last mail in list: 2016-09
+? - Libjit: `jit_value_t temp2 = jit_insn_add(function, temp1, z);`, last email in list: 2017-05, 
+? - myjit: `jit_addi(p, R(1), R(0), 1);` port of Lightning, last commit Mar 2015, has register allocator
+? - transpose to C and compile in-memory
+JIT:
+pro: more control, can do optimizations, more native
+con: can be difficult to generate executable
+TC:
+pro: easier to write compiler, almost everything is already available
+con: implementing some advanced features like green thread can be difficult because we have less control
+-------------
+myjit: C, Github, seems simpler (~10 files), 20K SLOC
+libjit: last commit 2017-05-26, has dpas example, has more files (~50), has `/jit-elf-write.c`, 46K SLOC
