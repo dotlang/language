@@ -801,9 +801,16 @@ while x>0 do
 
 **Notes**
 
-1. You can use `=` to duplicate normal values in the code but for an exclusive resource, this cannt happen because the underlying resource is not cheap to be duplicated. In this case, you cannot use `=` on these resources, but you must use core functions to acquire one one of them.
-2. These types are not supposed to be shared between two threads, because of their inherent mutability. If this happens, runtime will throw error.
-3. Any value of type exclusive resource which is not part of function return value, will be automatically disposed. You can also manually close/dispose them.
+1. These types are not supposed to be shared between two threads, because of their inherent mutability. If this happens, runtime will throw error. They all contain an owner thread identifier which is checked by core functions.
+
+## Dispose
+
+**Semantics**: Any variable which is created inside a function and it not part of function's output, will be automatically released when function is finished. It is done by runtime and before that `dispose` function is called for that type.
+
+**Notes**
+
+1. You can also manually call dispose on local variables after which you cannot used that variable.
+2. If some value is captured by a lambda which is being executed in another thread, that value won't be disposed until the thread is finished.
 
 ## Exception handling
 
