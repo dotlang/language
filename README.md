@@ -79,22 +79,6 @@ core
 In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages.
 - Unlike many other languages, modules are stateless. Meaning there is no variable or static code defined in a module-level.
 
-## General rules
-
-- **Encoding**: Modules are encoded in UTF-8 format.
-- **Whitespace**: Any instance of space(' '), tab(`\t`), newline(`\r` and `\n`) are whitespace and will be ignored. 
-- **Indentation**: Indentation must be done using spaces, not tabs. Using 4 spaces is advised but not mandatory.
-- **Comments**: `//` is used to start a comment.
-- **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0b0101011101` binary number. You can separate digits using undescore: `1_000_000`.
-- **Terminator**: Each statement must be in a separate line and must not end with semicolon.
-- **Order**: Each source code file contains 3 sections: import, definitions and function. The order of the contents of source code file matters: `import` section must come first, then declarations and then functions come at the end. If the order is not met, compiler will give errors.
-- Import section is used to reference other modules that are being used in this module.
-- Definitions section is used to define data types.
-- Function section is used to define function bodies.
-- **Adressing**: Modules are addressed using `/` notation (e.g. `/code/st/net/create_socket`). Where `/` denotes include path.
-- **Encapsulation**: If a name (of a type or function) starts with underscore, means that it is private to the module. If not, it is public.
-- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Primitive data types and basic types defined in core (`bool`, `string` and `nothing`) are the only exceptions to naming rules.
-
 ## Language in a nutshell
 
 01. **Import**: `import /core/std/queue`.
@@ -110,7 +94,8 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 11. **Union**: `type Maybe[T] := union[nothing, T]`.
 12. **Function**: `func calculate(x: int, y: string) -> float { return if x > 0 then 1.5 else 2.5  }`.
 13. **Lambda**: `var adder = |x:int, y:int| -> x+y`.
-
+14. **Loop**: `while x > 0 do x = x-1`
+15. **Iteration**: `for var key <- countryPopulation do print(key)`
 
 # Type System
 
@@ -129,8 +114,8 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 **Notes**
 
-1. `expression` can be a literal, function call, another variable or a combination.
-2. Everything is immutable.
+1. Everything is immutable. Even it you re-assign something to a variable, the original value is not changed.
+2. `expression` can be a literal, function call, another variable or a combination.
 3. You can however re-assign a name to a new value using assignment notation (Refer to the next section).
 4. Example 1 defines a variable called `x` which is of type `integer` and stores value of `12` in it.
 5. Compiler automatically infers the type of variable from expression, so type is optional except in special cases (e.g. `unions`)
@@ -243,11 +228,11 @@ stringed = switch ( int_or_float )
 **Examples**
 
 1. `var arr = $[1, 2, 3]`
-2. `var g = arr(0)` or `g = get(arr, 0)`
+2. `var g = arr[0]`
 3. `var new_arr = set(arr, 0, 10)`
-4. `var new_arr2 = set(arr, [0,1,2], [4,4,4])`
-5. `var two_d_array = $[ [1,2,3], [4,5,6] ]`
-6. `var p = two_d_array(0)(0)`
+4. `var new_arr2 = set(arr, $[0,1,2], $[4,4,4])`
+5. `var two_d_array = $[ $[1,2,3], $[4,5,6] ]`
+6. `var p = two_d_array[0][0]`
 7. `var arr2 = $[0..10]`
 8. `var arr: array[int] = $[1, 2, 3]`
 
@@ -262,13 +247,13 @@ stringed = switch ( int_or_float )
 
 **Semantices**: Represents an array which maps to a limited view into an existing array.
 
-**Syntax**: `array(start, end)`
+**Syntax**: `array[start, end]`
 
 **Examples**
 
-1. `arr = [1..9]`
-2. `slice1 = arr(1, 2)`
-3. `slice2 = arr(0, -1)`
+1. `arr = $[1..9]`
+2. `slice1 = arr[1, 2]`
+3. `slice2 = arr[0, -1]`
 
 **Notes**
 
@@ -284,10 +269,10 @@ stringed = switch ( int_or_float )
 **Examples**
 
 1. `my_map = $["A"=>1, "B"=>2, "C"=>3]`
-2. `item1 = my_map("A")`
+2. `item1 = my_map["A"]`
 3. `map2 = set(my_map, "A", 2)`
 4. `map3 = delete(map2, "B")`
-5. `my_map = map[string,int]$["A"=>1, "B"=>2, "C"=>3]`
+5. `my_map: map[string,int] = $["A"=>1, "B"=>2, "C"=>3]`
 
 **Notes**
 
@@ -660,14 +645,14 @@ stringed = switch ( int_or_float )
 03. `_`  placeholder for a lambda input or unknown variable in assignments
 04. `:`  type declaration for tuple and function input and values
 05. `:=` custom type definition
-06. `=`  type alias, copy value
+06. `=`  type alias, assignment
 07. `=>` map literals
 08. `..` range generator
 09. `->` function declaration, switch
 10. `<-` for/do
-11. `[]` generics, array and map literals (with `$` prefix)
+11. `[]` generics, read from array and map, array and map literals (with `$` prefix)
 12. `{}` code block, tuple definition and tuple literal (with `$` prefix)
-13. `()` function declaration and call, read from array and map
+13. `()` function declaration and call
 14. `||` lambda declaration
 15. `.`  access tuple fields, function chaining (with spaces around)
 
@@ -859,6 +844,22 @@ while x>0 do
 5. You can also create your own custom tuple with appropriate function pointers to be used in sort function. `autoBind` just helps you create this set of function pointers easier.
 6. The tuple defined in example 1 is called a protocol tuple because it only contains function pointers. These tuples are just like normal tuples, so for example you can embed other tuples inside them and as long as they only contains function pointers, they will be protocol tuples.
 7. `autoBind` works only on protocol tuples.
+
+## General rules
+
+- **Encoding**: Modules are encoded in UTF-8 format.
+- **Whitespace**: Any instance of space(' '), tab(`\t`), newline(`\r` and `\n`) are whitespace and will be ignored. 
+- **Indentation**: Indentation must be done using spaces, not tabs. Using 4 spaces is advised but not mandatory.
+- **Comments**: `//` is used to start a comment.
+- **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0b0101011101` binary number. You can separate digits using undescore: `1_000_000`.
+- **Terminator**: Each statement must be in a separate line and must not end with semicolon.
+- **Order**: Each source code file contains 3 sections: import, definitions and function. The order of the contents of source code file matters: `import` section must come first, then declarations and then functions come at the end. If the order is not met, compiler will give errors.
+- Import section is used to reference other modules that are being used in this module.
+- Definitions section is used to define data types.
+- Function section is used to define function bodies.
+- **Adressing**: Modules are addressed using `/` notation (e.g. `/code/st/net/create_socket`). Where `/` denotes include path.
+- **Encapsulation**: If a name (of a type or function) starts with underscore, means that it is private to the module. If not, it is public.
+- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Primitive data types and basic types defined in core (`bool`, `string` and `nothing`) are the only exceptions to naming rules.
 
 # Examples
 
