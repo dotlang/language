@@ -3780,9 +3780,9 @@ TC:
 pro: easier to write compiler, almost everything is already available
 con: implementing some advanced features like green thread can be difficult because we have less control
 -------------
-myjit: C, Github, seems simpler (~10 files), 20K SLOC
-libjit: last commit 2017-05-26, has dpas example, has more files (~50), has `/jit-elf-write.c`, 46K SLOC
-libgccjit: based on GCC
+myjit: C, Github, seems simpler (~10 files), 20K SLOC, last update 2015-03-15, `jit_addi(p, R(1), R(0), 1);`, has reg-allocator
+libjit: last commit 2017-05-26, has dpas example, has more files (~50), has `/jit-elf-write.c`, 46K SLOC, said its not designed for AOT.
+libgccjit: based on GCC, can output executable which is native without need any .so file
 
 Y - if we adopt Rust's model (simplified) we won't need GC and exclusive resources won't be an exception.
 Rust: There can only ever be one binding to a given resource
@@ -3803,3 +3803,24 @@ Exceptions regarding ex-res:
 what about lambda capture?
 if a lambda captures a file descriptor inside a same thread it's fine.
 if another thread -> core functions will notice that.
+
+? - Clarify how a block can return and evaluate to something.
+How to define a normal block:
+`x = { 5 } `
+`x = { process(1,2,3); 6 }`
+```
+x = if cond1 then {
+  process(1,2,3)
+  5
+} else {
+  radasd(Dsadsada)
+  11
+}
+```
+
+
+? - Shall we ban `x=y` format assignments? why?
+It is not very useful but banning it would add to the complexity.
+
+? - will banning re-assignment help readability and simplicity?
+what about loop variables?
