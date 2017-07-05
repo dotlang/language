@@ -812,13 +812,13 @@ while x>0 do
 
 **Semantics**: Represents a system resource (file, network socket, database connection, ...) which needs to have an exclusive owner and cannot be duplicated like normal values.
 
-**Syntax**: Exclusive resources are defined in core (file descriptor, thread, sockets).
+**Syntax**: Exclusive resources are defined in core (file descriptor, thread, sockets) and contain an identifier to indicate their owner thread.
 
 **Notes**
 
 1. You can use `=` to duplicate normal values in the code but for an exclusive resource, this cannt happen because the underlying resource is not cheap to be duplicated. In this case, you cannot use `=` on these resources, but you must use core functions to acquire one one of them.
 2. These types are not supposed to be shared between two threads, because of their inherent mutability. If this happens, runtime will throw error.
-3. Any value of type exclusive resource, must either be returned or disposed by calling `dispose` function (A function can have an exclusive resource as an input, by calling core functions or assigning).
+3. Any value of type exclusive resource which is not part of function return value, will be automatically disposed. You can also manually close/dispose them.
 
 ## Exception handling
 
