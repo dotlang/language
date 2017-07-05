@@ -3782,3 +3782,24 @@ con: implementing some advanced features like green thread can be difficult beca
 -------------
 myjit: C, Github, seems simpler (~10 files), 20K SLOC
 libjit: last commit 2017-05-26, has dpas example, has more files (~50), has `/jit-elf-write.c`, 46K SLOC
+libgccjit: based on GCC
+
+Y - if we adopt Rust's model (simplified) we won't need GC and exclusive resources won't be an exception.
+Rust: There can only ever be one binding to a given resource
+Resource = allocated memory space
+Binding = variable or value name
+Rust: If you pass a binding to a function, the function takes ownership of the resource
+If we mix this with everything immutable maybe we can simplify it.
+When we call a function, ownership is NOT moved to that function in dotLang. The caller is the owner of the data.
+The only problem that we have is with ex-res because they are special. 
+Exceptions regarding ex-res:
+1. you cannot `file1 = file2`
+2. you cannot share with another thread.
+3. dispose automatically if not returned
+
+3 can be stated as a general rule of the language. everything is disposed when function ends.
+1 can be removed. you can do `=` and its fine as long as everything is within a thread.
+2 can be enforced. if everything can be sent to other threads via channels, we can disable creating a channel of that type.
+what about lambda capture?
+if a lambda captures a file descriptor inside a same thread it's fine.
+if another thread -> core functions will notice that.
