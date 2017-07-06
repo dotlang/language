@@ -4035,3 +4035,6 @@ N - Define `IO` type and when a function returns something from io return it ins
 `x()`
 `let h:string = x.value`
 No. We are not interested in writing pure functions.
+
+N - Having `file_open` without close in the code is not good. 
+Compiler is not supposed to do that.
