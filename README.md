@@ -767,15 +767,7 @@ y = switch operation_result, int_or_float
 **Notes**
 
 1. These types are not supposed to be shared between two threads, because of their inherent mutability. If this happens, runtime will throw error. They all contain an owner thread identifier which is checked by core functions.
-
-## Dispose
-
-**Semantics**: Any binding which is created inside a function and it not part of function's output, will be automatically released when function is finished. It is done by runtime and before that `dispose` function is called for that type.
-
-**Notes**
-
-1. You can also manually call dispose on local bindings after which you cannot used that binding.
-2. If some value is captured by a lambda which is being executed in another thread, that value won't be disposed until the thread is finished.
+2. If you are not returning an exclusive resource, you must explicitly call `dispose` on it. Else compiler will issue error.
 
 ## Exception handling
 
