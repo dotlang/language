@@ -4038,3 +4038,14 @@ No. We are not interested in writing pure functions.
 
 N - Having `file_open` without close in the code is not good. 
 Compiler is not supposed to do that.
+
+? - First I need to check the language and make decisions.
+1. compilation passes
+2. memory model, heap, stack, pointer
+3. function call system: by value, by reference, ...
+4. how to represent different data types? union, map, array, ...
+5. Is there a way to implement as much as possible inside the language?
+6. What is the minimum required features that has to be implemented in the core compiler?
+7. How am I going to parse the code and what is the data structure for that?
+8. How to tokenize the source code?
+9. How can I measure size of every variable? e.g. tuple, union, map, ...
