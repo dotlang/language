@@ -3796,7 +3796,6 @@ Exceptions regarding ex-res:
 1. you cannot `file1 = file2`
 2. you cannot share with another thread.
 3. dispose automatically if not returned
-
 3 can be stated as a general rule of the language. everything is disposed when function ends.
 1 can be removed. you can do `=` and its fine as long as everything is within a thread.
 2 can be enforced. if everything can be sent to other threads via channels, we can disable creating a channel of that type.
@@ -3804,10 +3803,46 @@ what about lambda capture?
 if a lambda captures a file descriptor inside a same thread it's fine.
 if another thread -> core functions will notice that.
 
-? - Clarify how a block can return and evaluate to something.
+N - Shall we ban `x=y` format assignments? why?
+It is not very useful but banning it would add to the complexity.
+
+N - Seems we should put more effort on defining scope and ban rebinding.
+`let`
+This will affect: `if, else, while, then, do, for, var, =`
+`var` is very meaningless now. shall we replace it with def or let?
+what about multi-assignment?
+`var x,y = ${10,20}`?
+`let x,y = ...`
+`def` is a bit misleading and let is used in Fsharp, Ocaml, swift
+other options: `const`, `final`, `readonly`
+`let` `def` - def is easier to type.
+Let's go with `def`.
+`def x,y = ${1,20}`
+`def p = ${1,20}`
+`def p := ???`
+but let makes more sense and more intuitive.
+1. bindings are defined using `let`.
+2. no assignment. no re-binding the same name inside a block.
+3. loops are implemented using core functions.
+4. if, then, else, switch? make them more functional?
+5. closure can capture a binding.
+6. exclusive resources are like a normal binding. you can pass them to other functions. if used from multiple threads, will throw error.
+
+N - can we unify return in a function or lambda and evaluation of a block?
+now that we cannot re-assign, a block is more like a lambda or anonymous function.
+`||->{...}` a lambda without input
+`{...}` a block
+`||->{...}()` calling an anon-func, actually same as a block.
+
+N - multiple stmt/exp in same line?
+`let x = ${1,2}`
+`let y = 1,2` ?
+it makes things complicated.
+
+Y - Clarify how a block can return and evaluate to something.
 How to define a normal block:
-`x = { 5 } `
-`x = { process(1,2,3); 6 }`
+`let x = { 5 } `
+`let x = { process(1,2,3), 6 }`
 ```
 x = if cond1 then {
   process(1,2,3)
@@ -3818,9 +3853,185 @@ x = if cond1 then {
 }
 ```
 
+Y - will banning re-assignment help readability and simplicity?
+pro ban: it will force dev to choose good names for new results of computations.
+pro ban: rule for ban re-assign on closure use will be removed and simplified.
+con ban: while loop becomes messy function call.
+con ban: this forces user to write complex if/switch/... to get value of a variable. -> can we have a block-like notation where result of block evaluation will be assigned to variable? then it may make things easier to read and write.
+complete immutability without rebinding, makes code safer in multi-threading cases and easier to refactor and more documented ans easy to read. on the other hand it bans using loops or while as a keyword.
+this if happens will remove: `for, while, do, <-`
+In Closure we have: "If a lambda captures a value in the parent function, that value cannot be re-assigned"
+Erlang and elixir: "They simply don’t allow values in a certain memory location to change.
+Variables aren't the immutable thing. The data they point to is the immutable thing. That's why changing a variable is referred to as rebinding.
+"
+variables are labels for values. 
 
-? - Shall we ban `x=y` format assignments? why?
-It is not very useful but banning it would add to the complexity.
+Y - Shall we implement loop using functions? what about loop variables?
+types of loop:
+1. conditions: `while x > 0 do...`
+2. counted `for x=0..10 do...`
+3. iteration `for x <- arr1 ...`
+we can implement 2 using 3.
+so we just have two types:
+conditional and iteration.
+1. conditions: `while x > 0 do...`
+2. iteration `for x <- arr1 ...`
+2 can simply be done with lambdas. we will loose `do` and some other keywords and syntax will become a but cluttered. 
+Which maybe we can add notations to make it more readable.
+so we need to deal with while (loops with conditions):
+`while x > 0 do ...`
+we can say the loop has two lambdas: first predicate second body.
+body returns an output which will be used for predicate.
+`for, do, while` can be replace.
+`switch` maybe.
+`if, then, else` maybe.
+side effect: assign and declaration will be combined together.
+`func while[T](pred:func(T)->bool, body: func()->T, T)`
+`while( ||->{ !eof(file) }, ||->{ print(readLine(file)) }, nothing)`
+what about this?
+```
+var list: seq[func(x:int)]`
+for i <- [1..100] do {
+  list = append(list, ||->{print(i)})
+}
+for f <- list do f()
+```
+what will this code write? 
+Elixir: "closures in functional languages capture values, not references"
+maybe we can implement while loop with recursion on lambda:
+```
+|x:int|->{ print(x), if x>0 then call_self(x+1) }
+```
+the type of while where we check for number boundary can be implemented with a `map` on an array with that size but for large numbers this can be more efficient. but anyway, compiler can optimize map on a large array.
+`map(|x:int|->print(x), [1..100000])`
+`x = [1..1000000]`
+compiler does not need to allocate 1m memory cells for this. because it will only be read.
+maybe we can define a tail-recursion return statement. this will help implement while efficiently.
+But why add a new keyword? just let developer know we have tail recursion. and he can write:
+`return callme(1,2,3)`.
+Because we allow for functions to have side-effect it makes sense to have `if ( x > 0 ) process()` without else. basically using if as an statement, not an expression.
 
-? - will banning re-assignment help readability and simplicity?
-what about loop variables?
+N - how you write this without assignment?
+```
+result = (JSONObject) super.deserialize(writable);
+
+Object optDlValue = result.opt("dl");
+
+//Do not touch anything if for any reason we dont have a dl field
+if (!(optDlValue instanceof JSONObject)) return result;
+
+JSONObject dlValue = (JSONObject) optDlValue;
+Object urlList = JSONObject.getNames(dlValue);
+
+if (!(urlList instanceof String[])) return result;
+
+for (String url : (String[]) urlList) {
+    handleUrl(dlValue, dlValue, url);
+}
+```
+```
+result = deserialize(writeable)
+dlPart = get(result, "dl")
+if ( typeOf(dlPart) != @JSONObject ) return nothing
+names = getNames(dlPart)
+if ( typeOf(names) != @array[string] ) return nothing
+result = process(names, |s: string|->handleUrl(s))
+return result
+```
+```
+return writeable . deserialize(_) . get(_, "dl") . getNames(_) . process(_, |s:string|->handleUrl(s))
+```
+
+N - can we have if without else? then if will not be expression.
+
+N - Erlang:
+A sequence of expressions is separated by commas:
+Var = fun_call(),
+Var2 = fun_call2(), Var3 = fun_call3(Param1, Param2)
+
+Y - maybe we should remove `[]` syntax for array and map access and use just functions.
+
+Y - how can we write a lambda inside itself?
+If it has a name, it should be possible:
+`ff = |x:int| -> { print(x), ff(x+1) }`
+
+N - if `if` cannot come without else, maybe we should merge them.
+likewise, switch must have `else`. to be checked.
+```
+y = switch ${x,y}
+{
+    ${1,2} -> 
+}
+```
+what if switch does not have else?
+```
+y = switch x 
+{
+  1 -> 2,
+  2 -> 3,
+  3 -> 4,
+}
+```
+if x is 10, what will be the value of y?
+if y can accept nothing, then switch can be non-exhaustive.
+`let y: maybe[int] = switch ...`
+can we remove if, then, else?
+`callSystem(100) if x>100`
+let's keep them. 
+
+Y - replace word `variable` with `binding`.
+
+Y - Can we make switch more powerful? like for multiple items?
+```
+y = switch operation_result 
+{
+    1 or 5 or 9 -> "G",
+    2 -> "H",
+    3 -> "N",
+    _ -> "A"
+}
+```
+```
+y = switch operation_result, int_or_float 
+{
+    1 or 5 or 9, x:int -> "G",
+    2, y:float -> "H",
+    3 -> "N",
+    else -> "A"
+}
+```
+```
+y = switch operation_result, int_or_float 
+{
+    11, _ -> "R",
+    1 or 5 or 9, x:int -> "G",
+    _, y:float -> "H",
+    3 -> "N",
+    _ -> "A"
+}
+```
+```
+y = switch operation_result, int_or_float 
+{
+    11, _ -> "R",
+    1 or 5 or 9, x:int -> "G",
+    _, y:float -> "H",
+    3 -> "N",
+    _ -> "A"
+}
+```
+
+N - sometimes it is really useful to bind behavior and data. like what we do for an array (suggsted above)
+if it is a large array, just store the size and when asked for a specific element, calculate and return.
+this is: type of `array[int]` when you call `[]` should not just do a memory lookup but should have some logic there.
+maybe we can add a new type for it: `dynarray[int]`
+No Makes things complex. User can define a `dynarray` type and use it in the code.
+
+N - Define `IO` type and when a function returns something from io return it inside IO type.
+`var x: IO[string] = readLine()`
+`writeLine(x)`
+`writeLine(IO{"Hello world"})`
+`let x: IO[string] = readLine()`
+`x()`
+`let h:string = x.value`
+No. We are not interested in writing pure functions.
