@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, add `$` prefix for untyped tuple literals to make it more readable, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization, added `autoBind`.
+- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, add `$` prefix for untyped tuple literals to make it more readable, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization, added `autoBind`, ban re-assignment and use `val` for defining bindings (instead of variables), loops are functional
 
 # Introduction
 
@@ -101,49 +101,35 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 ## Declaration
 
-**Semantic**: Used to declare a unique name and assign an expression to it.
+**Semantic**: Used to declare a unique name and bind it to an expression.
 
-**Syntax**: `var identifier [: Type] = expression`
+**Syntax**: `let identifier [: Type] = expression`
 
 **Examples**
 
-1. `var x: int = 12`
-2. `var g = 19.8`
-3. `var a,b = process()`
-4. `var x = y`
+1. `let x: int = 12`
+2. `let g = 19.8`
+3. `let a,b = process()`
+4. `let x = y`
+5. 
+```
+let x = { 
+    process(1,2,3)
+    6 
+}
+```
 
 **Notes**
 
-1. Everything is immutable. Even it you re-assign something to a variable, the original value is not changed.
-2. `expression` can be a literal, function call, another variable or a combination.
+1. Everything is immutable and non re-assignable. But if you are starting a new code block `{...}`, you can define new bindings with same name as bindings outside the block. After the block, those bindings will be invalid.
+2. `expression` can be a literal, function call, another binding or a combination.
 3. You can however re-assign a name to a new value using assignment notation (Refer to the next section).
-4. Example 1 defines a variable called `x` which is of type `integer` and stores value of `12` in it.
-5. Compiler automatically infers the type of variable from expression, so type is optional except in special cases (e.g. `unions`)
-6. There should be one space after `var` and before variable name.
-7. If right side of `=` is a tuple type, you can destruct it's type and assign it's value to different variables (Example 3). See Tuple section for more information.
+4. Example 1 defines a binding called `x` which is of type `integer` and stores value of `12` in it.
+5. Compiler automatically infers the type of binding from expression, so type is optional except in special cases (e.g. `unions`)
+6. There should be one space after `let` and before binding name.
+7. If right side of `=` is a tuple type, you can destruct it's type and assign it's value to different bindings (Example 3). See Tuple section for more information.
 8. Declaration makes a copy of the right side if it is a simple identifier (Example 4). So any future change to `x` will not affect `y`.
-
-## Assignment
-
-**Semantics**: To make a copy of result of an expression and assign it to a pre-declared identifier.
-
-**Syntax**: `identifier = expression`
-
-**Examples**
-
-1. `x = 10`
-2. `x = y`
-3. `x = y + 10 - z`
-4. `x = func1(y) + func2(z) - 10`
-5. `x,y = func6()`
-
-**Notes**:
-
-1. `identifier` must be previously declared using `var` notation.
-2. Type of expression in assignment, must be the same as original type of the identifier.
-3. Note that you cannot change current value of an identifier, but you can use `=` to assign a new value to it.
-4. You can use `=` to do multiple assignment if right side is a function call which returns a tuple. See Functions section for more information.
-5. If right side of `=` is a tuple type, you can destruct it's type and assign it's value to different variables (Example 5). See Tuple section for more information.
+9. You can use a block as the expression and the last evaluated value inside the block will be bound to the given identifier.
 
 ## Primitives
 
@@ -153,9 +139,9 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 **Examples**
 
-1. `x = 12`
-2. `x = 1.918`
-3. `x = 'c'`
+1. `let x = 12`
+2. `let x = 1.918`
+3. `let x = 'c'`
 
 **Notes**:
 
@@ -176,7 +162,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 1. `type true`
 2. `type Saturday, Sunday, Monday`
 3. `type nothing`
-4. `g = nothing`
+4. `let g = nothing`
 5. `if ( x == nothing ) ...`
 
 **Notes**
@@ -213,8 +199,8 @@ stringed = switch ( int_or_float )
 1. `union` is a meta-type which can take form of different data types. It uses generic programming features which are explained in corresponding section. For more information refer to the next section.
 2. Types inside union definition must be named types. Refer to corresponding section.
 3. Example number 1 shows usage of label types to define an enum type to represent days of week.
-4. Example 2, defines a union variable with explicit type and changes it's value to other types in next two examples.
-5. Example 5, uses `typeOf` function to check if there is an integer type inside previously defined union variable.
+4. Example 2, defines a union binding with explicit type and changes it's value to other types in next two examples.
+5. Example 5, uses `typeOf` function to check if there is an integer type inside previously defined union binding.
 6. You can use the syntax in example 6 to cast a union to another type. It will also give a boolean to indicate if the casting was successful.
 7. Example 7, uses `switch` expression to check and match for type of data inside union.
 8. `union[int, union[float, string]]` will be simplified to `union[int, float, string]`
@@ -228,11 +214,11 @@ stringed = switch ( int_or_float )
 **Examples**
 
 1. `var arr = $[1, 2, 3]`
-2. `var g = arr[0]`
+2. `var g = get(arr, 0)`
 3. `var new_arr = set(arr, 0, 10)`
 4. `var new_arr2 = set(arr, $[0,1,2], $[4,4,4])`
 5. `var two_d_array = $[ $[1,2,3], $[4,5,6] ]`
-6. `var p = two_d_array[0][0]`
+6. `var p = get(two_d_array, 0, 0)`
 7. `var arr2 = $[0..10]`
 8. `var arr: array[int] = $[1, 2, 3]`
 
@@ -247,13 +233,13 @@ stringed = switch ( int_or_float )
 
 **Semantices**: Represents an array which maps to a limited view into an existing array.
 
-**Syntax**: `array[start, end]`
+**Syntax**: `slice(array, start, end)`
 
 **Examples**
 
 1. `arr = $[1..9]`
-2. `slice1 = arr[1, 2]`
-3. `slice2 = arr[0, -1]`
+2. `slice1 = slice(arr, 1, 2)`
+3. `slice2 = slice(arr, 0, -1)`
 
 **Notes**
 
@@ -268,11 +254,11 @@ stringed = switch ( int_or_float )
 
 **Examples**
 
-1. `my_map = $["A"=>1, "B"=>2, "C"=>3]`
-2. `item1 = my_map["A"]`
+1. `my_map = $["A": 1, "B": 2, "C": 3]`
+2. `item1 = get(my_map, "A")`
 3. `map2 = set(my_map, "A", 2)`
 4. `map3 = delete(map2, "B")`
-5. `my_map: map[string,int] = $["A"=>1, "B"=>2, "C"=>3]`
+5. `my_map: map[string,int] = $["A": 1, "B": 2, "C": 3]`
 
 **Notes**
 
@@ -341,7 +327,7 @@ stringed = switch ( int_or_float )
  
 ## Tuple
 
-**Semantice**: As a product type, this data type is used to defined a set of coherent variables of different types.
+**Semantice**: As a product type, this data type is used to defined a set of coherent bindings of different types.
 
 **Syntax**: 
 
@@ -365,7 +351,7 @@ stringed = switch ( int_or_float )
 
 1. Field names are not mandatory when defining a tuple literal.
 2. `$` prefix is used as an indicator to indicate a tuple literal without type. In this case you cannot name fields.
-2. Example 1 defines a named type for a 2-D point and next 3 examples show how to initialise variables of that type.
+2. Example 1 defines a named type for a 2-D point and next 3 examples show how to initialise bindings of that type.
 3. Examples 5 and 6 show how to destruct a tuple and extract it's data.
 4. Example 7 shows how to define a tuple based on another tuple.
 5. Example 8 indicates names should match with the expected type.
@@ -523,23 +509,23 @@ stringed = switch ( int_or_float )
 6. `|x:int|->int { return x+1 } (10)`
 7. `func process(x:int, y:float, z: string) -> { ... }`
 8. `lambda1 = process(10, _, _)`
+9. `ff = |x:int| -> { ff(x+1) }`
 
 **Notes**
 1. You can omit output type (Example 2 and 3).
 2. Even if lambda has no input you must include `||` (Example 4).
 3. Lambdas are closures and can capture values in the parent function (Example 4 and 5).
-4. If a lambda captures a value in the parent function, that value cannot be re-assigned. Compiler will detect this. This is to prevent possible data race in which case, a data is modified outside a thread (which is the closure) while the code inside the thread is reading it. Use channels to communicate between threads.
-5. Example 5 shows a function that returns a lambda.
-6. Example 6 shows invoking a lambda at the point of definition.
-7. You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normall call and replace the lambda inputs with `_`. Example 8 defines a lambda to call `process` functions with `x=10` but `y` and `z` will be inputs.
-8. Note that `||` notation is used for a function literal and `()` notation for function type declaration.
-
+4. Example 5 shows a function that returns a lambda.
+5. Example 6 shows invoking a lambda at the point of definition.
+6. You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normall call and replace the lambda inputs with `_`. Example 8 defines a lambda to call `process` functions with `x=10` but `y` and `z` will be inputs.
+7. Note that `||` notation is used for a function literal and `()` notation for function type declaration.
+8. If lambda is assigned to a binding, you can invoke itself from inside (Example 9).
 
 # Generics
 
 ## Declaration
 
-**Semantics**: To define a function or data type which has one or more types defined like variables. These types will get their values when the function is called or the data type is used to initialize a value.
+**Semantics**: To define a function or data type which has one or more types defined like bindings. These types will get their values when the function is called or the data type is used to initialize a value.
 
 **Syntax**: 
 1. `func funcName[T1, T2, T3, ...](input1: type1, input2: T1, input3: T3, ...)->T2`
@@ -642,21 +628,19 @@ stringed = switch ( int_or_float )
 
 01. `@`  type-id opertor
 02. `$`  tuple, array and map literal declaration
-03. `_`  placeholder for a lambda input or unknown variable in assignments
-04. `:`  type declaration for tuple and function input and values
+03. `_`  something we don't know or don't care (placeholder for a lambda input or unknown binding in assignments or switch)
+04. `:`  type declaration for tuple and function input and values, map literal
 05. `:=` custom type definition
 06. `=`  type alias, assignment
-07. `=>` map literals
-08. `..` range generator
-09. `->` function declaration, switch
-10. `<-` for/do
-11. `[]` generics, read from array and map, array and map literals (with `$` prefix)
-12. `{}` code block, tuple definition and tuple literal (with `$` prefix)
-13. `()` function declaration and call
-14. `||` lambda declaration
-15. `.`  access tuple fields, function chaining (with spaces around)
+07. `..` range generator
+08. `->` function declaration, switch
+09. `[]` generics, array and map literals (with `$` prefix)
+10. `{}` code block, tuple definition and tuple literal (with `$` prefix)
+11. `()` function declaration and call
+12. `||` lambda declaration
+13. `.`  access tuple fields, function chaining (with spaces around)
 
-Keywords: `import`, `func`, `return`, `type`, `var`, `if`, `then`, `else`, `switch`, `while`, `do`, `for` 
+Keywords: `import`, `func`, `return`, `type`, `let`, `if`, `then`, `else`, `switch` 
 
 Primitive data types: `int`, `float`, `char`, `union`, `array`, `map`
 
@@ -704,18 +688,19 @@ Pre-defined types: `bool`, `string`, `nothing`
 1. `x = if y>0 then 10 else 20`
 2. `if isFine and x>0 then process(x,y) else return 100`
 3. `callSystem(100) if x>100`
+4. `let f: maybe[int] = if x>0 then 100`
 
 **Notes**
 
-1. `if` is an expression so you can assign it's output to a vaue (Example 1).
-2. You can suffix any statement except variable declaration with `if` statement so it will only be executed if condition is met.
+1. `if` is an expression so you can assign it's output to a value (Example 1). In this case, if you do not include `else` clause, the target must be able to accept `nothing` (Example 4) (Missing `else` means `else nothing`).
+2. You can suffix any statement except binding declaration with `if` statement so it will only be executed if condition is met.
 3. You should not include parentheses for if argument.
 
 ## switch
 
 **Semantics**: A shortcut for multiple `if`s for values or a union data type.
 
-**Syntax**: `switch expression { case1-> statements, case2-> statements, ..., else-> statement }`
+**Syntax**: `switch expression { case1-> statements, case2-> statements, ..., _-> statement }`
 `switch unionValue { type1 -> statements, name: type2 -> statements, ... }`
 
 **Examples**
@@ -739,57 +724,37 @@ y = switch int_or_float_or_string
     else -> "X"
 }
 ```
-
-**Notes**
-1. `else` must be the laste case.
-2. In the `switch` expression for union data type, the name assigned for each type in a case will capture the internal value of the union if it has that type.
-3. You should not include parentheses for switch argument.
-
-## while, do
-
-**Semantics**: To define a loop to be executed as long as a condition is met
-
-**Syntax**: `while condition do code-block`
-
-**Examples**
-
-1. `while true do print("Hello")`
-2. 
+3.
 ```
-while x>0 do
+y = switch operation_result 
 {
-    x = x-1
-    print(x)
+    1 or 5 or 9 -> "G",
+    2 -> "H",
+    3 -> "N",
+    _ -> "A"
+}
+```
+4.
+```
+y = switch operation_result, int_or_float 
+{
+    11, _ -> "R",
+    1 or 5 or 9, x:int -> "G",
+    _, y:float -> "H",
+    3 -> "N",
+    _,_ -> "A"
 }
 ```
 
 **Notes**
-1. If the code-block is just one line you can omit braces.
-2. You should not include parentheses for while condition.
 
-## for, do
-
-**Semantics**: To define an iteration loop over a value
-
-**Syntax**: `for value <- iterable_value do { code-block }`
-
-**Examples**
-
-1. `for var x <- [2..10] do print("Hello world")`
-2. `for var item <- my_array do printf(item)`
-3. `for var key <- my_map do ...`
-4. `type Iterator[T] := {...}`
-5. `my_iterator = getIterator(myBitSet)`
-6. `for var g <- my_iterator do ...`
-7. `for var x,y <- [2..10], [1..9] do printf("Hello world " +x +y)`
-
-**Notes**
-
-1. You can use `for` to iterate over an array (Example 1 and 2) or a map (Example 3).
-2. `for` can also be used to iterate over any custom iterator (Example 4 to 6).
-3. You can flatten a nested `for` loop (Example 7).
-4. No `break` or `continue` keywords are defined. You should implement them as part of loop body.
-
+1. In the `switch` expression for union data type, the name assigned for each type in a case will capture the internal value of the union if it has that type.
+2. You should not include parentheses for switch argument.
+3. If result of switch is not used or it is assigned to a binding which can accept `nothing`, then switch does not need to be exhaustive. Else it must cover all cases or have `else` clause. (Missing `_` means `_ -> nothing`).
+4. You can match a `union` binding with either a value or a type.
+5. You can combine multiple values in `switch` with `or` (Example 3).
+6. You can switch based on multiple bindings (Example 4).
+7. You cannot use conditions with `switch`. In this case you should use `if`.
 
 # Miscellaneous
 
@@ -805,11 +770,11 @@ while x>0 do
 
 ## Dispose
 
-**Semantics**: Any variable which is created inside a function and it not part of function's output, will be automatically released when function is finished. It is done by runtime and before that `dispose` function is called for that type.
+**Semantics**: Any binding which is created inside a function and it not part of function's output, will be automatically released when function is finished. It is done by runtime and before that `dispose` function is called for that type.
 
 **Notes**
 
-1. You can also manually call dispose on local variables after which you cannot used that variable.
+1. You can also manually call dispose on local bindings after which you cannot used that binding.
 2. If some value is captured by a lambda which is being executed in another thread, that value won't be disposed until the thread is finished.
 
 ## Exception handling
@@ -977,6 +942,7 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Define notation to write low-level (Assembly or IR) code in a function body and also force inline.
 - Add notation for axioms and related operators like `=>` to protocol tuples to be able to define semantics of a protocol.
 - Vet to format code based on the standard (indentation, spacing, brace placement, warning about namings, ...).
-- Compiler will detect local variable updates which are not escape and optimize them to use mutable variable (for example for numerical calculations which happens only inside a function).
+- Compiler will detect local binding updates which are not escape and optimize them to use mutable binding (for example for numerical calculations which happens only inside a function).
 - Channels are the main tool for concurrency and coordination.
 - Provide ability to update used libraries without need to re-compile main application.
+- implementation for loops (while, for, iteration, map, ...) in core.
