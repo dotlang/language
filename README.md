@@ -938,3 +938,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Channels are the main tool for concurrency and coordination.
 - Provide ability to update used libraries without need to re-compile main application.
 - implementation for loops (while, for, iteration, map, ...) in core.
+- Parallel compilation
