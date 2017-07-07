@@ -83,19 +83,17 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 01. **Import**: `import /core/std/queue`.
 02. **Primitives**: `int`, `float`, `char`, `union`, `array`, `map` (Extended primitives: `bool`, `string`, `nothing`).
-03. **Values**: `var my_var:int = 19` (type can be automatically inferred, everything is immutable).
+03. **Binding**: `let my_var:int = 19` (type can be automatically inferred, everything is immutable).
 04. **Named type**: `type MyInt := int`
 05. **Tuple**: `type Point := {x: int, y:int, data: float}`.
 06. **Tuple value**: `location = Point{ .x=10, .y=20, .data=1.19 }`
 07. **Composition**: By embedding (only for tuples), `type Circle := {Shape, radius: float}`.
 08. **Generics**: `type Stack[T] := { data: array[T], info: int }`.
-09. **Array**: `var jobQueue: array[int] = $[0, 1, 2, 3]`.
-10. **Map**: `var countryPopulation: map[string, int] := $[ "US" => 300, "CA" => 180, "UK" =>80 ]`.
+09. **Array**: `let jobQueue: array[int] = $[0, 1, 2, 3]`.
+10. **Map**: `let countryPopulation: map[string, int] := $[ "US": 300, "CA": 180, "UK": 80 ]`.
 11. **Union**: `type Maybe[T] := union[nothing, T]`.
 12. **Function**: `func calculate(x: int, y: string) -> float { return if x > 0 then 1.5 else 2.5  }`.
-13. **Lambda**: `var adder = |x:int, y:int| -> x+y`.
-14. **Loop**: `while x > 0 do x = x-1`
-15. **Iteration**: `for var key <- countryPopulation do print(key)`
+13. **Lambda**: `let adder = |x:int, y:int| -> x+y`.
 
 # Type System
 
@@ -179,11 +177,11 @@ let x = {
 **Examples**
 
 1. `type day_of_week := union[SAT, SUN, MON, TUE, WED, THU, FRI]`
-2. `var int_or_float: unon[int, float] = 11`
-3. `var int_or_float = 12.91`
-4. `var int_or_float = 100`
-5. `var has_int = typeOf(int_or_float) == @int`
-6. `var int_value, has_int = int{int_or_float}`
+2. `let int_or_float: unon[int, float] = 11`
+3. `let int_or_float = 12.91`
+4. `let int_or_float = 100`
+5. `let has_int = typeOf(int_or_float) == @int`
+6. `let int_value, has_int = int{int_or_float}`
 7.
 ```
 stringed = switch ( int_or_float ) 
@@ -213,14 +211,14 @@ stringed = switch ( int_or_float )
 
 **Examples**
 
-1. `var arr = $[1, 2, 3]`
-2. `var g = get(arr, 0)`
-3. `var new_arr = set(arr, 0, 10)`
-4. `var new_arr2 = set(arr, $[0,1,2], $[4,4,4])`
-5. `var two_d_array = $[ $[1,2,3], $[4,5,6] ]`
-6. `var p = get(two_d_array, 0, 0)`
-7. `var arr2 = $[0..10]`
-8. `var arr: array[int] = $[1, 2, 3]`
+1. `let arr = $[1, 2, 3]`
+2. `let g = get(arr, 0)`
+3. `let new_arr = set(arr, 0, 10)`
+4. `let new_arr2 = set(arr, $[0,1,2], $[4,4,4])`
+5. `let two_d_array = $[ $[1,2,3], $[4,5,6] ]`
+6. `let p = get(two_d_array, 0, 0)`
+7. `let arr2 = $[0..10]`
+8. `let arr: array[int] = $[1, 2, 3]`
 
 **Notes**
 
@@ -237,9 +235,9 @@ stringed = switch ( int_or_float )
 
 **Examples**
 
-1. `arr = $[1..9]`
-2. `slice1 = slice(arr, 1, 2)`
-3. `slice2 = slice(arr, 0, -1)`
+1. `let arr = $[1..9]`
+2. `let slice1 = slice(arr, 1, 2)`
+3. `let slice2 = slice(arr, 0, -1)`
 
 **Notes**
 
@@ -254,11 +252,11 @@ stringed = switch ( int_or_float )
 
 **Examples**
 
-1. `my_map = $["A": 1, "B": 2, "C": 3]`
-2. `item1 = get(my_map, "A")`
-3. `map2 = set(my_map, "A", 2)`
-4. `map3 = delete(map2, "B")`
-5. `my_map: map[string,int] = $["A": 1, "B": 2, "C": 3]`
+1. `let my_map = $["A": 1, "B": 2, "C": 3]`
+2. `let item1 = get(my_map, "A")`
+3. `let map2 = set(my_map, "A", 2)`
+4. `let map3 = delete(map2, "B")`
+5. `let my_map: map[string,int] = $["A": 1, "B": 2, "C": 3]`
 
 **Notes**
 
@@ -315,7 +313,7 @@ stringed = switch ( int_or_float )
 2. `type IntArray := array[int]`
 3. `type Point := {x: int, y: int}`
 4. `type bool := union[true, false]`
-5. `var x: MyInt = 10`, `var y: MyInt = MyInt{x}`
+5. `let x: MyInt = 10`, `let y: MyInt = MyInt{x}`
 
 **Notes**
 
@@ -644,7 +642,7 @@ Keywords: `import`, `func`, `return`, `type`, `let`, `if`, `then`, `else`, `swit
 
 Primitive data types: `int`, `float`, `char`, `union`, `array`, `map`
 
-Pre-defined types: `bool`, `string`, `nothing`
+Extended primitives: `bool`, `string`, `nothing`
 
 
 # Keywords
@@ -659,10 +657,11 @@ Pre-defined types: `bool`, `string`, `nothing`
 2. `import /core/std/{Queue, Stack, Heap}`
 3. `import /core/std/Data/`
 4. `/core/std/data/Process(1,2,3)`
-5. `x: /core/std/data/Stack = ...`
+5. `let x: /core/std/data/Stack = ...`
 6. `func myProcess(x: int, y:int, z:int) -> /core/std/data/process(x,y,z)`
 7. `type myStack = /core/std/data/Stack`
 8. `import git:/github.com/adsad/dsada`
+9. `import svn:/bitcucket.com/adsad/dsada`
 
 **Notes**
 
@@ -681,11 +680,13 @@ Pre-defined types: `bool`, `string`, `nothing`
 
 **Semantics**: A basic control structure to execute a piece of code based on a condition.
 
-**Syntax**: `if condition then { code block } else if condition then { code block } else { code block}`
+**Syntax**: 
+1. `if condition then { code block } else if condition then { code block } else { code block}`
+2. `if condition then expression else if condition then expression else expression`
 
 **Examples**
 
-1. `x = if y>0 then 10 else 20`
+1. `let x = if y>0 then 10 else 20`
 2. `if isFine and x>0 then process(x,y) else return 100`
 3. `callSystem(100) if x>100`
 4. `let f: maybe[int] = if x>0 then 100`
@@ -693,7 +694,7 @@ Pre-defined types: `bool`, `string`, `nothing`
 **Notes**
 
 1. `if` is an expression so you can assign it's output to a value (Example 1). In this case, if you do not include `else` clause, the target must be able to accept `nothing` (Example 4) (Missing `else` means `else nothing`).
-2. You can suffix any statement except binding declaration with `if` statement so it will only be executed if condition is met.
+2. You can suffix any statement with `if` statement so it will only be executed if condition is met.
 3. You should not include parentheses for if argument.
 
 ## switch
@@ -712,7 +713,7 @@ y = switch operation_result
     1 -> "G",
     2 -> "H",
     3 -> "N",
-    else -> "A"
+    _ -> "A"
 }
 ```
 2.
@@ -721,7 +722,7 @@ y = switch int_or_float_or_string
 {
     g:int -> 1+g,
     s:string -> 10,
-    else -> "X"
+    _ -> "X"
 }
 ```
 3.
