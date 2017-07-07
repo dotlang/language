@@ -4059,3 +4059,5 @@ compiler only treats specially for map literals.
 but still we will need union. 
 solution 1: define maybe as an extended primitive. then union can be implemented using maybe.
 solution 2: just define union with normal types + tag field. compiler will handle to make sure only one of them is allocated.
+
+? - `A.b` can also be considered as a function (which definitely must be inlined).
