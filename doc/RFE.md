@@ -4049,3 +4049,13 @@ Compiler is not supposed to do that.
 7. How am I going to parse the code and what is the data structure for that?
 8. How to tokenize the source code?
 9. How can I measure size of every variable? e.g. tuple, union, map, ...
+
+? - Map can be implemented using a linked-list. and linked list is just a tuple.
+shall we make map an extended primitive?
+compiler only treats specially for map literals.
+
+? - `union` can also be implemented using a tuple with maybe[t] for each type + compiler and runtime helps.
+`union[int, float, char]` ~ `{a: union[int, nothing], b: union[float, char], c: union[char, nothing]}`
+but still we will need union. 
+solution 1: define maybe as an extended primitive. then union can be implemented using maybe.
+solution 2: just define union with normal types + tag field. compiler will handle to make sure only one of them is allocated.
