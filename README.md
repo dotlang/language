@@ -27,7 +27,7 @@ June 26, 2017
 
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions to keep in mind. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
 
-That's why I am creating a new programming language: dot (or dotLang). 
+That's why I am creating a new programming language: dotLang. 
 
 dot programming language (or dotLang for short) is an imperative, static-typed, general-purpose language based on author's experience and doing research on many programming languages (namely Go, Java, C\#, C, C++, Scala, Rust, Objective-C, Python, Perl, Smalltalk, Ruby, Swift, Haskell, Clojure, Eiffel, Elm, Falcon, Julia, F\# and Oberon-2). 
 I call the paradigm of this language "Data-oriented". This is a combination of Object Oriented and Functional approach and it is designed to work with data. There are no objects or classes. Only data types and functions. But most useful features of the OOP (encapsulation, abstraction, inheritance and polymorphism) are provided to some extent. On the other hand, we have first-class and higher-order functions borrowed from functional approach.
@@ -35,8 +35,8 @@ I call the paradigm of this language "Data-oriented". This is a combination of O
 Three main objectives are pursued in the design of this programming language:
 
 1. **Simplicity**: The code written in dotLang should be consistent, easy to write, read and understand. There has been a lot of effort to make sure there are as few exceptions and rules as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them. Very few things are done implicitly and transparently by the compiler or runtime system. Also I tried to reduce need for nested blocks and parentheses as much as possible.
-2. **Expressiveness**: It should give enough tools to the developer to produce readable and maintainable code. This requires a comprehensive standard library in addition to language notations.
-3. **Performance**: The compiler will compile to native code which will result in high performance. We try to do as much as possible during compilation (optimizations, de-refrencing, in-place mutation, sending by copy or reference, type checking, phantom types, inlining, exclusive resource handling, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in standard library will be implemented in a lower level language.
+2. **Expressiveness**: It should give enough tools to the developer to produce readable and maintainable code. This requires a comprehensive standard library in addition to language notations (lambdas, closure, generics, union data types, maps and arrays, chaining function calls, ...).
+3. **Performance**: The compiler will compile to native code which will result in high performance. We try to do as much as possible during compilation phase (optimizations, de-refrencing, in-place mutation, sending by copy or reference, type checking, phantom types, inlining, dispose function, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in standard library will be implemented in a lower level language.
 
 Achieving all of the above goals at the same time is impossible so there will definitely be trade-offs and exceptions.
 The underlying rules of design of this language are 
@@ -274,7 +274,7 @@ stringed = switch ( int_or_float )
 **Examples**
 
 1. `g = true`
-3. `str = 'Hello world!'`
+3. `str = "Hello world!"`
 
 **Notes**
 
@@ -299,7 +299,6 @@ stringed = switch ( int_or_float )
 1. In the above example, `MyInt` will be exactly same as `int`, without any difference.
 2. This can be used in refactoring process or when there is a name conflict between types imported from different modules. See `import` section for more information.
 3. There must be a single space between `type` and alias name.
-
 
 ## Named type
 
