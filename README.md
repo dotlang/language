@@ -62,7 +62,7 @@ dotLang consists of these components:
 2. A command line tool to compile, debug and package applications
 3. Runtime system: Responsible for memory allocation and management, interaction with the Operating System and other external libraries and handling concurrency.
 4. Core library: This package is used to implement some basic, low-level features which can not be simply implemented using pure dotLang language.
-5. Standard library: A layer above runtime and `core` which contains some general-purpose and common functions and data structures.
+5. Standard library: A layer above runtime and core which contains some general-purpose and common functions and data structures.
 
 ## Code organization
 
@@ -81,19 +81,19 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 ## Language in a nutshell
 
-01. **Import**: `import /core/std/queue`.
-02. **Primitives**: `int`, `float`, `char`, `union`, `array`, `map` (Extended primitives: `bool`, `string`, `nothing`).
-03. **Binding**: `let my_var:int = 19` (type can be automatically inferred, everything is immutable).
+01. **Import**: `import /core/std/queue`
+02. **Primitives**: `int`, `float`, `char`, `union`, `array`, `map` (Extended primitives: `bool`, `string`, `nothing`)
+03. **Binding**: `let my_var:int = 19` (type can be automatically inferred, everything is immutable)
 04. **Named type**: `type MyInt := int`
-05. **Tuple**: `type Point := {x: int, y:int, data: float}`.
-06. **Tuple value**: `location = Point{ .x=10, .y=20, .data=1.19 }`
-07. **Composition**: By embedding (only for tuples), `type Circle := {Shape, radius: float}`.
-08. **Generics**: `type Stack[T] := { data: array[T], info: int }`.
-09. **Array**: `let jobQueue: array[int] = $[0, 1, 2, 3]`.
-10. **Map**: `let countryPopulation: map[string, int] := $[ "US": 300, "CA": 180, "UK": 80 ]`.
-11. **Union**: `type Maybe[T] := union[nothing, T]`.
-12. **Function**: `func calculate(x: int, y: string) -> float { return if x > 0 then 1.5 else 2.5  }`.
-13. **Lambda**: `let adder = |x:int, y:int| -> x+y`.
+05. **Tuple**: `type Point := {x: int, y:int, data: float}`
+06. **Tuple literal**: `location = Point{ .x=10, .y=20, .data=1.19 }`
+07. **Composition**: By embedding (only for tuples), `type Circle := {Shape, radius: float}`
+08. **Array**: `let jobQueue: array[int] = $[0, 1, 2, 3]`
+09. **Generics**: `type Stack[T] := { data: array[T], info: int }`
+10. **Map**: `let countryPopulation: map[string, int] := $[ "US": 300, "CA": 180, "UK": 80 ]`
+11. **Union**: `type Maybe[T] := union[nothing, T]`
+12. **Function**: `func calculate(x: int, y: string) -> float { return if x > 0 then 1.5 else 2.5  }`
+13. **Lambda**: `let adder = |x:int, y:int| -> x+y`
 
 # Type System
 
@@ -127,7 +127,7 @@ let x = {
 6. There should be one space after `let` and before binding name.
 7. If right side of `=` is a tuple type, you can destruct it's type and assign it's value to different bindings (Example 3). See Tuple section for more information.
 8. Declaration makes a copy of the right side if it is a simple identifier (Example 4). So any future change to `x` will not affect `y`.
-9. You can use a block as the expression and the last evaluated value inside the block will be bound to the given identifier.
+9. You can use a block as the expression and the last evaluated value inside the block will be bound to the given identifier (Example 5).
 
 ## Primitives
 
