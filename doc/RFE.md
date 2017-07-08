@@ -4049,6 +4049,11 @@ Compiler is not supposed to do that.
 7. How am I going to parse the code and what is the data structure for that?
 8. How to tokenize the source code?
 9. How can I measure size of every variable? e.g. tuple, union, map, ...
+- union is a pointer to structure which is tag+data where tag represents the data type.
+- almost everything is allocated on stack except return data and things that are passed to a thread code. These data are either defined by their value or allocated on heap and use a pointer.
+- Each type will have it's unique number (result of `@Type`) assigned by the compiler.
+- Each function's signature is transformed into a unique string containing name, input type and output type. And each function call is converted to a call to a unique function name based on type of the arguments.
+
 
 ? - Map can be implemented using a linked-list. and linked list is just a tuple.
 shall we make map an extended primitive?
@@ -4063,3 +4068,12 @@ solution 2: just define union with normal types + tag field. compiler will handl
 ? - `A.b` can also be considered as a function (which definitely must be inlined).
 
 ? - Maybe we can use a set of rules or regex to convert code to LLVM IR.
+or a set of macros. 
+these can indicate micro-commands to be executed by the compiler so we will be coding our compiler into that notation.
+Compiler just needs to scan the source code, apply macros and run microcommands.
+This will be a very special macro language which is designed for this compiler and this language.
+
+? - https://medium.com/@greglo/descopes-a-missing-compiler-feature-b4a5fa0751c8
+How to remove a binding out of scope?
+`unlet`?
+`dispose`?
