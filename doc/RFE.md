@@ -4061,3 +4061,5 @@ solution 1: define maybe as an extended primitive. then union can be implemented
 solution 2: just define union with normal types + tag field. compiler will handle to make sure only one of them is allocated.
 
 ? - `A.b` can also be considered as a function (which definitely must be inlined).
+
+? - Maybe we can use a set of rules or regex to convert code to LLVM IR.
