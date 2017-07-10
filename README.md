@@ -758,6 +758,18 @@ y = switch operation_result, int_or_float
 
 # Miscellaneous
 
+## dispose
+
+**Semantics**: This function is used to invalid a binding and release any memory or resources associated with it.
+
+**Syntax**: `dispose(x)`
+
+**Notes**
+
+1. You cannot use a variable after calling dispose on it.
+2. You can call dispose on any variable.
+3. Dispose function will properly handle any resource release like closing file or socket or ... .
+
 ## Exclusive resource
 
 **Semantics**: Represents a system resource (file, network socket, database connection, ...) which needs to have an exclusive owner and cannot be duplicated like normal values.
