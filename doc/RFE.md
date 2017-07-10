@@ -4039,6 +4039,21 @@ No. We are not interested in writing pure functions.
 N - Having `file_open` without close in the code is not good. 
 Compiler is not supposed to do that.
 
+N - Providing security like Kerberos
+So user with credentials X can only call function f and g with arguments "A" and "B".
+As an additional and separate component like Kerberos and Ranger
+Which user can insert data in a table?
+On the server side we can have a kerberos server accessible via rest api.
+on the client side, a kerberos enabled app can ask server for each action.
+This does not need to need any change on the language.
+
+Y - https://medium.com/@greglo/descopes-a-missing-compiler-feature-b4a5fa0751c8
+How to remove a binding out of scope?
+`unlet`?
+`dispose`? yes. we should be able to call dispose on everything and compiler checks and prevents access something after calling dispose.
+So we won't have to have close_file and close-socket and...
+only dispose
+
 ? - First I need to check the language and make decisions.
 1. compilation passes
 2. memory model, heap, stack, pointer
@@ -4053,7 +4068,6 @@ Compiler is not supposed to do that.
 - almost everything is allocated on stack except return data and things that are passed to a thread code. These data are either defined by their value or allocated on heap and use a pointer.
 - Each type will have it's unique number (result of `@Type`) assigned by the compiler.
 - Each function's signature is transformed into a unique string containing name, input type and output type. And each function call is converted to a call to a unique function name based on type of the arguments.
-
 
 ? - Map can be implemented using a linked-list. and linked list is just a tuple.
 shall we make map an extended primitive?
@@ -4073,7 +4087,3 @@ these can indicate micro-commands to be executed by the compiler so we will be c
 Compiler just needs to scan the source code, apply macros and run microcommands.
 This will be a very special macro language which is designed for this compiler and this language.
 
-? - https://medium.com/@greglo/descopes-a-missing-compiler-feature-b4a5fa0751c8
-How to remove a binding out of scope?
-`unlet`?
-`dispose`?
