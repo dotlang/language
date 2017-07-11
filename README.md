@@ -370,6 +370,7 @@ stringed = switch ( int_or_float )
 4. You can define a union type which accepts all tuple types which embed a specific tuple type. See examples 4 and 5.
 5. Note that polymorphism does not apply to generics. So `array[Circle]` cannot substitute `array[Shape]`. But you can have `array[Circle|Square]` to have a mixed array of different types.
 6. We use closed recursion to dispatch function calls. This means if a function call is forwarded from `Circle` to `Shape` and inside that function another second function is called which has candidates for both `Circle` and `Shape` the one for `Shape` will be called.
+7. `|{T}|` where T is a named type can be used to indicate all tuples that embed that type (Example 4).
 
 ## Casting
 
