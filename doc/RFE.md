@@ -3750,7 +3750,7 @@ var f = openFile() {
 ```
 But what about returning a resource?
 
-? - Options for writing a compiler:
+N - Options for writing a compiler:
 1. Full hand-written compiler and parser and assembly generator and optimizer
 2. Use LLVM tools
 3. Fork an existing compiler (Go, Swift, C)
@@ -3770,9 +3770,9 @@ Let's go with LLVM.
 What about the language? C or C++?
 - asmjit: last commit May 2017, `a.mov(x86::eax, 1);`, 
 - GNU lightning: provides only a low-level interface for assembling from a standardized RISC assembly language, It does not provide register allocation, data-flow or control-flow analysis, or optimization. `jit_addi(JIT_R0, JIT_R0, 1);`, last mail in list: 2016-09
-? - Libjit: `jit_value_t temp2 = jit_insn_add(function, temp1, z);`, last email in list: 2017-05, 
-? - myjit: `jit_addi(p, R(1), R(0), 1);` port of Lightning, last commit Mar 2015, has register allocator
-? - transpose to C and compile in-memory
+ Libjit: `jit_value_t temp2 = jit_insn_add(function, temp1, z);`, last email in list: 2017-05, 
+ myjit: `jit_addi(p, R(1), R(0), 1);` port of Lightning, last commit Mar 2015, has register allocator
+ transpose to C and compile in-memory
 JIT:
 pro: more control, can do optimizations, more native
 con: can be difficult to generate executable
@@ -4077,6 +4077,39 @@ but still we will need union.
 solution 1: define maybe as an extended primitive. then union can be implemented using maybe.
 solution 2: just define union with normal types + tag field. compiler will handle to make sure only one of them is allocated.
 
+Y - Remove `$` prefix for literals. What can be confusing?
+array, map, tuple literals
+`$[1,2,3]` `$[a,b,c]`
+`$[1:"A", 2:"B", 3: "C"]` `$[x:y, z:t, u:v]`
+tuple: `${100, 200}`
+tuple type: `type pt := {x: int, y:int}`
+
+Y - Can we replace `union` type with a `|` notation?
+what about `union[Shape]`? We can use `|Shape|`?
+`|` is easier to read and write.
+`union[Shape]`
+`Circle|Square|Rectangle|...`
+`|.Shape|`
+then what about this: `|.Shape|.Polygon|`
+or: `Circle|.Shape|`?
+This notation will be confusing when combined with polymorphism union.
+`int|float|string`
+`Shape` no
+`let x: |Shape|`
+`let x: array[|Shape|]`
+`let x: Shape*`
+`let x: $Shape`
+`let x: ^Shape`
+`let x: *.Shape`
+`let x: array[*Shape]`
+`let x: T | T.Shape`
+`type AllShapes := *Shape`
+`type AllShapes := |*Shape|`
+`type AllShapes := union[Shape]`
+`type AllShapes := |{Shape}|`
+`|{Shape}|`
+`|{T}|` where T is a named type can be used to indicate all tuples that embed that type.
+
 ? - Map can be implemented using a linked-list. and linked list is just a tuple.
 shall we make map an extended primitive?
 compiler only treats specially for map literals.
@@ -4092,9 +4125,76 @@ Compiler just needs to scan the source code, apply macros and run microcommands.
 This will be a very special macro language which is designed for this compiler and this language.
 Won't it be same as writing C code? If it can be more maintainable maybe we can use it as an intermediate IR between dotlang code and LLVM IR.
 
-? - Remove `$` prefix for literals. What can be confusing?
-array, map, tuple literals
-`$[1,2,3]` `$[a,b,c]`
-`$[1:"A", 2:"B", 3: "C"]` `$[x:y, z:t, u:v]`
-tuple: `${100, 200}`
-tuple type: `type pt := {x: int, y:int}`
+
+? - core is supposed to have absolutely low level things that cannot be simply/easily defined in std.
+std is supposed to have absolutely minimum needed tools to provide expressiveness needed to write software.
+Everything else should be in external libraries (graph data structure, json parser, ...)
+
+
+? - We should have a modular design for compiler.
+Lexer, Parser and some extensions which process parser output.
+What we need to specify?
+Steps in the compilation process and what is input/output of each step.
+The type of rules that we need to have.
+e.g.
+```
+![on_fn_decl]
+fun name_check: FuncDecl fd
+    //NOTE: fd.name is the mangled name
+    if fd.basename != fd.name then
+        compErr "Function ${fd.basename} must be declared with ![no_mangle]" fd.loc
+
+    if not fd.name.startsWith "vk" then
+        compErr "Function ${fd.basename}'s name must be prefixed with 'vk'" fd.loc
+```
+or:
+```
+![macro]
+fun goto: VarNode vn
+    let label = ctLookup vn ?
+        None -> compErr "Cannot goto undefined label ${vn.name}"
+
+    LLVM.setInsertPoint getCallSiteBlock{}
+    LLVM.createBr label
+
+![macro]
+fun label: VarNode vn
+    let ctxt = Ante.llvm_ctxt
+    let callingFn = getCallSiteBlock().getParentFn()
+    let lbl = LLVM.BasicBlock ctxt callingFn
+    ctStore vn lbl
+```
+e.g. For each function we need to keep it's escape list.
+For each line we need to keep bindings used in that line.
+We need a list of all functions.
+We need a multi-pass scan: 
+- Pass1: Scan all types and functions (even generics) and built a map of them.
+- Pass2: Process each function (generate if it is generic) and create intermediate representation. Do all required checks.
+- Pass3: Optimize intermediate-representation for de-referencing, copy, dispose call, mutable data.
+- Pass4: Generate LLVM IR and feed it to llvm.
+We can do each of these passes for each function separately. Because each function is considered it's own world.
+Step 1: Collect a list of all type names and function names (even generics).
+Step 2: Compile each function into LLVM IR using below steps:
+- Phase A: Make all type name and function calls to normal function or type reference.
+- Make sure appropriate generic function is generated.
+- Do all checks and issue error messages if needed.
+- Create rule list based on function statements.
+- Do optimizations.
+- Generate LLVM IR.
+Step 2 is done for each function in the list created in Step 1 + functions requested in step 2.
+We have two lists: Functions, Types. Each element can be marked as concrete or generic.
+Generics are not compiled. They are just used to create concrete elements.
+We need to compile each non-generic function in the list.
+==========
+Step 0: Prepare 4 maps: CFunc, GFunc, CType, GType (Concret/Generic function/type)
+Each element in the map contains the location in the source code file too. Or maybe we can keep the body of type or function in-memory so this will be the first and last time we need to read disk.
+Step 1: Lex all input files for type name and function name and populate 4 maps.
+Step 2: Prepate CQ which is compilation queue. It initially contains only `main` function.
+Step 3: Fetch from CQ and lex/parse contents of that element. Do error checks.
+If it is a function call, add it to CQ and render an invoke statement.
+Step 4: After step 3 is finished, we don't need text of type and functions. Just IR.
+Step 5: Optimize IR.
+Step 6: Convert IR to LLVM IR and generate native code.
+================
+For now, let's just ignore generics and assume everything is concrete.
+We will have two maps: Func and Type.
