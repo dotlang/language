@@ -4054,7 +4054,9 @@ How to remove a binding out of scope?
 So we won't have to have close_file and close-socket and...
 only dispose
 
-? - First I need to check the language and make decisions.
+N - `A.b` can also be considered as a function (which definitely must be inlined).
+
+N - First I need to check the language and make decisions.
 1. compilation passes
 2. memory model, heap, stack, pointer
 3. function call system: by value, by reference, ...
@@ -4065,25 +4067,34 @@ only dispose
 8. How to tokenize the source code?
 9. How can I measure size of every variable? e.g. tuple, union, map, ...
 - union is a pointer to structure which is tag+data where tag represents the data type.
-- almost everything is allocated on stack except return data and things that are passed to a thread code. These data are either defined by their value or allocated on heap and use a pointer.
+- almost everything is allocated on stack except return data and things that are passed to a thread code. These data are either defined by their value or allocated on heap and use a pointer. Or maybe we can duplicate them inside caller code's stack.
 - Each type will have it's unique number (result of `@Type`) assigned by the compiler.
 - Each function's signature is transformed into a unique string containing name, input type and output type. And each function call is converted to a call to a unique function name based on type of the arguments.
 
-? - Map can be implemented using a linked-list. and linked list is just a tuple.
-shall we make map an extended primitive?
-compiler only treats specially for map literals.
-
-? - `union` can also be implemented using a tuple with maybe[t] for each type + compiler and runtime helps.
+N - `union` can also be implemented using a tuple with maybe[t] for each type + compiler and runtime helps.
 `union[int, float, char]` ~ `{a: union[int, nothing], b: union[float, char], c: union[char, nothing]}`
 but still we will need union. 
 solution 1: define maybe as an extended primitive. then union can be implemented using maybe.
 solution 2: just define union with normal types + tag field. compiler will handle to make sure only one of them is allocated.
 
-? - `A.b` can also be considered as a function (which definitely must be inlined).
+? - Map can be implemented using a linked-list. and linked list is just a tuple.
+shall we make map an extended primitive?
+compiler only treats specially for map literals.
+why map is a primitive but linked-list is not?
+If everything is immutable, what is the difference between list and array?
+we can say array has O(1) access and O(n) update.
+list has O(n) access and O(lgn) update.
 
 ? - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
 these can indicate micro-commands to be executed by the compiler so we will be coding our compiler into that notation.
 Compiler just needs to scan the source code, apply macros and run microcommands.
 This will be a very special macro language which is designed for this compiler and this language.
+Won't it be same as writing C code? If it can be more maintainable maybe we can use it as an intermediate IR between dotlang code and LLVM IR.
 
+? - Remove `$` prefix for literals. What can be confusing?
+array, map, tuple literals
+`$[1,2,3]` `$[a,b,c]`
+`$[1:"A", 2:"B", 3: "C"]` `$[x:y, z:t, u:v]`
+tuple: `${100, 200}`
+tuple type: `type pt := {x: int, y:int}`
