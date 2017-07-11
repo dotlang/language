@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, add `$` prefix for untyped tuple literals to make it more readable, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization, added `autoBind`, ban re-assignment and use `val` for defining bindings (instead of variables), loops are functional
+- **Version 0.98**: ?? ??? ???? - remove `++` and `--`, implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization, added `autoBind`, ban re-assignment and use `val` for defining bindings (instead of variables), loops are functional, change notation for union to `|`
 
 # Introduction
 
@@ -82,16 +82,16 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 ## Language in a nutshell
 
 01. **Import**: `import /core/std/queue`
-02. **Primitives**: `int`, `float`, `char`, `union`, `array`, `map` (Extended primitives: `bool`, `string`, `nothing`)
+02. **Primitives**: `int`, `float`, `char` (Extended primitives: `array`, `map`, `bool`, `string`, `nothing`)
 03. **Binding**: `let my_var:int = 19` (type can be automatically inferred, everything is immutable)
 04. **Named type**: `type MyInt := int`
 05. **Tuple**: `type Point := {x: int, y:int, data: float}`
 06. **Tuple literal**: `location = Point{ .x=10, .y=20, .data=1.19 }`
 07. **Composition**: By embedding (only for tuples), `type Circle := {Shape, radius: float}`
-08. **Array**: `let jobQueue: array[int] = $[0, 1, 2, 3]`
+08. **Array**: `let jobQueue: array[int] = [0, 1, 2, 3]`
 09. **Generics**: `type Stack[T] := { data: array[T], info: int }`
-10. **Map**: `let countryPopulation: map[string, int] := $[ "US": 300, "CA": 180, "UK": 80 ]`
-11. **Union**: `type Maybe[T] := union[nothing, T]`
+10. **Map**: `let countryPopulation: map[string, int] := [ "US": 300, "CA": 180, "UK": 80 ]`
+11. **Union**: `type Maybe[T] := T | nothing`
 12. **Function**: `func calculate(x: int, y: string) -> float { return if x > 0 then 1.5 else 2.5  }`
 13. **Lambda**: `let adder = |x:int, y:int| -> x+y`
 
@@ -133,7 +133,7 @@ let x = {
 
 **Semantics**: Provide basic feature to define most commonly used data types.
 
-**Syntax**: `int`, `float`, `char`, `union`, `array`, `map`
+**Syntax**: `int`, `float`, `char`
 
 **Examples**
 
@@ -147,7 +147,7 @@ let x = {
 2. `float` is double-precision 8-byte floating point number.
 3. `char` is a single character, represented as an unsigned byte.
 4. Character literals should be enclosed in single-quote.
-5. For `union`, `array` and `map` types, refer to the next sections.
+5. For extended primitives, refer to the following sections.
 
 ## Label types
 
@@ -172,12 +172,12 @@ let x = {
 
 **Semantics**: A primitive meta-type to provide same interface which can contain different types.
 
-**Syntax**: `union[type1, type2, ...]`
+**Syntax**: `type1 | type2 | ...`
 
 **Examples**
 
-1. `type day_of_week := union[SAT, SUN, MON, TUE, WED, THU, FRI]`
-2. `let int_or_float: unon[int, float] = 11`
+1. `type day_of_week := SAT | SUN | MON | TUE | WED | THU | FRI`
+2. `let int_or_float: int | float = 11`
 3. `let int_or_float = 12.91`
 4. `let int_or_float = 100`
 5. `let has_int = typeOf(int_or_float) == @int`
@@ -201,7 +201,7 @@ stringed = switch ( int_or_float )
 5. Example 5, uses `typeOf` function to check if there is an integer type inside previously defined union binding.
 6. You can use the syntax in example 6 to cast a union to another type. It will also give a boolean to indicate if the casting was successful.
 7. Example 7, uses `switch` expression to check and match for type of data inside union.
-8. `union[int, union[float, string]]` will be simplified to `union[int, float, string]`
+8. `int | flotOrString` will be simplified to `int | float | string`
 
 ## Array
 
@@ -211,21 +211,20 @@ stringed = switch ( int_or_float )
 
 **Examples**
 
-1. `let arr = $[1, 2, 3]`
+1. `let arr = [1, 2, 3]`
 2. `let g = get(arr, 0)`
 3. `let new_arr = set(arr, 0, 10)`
-4. `let new_arr2 = set(arr, $[0,1,2], $[4,4,4])`
-5. `let two_d_array = $[ $[1,2,3], $[4,5,6] ]`
+4. `let new_arr2 = set(arr, [0,1,2], [4,4,4])`
+5. `let two_d_array = [ [1,2,3], [4,5,6] ]`
 6. `let p = get(two_d_array, 0, 0)`
-7. `let arr2 = $[0..10]`
-8. `let arr: array[int] = $[1, 2, 3]`
+7. `let arr2 = [0..10]`
+8. `let arr: array[int] = [1, 2, 3]`
 
 **Notes**
 
 1. Above examples show definition and how to read/update array.
 2. In example 7, the range operator `..` is used to generate an array literal.
 3. You can explicitly state array literal type like in example 8.
-4. A `$` sign must prefix array literals.
 
 ## Slice
 
@@ -235,7 +234,7 @@ stringed = switch ( int_or_float )
 
 **Examples**
 
-1. `let arr = $[1..9]`
+1. `let arr = [1..9]`
 2. `let slice1 = slice(arr, 1, 2)`
 3. `let slice2 = slice(arr, 0, -1)`
 
@@ -252,18 +251,17 @@ stringed = switch ( int_or_float )
 
 **Examples**
 
-1. `let my_map = $["A": 1, "B": 2, "C": 3]`
+1. `let my_map = ["A": 1, "B": 2, "C": 3]`
 2. `let item1 = get(my_map, "A")`
 3. `let map2 = set(my_map, "A", 2)`
 4. `let map3 = delete(map2, "B")`
-5. `let my_map: map[string,int] = $["A": 1, "B": 2, "C": 3]`
+5. `let my_map: map[string,int] = ["A": 1, "B": 2, "C": 3]`
 
 **Notes**
 
 1. You need to use core functions to manipulate a map, because (like everything else), they are immutable.
 2. If you query a map for something which does not exist, it will return `nothing`.
 3. You can explicitly state type of a map literal like example 5.
-4. A `$` sign must prefix map literals.
 
 ## Extended primitives
 
@@ -311,7 +309,7 @@ stringed = switch ( int_or_float )
 1. `type MyInt := int`
 2. `type IntArray := array[int]`
 3. `type Point := {x: int, y: int}`
-4. `type bool := union[true, false]`
+4. `type bool := true | false`
 5. `let x: MyInt = 10`, `let y: MyInt = MyInt{x}`
 
 **Notes**
@@ -331,23 +329,22 @@ stringed = switch ( int_or_float )
 1. Declaration: `{field1: type1, field2: type2, field3: type3, ...}` 
 2. Literal: `Type{.field1=value1, .field2=value2, .field3=value3, ...}` 
 3. Update: `other_tuple{.field1=value1, .field2=value2, .field3=value3, ...}` 
-4. Untyped literal: `${value1 value2, value3, ...}` 
+4. Untyped literal: `{value1 value2, value3, ...}` 
 
 **Examples**
 
 1. `type Point := {x:int, y:int}`
-2. `point = ${100, 200}`
+2. `point = {100, 200}`
 3. `point = Point{.x=100, .y=200}`
 4. `my_point = Point{100, 200}`
 5. `x,y = point`
-6. `x,y = ${100,200}`
+6. `x,y = {100,200}`
 7. `another_point = my_point{.x=11, .y=my_point.y + 200}`
 8. `new_point = {a:100, b:200} //WRONG!`
 
 **Notes**
 
 1. Field names are not mandatory when defining a tuple literal.
-2. `$` prefix is used as an indicator to indicate a tuple literal without type. In this case you cannot name fields.
 2. Example 1 defines a named type for a 2-D point and next 3 examples show how to initialise bindings of that type.
 3. Examples 5 and 6 show how to destruct a tuple and extract it's data.
 4. Example 7 shows how to define a tuple based on another tuple.
@@ -363,7 +360,7 @@ stringed = switch ( int_or_float )
 1. `type Shape := { id:int }`
 2. `type Circle := { Shape, radius: float}`
 3. `my_circle = Circle{id=100, radius=1.45}`
-4. `type AllShapes := union[Shape]`
+4. `type AllShapes := |{Shape}|`
 5. `someShapes = AllShapes[myCircle, mySquare, myRectangle, myTriangle]`
 
 **Notes**
@@ -371,12 +368,12 @@ stringed = switch ( int_or_float )
 2. The language provides pure "contain and delegate" mechanism as a limited form of polymorphism.
 3. A tuple type can embed as many other tuple types as it wants and forward function calls to embedded tuples. Refer to function section for more information about forwarding functions.
 4. You can define a union type which accepts all tuple types which embed a specific tuple type. See examples 4 and 5.
-5. Note that polymorphism does not apply to generics. So `array[Circle]` cannot substitute `array[Shape]`. But you can have `array[union[Circle, Square]]` to have a mixed array of different types.
+5. Note that polymorphism does not apply to generics. So `array[Circle]` cannot substitute `array[Shape]`. But you can have `array[Circle|Square]` to have a mixed array of different types.
 6. We use closed recursion to dispatch function calls. This means if a function call is forwarded from `Circle` to `Shape` and inside that function another second function is called which has candidates for both `Circle` and `Shape` the one for `Shape` will be called.
 
 ## Casting
 
-**Semantics**: To change type of data without changing the semantics of the data
+**Semantics**: To change type of data without changing the semantics of the data (Used for union, named types and primitives)
 
 **Syntax**: `Type{identifier}`
 
@@ -409,12 +406,12 @@ stringed = switch ( int_or_float )
 01. `func myFunc(y:int, x:int) -> int { return 6+y+x }`
 02. `func log(s: string) -> { print(s) }`
 03. `func process(pt: Point)->int { return pt.x }`
-04. `func process2(pt: Point) -> ${pt.x, pt.y}`
-05. `func my_func8() -> {x:int, y:int} { return ${10,20} }`
+04. `func process2(pt: Point) -> {pt.x, pt.y}`
+05. `func my_func8() -> {x:int, y:int} { return {10,20} }`
 06. `func my_func(x:int) -> x+9`
-07. `func myFunc9(x:int) -> {int} ${12}`
+07. `func myFunc9(x:int) -> {int} {12}`
 08. `func PI -> 3.14`
-09. `func process(x: union[int,Point])->int`
+09. `func process(x: int|Point])->int`
 10. `func fileOpen(path: string) -> File {...}`
 
 **Notes**:
@@ -428,7 +425,7 @@ stringed = switch ( int_or_float )
 7. Each function must have an output type. Even if it does not return anything, output type will be `nothing`.
 8. Function output can be tuple type with or without field names (Examples 5 and 7).
 9. You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
-10. The function in example 9 will be invoked if the input is either `int` or `Point` or `union[int, Point]`.
+10. The function in example 9 will be invoked if the input is either `int` or `Point` or `int|Point`.
 11. There should not be ambiguity when calling a function. So having functions on examples 9 and 3 in same compilation is invalid.
 12. If a function is implemented in the runtime or core sub-system, it's body will be written as `{...}`
 
@@ -459,8 +456,8 @@ stringed = switch ( int_or_float )
 **Examples**
 
 1. `func draw(Circle->Shape)`
-2. `func process(union(Polygon, Square, Circle)->Shape, union[GradientColor, SolidColor]->Color)`
-3. `func process(float, union[Shape]->Shape, string, int, union[GradientColor,SolidColor]->Color, int)`
+2. `func process(union(Polygon, Square, Circle)->Shape, GradientColor|SolidColor]->Color)`
+3. `func process(float, |{Shape}|->Shape, string, int, GradientColor|SolidColor->Color, int)`
 
 **Notes**
 
@@ -532,7 +529,7 @@ stringed = switch ( int_or_float )
 
 01. `type Stack[T] := array[T]`
 02. `type Tree[T] := {x: T, left: Tree[T], right: Tree[T]}`
-03. `type optional[T] := union[nothing, T]`
+03. `type optional[T] := nothing|T`
 04. `type BoxedValue[T] := {value:T}`
 05. `func push[T](s: Stack[T], data: T) ...`
 06. `func pop[T](s: Stack[T])->T...`
@@ -558,7 +555,7 @@ stringed = switch ( int_or_float )
 **Syntax**: Like generic data types
 
 **Examples**
-1. `type HashType := union[MD5, SHA1]`
+1. `type HashType := MD5|SHA1`
 2. `type HashStr[T] := string`
 3. `type Md5Hash := HashStr[MD5]` 
 4. `type Sha1Hash := HashStr[SHA1]`
@@ -568,7 +565,7 @@ stringed = switch ( int_or_float )
 8. `type SafeString := string`
 9. `func processString(s: string)->SafeString`
 10. `func work(s: SafeString)`
-11. `type DoorState := union[Open, Closed]`
+11. `type DoorState := Open|Closed`
 12. `type Door[T] := string`
 13. `func closeDoor(x: Door[Open]) -> Door[Closed]`
 14. `func openDoor(x: Door[Closed]) -> Door[Open]`
@@ -597,15 +594,15 @@ stringed = switch ( int_or_float )
 
 01. `g = @int`
 02. `y:int = x`
-03. `y:union[int, float] = 12`
-04. `${x,y,z} . ${_,_,_}` => `${x,y,z}`
-05. `g = ${5,9} . add(_, _)` => `g = add(5,9)`
-06. `${1,2} . processTwoData(_, _)` => `processTwoData(1,2)`
-07. `${1,2} . processTuple(_)` => `processTuple(${1,2})`
+03. `y: int|float = 12`
+04. `{x,y,z} . {_,_,_}` => `{x,y,z}`
+05. `g = {5,9} . add(_, _)` => `g = add(5,9)`
+06. `{1,2} . processTwoData(_, _)` => `processTwoData(1,2)`
+07. `{1,2} . processTuple(_)` => `processTuple({1,2})`
 08. `6 . addTo(1, _)` => `addTo(1, 6)`
-09. `result = ${input, check1(5, _)} . pipe(_,_) . ${_, check3(1,2,_)} . pipe(_, _) . ${_, check5(8,_,1) } . pipe(_,_)`
+09. `result = {input, check1(5, _)} . pipe(_,_) . {_, check3(1,2,_)} . pipe(_, _) . {_, check5(8,_,1) } . pipe(_,_)`
 10. `func pipe[T, O](input: Maybe[T], handler: func(T)->Maybe[O])->Maybe[O] ...`
-11. `${1,2} . ${_, _, 5} . process(_,_,_)` => `process(1,2,5)`.
+11. `{1,2} . {_, _, 5} . process(_,_,_)` => `process(1,2,5)`.
 
 **Notes**:
 1. `=` operator copies data from right-side value into the left-side value.
@@ -624,15 +621,15 @@ stringed = switch ( int_or_float )
 ## Special notations
 
 01. `@`  type-id opertor
-02. `$`  tuple, array and map literal declaration
+02. `|`  union data type
 03. `_`  something we don't know or don't care (placeholder for a lambda input or unknown binding in assignments or switch)
 04. `:`  type declaration for tuple and function input and values, map literal
 05. `:=` custom type definition
 06. `=`  type alias, assignment
 07. `..` range generator
 08. `->` function declaration, switch
-09. `[]` generics, array and map literals (with `$` prefix)
-10. `{}` code block, tuple definition and tuple literal (with `$` prefix)
+09. `[]` generics, array and map literals
+10. `{}` code block, tuple definition and tuple literal
 11. `()` function declaration and call
 12. `||` lambda declaration
 13. `.`  access tuple fields, function chaining (with spaces around)
@@ -785,11 +782,11 @@ y = switch operation_result, int_or_float
 
 **Semantics**: Handle unexpected and rare conditions.
 
-**Syntax**: `func process() -> union[int, exception] { ... return exception{...} }`
+**Syntax**: `func process() -> int|exception { ... return exception{...} }`
 
 **Examples**
 
-1. `result: union[int, exception] = invoke(my_function)`
+1. `result: int|exception] = invoke(my_function)`
 
 **Notes**
 
@@ -864,7 +861,7 @@ We want to write a function which accepts a string like "2+4-3" and returns resu
 
 ```
 type NormalExpression := {op: char, left: Expression, right: Expression}
-type Expression := union[int, NormalExpression]
+type Expression := int|NormalExpression
 
 func eval(input: string) -> float 
 {
