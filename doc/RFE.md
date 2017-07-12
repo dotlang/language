@@ -4110,13 +4110,31 @@ This notation will be confusing when combined with polymorphism union.
 `|{Shape}|`
 `|{T}|` where T is a named type can be used to indicate all tuples that embed that type.
 
-? - Map can be implemented using a linked-list. and linked list is just a tuple.
+N - core is supposed to have absolutely low level things that cannot be simply/easily defined in std.
+std is supposed to have absolutely minimum needed tools to provide expressiveness needed to write software.
+Everything else should be in external libraries (graph data structure, json parser, ...)
+
+Y - Map can be implemented using a linked-list. and linked list is just a tuple.
 shall we make map an extended primitive?
 compiler only treats specially for map literals.
 why map is a primitive but linked-list is not?
 If everything is immutable, what is the difference between list and array?
 we can say array has O(1) access and O(n) update.
 list has O(n) access and O(lgn) update.
+list is a mutable version of array.
+We can have immutable linked-list if we just keep track of head and add to the head and with a singly-linked list.
+We can have single-linked list, double-linked list, queue and other data structures.
+`type List[T] := { head: T, tail: List[T] }`
+map may be implemented using a linked-list behind the scene but because of the special behavior it expects, we consider it as an extended primitive data type.
+list and dlist and queue and other data types can be easily implemented using existing features.
+We could also define list as an extended primitive and build map on top of it.
+I think we should consider map, list, queue ... just data structures that we have. The only difference is that in map, we can have literals: `["A":1, "B":2, "C":3, ...]` which we can simply make this available to any other data type which has set method. and `[1,2,3]` same.
+So map is just an important data structure.
+- bool, string and nothing are just plain data types which are also important. just explain them inside notes sections.
+
+Y - Now that we use `|` for union, lambda expression becomes a bit confusing: 
+`let adder = |x:int, y:int| -> x+y`
+`let adder = (x:int, y:int) -> x+y`
 
 ? - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
@@ -4125,12 +4143,6 @@ Compiler just needs to scan the source code, apply macros and run microcommands.
 This will be a very special macro language which is designed for this compiler and this language.
 Won't it be same as writing C code? If it can be more maintainable maybe we can use it as an intermediate IR between dotlang code and LLVM IR.
 
-
-? - core is supposed to have absolutely low level things that cannot be simply/easily defined in std.
-std is supposed to have absolutely minimum needed tools to provide expressiveness needed to write software.
-Everything else should be in external libraries (graph data structure, json parser, ...)
-
-
 ? - We should have a modular design for compiler.
 Lexer, Parser and some extensions which process parser output.
 What we need to specify?
@@ -4138,6 +4150,7 @@ Steps in the compilation process and what is input/output of each step.
 The type of rules that we need to have.
 e.g.
 ```
+ante
 ![on_fn_decl]
 fun name_check: FuncDecl fd
     //NOTE: fd.name is the mangled name
@@ -4198,3 +4211,36 @@ Step 6: Convert IR to LLVM IR and generate native code.
 ================
 For now, let's just ignore generics and assume everything is concrete.
 We will have two maps: Func and Type.
+Step 0: Prepare two maps Func and Type where key is string and value is a structure of type FunctionDescriptor or TypeDescriptor
+Step 1: Lex the input file and just read names of types and functions and update Func/Type maps.
+Step 2: Prepare CQ (compilation queue) and add `main` to it.
+Step 3: Repeat until CQ is empty: 
+  A. Fetch function name F from CQ
+  B. Find it in Func map and fetch FunctionDescriptor
+  C. Lex it's contents and check for lex errors.
+  D. For each function call, first make sure we have such a function. If so, add it to CQ
+  E. render intermediate code (between dotlang and LLVM IR) containing simple expressions and method calls.
+  F. Check for optimizations.
+  G. FunctionDescriptor will contain function body, intermediate codes, metadata, ...
+  H. Render intermediate codes to LLVM IR.
+  I. Send output LLVM IR to a IR repository.
+Step 4: Send IR repository contents to LLVM compiler.
+Transforms:
+- chaining operator is transformed to normal function call.
+- dot operator is transformed to an internal offset fetch.
+- get operators are transformed to internal offset fetch
+- set operators are tx to internal operation which has potential to be optimized.
+- math: divided into separate expressions and temp bindings.
+- if/else. simplified to a binding for condition and if with only one boolean variable.
+- switch.
+- No type inference
+- No closure
+- explicit dispose and mallo
+what would the intermediate code look like? It will be called semi-ir.
+Maybe we can merge two maps into "Symbols" map with a kind which can be type or function.
+
+? - Just like we define type alias, shall we have function alias?
+`type MyInt = int`
+`func myProcess(x: int, y:int) = p2`
+`func myProcess(x: int, y:int) = p2(y,x)`
+But there is no advanrage to this.
