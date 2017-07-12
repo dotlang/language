@@ -81,19 +81,19 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 ## Language in a nutshell
 
-01. **Import**: `import /core/std/queue`
-02. **Primitives**: `int`, `float`, `char` (Extended primitives: `array`, `map`, `bool`, `string`, `nothing`)
+01. **Import a module**: `import /core/std/queue` (you can also import from external sources like Github)
+02. **Primitive types**: `int`, `float`, `char` (other useful types are define in core)
 03. **Binding**: `let my_var:int = 19` (type can be automatically inferred, everything is immutable)
 04. **Named type**: `type MyInt := int`
-05. **Tuple**: `type Point := {x: int, y:int, data: float}`
+05. **Tuple type**: `type Point := {x: int, y:int, data: float}` (Like `struct` in C)
 06. **Tuple literal**: `location = Point{ .x=10, .y=20, .data=1.19 }`
-07. **Composition**: By embedding (only for tuples), `type Circle := {Shape, radius: float}`
-08. **Array**: `let jobQueue: array[int] = [0, 1, 2, 3]`
-09. **Generics**: `type Stack[T] := { data: array[T], info: int }`
-10. **Map**: `let countryPopulation: map[string, int] := [ "US": 300, "CA": 180, "UK": 80 ]`
-11. **Union**: `type Maybe[T] := T | nothing`
+07. **Composition of tuples**: By embedding (only for tuples), `type Circle := {Shape, radius: float}`
+08. **Array type**: `let jobQueue: array[int] = [0, 1, 2, 3]`
+09. **Map type**: `let countryPopulation: map[string, int] := [ "US": 300, "CA": 180, "UK": 80 ]`
+10. **Generics**: `type Stack[T] := { data: array[T], info: int }`
+11. **Union type**: `type Maybe[T] := T | nothing`
 12. **Function**: `func calculate(x: int, y: string) -> float { return if x > 0 then 1.5 else 2.5  }`
-13. **Lambda**: `let adder = |x:int, y:int| -> x+y`
+13. **Lambda expression**: `let adder = (x:int, y:int) -> x+y`
 
 # Type System
 
@@ -141,13 +141,13 @@ let x = {
 2. `let x = 1.918`
 3. `let x = 'c'`
 
+
 **Notes**:
 
 1. `int` type is a signed 8-byte integer data type.
 2. `float` is double-precision 8-byte floating point number.
 3. `char` is a single character, represented as an unsigned byte.
 4. Character literals should be enclosed in single-quote.
-5. For extended primitives, refer to the following sections.
 
 ## Label types
 
@@ -167,6 +167,7 @@ let x = {
 
 1. You can define multiple label types at once (Example number 3).
 2. Labels types are a special kind of named types which are explained in the corresponding section.
+3. `nothing` is an important data type which is used widely in the language.
 
 ## Union
 
@@ -203,7 +204,30 @@ stringed = switch ( int_or_float )
 7. Example 7, uses `switch` expression to check and match for type of data inside union.
 8. `int | flotOrString` will be simplified to `int | float | string`
 
-## Array
+## Important types
+
+These types are not primitive but due to being widely used in the language and libraries, we explain some of them in this section. These types are built on top of primitives and some of the more important types are `string`, `bool`,  `array`, `slice`, `map`, and some other basic data types like sequence, queue, ...
+
+### Basic types
+
+**Semantics**: These important data types are some basic and well known types with simple definition.
+
+**Syntax**: `nothing`, `bool`, `string`
+
+**Examples**
+
+1. `let g: bool = true`
+3. `let str: string = "Hello world!"`
+
+**Notes**
+
+1. `string` is defined as an array of `char` data type. The conversion from/to string literals is handled by the compiler.
+2. String literals should be enclosed in double quotes. 
+3. String litearls enclosed in backtick can be multi-line and escape character `\` will not be processed in them.
+4. `nothing` is a label type which is used in union types, specially `maybe` type.
+5. `bool` type is a union of two label types: `true` and `false`.
+
+### Array
 
 **Semantics**: Define a fixed-size sequence of elements of the same type.
 
@@ -225,8 +249,9 @@ stringed = switch ( int_or_float )
 1. Above examples show definition and how to read/update array.
 2. In example 7, the range operator `..` is used to generate an array literal.
 3. You can explicitly state array literal type like in example 8.
+5. The way we define array literals is not unique to array type. Any other type which has appropriate `set` methods can be initilized using this syntax (We cann these, custom literals).
 
-## Slice
+### Slice
 
 **Semantices**: Represents an array which maps to a limited view into an existing array.
 
@@ -243,7 +268,7 @@ stringed = switch ( int_or_float )
 1. Example 2 will give a slice which contains `2, 3`.
 2. Example 3 will give a slice which contains all elements. End parameter can be negative which is counted from end of the array (`-1` means last element). Same for start.
 
-## Map
+### Map
 
 **Semantics**: Represent a mapping from key to value.
 
@@ -262,25 +287,7 @@ stringed = switch ( int_or_float )
 1. You need to use core functions to manipulate a map, because (like everything else), they are immutable.
 2. If you query a map for something which does not exist, it will return `nothing`.
 3. You can explicitly state type of a map literal like example 5.
-
-## Extended primitives
-
-**Semantics**: Built on top of primitives, these types provide more advanced data types.
-
-**Syntax**: `bool`, `string`, `nothing`
-
-**Examples**
-
-1. `g = true`
-3. `str = "Hello world!"`
-
-**Notes**
-
-1. `string` is defined as an array of `char` data type. The conversion from/to string literals is handled by the compiler.
-2. String literals should be enclosed in double quotes. 
-3. String litearls enclosed in backtick can be multi-line and escape character `\` will not be processed in them.
-4. `nothing` is a label type which is used in union types, specially `maybe` type.
-5. `bool` type is a union of two label types: `true` and `false`.
+4. The way we define map literals is not unique to map type. Any other type which has appropriate `set` methods can be initilized using this syntax (We call these, custom literals).
 
 ## Type alias
 
@@ -496,25 +503,24 @@ stringed = switch ( int_or_float )
 
 **Examples**
 
-1. `f1 = |x: int, y:int| -> int { return x+y }`
-2. `f1 = |x: int, y:int| -> { return x+y }` ;the most complete definition
-3. `rr = |x: int, y:int| -> x + y`  ;return type can be inferred
-4. `rr = || -> { x + y }`
+1. `f1 = (x: int, y:int) -> int { return x+y }`
+2. `f1 = (x: int, y:int) -> { return x+y }` ;the most complete definition
+3. `rr = (x: int, y:int) -> x + y`  ;return type can be inferred
+4. `rr = () -> { x + y }`
 5. `func test(x:int) -> plusFunc { return |y:int| -> y + x }`
-6. `|x:int|->int { return x+1 } (10)`
+6. `(x:int)->int { return x+1 } (10)`
 7. `func process(x:int, y:float, z: string) -> { ... }`
 8. `lambda1 = process(10, _, _)`
-9. `ff = |x:int| -> { ff(x+1) }`
+9. `ff = (x:int) -> { ff(x+1) }`
 
 **Notes**
 1. You can omit output type (Example 2 and 3).
-2. Even if lambda has no input you must include `||` (Example 4).
+2. Even if lambda has no input you must include `()` (Example 4).
 3. Lambdas are closures and can capture values in the parent function (Example 4 and 5).
 4. Example 5 shows a function that returns a lambda.
 5. Example 6 shows invoking a lambda at the point of definition.
 6. You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normall call and replace the lambda inputs with `_`. Example 8 defines a lambda to call `process` functions with `x=10` but `y` and `z` will be inputs.
-7. Note that `||` notation is used for a function literal and `()` notation for function type declaration.
-8. If lambda is assigned to a binding, you can invoke itself from inside (Example 9).
+7. If lambda is assigned to a binding, you can invoke itself from inside (Example 9).
 
 # Generics
 
@@ -629,17 +635,14 @@ stringed = switch ( int_or_float )
 06. `=`  type alias, assignment
 07. `..` range generator
 08. `->` function declaration, switch
-09. `[]` generics, array and map literals
+09. `[]` generics, custom literals
 10. `{}` code block, tuple definition and tuple literal
 11. `()` function declaration and call
-12. `||` lambda declaration
-13. `.`  access tuple fields, function chaining (with spaces around)
+12. `.`  access tuple fields, function chaining (with spaces around)
 
 Keywords: `import`, `func`, `return`, `type`, `let`, `if`, `then`, `else`, `switch` 
 
-Primitive data types: `int`, `float`, `char`, `union`, `array`, `map`
-
-Extended primitives: `bool`, `string`, `nothing`
+Primitive data types: `int`, `float`, `char`
 
 
 # Keywords
@@ -678,6 +681,7 @@ Extended primitives: `bool`, `string`, `nothing`
 **Semantics**: A basic control structure to execute a piece of code based on a condition.
 
 **Syntax**: 
+
 1. `if condition then { code block } else if condition then { code block } else { code block}`
 2. `if condition then expression else if condition then expression else expression`
 
