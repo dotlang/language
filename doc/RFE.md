@@ -4136,6 +4136,41 @@ Y - Now that we use `|` for union, lambda expression becomes a bit confusing:
 `let adder = |x:int, y:int| -> x+y`
 `let adder = (x:int, y:int) -> x+y`
 
+
+Y - In order to simplify things, we should do as least-astonishment rule. Let local variables be mutable.
+The fact that I cannot modify/edit a local variable is a bit of atonishment.
+The fact that I cannot edit input argument is expected and normal because it belongs to elsewhere.
+But we have the restriction about data race and closure capture and mutable shared state. also meaning of `let`.
+Maybe we should revert to `var`???????????
+Let's check them one by one. All of these issues become problem in the context of multiple threads.
+Closure captures a local variable. It becomes a thread. Local variable is modified outside either by other closures or parent function. 
+```
+let x = 12
+start_parallel () -> { process(x) }
+```
+A closure definitely cannot mutate captures variable.
+This is a cast of simplicity vs. security. We can let closure capture variables which are mutable and accept the fact that we might end up with a mutable state which is shared with a thread (we have simplicity but loose security).
+Solution 1: Closure can capture any variable, but they cannot be changed (Java says they must be effectively final, we say they cannot be modified and compiler can verify that). So compiler will give error is closure is capturing a local variable which is being modified after declaration.
+This will also affect loop. Now that we can modify, why not have loops back?
+If I call `process(myPoint)` and the function starts a new thread with myPoint and later I modify myPoint, it will also result in data race.
+Java forcing effective final values to be captures, is not for race but for the way it handles those captures.
+I am convinced that a shared mutable state can be problematic.
+But not all of closures and function calls are going to be threads.
+Let's permit everything but compiler will check for code that can cause problem.
+But it will be hard to check. You may have a chain of function calls which end to a thread, reading variable X.
+The mere fact that function/closure cannot change their input/captured variable will reduce likeliness of data race.
+Because there is only one place which is owner of the data and can change the data.
+I think we can accept this (and make developer responsible to handle this case), and in return make language easier to work with.
+Proposal:
+1. Use `var` instead of `let` and call it variable instead of binding.
+2. Functions can modify local variables.
+3. Notation to modify array, map and tuple changes.
+4. We will have `for, while, do` keywords back. `<-`
+Modify array and map: `x[0] = 10, a["A"] = 10`
+
+N - Can't a closure modify variables of parent function?
+No. It is againt transparency. We may return the closure and it can have all sorts of side effects.
+
 ? - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
 these can indicate micro-commands to be executed by the compiler so we will be coding our compiler into that notation.
@@ -4238,9 +4273,36 @@ Transforms:
 - explicit dispose and mallo
 what would the intermediate code look like? It will be called semi-ir.
 Maybe we can merge two maps into "Symbols" map with a kind which can be type or function.
+We should process types first because they dont rely on functions.
 
 ? - Just like we define type alias, shall we have function alias?
 `type MyInt = int`
 `func myProcess(x: int, y:int) = p2`
 `func myProcess(x: int, y:int) = p2(y,x)`
 But there is no advanrage to this.
+
+? - example
+```
+let a : Point = Point{100, 200}
+...
+let u = a.x - make u point to address of a + offset but if it is an int, just make a copy
+```
+for `let` make a copy for int, char, float and create a pointer for all other cases.
+union will be rendered as `tag + buffer`. if all cases are primitives or label types, it will be marked as value type (copy on assignment), else, it will be a pointer.
+
+? - implementation
+- we should keep an integer for each type to be for `@` operator
+- q: can we have overloaded functions in llvm ir?
+- q: can I really inline llvm ir functions?
+- determine in which case can I make a binding mutable?
+
+? - functions like copy which order is important can be called by mistake.
+Can we make it more clear? without using named argument?
+Maybe using named types?
+`Copy(From{x}, To{y})`
+`check(Str{x}, Pattern{y})`
+`move(Source{x}, Target{x})`
+`contains(Str{x}, Char{y})`
+`checkGreaterThan(Source{x}, Boundary{y})`
+In this case we are not relying on argument names but on their types.
+
