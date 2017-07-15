@@ -4171,6 +4171,25 @@ Modify array and map: `x[0] = 10, a["A"] = 10`
 N - Can't a closure modify variables of parent function?
 No. It is againt transparency. We may return the closure and it can have all sorts of side effects.
 
+N - functions like copy which order is important can be called by mistake.
+Can we make it more clear? without using named argument?
+Maybe using named types?
+`Copy(From{x}, To{y})`
+`check(Str{x}, Pattern{y})`
+`move(Source{x}, Target{x})`
+`contains(Str{x}, Char{y})`
+`checkGreaterThan(Source{x}, Boundary{y})`
+In this case we are not relying on argument names but on their types.
+These functions are not overloaded much. Why not use a tuple?
+`func copy(x:{from: string, to: string}) { ... }`
+`copy({.from=A, .to=B})`
+`copy({.to=B, .from=A})`
+
+Y - Add `++` and `--` as statements.
+
+
+N - Are map and array still not primitive types?
+
 ? - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
 these can indicate micro-commands to be executed by the compiler so we will be coding our compiler into that notation.
@@ -4296,13 +4315,13 @@ union will be rendered as `tag + buffer`. if all cases are primitives or label t
 - q: can I really inline llvm ir functions?
 - determine in which case can I make a binding mutable?
 
-? - functions like copy which order is important can be called by mistake.
-Can we make it more clear? without using named argument?
-Maybe using named types?
-`Copy(From{x}, To{y})`
-`check(Str{x}, Pattern{y})`
-`move(Source{x}, Target{x})`
-`contains(Str{x}, Char{y})`
-`checkGreaterThan(Source{x}, Boundary{y})`
-In this case we are not relying on argument names but on their types.
-
+? - map and almost everything else can be implemented using normal types and array.
+can array also be implemented using normal features?
+we have special behavior for array and map: indexing and literals.
+What about other types?
+Can I use `[1,2,3]` literal for another type? How?
+Remember that functions cannot modify their input.
+`var x = [1, 2, 3]` what should be type of x? array of int. so this type of literal can only be used for array not any other type. because type inference will have problems.
+so we can and will have a queue data type but it will be initialized using an array or map + a function.
+`var x: queu[int] = newQueue([1, 2, 3])`
+it doesn't matter it we can implement array using language features because it is so basic.
