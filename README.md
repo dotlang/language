@@ -92,7 +92,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 09. **Map type**: `var countryPopulation: map[string, int] := [ "US": 300, "CA": 180, "UK": 80 ]`
 10. **Generics**: `type Stack[T] := { data: array[T], info: int }`
 11. **Union type**: `type Maybe[T] := T | nothing`
-12. **Function**: `func calculate(x: int, y: string) -> float { return if x > 0 then 1.5 else 2.5  }`
+12. **Function**: `func calculate(x: int, y: string) -> float { ??? if x > 0 then 1.5 else 2.5  }`
 13. **Lambda expression**: `var adder = (x:int, y:int) -> x+y`
 
 # Type System
@@ -163,28 +163,14 @@ var x = {
 3. `var int_or_float = 12.91`
 4. `var int_or_float = 100`
 5. `var int_value, has_int = int{int_or_float}`
-6.
-```
-stringed = switch ( int_or_float ) 
-{
-    x:int -> ["int" , toString(1+x)],
-    y:float -> "is_float",
-    else: "Not_int"
-}
-```
-7. `var x:int, found: bool = maybe_int`.
-8. `var x:string, found: bool = int_or_string_or_float`
 
 **Notes**
 
 2. You can use either types or identifiers for union cases. If you use an identifier you must use a capital identifier and it's name should be unique.
 3. Example number 1 shows usage of label types to define an enum type to represent days of week.
 4. Example 2, defines a union with explicit type and changes it's value to other types in next two examples.
-5. Example 5, uses `typeOf` function to check if there is an integer type inside previously defined union.
-6. You can use the syntax in example 6 to cast a union to another type. It will also give a boolean to indicate if the casting was successful.
-7. Example 7, uses `switch` expression to check and match for type of data inside union.
+6. You can use the syntax in example 5 to cast a union to another type. It will also give a boolean to indicate if the casting was successful.
 8. `int | flotOrString` will be simplified to `int | float | string`
-9. You can use assignment operator to extract and check internal data of a union type (Example 7 and 8).
 
 ## Important types
 
@@ -315,16 +301,16 @@ These types are not primitive but due to being widely used in the language and l
 1. Declaration: `{field1: type1, field2: type2, field3: type3, ...}` 
 2. Literal: `Type{.field1=value1, .field2=value2, .field3=value3, ...}` 
 3. Update: `other_tuple{.field1=value1, .field2=value2, .field3=value3, ...}` 
-4. Untyped literal: `{value1 value2, value3, ...}` 
+4. Untyped literal: `${value1 value2, value3, ...}` 
 
 **Examples**
 
 1. `type Point := {x:int, y:int}`
-2. `point = {100, 200}`
+2. `point = ${100, 200}`
 3. `point = Point{.x=100, .y=200}`
 4. `my_point = Point{100, 200}`
 5. `x,y = point`
-6. `x,y = {100,200}`
+6. `x,y = ${100,200}`
 7. `another_point = my_point{.x=11, .y=my_point.y + 200}`
 8. `another_point = my_point`, `another_point.x = 11`, `another_point.y += 200`
 9. `new_point = {a=100, b=200} //WRONG!`
@@ -376,11 +362,11 @@ These types are not primitive but due to being widely used in the language and l
 **Notes**
 
 1. There is no implicit and automatic casting in the language.
-2. Casting is mostly used to cast between a union and it's internal type (Example 2) or between named and equal unnamed type (Example 4 and 5).
+2. Casting is mostly used to cast between a union and it's internal type (Example 2) or between named and equal unnamed type (Example 4 and 5). 
 3. If function expects a named type, you cannot pass an equivalent unnamed type. 
 4. Similarly, when a function expects an unnamed type, you cannot pass a named type with same underlying type. 
 5. Another usage of casting is to cast between `int` and `float` and `char` (Example 1).
-
+6. When casting for union types, you get two outputs: Target type and a boolean flag indicating whether cast was successful.
 
 # Functions
 
@@ -392,11 +378,11 @@ These types are not primitive but due to being widely used in the language and l
 
 **Examples**
 
-01. `func myFunc(y:int, x:int) -> int { return 6+y+x }`
+01. `func myFunc(y:int, x:int) -> int { 6+y+x }`
 02. `func log(s: string) -> { print(s) }`
-03. `func process(pt: Point)->int { return pt.x }`
+03. `func process(pt: Point)->int { pt.x }`
 04. `func process2(pt: Point) -> {pt.x, pt.y}`
-05. `func my_func8() -> {x:int, y:int} { return {10,20} }`
+05. `func my_func8() -> {x:int, y:int} { {10,20} }`
 06. `func my_func(x:int) -> x+9`
 07. `func myFunc9(x:int) -> {int} {12}`
 08. `func PI -> 3.14`
@@ -405,7 +391,7 @@ These types are not primitive but due to being widely used in the language and l
 
 **Notes**:
 
-1. Every function must return something. If it doesn't compiler marks output type as `nothing` (Example 2).
+1. Every function must return something which is the last expression in the function body. If it doesn't, compiler marks output type as `nothing` (Example 2).
 2. A function call with union data, means there must be functions defined for all possible types in the union. See Call resolution section for more information.
 3. You can define consts using functions (Example 6).
 4. There must be a single space between func and function name.
@@ -420,7 +406,6 @@ These types are not primitive but due to being widely used in the language and l
 13. Only local variables are mutable. So function cannot modify it's inputs.
 14. You can call a function or lambda which accepts an int with `int|string` only if you are sure it contains an integer. Other method is to define two functions with same signature, one for int and one for string.
 15. You can call a function that accepts `int|string` with either `int` or `string` or `int|string`.
-16. `return` is same as `return nothing`.
 
 ## Invocation
 
@@ -488,16 +473,16 @@ These types are not primitive but due to being widely used in the language and l
 
 **Examples**
 
-1. `f1 = (x: int, y:int) -> int { return x+y }`
-2. `f1 = (x: int, y:int) -> { return x+y }` ;the most complete definition
+1. `f1 = (x: int, y:int) -> int { x+y }`
+2. `f1 = (x: int, y:int) -> { x+y }` ;the most complete definition
 3. `rr = (x: int, y:int) -> x + y`  ;return type can be inferred
 4. `rr = () -> { x + y }`
-5. `func test(x:int) -> plusFunc { return |y:int| -> y + x }`
-6. `(x:int)->int { return x+1 } (10)`
+5. `func test(x:int) -> plusFunc { |y:int| -> y + x }`
+6. `(x:int)->int { x+1 } (10)`
 7. `func process(x:int, y:float, z: string) -> { ... }`
 8. `lambda1 = process(10, _, _)`
 9. `ff = (x:int) -> { ff(x+1) }`
-10. `(x:int)-> {print(x), return x-1}`
+10. `(x:int)-> {print(x), x-1}`
 
 **Notes**
 
@@ -621,6 +606,7 @@ These types are not primitive but due to being widely used in the language and l
 ## Special notations
 
 01. `@`  type-id opertor
+02. `$` prefix for tuple literals
 02. `|`  union data type
 03. `_`  something we don't know or don't care (placeholder for a lambda input or unknown variable in assignments or switch)
 04. `:`  type declaration for tuple and function input and values, map literal
@@ -633,11 +619,9 @@ These types are not primitive but due to being widely used in the language and l
 11. `()` function declaration and call
 12. `.`  access tuple fields, function chaining (with spaces around)
 
-Keywords: `import`, `func`, `return`, `type`, `var`
+Keywords: `import`, `type`, `func`, `var`, `loop`
 
 Primitive data types: `int`, `float`, `char`
-
-Operators: `and`, `or`, `not`, `@`, `{}`
 
 Other built-in names: `nothing`, `true`, `false`
 
@@ -687,20 +671,32 @@ Other built-in names: `nothing`, `true`, `false`
 ```
 var y:int = switch(int_or_float_or_string, [@int: (x:int)->1+x, @string: (s:string)->10], ()->100)
 ...
-func switch(v: S|T|U, mp: map[int, func(T)->X|func(S)->X|func(U)->X], else: func()->X)->X {
-  var ff, found = mp[xType(v)]
-  return [false: else(), true: ff(v)][found]
+type FF := func(T)->X|func(S)->X|func(U)->X
+func switch(v: S|T|U, mp: map[int, FF->X], else: func()->X)->X {
+  var ff, found = FF{mp[xType(v)]}
+  [false: else(), true: ff(v)][found]
 }
 ```
-2. `return [true:nothing][failed]`
-3. `x := [true: (x:int)-> {print(x), return x-1}, false: (x:int)-> nothing][x>0](x)`
+3. `loop {x = [true: (x:int)-> {print(x), x-1}, false: (x:int)-> nothing][x>0](x)}`
+4.
+```
+var myOutput
+var iter
+loop 
+{
+    data, iter = [
+        true: (x:iterator) -> ${nothing, nothing}, 
+        false: (x: iteartor)->${getData(x), next(x)}
+    ][eof(iter)](iter) 
+    append(myOutput, data)}
+```
 
 **Notes**
 
 1. Example 1 shows a simple case of implementing pattern matching.
-2. With `return` statement, if map access is used with missing key, statement won't be executed (Example 2, if not failed, this statement won't be executed).
-3. Example 3 shows implementation of `while ( x > 0 ) print(x), x--` using `:=` notation.
-4. `A := ...` repeat assignment until A becomes nothing.
+2. Example 2 shows implementation of `while ( x > 0 ) print(x), x--` using `loop` notation.
+3. `loop { ... }` repeat until block's evaluation result becomes nothing.
+4. Example 4 represents implementation of a `map` function.
 
 ## dispose
 
@@ -729,7 +725,7 @@ func switch(v: S|T|U, mp: map[int, func(T)->X|func(S)->X|func(U)->X], else: func
 
 **Semantics**: Handle unexpected and rare conditions.
 
-**Syntax**: `func process() -> int|exception { ... return exception{...} }`
+**Syntax**: `func process() -> int|exception { ... exception{...} }`
 
 **Examples**
 
@@ -788,7 +784,7 @@ func switch(v: S|T|U, mp: map[int, func(T)->X|func(S)->X|func(U)->X], else: func
 ```
 func main() -> 
 {
-    return 0 
+    0 
 }
 ```
 
@@ -813,12 +809,12 @@ type Expression := int|NormalExpression
 func eval(input: string) -> float 
 {
   exp = parse(input)
-  return innerEval(exp)
+  innerEval(exp)
 }
 
 func innerEval(exp: Expression) -> float 
 {
-  return switch exp
+  switch exp
   {
     x: int -> x,
     y: NormalExpression ->
