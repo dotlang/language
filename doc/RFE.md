@@ -4532,6 +4532,18 @@ N - A way to define multiple statement in the same line, for lambdas.
 Y - simplify `{{...}}`?
 remove it.
 
+Y - Let's say we can write: 
+`var x:int, found: bool = maybe_int`.
+we can do this for every union type:
+`var x:string, found: bool = int_or_string_or_float`
+
+Y - `return [true:][failed]`
+This is confusing. Everything is according to a map fetch. 
+Only `:=` adds a little complexity (which also removed label and goto).
+`return [true:nothing][failed]` 
+Maybe we should follow the advice that a function must only have one return statement.
+No. Just add more explanations and make it only for return.
+
 ? - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
 these can indicate micro-commands to be executed by the compiler so we will be coding our compiler into that notation.
