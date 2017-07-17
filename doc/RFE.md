@@ -4633,6 +4633,87 @@ stringed = switch ( int_or_float )
 stringed = switch(int_or_float, [@int, (x:int)->["int", toString(1+x)], (y:float)-> "is_float"...
 ```
 
+Y - Reading this notation is a bit difficult. Can we make it more readable?
+`x = [true: (x:int)-> {print(x), x-1}, false: (x:int)-> nothing][x>0](x)`
+`x = [x>0][true: (x:int)-> {print(x), x-1}, false: (x:int)-> nothing](x)`
+This is more readable but we are using `[]` for many different purposes.
+Define map literal, array literal, query map and query array.
+Btw we can also use array for conditionals.
+`[T]` generics
+`[1,2,3]` array literal
+`[true:1, false: 2]` map literal
+`map[4]` map query
+`arr[1]` array query
+we can use functions. `get` + `$` for map and array literals.
+`x = get(x>0, $[true: (x:int)-> {print(x), x-1}, false: (x:int)-> nothing])(x)`
+`x = [x>0]$[true: (x:int)-> {print(x), x-1}, false: (x:int)-> nothing](x)`
+`map$"A"`
+`map[1]`
+`[1]map`
+
+Y - Stil this does not seem correct.
+```
+var y:int = switch(int_or_float_or_string, $[@int: (x:int)->1+x, @string: (s:string)->10], ()->100)
+...
+type FF[T,X] := func(T)->X
+func switch[S,T,U,X](v: S|T|U, mp: map[int, FF[S,X]|FF[T,X]||FF[U,X]], else: func()->X)->X {
+  var func_to_call: maybe[FF[S,X]|FF[T,X]||FF[U,X]] = [@v]$[@S: mp[@S], @T: mp[@T], @U: mp[@U]]
+  var found = func_to_call != nothing
+  //reading from map, returns a maybe
+  var result = [found]$[true: func_to_call(v), false: else()]
+  
+  result
+}
+```
+problem is nesting this structure is extremely hard to read.
+jump can solve it but it adds problm with forward labels and using labels as data.
+
+Y - Extend `@` for unions too. acts like `xType`.
+
+Y - There is a surprise here.
+when you cast union to a type, you get two output! an additional flag.
+when you read from map or array you get a maybe[T]
+Let's make them uniform. When you cast union to some type you get maybe[T] too.
+You can check for nothing with `==` and `!=`
+
+Y - if casting union to int returns maybe, how can I extract the integer data inside a union?
+`${int_value, done} = int{my_union}`
+`${value, found} = my_map[1]`
+`${value, found} = my_array[100]`
+
+? - can we remove loop?
+`loop {x = [x>0]$[true: (x:int)-> {print(x), x-1}, false: (x:int)-> nothing](x)}`
+It is a bit hard to read. and `nothing` is a special case.
+`var x = 100`
+`//x!=0// x = [x>0]$[true: (x:int)-> {print(x), x-1}](x)` run this statement or block as long as this condition holds.
+`/x!=0/ x++` run this block or statement if this condition holds.
+NO. any kind of prefix will be confusing when mixed with statement or expression or assignment.
+It will reduce orthogonality. If with map, is completely orthogonal with other concepts. Actually it is nothing new.
+Now, we want to have a loop. internally, loop can be also modelled as reading from a map and processing the result.
+1. x = read from map
+2. y = process x
+3. if predicate(y) goto step 1
+problem is with goto.
+`x=[k]$[1: ..., 2: ...]`
+`y = x>0`
+`x=[x>0]$[true: (g:int)->g-1, false: (g:int)->nothing](x)`
+This is wrong! invoking result of map will return maybe[int] while left side is expected to be int.
+We want to implement this:
+`while ( x > 0 ) print(x), x--`
+`x, found = [x>0]$[true: (g:int)-> { print(g), x-- }]`
+we want to repeat while a condition is held.
+`x, found = [x>0]$[true: (g:int)-> { print(g), x-- }](x)`
+prefix makes code more readable but less orthogonal.
+This definitely involes an assignment. a restricted and minimal way to model loop criteria is a boolean variable. Other things can be simulated with a boolean variable.
+`label1: x, found = [x>0]$[true: (g:int)-> { print(g), x-- }](x)`
+`jump label1, found`
+jump is very general and powerful.
+`x, found = [x>0]$[true: (g:int)-> { print(g), x-- }](x)`
+`loop found` repeat previous command if found is true.
+How can we do loop condition check before the actual command?
+
+
+
 
 ? - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
