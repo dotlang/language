@@ -4187,8 +4187,188 @@ These functions are not overloaded much. Why not use a tuple?
 
 Y - Add `++` and `--` as statements.
 
-
 N - Are map and array still not primitive types?
+
+N - Just like we define type alias, shall we have function alias?
+`type MyInt = int`
+`func myProcess(x: int, y:int) = p2`
+`func myProcess(x: int, y:int) = p2(y,x)`
+But there is no advanrage to this.
+
+N - map and almost everything else can be implemented using normal types and array.
+can array also be implemented using normal features?
+we have special behavior for array and map: indexing and literals.
+What about other types?
+Can I use `[1,2,3]` literal for another type? How?
+Remember that functions cannot modify their input.
+`var x = [1, 2, 3]` what should be type of x? array of int. so this type of literal can only be used for array not any other type. because type inference will have problems.
+so we can and will have a queue data type but it will be initialized using an array or map + a function.
+`var x: queu[int] = newQueue([1, 2, 3])`
+it doesn't matter it we can implement array using language features because it is so basic.
+
+
+N - Support check  loop condition at the end
+`while x>0 loop print(x)`
+`loop print(x) while x>0`
+`while x>0 loop { ... }`
+`loop { ... } while condition`
+
+Y - The control structure in the language is a bit too complicated now:
+`for, do, while, if, then, else, break, continue?, switch, ...`
+Can we simplify it?
+we can write these using `switch` but as we don't have macros, we either need to define them as new keywords or functions.
+Can we have inline functions in place of a macro? 
+`#define if(c,t,f) switch(c) true -> t, false -> f`
+`func if(cond: func()->bool, tr, fa) ...`
+`... if ( x>0, print(x), return false)`
+I should decide how revolutionary this should be. If I want something revolutionary, this can result in a new notation. but if I don't I might stick with normal and more intuitive keywords.
+func with inline marker can accept an input which does not have a type and will simply be replaced.
+`func! if(con, tr, fa) ...`
+```
+if ( x>0, {
+  print(x)
+  process(x,y)
+}, {
+x++
+return x
+})
+```
+maybe we can add only switch and goto and implement other control structure.
+or `goto` and `if`. but we cannot implement switch with if, because switch has an unknonwn number of inputs.
+`switch` is more general than others.
+how can we handle untyped arguments? like the condition in if.
+`func! if(cond: bool, tr: func()->T, fa: func()->T)->T`
+`if(()->x>0, ..., ...)`
+we can keep this syntax and avoid untyped input argument (which is against language rules and typing system), but we need to simplift `()->x>0`.
+We can say that `{...}` can be considered as a lambda with no input. but then a lambda is not supposed to change parent variables. but a code-block inside a function can do that.
+q: How can we simplify definition of a lambda without input? Like `()->x>0 and y==1`
+how can we implement while loop?
+maybe we can implement everything using switch and recursive functions. But if we use inline code, then being recursive can be confusing and expensive in runtime and output size.
+proposal: Why should we deal with macro? Compiler should deal with it. we just write functions and the smart compiler detects what needs to be inlined. Of course recursive function cannot be inlines especially if rec. condition is dynamic. We just write a normal function. `if`, `while`, ...
+Suppose that we have switch and goto and labels.
+`func while(cond: func(T)->bool, body: func()->T) ...`
+`while((x:int)->{x>0}, ()->{.... x })`
+`/x>0/`
+`/_>0/`
+we can define shortcut for lambda expression: `/.../`
+`<...>`
+`\...\`
+`$...$`
+`$x>0$`
+`{{x>0}}`
+`{{_>0}}`
+we can implement everything using if, goto or switch, goto.
+using if, goto has the advantage that I can also use if in normal code. 
+`print(t) if t<0`
+`if(r==0) { ... }`
+`while({{_>0}}, {{.... x }})`.
+```
+func while(cond: func(T)->bool, body: func()->T, x: T)
+{
+  var indicator = cond(x)
+  start:
+  if ( indicator == false ) return
+  indicator = body()
+  goto start
+}
+```
+the more revolutionaty, the more difficult (or at least unintuitive) code writing will be. You will need to do according to some rules. We can define basic commands based on a mapping from assembly language. Because of that, if and goto are normal choices.
+- we can implement `continue` using return inside body block. 
+- we can also have `break` with a different output type for body `T | BreakIndicator`.
+- we can make switch single argument and make it's choices, lambdas.
+so all we will need is `if`, `goto` and lambdas + `{{}}` notation.
+con: we cannot return somethnig from within while. This is possible with a specific notation.
+`func while(cond: func(T)->bool, body: func()->T|Return[X]|BreakIndicator, x: T)`
+still we cannot return from inside `while` function something which forces parent function to return.
+so:
+1. Add `{{}}` shortcut notation for lambda.
+2. Add `goto` keyword.
+3. Make `if` general (it can be used as prefix or suffix).
+4. Make every other thing, a function: `for, while, switch, ...`
+`func switch(x:T|S, (i:T)->int, (i:S)->int)`
+or we can use a map literal with key = type and value = lambda. but value type cannot be changing.
+I have been switching between "everything is a function" and "these should be keyword" notation multiple times.
+Each one has it's pro and con.
+everything func: 
+ pro: simpler, easier to write compiler, 
+ con: notation will be a bit more restricted (e.g. return is not possible)
+keywords:
+ pro: easier to read
+ con: language spec will be longer.
+we want a language which is both high-level and low-level at the same time.
+
+Y - If we want to make `if` an expression maybe we should also add else. 
+Or use this notation:
+`x=t>0 and print(t)`
+`y=t<0 or print("not found")`
+`var x = if(correct) 10` if not correct, x will be nothing? this is a bit confusing because x does not have a type.
+Simple: no else, no nothing.
+We already have `and` and `or`. Maybe we can replace `if` with them.
+so we will only have `jump` + operators `and, or, not, ...`
+Also, and and or make expressions.
+`print(x) if x>0`
+`(x>0) and print(x)`
+but then we have to support non-booleans for and/or.
+`(x>0) and print(x) or print("failed")`
+if condition is true, short circuit rule, will cause print to be executed.
+if it is false, after `and` won't be executed.
+if condition is false, short circuit rule, will cause print-failed to be executed.
+`true and A or B` will invoke A
+`false and A or B` will invoke B
+what about this?
+let's define `and` and `or` like this:
+on their first (left) argument they must have a boolean but the right side argument can be non-boolean.
+`true and X` will evaluate to X.
+`false and X` will evaluate to false.
+`true or X` will evaluate to true.
+`false or X` will evaluate to X.
+`condition and true_action or false_action`
+how can this be non-boolean expression? if it has and/or 
+`x = condition and true_expression or false_expression`
+left of or operator is not bool. NO. if left side evaluates to non-bool, means, condition is true. 
+`x = condition and nothing or 1`
+This should be clarified more and formalized with a clear definition. 
+Then we can replace if and only use `and` and `or`.
+Perl uses or in this way.
+What if they are not expressions this way?
+So and/or as expression, only accept booleans.
+But as statements, they accept anything.
+`X and Y`
+What does `X and Y and Z or Y` mean? also `X and Y or Z or T or V`?
+It is confusing. developer must use paren. otherwise they will be evaluated left-to-right.
+`b1 and b2 and act1 or act2`
+`(b1 and b2 and act1) or act2`
+`A or act2` is A is false, act2 is executed. if A is true, no act2.
+`(b1 and b2 and act1) or act2`
+`if(b1 and b2) act1 else act2`
+This is confusing (precedense) and complex (paren everywhere).
+`... if (C)`
+`if (C) ...`
+if can be prefix or suffix of simple statement.
+why not suffix for code block?
+`{....} if x>0` 
+it make code un-readable if condition comes at the end of the block.
+
+N - How can we handle the requirement for having unique names for function and types?
+In a large project this may cause problems.
+
+Y - Shall we use a notation for union type labels? Instead of using strange "Label types"?
+Then what will happen to the type of the union?
+`var x: bool = $true`
+`type(x) == @bool`
+`if ( x == $true )`
+The `typeOf` function exaplained in union section is confusing. It seems to return type of it's input but type of it is a union of int and float. So returning current data inside it is confusing.
+We should only rely on pattern matching and switch.
+```
+func switch(x: T|U, t_handler: func(T)->S, u_handler:func(U)->S)->S {
+  var t, has_t = T{x}
+  var u, has_u = U{x}
+  if ( has_t ) return t_handler(x)
+  if ( has_u ) return u_handler(x)
+}
+```
+Can we have a general switch function? For any number of cases in a union?
+Maybe we can handle it via recursion.
 
 ? - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
@@ -4289,16 +4469,27 @@ Transforms:
 - switch.
 - No type inference
 - No closure
-- explicit dispose and mallo
+- explicit dispose and malloc
+- No generics
 what would the intermediate code look like? It will be called semi-ir.
 Maybe we can merge two maps into "Symbols" map with a kind which can be type or function.
 We should process types first because they dont rely on functions.
-
-? - Just like we define type alias, shall we have function alias?
-`type MyInt = int`
-`func myProcess(x: int, y:int) = p2`
-`func myProcess(x: int, y:int) = p2(y,x)`
-But there is no advanrage to this.
+============
+Step 0: Prepare SymbolMap which maps string to Symbol struct. This includes kind field (type or function) + the source code definition + metadata + intermediate code
+Step 1: Lex the input file and just read names of types and functions and update SymbolMap.
+Step 2: Prepare CQ (compilation queue) and add `main` symbol to it.
+Step 3: Repeat until CQ is empty: 
+  A. Fetch function name F from CQ
+  B. Find it in Func map and fetch FunctionDescriptor
+  C. Lex it's contents and check for lex errors.
+  D. For each function call, first make sure we have such a function. If so, add it to CQ
+  D1. Metadata for function: Functions it calls, local variables and if they are part of return, stack size.
+  E. render intermediate code (between dotlang and LLVM IR) containing simple expressions and method calls.
+  F. Check for optimizations.
+  G. FunctionDescriptor will contain function body, intermediate codes, metadata, ...
+  H. Render intermediate codes to LLVM IR.
+  I. Send output LLVM IR to a IR repository.
+Step 4: Send IR repository contents to LLVM compiler.
 
 ? - example
 ```
@@ -4315,13 +4506,7 @@ union will be rendered as `tag + buffer`. if all cases are primitives or label t
 - q: can I really inline llvm ir functions?
 - determine in which case can I make a binding mutable?
 
-? - map and almost everything else can be implemented using normal types and array.
-can array also be implemented using normal features?
-we have special behavior for array and map: indexing and literals.
-What about other types?
-Can I use `[1,2,3]` literal for another type? How?
-Remember that functions cannot modify their input.
-`var x = [1, 2, 3]` what should be type of x? array of int. so this type of literal can only be used for array not any other type. because type inference will have problems.
-so we can and will have a queue data type but it will be initialized using an array or map + a function.
-`var x: queu[int] = newQueue([1, 2, 3])`
-it doesn't matter it we can implement array using language features because it is so basic.
+
+? - Allow overloading based on return type and give error if assignments like `x=func1()` are ambiguous.
+We already have this by `autoBind` function.
+So either you have to write: `x: Type1 = func1(1,2,3)` or if it is generic with generic output argument: `x = func1[Type1](1, 2, 3)`
