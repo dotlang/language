@@ -4544,6 +4544,96 @@ Only `:=` adds a little complexity (which also removed label and goto).
 Maybe we should follow the advice that a function must only have one return statement.
 No. Just add more explanations and make it only for return.
 
+Y - I think we can also eliminate `return` keyword.
+The last expression inside the function will determine it's result.
+```
+func process(x: in) {
+  print(x)
+  x+1
+}
+```
+pro: no need for exception for return with map with missing key.
+con: code may become complex.
+we can write `x=nothing` and update it if needed.
+then at the end: `x`.
+we already had this with `func process(x:int)->x+1`
+`func myFunc9(x:int) -> {int} {12}`
+does this function return 12 in a code block or returns a tuple literal?
+Maybe we should use `$` prefix for tuple literals.
+`func myFunc9(x:int) -> {12}` this one is really confusing. We don't know type of return.
+`func myFunc9(x:int) -> 12`
+`func myFunc9(x:int) -> { print(10), 12 }`
+`func myFunc9(x:int) -> {12}`
+At least it is confusing.
+`${...}`
+Let's use `$`
+
+Y - `:=` notation is not very intuitive and does not imply repeatition.
+`x := [true: (x:int)-> {print(x), x-1}, false: (x:int)-> nothing][x>0](x)`
+`x = [true: (g:int)-> {print(g), g-1}, false: (g:int)-> nothing][x>0](x)`
+- we can have multiple variables on the left side and loop will finish when all of them are nothing.
+we need something which means: continue evaluation until result is nothing.
+`lbl: x = [true: (g:int)-> {print(g), g-1}, false: (g:int)-> nothing][x>0](x)`
+`jump [nothing:lbl](x)`
+adding jump and labels makes things more complicated (although more flexible and dangerous too).
+`&{x = [true: (x:int)-> {print(x), x-1}, false: (x:int)-> nothing][x>0](x)}`
+`&{...}` means evaluate block until it is nothing. then continue to the next statement.
+`x=1` evaluates to 1.
+`loop {x = [true: (x:int)-> {print(x), x-1}, false: (x:int)-> nothing][x>0](x)}`
+
+N - Can we add a keyword which is simple like `loop`? but for if. NO
+`loop { ... }`
+
+Y - How can we implement map?
+`var x:array[int] = loop { y }`
+```
+var myOutput
+var iter
+loop 
+{
+    data, iter = [
+        true: (x:iterator) -> ${nothing, nothing}, 
+        false: (x: iteartor)->${getData(x), next(x)}
+    ][eof(iter)](iter) 
+    append(myOutput, data)}
+```
+
+N - assign if it is not nothing.
+`x = if y` if y is not nothing, assign it to x.
+it is not straight forward to implement this behavior using functions.
+but the notation is confusing.
+`if y then x=y`
+conditional assignment:
+`x := y` y will be assigned to x if it is not nothing.
+if y is nothing, x won't be changed.
+Is this useful?
+```
+var y:int = switch(int_or_float_or_string, [@int: (x:int)->1+x, @string: (s:string)->10], ()->100)
+...
+func switch(v: S|T|U, mp: map[int, func(T)->X|func(S)->X|func(U)->X], else: func()->X)->X {
+  var ff, found = mp[xType(v)]
+  retVal := ff(v) //run if ff is not nothing?
+  [false: else(), true: ff(v)][found]
+}
+```
+alternative:
+`data, something = y`
+`x = [true: data, false: x][something]`
+
+N - How do you write this now?
+```
+stringed = switch ( int_or_float ) 
+{
+    x:int -> ["int" , toString(1+x)],
+    y:float -> "is_float",
+    else: "Not_int"
+}
+```
+```
+stringed = switch(int_or_float, [@int, (x:int)->["int", toString(1+x)], (y:float)-> "is_float"...
+```
+
+
 ? - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
 these can indicate micro-commands to be executed by the compiler so we will be coding our compiler into that notation.
