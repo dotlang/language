@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditionals, loops and pattern matching using map and `:=` notation.
+- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditionals, loops and pattern matching using map and `loop` keyword, return `$` for litearls,
 
 # Introduction
 
@@ -162,15 +162,17 @@ var x = {
 2. `var int_or_float: int | float = 11`
 3. `var int_or_float = 12.91`
 4. `var int_or_float = 100`
-5. `var int_value, has_int = int{int_or_float}`
+5. `int_value, done = int{my_union}`
+6. `var real_type:int = @my_int_or_float`
 
 **Notes**
 
-2. You can use either types or identifiers for union cases. If you use an identifier you must use a capital identifier and it's name should be unique.
-3. Example number 1 shows usage of label types to define an enum type to represent days of week.
-4. Example 2, defines a union with explicit type and changes it's value to other types in next two examples.
-6. You can use the syntax in example 5 to cast a union to another type. It will also give a boolean to indicate if the casting was successful.
-8. `int | flotOrString` will be simplified to `int | float | string`
+1. You can use either types or identifiers for union cases. If you use an identifier you must use a capital identifier and it's name should be unique.
+2. Example number 1 shows usage of label types to define an enum type to represent days of week.
+3. Example 2, defines a union with explicit type and changes it's value to other types in next two examples.
+4. You can use the syntax in example 5 to cast a union to another type. Result will have two parts: data and a flag.
+5. `int | flotOrString` will be simplified to `int | float | string`
+6. Example 6 shows using `@` operator to fetch real type of a union variable.
 
 ## Important types
 
@@ -203,20 +205,21 @@ These types are not primitive but due to being widely used in the language and l
 
 **Examples**
 
-1. `var arr = [1, 2, 3]`
-2. `var g = arr[0]`
+1. `var arr = $[1, 2, 3]`
+2. `var g, found = arr[0]`, `var g, found = [0]arr`
 3. `arr[0] = 10`
-4. `var two_d_array: array[array[int]] = [ [1,2,3], [4,5,6] ]`
-5. `var two_d_array = [ [1,2,3], [4,5,6] ]`
+4. `var two_d_array: array[array[int]] = $[ $[1,2,3], $[4,5,6] ]`
+5. `var two_d_array = $[ $[1,2,3], $[4,5,6] ]`
 6. `var p = two_d_array[0][0]`
-7. `var arr2 = [0..10]`
-8. `var arrx: array[int] = [1, 2, 3]`
+7. `var arr2 = $[0..10]`
+8. `var arrx: array[int] = $[1, 2, 3]`
 
 **Notes**
 
 1. Above examples show definition and how to read/update array.
 2. In example 7, the range operator `..` is used to generate an array literal.
 3. You can explicitly state array literal type like in example 8.
+4. You can use prefix or suffix notation to read from array (Example 2).
 
 ### Slice
 
@@ -226,7 +229,7 @@ These types are not primitive but due to being widely used in the language and l
 
 **Examples**
 
-1. `var arr = [1..9]`
+1. `var arr = $[1..9]`
 2. `var slice1 = arr[1, 2]`
 3. `var slice2 = arr[0, -1]`
 
@@ -243,16 +246,18 @@ These types are not primitive but due to being widely used in the language and l
 
 **Examples**
 
-1. `var my_map = ["A": 1, "B": 2, "C": 3]`
-2. `var item1 = my_map["A"]`
+1. `var my_map = $["A": 1, "B": 2, "C": 3]`
+2. `var item1, found = my_map["A"]`, `var item1, found = ["A"]my_map`
 3. `my_map["A"] = 2`
-4. `var my_map: map[string,int] = ["A": 1, "B": 2, "C": 3]`
+4. `var my_map: map[string,int] = $["A": 1, "B": 2, "C": 3]`
+
 
 **Notes**
 
 1. You need to use core functions to manipulate a map, because (like everything else), they are immutable.
 2. If you query a map for something which does not exist, it will return `nothing`.
 3. You can explicitly state type of a map literal like example 4.
+4. You can use prefix or suffix notation to read from map (Example 2).
 
 ## Type alias
 
@@ -576,7 +581,7 @@ These types are not primitive but due to being widely used in the language and l
 
 **Examples**
 
-01. `g = @int`
+01. `g = @int`, `g = @my_union`
 02. `y:int = x`
 03. `y: int|float = 12`
 04. `{x,y,z} . {_,_,_}` => `{x,y,z}`
@@ -593,7 +598,7 @@ These types are not primitive but due to being widely used in the language and l
 1. `=` operator copies data from right-side into the left-side.
 2. `==` will do comparison on a binary-level. If you need custom comparison, you can do in a custom function.
 3. Operators for bitwise operations and exponentiation are defined as functions.
-4. `@`: returns type-id of a named or primitive type as an integer number (Example 1).
+4. `@`: returns type-id of a named or primitive type as an integer number, or a union variable (Example 1).
 5. `{}`: To cast from named to unnamed type you can use: `Type{value}` notation (Example 2).
 6. `{}`: To cast from variable to a union-type (Example 3).
 7. ` . `: Chaining opertor (Note to the spaces around the dot). `X . F(_)` will be translated to `F(X)` function call. right side of dot must be either a closure with expected inputs or a tuple with underscores for substitition. If right-side expects a single input but left side is a tuple with multiple items, it will be treated as a tuple for the single input of the function (Example 7) but if function expects multiple inputs they will be extracted from left side (Example 6). 
@@ -606,7 +611,7 @@ These types are not primitive but due to being widely used in the language and l
 ## Special notations
 
 01. `@`  type-id opertor
-02. `$` prefix for tuple literals
+02. `$` prefix for literals (tuple, map and array)
 02. `|`  union data type
 03. `_`  something we don't know or don't care (placeholder for a lambda input or unknown variable in assignments or switch)
 04. `:`  type declaration for tuple and function input and values, map literal
@@ -663,32 +668,34 @@ Other built-in names: `nothing`, `true`, `false`
 
 **Semantics**: Used to implement loops and conditionals and pattern matching
 
-**Syntax**: No specific syntax. `:=` and map access.
-
 **Examples**
 
 1.
 ```
-var y:int = switch(int_or_float_or_string, [@int: (x:int)->1+x, @string: (s:string)->10], ()->100)
+var y:int = switch(int_or_float_or_string, $[@int: (x:int)->1+x, @string: (s:string)->10], ()->100)
 ...
-type FF := func(T)->X|func(S)->X|func(U)->X
-func switch(v: S|T|U, mp: map[int, FF->X], else: func()->X)->X {
-  var ff, found = FF{mp[xType(v)]}
-  [false: else(), true: ff(v)][found]
+type FF[T,X] := func(T)->X
+func switch[S,T,U,X](v: S|T|U, mp: map[int, FF[S,X]|FF[T,X]||FF[U,X]], else: func()->X)->X {
+  var func_to_call: FF[S,X]|FF[T,X]||FF[U,X], found:bool = [@v]$[@S: mp[@S], @T: mp[@T], @U: mp[@U]]
+  //reading from map, returns a maybe
+  var result,_ = [found]$[true: func_to_call(v), false: else()]
+  
+  result
 }
 ```
-3. `loop {x = [true: (x:int)-> {print(x), x-1}, false: (x:int)-> nothing][x>0](x)}`
+3. `loop {x = [x>0]$[true: (x:int)-> {print(x), x-1}, false: (x:int)-> nothing](x)}`
 4.
 ```
-var myOutput
-var iter
+var myOutput = ...
+var iter = ...
 loop 
 {
     data, iter = [
         true: (x:iterator) -> ${nothing, nothing}, 
         false: (x: iteartor)->${getData(x), next(x)}
     ][eof(iter)](iter) 
-    append(myOutput, data)}
+    append(myOutput, data)
+}
 ```
 
 **Notes**
