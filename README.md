@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, define `jump` and implement loops in core.
+- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditionals, loops and pattern matching using map and `:=` notation.
 
 # Introduction
 
@@ -154,11 +154,11 @@ var x = {
 
 **Semantics**: A primitive meta-type to provide same interface which can contain different types.
 
-**Syntax**: `type1 | type2 | $identifier1 | ...`
+**Syntax**: `type1 | type2 | IDENTIFIER1 | ...`
 
 **Examples**
 
-1. `type day_of_week := $SAT | $SUN | $MON | $TUE | $WED | $THU | $FRI`
+1. `type day_of_week := SAT | SUN | MON | TUE | WED | THU | FRI`
 2. `var int_or_float: int | float = 11`
 3. `var int_or_float = 12.91`
 4. `var int_or_float = 100`
@@ -172,16 +172,19 @@ stringed = switch ( int_or_float )
     else: "Not_int"
 }
 ```
+7. `var x:int, found: bool = maybe_int`.
+8. `var x:string, found: bool = int_or_string_or_float`
 
 **Notes**
 
-2. You can use either types or identifiers for union cases. If you use an identifier you must prefix it with `$` and it's name should be unique.
+2. You can use either types or identifiers for union cases. If you use an identifier you must use a capital identifier and it's name should be unique.
 3. Example number 1 shows usage of label types to define an enum type to represent days of week.
 4. Example 2, defines a union with explicit type and changes it's value to other types in next two examples.
 5. Example 5, uses `typeOf` function to check if there is an integer type inside previously defined union.
 6. You can use the syntax in example 6 to cast a union to another type. It will also give a boolean to indicate if the casting was successful.
 7. Example 7, uses `switch` expression to check and match for type of data inside union.
 8. `int | flotOrString` will be simplified to `int | float | string`
+9. You can use assignment operator to extract and check internal data of a union type (Example 7 and 8).
 
 ## Important types
 
@@ -371,6 +374,7 @@ These types are not primitive but due to being widely used in the language and l
 5. `y:int = x`
 
 **Notes**
+
 1. There is no implicit and automatic casting in the language.
 2. Casting is mostly used to cast between a union and it's internal type (Example 2) or between named and equal unnamed type (Example 4 and 5).
 3. If function expects a named type, you cannot pass an equivalent unnamed type. 
@@ -414,6 +418,9 @@ These types are not primitive but due to being widely used in the language and l
 11. There should not be ambiguity when calling a function. So having functions on examples 9 and 3 in same compilation is invalid.
 12. If a function is implemented in the runtime or core sub-system, it's body will be written as `{...}`
 13. Only local variables are mutable. So function cannot modify it's inputs.
+14. You can call a function or lambda which accepts an int with `int|string` only if you are sure it contains an integer. Other method is to define two functions with same signature, one for int and one for string.
+15. You can call a function that accepts `int|string` with either `int` or `string` or `int|string`.
+16. `return` is same as `return nothing`.
 
 ## Invocation
 
@@ -490,7 +497,7 @@ These types are not primitive but due to being widely used in the language and l
 7. `func process(x:int, y:float, z: string) -> { ... }`
 8. `lambda1 = process(10, _, _)`
 9. `ff = (x:int) -> { ff(x+1) }`
-10. `add1 = {{ _+1 }}`
+10. `(x:int)-> {print(x), return x-1}`
 
 **Notes**
 
@@ -501,7 +508,7 @@ These types are not primitive but due to being widely used in the language and l
 5. Example 6 shows invoking a lambda at the point of definition.
 6. You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normall call and replace the lambda inputs with `_`. Example 8 defines a lambda to call `process` functions with `x=10` but `y` and `z` will be inputs.
 7. If lambda is assigned to a variable, you can invoke itself from inside (Example 9).
-8. You can use `{{...}}` notation as a shortcut for lambdas with no or one input (Example 10).
+8. You can put multiple statements in a lambda and separate them with comma (Example 10).
 
 # Generics
 
@@ -617,21 +624,22 @@ These types are not primitive but due to being widely used in the language and l
 02. `|`  union data type
 03. `_`  something we don't know or don't care (placeholder for a lambda input or unknown variable in assignments or switch)
 04. `:`  type declaration for tuple and function input and values, map literal
-05. `:=` custom type definition
+05. `:=` custom type definition, repeat assignment
 06. `=`  type alias, assignment
 07. `..` range generator
 08. `->` function declaration
 09. `[]` generics, custom literals
-10. `{}` code block, tuple definition and tuple literal
-11. `{{ }}` lambda shortcut
-12. `()` function declaration and call
-13. `.`  access tuple fields, function chaining (with spaces around)
+10. `{}` code block, tuple definition and tuple literal, casting
+11. `()` function declaration and call
+12. `.`  access tuple fields, function chaining (with spaces around)
 
-Keywords: `import`, `func`, `return`, `type`, `var`, `if`, `else`, `jump`
+Keywords: `import`, `func`, `return`, `type`, `var`
 
 Primitive data types: `int`, `float`, `char`
 
 Operators: `and`, `or`, `not`, `@`, `{}`
+
+Other built-in names: `nothing`, `true`, `false`
 
 
 # Keywords
@@ -665,45 +673,34 @@ Operators: `and`, `or`, `not`, `@`, `{}`
 9. You can use function redirection to work with FQ functions (Example 6) or use type alias to work with FQ type names (Example 7).
 10. `import` supports other systems too. By default it imports modules from local file-system. But depending on the prefix used you can import from other sources too (Example 8).
 
-## if/else
+# Miscellaneous
 
-**Semantics**: A basic control structure (And the only one) to execute a piece of code based on a condition.
+## Conditionals, loops and pattern matching
 
-**Syntax**: 
+**Semantics**: Used to implement loops and conditionals and pattern matching
 
-1. `if (condition) { code block } else { code block }`
-2. `if (condition) simple_statement else simple_statement`
-3. `simple_statement if (condition)`
+**Syntax**: No specific syntax. `:=` and map access.
 
 **Examples**
 
-1. `x = 10 if (y>0)`
-2. `if (isFine and x>0) process(x,y)`
-3. `callSystem(100) if (x>100)`
-4. `var f: maybe[int] = 100 if (x>0)`
+1.
+```
+var y:int = switch(int_or_float_or_string, [@int: (x:int)->1+x, @string: (s:string)->10], ()->100)
+...
+func switch(v: S|T|U, mp: map[int, func(T)->X|func(S)->X|func(U)->X], else: func()->X)->X {
+  var ff, found = mp[xType(v)]
+  return [false: else(), true: ff(v)][found]
+}
+```
+2. `return [true:nothing][failed]`
+3. `x := [true: (x:int)-> {print(x), return x-1}, false: (x:int)-> nothing][x>0](x)`
 
 **Notes**
 
-1. You can suffix any statement with `if` statement so it will only be executed if condition is met.
-2. If `if` is used in variable declaration and condition is not met, it will evaluate to `nothing`.
-3. Other control structures like switch, while loop and for loop are implemented in core functions using `if` and `jump`.
-4. Missing `else` in if means `else nothing`.
-
-##jump
-
-**Semantics**: Used to jump to a label defined inside current function
-
-**Syntax**:
-
-1. `label_name:`
-2. `jump label_name`
-
-**Notes**
-
-1. This statement should be used with care.
-2. This is used to implement loops and switch function.
-
-# Miscellaneous
+1. Example 1 shows a simple case of implementing pattern matching.
+2. With `return` statement, if map access is used with missing key, statement won't be executed (Example 2, if not failed, this statement won't be executed).
+3. Example 3 shows implementation of `while ( x > 0 ) print(x), x--` using `:=` notation.
+4. `A := ...` repeat assignment until A becomes nothing.
 
 ## dispose
 
