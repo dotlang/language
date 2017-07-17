@@ -4370,6 +4370,168 @@ func switch(x: T|U, t_handler: func(T)->S, u_handler:func(U)->S)->S {
 Can we have a general switch function? For any number of cases in a union?
 Maybe we can handle it via recursion.
 
+Y - 
+`var result = [true: {...}, false: {...}][condition]()`
+`var result = if ( condition ) {...} else {...}`
+we can remove if and else and just use map literals.
+but how can we have loops then?
+`jump [true: label1, false: label2][condition]`
+problem is labels are treated like something very different.
+If we can assume they are integer numbers representing places in the code, we can treat them like integers.
+prefix with `@`?
+we have `$` for union labels, `@` for type-id and `?` for labels.
+`@` which is read `at` makes more sense for labels.
+`@PPP` defines a integer label with the same name with value an integer. So you can store `@PPP` in a variable.
+What if I pass `@PPP` to another function and jump to it? it should not be possible.
+we can have a core function to return current execution position as an integer.
+`var x: int = label()`
+later we can jump to this label: `jump LL`
+The `label` function returns a named type: `type Label := int`. Compiler will issue error if you send or receive this type from/to a function.
+So you can simply store this in a hash or anywhere else.
+Proposal:
+1. Remove `if/else` an replace it with a map.
+2. new type `type Label := int`
+3. core function `func getLabel() -> Label`
+4. statement `jump lbl` (we can only allow it in core functions)
+5. we can store labels in a variable or map or ...
+6. `jump [true: lbl1, false: lbl2][condition]`
+
+Y - we have two prefixes: `@` for getting type. `$` for union labels.
+Can we remove or simplify them?
+`@` is very limited. I think we can remove it.
+`$` is needed for clarity only. Maybe we can remove it and make some easy and basic assunptions.\
+or we can say, all capital names are union labels.
+Why do we need `@`? to investigate type inside union. but we can use functions:
+`if ( internalType(int_or_float) == typeOf[int]() )`
+`func typeOf[T]()->int`
+proposal:
+1. remove `$`
+2. union can have type or capital letter identifiers as flag labels
+3. we can call a function or lambda which accepts an int with `int|string` if we are sure that the variable contains int.
+so, we need `@` operator for simplifying creation of maps for pattern matching. 
+but maybe we can get rid of `var t, found = int{int_or_float}` notation?
+but this is useful for maps. and arrays. let's keep it.
+
+Y - How can we implement pattern matching with map and jump and ...?
+use core functions.
+`var real_type: int = internalType(x)`
+```
+y = switch int_or_float_or_string
+{
+    g:int -> 1+g,
+    s:string -> 10,
+    _ -> "X"
+}
+```
+```
+y = switch(int_or_float_or_string, [@int: {{1+_}}, @string: {{10}}], {{ "X" }})
+func switch(v: S|T|U, mp: map[int, func()->X], else: func()->X)->X {
+  var ff, found = mp[xType(v)]
+  return [false: else(), true: ff(v)]
+  //instead of
+  return 1 if A
+  return 2
+  //we write
+  return [true: 1, false: 2][A]
+}
+```
+can we somehow make this more general? a union of any type?
+maybe define a general function with 5 union cases, and just invoke it if input has less than 5 cases.
+
+Y - How to define a pattern matching with typed input?
+`func switch(v: S|T|U, mp: map[int, func()->X], else: func()->X)->X { ... }`
+the `mp` input contains lambdas which don't have any input. I want them to accept an input of type specified by map key.
+But compiler has no way of checking types. Because map key is a variable.
+`var y:int = switch(int_or_float_or_string, [@int: (x:int)->1+x, @string: (s:string)->10], ()->100)`
+`func switch(v: S|T|U, mp: map[int, func(T)->X|func(S)->X|func(U)->X], else: func()->X)->X { ... }`
+```
+func switch(v: S|T|U, mp: map[int, func(T)->X|func(S)->X|func(U)->X], else: func()->X)->X {
+  var ff, found = mp[xType(v)]
+  return [false: else(), true: ff(v)][found]
+}
+```
+
+Y - `func process(x:int|float|string)`
+`process(int_or_float)`
+is this valid?
+
+N - How can I write this?
+`return if failed`
+`...`
+`return [true: nothing, false: ??? ][failed]`
+what about this?
+`return [failed: nothing][true]`
+if failed, it is `return nothing`.
+if failed is false, it will also return nothing.
+```
+jump([true: x][failed])
+return
+x = getLabel()
+```
+`jump` function does nothing if it's input is nothing.
+
+Y - How can we do forward jump?
+```
+jump(x)
+...
+x = getLabel()
+```
+This contradicts with all rules. And we are doing this only to treat labels as numbers.
+can't we just use `:` notation to define a label and `jump` function to jump to a label and store labels inside a map.
+```
+var x: Label
+jump(x)
+...
+x = getLabel()
+asdsdasda
+```
+This storing labels inside map is only for a jump.
+mayeb we can have this:
+`func jump(cond: bool, true_label: int, false_label: int)`
+`func jump(cond: bool, true_label: int)`
+`func jump(label: int|nothing)`
+It's a bit confusing.
+We should be looking for readability and minimalism.
+what if I re-assign a label variable?
+It is not correct to treat them like variables.
+Maybe we should not be storing them in a map in the first place.
+But then it does not make sense for `jump` to be a function.
+`jump label_1`
+but if we don't treat them like normal variables, we cannot use things like label or nothing for jump.
+`jump label1`
+`return if failed`
+the current mechanism with label and map is good for expressions but what about statements?
+`[true: return, false: nothing][failed]` NONONO
+we can say if expression results in nothing, statement won't be executed.
+`return [true: nothing][failed]` if failed, return nothing.
+**if map access is used with statement and key is not found, statement won't be executed.**
+But how can we differentiate between a nothing value and a missing value? return 1.
+Then, how to return `nothing`?
+
+Y - Maybe we can replace jump and label with some kind of notaion to repeat a map check.
+`while ( x > 0 ) print(x), x--`
+`x := [true: (x:int)-> {print(x), return x-1}][x>0]`
+`A := ...` repeat assignment until A becomes nothing.
+We can remove jump and label and forward jump and label type and map with labels ...
+
+Y - how can we use this in the case for statements?
+e.g. `return if failed`
+`return [true: nothing][failed]`
+we can detect whether map contains a key or not.
+so: `statement [...][...]` will run statement if map contains the given key. in this case, the value of the map does not matter because statement does not have any input.
+`return [true:true][failed]`
+`return [true:][failed]`
+
+N - This is a minimal solution, but not very much readable. Maybe we can add a shortcut or a notation or operator.
+e.g. `[[A, B]]` shortcut for `[[true:A, false: B]]`
+
+N - map always returns `T|nothing`. Doesn't it affect our routing and conditionals and loops?
+
+N - A way to define multiple statement in the same line, for lambdas.
+
+Y - simplify `{{...}}`?
+remove it.
+
 ? - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
 these can indicate micro-commands to be executed by the compiler so we will be coding our compiler into that notation.
