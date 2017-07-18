@@ -205,39 +205,24 @@ These types are not primitive but due to being widely used in the language and l
 
 **Examples**
 
-1. `var arr = $[1, 2, 3]`
-2. `var g, found = arr[0]`, `var g, found = [0]arr`
-3. `arr[0] = 10`
-4. `var two_d_array: array[array[int]] = $[ $[1,2,3], $[4,5,6] ]`
-5. `var two_d_array = $[ $[1,2,3], $[4,5,6] ]`
-6. `var p = two_d_array[0][0]`
-7. `var arr2 = $[0..10]`
-8. `var arrx: array[int] = $[1, 2, 3]`
+1. `var arr = [1, 2, 3]`
+2. `var g, found = arr(0)`
+3. `arr(0, 10)`
+4. `var two_d_array: array[array[int]] = [ [1,2,3], [4,5,6] ]`
+5. `var two_d_array = [ [1,2,3], [4,5,6] ]`
+6. `var p = two_d_array(0, 0)`
+7. `var arr2 = [0..10]`
+8. `var arrx: array[int] = [1, 2, 3]`
+9. `${0, 10} . myArray`
 
 **Notes**
 
 1. Above examples show definition and how to read/update array.
 2. In example 7, the range operator `..` is used to generate an array literal. Note that the end number is not included in the result.
 3. You can explicitly state array literal type like in example 8.
-4. You can use prefix or suffix notation to read from array (Example 2).
-5. There is another notation to create array literals which uses a function to generate elements. See lambda section for more information.
-
-### Slice
-
-**Semantices**: Represents an array which maps to a limited view into an existing array.
-
-**Syntax**: `slice(array, start, end)`
-
-**Examples**
-
-1. `var arr = $[1..9]`
-2. `var slice1 = arr[1, 2]`
-3. `var slice2 = arr[0, -1]`
-
-**Notes**
-
-1. Example 2 will give a slice which contains `2, 3`.
-2. Example 3 will give a slice which contains all elements. End parameter can be negative which is counted from end of the array (`-1` means last element). Same for start.
+4. There is another notation to create array literals which uses a function to generate elements. See lambda section for more information.
+5. You can use array name as a lambda and use chaining operator to read or write it's data (Example 9) for more information refer to operators and lambda sections.
+6. array is not a function. It acts like a function when reading or writing data.
 
 ### Map
 
@@ -247,10 +232,11 @@ These types are not primitive but due to being widely used in the language and l
 
 **Examples**
 
-1. `var my_map = $["A": 1, "B": 2, "C": 3]`
-2. `var item1, found = my_map["A"]`, `var item1, found = ["A"]my_map`
-3. `my_map["A"] = 2`
-4. `var my_map: map[string,int] = $["A": 1, "B": 2, "C": 3]`
+1. `var my_map = ["A": 1, "B": 2, "C": 3]`
+2. `var item1, found = my_map("A")`
+3. `my_map("A", 2)`
+4. `var my_map: map[string,int] = ["A": 1, "B": 2, "C": 3]`
+5. `${"A", 1} . myMap`
 
 
 **Notes**
@@ -259,6 +245,8 @@ These types are not primitive but due to being widely used in the language and l
 2. If you query a map for something which does not exist, it will return `nothing`.
 3. You can explicitly state type of a map literal like example 4.
 4. You can use prefix or suffix notation to read from map (Example 2).
+5. You can use map name as a lambda and use chain operator to read or write values (Example 5). For more information refer to operators and lambda sections.
+6. map is not a function. It acts like a function when reading or writing data.
 
 ## Type alias
 
@@ -491,7 +479,7 @@ These types are not primitive but due to being widely used in the language and l
 10. `(x:int)-> {print(x), x-1}`
 11. `$[10 .. (x:int)-> x-1 .. 0]`
 
-**Notes**
+**Note**
 
 1. You can omit output type (Example 2 and 3).
 2. Even if lambda has no input you must include `()` (Example 4).
@@ -502,6 +490,7 @@ These types are not primitive but due to being widely used in the language and l
 7. If lambda is assigned to a variable, you can invoke itself from inside (Example 9).
 8. You can put multiple statements in a lambda and separate them with comma (Example 10).
 9. Example 11 is another way to generate an array literal. You specify start and end and a function which accepts current element and returns the next element. This can be used to implement loops. Execution of the lambda will continue until it's output is equal to the end marker.
+10. Writing name of a function without input creates a lambda with inputs same as function inputs. This notation can also be used with array and maps.
 
 # Generics
 
@@ -595,6 +584,8 @@ These types are not primitive but due to being widely used in the language and l
 09. `result = {input, check1(5, _)} . pipe(_,_) . {_, check3(1,2,_)} . pipe(_, _) . {_, check5(8,_,1) } . pipe(_,_)`
 10. `func pipe[T, O](input: Maybe[T], handler: func(T)->Maybe[O])->Maybe[O] ...`
 11. `{1,2} . {_, _, 5} . process(_,_,_)` => `process(1,2,5)`.
+12. `func inc(x:int) -> x+1`, `var eleven = 10 . inc`
+13. `func add(x:int, y:int) -> x+y`, `${10, 20} . add`
 
 **Notes**:
 
@@ -607,18 +598,18 @@ These types are not primitive but due to being widely used in the language and l
 7. ` . `: Chaining opertor (Note to the spaces around the dot). `X . F(_)` will be translated to `F(X)` function call. right side of dot must be either a closure with expected inputs or a tuple with underscores for substitition. If right-side expects a single input but left side is a tuple with multiple items, it will be treated as a tuple for the single input of the function (Example 7) but if function expects multiple inputs they will be extracted from left side (Example 6). 
 8. You can also pass a single argument to right side of the chain by using non-tuple value.
 9. You can use chain operator with custom functions as a monadic processing operator. For example you can streamline calling mutiple error-prone functions without checking for error on each call (Example 9 and 10).
-
+10. Name of a function without `()` creates a lambda with appropriate inputs (Example 12 and 13).
 
 # Syntax
 
 ## Special notations
 
 01. `@`  type-id opertor
-02. `$` prefix for literals (tuple, map and array)
+02. `$` tuple literal
 02. `|`  union data type
 03. `_`  something we don't know or don't care (placeholder for a lambda input or unknown variable in assignments or switch)
 04. `:`  type declaration for tuple and function input and values, map literal
-05. `:=` custom type definition, repeat assignment
+05. `:=` custom type definition
 06. `=`  type alias, assignment
 07. `..` range generator
 08. `->` function declaration
@@ -631,8 +622,7 @@ Keywords: `import`, `type`, `func`, `var`
 
 Primitive data types: `int`, `float`, `char`
 
-Other built-in names: `nothing`, `true`, `false`
-
+Other important identifiers: `nothing`, `bool`, `true`, `false`, `map`, `array`, `string`
 
 # Keywords
 
@@ -679,22 +669,22 @@ var y:int = switch(int_or_float_or_string, $[@int: (x:int)->1+x, @string: (s:str
 ...
 type FF[T,X] := func(T)->X
 func switch[S,T,U,X](v: S|T|U, mp: map[int, FF[S,X]|FF[T,X]||FF[U,X]], else: func()->X)->X {
-  var func_to_call: FF[S,X]|FF[T,X]||FF[U,X], found:bool = [@v]$[@S: mp[@S], @T: mp[@T], @U: mp[@U]]
+  var func_to_call: FF[S,X]|FF[T,X]||FF[U,X], found:bool = [@S: mp[@S], @T: mp[@T], @U: mp[@U]](@v)
   //reading from map, returns a maybe
-  var result,_ = [found]$[true: func_to_call(v), false: else()]
+  var result,_ = [true: func_to_call(v), false: else()](found)
   
   result
 }
 ```
-2. `$[10 .. (x:int)-> {print(x), x--} .. 0]`
+2. `[10 .. (x:int)-> {print(x), x--} .. 0]`
 3.
 ```
-$[
+[
 iter .. 
   (x: Iterator)->
   {
       append(myOutput, getData(x))
-      [eof(x)]$[true: nothing, false: getNext(x)] 
+      [true: nothing, false: getNext(x)](eof(x))
   }   
 .. nothing
 ]
@@ -899,3 +889,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Provide ability to update used libraries without need to re-compile main application.
 - Parallel compilation
 - Managing name conflict in large projects
+- Add slice functions to core to return array as a pointer to another array
