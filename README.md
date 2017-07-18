@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditionals, loops and pattern matching using map and `loop` keyword, return `$` for litearls,
+- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditionals, loops and pattern matching using map and loop using array, return `$` for litearls,
 
 # Introduction
 
@@ -217,9 +217,10 @@ These types are not primitive but due to being widely used in the language and l
 **Notes**
 
 1. Above examples show definition and how to read/update array.
-2. In example 7, the range operator `..` is used to generate an array literal.
+2. In example 7, the range operator `..` is used to generate an array literal. Note that the end number is not included in the result.
 3. You can explicitly state array literal type like in example 8.
 4. You can use prefix or suffix notation to read from array (Example 2).
+5. There is another notation to create array literals which uses a function to generate elements. See lambda section for more information.
 
 ### Slice
 
@@ -488,6 +489,7 @@ These types are not primitive but due to being widely used in the language and l
 8. `lambda1 = process(10, _, _)`
 9. `ff = (x:int) -> { ff(x+1) }`
 10. `(x:int)-> {print(x), x-1}`
+11. `$[10 .. (x:int)-> x-1 .. 0]`
 
 **Notes**
 
@@ -499,6 +501,7 @@ These types are not primitive but due to being widely used in the language and l
 6. You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normall call and replace the lambda inputs with `_`. Example 8 defines a lambda to call `process` functions with `x=10` but `y` and `z` will be inputs.
 7. If lambda is assigned to a variable, you can invoke itself from inside (Example 9).
 8. You can put multiple statements in a lambda and separate them with comma (Example 10).
+9. Example 11 is another way to generate an array literal. You specify start and end and a function which accepts current element and returns the next element. This can be used to implement loops. Execution of the lambda will continue until it's output is equal to the end marker.
 
 # Generics
 
@@ -624,7 +627,7 @@ These types are not primitive but due to being widely used in the language and l
 11. `()` function declaration and call
 12. `.`  access tuple fields, function chaining (with spaces around)
 
-Keywords: `import`, `type`, `func`, `var`, `loop`
+Keywords: `import`, `type`, `func`, `var`
 
 Primitive data types: `int`, `float`, `char`
 
@@ -666,7 +669,7 @@ Other built-in names: `nothing`, `true`, `false`
 
 ## Conditionals, loops and pattern matching
 
-**Semantics**: Used to implement loops and conditionals and pattern matching
+**Semantics**: We use array and map literals to implement conditionals, loops and pattern matching.
 
 **Examples**
 
@@ -683,27 +686,25 @@ func switch[S,T,U,X](v: S|T|U, mp: map[int, FF[S,X]|FF[T,X]||FF[U,X]], else: fun
   result
 }
 ```
-3. `loop {x = [x>0]$[true: (x:int)-> {print(x), x-1}, false: (x:int)-> nothing](x)}`
-4.
+2. `$[10 .. (x:int)-> {print(x), x--} .. 0]`
+3.
 ```
-var myOutput = ...
-var iter = ...
-loop 
-{
-    data, iter = [
-        true: (x:iterator) -> ${nothing, nothing}, 
-        false: (x: iteartor)->${getData(x), next(x)}
-    ][eof(iter)](iter) 
-    append(myOutput, data)
-}
+$[
+iter .. 
+  (x: Iterator)->
+  {
+      append(myOutput, getData(x))
+      [eof(x)]$[true: nothing, false: getNext(x)] 
+  }   
+.. nothing
+]
 ```
 
 **Notes**
 
 1. Example 1 shows a simple case of implementing pattern matching.
-2. Example 2 shows implementation of `while ( x > 0 ) print(x), x--` using `loop` notation.
-3. `loop { ... }` repeat until block's evaluation result becomes nothing.
-4. Example 4 represents implementation of a `map` function.
+2. Example 2 shows implementation of `while ( x > 0 ) print(x), x--` using array literals.
+3. Example 3 represents implementation of a `map` function with custom iterator.
 
 ## dispose
 
