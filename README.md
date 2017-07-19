@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditionals, loops and pattern matching using map and loop using array, return `$` for litearls, renamed tuple to struct, `()` notation to read/write map and array
+- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, return `$` for tuple litearls, renamed tuple to struct, `()` notation to read/write map and array, `:=` for loop, 
 
 # Introduction
 
@@ -206,14 +206,14 @@ These types are not primitive but due to being widely used in the language and l
 **Examples**
 
 1. `var arr = [1, 2, 3]`
-2. `var g, found = arr(0)`
+2. `var g, found = arr(0)`, `arr(0) = 100`
 3. `arr(0, 10)`
 4. `var two_d_array: array[array[int]] = [ [1,2,3], [4,5,6] ]`
 5. `var two_d_array = [ [1,2,3], [4,5,6] ]`
 6. `var p = two_d_array(0, 0)`
 7. `var arr2 = [0..10]`
 8. `var arrx: array[int] = [1, 2, 3]`
-9. `${0, 10} . myArray`
+9. `${0} . myArray`
 
 **Notes**
 
@@ -221,7 +221,7 @@ These types are not primitive but due to being widely used in the language and l
 2. In example 7, the range operator `..` is used to generate an array literal. Note that the end number is not included in the result.
 3. You can explicitly state array literal type like in example 8.
 4. There is another notation to create array literals which uses a function to generate elements. See lambda section for more information.
-5. You can use array name as a lambda and use chaining operator to read or write it's data (Example 9) for more information refer to operators and lambda sections.
+5. You can use array name as a lambda and use chaining operator to read it's data (Example 9) for more information refer to operators and lambda sections.
 6. array is not a function. It acts like a function when reading or writing data.
 
 ### Map
@@ -233,7 +233,7 @@ These types are not primitive but due to being widely used in the language and l
 **Examples**
 
 1. `var my_map = ["A": 1, "B": 2, "C": 3]`
-2. `var item1, found = my_map("A")`
+2. `var item1, found = my_map("A")`, `myMap("A") = 100`
 3. `my_map("A", 2)`
 4. `var my_map: map[string,int] = ["A": 1, "B": 2, "C": 3]`
 5. `${"A", 1} . myMap`
@@ -354,7 +354,7 @@ These types are not primitive but due to being widely used in the language and l
 
 **Notes**
 
-1. There is no implicit and automatic casting in the language.
+1. There is no implicit and automatic casting in the language. The only case is for `true` to be 1 and `false` to be 0 when used as an integer.
 2. Casting is mostly used to cast between a union and it's internal type (Example 2) or between named and equal unnamed type (Example 4 and 5). 
 3. If function expects a named type, you cannot pass an equivalent unnamed type. 
 4. Similarly, when a function expects an unnamed type, you cannot pass a named type with same underlying type. 
@@ -476,8 +476,6 @@ These types are not primitive but due to being widely used in the language and l
 8. `lambda1 = process(10, _, _)`
 9. `ff = (x:int) -> { ff(x+1) }`
 10. `(x:int)-> {print(x), x-1}`
-11. `$[10 .. (x:int)-> x-1 .. 0]`
-12. `result = $[10 .. (x:int)-> x-1, (x:int)->2*x .. 0]`
 
 **Note**
 
@@ -489,9 +487,8 @@ These types are not primitive but due to being widely used in the language and l
 6. You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normall call and replace the lambda inputs with `_`. Example 8 defines a lambda to call `process` functions with `x=10` but `y` and `z` will be inputs.
 7. If lambda is assigned to a variable, you can invoke itself from inside (Example 9).
 8. You can put multiple statements in a lambda and separate them with comma (Example 10).
-9. Example 11 is another way to generate an array literal. You specify start and end and a function which accepts current element and returns the next element. This can be used to implement loops. Execution of the lambda will continue until it's output is equal to the end marker. Note that start element is included in the output but end element is not.
-10. In a range operator, you can specify two lambdas. In this case, the first lambda will return the next element and the second lambda will return output of the current iteration round. The second lambda will not be called if output of the first lambda is same as the end marker.
-11. Writing name of a function without input creates a lambda with inputs same as function inputs. This notation can also be used with array and maps.
+9. In a range operator, you can specify two lambdas. In this case, the first lambda will return the next element and the second lambda will return output of the current iteration round. The second lambda will not be called if output of the first lambda is same as the end marker.
+10. Writing name of a function without input creates a lambda with inputs same as function inputs. This notation can also be used with array and maps.
 
 # Generics
 
@@ -561,6 +558,8 @@ These types are not primitive but due to being widely used in the language and l
 
 # Operators
 
+## Basic operators
+
 **Semantics**: All non-alpabetical notations operators used in the language.
 
 **Syntax**:
@@ -568,25 +567,13 @@ These types are not primitive but due to being widely used in the language and l
 2. Arithmetic: `+, -, *, /, %, %%, +=, -=, *=, /=`
 3. Assignment: `=`
 4. Type-id: `@`
-5. Chaining: ` . `
 6. Casting `{}`
-7. `++` and `--` (These are only statements, not expressions)
 
 **Examples**
 
 01. `g = @int`, `g = @my_union`
 02. `y:int = x`
 03. `y: int|float = 12`
-04. `{x,y,z} . {_,_,_}` => `{x,y,z}`
-05. `g = {5,9} . add(_, _)` => `g = add(5,9)`
-06. `{1,2} . processTwoData(_, _)` => `processTwoData(1,2)`
-07. `{1,2} . processStruct(_)` => `processStruct({1,2})`
-08. `6 . addTo(1, _)` => `addTo(1, 6)`
-09. `result = {input, check1(5, _)} . pipe(_,_) . {_, check3(1,2,_)} . pipe(_, _) . {_, check5(8,_,1) } . pipe(_,_)`
-10. `func pipe[T, O](input: Maybe[T], handler: func(T)->Maybe[O])->Maybe[O] ...`
-11. `{1,2} . {_, _, 5} . process(_,_,_)` => `process(1,2,5)`.
-12. `func inc(x:int) -> x+1`, `var eleven = 10 . inc`
-13. `func add(x:int, y:int) -> x+y`, `${10, 20} . add`
 
 **Notes**:
 
@@ -596,28 +583,77 @@ These types are not primitive but due to being widely used in the language and l
 4. `@`: returns type-id of a named or primitive type as an integer number, or a union variable (Example 1).
 5. `{}`: To cast from named to unnamed type you can use: `Type{value}` notation (Example 2).
 6. `{}`: To cast from variable to a union-type (Example 3).
-7. ` . `: Chaining opertor (Note to the spaces around the dot). `X . F(_)` will be translated to `F(X)` function call. right side of dot must be either a closure with expected inputs or a struct with underscores for substitition, a map or an array. If right-side expects a single input but left side is a struct with multiple items, it will be treated as a struct for the single input of the function (Example 7) but if function expects multiple inputs they will be extracted from left side (Example 6). 
+
+## Chain operator
+
+**Semantics**: To put arguments before function or struct or map or array.
+
+**Syntax**: 
+
+1. `input . func(_,_,_,...)`
+2. `input . ${_,_,_,...}`
+3. `input . arr(_)`
+4. `input . map(_)`
+
+**Examples**
+
+1. `{x,y,z} . {_,_,_}` => `{x,y,z}`
+2. `g = {5,9} . add(_, _)` => `g = add(5,9)`
+3. `{1,2} . processTwoData(_, _)` => `processTwoData(1,2)`
+4. `{1,2} . processStruct(_)` => `processStruct({1,2})`
+5. `6 . addTo(1, _)` => `addTo(1, 6)`
+6. `result = {input, check1(5, _)} . pipe(_,_) . {_, check3(1,2,_)} . pipe(_, _) . {_, check5(8,_,1) } . pipe(_,_)`
+7. `func pipe[T, O](input: Maybe[T], handler: func(T)->Maybe[O])->Maybe[O] ...`
+8. `{1,2} . {_, _, 5} . process(_,_,_)` => `process(1,2,5)`.
+9. `func inc(x:int) -> x+1`, `var eleven = 10 . inc`
+10. `func add(x:int, y:int) -> x+y`, `${10, 20} . add`
+
+**Notes**
+
+1.  `X . F(_)` will be translated to `F(X)`
+2. right side of dot must be either a closure with expected inputs or a struct with underscores for substitition, a map or an array
+3. If right-side expects a single input but left side is a struct with multiple items, it will be treated as a struct for the single input of the function (Example 4) but if function expects multiple inputs they will be extracted from left side (Example 3). 
 8. You can also pass a single argument to right side of the chain by using non-struct value.
-9. You can use chain operator with custom functions as a monadic processing operator. For example you can streamline calling mutiple error-prone functions without checking for error on each call (Example 9 and 10).
-10. Name of a function without `()` creates a lambda with appropriate inputs (Example 12 and 13).
+9. You can use chain operator with custom functions as a monadic processing operator. For example you can streamline calling mutiple error-prone functions without checking for error on each call (Example 6 and 7).
+10. Name of a function without `()` creates a lambda with appropriate inputs (Example 9 and 10).
 
-# Syntax
+## Repeated assignment operator
 
-## Special notations
+**Semantics**: To repeat an assignment until `nothing` is being assigned.
+
+**Syntax**: `v1, v2, v3, ... := expression` 
+
+**Examples**
+
+1. `var x=0 := [true: (a:int)->{print(a), a+1}, false: (a:int)->nothing](x<=10)(x)`.
+2. `list.data, list, fpos := [true: ${getChar(fpos), list.next, getNext(fpos)}, false: ${nothing, nothing, nothing}](!eof(fpos))`
+3. `arr[index], index, fpos := [true: ${getChar(fpos), index+1, getNext(fpos)}, false: ${nothing, nothing, nothing}](!eof(fpos))`
+4. `new_array[idx],idx := [true:${arr(idx)+1,idx+1}, false: ${nothing, nothing}](idx<=length(arr))`
+
+**Notes**
+
+1. The expression is supposed to return a tuple with appropriate number of elements assignable to left values. assignment will be done to `v1`, then `v2` and so on.
+2. Evaluation of expression will be repeated until it outputs `nothing` for all of it's arguments.
+3. Example 1 shows loop to print from 0 to 10.
+4. Example 2 shows loop to read whole file into a linked list.
+5. Example 3 shows reading whole file into a char array.
+6. Example 4 shows mapping original array `arr` into new array with incrementing each element.
+
+# Summary of notations
 
 01. `@`  type-id opertor
 02. `$` struct literal
-02. `|`  union data type
-03. `_`  something we don't know or don't care (placeholder for a lambda input or unknown variable in assignments or switch)
-04. `:`  type declaration for struct and function input and values, map literal
-05. `:=` custom type definition
-06. `=`  type alias, assignment
-07. `..` range generator
-08. `->` function declaration
-09. `[]` generics, custom literals
-10. `{}` code block, struct definition and struct literal, casting
-11. `()` function declaration and call
-12. `.`  access struct fields, function chaining (with spaces around)
+03. `|`  union data type
+04. `_`  something we don't know or don't care (placeholder for a lambda input or unknown variable in assignments or switch)
+05. `:`  type declaration for struct and function input and values, map literal
+06. `:=` custom type definition, repeated assignment
+07. `=`  type alias, assignment
+08. `..` range generator
+09. `->` function declaration
+10. `[]` generics, custom literals
+11. `{}` code block, struct definition and struct literal, casting
+12. `()` function declaration and call
+13. `.`  access struct fields, function chaining (with spaces around)
 
 Keywords: `import`, `type`, `func`, `var`
 
@@ -625,7 +661,7 @@ Primitive data types: `int`, `float`, `char`
 
 Other important identifiers: `nothing`, `bool`, `true`, `false`, `map`, `array`, `string`
 
-# Keywords
+# Miscellaneous
 
 ## import
 
@@ -656,9 +692,7 @@ Other important identifiers: `nothing`, `bool`, `true`, `false`, `map`, `array`,
 9. You can use function redirection to work with FQ functions (Example 6) or use type alias to work with FQ type names (Example 7).
 10. `import` supports other systems too. By default it imports modules from local file-system. But depending on the prefix used you can import from other sources too (Example 8).
 
-# Miscellaneous
-
-## Conditionals, loops and pattern matching
+## Conditionals and pattern matching
 
 **Semantics**: We use array and map literals to implement conditionals, loops and pattern matching.
 
@@ -677,25 +711,24 @@ func switch[S,T,U,X](v: S|T|U, mp: map[int, FF[S,X]|FF[T,X]||FF[U,X]], else: fun
   result
 }
 ```
-2. `[10 .. (x:int)-> {print(x), x--} .. 0]`
-3.
+2.
 ```
-[
-iter .. 
-  (x: Iterator)->
-  {
-      append(myOutput, getData(x))
-      [true: nothing, false: getNext(x)](eof(x))
-  }   
-.. nothing
-]
+var y:int = switch(int_or_float_or_string, $[@int: (x:int)->1+x, @string: (s:string)->10], ()->100)
+...
+type FF[T,X] := func(T)->X
+func switch[S,T,U,X](v: S|T|U, mp: map[int, FF[S,X]|FF[T,X]||FF[U,X]], else: func()->X)->X {
+  var func_to_call: FF[S,X]|FF[T,X]||FF[U,X], found:bool = [@S: mp[@S], @T: mp[@T], @U: mp[@U]](@v)
+  //reading from map, returns a maybe
+  var result,_ = [else(), func_to_call(v)](found)
+  
+  result
+}
 ```
 
 **Notes**
 
 1. Example 1 shows a simple case of implementing pattern matching.
-2. Example 2 shows implementation of `while ( x > 0 ) print(x), x--` using array literals.
-3. Example 3 represents implementation of a `map` function with custom iterator.
+2. You can also use array for conditionals. `true` will be mapped to index `1` and `false` to index `0`.
 
 ## dispose
 
