@@ -1,3 +1,6 @@
+! - If this is going to be 90% similar to another programming language, then why bother?
+I need to test new ideas and approaches without fearing to fail.
+
 Y - syntax to fetch from map is not extendable:
 `["A"]myMap(1)` map key is string and value is function pointer.
 The dual behavior (key before or after map name) is a bit confusing.
@@ -119,11 +122,13 @@ The only purpose of addin `$` prefix is to make code readable and prevent confus
 `x=(12)`?
 `x=(a=1, b=2)` it will be confusing with function call. let's stick to `${}`
 
-? - `type array[T] := map[int, T]`?
+N - `type array[T] := map[int, T]`?
 
-? - remove `++` and `--`. If they are not expressions, why have them and make people confused?
+Y - remove `++` and `--`. If they are not expressions, why have them and make people confused?
+Let's keep them. It is intuitive.
+But we want everything to be expression to be composable.
 
-? - Expressions are composable so add to orth.
+Y - Expressions are composable so add to orth.
 What non-exp do we have? var decl., 
 whatever you cannot pass as an argument?
 you cannot combine statements. 
@@ -219,12 +224,166 @@ iter ..
 ```
 This is not correct. `append` will modify `myOutput`? It is not local.
 we must specify iteration value in the lambda.
+`[start..end]` next is `+1` or `-1` and value if the actual number.
+`[start..(current:int)->${current+2, current+2}..end]`
+output of the lambda is `${value, next}`. 
+so:
+`[start..(input)->${current, next}..end]`
+`[iter0..(iter:Iteartor)->${read(iter), iter+1}..nothing]`
+means:
+1. create an empty array O.
+2. set val = start
+3. run lambda with val. name result current and next.
+4. add current to O.
+5. if next is same as end: finish
+6. if not, val = next and goto 3.
+what if we want to read a file and it is empty? The result array should be empty but here it will be at least an iterator.
+loop is a repeated execution of if.
+`while(x<10) { print(x), x++ }`
+`x=10`, `x=[true: (x:int)->print(x), false: nothing](x>10)`
+reading from file into an array:
+```
+file = fileOpen(...)
+file_contents = [
+  true: nothing,
+  false: ()->{ getChar(file), 
+](eof(file))
+```
+Nature of a loop is repeated execution of a block of a code. until when? until some condition is met.
+But that code block is a lambda. So it cannot modify any of local variables. So either we need it for side effect (write to file) or it should return the value of the iteration. what about end condition?
+The end condition is something which should rely on a changing variable. So that lambda should return the new value for that variable too.
+Can't we implement this using recursion? It will be hard to read and we cannot capture a good output.
+So, the iteration processing needs to return two things: result of this iteration and next iteration value.
+Can't we just assume iterator to be auto-next by compiler after each round? Depending on the type of loop: Issue is we cannot have custom iterator but the iteration logic rarely changes.
+Even if it does, we can use named types. `MyInt` and define `getNext(x: MyInt)`.
+So the loop lambda only needs to return value of the current iteration. if it is same as end marker, loop is finished.
+`[1..(x:int)->x..10]` ~ `[1,2,3,...,9]`
+`[1..(x:int)->x..1]` ~ `[]`
+read the whole file: `arr = [file_iter..(x: FileIterator)->[false: getChar(x), true: nothing](eof(x))]`
+can't we have two lambdas: one to check end and other to get value?
+`arr = [file_iter..(x: FileIterator)->[false: getChar(x), true: nothing](eof(x))..nothing]`
+gnerally we need 3 lambdas: `getValue`, `moveForward`, `isFinished`.
+`getValue` will get current iteartor and return the value for the current iteration round.
+`moveForward` sill receive current iterator and return the next iterator
+`isFinished` will receive current iterator and return true if we are finished with iteration.
+Can't we model it as a struct?
+`type Loop[T,U] := {start: T, getValue: func(T)->U, moveForward: func(T)->T, isFinished: func(T)->bool}`
+How can we use this to create an array?
+Can't we use the same thing for if? a tuple with two lambdas or values?
+Ok. Let's do something else.
+Use convention:
+`isFinished` -> Loop is finished when getValue returns `nothing`. But what if we have a loop for it's side effect? (e.g. print the current value only). No problem. Just return a dummy 0. and return `nothing` when you are finished.
+`start` is marker in `[start...`
+`for(int x=0;x<100;x++)` `x++` is moveForward and the body of the loop is getValue.
+So we have `[start..(current)->next]`
+Read a file: `arr = [file_iter..(x: FileIterator)->[false: getChar(x), true: nothing](eof(x))]`
+print 0 to 10: `[0..(x:int)->{print(x), [true: 0, false:nothing](x<=10)]`
+map array to array+1: `new_array = [0..(x:int)->{[false: arr(x)+1, true: nothing](x<length(arr))}]`
+this is a bit unreadable. for reading from file, we don't need end-checker as we have to check in getValue.
+But for array+1 checking for length each time is a bit daunting.
+read whole file: `arr = [file_iter..(x: FileIterator)->getChar(x)..(x: FileIterator)->eof(x)]`
+Let's say the processing lambda has to return two things: iteration value and next iterator.
+general format: `[initial_value..(current_value)->${output, next}..(current_value)->continue_check]`
+print 0 to 10: `[0..(x:int)->{print(x), ${0, x+1}..(x:int)->{x<=10}]`
+read whole file: `arr = [file_iter..(x: FileIterator)->${getChar(x), next(c)}..(x: FileIterator)->!eof(x)]`
+map array to array+1: `new_array = [0..(idx:int)->${arr(idx),x+1}..(idx:int)->idx<=length(arr)]`
+Why do we define loop based on an array? I think we should base it on `if` concept.
+So it can be orthogonal and used either with an array or map.
+We can implement if/conditional using map or array.
+Let's just model it as if pseudo code: `if(X) then A else B`
+`result = if(X) then A else B` we can model this using current methods.
+we can say, repeat this until result of the expression is nothing. Then stop.
+As the result of evaluation you can return one thing or more. So if you return two things they can be next iteration and current value.
+print 0 to 10: `x=0`, repeat this: `x = if(x<=10) print(x) && evaluate to x+1 else nothing`
+read whole file: `arr = REPEAT if ( eof(file_position) ) nothing else getChar(file_position) && evaluateo to next(file_position)`
+map array to array+1: `new_array = REPEAT if (idx<=length(arr) ) ${arr(idx)+1, idx+1} else ${nothing, nothing}`
+`result_array = REPEAT if ( condition ) value1 else value2`
+continue until result of evaluation is `nothing`.
+Let's use `:=` for repeat. But how can we repeat something without assignment? use `_`
+`_ := ...`
+`:=` means repeat right side and store result on the left side. so left side will be an array.
+`result_array := expression` evaluate expression and store the result it in result_array until evaluation result is `nothing`.
+But in order for expression to change, it must change one or more of existing variables in the current function.
+So expression, may result in more than one output. First output is the one which is accumulated.
+Iterate from 0 to 10 : `x=0`, `_,x := [true: ${x, x+1} , false: ${nothing, nothing}](x<=10)`
+Here we print from 0 to 10. map that is used for if has key=true/false and value is a lambda which we call with x.
+Result of that call is two values: first value is output and second is next value for x. 
+`x=0`, `n,x := [true: (a:int)->{print(a), a+1}, false: (a:int)->${nothing, nothing}](x<=10)(x)`
+**q: **What will be type of `n`? We don't know it's size in the general case.
+What if we don't want to have an array in the output? What if we want a linked-list? 
+print 0 to 10: `x=0`, `_,x := [true: (a:int)->{print(a), a+1}, false: (a:int)->${nothing, nothing}](x<=10)(x)`.
+read whole file: `arr, fpos := [true: ${getChar(fpos), getNext(fpos)}, false: ${nothing, nothing}](!eof(fpos))`
+map array to array+1: `new_array,idx = [true:${arr(idx)+1,idx+1}, false: ${nothing, nothing}](idx<=length(arr))`
+or we can say, the variable which is of type array will be accumulated.
+about linked-list, I think it is possible if we do it like print. Inside the lambda and not using output.
+What if I want to read the whole file and store it's chars in a linked-list?
+`list, fpos := [true: ${getChar(fpos), getNext(fpos)}, false: ${nothing, nothing}](!eof(fpos))`
+we can use convention here: use `accumulate` function. we have a default implementation for arrays.
+```
+var list: LinkedList[char]
+var file_pos = openFile(...)
+while ( !eof(file_pos) ) {
+  list.data = getChar(file_pos)
+  list = list.next
+  file_pos = next(file_pos)
+}
+```
+how can we have a function which adds something to list?
+```
+func accumulate(storage: LinkedList[T], data: T)->LinkedList[T]
+{
+  var resut: LinkedList[T]
+  result.head = data
+  result.tail = storage
+  return result
+}
+type Accumulator[S,T] := func(storage: S[T], data: T)->S[T]
+```
+obviously you cannot accumulate for int or float or char. Only for collections.
+**so** the general syntax will be: `v1, v2, v3, ... := expression` where expression is supposed to return a tuple with appropriate number of elements assignable to left values. assignment will be done from v1 to vn.
+it will continue evaluating expression until it outputs `nothing` for all of it's arguments.
+Before then, output of the expression will be updated into `vi` lvalues. If they support accumulation, they will be applied else they will be overwritten.
+So if `v1` is int and `v2` is array and `v3` is set, this will overwrite value of v1 but add the value for v2 and v3.
+even `nothing` can be applied to lvalues unless everything is `nothing`.
+**print 0 to 10**: `var _,x=0 := [true: (a:int)->{print(a), a+1}, false: (a:int)->${nothing, nothing}](x<=10)(x)`.
+**read whole file**: `arr, fpos := [true: ${getChar(fpos), getNext(fpos)}, false: ${nothing, nothing}](!eof(fpos))`
+**map array to array+1**: `new_array,idx = [true:${arr(idx)+1,idx+1}, false: ${nothing, nothing}](idx<=length(arr))`
+What if we can run some code after each assignment?
+read whole file into a linked-list.
+So there is no need for convention and accumulate function.
+Can we have an array on the left-side? Let's also return index:
+**print 0 to 10**: 
+`var x=0 := [true: (a:int)->{print(a), a+1}, false: (a:int)->nothing](x<=10)(x)`.
+**read whole file into a linked-list**: 
+`list.data, list, fpos := [true: ${getChar(fpos), list.next, getNext(fpos)}, false: ${nothing, nothing, nothing}](!eof(fpos))`
+**read file into array of chars**:
+`arr[index], index, fpos := [true: ${getChar(fpos), index+1, getNext(fpos)}, false: ${nothing, nothing, nothing}](!eof(fpos))`
+**map array to array+1**: 
+`new_array[idx],idx := [true:${arr(idx)+1,idx+1}, false: ${nothing, nothing}](idx<=length(arr))`
 
-? - reading from array `arr(0)` is fine even if we send it to another function.
+Y - We are using a map with true and false a lot. Can we simplify it?
+Or maybe use array? true=1, false=0
+
+Y - reading from array `arr(0)` is fine even if we send it to another function.
 but writing `arr(0,1)` is not. can we make it more explicit?
 maybe by using a function? or `=`?
+`var t = arr(0)`
+`arr([0:10, 1:20])`
+`var y = mymap("A")`
+`myMap(["A":1, "B": 2])`
+we use map to update an array or map. key is index or map key.
+value is array or map value.
+what if key of the map is a map itself?
+`myMap(["A":1])` does this read from map or write to it?
+can't we write: `arr(0) = 10`
+`myMap("A") = 100`
+what is result of this expression? rvalue.
+it is more readable.
 
-we should also decide about boundaries. are they inclusive or exclusive?
+N - How can I force `set` data structure uniqueness requirement?
+`type Set[T] := LinkedList[T]`
+Just add appropriate functions as gateways:
+`func add(s: Set[T], x: T)` which will check for correctness of the set.
 
 ? - cant user write this?
 ```
@@ -233,17 +392,23 @@ struct1
 field1
 ```?
 won't it be confusing with chain operator?
+No. user is not support to do that and that will be a syntax error.
+but relying on whitespace around dot is like Python relying on indentation.
+Can we replace it with another symbol which is also easy to type?
+It should be single keypress, single char and easy to read and type.
+`~`
+`,`
+`str ~ contains(_, ":")`
 
-? - How can I force `set` data structure uniqueness requirement?
 
-? - Maybe we can use a set of rules or regex to convert code to LLVM IR.
+! - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
 these can indicate micro-commands to be executed by the compiler so we will be coding our compiler into that notation.
 Compiler just needs to scan the source code, apply macros and run microcommands.
 This will be a very special macro language which is designed for this compiler and this language.
 Won't it be same as writing C code? If it can be more maintainable maybe we can use it as an intermediate IR between dotlang code and LLVM IR.
 
-? - We should have a modular design for compiler.
+! - We should have a modular design for compiler.
 Lexer, Parser and some extensions which process parser output.
 What we need to specify?
 Steps in the compilation process and what is input/output of each step.
@@ -357,7 +522,7 @@ Step 3: Repeat until CQ is empty:
   I. Send output LLVM IR to a IR repository.
 Step 4: Send IR repository contents to LLVM compiler.
 
-? - example
+! - example
 ```
 let a : Point = Point{100, 200}
 ...
@@ -366,13 +531,13 @@ let u = a.x - make u point to address of a + offset but if it is an int, just ma
 for `let` make a copy for int, char, float and create a pointer for all other cases.
 union will be rendered as `tag + buffer`. if all cases are primitives or label types, it will be marked as value type (copy on assignment), else, it will be a pointer.
 
-? - implementation
+! - implementation
 - we should keep an integer for each type to be for `@` operator
 - q: can we have overloaded functions in llvm ir?
 - q: can I really inline llvm ir functions?
 - determine in which case can I make a binding mutable?
 
 
-? - Allow overloading based on return type and give error if assignments like `x=func1()` are ambiguous.
+! - Allow overloading based on return type and give error if assignments like `x=func1()` are ambiguous.
 We already have this by `autoBind` function.
 So either you have to write: `x: Type1 = func1(1,2,3)` or if it is generic with generic output argument: `x = func1[Type1](1, 2, 3)`
