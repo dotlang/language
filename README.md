@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditionals, loops and pattern matching using map and loop using array, return `$` for litearls,
+- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditionals, loops and pattern matching using map and loop using array, return `$` for litearls, renamed tuple to struct, `()` notation to read/write map and array
 
 # Introduction
 
@@ -44,7 +44,7 @@ The underlying rules of design of this language are
 [KISS rule](https://en.wikipedia.org/wiki/KISS_principle) and
 [DRY rule](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  We have functions and types. Each function acts on a set of inputs and gives an output. Type system includes primitive data types, tuple, union, array and map. Polymorphism, generics and lambda expression are also provided and everything is immutable.
+As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  We have functions and types. Each function acts on a set of inputs and gives an output. Type system includes primitive data types, struct, union, array and map. Polymorphism, generics and lambda expression are also provided and everything is immutable.
 
 ## Comparison with other languages
 
@@ -85,9 +85,9 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 02. **Primitive types**: `int`, `float`, `char` (other useful types are define in core)
 03. **Variables**: `var my_var:int = 19` (type can be automatically inferred, only local variables are mutable)
 04. **Named type**: `type MyInt := int`
-05. **Tuple type**: `type Point := {x: int, y:int, data: float}` (Like `struct` in C)
-06. **Tuple literal**: `location = Point{ .x=10, .y=20, .data=1.19 }`
-07. **Composition of tuples**: By embedding (only for tuples), `type Circle := {Shape, radius: float}`
+05. **Struct type**: `type Point := {x: int, y:int, data: float}` (Like `struct` in C)
+06. **Struct literal**: `location = Point{ .x=10, .y=20, .data=1.19 }`
+07. **Composition of structs**: By embedding (only for structs), `type Circle := {Shape, radius: float}`
 08. **Array type**: `var jobQueue: array[int] = [0, 1, 2, 3]`
 09. **Map type**: `var countryPopulation: map[string, int] := [ "US": 300, "CA": 180, "UK": 80 ]`
 10. **Generics**: `type Stack[T] := { data: array[T], info: int }`
@@ -126,7 +126,7 @@ var x = {
 3. Example 1 defines a binding called `x` which is of type `integer` and stores value of `12` in it.
 4. Compiler automatically infers the type of binding from expression, so type is optional except in special cases (e.g. `unions`)
 5. There should be one space after `var` and before binding name.
-6. If right side of `=` is a tuple type, you can destruct it's type and assign it's value to different bindings (Example 3 and 7). See Tuple section for more information.
+6. If right side of `=` is a struct type, you can destruct it's type and assign it's value to different bindings (Example 3 and 7). See struct section for more information.
 7. Declaration makes a copy of the right side if it is a simple identifier (Example 4). So any future change to `x` will not affect `y`.
 8. You can use a block as the expression and the last evaluated value inside the block will be bound to the given identifier (Example 5).
 9. Note that assignment operator, makes a copy of the right side variable and assign it to the left side variable.
@@ -286,40 +286,39 @@ These types are not primitive but due to being widely used in the language and l
 4. You can use casting operator to convert between a named type and it's underlying type (Example 5).
 5. If a type is implemented in the runtime, it's definition will be `{...}`. For example `type array[T] := {...}`
  
-## Tuple
+## Struct
 
 **Semantice**: As a product type, this data type is used to defined a set of coherent variables of different types.
 
 **Syntax**: 
 
 1. Declaration: `{field1: type1, field2: type2, field3: type3, ...}` 
-2. Literal: `Type{.field1=value1, .field2=value2, .field3=value3, ...}` 
-3. Update: `other_tuple{.field1=value1, .field2=value2, .field3=value3, ...}` 
-4. Untyped literal: `${value1 value2, value3, ...}` 
+2. Typed Literal: `Type{field1=value1, field2=value2, field3=value3, ...}` 
+3. Untyped literal: `${value1, value2, value3, ...}` 
 
 **Examples**
 
 1. `type Point := {x:int, y:int}`
-2. `point = ${100, 200}`
-3. `point = Point{.x=100, .y=200}`
-4. `my_point = Point{100, 200}`
-5. `x,y = point`
+2. `point2 = Point{x=100, y=200}`
+3. `point3 = Point{100, 200}`
+4. `point1 = ${100, 200}`
+5. `x,y = point1`
 6. `x,y = ${100,200}`
-7. `another_point = my_point{.x=11, .y=my_point.y + 200}`
-8. `another_point = my_point`, `another_point.x = 11`, `another_point.y += 200`
-9. `new_point = {a=100, b=200} //WRONG!`
+7. `another_point = Point{x=11, y=my_point.y + 200}`
+8. `another_point = my_point`
+9. `new_point = ${a=100, b=200} //WRONG!`
 
 **Notes**
 
-1. Field names are not mandatory when defining a tuple literal.
-2. Example 1 defines a named type for a 2-D point and next 3 examples show how to initialise variables of that type.
-3. Examples 5 and 6 show how to destruct a tuple and extract it's data.
-4. Example 7 and 8 are the same and show how to define a tuple based on another tuple.
-5. Example 9 indicates names should match with the expected type.
+1. Example 1 defines a named type for a 2-D point and next 2 examples show how to initialise variables of that type.
+2. If you define an untyped literal (Example 4), you can access it's component by destruction (Example 5).
+3. Examples 5 and 6 show how to destruct a struct and extract it's data.
+4. Example 7 and 8 are the same and show how to define a struct based on another struct.
+5. Example 9 indicates you cannot choose field names for an untyped struct literal.
 
 ## Composition
 
-**Semantics**: To include (or embed) the data defined in another tuple type.
+**Semantics**: To include (or embed) the data defined in another struct type.
 
 **Syntax**: `{Parent1Type, field1: type1, Parent2Type, field2: type2, Parent2Type, ...}`
 
@@ -333,11 +332,11 @@ These types are not primitive but due to being widely used in the language and l
 **Notes**
 1. In the above example, `Shape` is the contained type and `Circle` is container type.
 2. The language provides pure "contain and delegate" mechanism as a limited form of polymorphism.
-3. A tuple type can embed as many other tuple types as it wants and forward function calls to embedded tuples. Refer to function section for more information about forwarding functions.
-4. You can define a union type which accepts all tuple types which embed a specific tuple type. See examples 4 and 5.
+3. A struct type can embed as many other struct types as it wants and forward function calls to embedded structs. Refer to function section for more information about forwarding functions.
+4. You can define a union type which accepts all struct types which embed a specific struct type. See examples 4 and 5.
 5. Note that polymorphism does not apply to generics. So `array[Circle]` cannot substitute `array[Shape]`. But you can have `array[Circle|Square]` to have a mixed array of different types.
 6. We use closed recursion to dispatch function calls. This means if a function call is forwarded from `Circle` to `Shape` and inside that function another second function is called which has candidates for both `Circle` and `Shape` the one for `Shape` will be called.
-7. `|{T}|` where T is a named type can be used to indicate all tuples that embed that type (Example 4).
+7. `|{T}|` where T is a named type can be used to indicate all structs that embed that type (Example 4).
 
 ## Casting
 
@@ -392,7 +391,7 @@ These types are not primitive but due to being widely used in the language and l
 5. You can omit function output type and let compiler infer it, only if it has no body (Examples 4, 6 and 8).
 6. You can omit braces and `return` keyword if you only want to return an expression (Examples 4, 6, 7 and 8).
 7. Each function must have an output type. Even if it does not return anything, output type will be `nothing`.
-8. Function output can be tuple type with or without field names (Examples 5 and 7).
+8. Function output can be struct type with or without field names (Examples 5 and 7).
 9. You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
 10. The function in example 9 will be invoked if the input is either `int` or `Point` or `int|Point`.
 11. There should not be ambiguity when calling a function. So having functions on examples 9 and 3 in same compilation is invalid.
@@ -412,7 +411,7 @@ These types are not primitive but due to being widely used in the language and l
 1. `pi = PI()`
 2. `a,b = process2(myPoint)`
 3. `_,b = process2(myPoint)`
-4. `tuple1 = myFun9();`
+4. `struct1 = myFun9();`
 
 **Notes**
 
@@ -478,6 +477,7 @@ These types are not primitive but due to being widely used in the language and l
 9. `ff = (x:int) -> { ff(x+1) }`
 10. `(x:int)-> {print(x), x-1}`
 11. `$[10 .. (x:int)-> x-1 .. 0]`
+12. `result = $[10 .. (x:int)-> x-1, (x:int)->2*x .. 0]`
 
 **Note**
 
@@ -489,8 +489,9 @@ These types are not primitive but due to being widely used in the language and l
 6. You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normall call and replace the lambda inputs with `_`. Example 8 defines a lambda to call `process` functions with `x=10` but `y` and `z` will be inputs.
 7. If lambda is assigned to a variable, you can invoke itself from inside (Example 9).
 8. You can put multiple statements in a lambda and separate them with comma (Example 10).
-9. Example 11 is another way to generate an array literal. You specify start and end and a function which accepts current element and returns the next element. This can be used to implement loops. Execution of the lambda will continue until it's output is equal to the end marker.
-10. Writing name of a function without input creates a lambda with inputs same as function inputs. This notation can also be used with array and maps.
+9. Example 11 is another way to generate an array literal. You specify start and end and a function which accepts current element and returns the next element. This can be used to implement loops. Execution of the lambda will continue until it's output is equal to the end marker. Note that start element is included in the output but end element is not.
+10. In a range operator, you can specify two lambdas. In this case, the first lambda will return the next element and the second lambda will return output of the current iteration round. The second lambda will not be called if output of the first lambda is same as the end marker.
+11. Writing name of a function without input creates a lambda with inputs same as function inputs. This notation can also be used with array and maps.
 
 # Generics
 
@@ -579,7 +580,7 @@ These types are not primitive but due to being widely used in the language and l
 04. `{x,y,z} . {_,_,_}` => `{x,y,z}`
 05. `g = {5,9} . add(_, _)` => `g = add(5,9)`
 06. `{1,2} . processTwoData(_, _)` => `processTwoData(1,2)`
-07. `{1,2} . processTuple(_)` => `processTuple({1,2})`
+07. `{1,2} . processStruct(_)` => `processStruct({1,2})`
 08. `6 . addTo(1, _)` => `addTo(1, 6)`
 09. `result = {input, check1(5, _)} . pipe(_,_) . {_, check3(1,2,_)} . pipe(_, _) . {_, check5(8,_,1) } . pipe(_,_)`
 10. `func pipe[T, O](input: Maybe[T], handler: func(T)->Maybe[O])->Maybe[O] ...`
@@ -595,8 +596,8 @@ These types are not primitive but due to being widely used in the language and l
 4. `@`: returns type-id of a named or primitive type as an integer number, or a union variable (Example 1).
 5. `{}`: To cast from named to unnamed type you can use: `Type{value}` notation (Example 2).
 6. `{}`: To cast from variable to a union-type (Example 3).
-7. ` . `: Chaining opertor (Note to the spaces around the dot). `X . F(_)` will be translated to `F(X)` function call. right side of dot must be either a closure with expected inputs or a tuple with underscores for substitition. If right-side expects a single input but left side is a tuple with multiple items, it will be treated as a tuple for the single input of the function (Example 7) but if function expects multiple inputs they will be extracted from left side (Example 6). 
-8. You can also pass a single argument to right side of the chain by using non-tuple value.
+7. ` . `: Chaining opertor (Note to the spaces around the dot). `X . F(_)` will be translated to `F(X)` function call. right side of dot must be either a closure with expected inputs or a struct with underscores for substitition, a map or an array. If right-side expects a single input but left side is a struct with multiple items, it will be treated as a struct for the single input of the function (Example 7) but if function expects multiple inputs they will be extracted from left side (Example 6). 
+8. You can also pass a single argument to right side of the chain by using non-struct value.
 9. You can use chain operator with custom functions as a monadic processing operator. For example you can streamline calling mutiple error-prone functions without checking for error on each call (Example 9 and 10).
 10. Name of a function without `()` creates a lambda with appropriate inputs (Example 12 and 13).
 
@@ -605,18 +606,18 @@ These types are not primitive but due to being widely used in the language and l
 ## Special notations
 
 01. `@`  type-id opertor
-02. `$` tuple literal
+02. `$` struct literal
 02. `|`  union data type
 03. `_`  something we don't know or don't care (placeholder for a lambda input or unknown variable in assignments or switch)
-04. `:`  type declaration for tuple and function input and values, map literal
+04. `:`  type declaration for struct and function input and values, map literal
 05. `:=` custom type definition
 06. `=`  type alias, assignment
 07. `..` range generator
 08. `->` function declaration
 09. `[]` generics, custom literals
-10. `{}` code block, tuple definition and tuple literal, casting
+10. `{}` code block, struct definition and struct literal, casting
 11. `()` function declaration and call
-12. `.`  access tuple fields, function chaining (with spaces around)
+12. `.`  access struct fields, function chaining (with spaces around)
 
 Keywords: `import`, `type`, `func`, `var`
 
@@ -738,7 +739,7 @@ iter ..
 
 ## autoBind
 
-**Semantics**: A compiler-level supported mechanism to fetch funcion pointers to currently defined functions and create an appropriate tuple with them.
+**Semantics**: A compiler-level supported mechanism to fetch funcion pointers to currently defined functions and create an appropriate struct with them.
 
 **Syntax**: `x = autoBind[Type1]()`
 
@@ -751,13 +752,13 @@ iter ..
 
 **Notes**
 
-1. Example 1 defines a general tuple which only contains function pointer fields.
+1. Example 1 defines a general struct which only contains function pointer fields.
 2. Example 2 defines a function to sort any given array of any type. But to do the sort, it needs a function to compare data of that type. So it defines an input of type `Comparer[T]` to include a function to do the comparison.
-3. Example 3 shows how to call `sort` function defined in example 2. You simply call `autoBind` to create appropriate tuple of appropriate types by the compiler. So `f.compare` field will contain a function pointer to a function with the same name and signature.
+3. Example 3 shows how to call `sort` function defined in example 2. You simply call `autoBind` to create appropriate struct of appropriate types by the compiler. So `f.compare` field will contain a function pointer to a function with the same name and signature.
 4. Example 4 is same as example 3 but with explicit types. You can omit these types as compiler will infer them.
-5. You can also create your own custom tuple with appropriate function pointers to be used in sort function. `autoBind` just helps you create this set of function pointers easier.
-6. The tuple defined in example 1 is called a protocol tuple because it only contains function pointers. These tuples are just like normal tuples, so for example you can embed other tuples inside them and as long as they only contains function pointers, they will be protocol tuples.
-7. `autoBind` works only on protocol tuples.
+5. You can also create your own custom struct with appropriate function pointers to be used in sort function. `autoBind` just helps you create this set of function pointers easier.
+6. The struct defined in example 1 is called a protocol struct because it only contains function pointers. These structs are just like normal structs, so for example you can embed other structs inside them and as long as they only contains function pointers, they will be protocol structs.
+7. `autoBind` works only on protocol structs.
 
 ## General rules
 
@@ -882,7 +883,7 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Testing and profiling features
 - Distributed processing: Moving code to another machine and running there (Actor model + channel)
 - Define notation to write low-level (Assembly or IR) code in a function body and also force inline.
-- Add notation for axioms and related operators like `=>` to protocol tuples to be able to define semantics of a protocol.
+- Add notation for axioms and related operators like `=>` to protocol structs to be able to define semantics of a protocol.
 - Vet to format code based on the standard (indentation, spacing, brace placement, warning about namings, ...).
 - Compiler will detect local variable updates which are not escape and optimize them to use mutable variable (for example for numerical calculations which happens only inside a function).
 - Channels are the main tool for concurrency and coordination.
