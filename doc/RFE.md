@@ -53,9 +53,9 @@ Y - Now that read/write for array and map uses `()` notation can we use literals
 What about tuple? For tuple it is different. we need it because we use `{}` for code block too and if a function only returns a tuple literal it will be confusing.
 We can remove it for array and map.
 
-? - Rename tuple to struct.
+Y - Rename tuple to struct.
 
-? - one negative thing about literals is that they are not orthogonal.
+N - one negative thing about literals is that they are not orthogonal.
 can we make them + tuple orth?
 `var arr = $[1, 2, 3]`.
 we can say `$` is a special function which creates array and map literals.
@@ -97,13 +97,13 @@ but this makes them like map. can we use same notation? no. it will make things 
 Actuallt, this is not tuple. It is a struct.
 1. `type Point := {x:int, y:int}`
 2. `point = ${100, 200}`
-3. `point = Point{.x=100, .y=200}`
+3. `point = Point{x=100, y=200}`
 4. `my_point = Point{100, 200}`
 5. `x,y = point`
 6. `x,y = ${100,200}`
-7. `another_point = my_point{.x=11, .y=my_point.y + 200}`
+7. `another_point = Point{x=11, y=my_point.y + 200}`
 8. `another_point = my_point`, `another_point.x = 11`, `another_point.y += 200`
-9. `new_point = {a=100, b=200} //WRONG!`
+9. `new_point = ${a=100, b=200} //WRONG!`
 What about this: struct is a map with values of different types.
 keys are string but values have different types. We specify type of value for each key.
 we need to support variadic templates and string as template arguments.
@@ -111,7 +111,130 @@ we need to support variadic templates and string as template arguments.
 you cannot read from a struct with a variable. You must refer to it's inside data using a literal string.
 Adding this orthogonality will make code much less readable. Let's agree to add a new concept: struct.
 How shall we define struct literal?
+The only purpose of addin `$` prefix is to make code readable and prevent confusion.
+`func myFunc9(x:int) -> {int} {12}`
+`x={12}` is this a code block which evaluates to 12 or a tuple literal?
+`x=[12]` array with one element
+`x=["A":12]` map
+`x=(12)`?
+`x=(a=1, b=2)` it will be confusing with function call. let's stick to `${}`
 
+? - `type array[T] := map[int, T]`?
+
+? - remove `++` and `--`. If they are not expressions, why have them and make people confused?
+
+? - Expressions are composable so add to orth.
+What non-exp do we have? var decl., 
+whatever you cannot pass as an argument?
+you cannot combine statements. 
+function calls are statement because they return something (even if nothing).
+loops should also be expressions. This means that the function handler should return two things: next iterator and iteration result.
+`[10 .. (x:int)-> {print(x), x--} .. 0]`
+`g = [10 .. (x:int)-> {print(x), ${x, x-1} } .. 0]`
+then g will be `[10,9,...,0]`
+`g = [10 .. (x:int)-> x-1 .. 0]`
+`g = [0 .. (x:int)-> arr1[x]+1 .. length(arr1)]`
+we have two things: iteration result and next iteration input.
+either we can specify both in the lambda or use convention for one of them.
+solution1: lambda returns the value of iteration, next iteration input is determined using a function call. (on what?)
+solution2: lambda returns next iteration input. the value is determined using `getValue` function call. what if we want to have different `getValue` for different types? e.g. a loop on customer list, first time we extract their names, then their ids.
+let's say, if lambda returns one thing: it will be both value of this round and input to next round. if it returns two things, first is value and second is input for the next round.
+loop stops as soon as input to the next round is same as end marker.
+`g = [10 .. (x:int)-> x-1 .. 0]` 
+`g = [0 .. (x:int)-> arr1[x]+1 .. length(arr1)]`
+```
+myOutput = [
+iter .. 
+  (x: Iterator)->
+  {
+      [true: ${nothing, nothing}, false: ${x, getNext(x)}](eof(x))
+  }   
+.. nothing
+]
+```
+proposal: lambda always returns next round input. value can be extracted by calling another function outside `[]`.
+`g = [0 .. (index:int)-> index+1 .. length(arr1)] . arr1(_)`
+another way to have loop: chain operator + array.
+if we chain an array to a lambda which has only one input, it will be called in order and generate a new array.
+so, the array can be anything. literal or use a lambda to create iterators.
+`g = [0 .. (index:int)-> index+1 .. length(arr1)] . arr1(_)`
+```
+myOutput = [
+iter .. 
+  (x: Iterator)->
+  {
+      [true: nothing, false: getNext(x)](eof(x))
+  }   
+.. nothing
+] . getValue(_)
+```
+so with a lambda: `[start..lambda..end] . func`
+output of the first part `[start..lambda..end]` is: `[x0=start, x1=lambda(start), x2=lambda(x0), ... ]`
+we continue until output of lambda is same as end. then we stop. we don't end in the output. so it can be used as a marker without any useful information (e.g. nothing).
+then we feed the array to the lambda.
+the array can contain structs which will be fed to the lambda2. 
+lambda can output anything as long as it can accept the same thing and func accepts it.
+`[${start,0}..lambda..${end,0}] . func(_,_)`
+start, end, lambda input and output and func input must be same type. int or string or struct or ...
+`out = [start..(input: start)->output..end] . lambda(lin)`
+type of start, output, end and lin must be the same. out will be an array of type of output of lambda.
+if no lambda, out will be of type of output.
+But if left side is an array, what if lambda accepts an array?
+`[1,2,3] . (x:int)->x+1` it can be deduced from the context. lambda must specify input type. even if we use `process(_)` the process function has input type.
+If chain target accepts an array, the whole array will be sent to it.
+1. extend chain operator: if left side is `array[T]` and chain target accepts `T`, it will process each element of the array.
+2. array range operator: clarify definition and algorithm.
+start is inclusive but end is not.
+lambda is used to fetch the next element of the array.
+NO to extending chain operator. It will make language more difficult.
+```
+myOutput = [
+iter .. 
+  (x: Iterator)->
+  {
+      [true: ${0, nothing}, false: ${getData(x), getNext(x)}](eof(x))
+  },
+  (x: Iterator) -> getData(x)
+.. nothing
+]
+```
+two lambda is confusing. Let's say lambda returns two things: value and next.
+problem: 1. when returning end marker we have to also send a dummy value for round output.
+2. if we want to return a tuple as round value, it will not be very readable.
+`[0..10]` ~ `[0..(x:int)->${x, x+1} .. 10]`
+what if we say, next is determined using convention and round output is the output of the lambda?
+still generating custom int ranges (`1,3,5,7,...` ...) anything which is not +1 or -1 will be more difficult.
+what if we don't want to have an array? Just run a code with some side-effect?
+WAIT! it we use lambda, we cannot modify any non-local variable:
+```
+[
+iter .. 
+  (x: Iterator)->
+  {
+      append(myOutput, getData(x))
+      [true: nothing, false: getNext(x)](eof(x))
+  }   
+.. nothing
+]
+```
+This is not correct. `append` will modify `myOutput`? It is not local.
+we must specify iteration value in the lambda.
+
+? - reading from array `arr(0)` is fine even if we send it to another function.
+but writing `arr(0,1)` is not. can we make it more explicit?
+maybe by using a function? or `=`?
+
+we should also decide about boundaries. are they inclusive or exclusive?
+
+? - cant user write this?
+```
+struct1
+.
+field1
+```?
+won't it be confusing with chain operator?
+
+? - How can I force `set` data structure uniqueness requirement?
 
 ? - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
