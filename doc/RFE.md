@@ -438,7 +438,6 @@ Can we choose a better name?
 `ret` and `return` will be misleading
 `ensure`
 `assert` is better. but it is not meaningful here. 
-`retif` ? remember that we are not bound by other languages.
 
 Y - Make assignment a statement so people cannot mis-use side-effects and combine them.
 
@@ -450,6 +449,50 @@ var x=0 := [
   (a:int)->{print(a), a+1}
 ](x<=10)(x)
 ```
+```
+var x=0 := x ~ x<=10 ~ [
+  (a:int)->nothing, 
+  (a:int)->{print(a), a+1}
+]
+```
+
+N - How can we apply assert to data?
+Examples: datetime.month<13, ...
+simply define a validation function. and write: `assert isValid(x), exception`
+
+
+? - `assert` is not very descriptive.
+The purpose is: Make sure this condition holds, or else the whole block should be terminated and be evaluated as this value: ...
+`retif` ? remember that we are not bound by other languages.
+`evalif`
+`throw`
+`ensure` - this implies the first part (make sure condition holds), but not the second part (return).
+I don't want to make it two keywords. Because it will add to the complexity. 
+The purpose of adding this is to make defensive programming and requirement enforcement more straight forward.
+`expression if condition`? this is not very readable. I need something at the beginning.
+`if condition, expression`
+`[false_ret, nothing](condition)`
+Generally it is better to document expected condition rather that unexpected. So the command should be something like 'ensure this condition holds or else return this value'
+so `retif` does not make sense.
+`guard`?
+`guard month<12, 100`
+`retifnot month<12, 100`
+`100 unless month<12`
+`unless month<12`
+
+? - Doesn't reading from map and array return two values? data and found? Doesn't this affect conditionals and loops?
+How can I chain result of reading from array or map?
+Maybe you are not supposed to do that.
+For array we can say return data or runtime error if index out of bounds.
+But for map, user really needs to capture both outputs.
+If map's value is a function and I want to call function immediately affter reading from map:
+`myMap(100)("A", "B", "C")`?
+`var f,_ = myMap(100)`, `f("A", "B", "C")`?
+what about this?
+`var x=0 := [true: (a:int)->{print(a), a+1}, false: (a:int)->nothing](x<=10)(x)`.
+`var x=0 := { var f, _ = [true: (a:int)->{print(a), a+1}, false: (a:int)->nothing](x<=10), f(x) }`.
+For array, we can say runtime error will be thrown.
+Can't we keep this for array too?
 
 ! - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
