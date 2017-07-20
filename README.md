@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow operator overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, return `$` for tuple litearls, renamed tuple to struct, `()` notation to read/write map and array, `:=` for loop, 
+- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, return `$` for tuple litearls, renamed tuple to struct, `()` notation to read/write map and array, `:=` for loop, made `=` a statement, added `assert` keyword.
 
 # Introduction
 
@@ -32,11 +32,10 @@ That's why I am creating a new programming language: dotLang.
 dot programming language (or dotLang for short) is an imperative, static-typed, general-purpose language based on author's experience and doing research on many programming languages (namely Go, Java, C\#, C, C++, Scala, Rust, Objective-C, Python, Perl, Smalltalk, Ruby, Swift, Haskell, Clojure, Eiffel, Elm, Falcon, Julia, F\# and Oberon-2). 
 I call the paradigm of this language "Data-oriented". This is a combination of Object Oriented and Functional approach and it is designed to work with data. There are no objects or classes. Only data types and functions. But most useful features of the OOP (encapsulation, abstraction, inheritance and polymorphism) are provided to some extent. On the other hand, we have first-class and higher-order functions borrowed from functional approach.
 
-Three main objectives are pursued in the design of this programming language:
+Two main objectives are pursued in the design and implementation of this programming language:
 
-1. **Simplicity**: The code written in dotLang should be consistent, easy to write, read and understand. There has been a lot of effort to make sure there are as few exceptions and rules as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them. Very few things are done implicitly and transparently by the compiler or runtime system. Also I tried to reduce need for nested blocks and parentheses as much as possible.
-2. **Expressiveness**: It should give enough tools to the developer to produce readable and maintainable code. This requires a comprehensive standard library in addition to language notations (lambdas, closure, generics, union data types, maps and arrays, chaining function calls, ...).
-3. **Performance**: The compiler will compile to native code which will result in high performance. We try to do as much as possible during compilation phase (optimizations, de-refrencing, in-place mutation, sending by copy or reference, type checking, phantom types, inlining, dispose function, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in standard library will be implemented in a lower level language.
+1. **Simplicity**: The code written in dotLang should be consistent, easy to write, read and understand. There has been a lot of effort to make sure there are as few exceptions and rules as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them. Very few things are done implicitly and transparently by the compiler or runtime system. Also I tried to reduce need for nested blocks and parentheses as much as possible. Another aspect of simplicity is minimaism in the language. It has very few keywords and rules to remember.
+2. **Performance**: The compiler will compile to native code which will result in high performance. We try to do as much as possible during compilation phase (optimizations, de-refrencing, in-place mutation, sending by copy or reference, type checking, phantom types, inlining, dispose function, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in standard library will be implemented in a lower level language.
 
 Achieving all of the above goals at the same time is impossible so there will definitely be trade-offs and exceptions.
 The underlying rules of design of this language are 
@@ -130,12 +129,13 @@ var x = {
 7. Declaration makes a copy of the right side if it is a simple identifier (Example 4). So any future change to `x` will not affect `y`.
 8. You can use a block as the expression and the last evaluated value inside the block will be bound to the given identifier (Example 5).
 9. Note that assignment operator, makes a copy of the right side variable and assign it to the left side variable.
+10. Assignment is a statement and not an operator. So you cannot combine it with other things in one line.
 
 ## Primitives
 
 **Semantics**: Provide basic feature to define most commonly used data types.
 
-**Syntax**: `int`, `float`, `char`, `map`
+**Syntax**: `int`, `float`, `char`
 
 **Examples**
 
@@ -149,6 +149,33 @@ var x = {
 2. `float` is double-precision 8-byte floating point number.
 3. `char` is a single character, represented as an unsigned byte.
 4. Character literals should be enclosed in single-quote.
+
+## Array
+
+**Semantics**: Define a fixed-size sequence of elements of the same type.
+
+**Syntax**: `array[type]`
+
+**Examples**
+
+1. `var arr = [1, 2, 3]`
+2. `var g, found = arr(0)`, `arr(0) = 100`
+3. `arr(0, 10)`
+4. `var two_d_array: array[array[int]] = [ [1,2,3], [4,5,6] ]`
+5. `var two_d_array = [ [1,2,3], [4,5,6] ]`
+6. `var p = two_d_array(0, 0)`
+7. `var arr2 = [0..10]`
+8. `var arrx: array[int] = [1, 2, 3]`
+9. `${0} . myArray`
+
+**Notes**
+
+1. Above examples show definition and how to read/update array.
+2. In example 7, the range operator `..` is used to generate an array literal. Note that the end number is not included in the result.
+3. You can explicitly state array literal type like in example 8.
+4. There is another notation to create array literals which uses a function to generate elements. See lambda section for more information.
+5. You can use array name as a lambda and use chaining operator to read it's data (Example 9) for more information refer to operators and lambda sections.
+6. array is not a function. It acts like a function when reading or writing data.
 
 ## Map
 
@@ -198,11 +225,7 @@ var x = {
 5. `int | flotOrString` will be simplified to `int | float | string`
 6. Example 6 shows using `@` operator to fetch real type of a union variable.
 
-## Important types
-
-These types are not primitive but due to being widely used in the language and libraries, we explain some of them in this section. These types are built on top of primitives and some of the more important types are `string`, `bool`,  `array`, and some other basic data types like sequence, queue, ...
-
-### Basic types
+## Basic types
 
 **Semantics**: These important data types are some basic and well known types with simple definition.
 
@@ -220,33 +243,6 @@ These types are not primitive but due to being widely used in the language and l
 3. String litearls enclosed in backtick can be multi-line and escape character `\` will not be processed in them.
 4. `nothing` is a label type which is used in union types, specially `maybe` type.
 5. `bool` type is a union of two label types: `true` and `false`.
-
-### Array
-
-**Semantics**: Define a fixed-size sequence of elements of the same type.
-
-**Syntax**: `array[type]`
-
-**Examples**
-
-1. `var arr = [1, 2, 3]`
-2. `var g, found = arr(0)`, `arr(0) = 100`
-3. `arr(0, 10)`
-4. `var two_d_array: array[array[int]] = [ [1,2,3], [4,5,6] ]`
-5. `var two_d_array = [ [1,2,3], [4,5,6] ]`
-6. `var p = two_d_array(0, 0)`
-7. `var arr2 = [0..10]`
-8. `var arrx: array[int] = [1, 2, 3]`
-9. `${0} . myArray`
-
-**Notes**
-
-1. Above examples show definition and how to read/update array.
-2. In example 7, the range operator `..` is used to generate an array literal. Note that the end number is not included in the result.
-3. You can explicitly state array literal type like in example 8.
-4. There is another notation to create array literals which uses a function to generate elements. See lambda section for more information.
-5. You can use array name as a lambda and use chaining operator to read it's data (Example 9) for more information refer to operators and lambda sections.
-6. array is not a function. It acts like a function when reading or writing data.
 
 ## Type alias
 
@@ -354,7 +350,7 @@ These types are not primitive but due to being widely used in the language and l
 
 **Notes**
 
-1. There is no implicit and automatic casting in the language. The only case is for `true` to be 1 and `false` to be 0 when used as an integer.
+1. There is no implicit and automatic casting in the language. The only case is for `true` to be 1 and `false` to be 0 when used as an array index.
 2. Casting is mostly used to cast between a union and it's internal type (Example 2) or between named and equal unnamed type (Example 4 and 5). 
 3. If function expects a named type, you cannot pass an equivalent unnamed type. 
 4. Similarly, when a function expects an unnamed type, you cannot pass a named type with same underlying type. 
@@ -630,18 +626,25 @@ These types are not primitive but due to being widely used in the language and l
 **Examples**
 
 1. `var x=0 := [true: (a:int)->{print(a), a+1}, false: (a:int)->nothing](x<=10)(x)`.
-2. `list.data, list, fpos := [true: ${getChar(fpos), list.next, getNext(fpos)}, false: ${nothing, nothing, nothing}](!eof(fpos))`
-3. `arr[index], index, fpos := [true: ${getChar(fpos), index+1, getNext(fpos)}, false: ${nothing, nothing, nothing}](!eof(fpos))`
-4. `new_array[idx],idx := [true:${arr(idx)+1,idx+1}, false: ${nothing, nothing}](idx<=length(arr))`
+2. 
+```
+var x=0 := x ~ x<=10 ~ [
+  (a:int)->nothing, 
+  (a:int)->{print(a), a+1}
+]
+```
+3. `list.data, list, fpos := [true: ${getChar(fpos), list.next, getNext(fpos)}, false: ${nothing, nothing, nothing}](!eof(fpos))`
+4. `arr[index], index, fpos := [true: ${getChar(fpos), index+1, getNext(fpos)}, false: ${nothing, nothing, nothing}](!eof(fpos))`
+5. `new_array[idx],idx := [true:${arr(idx)+1,idx+1}, false: ${nothing, nothing}](idx<=length(arr))`
 
 **Notes**
 
 1. The expression is supposed to return a tuple with appropriate number of elements assignable to left values. assignment will be done to `v1`, then `v2` and so on.
 2. Evaluation of expression will be repeated until it outputs `nothing` for all of it's arguments.
-3. Example 1 shows loop to print from 0 to 10.
-4. Example 2 shows loop to read whole file into a linked list.
-5. Example 3 shows reading whole file into a char array.
-6. Example 4 shows mapping original array `arr` into new array with incrementing each element.
+3. Example 1 shows loop to print from 0 to 10 (Example 2 is the same but using chain and array).
+4. Example 3 shows loop to read whole file into a linked list.
+5. Example 4 shows reading whole file into a char array.
+6. Example 5 shows mapping original array `arr` into new array with incrementing each element.
 
 # Summary of notations
 
@@ -825,9 +828,8 @@ func switch[S,T,U,X](v: S|T|U, mp: map[int, FF[S,X]|FF[T,X]||FF[U,X]], else: fun
 - Import section is used to reference other modules that are being used in this module.
 - Definitions section is used to define data types.
 - Function section is used to define function bodies.
-- **Adressing**: Modules are addressed using `/` notation (e.g. `/code/st/net/create_socket`). Where `/` denotes include path.
-- **Encapsulation**: If a name (of a type or function) starts with underscore, means that it is private to the module. If not, it is public.
-- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeType`, `my_package_or_module`. If these are not met, compiler will give warnings. Primitive data types and basic types defined in core (`bool`, `string` and `nothing`) are the only exceptions to naming rules.
+- **Encapsulation**: If a name (of a type or function) starts with underscore, means that it is private to the module. If not, it is public and can be used from outside using `import` statement.
+- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeDataType`, `my_package_or_module`. If these are not met, compiler will give warnings. Primitive data types and basic types defined in core (`array`, `map`, `bool`, `string` and `nothing`) are the only exceptions to naming rules.
 
 # Examples
 
