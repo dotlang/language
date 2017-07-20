@@ -437,6 +437,19 @@ Can we choose a better name?
 `check`
 `ret` and `return` will be misleading
 `ensure`
+`assert` is better. but it is not meaningful here. 
+`retif` ? remember that we are not bound by other languages.
+
+Y - Make assignment a statement so people cannot mis-use side-effects and combine them.
+
+N - Repeated assignment might be difficult to read especially when we have multiple variables.
+`v1, v2, v3, v4 = ...`
+```
+var x=0 := [
+  (a:int)->nothing, 
+  (a:int)->{print(a), a+1}
+](x<=10)(x)
+```
 
 ! - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
