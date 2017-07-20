@@ -18,7 +18,7 @@ June 26, 2017
 - **Version 0.7**: Feb 19, 2017 - Fully qualified type name, more consistent templates, `::` operator and `any` keyword, unified enum and union, `const` keyword
 - **Version 0.8**: May 3, 2017 - Clarifications for exception, Adding `where` keyword, explode operator, Sum types, new notation for hash-table and changes in defining tuples, removed `const` keyword, reviewed inheritance notation.
 - **Version 0.9**: May 8, 2017 - Define notation for tuple without fields names, hashmap, extended explode operator, refined notation to catch exception using `//` operator, clarifications about empty types and inheritance, updated templates to use empty types instead of `where` and moved `::` and `any` to core functions and types, replaced `switch` with `match` and extended the notation to types and values, allowed functions to be defined for literal input, redefined if to be syntax sugar for match, made `loop` a function instead of built-in keyword.
-- **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow opertor overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
+- **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow operator overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
 - **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to dot, added `switch` and `while` keywords, renamed `loop` to `for`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, return `$` for tuple litearls, renamed tuple to struct, `()` notation to read/write map and array, `:=` for loop, 
@@ -135,7 +135,7 @@ var x = {
 
 **Semantics**: Provide basic feature to define most commonly used data types.
 
-**Syntax**: `int`, `float`, `char`
+**Syntax**: `int`, `float`, `char`, `map`
 
 **Examples**
 
@@ -149,6 +149,30 @@ var x = {
 2. `float` is double-precision 8-byte floating point number.
 3. `char` is a single character, represented as an unsigned byte.
 4. Character literals should be enclosed in single-quote.
+
+## Map
+
+**Semantics**: Represent a mapping from key to value.
+
+**Syntax**: `map[key, value]`
+
+**Examples**
+
+1. `var my_map = ["A": 1, "B": 2, "C": 3]`
+2. `var item1, found = my_map("A")`, `myMap("A") = 100`
+3. `my_map("A", 2)`
+4. `var my_map: map[string,int] = ["A": 1, "B": 2, "C": 3]`
+5. `${"A", 1} . myMap`
+
+
+**Notes**
+
+1. You need to use core functions to manipulate a map, because (like everything else), they are immutable.
+2. If you query a map for something which does not exist, it will return `nothing`.
+3. You can explicitly state type of a map literal like example 4.
+4. You can use prefix or suffix notation to read from map (Example 2).
+5. You can use map name as a lambda and use chain operator to read or write values (Example 5). For more information refer to operators and lambda sections.
+6. map is not a function. It acts like a function when reading or writing data.
 
 ## Union
 
@@ -176,7 +200,7 @@ var x = {
 
 ## Important types
 
-These types are not primitive but due to being widely used in the language and libraries, we explain some of them in this section. These types are built on top of primitives and some of the more important types are `string`, `bool`,  `array`, `slice`, `map`, and some other basic data types like sequence, queue, ...
+These types are not primitive but due to being widely used in the language and libraries, we explain some of them in this section. These types are built on top of primitives and some of the more important types are `string`, `bool`,  `array`, and some other basic data types like sequence, queue, ...
 
 ### Basic types
 
@@ -223,30 +247,6 @@ These types are not primitive but due to being widely used in the language and l
 4. There is another notation to create array literals which uses a function to generate elements. See lambda section for more information.
 5. You can use array name as a lambda and use chaining operator to read it's data (Example 9) for more information refer to operators and lambda sections.
 6. array is not a function. It acts like a function when reading or writing data.
-
-### Map
-
-**Semantics**: Represent a mapping from key to value.
-
-**Syntax**: `map[key, value]`
-
-**Examples**
-
-1. `var my_map = ["A": 1, "B": 2, "C": 3]`
-2. `var item1, found = my_map("A")`, `myMap("A") = 100`
-3. `my_map("A", 2)`
-4. `var my_map: map[string,int] = ["A": 1, "B": 2, "C": 3]`
-5. `${"A", 1} . myMap`
-
-
-**Notes**
-
-1. You need to use core functions to manipulate a map, because (like everything else), they are immutable.
-2. If you query a map for something which does not exist, it will return `nothing`.
-3. You can explicitly state type of a map literal like example 4.
-4. You can use prefix or suffix notation to read from map (Example 2).
-5. You can use map name as a lambda and use chain operator to read or write values (Example 5). For more information refer to operators and lambda sections.
-6. map is not a function. It acts like a function when reading or writing data.
 
 ## Type alias
 
@@ -399,6 +399,7 @@ These types are not primitive but due to being widely used in the language and l
 13. Only local variables are mutable. So function cannot modify it's inputs.
 14. You can call a function or lambda which accepts an int with `int|string` only if you are sure it contains an integer. Other method is to define two functions with same signature, one for int and one for string.
 15. You can call a function that accepts `int|string` with either `int` or `string` or `int|string`.
+16. You can combine multiple expressions on the same line using comma as separator.
 
 ## Invocation
 
@@ -489,6 +490,7 @@ These types are not primitive but due to being widely used in the language and l
 8. You can put multiple statements in a lambda and separate them with comma (Example 10).
 9. In a range operator, you can specify two lambdas. In this case, the first lambda will return the next element and the second lambda will return output of the current iteration round. The second lambda will not be called if output of the first lambda is same as the end marker.
 10. Writing name of a function without input creates a lambda with inputs same as function inputs. This notation can also be used with array and maps.
+11. You can combine multiple expressions on the same line using comma as separator.
 
 # Generics
 
@@ -563,6 +565,7 @@ These types are not primitive but due to being widely used in the language and l
 **Semantics**: All non-alpabetical notations operators used in the language.
 
 **Syntax**:
+
 1. Conditional operators: `and, or, not, ==, !=, >=, <=`
 2. Arithmetic: `+, -, *, /, %, %%, +=, -=, *=, /=`
 3. Assignment: `=`
@@ -597,25 +600,26 @@ These types are not primitive but due to being widely used in the language and l
 
 **Examples**
 
-1. `{x,y,z} . {_,_,_}` => `{x,y,z}`
-2. `g = {5,9} . add(_, _)` => `g = add(5,9)`
-3. `{1,2} . processTwoData(_, _)` => `processTwoData(1,2)`
-4. `{1,2} . processStruct(_)` => `processStruct({1,2})`
-5. `6 . addTo(1, _)` => `addTo(1, 6)`
-6. `result = {input, check1(5, _)} . pipe(_,_) . {_, check3(1,2,_)} . pipe(_, _) . {_, check5(8,_,1) } . pipe(_,_)`
+1. `{x,y,z} ~ {_,_,_}` => `{x,y,z}`
+2. `g = {5,9} ~ add(_, _)` => `g = add(5,9)`
+3. `{1,2} ~ processTwoData(_, _)` => `processTwoData(1,2)`
+4. `{1,2} ~ processStruct(_)` => `processStruct({1,2})`
+5. `6 ~ addTo(1, _)` => `addTo(1, 6)`
+6. `result = {input, check1(5, _)} ~ pipe(_,_) ~ {_, check3(1,2,_)} ~ pipe(_, _) ~ {_, check5(8,_,1) } ~ pipe(_,_)`
 7. `func pipe[T, O](input: Maybe[T], handler: func(T)->Maybe[O])->Maybe[O] ...`
-8. `{1,2} . {_, _, 5} . process(_,_,_)` => `process(1,2,5)`.
+8. `{1,2} ~ {_, _, 5} ~ process(_,_,_)` => `process(1,2,5)`.
 9. `func inc(x:int) -> x+1`, `var eleven = 10 . inc`
 10. `func add(x:int, y:int) -> x+y`, `${10, 20} . add`
 
 **Notes**
 
-1.  `X . F(_)` will be translated to `F(X)`
+1.  `X ~ F(_)` will be translated to `F(X)`
 2. right side of dot must be either a closure with expected inputs or a struct with underscores for substitition, a map or an array
 3. If right-side expects a single input but left side is a struct with multiple items, it will be treated as a struct for the single input of the function (Example 4) but if function expects multiple inputs they will be extracted from left side (Example 3). 
 8. You can also pass a single argument to right side of the chain by using non-struct value.
 9. You can use chain operator with custom functions as a monadic processing operator. For example you can streamline calling mutiple error-prone functions without checking for error on each call (Example 6 and 7).
 10. Name of a function without `()` creates a lambda with appropriate inputs (Example 9 and 10).
+11. You can use chain operator to read from map and array too.
 
 ## Repeated assignment operator
 
@@ -641,25 +645,26 @@ These types are not primitive but due to being widely used in the language and l
 
 # Summary of notations
 
-01. `@`  type-id opertor
-02. `$` struct literal
-03. `|`  union data type
-04. `_`  something we don't know or don't care (placeholder for a lambda input or unknown variable in assignments or switch)
-05. `:`  type declaration for struct and function input and values, map literal
-06. `:=` custom type definition, repeated assignment
-07. `=`  type alias, assignment
-08. `..` range generator
-09. `->` function declaration
-10. `[]` generics, custom literals
-11. `{}` code block, struct definition and struct literal, casting
-12. `()` function declaration and call
-13. `.`  access struct fields, function chaining (with spaces around)
+01. `~` chain operator
+02. `@`  type-id operator
+03. `$` struct literal
+04. `|`  union data type
+05. `_`  something we don't know or don't care (placeholder for a lambda input or unknown variable in assignments or switch)
+06. `:`  type declaration for struct and function input and values, map literal
+07. `:=` custom type definition, repeated assignment
+08. `=`  type alias, assignment
+09. `..` range generator
+10. `->` function declaration
+11. `[]` generics, custom literals
+12. `{}` code block, struct definition and struct literal, casting
+13. `()` function declaration and call
+14. `.`  access struct fields
 
-Keywords: `import`, `type`, `func`, `var`
+Keywords: `import`, `type`, `func`, `var`, `assert`
 
-Primitive data types: `int`, `float`, `char`
+Primitive data types: `int`, `float`, `char`, `map`
 
-Other important identifiers: `nothing`, `bool`, `true`, `false`, `map`, `array`, `string`
+Other important identifiers: `nothing`, `bool`, `true`, `false`, `array`, `string`
 
 # Miscellaneous
 
@@ -691,6 +696,20 @@ Other important identifiers: `nothing`, `bool`, `true`, `false`, `map`, `array`,
 8. Functions imported with fully-qualified method won't be used in method dispatch mechanism. You must explicitly call them or use data types in the module using fully-qualified notation. (Example 4 and 5).
 9. You can use function redirection to work with FQ functions (Example 6) or use type alias to work with FQ type names (Example 7).
 10. `import` supports other systems too. By default it imports modules from local file-system. But depending on the prefix used you can import from other sources too (Example 8).
+
+## assert
+
+**Semantics**: To finish evaluation of the current code block immediately
+
+**Syntax**: `assert condition, expression`
+
+**Examples**
+
+1. `assert success, 100`
+
+**Notes**
+
+1. In this example, if `success` is evaluated to false, block will be evaluated to 100.
 
 ## Conditionals and pattern matching
 
@@ -738,9 +757,10 @@ func switch[S,T,U,X](v: S|T|U, mp: map[int, FF[S,X]|FF[T,X]||FF[U,X]], else: fun
 
 **Notes**
 
-1. You cannot use a variable after calling dispose on it.
+1. You cannot use a variable after calling dispose on it. 
 2. You can call dispose on any variable.
 3. Dispose function will properly handle any resource release like closing file or socket or ... .
+
 
 ## Exclusive resource
 
@@ -766,7 +786,7 @@ func switch[S,T,U,X](v: S|T|U, mp: map[int, FF[S,X]|FF[T,X]||FF[U,X]], else: fun
 **Notes**
 
 1. There is no explicit support for exceptions. You can return a specific `exception` type instead.
-2. You can use chaining opertor to streamling calling multiple functions without checking for exception output each time.
+2. You can use chaining operator to streamling calling multiple functions without checking for exception output each time.
 3. If a really unrecoverable error happens, you should exit the application by calling `exit` function in core.
 4. In special cases like a plugin system, where you must control exceptions, you can use core function `invoke` which will return an error result if the function which it calls exits.
 
