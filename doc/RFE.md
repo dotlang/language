@@ -385,7 +385,7 @@ N - How can I force `set` data structure uniqueness requirement?
 Just add appropriate functions as gateways:
 `func add(s: Set[T], x: T)` which will check for correctness of the set.
 
-? - cant user write this?
+Y - cant user write this?
 ```
 struct1
 .
@@ -399,7 +399,44 @@ It should be single keypress, single char and easy to read and type.
 `~`
 `,`
 `str ~ contains(_, ":")`
+`0 ~ arr = 10`
+but `~` does not imply chaining. `>>` is better but it's two characters.
+`>>` and we use `>` in function and comparison so it will be unreadable.
+`x>0>>arr`
+`""`
+`|`
+`f(x)`, `f(g(x,1))`
+`(x)f`, `((x)f(_), 1)g(_,_)`
+`x . f(_)`, `x . f(_) . g(_,1)`
+`x ~ f(_)`, `x ~ f(_) ~ g(_,1)`
 
+1. `{x,y,z} ~ {_,_,_}` => `{x,y,z}`
+2. `g = (5,9)add(_, _)` => `g = add(5,9)`
+3. `(1,2)processTwoData(_, _)` => `processTwoData(1,2)`
+4. `({1,2})processStruct(_)` => `processStruct({1,2})`
+5. `(6)addTo(1, _)` => `addTo(1, 6)`
+6. `result = {input, check1(5, _)} . pipe(_,_) . {_, check3(1,2,_)} . pipe(_, _) . {_, check5(8,_,1) } . pipe(_,_)`
+7. `func pipe[T, O](input: Maybe[T], handler: func(T)->Maybe[O])->Maybe[O] ...`
+8. `{1,2} . {_, _, 5} . process(_,_,_)` => `process(1,2,5)`.
+9. `func inc(x:int) -> x+1`, `var eleven = 10 . inc`
+10. `func add(x:int, y:int) -> x+y`, `${10, 20} . add`
+
+Y - Can we have some kind of assertions for function and data?
+minimal and simple?
+for data, it will have a performance cost. and it won't be flexible. what if I just want to return exception insted of exit?
+The best choice for functions is `assert` as a mechanism to return exception.
+To exit, we don't need any special code. just `if`: `[()->{exit(1), ()->{}](isSafe)`
+but assert can cause the block to evaluate to a specific expression if a condition is satisfied:
+`if(!success) return expression`
+this can be done for early return cases.
+`assert success, expression` means `[expression, nothing](success)` but forces block to be evaluated to the expression. 
+This can apply to any code block.
+`x={assert success, 10 .... 20}`
+you can use assert to early-terminate a code block.
+Can we choose a better name?
+`check`
+`ret` and `return` will be misleading
+`ensure`
 
 ! - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
