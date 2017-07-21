@@ -460,8 +460,22 @@ N - How can we apply assert to data?
 Examples: datetime.month<13, ...
 simply define a validation function. and write: `assert isValid(x), exception`
 
+Y - Doesn't reading from map and array return two values? data and found? Doesn't this affect conditionals and loops?
+How can I chain result of reading from array or map?
+Maybe you are not supposed to do that.
+For array we can say return data or runtime error if index out of bounds.
+But for map, user really needs to capture both outputs.
+If map's value is a function and I want to call function immediately affter reading from map:
+`myMap(100)("A", "B", "C")`?
+`var f,_ = myMap(100)`, `f("A", "B", "C")`?
+what about this?
+`var x=0 := [true: (a:int)->{print(a), a+1}, false: (a:int)->nothing](x<=10)(x)`.
+`var x=0 := { var f, _ = [true: (a:int)->{print(a), a+1}, false: (a:int)->nothing](x<=10), f(x) }`.
+For array, we can say runtime error will be thrown.
+Can't we keep this for array too? because this is consistent with the philosophy of the language.
+`var x=0 := [true: (a:int)->{print(a), a+1}, false: (a:int)->nothing](x<=10).0(x)`.
 
-? - `assert` is not very descriptive.
+Y - `assert` is not very descriptive.
 The purpose is: Make sure this condition holds, or else the whole block should be terminated and be evaluated as this value: ...
 `retif` ? remember that we are not bound by other languages.
 `evalif`
@@ -479,20 +493,95 @@ so `retif` does not make sense.
 `retifnot month<12, 100`
 `100 unless month<12`
 `unless month<12`
+it is better to check for unwanted cases rather than wanted cases. because we are going to return some value and it may depend on the wrong data. so if input is <0 return `err("must be positive")` and if it is `>100` return `err("too big")`.
+so the correct semantic should be: `if this is true, evaluate immediately and exit the block`
+`exitif condition, expression`
+`retif condition, expression`
+`guard condition, expression`
+guard does not make it explicit that we will return.
+this is overlapping with conditionals if. can we merge them?
+`return 0 if x<0`
+`retif x<0, 0`
+`return [true: 0, false: nothing](x<0).1`? this will mean that we return `int|nothing`. which can change semantic of function.
+`return [true: 0](x<0)` -> `return an_int, found_bool`
+if found_bool is true, return will be executed. if false, it won't. but we can just write the conditions manually:
+`return 0, x<0` without using map or array.
+`assert 0, x<0`
+we can check both ways: wanted or unwanted cases. checking for wanted cases makes code more readable?
+`return err("must be positive") if x<=0`
+`return err("too big") if x>100`
+vs:
+`return err("must be positive") if !(x>0)`
+`return err(too big") if !(x<100)`
+semantically both are the same but the first type of checks are more readable because you don't need to add `!` for conditions.
+So let's check for unwanted case. 
+`retif bad_condition, return_value`
+`value ::cond` evaluate this block to value if cond holds.
+if cond holds, make this line the last line of the block.
+`1 ::missing_data`
+`err("must be positive") ::{x<0}`
+`err(too big data") ::{x>100}`
+because using a keyword make it difficult. it should contain multiple concepts:
+1. exit the current block immediately
+2. if this condition holds
+3. return/evaluate to this value
+what if we are inside a block and want to exit the function?
+this should be the main purpose of the operator. because inside a block, simply check for condition??
+i think "exit block" semantic is more powerful than "exit function". You can put the statements outside the blocks and make function return.
+If it is inside the block, you can check for block exit and return from function immediately if it is error.
+but if this is valid in block-level, doesn't it replace if?
+`x=[100,200](success).0`
+`x={100::success, 200::!success}`
+There should not be more than one way to do something.
+otoh if we make it exit from current function, it might make reading code more difficult.
+maybe we should change the semantics: stop further processing if this condition holds.
+```
+result = nothing
+result = [err("must be positive), nothing](x>0).0
+result = [err("too big"), nothing](x>100).0
+result ::{result != nothing}
+```
+what if we make the condition checking a code-block?
+```
+result = { [err("ERROR"), nothing](x<100 and x>0).0 }
+::result
+```
+we can say `::x` means evaluate current block to x if it is not nothing. 
+you can explicitly evaluate to nothing by writing `nothing` as the last statement.
+but what if I want to return nothing?
+what about putting these conditions outside function block?
+```
+func process(x:int) -> int|error ::{x>0}, error("too big)
+{
+  ...
+}
+```
+NO. it makes code complicated. you have to read different parts.
+I think in any case, this feature can be misused to simulate if instead of checking for errors.
+so either: 1. let misuse happen, or 2. make it so explicit that misuse is almost impossible.
+for example checking for conditions outside function is an example of 2.
+```
+func process(x:int, y:int) -> int|error 
+::{x<0}, error("must be positive")::
+::{x>100}, error("too big")::
+::{x>y}, error("wrong order")::
+{
+  ...
+}
+```
+problem: more advanced cases like if result of pre-processing failed, return this, is not possible.
+a compromise: return if x is not nothing. returning nothing is still possible but must be done explicitly.
+```
+func process(x:int, y:int) -> int|error 
+{
+  var result = [nothing, err("must be positive")](x<0).0
+  ::result
+  result,_ = [nothing, err("too big")](x>100)
+  ::result
+  ...
+}
+```
 
-? - Doesn't reading from map and array return two values? data and found? Doesn't this affect conditionals and loops?
-How can I chain result of reading from array or map?
-Maybe you are not supposed to do that.
-For array we can say return data or runtime error if index out of bounds.
-But for map, user really needs to capture both outputs.
-If map's value is a function and I want to call function immediately affter reading from map:
-`myMap(100)("A", "B", "C")`?
-`var f,_ = myMap(100)`, `f("A", "B", "C")`?
-what about this?
-`var x=0 := [true: (a:int)->{print(a), a+1}, false: (a:int)->nothing](x<=10)(x)`.
-`var x=0 := { var f, _ = [true: (a:int)->{print(a), a+1}, false: (a:int)->nothing](x<=10), f(x) }`.
-For array, we can say runtime error will be thrown.
-Can't we keep this for array too?
 
 ! - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
