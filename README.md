@@ -591,19 +591,19 @@ var x = {
 
 **Syntax**: 
 
-1. `input . func(_,_,_,...)`
-2. `input . ${_,_,_,...}`
-3. `input . arr(_)`
-4. `input . map(_)`
+1. `input ~ func(_,_,_,...)`
+2. `input ~ ${_,_,_,...}`
+3. `input ~ arr(_)`
+4. `input ~ map(_)`
 
 **Examples**
 
-1. `{x,y,z} ~ {_,_,_}` => `{x,y,z}`
+1. `${x,y,z} ~ ${_,_,_}` => `{x,y,z}`
 2. `g = {5,9} ~ add(_, _)` => `g = add(5,9)`
-3. `{1,2} ~ processTwoData(_, _)` => `processTwoData(1,2)`
-4. `{1,2} ~ processStruct(_)` => `processStruct({1,2})`
+3. `${1,2} ~ processTwoData(_, _)` => `processTwoData(1,2)`
+4. `${1,2} ~ processStruct(_)` => `processStruct({1,2})`
 5. `6 ~ addTo(1, _)` => `addTo(1, 6)`
-6. `result = {input, check1(5, _)} ~ pipe(_,_) ~ {_, check3(1,2,_)} ~ pipe(_, _) ~ {_, check5(8,_,1) } ~ pipe(_,_)`
+6. `result = ${input, check1(5, _)} ~ pipe(_,_) ~ ${_, check3(1,2,_)} ~ pipe(_, _) ~ ${_, check5(8,_,1) } ~ pipe(_,_)`
 7. `func pipe[T, O](input: Maybe[T], handler: func(T)->Maybe[O])->Maybe[O] ...`
 8. `{1,2} ~ {_, _, 5} ~ process(_,_,_)` => `process(1,2,5)`.
 9. `func inc(x:int) -> x+1`, `var eleven = 10 . inc`
@@ -612,12 +612,13 @@ var x = {
 **Notes**
 
 1.  `X ~ F(_)` will be translated to `F(X)`
-2. right side of dot must be either a closure with expected inputs or a struct with underscores for substitition, a map or an array
+2. right side of `~` must be either a closure with expected inputs or a struct with underscores for substitition, a map or an array
 3. If right-side expects a single input but left side is a struct with multiple items, it will be treated as a struct for the single input of the function (Example 4) but if function expects multiple inputs they will be extracted from left side (Example 3). 
 8. You can also pass a single argument to right side of the chain by using non-struct value.
 9. You can use chain operator with custom functions as a monadic processing operator. For example you can streamline calling mutiple error-prone functions without checking for error on each call (Example 6 and 7).
 10. Name of a function without `()` creates a lambda with appropriate inputs (Example 9 and 10).
 11. You can use chain operator to read from map and array too.
+12. The approach of Example 6 and 7 can also be used to do error checking and early return in case of invalid inputs. For example `:: validate_data(x,y,z) ~ errCheck(_, process1(_))`. `errCheck` function checks for the first input. If it is marked with error, won't call `process1` function.
 
 ## Repeated assignment operator
 
@@ -648,20 +649,29 @@ var x=0 := x ~ x<=10 ~ [
 5. Example 4 shows reading whole file into a char array.
 6. Example 5 shows mapping original array `arr` into new array with incrementing each element.
 
-## Immediate exit
+## Return operator
 
-**Semantics**: Used to indicate the current block should be evaluate to an expression if it is not `nothing`.
+**Semantics**: Used to indicate the evaluation result of a block.
 
-**Syntax**: `::expression`
+**Syntax**: `:: expression`
 
 **Examples**
 
-1. `var result,_ = [nothing, err("must be positive")](x<0)`, `::result`
-2. `result,_ = [nothing, err("too big")](x>100)`, `::result`
+1. 
+```
+var result,_ = [nothing, err("must be positive")](x<0)
+:: result
+```
+
+2. 
+```
+result,_ = [nothing, err("too big")](x>100)
+:: result
+```
 
 **Notes**
 
-1. This operator is used for pre-requirements checking in functions. If they do not hold, function should return immediately without further processing.
+1. There must be at most one exit point at the end of each block (if none, compiler assumes `nothing` output).
 
 # Summary of notations
 
@@ -671,7 +681,7 @@ var x=0 := x ~ x<=10 ~ [
 04. `|`  union data type
 05. `_`  something we don't know or don't care (placeholder for a lambda input or unknown variable in assignments or switch)
 06. `:`  type declaration for struct and function input and values, map literal
-07. `::` immediate exit 
+07. `::` return operator
 08. `:=` custom type definition, repeated assignment
 09. `=`  type alias, assignment
 10. `..` range generator
