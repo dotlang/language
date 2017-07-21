@@ -579,8 +579,148 @@ func process(x:int, y:int) -> int|error
   result,_ = [nothing, err("too big")](x>100)
   ::result
   ...
+  x+y
 }
 ```
+This definitely makes code a bit more complex and language more complicated. But it will be more expressive. 
+Because otherwise, we will need to check for error for the rest of the function or put the rest of the function in a very big lambda.
+How can we write above code without `::`?
+```
+func process(x:int, y:int) -> int|error 
+{
+  var valid1 = x<0
+  var valid2 = valid1 and x<100
+  var result = [err("general error"), x+y](valid2)
+  result
+}
+```
+Above code needs to calculate `x+y` even if we have an invalid input. 
+```
+func process(x:int, y:int) -> int|error 
+{
+  var valid1 = x<0
+  var valid2 = valid1 and x<100
+  var result = [()->err("general error"), ()->x+y](valid2)()
+  result
+}
+```
+Above code does not calculate `x+y` in case of an error, but for a medium to large function, this will be difficult and the error message is not specific.
+```
+func process(x:int, y:int) -> int|error 
+{
+  var result = [err("must be positive), nothing](x<0)
+  result = [err("too big"), nothing](x<100)
+  result = [code_block, result](result != nothing)
+  
+  result
+}
+```
+Another solution is to add a `=` that only works if left side is nothing.
+If left side is nothing, it won't execute and won't evaluate right value.
+`x <= 5` means put 5 into x if it is `nothing`. 
+This can be called "soft assignment" which means only assigng if lvalue is not nothing.
+but this will affect the whole type system. what if function output does not accept nothing?
+suppose that function output is `T|error`. I declare result as `T|error|nothing`.
+check pre-conditions. If they are failed, set result to an error. else set result to nothing.
+Put the reset of the function in a block of code and assign it to result. If result is already an error, the block won't be evaluated.
+```
+func process(x:int, y:int) -> int|error 
+{
+  var result = [err("must be positive), nothing](x<0)
+  result = [err("too big"), nothing](x<100)
+  //if result is nothing, evaluate right value and assign to result
+  //if result is not nothing, skip this block.
+  result << { x+y }
+  //same as above but with lambda which is more limited in terms of access
+  result = [true: ()->{ x+y }, false: result](result == nothing)
+  //other way:
+  result = { x+y } if ( result != nothing )
+  //and does short-circuit. if result is nothing, it will evaluate the block.
+  //if result is not nothing, it will short curcuit and skip the block.\
+  //but we are re-inventing if/else with a more confusing notation.
+  //array and map access notation is intuitive and familiar. But this type of usage for
+  //and/or is not and it also gives developer two ways to do the same things.
+  result = ( result == nothing ) and { x+y } or result
+  
+  result
+}
+```
+con: a new indentation level
+pro: we still have only one exit point
+pro: we still can return nothing here. but in `::` we cannot use it to return nothing.
+con: make code complicated because result is `err|int|nothing` but function output is `int|erro`.
+Compiler can handle this because using `<=` makes sure result won't remain `nothing` (unless the block evaluates to nothing).
+solution 1: add `::`
+solution 2: add `<=` (or `=?`, or `<<`).
+so we have two bad things: more indentation, more exit point. 
+Which bad things do you want to choose?
+If we go with `::` we can force the developer to explicitly state the block evaluation result with `::` as the last statement in the block. But `::` has a conditional nature. return if this is no nothing.
+What if we really want to return `nothing`?
+I think its a good idea to make return explicit but adding two separate notations for early return and final return is too much.
+Maybe we can merge these two.
+solution 1: convention, if `::` is the last statement in the block, it will return unconditioanlly. if it is in the middle, it will only return if the argument is not nothing. compiler can check to make sure each block of code ends with `::`.
+`{x+y}` vs `{ :: x+y }`.
+`func add(x:int, y:int) -> :: x+y` 
+`:: expression` put a space between these two, so complex expressions are more readable.
+```
+var result,_ = [nothing, err("must be positive")](x<0)
+:: result
+```
+vs
+`:: [nothing, err("must be positive")](x<0)`
+con: two different meanings for the same symbol.
+con: what if I want to return nothing in the middle of the function?
+`:: err("must be positive"), x<0`
+`:: final_result`
+`x = { :: 1, x>0, :: 2}` this is overlapping with if.
+Let's say, if user wants to return nothing, he has to write code accordingly.
+The features that the language provides are for non-nothing (something), return value:
+`:: 10` what does this do if it is in the middle of the code?
+`10}` no. confusing.
+to remove the overlap, make `::` independent of if. use nothing criteria.
+`:: [nothing, err("must be positive")](x<0)` evaluate to the expression if it is not nothing.
+But in many cases, we return `myabe[t]` so for error cases, we may want to return `nothing`.
+con: two different meanings for the same symbol.
+con: what if I want to return nothing in the middle of the function?
+what about making use of missing values in if?
+`:: [err("too big")](x<100)`
+if `x<100` expression will evaluate to true which returns `${invalid, false}`. no exit.
+if `x>100` expression will evaluate to false, which returns `${err("too big"), true}`. exit.
+so we can say, `::` accepts a tuple of A,B where if B is true, it will return else will continue.
+we can write: `:: ${err("too big"), true}` to force exit.
+`:: ${exp, bool}` conditional exit. if bool is false, exit with exp value.
+`:: exp` immediate exit
+`t = { :: ${1, x>0}, :: 0}`. still we can simulate if/else with `::` in a block.
+But what if `::` wants to return a real tuple? containing a value and a boolean?
+we get back to step 0:
+`:: exp, condition`
+`:: exp`
+and force block end with `:: exp`.
+Can we embed it inside if? but explicit return is a good thing.
+we agree to have multiple exit points.
+**there must be at most one unconditional exit point at the end of the block (if none, compiler assumes nothing output) and multiple conditional exit points.**
+`:: value` exit unconditionally and must be last statement.
+`[false: :: nothing](isFine(x))`
+using `return` is not good because we want to concept to be applicable to code blocks too.
+what if we agree to use a prefix before `::`?
+`x>0 :: nothing`
+can I use this notation for other cases? `x>0 g=10`? 
+Adding complexity.
+what if I declare a special variable for block result (e.g. `%`). assign whatever value I want to it.
+So problem of nothing will be solved. then I can say `::` exits immediately if condition is satisfied.
+`:: x>0`
+`::`
+We have two new notations: `::` and `%`. Too many notations. Can't we just re-use existing notations?
+`:: 100`
+`:: `
+can't we do this with chaining?
+if function output is `int|err`:
+`:: validate_data(x,y,z) ~ process1`
+if `validate_data` returns err and process only accepts int, chain will not proceed and return value is the output of validate_data. but if validate returns something which is expected by process1 chain will proceed.
+pro:
+
+Y - add `::` as explicit return specified.
+**there must be at most one unconditional exit point at the end of the block (if none, compiler assumes nothing output) and multiple conditional exit points.**
 
 
 ! - Maybe we can use a set of rules or regex to convert code to LLVM IR.
