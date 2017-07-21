@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow operator overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, return `$` for tuple litearls, renamed tuple to struct, `()` notation to read/write map and array, `:=` for loop, made `=` a statement, added `assert` keyword.
+- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, return `$` for tuple litearls, renamed tuple to struct, `()` notation to read/write map and array, `:=` for loop, made `=` a statement, added `::` operator.
 
 # Introduction
 
@@ -303,6 +303,7 @@ var x = {
 7. `another_point = Point{x=11, y=my_point.y + 200}`
 8. `another_point = my_point`
 9. `new_point = ${a=100, b=200} //WRONG!`
+10. `var x = point1.1`
 
 **Notes**
 
@@ -311,6 +312,7 @@ var x = {
 3. Examples 5 and 6 show how to destruct a struct and extract it's data.
 4. Example 7 and 8 are the same and show how to define a struct based on another struct.
 5. Example 9 indicates you cannot choose field names for an untyped struct literal.
+6. You can use `.0,.1,.2,...` notaion to access fields inside an untyped tuple (Example 10).
 
 ## Composition
 
@@ -646,6 +648,21 @@ var x=0 := x ~ x<=10 ~ [
 5. Example 4 shows reading whole file into a char array.
 6. Example 5 shows mapping original array `arr` into new array with incrementing each element.
 
+## Immediate exit
+
+**Semantics**: Used to indicate the current block should be evaluate to an expression if it is not `nothing`.
+
+**Syntax**: `::expression`
+
+**Examples**
+
+1. `var result,_ = [nothing, err("must be positive")](x<0)`, `::result`
+2. `result,_ = [nothing, err("too big")](x>100)`, `::result`
+
+**Notes**
+
+1. This operator is used for pre-requirements checking in functions. If they do not hold, function should return immediately without further processing.
+
 # Summary of notations
 
 01. `~` chain operator
@@ -654,16 +671,17 @@ var x=0 := x ~ x<=10 ~ [
 04. `|`  union data type
 05. `_`  something we don't know or don't care (placeholder for a lambda input or unknown variable in assignments or switch)
 06. `:`  type declaration for struct and function input and values, map literal
-07. `:=` custom type definition, repeated assignment
-08. `=`  type alias, assignment
-09. `..` range generator
-10. `->` function declaration
-11. `[]` generics, custom literals
-12. `{}` code block, struct definition and struct literal, casting
-13. `()` function declaration and call
-14. `.`  access struct fields
+07. `::` immediate exit 
+08. `:=` custom type definition, repeated assignment
+09. `=`  type alias, assignment
+10. `..` range generator
+11. `->` function declaration
+12. `[]` generics, custom literals
+13. `{}` code block, struct definition and struct literal, casting
+14. `()` function declaration and call
+15. `.`  access struct fields
 
-Keywords: `import`, `type`, `func`, `var`, `assert`
+Keywords: `import`, `type`, `func`, `var`
 
 Primitive data types: `int`, `float`, `char`, `map`
 
