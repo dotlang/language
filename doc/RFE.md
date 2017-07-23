@@ -725,8 +725,134 @@ Y - add `::` as explicit return specified.
 Y - Add `return` statement, remove `$` for tuple literals.
 change chain operator behavior: return x if f cannot accept x type
 
-? - How can we make it easier to check for invalid data?
+Y - How can we make it easier to check for invalid data?
 We don't want to make a big complex expression for return.
+```
+func add(x:int, y:int)->int
+{
+  return x+y
+}
+```
+```
+func add(x:int, y:int)->int|error
+:: x>100 -> err("too big")
+:: x<0 -> err("most be positive")
+{
+  return x+y
+}
+```
+can we use a normal if statement and indicate in the else clause that the rest should be processed?
+```
+func add(x:int, y:int)->int|error
+:: [true: err("too big"), false: continue](x>100)
+:: x<0 -> err("most be positive")
+{
+  return x+y
+}
+```
+or have a symbol which indicates result of evaluating "rest" of the function.
+```
+func add(x:int, y:int)->int|error
+:: [true: err("too big"), false: continue](x>100)
+:: x<0 -> err("most be positive")
+{
+  return [true: erro("too big"), false: %%^](x>100)
+  return [true: erro("must be positive"), false: %%^](x<0)
+  
+  return x+y
+}
+```
+limitation:this should only be used in return where we are sure we won't be continuing.
+pro: removes problem of lots of indentation or nested lambdas
+pro: readable
+pro: useful for pre-req
+pro: can return nothing.
+con: not very orth.
+```
+func add(x:int, y:int)->int|error
+{
+  var t = 12
+  return [true: erro("too big"), false: $](x>100)
+  return [true: erro("must be positive"), false: $](x<0)
+  
+  return x+y+t
+}
+```
+can we think of `$` as evaluation result of main body of the function and move these outside block?
+```
+func add(x:int, y:int)->int|error
+{
+  var t = 12
+  return [true: erro("too big"), false: $](x>100).0()
+  return [true: erro("must be positive"), false: $](x<0).0()
+  
+  return x+y+t
+}
+```
+q: can I combine `$` with other things? e.g. `$+10`?
+`$` symbol can only be used outside main block. It refers to evaluation result of the main block as a lambda which does not have any input. `()->T`. `$` represents the main function.
+basicall `$` means ignore and continue but in the language we cannot have such a concept. So we interpret it as a lambda with no input and output of the function.
+1. You can use `$` symbol in the expression used for return statement.
+2. `$` represents a lambda with no input and output is equal to evaluation of the rest of the function.
+but problem is about treating rest of the function as a lambda. By definition, lambda has read only access to outer variables. But we can have variables defined before return and should be able to update then in the function body.
+what about a convention:
+`return $` means do not do anything. `$` can be considered as a special symbol which is not returnable. So `return $` does not return anything and goes to the next statmement.
+We can replace `$` with nothing, but then it will be a bit confusing. Because nothing is perfectly valid as output of a function.
+```
+func add(x:int, y:int)->int|error
+{
+  var t = 12
+  return [$, erro("too big")](x>100).0
+  return [$, erro("must be positive")](x<0).0
+  
+  return x+y+t
+}
+```
+Still not very normal. Using a very special notation that returning it does not do anything! not very normal.
+```
+func add(x:int, y:int)->int|error
+{
+  var t = 12
+
+  result1 = [nothing, erro("too big")](x>100).0
+  result2 = [nothing, erro("must be positive")](x<0).0
+  
+  return [()->result1, ()->result2, ()->x+y+t]()
+  
+  return x+y+t
+}
+```
+what about return nothing to be ignored but return a lambda which returns nothing to work?
+```
+func add(x:int, y:int)->int|error
+{
+  var t = 12
+  return [nothing, erro("too big")](x>100).0
+  return [nothing, erro("must be positive")](x<0).0
+  
+  return x+y+t
+}
+```
+another solution: return is ignored if it's argument does not match with function output. No. We encourage writing incorrect code!
+another solution: chain!!!
+`return x<0 ~ [true: ()->err("A"), false: ()->nothing](_).0() ~ (_: nothing) -> { rest of the function}`
+**proposal:** enable using `_` for function argument name if we dont use it.
+we don't need to introduce a shortcut like `{...}` for a lambda without input. because it will make language more complex without much usefullness.
+**applicatios of `_`**: ignore function input or output, create lambda in-place. `f(x,_,_,1)` creates a lambda with two inputs.
+
+? - Even the notes in the lang spec can be some kind of complexity and harm orth and gen. 
+We need some of them anyway but those who have higher cost (complexity, not orth, not gen) and little benefit should be eliminated. 
+?e.g. 16. You can combine multiple expressions on the same line using comma as separator.
+
+? - What if I want to call function output after chain?
+`x ~ f.p` f output is a struct which has `p` field. this is not readable!
+either ban it altogether or state `f` must be in single form without attached symbols (more exceptions).
+what was the purpose of this rule? Just to make code shorter?
+shouldn't we state that ANY type of function call must have `()`? `1 ~ f` does not have this.
+
+? - Can't we get rid of all `.0` in array and map readings?
+Just throw runtime error if index is wrong for array.
+Referencing an array with invalid index is really exceptional error.
 
 ! - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
