@@ -379,6 +379,7 @@ var x = {
 08. `func PI -> 3.14`
 09. `func process(x: int|Point])->int`
 10. `func fileOpen(path: string) -> File {...}`
+11. `func process(_:something) -> 10`
 
 **Notes**:
 
@@ -398,6 +399,7 @@ var x = {
 14. You can call a function or lambda which accepts an int with `int|string` only if you are sure it contains an integer. Other method is to define two functions with same signature, one for int and one for string.
 15. You can call a function that accepts `int|string` with either `int` or `string` or `int|string`.
 16. You can combine multiple expressions on the same line using comma as separator.
+17. You can use `_` as the name of function input to state you don't need it's value.
 
 ## Invocation
 
@@ -487,7 +489,6 @@ var x = {
 7. If lambda is assigned to a variable, you can invoke itself from inside (Example 9).
 8. You can put multiple statements in a lambda and separate them with comma (Example 10).
 9. In a range operator, you can specify two lambdas. In this case, the first lambda will return the next element and the second lambda will return output of the current iteration round. The second lambda will not be called if output of the first lambda is same as the end marker.
-10. Writing name of a function without input creates a lambda with inputs same as function inputs. This notation can also be used with array and maps.
 11. You can combine multiple expressions on the same line using comma as separator.
 
 # Generics
@@ -618,7 +619,7 @@ var x = {
 9. You can use chain operator with custom functions as a monadic processing operator. For example you can streamline calling mutiple error-prone functions without checking for error on each call (Example 6 and 7).
 10. Name of a function without `()` creates a lambda with appropriate inputs (Example 9 and 10).
 11. You can use chain operator to read from map and array too.
-12. The approach of Example 6 and 7 can also be used to do error checking and early return in case of invalid inputs. For example `:: validate_data(x,y,z) ~ errCheck(_, process1(_))`. `errCheck` function checks for the first input. If it is marked with error, won't call `process1` function.
+12. The approach of Example 6 and 7 can also be used to do error checking and early return in case of invalid inputs. For example `return validate_data(x,y,z) ~ process1(_)`. If output of `validate_data` is not what `process1` expects, it will be result of the expression.
 
 ## Repeated assignment operator
 
@@ -654,7 +655,7 @@ var x=0 := x ~ x<=10 ~ [
 01. `~` chain operator
 02. `@`  type-id operator
 03. `|`  union data type
-04. `_`  something we don't know or don't care (placeholder for a lambda input or unknown variable in assignments or switch)
+04. `_`  something we don't know or don't care (placeholder for a lambda input or unknown variable in assignments or function input)
 05. `:`  type declaration for struct and function input and values, map literal
 06. `:=` custom type definition, repeated assignment
 07. `=`  type alias, assignment
