@@ -722,6 +722,11 @@ pro:
 Y - add `::` as explicit return specified.
 **there must be at most one unconditional exit point at the end of the block (if none, compiler assumes nothing output) and multiple conditional exit points.**
 
+Y - Add `return` statement, remove `$` for tuple literals.
+change chain operator behavior: return x if f cannot accept x type
+
+? - How can we make it easier to check for invalid data?
+We don't want to make a big complex expression for return.
 
 ! - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
