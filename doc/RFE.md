@@ -851,9 +851,122 @@ Just throw runtime error if index is wrong for array.
 Referencing an array with invalid index is really exceptional error.
 Can't we have both of them?
 
-? - Even the notes in the lang spec can be some kind of complexity and harm orth and gen. 
+N - Even the notes in the lang spec can be some kind of complexity and harm orth and gen. 
 We need some of them anyway but those who have higher cost (complexity, not orth, not gen) and little benefit should be eliminated. 
 ?e.g. 16. You can combine multiple expressions on the same line using comma as separator.
+
+Y - The syntax to update array or map is not very intuitive.
+`arr(0, 10)`
+`my_map("A", 2)`
+solution 1: use a function. But functions are not supposed to change their input: `set(arr, 0, 10)`. And the syntax is not very intuitive.
+solution 2: normal `=`: Like assigning a variable, `my_map("A") = 2`.
+How does this work with chaining an 2d array?
+`myArray(0,0)= 100`
+`{0,0} ~ myArray = 100`
+Can we replace `myArray(0)` with a function?
+`process(myArray) = 100`
+`func process(x: array[int]) return x(0)`
+I think this will make things more complicated in runtime and compiler implementation.
+`myMap += {key, value}`?
+`myArray += {index, value}`?
+`myArray2d += {index1, index2, value}`?
+and `-=` to remove from map? Because still we cannot use a function to modify the map.
+What about write to array using reading + set?
+`myArray = [myArray(0..5), 100, myArray(6, 100)]`
+`myArray = [myArray(0..5), 100, myArray(6, 100)]`
+How should we be updating arrays?
+Without having any special behavior for array.
+`myArray(0) = 0`
+What about using `[]` and `=` notation for array and map.
+For conditionals we can just allow `~` for `[]` too.
+`0 ~ arr[_] = 100`
+
+N - `x ~ y ~ f(_)` is it `f(y)(x)` or `f(y(x))`?
+Each variable must correspond to one `_`.
+
+
+? - What happens if a function gets an array and returns the same array and we send X to func and change it's output.
+```
+func process(x: array[int]) -> x
+var t = [1,2,3]
+y = process(t)
+y(0) = 100
+//does this change t?
+```
+Remember that `=` is copy operator.
+or: `process(t)[0] = 100`?
+If behavior of `process(t)[0] = 100` is not the same as `x=process(t), x[0] = 100` then it will be really hard to read.
+what if process returns an int? 
+It is not enough to say that function cannot modify it's arguments. What if the function returns one of it's argument (directly on indirectly)? e.g. returns an array of structs, which contains it's input. Or a map which has key or value of it's input.
+```
+var t: array[Point] = [p1, p2, p3]
+var t2: array[Point]
+t2[0] = p1
+```
+does t contain original points? 
+Does t2 contain a copy of `p1`?
+the rule of least surprise states that `t=[p1,p2,p3]` will mean `t[0]`should return p1.
+solution 1: adding `ptr[T]` type. NO! it will affect every single thing.
+solution 2: everything reference.
+solution 3: everything data.
+solution 4: primitive are by value, others by reference.
+Should this affect `p1.x`? `var t: array[Point] = [p1, p2, p3], t[0].x = 100`
+similar to putting something inside a map.
+`func process(x:int) -> x`, `t=process(p)`, `t=100` should this affect p?
+The general rule is calling a function should not have a hidden effect that is not visible in the call site.
+`x=f(y,z,t)` x should be independent of other 3 arguments. So any change to x should not affect y,z or t. If it does, it will make code not readable.
+but what about `t=[p1, p2, p3]`? We cannot say this generally.
+pointer data type: More complicated but no exception and general.
+rule-based: Less complicated but we will have exceptions.
+What is the best solution? Remmeber our top goal: Simplicity.
+Let's write some cases and examples:
+1. `t=returnSame(p)`, `t++`. Does this affect `p`?
+2. `t=[pt1, pt2, pt3]`, `t[0].x = 100`, does this affect `pt1`?
+3. `t=returnArray(pt1, pt2, pt3)`, `t[0].x=100` does this affect `pt1`?
+We can have array of point vs. array of point pointer. `array[Point]`, `array[Point*]`?
+This will definitely make code less readable. I don't know whether `WindowHabdle` is a pointer or not. User can make it pointer with a named type. It won't be understandable by reading the code.
+If we say, caller will receive a deep-copy of result of a function, it can be expensive.
+What about this: Caller cannot modify result of a function call in any way. If it wants, it can make a copy.
+This will solve problem 1 and 3.
+Doesn't this rule conflict with `:=` and loop imeplementation?
+If we make everything immutable this problem will be solved but then we cannot have loops.
+`x := [true:x+1, false: nothing](x<10)`
+Here we only need the final results (The round just before returning `nothing`).
+Also if we make everything immutable, then we will be back to the old problem: How to modify array, map, tuple, .... 
+So: Variables are mutable except function input and outputs.
+We can change the responsibility to a function: Result of a function should be created using mutable variables. So a map with one of inputs is not valid. But this is really hard to enforce.
+`t=[pt1, pt2, pt3]`, `t[0].x = 100`
+`map1=["A": pt1, "B":pt2]`, `map1["A"].x = 400`
+`var t = map1["A"]`, `t.x = 900` does this change the map?
+It should. But then again, `=` is not copying now!
+`var t = map1["A"]` makes a reference copy of the data inside the map. So `=` is not making a duplicate.
+`map1["A"].x=200`.
+If map had int, then `=` would create copies. 
+This is a different behavior for different data which is against simplicity.
+What we are looking for is "Simplicity" which means less rules and less exceptions.
+We say `=` makes a copy EXCEPT when it is a tuple or a union or array or map. 
+What if we say `=` does reference assignment ALWAYS.
+Then `arr1 = [pt1, pt2, pt3]`, `arr2 = arr1`, `arr2[0].x=101` will update `pt1`.
+Then what about int?
+`x=100`, `y=x`, `y=19` this will update x too.
+Let's say, `=` makes a ref assignment. `y=x` will make y point to the same data as x.
+`y=x+0` will make y point to a copy of x. but this is weird.
+**1-** `=` makes a copy of rvalue to lvalue if type of rvalue is `int`, `float` or `char`. For other types (struct, union, array, map, string, bool, nothing) it will assign lvalue as a reference to rvalue.
+**2-**: You can use `clone` core function to duplicate something.
+Can we easily enforce the rule of not modifying function output?
+What if I put it inside a map and query the map using a runtime value?
+`var pt = process()`, `myMap["A"] = pt`, `myMap[readInput()].x = 101`.
+`pt=returnSame(original)`, `pt.x=10`, doesthis affect original?
+We can have the same problem inside the function. What if function stores a lot of data inside map and query using a runtime value and modify it?!!!!!!!!!!!!!!
+That's why they say everything immutable.
+What's the barrier to make everything immutable?
+Loops.
+What will be affected? syntax to update array, map, tuple. closure capture.
+There are two solutions to this: 1. make everything immutable. 2. make things selectively mutable (pointer data type).
+I prefer 1 because it is safer.
+
+
+
 
 ! - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
