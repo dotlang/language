@@ -840,19 +840,20 @@ another solution: chain!!!
 we don't need to introduce a shortcut like `{...}` for a lambda without input. because it will make language more complex without much usefullness.
 **applicatios of `_`**: ignore function input or output, create lambda in-place. `f(x,_,_,1)` creates a lambda with two inputs.
 
-? - Even the notes in the lang spec can be some kind of complexity and harm orth and gen. 
-We need some of them anyway but those who have higher cost (complexity, not orth, not gen) and little benefit should be eliminated. 
-?e.g. 16. You can combine multiple expressions on the same line using comma as separator.
-
-? - What if I want to call function output after chain?
+Y - What if I want to call function output after chain?
 `x ~ f.p` f output is a struct which has `p` field. this is not readable!
 either ban it altogether or state `f` must be in single form without attached symbols (more exceptions).
 what was the purpose of this rule? Just to make code shorter?
 shouldn't we state that ANY type of function call must have `()`? `1 ~ f` does not have this.
 
-? - Can't we get rid of all `.0` in array and map readings?
+Y - Can't we get rid of all `.0` in array and map readings?
 Just throw runtime error if index is wrong for array.
 Referencing an array with invalid index is really exceptional error.
+Can't we have both of them?
+
+? - Even the notes in the lang spec can be some kind of complexity and harm orth and gen. 
+We need some of them anyway but those who have higher cost (complexity, not orth, not gen) and little benefit should be eliminated. 
+?e.g. 16. You can combine multiple expressions on the same line using comma as separator.
 
 ! - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
