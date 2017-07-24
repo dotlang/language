@@ -159,7 +159,7 @@ var x = {
 **Examples**
 
 1. `var arr = [1, 2, 3]`
-2. `var g, found = arr(0)`, `arr(0) = 100`
+2. `var g = arr(0)`, `arr(0) = 100`
 3. `arr(0, 10)`
 4. `var two_d_array: array[array[int]] = [ [1,2,3], [4,5,6] ]`
 5. `var two_d_array = [ [1,2,3], [4,5,6] ]`
@@ -176,6 +176,7 @@ var x = {
 4. There is another notation to create array literals which uses a function to generate elements. See lambda section for more information.
 5. You can use array name as a lambda and use chaining operator to read it's data (Example 9) for more information refer to operators and lambda sections.
 6. array is not a function. It acts like a function when reading or writing data.
+7. If you refer to an index outside array bounds, it will throw runtime error.
 
 ## Map
 
@@ -373,7 +374,6 @@ var x = {
 02. `func log(s: string) -> { print(s) }`
 03. `func process(pt: Point)->int { pt.x }`
 04. `func process2(pt: Point) -> {pt.x, pt.y}`
-05. `func my_func8() -> {x:int, y:int} { {10,20} }`
 06. `func my_func(x:int) -> x+9`
 07. `func myFunc9(x:int) -> {int} {12}`
 08. `func PI -> 3.14`
@@ -390,16 +390,14 @@ var x = {
 5. You can omit function output type and let compiler infer it, only if it has no body (Examples 4, 6 and 8).
 6. You can omit braces and `return` keyword if you only want to return an expression (Examples 4, 6, 7 and 8).
 7. Each function must have an output type. Even if it does not return anything, output type will be `nothing`.
-8. Function output can be struct type with or without field names (Examples 5 and 7).
+8. Function output can be struct type without field names or with a named struct type (Examples 5 and 7). In other words, you cannot define a new type at the time of function definition.
 9. You can define variadic functions by having an array input as the last input. When user wants to call it, he can provide an array literal with any number of elements needed.
 10. The function in example 9 will be invoked if the input is either `int` or `Point` or `int|Point`.
 11. There should not be ambiguity when calling a function. So having functions on examples 9 and 3 in same compilation is invalid.
 12. If a function is implemented in the runtime or core sub-system, it's body will be written as `{...}`
 13. Only local variables are mutable. So function cannot modify it's inputs.
-14. You can call a function or lambda which accepts an int with `int|string` only if you are sure it contains an integer. Other method is to define two functions with same signature, one for int and one for string.
-15. You can call a function that accepts `int|string` with either `int` or `string` or `int|string`.
-16. You can combine multiple expressions on the same line using comma as separator.
-17. You can use `_` as the name of function input to state you don't need it's value.
+14. You can call a function that accepts `int|string` with either `int` or `string` or `int|string`.
+15. You can use `_` as the name of function input to state you don't need it's value.
 
 ## Invocation
 
@@ -489,7 +487,6 @@ var x = {
 7. If lambda is assigned to a variable, you can invoke itself from inside (Example 9).
 8. You can put multiple statements in a lambda and separate them with comma (Example 10).
 9. In a range operator, you can specify two lambdas. In this case, the first lambda will return the next element and the second lambda will return output of the current iteration round. The second lambda will not be called if output of the first lambda is same as the end marker.
-11. You can combine multiple expressions on the same line using comma as separator.
 
 # Generics
 
@@ -607,17 +604,16 @@ var x = {
 6. `result = {input, check1(5, _)} ~ pipe(_,_) ~ {_, check3(1,2,_)} ~ pipe(_, _) ~ {_, check5(8,_,1) } ~ pipe(_,_)`
 7. `func pipe[T, O](input: Maybe[T], handler: func(T)->Maybe[O])->Maybe[O] ...`
 8. `{1,2} ~ {_, _, 5} ~ process(_,_,_)` => `process(1,2,5)`.
-9. `func inc(x:int) -> x+1`, `var eleven = 10 . inc`
-10. `func add(x:int, y:int) -> x+y`, `{10, 20} . add`
+9. `func inc(x:int) -> x+1`, `var eleven = 10 . inc(_)`
+10. `func add(x:int, y:int) -> x+y`, `{10, 20} . add(_,_)`
 
 **Notes**
 
 1.  `X ~ F(_)` will be translated to `F(X)` unless `F` cannot accept input of type `x`, in which case it will be evaluated to `X`.
-2. right side of `~` must be either a closure with expected inputs or a struct with underscores for substitition, a map or an array
+2. right side of `~` must be either a closure with expected inputs or a struct with underscores for substitition, a map or an array.
 3. If right-side expects a single input but left side is a struct with multiple items, it will be treated as a struct for the single input of the function (Example 4) but if function expects multiple inputs they will be extracted from left side (Example 3). 
 8. You can also pass a single argument to right side of the chain by using non-struct value.
 9. You can use chain operator with custom functions as a monadic processing operator. For example you can streamline calling mutiple error-prone functions without checking for error on each call (Example 6 and 7).
-10. Name of a function without `()` creates a lambda with appropriate inputs (Example 9 and 10).
 11. You can use chain operator to read from map and array too.
 12. The approach of Example 6 and 7 can also be used to do error checking and early return in case of invalid inputs. For example `return validate_data(x,y,z) ~ process1(_)`. If output of `validate_data` is not what `process1` expects, it will be result of the expression.
 
