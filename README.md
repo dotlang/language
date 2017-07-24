@@ -159,21 +159,20 @@ var x = {
 **Examples**
 
 1. `var arr = [1, 2, 3]`
-2. `var g = arr(0)`, `arr(0) = 100`
-3. `arr(0, 10)`
+2. `var g = arr[0]`, `arr[0] = 100`
+3. `0 ~ arr[_] = 10`
 4. `var two_d_array: array[array[int]] = [ [1,2,3], [4,5,6] ]`
 5. `var two_d_array = [ [1,2,3], [4,5,6] ]`
 6. `var p = two_d_array(0, 0)`
 7. `var arr2 = [0..10]`
 8. `var arrx: array[int] = [1, 2, 3]`
-9. `{0} . myArray`
+9. `0 ~ myArray[_]`
 
 **Notes**
 
 1. Above examples show definition and how to read/update array.
 2. In example 7, the range operator `..` is used to generate an array literal. Note that the end number is not included in the result.
 3. You can explicitly state array literal type like in example 8.
-4. There is another notation to create array literals which uses a function to generate elements. See lambda section for more information.
 5. You can use array name as a lambda and use chaining operator to read it's data (Example 9) for more information refer to operators and lambda sections.
 6. array is not a function. It acts like a function when reading or writing data.
 7. If you refer to an index outside array bounds, it will throw runtime error.
@@ -187,10 +186,10 @@ var x = {
 **Examples**
 
 1. `var my_map = ["A": 1, "B": 2, "C": 3]`
-2. `var item1, found = my_map("A")`, `myMap("A") = 100`
-3. `my_map("A", 2)`
+2. `var item1, found = my_map["A"]`
+3. `my_map["A"] = 2`
 4. `var my_map: map[string,int] = ["A": 1, "B": 2, "C": 3]`
-5. `{"A", 1} . myMap`
+5. `"A" ~ myMap[_]`
 
 
 **Notes**
@@ -215,7 +214,7 @@ var x = {
 3. `var int_or_float = 12.91`
 4. `var int_or_float = 100`
 5. `int_value, done = int{my_union}`
-6. `var real_type:int = @my_int_or_float`
+6. `var has_int = (@my_int_or_float == @int)`
 
 **Notes**
 
@@ -273,7 +272,7 @@ var x = {
 2. `type IntArray := array[int]`
 3. `type Point := {x: int, y: int}`
 4. `type bool := true | false`
-5. `var x: MyInt = 10`, `var y: MyInt = MyInt{x}`
+5. `var x: MyInt = 10`, `var y: MyInt = MyInt{10}`
 
 **Notes**
 
@@ -591,8 +590,8 @@ var x = {
 
 1. `input ~ func(_,_,_,...)`
 2. `input ~ {_,_,_,...}`
-3. `input ~ arr(_)`
-4. `input ~ map(_)`
+3. `input ~ arr[_]`
+4. `input ~ map[_]`
 
 **Examples**
 
@@ -631,7 +630,7 @@ var x = {
 var x=0 := x ~ x<=10 ~ [
   (a:int)->nothing, 
   (a:int)->{print(a), a+1}
-]
+][_](_)
 ```
 3. `list.data, list, fpos := [true: {getChar(fpos), list.next, getNext(fpos)}, false: {nothing, nothing, nothing}](!eof(fpos))`
 4. `arr[index], index, fpos := [true: {getChar(fpos), index+1, getNext(fpos)}, false: {nothing, nothing, nothing}](!eof(fpos))`
@@ -651,7 +650,7 @@ var x=0 := x ~ x<=10 ~ [
 01. `~` chain operator
 02. `@`  type-id operator
 03. `|`  union data type
-04. `_`  something we don't know or don't care (placeholder for a lambda input or unknown variable in assignments or function input)
+04. `_`  placeholder (lambda creator or unknown variable in assignments or function input)
 05. `:`  type declaration for struct and function input and values, map literal
 06. `:=` custom type definition, repeated assignment
 07. `=`  type alias, assignment
@@ -664,9 +663,9 @@ var x=0 := x ~ x<=10 ~ [
 
 Keywords: `import`, `type`, `func`, `var`, `return`
 
-Primitive data types: `int`, `float`, `char`, `map`
+Primitive data types: `int`, `float`, `char`, `array`, `map`
 
-Other important identifiers: `nothing`, `bool`, `true`, `false`, `array`, `string`
+Other important identifiers: `nothing`, `bool`, `true`, `false`, `string`
 
 # Miscellaneous
 
