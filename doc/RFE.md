@@ -964,8 +964,46 @@ Loops.
 What will be affected? syntax to update array, map, tuple. closure capture.
 There are two solutions to this: 1. make everything immutable. 2. make things selectively mutable (pointer data type).
 I prefer 1 because it is safer.
-
-
+WHY DO WE NEED FULL IMMUTABILITY? We cannot check function does not mutate it's inputs. Also if function returns a result which includes an input inside it, updating that result will have hidden effects and we also cannot enforce function output to be read-only.
+How can we implement loops with single-assignment?
+`var v1, v2, v3 := {f1(v1,v2,v3), f2(v1,v2,v3), f3(v1,v2,v3)}`
+Internally, this is a recusrive function call which ends if input is nothing.
+`x := [true: ()->{print(x), return x+1}, false: ()->nothing][x<100]()`
+`var f = (x:int) -> { print(x), return [nothing, x+1](x<100) }`
+`f` will return int or nothing.
+`0 ~ f` means `f(0)` which will return 1. 
+`f(f(0))` will return 2.
+`f(f(f(0)))` will return 3.
+`var x = 0`
+`var final = (x  ~~ f)` means feed `0` into `f` and after getting the result, feed it again into `f`. And repeat until it cannot be fed into `f` (it is `nothing`).
+But if we make everything immutable, we cannot have things like what we do for repeated assignment.
+**What are problems we want to solve:**
+1. We cannot enforce a function does not modify it's inputs and can modify it's local variables. If it can modify, it can modify everything.
+2. If a function returns a data which includes all or part of it's input, we can modify the output and result will be an indirect change and side effect which is hidden when reading the code. Also similar to 1, we cannot enforce function output to remain read-only.
+The solution to these problems is to make everything immutable.
+Now problem is: How to handle loops?
+`while(predicate, body)`
+q: read whole file into a linked list of characters.
+`while((f: iterator)->!eof(f), (list: LinkedList, f: Iteartor) -> { return LinkedList{head=readChar(f), tail: list} }`
+whole file into a char array?
+`arr = while((f:Iteartor)->!eof(f), ...`
+`func while(...f: func()->T)->T[]`
+We can implement loops as functions in core.
+Everything becomes immutable and single assigned.
+Closure can capture vars outside but as read-only.
+Shall we change `var`?
+How to modify array? You cannot. You cannot modify a map also.
+Tuple: Clone.
+Then maybe we can use `()` notation to read from map and array.
+1. Change `var` to `let`
+2. Everything is immutable (local vars, function input, output, captured vars, ...)
+3. Loops are done as core functions.
+4. No `:=`
+5. `=` is only usable with `let`.
+6. You cannot update array or map or tuple in-place.
+7. You can run a loop and it's output will be a map or array.
+What made us to have re-assignability in the first place?
+Line 4141 of RFE.4: "The fact that I cannot modify/edit a local variable is a bit of a[s]tonishment.".
 
 
 ! - Maybe we can use a set of rules or regex to convert code to LLVM IR.
