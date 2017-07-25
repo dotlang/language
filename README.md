@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow operator overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read/write map and array, `:=` for loop, made `=` a statement, added `return` statement, updated definition of chaining operator,
+- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, 
 
 # Introduction
 
@@ -82,49 +82,49 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 01. **Import a module**: `import /core/std/queue` (you can also import from external sources like Github)
 02. **Primitive types**: `int`, `float`, `char` (other useful types are define in core)
-03. **Variables**: `var my_var:int = 19` (type can be automatically inferred, only local variables are mutable)
+03. **Bindings**: `let my_var:int = 19` (type can be automatically inferred, everything is immutable)
 04. **Named type**: `type MyInt := int`
 05. **Struct type**: `type Point := {x: int, y:int, data: float}` (Like `struct` in C)
 06. **Struct literal**: `location = Point{ .x=10, .y=20, .data=1.19 }`
 07. **Composition of structs**: By embedding (only for structs), `type Circle := {Shape, radius: float}`
-08. **Array type**: `var jobQueue: array[int] = [0, 1, 2, 3]`
-09. **Map type**: `var countryPopulation: map[string, int] := [ "US": 300, "CA": 180, "UK": 80 ]`
+08. **Array type**: `let jobQueue: array[int] = [0, 1, 2, 3]`
+09. **Map type**: `let countryPopulation: map[string, int] := [ "US": 300, "CA": 180, "UK": 80 ]`
 10. **Generics**: `type Stack[T] := { data: array[T], info: int }`
 11. **Union type**: `type Maybe[T] := T | nothing`
 12. **Function**: `func calculate(x: int, y: string) -> float { ??? if x > 0 then 1.5 else 2.5  }`
-13. **Lambda expression**: `var adder = (x:int, y:int) -> x+y`
+13. **Lambda expression**: `let adder = (x:int, y:int) -> x+y`
 
 # Type System
 
 ## Variables
 
-**Semantic**: Used to declare a unique variable name and assign an expression to it.
+**Semantic**: Used to declare a unique binding name and assign an expression to it.
 
-**Syntax**: `var identifier [: Type] = expression`, `identifier = expression`
+**Syntax**: `let identifier [: Type] = expression`, `identifier = expression`
 
 **Examples**
 
-1. `var x: int = 12`
-2. `var g = 19.8`
-3. `var a,b = process()`
-4. `var x = y`
+1. `let x: int = 12`
+2. `let g = 19.8`
+3. `let a,b = process()`
+4. `let x = y`
 5. 
 ```
-var x = { 
+let x = { 
     process(1,2,3)
     6 
 }
 ```
 6. `x=y`
-7. `var a,b = {1, 100}`
+7. `let a,b = {1, 100}`
 
 **Notes**
 
 1. `expression` can be a literal, function call, another binding or a combination.
-2. You can however re-assign a name to a new value using assignment notation (Refer to the next section).
+2. You cannot re-assign a name to a new value, because everything is immutable.
 3. Example 1 defines a binding called `x` which is of type `integer` and stores value of `12` in it.
 4. Compiler automatically infers the type of binding from expression, so type is optional except in special cases (e.g. `unions`)
-5. There should be one space after `var` and before binding name.
+5. There should be one space after `let` and before binding name.
 6. If right side of `=` is a struct type, you can destruct it's type and assign it's value to different bindings (Example 3 and 7). See struct section for more information.
 7. Declaration makes a copy of the right side if it is a simple identifier (Example 4). So any future change to `x` will not affect `y`.
 8. You can use a block as the expression and the last evaluated value inside the block will be bound to the given identifier (Example 5).
@@ -139,9 +139,9 @@ var x = {
 
 **Examples**
 
-1. `var x = 12`
-2. `var x = 1.918`
-3. `var x = 'c'`
+1. `let x = 12`
+2. `let x = 1.918`
+3. `let x = 'c'`
 
 **Notes**:
 
@@ -158,15 +158,13 @@ var x = {
 
 **Examples**
 
-1. `var arr = [1, 2, 3]`
-2. `var g = arr[0]`, `arr[0] = 100`
-3. `0 ~ arr[_] = 10`
-4. `var two_d_array: array[array[int]] = [ [1,2,3], [4,5,6] ]`
-5. `var two_d_array = [ [1,2,3], [4,5,6] ]`
-6. `var p = two_d_array(0, 0)`
-7. `var arr2 = [0..10]`
-8. `var arrx: array[int] = [1, 2, 3]`
-9. `0 ~ myArray[_]`
+1. `let arr = [1, 2, 3]`
+2. `let g = arr(0)`, `arr = set(arr, 0, 100)`
+4. `let two_d_array: array[array[int]] = [ [1,2,3], [4,5,6] ]`
+5. `let two_d_array = [ [1,2,3], [4,5,6] ]`
+6. `let p = two_d_array(0, 0)`
+7. `let arr2 = [0..10]`
+8. `let arrx: array[int] = [1, 2, 3]`
 
 **Notes**
 
@@ -175,7 +173,7 @@ var x = {
 3. You can explicitly state array literal type like in example 8.
 5. You can use array name as a lambda and use chaining operator to read it's data (Example 9) for more information refer to operators and lambda sections.
 6. array is not a function. It acts like a function when reading or writing data.
-7. If you refer to an index outside array bounds, it will throw runtime error.
+7. If you refer to an index outside array bounds, it will give you zero-value + a false flag. Similar to `map`.
 
 ## Map
 
@@ -185,17 +183,17 @@ var x = {
 
 **Examples**
 
-1. `var my_map = ["A": 1, "B": 2, "C": 3]`
-2. `var item1, found = my_map["A"]`
-3. `my_map["A"] = 2`
-4. `var my_map: map[string,int] = ["A": 1, "B": 2, "C": 3]`
-5. `"A" ~ myMap[_]`
+1. `let my_map = ["A": 1, "B": 2, "C": 3]`
+2. `let item1, found = my_map("A")`
+3. `set(my_map, "A", 2)`
+4. `let my_map: map[string,int] = ["A": 1, "B": 2, "C": 3]`
+5. `"A" ~ myMap(_)`
 
 
 **Notes**
 
 1. You need to use core functions to manipulate a map, because (like everything else), they are immutable.
-2. If you query a map for something which does not exist, it will return `nothing`.
+2. If you query a map for something which does not exist, it will return zero-value for that type + a false flag.
 3. You can explicitly state type of a map literal like example 4.
 4. You can use prefix or suffix notation to read from map (Example 2).
 5. You can use map name as a lambda and use chain operator to read or write values (Example 5). For more information refer to operators and lambda sections.
@@ -210,11 +208,11 @@ var x = {
 **Examples**
 
 1. `type day_of_week := SAT | SUN | MON | TUE | WED | THU | FRI`
-2. `var int_or_float: int | float = 11`
-3. `var int_or_float = 12.91`
-4. `var int_or_float = 100`
+2. `let int_or_float: int | float = 11`
+3. `let int_or_float = 12.91`
+4. `let int_or_float = 100`
 5. `int_value, done = int{my_union}`
-6. `var has_int = (@my_int_or_float == @int)`
+6. `let has_int = (@my_int_or_float == @int)`
 
 **Notes**
 
@@ -233,8 +231,8 @@ var x = {
 
 **Examples**
 
-1. `var g: bool = true`
-3. `var str: string = "Hello world!"`
+1. `let g: bool = true`
+3. `let str: string = "Hello world!"`
 
 **Notes**
 
@@ -272,7 +270,7 @@ var x = {
 2. `type IntArray := array[int]`
 3. `type Point := {x: int, y: int}`
 4. `type bool := true | false`
-5. `var x: MyInt = 10`, `var y: MyInt = MyInt{10}`
+5. `let x: MyInt = 10`, `let y: MyInt = MyInt{10}`
 
 **Notes**
 
@@ -291,19 +289,21 @@ var x = {
 1. Declaration: `{field1: type1, field2: type2, field3: type3, ...}` 
 2. Typed Literal: `Type{field1=value1, field2=value2, field3=value3, ...}` 
 3. Untyped literal: `{value1, value2, value3, ...}` 
+4. Update: `original_var{field1=value1, field2=value2, ...}` 
 
 **Examples**
 
 1. `type Point := {x:int, y:int}`
+4. `point1 = {100, 200}`
 2. `point2 = Point{x=100, y=200}`
 3. `point3 = Point{100, 200}`
-4. `point1 = {100, 200}`
+3. `point4 = point3{y=101}`
 5. `x,y = point1`
 6. `x,y = {100,200}`
 7. `another_point = Point{x=11, y=my_point.y + 200}`
 8. `another_point = my_point`
 9. `new_point = {a=100, b=200} //WRONG!`
-10. `var x = point1.1`
+10. `let x = point1.1`
 
 **Notes**
 
@@ -590,8 +590,8 @@ var x = {
 
 1. `input ~ func(_,_,_,...)`
 2. `input ~ {_,_,_,...}`
-3. `input ~ arr[_]`
-4. `input ~ map[_]`
+3. `input ~ arr(_)`
+4. `input ~ map(_)`
 
 **Examples**
 
@@ -603,7 +603,7 @@ var x = {
 6. `result = {input, check1(5, _)} ~ pipe(_,_) ~ {_, check3(1,2,_)} ~ pipe(_, _) ~ {_, check5(8,_,1) } ~ pipe(_,_)`
 7. `func pipe[T, O](input: Maybe[T], handler: func(T)->Maybe[O])->Maybe[O] ...`
 8. `{1,2} ~ {_, _, 5} ~ process(_,_,_)` => `process(1,2,5)`.
-9. `func inc(x:int) -> x+1`, `var eleven = 10 . inc(_)`
+9. `func inc(x:int) -> x+1`, `let eleven = 10 . inc(_)`
 10. `func add(x:int, y:int) -> x+y`, `{10, 20} . add(_,_)`
 
 **Notes**
@@ -616,35 +616,6 @@ var x = {
 11. You can use chain operator to read from map and array too.
 12. The approach of Example 6 and 7 can also be used to do error checking and early return in case of invalid inputs. For example `return validate_data(x,y,z) ~ process1(_)`. If output of `validate_data` is not what `process1` expects, it will be result of the expression.
 
-## Repeated assignment operator
-
-**Semantics**: To repeat an assignment until `nothing` is being assigned.
-
-**Syntax**: `v1, v2, v3, ... := expression` 
-
-**Examples**
-
-1. `var x=0 := [true: (a:int)->{print(a), a+1}, false: (a:int)->nothing](x<=10)(x)`.
-2. 
-```
-var x=0 := x ~ x<=10 ~ [
-  (a:int)->nothing, 
-  (a:int)->{print(a), a+1}
-][_](_)
-```
-3. `list.data, list, fpos := [true: {getChar(fpos), list.next, getNext(fpos)}, false: {nothing, nothing, nothing}](!eof(fpos))`
-4. `arr[index], index, fpos := [true: {getChar(fpos), index+1, getNext(fpos)}, false: {nothing, nothing, nothing}](!eof(fpos))`
-5. `new_array[idx],idx := [true:{arr(idx)+1,idx+1}, false: {nothing, nothing}](idx<=length(arr))`
-
-**Notes**
-
-1. The expression is supposed to return a tuple with appropriate number of elements assignable to left values. assignment will be done to `v1`, then `v2` and so on.
-2. Evaluation of expression will be repeated until it outputs `nothing` for all of it's arguments.
-3. Example 1 shows loop to print from 0 to 10 (Example 2 is the same but using chain and array).
-4. Example 3 shows loop to read whole file into a linked list.
-5. Example 4 shows reading whole file into a char array.
-6. Example 5 shows mapping original array `arr` into new array with incrementing each element.
-
 # Summary of notations
 
 01. `~` chain operator
@@ -652,7 +623,7 @@ var x=0 := x ~ x<=10 ~ [
 03. `|`  union data type
 04. `_`  placeholder (lambda creator or unknown variable in assignments or function input)
 05. `:`  type declaration for struct and function input and values, map literal
-06. `:=` custom type definition, repeated assignment
+06. `:=` custom type definition
 07. `=`  type alias, assignment
 08. `..` range generator
 09. `->` function declaration
@@ -661,7 +632,7 @@ var x=0 := x ~ x<=10 ~ [
 12. `()` function declaration and call
 13. `.`  access struct fields
 
-Keywords: `import`, `type`, `func`, `var`, `return`
+Keywords: `import`, `type`, `func`, `let`, `return`, `assert`
 
 Primitive data types: `int`, `float`, `char`, `array`, `map`
 
@@ -679,7 +650,7 @@ Other important identifiers: `nothing`, `bool`, `true`, `false`, `string`
 2. `import /core/std/{Queue, Stack, Heap}`
 3. `import /core/std/Data/`
 4. `/core/std/data/Process(1,2,3)`
-5. `var x: /core/std/data/Stack = ...`
+5. `let x: /core/std/data/Stack = ...`
 6. `func myProcess(x: int, y:int, z:int) -> /core/std/data/process(x,y,z)`
 7. `type myStack = /core/std/data/Stack`
 8. `import git:/github.com/adsad/dsada`
@@ -698,6 +669,16 @@ Other important identifiers: `nothing`, `bool`, `true`, `false`, `string`
 9. You can use function redirection to work with FQ functions (Example 6) or use type alias to work with FQ type names (Example 7).
 10. `import` supports other systems too. By default it imports modules from local file-system. But depending on the prefix used you can import from other sources too (Example 8).
 
+## assert
+
+**Semantics**: Early return if a condition is not satisfied
+
+**Syntax**: `assert predicate, expression`
+
+**Examples**
+
+1. `assert x>0, error("x must be positive")`
+
 ## Conditionals and pattern matching
 
 **Semantics**: We use array and map literals to implement conditionals, loops and pattern matching.
@@ -706,26 +687,26 @@ Other important identifiers: `nothing`, `bool`, `true`, `false`, `string`
 
 1.
 ```
-var y:int = switch(int_or_float_or_string, [@int: (x:int)->1+x, @string: (s:string)->10], ()->100)
+let y:int = switch(int_or_float_or_string, [@int: (x:int)->1+x, @string: (s:string)->10], ()->100)
 ...
 type FF[T,X] := func(T)->X
 func switch[S,T,U,X](v: S|T|U, mp: map[int, FF[S,X]|FF[T,X]||FF[U,X]], else: func()->X)->X {
-  var func_to_call: FF[S,X]|FF[T,X]||FF[U,X], found:bool = [@S: mp[@S], @T: mp[@T], @U: mp[@U]](@v)
+  let func_to_call: FF[S,X]|FF[T,X]||FF[U,X], found:bool = [@S: mp[@S], @T: mp[@T], @U: mp[@U]](@v)
   //reading from map, returns a maybe
-  var result,_ = [true: func_to_call(v), false: else()](found)
+  let result,_ = [true: func_to_call(v), false: else()](found)
   
   result
 }
 ```
 2.
 ```
-var y:int = switch(int_or_float_or_string, [@int: (x:int)->1+x, @string: (s:string)->10], ()->100)
+let y:int = switch(int_or_float_or_string, [@int: (x:int)->1+x, @string: (s:string)->10], ()->100)
 ...
 type FF[T,X] := func(T)->X
 func switch[S,T,U,X](v: S|T|U, mp: map[int, FF[S,X]|FF[T,X]||FF[U,X]], else: func()->X)->X {
-  var func_to_call: FF[S,X]|FF[T,X]||FF[U,X], found:bool = [@S: mp[@S], @T: mp[@T], @U: mp[@U]](@v)
+  let func_to_call: FF[S,X]|FF[T,X]||FF[U,X], found:bool = [@S: mp[@S], @T: mp[@T], @U: mp[@U]](@v)
   //reading from map, returns a maybe
-  var result,_ = [else(), func_to_call(v)](found)
+  let result,_ = [else(), func_to_call(v)](found)
   
   result
 }
@@ -930,3 +911,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Parallel compilation
 - Managing name conflict in large projects
 - Add slice functions to core to return array as a pointer to another array
+- Loop functions in core
