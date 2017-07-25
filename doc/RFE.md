@@ -849,7 +849,7 @@ shouldn't we state that ANY type of function call must have `()`? `1 ~ f` does n
 Y - Can't we get rid of all `.0` in array and map readings?
 Just throw runtime error if index is wrong for array.
 Referencing an array with invalid index is really exceptional error.
-Can't we have both of them?
+Can't we have both of them? no.
 
 N - Even the notes in the lang spec can be some kind of complexity and harm orth and gen. 
 We need some of them anyway but those who have higher cost (complexity, not orth, not gen) and little benefit should be eliminated. 
@@ -885,7 +885,7 @@ N - `x ~ y ~ f(_)` is it `f(y)(x)` or `f(y(x))`?
 Each variable must correspond to one `_`.
 
 
-? - What happens if a function gets an array and returns the same array and we send X to func and change it's output.
+Y - What happens if a function gets an array and returns the same array and we send X to func and change it's output.
 ```
 func process(x: array[int]) -> x
 var t = [1,2,3]
@@ -1005,6 +1005,80 @@ Then maybe we can use `()` notation to read from map and array.
 What made us to have re-assignability in the first place?
 Line 4141 of RFE.4: "The fact that I cannot modify/edit a local variable is a bit of a[s]tonishment.".
 
+N - So:
+`let arr = [pt1, pt2, pt3]`
+this contains references? yes.
+
+Y - Now that we no longer have loop with `:=` shall we return `if/else` keywords?
+Early returns is really needed and without if, it will make things less readable.
+`return A if B`
+then?
+`if x>0 then return 100`
+`let h = if x>0 then 1 else 2`
+Especially with immutability, we need to have more powerful mechanism to write assignment expressions.
+`x>0 ~ [()..`
+Then what about switch? We will need a switch statement for type matching and ... . 
+It will become super confusing.
+OTOH missing early return will also make things confusing.
+can't we add `retif` keyword?
+`retif 100, x>0`
+or assert:
+`assert x>0, error("x must be positive")`
+
+N - and as if
+`x = (x<0) and exit(1)` ~ `if(x<0) exit(1)`
+`x = (x<0) or exit(1)` ~ `ifnot(x<0) exit(1)`
+or:
+`x = (x<0) and bool{exit(1)}`
+`x = (x<0) or bool{exit(1)}`
+or:
+`x = (x<0) and bool{let tmp=process(1)}`
+`x = (x<0) or bool{let tmp=process(1)}`
+
+Y - map should return zero-value for missing key
+`x=[()->0, ()->process(1)](x<0)`
+don't read output, just execute. if not missing.
+`[false:()->exit(1)](x<0).0()`
+if `x<0` we don't want to execute anything. just the case that `x>0` is important for us.
+Can we say, if map element is missing, it will return a default value + false flag?
+Then we can safely run the default value which is expected to be harmless.
+so if we have `map[string, int]` reading a missing key, will give us `{0, false}` where 0 is default value for value.
+Similarly if value is a function, a lambda with return of default value will be given to us + a false flag.
+zero value: The default value for a type.
+`x=[()->process(1)](x<0).0()`
+`x=[false:()->process(1)](x<0).0()`
+Why array should not have this?
+One application of not having this: throw runtime errors. But this is not the correct way to throw runtime error (using missing array index). because the error message will be confusing.
+
+Y - array should return zero-value for missing index (value+flat).
+Why array should not have this?
+One application of not having this: throw runtime errors. But this is not the correct way to throw runtime error (using missing array index). because the error message will be confusing.
+
+? - Now that everything is immutable, we can think of functions as immutable lambda bindings!
+`let process: func(x:int)->int = { ... }`
+yes it is possible but just makes syntax more confusing and less readable.
+What can be application of this?
+If we allow this, we should also allow other types here. `let PI:float = 3.1415`
+`let process: func(x:int)->int = { ... }`
+`func process(x:int)->int { ... }`
+pro: it will make things simpler. we don't have function and lambda. we only have lambda.
+con: Reading code may become more difficult.
+`let process = (x:int) -> x ~ print(_)`
+What happens to closure then?
+pro: we will allow nested functions without changing anything in the language.
+there will be no declaration. only assignment/binding.
+q: what happens to method resolution? 
+`let f: func(int|string)->int = process`. There must be a func named process with exact same definition.
+If we have two functions for int and string, it cannot be used.
+Maybe we can use `:=` for let too. Similar to type. because it is not supposed to be changed.
+Then we use `=` for conditional.
+`let x := 100`
+`:=` also implies that the binding is immutable. 
+
+? - Simple:
+1. Similar things behave similarly.
+2. No exceptions. Only general rules.
+3. Similar notations for similar things.
 
 ! - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
