@@ -27,7 +27,7 @@ June 26, 2017
 
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions to keep in mind. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
 
-That's why I am creating a new programming language: dotLang. 
+That's why I am creating a new programming language: **dotLang**.
 
 dot programming language (or dotLang for short) is an imperative, static-typed, general-purpose language based on author's experience and doing research on many programming languages (namely Go, Java, C\#, C, C++, Scala, Rust, Objective-C, Python, Perl, Smalltalk, Ruby, Swift, Haskell, Clojure, Eiffel, Elm, Falcon, Julia, F\# and Oberon-2). 
 I call the paradigm of this language "Data-oriented". This is a combination of Object Oriented and Functional approach and it is designed to work with data. There are no objects or classes. Only data types and functions. But most useful features of the OOP (encapsulation, abstraction, inheritance and polymorphism) are provided to some extent. On the other hand, we have first-class and higher-order functions borrowed from functional approach.
@@ -35,21 +35,21 @@ I call the paradigm of this language "Data-oriented". This is a combination of O
 Two main objectives are pursued in the design and implementation of this programming language:
 
 1. **Simplicity**: The code written in dotLang should be consistent, easy to write, read and understand. There has been a lot of effort to make sure there are as few exceptions and rules as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them. Very few things are done implicitly and transparently by the compiler or runtime system. Also I tried to reduce need for nested blocks and parentheses as much as possible. Another aspect of simplicity is minimaism in the language. It has very few keywords and rules to remember.
-2. **Performance**: The compiler will compile to native code which will result in high performance. We try to do as much as possible during compilation phase (optimizations, de-refrencing, in-place mutation, sending by copy or reference, type checking, phantom types, inlining, dispose function, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in standard library will be implemented in a lower level language.
+2. **Performance**: The compiler will compile to native code which will result in higher performance compared to interpreted languages. Compiler tries to do as much as possible (optimizations, de-refrencing, in-place mutation, sending by copy or reference, type checking, phantom types, inlining, disposing, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in core library will be implemented in a lower level language.
 
-Achieving all of the above goals at the same time is impossible so there will definitely be trade-offs and exceptions.
+Achieving both of the above goals at the same time is impossible so there will definitely be trade-offs and exceptions.
 The underlying rules of design of this language are 
 [Principle of least astonishment](https://en.wikipedia.org/wiki/Principle_of_least_astonishment), 
 [KISS rule](https://en.wikipedia.org/wiki/KISS_principle) and
 [DRY rule](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  We have functions and types. Each function acts on a set of inputs and gives an output. Type system includes primitive data types, struct, union, array and map. Polymorphism, generics and lambda expression are also provided and everything is immutable.
+As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  We have bindings (functions and immutable values) types (Blueprints to create bindings). Each function acts on a set of inputs and gives an output. Type system includes primitive data types, struct, union, array and map. Polymorphism, generics and lambda expression are also provided and everything is immutable.
 
 ## Comparison with other languages
 
 **Compared to C**: C language + Garabage collector + first-class functions + template programming + better union data types + module system + flexible polymorphism + simple and powerful standard library + lambda expressions + closure + powerful built-in data types (map, string,...) + simpler primitives + multiple dispatch + sane defaults + full immutability - ambiguities - pointers - macros - header files.
 
-**Compared to Scala**: Scala + multiple dispatch + full immutability + simpler primitives - *dependency on JVM* - *cryptic syntax* - trait - custom operators - variance - implicit.
+**Compared to Scala**: Scala + multiple dispatch + full immutability + simpler primitives - *dependency on JVM* - *cryptic syntax* - trait - custom operators - variance - implicit parameters.
 
 **Compared to Go**: Go + *generics* + full immutability + multiple dispatch + union types + sane defaults + better orthogonality (e.g. creating maps) + simpler primitives - pointers - interfaces - global variables.
 
@@ -57,8 +57,8 @@ As a 10,000 foot view of the language, code is written in files (called modules)
 
 dotLang consists of these components:
 
-1. The language specification (this document)
-2. A command line tool to compile, debug and package applications
+1. The language specification (this document).
+2. A command line tool to compile, debug and package applications.
 3. Runtime system: Responsible for memory allocation and management, interaction with the Operating System and other external libraries and handling concurrency.
 4. Core library: This package is used to implement some basic, low-level features which can not be simply implemented using pure dotLang language.
 5. Standard library: A layer above runtime and core which contains some general-purpose and common functions and data structures.
@@ -75,7 +75,7 @@ core
 |-----|-----tcp  
 ```
 
-In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages.
+In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages. Each package can potentially contain a set of modules.
 
 ## Language in a nutshell
 
@@ -622,13 +622,13 @@ Merge with function?
 06. `:=` Binding declaration
 07. `=`  equality check
 08. `..` range generator
-09. `->` function declaration
+09. `->` function declaration, import alias
 10. `[]` generics, custom literals
 11. `{}` code block, struct definition and struct literal, casting
 12. `()` function declaration and call
 13. `.`  access struct fields
 
-Keywords: `namespace`, `type`, `let`, `return`, `assert`
+Keywords: `import`, `type`, `let`, `return`, `assert`
 
 Primitive data types: `int`, `float`, `char`, `array`, `map`, `func`
 
@@ -642,25 +642,26 @@ Extended primitive type: `nothing`, `bool`, `string`
 
 **Example**
 
-1. `namespace _ := //code/st/Socket` import all type and bindings in this module into current namespace
-2. `namespace mod1 := //core/st/Socket` same as above but import into `mod1` namespace
+1. `import //code/st/Socket` import all type and bindings in this module into current namespace
+2. `import //core/st/Socket -> mod1` same as above but import into `mod1` namespace
+2. `import //core/std/{Queue, Stack, Heap} -> A,B,C`, we have three new modules imported under A,B,C names
 `let createSocket := mod1::createSocket`
 `type socketType := mod1::SocketType`
-2. `namespace _ := //core/std/{Queue, Stack, Heap}`
-2. `namespace A,B,C := //core/std/{Queue, Stack, Heap}`
-8. `namespace _ := git:/github.com/adsad/dsada`
-9. `namespace _ := svn:/bitcucket.com/adsad/dsada`
+2. `import //core/std/{Queue, Stack, Heap}`
+8. `import git:/github.com/adsad/dsada`
+9. `import svn:/bitcucket.com/adsad/dsada`
 
 **Notes**
 
-0. Each module has it's own namespace which is called default namespace. You can define new namespaces using `namespace`.
-Any definition using type or let, adds to the default namespace. You can also merge other modules into default namespace using `namespace _ := ...` statement.
+0. Each module has it's own namespace which is called default namespace. You can define new namespaces using `import`.
+Any definition using type or let, adds to the default namespace. You can also merge other modules into default namespace using `import _ := ...` statement.
 `//` is shortcut for `/file/`. Namespace path starts with protocl which determines the location for file for namespace.
+`A::B` means A is alias name and B is name of a type or function or binding.
 **TODO Update**
 1. You cannot import multiple modules using wildcards. Each one must be imported in a separate command.
 2. You can import multiple modules with same package using notation in Example 2.
 3. There must be a single space between `import` keyword and it's parameter.
-4. Import paths starting with `/` mean they are absolute path (Regarding dot's runtime import path).
+4. Import paths starting with `/` mean they are absolute path (Regarding dotLang's runtime import path).
 5. If an import path does not start with `/` means the module path is relative to the current module.
 6. It is an error if as a result of imports, there are two exactly similar functions (same name, input and output). In this case, none of conflicting functions will be available for call. 
 7. If you add a slash at the end of import file, it means import symbols using fully qualified name (Example 3)
@@ -718,7 +719,7 @@ func switch[S,T,U,X](v: S|T|U, mp: map[int, FF[S,X]|FF[T,X]||FF[U,X]], else: fun
 
 ## dispose
 
-**Semantics**: This function is used to invalid a variable and release any memory or resources associated with it.
+**Semantics**: This function is used to invalid a binding and release any memory or resources associated with it.
 
 **Syntax**: `dispose(x)`
 
@@ -761,7 +762,7 @@ func switch[S,T,U,X](v: S|T|U, mp: map[int, FF[S,X]|FF[T,X]||FF[U,X]], else: fun
 
 **Semantics**: We can cast a namespace to a struct. This act will map bindings with similar names to fields inside the struct.
 
-**Syntax**: `x = StructType{NamespaceName}`, `x = StructType{::}`
+**Syntax**: `x = StructType{Alias}`, `x = StructType{::}`
 
 **Examples**
 
@@ -789,7 +790,7 @@ TODO: update
 - **Comments**: `//` is used to start a comment.
 - **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0b0101011101` binary number. You can separate digits using undescore: `1_000_000`.
 - **Terminator**: Each statement must be in a separate line and must not end with semicolon.
-- **Order**: Each source code file contains 3 sections: import, definitions and function. The order of the contents of source code file matters: `import` section must come first, then declarations and then functions come at the end. If the order is not met, compiler will give errors.
+- **Order**: Each module contains 3 sections: import and binding. The order of the contents of source code file matters: `import` section must come first. If the order is not met, compiler will give errors.
 - Import section is used to reference other modules that are being used in this module.
 - Definitions section is used to define data types.
 - Function section is used to define function bodies.
@@ -912,3 +913,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Managing name conflict in large projects
 - Add slice functions to core to return array as a pointer to another array
 - Loop functions in core
+- Decide if we can provide std as an external package rather than a built-in.
