@@ -76,7 +76,6 @@ core
 ```
 
 In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages.
-- Unlike many other languages, modules are stateless. Meaning there is no variable or static code defined in a module-level.
 
 ## Language in a nutshell
 
