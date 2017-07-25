@@ -1074,6 +1074,115 @@ Maybe we can use `:=` for let too. Similar to type. because it is not supposed t
 Then we use `=` for conditional.
 `let x := 100`
 `:=` also implies that the binding is immutable. 
+`let` defines data, `type` defines type or blueprint to create data.
+This may enable us to import a module with prefix.
+`let mod1 := import("...")`
+`mod1.process` will be a lambda pointing to the function inside module.
+so `import` function will return a struct with appropriate field names pointing to functions.
+`let _ := import("core/st")` will import functions without being inside a struct.
+then we can remove `import` keyword!
+modules will be `let` + `type` to define data and types. 
+pro: `func` will not be a magical keyword. It will be just like `int`. A normal type of a variable.
+maybe we can use `import` instead of `autoBind` too!
+1. define functions using `let`.
+2. import will be a function in core: `let _ := import("core/st")`, `let mod1 := import("...")`
+3. `=` will be used for comparison.
+4. modules will contains let and types.
+
+? - import as a function, `module` primitive type.
+q: what if import is used with a variable?
+solution1: disallow using `import` inside functions. Only at module-level.
+`let module = import(...)` type of module is a struct with fields determined by the compiler based on contents of the module imported.
+`let module: MyStruct = import[MyStruct]()` type of module is specified here. `import` function will return `MyStruct` with appropriate function pointers to available functions.
+`import` will import both functions and types. Types cannot be part of a struct. 
+`let mod1 := import("...")`
+what happens to the types defined inside the module?
+Can we have types inside a struct? If so, we can think of a module as a big struct.
+`type s := { x:int, y:int, z:int, f: func(...), tt: ???}`
+Let's not think about module as a struct.
+So how can I import a module with prefix? To avoid name clash?
+`let prefix := import("..")`
+Maybe we can use a notation different from dot. A new type: Module.
+`let prefix: Module1 := import...`
+`let _ := import...`
+let the user call import with a variable. we will handle this in implementation.
+autoBind?
+`let myFuncs : AdderFunctions := import[AdderFunctions]()` import without input will look in currently available functions at compile time and return a struct with appropriate function pointers.
+Or why not use autoBind itself? pro: Simplify and unify.
+so:
+1. import function in core accepts a string and loads the symbols inside that module as a module binding.
+2. import without input, will be called like autoBind.
+3. `func` becomes a primitive data type.
+What prevents us from treating `module` like a `struct`? The fact that we cannot have a type defined inside a struct.
+`type MyStruct := { x:int, y: int, `.
+`struct` is a blueprint for data. Not definitions.
+we can have a `Module` primitive type which is defined by creating a new file and importing it.
+You can use `_` to capture output of import as normal available symbols.
+Or name it's output. If you name, you can use `moduleName#name` to access functions and types inside the module. 
+`let x: myModule#myType = ...`
+`let p = myModule#myFunc(10, 20, 30)`
+`/`?
+`let x: myModule/myType = ...`
+`let p = myModule/myFunc(10, 20, 30)`
+we can use `/` as a separator.
+we can use the same notation to import a single function or type:
+`let y := import("/core/st/Socket/createSocket")`
+`let y := import("/core/st/Socket/SocketType")`
+Maybe we can even replace import with a symbol. So `/` will be really part of identifier not inside a string.
+```
+let y := /core/st/Socket/createSocket
+type y := /core/st/Socket/SocketType
+let mod1 := /core/st/Socket
+type socketType := mod1/SocketType
+let process := mod1/createSocket
+```
+Maybe `/` is good for path separate which has a physical corresponding element in the file-system.
+But we should use a different notation for things that are "inside" the module.
+```
+let _ := /code/st/Socket` //all types and functions inside core-st-socket are available normally without prefix
+let mod1 := /core/st/Socket  //type of mod1 is a module. it contains all functions and types defined inside mod1
+let createSocket := /core/st/Socket::createSocket
+let createSocket := mod1::createSocket
+type socketType := /core/st/Socket::SocketType
+type socketType := mod1::SocketType
+```
+We can use `::` to access types and functions inside an already loaded module.
+1. `func` becomes a primitive data type.
+2. `import` is not keyword and it removed.
+3. You can use `::` to access types and bindings defined inside a module.
+4. You can load a module in current namespace or as a binding with `let`. Then use `::` to access it's internals.
+5. A new primitive type: `module` which you can only use by writing a module file and importing it. 
+
+? - Why can't we write a new module inline?
+`let myModule := { let y = 12, let process = (x:int)->x+1, ...}`?
+it will be confused with struct.
+module can contain bindings and types and alias.
+```
+let myModule := {
+  let y := 12
+  let process := (x:int)->x+1
+  type MyInt := int
+  type MyInt2 = int //myModule::MyInt2 will be exactly the same as int
+  let M2 := {
+    let f:func(x:int)->x+1
+  }
+}
+let g := myModule::y
+let h := myModule::M2::f(10) //h will be 11
+```
+can I define a module inside module then? It make things much more complicated.
+You can define struct inside struct. But for module, you cannot. Same as why you cannot define a file inside a file.
+This is not a very useful notation (inline module), but banning it is harmful.
+Is module a type or binding?
+type is used when we can have multiple instances of it: `type MyInt := int`
+But `let` is when we define an instance. `let x:MyType`. 
+So module is a binding not a type.
+I don't think banning this is a bad decision. This is not banning. We just dont provide notation and dont support this feature. If you want a module, create a new file and store the contents there. And load it here.
+If that's not possible, just put the contents inside the current file. 
+
+? - maybe we can use `import` function instead of `autoBind` too!
+
+? - Maybe we should use a keyword for struct.
 
 ? - Simple:
 1. Similar things behave similarly.
