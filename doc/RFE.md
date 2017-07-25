@@ -1185,19 +1185,7 @@ Unless we say, this is only possible if we have loaded the module before.
 
 N - maybe we can use `import` function instead of `autoBind` too!
 
-? - replace `autoBdin` with casting default namespace `::` or a module namespace to a struct.
-How can we simplify autoBind?
-autoBind is responsible to create a struct with function pointers (let) which now can be either function or any bindings, from a namespace.
-`def A := /code/st/Socket`
-`let myAdderUtils: AdderUtils := AdderUtils{A}`
-Basically we are casting a module to a tuple. So it will assign everything inside the module with the same name as the struct fields and return a new instance of struct.
-`let myAdderUtils: AdderUtils := AdderUtils{::}` This will do the above but for current namespace.
-
-? - Explain the difference between namespace and module.
-We have a default namespace which is current symbols + imported modules with `_`
-Each module has it's own namespace which is accessible using `ns::symbol` notation.
-
-? - We cannot use `=` for type alias anymore. Because it is confusing.
+Y - We cannot use `=` for type alias anymore. Because it is confusing.
 `=` is equality check.
 `:=` is binding.
 maybe we should add a new keyword: `alias`.
@@ -1209,7 +1197,15 @@ alias con: it is similar to define in C. why not use it for other bindings?
 `typedef MyInt := int`
 `type MyInt : int`? like `x:int` we define a type which is of another type.
 
-? - Why can't we write a new module inline?
+Y - Explain the difference between namespace and module.
+We have a default namespace which is current symbols + imported modules with `_`
+Each module has it's own namespace which is accessible using `ns::symbol` notation.
+Each module has it's own namespace. You can define new namespaces using `def`.
+Maybe it is better if we replace `def` with `namespace` keyword.
+`namespace _ := /code/st/Socket`
+`namespace mod1 := /core/st/Socket`
+
+N - Why can't we write a new module inline?
 `let myModule := { let y = 12, let process = (x:int)->x+1, ...}`?
 it will be confused with struct.
 module can contain bindings and types and alias.
@@ -1239,16 +1235,29 @@ It is possible to allow such definition and semantic, but what problem will it s
 It will definitely complicate definitions and encourage people to put multiple things in the same file.
 But what advantages will it have?
 It's advantage is like a function literal which is defined in-line.
+Define module inline, means namespace lies below modules. Each module can have one or more namespaces.
+What if what we need is above module? This is called package. You cannot import a package directly for readability reasons.
+Also each module should work on a specific problem, so we don't really need further classification inside module.
 
-? - In import use `//` for local filesystem which is shortcut for `/file/`
+Y - In import use `//` for local filesystem which is shortcut for `/file/`
 Then `/git/`, `/svn/`... can be used to other protocols.
 
-? - Maybe we should use a keyword for struct.
+N - Maybe we should use a keyword for struct.
 
-? - Simple:
+N - Simple:
 1. Similar things behave similarly.
 2. No exceptions. Only general rules.
 3. Similar notations for similar things.
+
+Y - replace `autoBind` with casting default namespace `::` or a module namespace to a struct.
+How can we simplify autoBind?
+autoBind is responsible to create a struct with function pointers (let) which now can be either function or any bindings, from a namespace.
+`def A := /code/st/Socket`
+`let myAdderUtils: AdderUtils := AdderUtils{A}`
+Basically we are casting a module to a tuple. So it will assign everything inside the module with the same name as the struct fields and return a new instance of struct.
+`let myAdderUtils: AdderUtils := AdderUtils{::}` This will do the above but for current namespace.
+
+Y - Naming for namespace?
 
 ! - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
