@@ -1054,7 +1054,7 @@ Y - array should return zero-value for missing index (value+flat).
 Why array should not have this?
 One application of not having this: throw runtime errors. But this is not the correct way to throw runtime error (using missing array index). because the error message will be confusing.
 
-? - Now that everything is immutable, we can think of functions as immutable lambda bindings!
+Y - Now that everything is immutable, we can think of functions as immutable lambda bindings!
 `let process: func(x:int)->int = { ... }`
 yes it is possible but just makes syntax more confusing and less readable.
 What can be application of this?
@@ -1085,11 +1085,12 @@ modules will be `let` + `type` to define data and types.
 pro: `func` will not be a magical keyword. It will be just like `int`. A normal type of a variable.
 maybe we can use `import` instead of `autoBind` too!
 1. define functions using `let`.
-2. import will be a function in core: `let _ := import("core/st")`, `let mod1 := import("...")`
-3. `=` will be used for comparison.
-4. modules will contains let and types.
+2. `=` will be used for comparison, `:=` for let.
+3. modules will contains let and types.
+`let process: func(int)->int := (x:int)->int { ... }`
+`let process := (x:int)->int { ... }`
 
-? - import as a function, `module` primitive type.
+Y - import as a function, `module` primitive type.
 q: what if import is used with a variable?
 solution1: disallow using `import` inside functions. Only at module-level.
 `let module = import(...)` type of module is a struct with fields determined by the compiler based on contents of the module imported.
@@ -1152,17 +1153,72 @@ We can use `::` to access types and functions inside an already loaded module.
 3. You can use `::` to access types and bindings defined inside a module.
 4. You can load a module in current namespace or as a binding with `let`. Then use `::` to access it's internals.
 5. A new primitive type: `module` which you can only use by writing a module file and importing it. 
+`func calculate(x: int, y: string) -> float { ??? if x > 0 then 1.5 else 2.5  }`
+`let calculate = func(x:int, y:string)->...`
+
+Y - use `def` to define a module binding.
+The module type is too hidden. When I see `let x :=` on the right side it can be an int, a function, a module or any other possible value.
+This is right and if there is need for more documentation, I can determine type.
+`let x:int := 12`
+maybe I should not use `let`?
+`def`?
+`def mod1 := /core/st/Socket`
+2. `def _ := /core/std/{Queue, Stack, Heap}`
+2. `def A,B,C := /core/std/{Queue, Stack, Heap}`
+8. `def _ := git:/github.com/adsad/dsada`
+9. `def _ := svn:/bitcucket.com/adsad/dsada`
+Then maybe it can help to define inline module easier.
+But it will make autoBind very different.
+How can I convert a module to a tuple? You cannot because module can have custom types.
+suggestion: Enable user to generate a tuple of function pointers with available functions in current context (default namespace) or any given module.
+`def mod1 := /core/st/Socket`
+`let au: AdderUtils := autoBind[mod1, AdderUtils]()`
+Exception: You cannot send a module as an argument to a function. Why not? Because function argument needs a type. And a module contains types and bindings.
+Just like the way we can have struct inside struct, we should be able to have module inside module.
+But passing a module to another function is not possible. Because how are we going to describe it's type? Unless we capture part of the module. e.g. like auto-bind.
+It will be a bit confusing if we use `def` here.
+Because we should be able to address a function inside a module.
+`let createSocket := /core/st/Socket::createSocket`
+Unless we say, this is only possible if we have loaded the module before.
+`def A := /code/st/Socket`
+`let createSocket := A::createSocket`
+
+N - maybe we can use `import` function instead of `autoBind` too!
+
+? - replace `autoBdin` with casting default namespace `::` or a module namespace to a struct.
+How can we simplify autoBind?
+autoBind is responsible to create a struct with function pointers (let) which now can be either function or any bindings, from a namespace.
+`def A := /code/st/Socket`
+`let myAdderUtils: AdderUtils := AdderUtils{A}`
+Basically we are casting a module to a tuple. So it will assign everything inside the module with the same name as the struct fields and return a new instance of struct.
+`let myAdderUtils: AdderUtils := AdderUtils{::}` This will do the above but for current namespace.
+
+? - Explain the difference between namespace and module.
+We have a default namespace which is current symbols + imported modules with `_`
+Each module has it's own namespace which is accessible using `ns::symbol` notation.
+
+? - We cannot use `=` for type alias anymore. Because it is confusing.
+`=` is equality check.
+`:=` is binding.
+maybe we should add a new keyword: `alias`.
+`alias MyInt := int`
+`type MyInt = int`
+`type MyInt <- int`
+alias con: it is similar to define in C. why not use it for other bindings?
+`typedef`?
+`typedef MyInt := int`
+`type MyInt : int`? like `x:int` we define a type which is of another type.
 
 ? - Why can't we write a new module inline?
 `let myModule := { let y = 12, let process = (x:int)->x+1, ...}`?
 it will be confused with struct.
 module can contain bindings and types and alias.
 ```
-let myModule := {
+def myModule := {
   let y := 12
   let process := (x:int)->x+1
   type MyInt := int
-  type MyInt2 = int //myModule::MyInt2 will be exactly the same as int
+  type MyInt2 : int //myModule::MyInt2 will be exactly the same as int
   let M2 := {
     let f:func(x:int)->x+1
   }
@@ -1179,8 +1235,13 @@ But `let` is when we define an instance. `let x:MyType`.
 So module is a binding not a type.
 I don't think banning this is a bad decision. This is not banning. We just dont provide notation and dont support this feature. If you want a module, create a new file and store the contents there. And load it here.
 If that's not possible, just put the contents inside the current file. 
+It is possible to allow such definition and semantic, but what problem will it solve?
+It will definitely complicate definitions and encourage people to put multiple things in the same file.
+But what advantages will it have?
+It's advantage is like a function literal which is defined in-line.
 
-? - maybe we can use `import` function instead of `autoBind` too!
+? - In import use `//` for local filesystem which is shortcut for `/file/`
+Then `/git/`, `/svn/`... can be used to other protocols.
 
 ? - Maybe we should use a keyword for struct.
 
