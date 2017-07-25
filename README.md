@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow operator overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, 
+- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding
 
 # Introduction
 
@@ -238,11 +238,11 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 **Semantics**: To define alternative names for a type.
 
-**Syntax**: `type NewName = CurrentName`
+**Syntax**: `type NewName : CurrentName`
 
 **Examples**
 
-1. `type MyInt = int`
+1. `type MyInt : int`
 
 **Notes**
 
@@ -640,18 +640,21 @@ Other important identifiers: `nothing`, `bool`, `true`, `false`, `string`
 
 **Example**
 
-1. `def _ := /code/st/Socket` import all type and bindings in this module into current namespace
-2. `def mod1 := /core/st/Socket` same as above but import into `mod1` namespace
+1. `namespace _ := //code/st/Socket` import all type and bindings in this module into current namespace
+2. `namespace mod1 := //core/st/Socket` same as above but import into `mod1` namespace
 `let createSocket := mod1::createSocket`
 `type socketType := mod1::SocketType`
-2. `def _ := /core/std/{Queue, Stack, Heap}`
-2. `def A,B,C := /core/std/{Queue, Stack, Heap}`
-8. `def _ := git:/github.com/adsad/dsada`
-9. `def _ := svn:/bitcucket.com/adsad/dsada`
+2. `namespace _ := //core/std/{Queue, Stack, Heap}`
+2. `namespace A,B,C := //core/std/{Queue, Stack, Heap}`
+8. `namespace _ := git:/github.com/adsad/dsada`
+9. `namespace _ := svn:/bitcucket.com/adsad/dsada`
 
 **Notes**
 
-TODO Update
+0. Each module has it's own namespace which is called default namespace. You can define new namespaces using `namespace`.
+Any definition using type or let, adds to the default namespace. You can also merge other modules into default namespace using `namespace _ := ...` statement.
+`//` is shortcut for `/file/`. Namespace path starts with protocl which determines the location for file for namespace.
+**TODO Update**
 1. You cannot import multiple modules using wildcards. Each one must be imported in a separate command.
 2. You can import multiple modules with same package using notation in Example 2.
 3. There must be a single space between `import` keyword and it's parameter.
@@ -754,19 +757,20 @@ func switch[S,T,U,X](v: S|T|U, mp: map[int, FF[S,X]|FF[T,X]||FF[U,X]], else: fun
 
 ## autoBind
 
-**Semantics**: A compiler-level supported mechanism to fetch funcion pointers to currently defined functions and create an appropriate struct with them.
+**Semantics**: We can cast a namespace to a struct. This act will map bindings with similar names to fields inside the struct.
 
-**Syntax**: `x = autoBind[Type1]()`
+**Syntax**: `x = StructType{NamespaceName}`, `x = StructType{::}`
 
 **Examples**
 
 1. `type Comparer[T] := { compare: func(T,T)->bool }`
 2. `func sort[T](x: array[T], f: Comparer[T])->array[T] { ... }`
-3. `sort(myIntArray, autoBind())`
-4. `sort(myIntArray, autoBind[Comparer[int]]())`
+3. `sort(myIntArray, Comparer{::})`
+4. `sort(myIntArray, Comparer[int]{::})`
 
 **Notes**
 
+TODO: update
 1. Example 1 defines a general struct which only contains function pointer fields.
 2. Example 2 defines a function to sort any given array of any type. But to do the sort, it needs a function to compare data of that type. So it defines an input of type `Comparer[T]` to include a function to do the comparison.
 3. Example 3 shows how to call `sort` function defined in example 2. You simply call `autoBind` to create appropriate struct of appropriate types by the compiler. So `f.compare` field will contain a function pointer to a function with the same name and signature.
@@ -788,7 +792,7 @@ func switch[S,T,U,X](v: S|T|U, mp: map[int, FF[S,X]|FF[T,X]||FF[U,X]], else: fun
 - Definitions section is used to define data types.
 - Function section is used to define function bodies.
 - **Encapsulation**: If a name (of a type or function) starts with underscore, means that it is private to the module. If not, it is public and can be used from outside using `import` statement.
-- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeDataType`, `my_package_or_module`. If these are not met, compiler will give warnings. Primitive data types and basic types defined in core (`array`, `map`, `bool`, `string` and `nothing`) are the only exceptions to naming rules.
+- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeDataType`, `my_package_dir`, `my_modue_file`, `my_namespace`. If these are not met, compiler will give warnings. Primitive data types and basic types defined in core (`array`, `map`, `bool`, `string` and `nothing`) are the only exceptions to naming rules.
 
 # Examples
 
