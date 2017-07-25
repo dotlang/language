@@ -79,7 +79,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 ## Language in a nutshell
 
-01. **Import a module**: `import /core/std/queue` (you can also import from external sources like Github)
+01. **Import a module**: `??? import /core/std/queue` (you can also import from external sources like Github)
 02. **Primitive types**: `int`, `float`, `char` (other useful types are define in core)
 03. **Bindings**: `let my_var:int = 19` (type can be automatically inferred, everything is immutable)
 04. **Named type**: `type MyInt := int`
@@ -90,7 +90,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 09. **Map type**: `let countryPopulation: map[string, int] := [ "US": 300, "CA": 180, "UK": 80 ]`
 10. **Generics**: `type Stack[T] := { data: array[T], info: int }`
 11. **Union type**: `type Maybe[T] := T | nothing`
-12. **Function**: `func calculate(x: int, y: string) -> float { ??? if x > 0 then 1.5 else 2.5  }`
+12. **Function**: `let calculate = func(x: int, y: string) -> float { ??? if x > 0 then 1.5 else 2.5  }`
 13. **Lambda expression**: `let adder = (x:int, y:int) -> x+y`
 
 # Type System
@@ -103,19 +103,12 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 **Examples**
 
-1. `let x: int = 12`
-2. `let g = 19.8`
-3. `let a,b = process()`
-4. `let x = y`
-5. 
-```
-let x = { 
-    process(1,2,3)
-    6 
-}
-```
-6. `x=y`
-7. `let a,b = {1, 100}`
+1. `let x: int := 12`
+2. `let g := 19.8`
+3. `let a,b := process()`
+4. `let x := y`
+6. `let x := y`
+7. `let a,b := {1, 100}`
 
 **Notes**
 
@@ -362,25 +355,26 @@ let x = {
 
 ## Declaration
 
-**Semantics**: To group a set of coherent commands into a group with a specific name, input and output.
+**Semantics**: To group a set of coherent commands into a named lambda, with specific input and output.
 
-**Syntax**: `func functionName(input1: type1, input2: type2, ...) -> OutputType { code block }`
+**Syntax**: `let functionName: func(type1, type2, type3, ...) -> OutputType := (name1: type1, name2: type2...) -> OutputType { code block }`
 
 **Examples**
 
-01. `func myFunc(y:int, x:int) -> int { return 6+y+x }`
-02. `func log(s: string) -> { print(s) }`
-03. `func process(pt: Point)->int { pt.x }`
-04. `func process2(pt: Point) -> {pt.x, pt.y}`
-06. `func my_func(x:int) -> x+9`
-07. `func myFunc9(x:int) -> {int} {12}`
-08. `func PI -> 3.14`
-09. `func process(x: int|Point])->int`
-10. `func fileOpen(path: string) -> File {...}`
-11. `func process(_:something) -> 10`
+01. `let myFunc(int, int) -> int := func(x:int, y:int)-> int { return 6+y+x }`
+02. `let log(s: string) -> { print(s) }`
+03. `let process(pt: Point)->int { pt.x }`
+04. `let process2(pt: Point) -> {pt.x, pt.y}`
+06. `let my_func(x:int) -> x+9`
+07. `let myFunc9(x:int) -> {int} {12}`
+08. `let PI -> 3.14`
+09. `let process(x: int|Point])->int`
+10. `let fileOpen(path: string) -> File {...}`
+11. `let process(_:something) -> 10`
 
 **Notes**:
 
+0. Functions are defined like lambdas. Note that `func` is part of type of a function. But for a function literal (the expression that comes after `:=` in function definition, it does not need `func` keyword).
 1. Every function must return something which is specified using `return`. If it doesn't, compiler marks output type as `nothing` (Example 2).
 2. A function call with union data, means there must be functions defined for all possible types in the union. See Call resolution section for more information.
 3. You can define consts using functions (Example 6).
@@ -456,6 +450,7 @@ let x = {
 4. In a function type, you should not include input parameter names.
 
 ## Lambda
+Merge with function?
 
 **Semantics**: Define function literals of a specific function pointer type, inside another function's body.
 
@@ -560,7 +555,7 @@ let x = {
 
 **Syntax**:
 
-1. Conditional operators: `and, or, not, ==, !=, >=, <=`
+1. Conditional operators: `and, or, not, =, !=, >=, <=`
 2. Arithmetic: `+, -, *, /, %, %%, +=, -=, *=, /=`
 3. Assignment: `=`
 4. Type-id: `@`
@@ -623,7 +618,7 @@ let x = {
 04. `_`  placeholder (lambda creator or unknown variable in assignments or function input)
 05. `:`  type declaration for struct and function input and values, map literal
 06. `:=` custom type definition
-07. `=`  type alias, assignment
+07. `=`  equality check
 08. `..` range generator
 09. `->` function declaration
 10. `[]` generics, custom literals
@@ -631,9 +626,9 @@ let x = {
 12. `()` function declaration and call
 13. `.`  access struct fields
 
-Keywords: `import`, `type`, `func`, `let`, `return`, `assert`
+Keywords: `type`, `let`, `return`, `assert`
 
-Primitive data types: `int`, `float`, `char`, `array`, `map`
+Primitive data types: `int`, `float`, `char`, `array`, `map`, `func`
 
 Other important identifiers: `nothing`, `bool`, `true`, `false`, `string`
 
@@ -645,18 +640,18 @@ Other important identifiers: `nothing`, `bool`, `true`, `false`, `string`
 
 **Example**
 
-1. `import /core/std/Queue`
-2. `import /core/std/{Queue, Stack, Heap}`
-3. `import /core/std/Data/`
-4. `/core/std/data/Process(1,2,3)`
-5. `let x: /core/std/data/Stack = ...`
-6. `func myProcess(x: int, y:int, z:int) -> /core/std/data/process(x,y,z)`
-7. `type myStack = /core/std/data/Stack`
-8. `import git:/github.com/adsad/dsada`
-9. `import svn:/bitcucket.com/adsad/dsada`
+1. `def _ := /code/st/Socket` import all type and bindings in this module into current namespace
+2. `def mod1 := /core/st/Socket` same as above but import into `mod1` namespace
+`let createSocket := mod1::createSocket`
+`type socketType := mod1::SocketType`
+2. `def _ := /core/std/{Queue, Stack, Heap}`
+2. `def A,B,C := /core/std/{Queue, Stack, Heap}`
+8. `def _ := git:/github.com/adsad/dsada`
+9. `def _ := svn:/bitcucket.com/adsad/dsada`
 
 **Notes**
 
+TODO Update
 1. You cannot import multiple modules using wildcards. Each one must be imported in a separate command.
 2. You can import multiple modules with same package using notation in Example 2.
 3. There must be a single space between `import` keyword and it's parameter.
