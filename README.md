@@ -359,6 +359,8 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 **Syntax**: `let functionName: func(type1, type2, type3, ...) -> OutputType := (name1: type1, name2: type2...) -> OutputType { code block }`
 
+Note that `func(int,int)->int` is a type. `(x:int, y:int)->{x+y}` is value.
+
 **Examples**
 
 01. `let myFunc(int, int) -> int := func(x:int, y:int)-> int { return 6+y+x }`
@@ -616,8 +618,8 @@ Merge with function?
 02. `@`  type-id operator
 03. `|`  union data type
 04. `_`  placeholder (lambda creator or unknown variable in assignments or function input)
-05. `:`  type declaration for struct and function input and values, map literal
-06. `:=` custom type definition
+05. `:`  type declaration for struct and function input and values, map literal, type alias
+06. `:=` Binding declaration
 07. `=`  equality check
 08. `..` range generator
 09. `->` function declaration
@@ -626,17 +628,17 @@ Merge with function?
 12. `()` function declaration and call
 13. `.`  access struct fields
 
-Keywords: `type`, `let`, `return`, `assert`
+Keywords: `namespace`, `type`, `let`, `return`, `assert`
 
 Primitive data types: `int`, `float`, `char`, `array`, `map`, `func`
 
-Other important identifiers: `nothing`, `bool`, `true`, `false`, `string`
+Extended primitive type: `nothing`, `bool`, `string`
 
 # Miscellaneous
 
 ## import
 
-**Semantics**: Import public type definitions and functions from another module.
+**Semantics**: Import public type definitions and functions from another module into a new namespace or default namespace.
 
 **Example**
 
