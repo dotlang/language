@@ -94,42 +94,43 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 # Summary of notations
 
-01. `~` chain operator
-02. `@`  type-id operator
-03. `|`  union data type
-04. `_`  placeholder (lambda creator or unknown variable in assignments or function input)
+**List of symbols**
+
+01. `~`  chain operator (To chain function calls)
+02. `@`  type-id operator (Return unique identifier of types)
+03. `|`  union data type (Define different possible types)
+04. `_`  placeholder (lambda creator, unknown variable in assignments or function argument)
 05. `:`  type declaration for struct and function input and values, map literal, type alias
-06. `:=` Binding declaration
-07. `=`  equality check
-08. `..` range generator
-09. `->` function declaration, import alias
-10. `[]` generics, custom literals
-11. `{}` code block, struct definition and struct literal, casting
-12. `()` function declaration and call
-13. `.`  access struct fields
-14. `::` address inside a module
+06. `:=` Binding declaration, named types
+07. `..` range generator
+08. `->` function declaration, module alias
+09. `[]` generics, array and map literals, reading from array and map
+10. `{}` code block, struct definition and struct literal, casting
+11. `()` function declaration and call
+12. `.`  access struct fields
+13. `::` address inside a module alias
 
-Keywords: `import`, `type`, `let`, `return`, `assert`
+**Keywords**: `import`, `type`, `let`, `return`, `assert`
 
-Primitive data types: `int`, `float`, `char`, `array`, `map`, `func`
+**Primitive data types**: `int`, `float`, `char`, `array`, `map`, `func`
 
-Extended primitive type: `nothing`, `bool`, `string`
+**Extended primitive types**: `nothing`, `bool`, `string`
+
+**Other reserved identifiers**: `true`, `false`
 
 ## General rules
 
 - **Encoding**: Modules are encoded in UTF-8 format.
-- **Whitespace**: Any instance of space(' '), tab(`\t`), newline(`\r` and `\n`) are whitespace and will be ignored. 
 - **Indentation**: Indentation must be done using spaces, not tabs. Using 4 spaces is advised but not mandatory.
 - **Comments**: `//` is used to start a comment.
-- **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0b0101011101` binary number. You can separate digits using undescore: `1_000_000`.
+- **Literals**: `123` is integer literal, `'c'` is character literal, `"this is a test"` string literal, `0xffe` hexadecimal number, `0b0101011101` for binary number. You can separate digits using undescore: `1_000_000`.
 - **Terminator**: Each statement must be in a separate line and must not end with semicolon.
-- **Order**: Each module contains 3 sections: import and binding. The order of the contents of source code file matters: `import` section must come first. If the order is not met, compiler will give errors.
+- **Order**: Each module contains 3 sections: imports, types and binding. The order of the contents of source code file matters: `import` section must come first, then types and lastly bindings. If the order is not met, compiler will give errors.
 - Import section is used to reference other modules that are being used in this module.
-- Definitions section is used to define data types.
-- Function section is used to define function bodies.
-- **Encapsulation**: If a name (of a type or function) starts with underscore, means that it is private to the module. If not, it is public and can be used from outside using `import` statement.
-- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeDataType`, `my_package_dir`, `my_modue_file`, `my_namespace`. If these are not met, compiler will give warnings. Primitive data types and basic types defined in core (`array`, `map`, `bool`, `string` and `nothing`) are the only exceptions to naming rules.
-
+- Type section is used to define data types.
+- Bindings section is used to define function bodies.
+- **Encapsulation**: If a name (of a type or binding) starts with underscore, means that it is private to the module. If not, it is public and can be used from outside using `import` statement.
+- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeDataType`, `my_package_dir`, `my_modue_file`. If these are not met, compiler will give warnings. Primitive data types and basic types defined in core (`array`, `map`, `bool`, `string` and `nothing`) are the only exceptions to naming rules.
 
 # import
 
