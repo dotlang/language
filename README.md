@@ -134,12 +134,24 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 # import
 
-**Semantics**: Import public type definitions and functions from another module into a new namespace or default namespace.
+1. This keyword is used to import another module into current module's namespace. After importing a module, you can use it's types, call it's functions or work with the baindings in the module in any way.
+2. You can import a module into a separate named namespace. If you do this, you can only access the definitions by prefixing namespace name.
+3. Note that elements that start with underscore are considered private and will not be available when you import their module.
+
+**Syntax**
+
+1. `import /path/to/module`
+2. `import /path/to/module -> Name`
 
 **Example**
 
-1. `import /code/st/Socket` import all type and bindings in this module into current namespace
-2. `import /core/st/Socket -> mod1` same as above but import into `mod1` namespace
+1. `import /core/st/Socket` 
+
+Imports all type and bindings in this module into current namespace
+
+2. `import /core/st/Socket -> mod1` 
+
+same as above but import into `mod1` namespace
 2. `import /core/std/{Queue, Stack, Heap} -> A,B,C`, we have three new modules imported under A,B,C names
 `let createSocket := mod1::createSocket`
 `type socketType := mod1::SocketType`
