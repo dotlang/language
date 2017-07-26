@@ -1259,6 +1259,34 @@ Basically we are casting a module to a tuple. So it will assign everything insid
 
 Y - Naming for namespace?
 
+N - Can we use `[1,2,3]` notation for other types too?
+If they suppose `set` then yes. Compiler generates calls to `set` for them.
+But this will be confusing. When I call a function with `[1,2,3]` what will be it's type?
+
+N - Can we reduce primitive data types?
+e.g. remove array and map from primitives and treat them like a non-primitive? possible defined in std and not core.
+bear in mind that everything is immutable.
+`let x: array[int] = [1,2,3]`
+then we need to remove `arr[0]` notation and possibly use `get` function.
+make code less readable.
+what about map?
+replace `map["A"]` notation with `get` function call.
+we no longer have `a[b]` notation. we use `a(...)` notation.
+replace `map("A")` notation with `get` function call.
+handle map literals in a general way.
+conditionals?
+we need to implement map in core. because inherently it uses conditionals.
+question is: How can people define their own custom maps?
+With cusom hash or bucketing. sha-1 or murmur or md5 or ... ?
+User can write his own data type like `CustomMap` and write appropriate functions.
+Will it support `myCustomMap("A")`?
+will it support map literals? `["A":1, "B": 2]`. Not needed very much. We can write custom casting functions.
+But we need to decide about `map("A")` and `array("A")` notation.
+They make code more readable.
+But their shortcut should not be special case.
+`var(a1,a2,...)` maps to `get(var, a1, a2, ...)`
+`var(a1, a2, ...)` maps to `var ~ get(_, a1, a2, ...)`.
+
 ! - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
 these can indicate micro-commands to be executed by the compiler so we will be coding our compiler into that notation.
