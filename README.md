@@ -57,8 +57,8 @@ As a 10,000 foot view of the language, code is written in files (called modules)
 
 dotLang consists of these components:
 
-1. The language specification (this document).
-2. A command line tool to compile, debug and package applications.
+1. The language manual (this document).
+2. A command line tool to compile, debug and package source code.
 3. Runtime system: Responsible for memory allocation and management, interaction with the Operating System and other external libraries and handling concurrency.
 4. Core library: This package is used to implement some basic, low-level features which can not be simply implemented using pure dotLang language.
 5. Standard library: A layer above runtime and core which contains some general-purpose and common functions and data structures.
@@ -75,27 +75,96 @@ core
 |-----|-----tcp  
 ```
 
-In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages. Each package can potentially contain a set of modules.
+In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages. Each package can potentially contain zero or more modules.
 
 ## Language in a nutshell
 
-01. **Import a module**: `??? import /core/std/queue` (you can also import from external sources like Github)
-02. **Primitive types**: `int`, `float`, `char` (other useful types are define in core)
+01. **Import a module**: `import /core/std/queue` (you can also import from external sources like Github)
+02. **Primitive types**: `int`, `float`, `char`, `array`, `map`, `func`
 03. **Bindings**: `let my_var:int = 19` (type can be automatically inferred, everything is immutable)
-04. **Named type**: `type MyInt := int`
+04. **Named type**: `type MyInt := int` (This defines a new type with same binary representation as `int`).
 05. **Struct type**: `type Point := {x: int, y:int, data: float}` (Like `struct` in C)
-06. **Struct literal**: `location = Point{ .x=10, .y=20, .data=1.19 }`
-07. **Composition of structs**: By embedding (only for structs), `type Circle := {Shape, radius: float}`
-08. **Array type**: `let jobQueue: array[int] = [0, 1, 2, 3]`
-09. **Map type**: `let countryPopulation: map[string, int] := [ "US": 300, "CA": 180, "UK": 80 ]`
+06. **Struct literal**: `let location := Point{x=10, y=20, data=1.19}`
+07. **Composition of structs**: By embedding, `type Circle := {Shape, radius: float}`
+08. **Array**: `let jobQueue: array[int] := [0, 1, 2, 3]`
+09. **Map**: `let countryPopulation: map[string, int] := [ "US": 300, "CA": 180, "UK": 80 ]`
 10. **Generics**: `type Stack[T] := { data: array[T], info: int }`
 11. **Union type**: `type Maybe[T] := T | nothing`
-12. **Function**: `let calculate = func(x: int, y: string) -> float { ??? if x > 0 then 1.5 else 2.5  }`
-13. **Lambda expression**: `let adder = (x:int, y:int) -> x+y`
+12. **Function**: `let calculate := (x: int, y: string) -> float { return x/y  }`
 
-# Type System
+# Summary of notations
 
-## Variables
+01. `~` chain operator
+02. `@`  type-id operator
+03. `|`  union data type
+04. `_`  placeholder (lambda creator or unknown variable in assignments or function input)
+05. `:`  type declaration for struct and function input and values, map literal, type alias
+06. `:=` Binding declaration
+07. `=`  equality check
+08. `..` range generator
+09. `->` function declaration, import alias
+10. `[]` generics, custom literals
+11. `{}` code block, struct definition and struct literal, casting
+12. `()` function declaration and call
+13. `.`  access struct fields
+14. `::` address inside a module
+
+Keywords: `import`, `type`, `let`, `return`, `assert`
+
+Primitive data types: `int`, `float`, `char`, `array`, `map`, `func`
+
+Extended primitive type: `nothing`, `bool`, `string`
+
+## General rules
+
+- **Encoding**: Modules are encoded in UTF-8 format.
+- **Whitespace**: Any instance of space(' '), tab(`\t`), newline(`\r` and `\n`) are whitespace and will be ignored. 
+- **Indentation**: Indentation must be done using spaces, not tabs. Using 4 spaces is advised but not mandatory.
+- **Comments**: `//` is used to start a comment.
+- **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0b0101011101` binary number. You can separate digits using undescore: `1_000_000`.
+- **Terminator**: Each statement must be in a separate line and must not end with semicolon.
+- **Order**: Each module contains 3 sections: import and binding. The order of the contents of source code file matters: `import` section must come first. If the order is not met, compiler will give errors.
+- Import section is used to reference other modules that are being used in this module.
+- Definitions section is used to define data types.
+- Function section is used to define function bodies.
+- **Encapsulation**: If a name (of a type or function) starts with underscore, means that it is private to the module. If not, it is public and can be used from outside using `import` statement.
+- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeDataType`, `my_package_dir`, `my_modue_file`, `my_namespace`. If these are not met, compiler will give warnings. Primitive data types and basic types defined in core (`array`, `map`, `bool`, `string` and `nothing`) are the only exceptions to naming rules.
+
+
+# import
+
+**Semantics**: Import public type definitions and functions from another module into a new namespace or default namespace.
+
+**Example**
+
+1. `import /code/st/Socket` import all type and bindings in this module into current namespace
+2. `import /core/st/Socket -> mod1` same as above but import into `mod1` namespace
+2. `import /core/std/{Queue, Stack, Heap} -> A,B,C`, we have three new modules imported under A,B,C names
+`let createSocket := mod1::createSocket`
+`type socketType := mod1::SocketType`
+2. `import /core/std/{Queue, Stack, Heap}`
+8. `import git/github.com/adsad/dsada`
+9. `import svn/bitcucket.com/adsad/dsada`
+
+**Notes**
+
+0. Each module has it's own namespace which is called default namespace. You can define new namespaces using `import`.
+Any definition using type or let, adds to the default namespace. You can also merge other modules into default namespace using `import _ := ...` statement.
+`/` in the beginning is shortcut for `file/`. Namespace path starts with protocl which determines the location for file for namespace.
+`A::B` means A is alias name and B is name of a type or function or binding.
+**TODO Update**
+1. You cannot import multiple modules using wildcards. Each one must be imported in a separate command.
+2. You can import multiple modules with same package using notation in Example 2.
+3. There must be a single space between `import` keyword and it's parameter.
+4. Import paths starting with `/` mean they are absolute path (Regarding dotLang's runtime import path).
+5. If an import path does not start with `/` means the module path is relative to the current module.
+6. It is an error if as a result of imports, there are two exactly similar functions (same name, input and output). In this case, none of conflicting functions will be available for call. 
+7. If you add a slash at the end of import file, it means import symbols using fully qualified name (Example 3)
+8. Functions imported with fully-qualified method won't be used in method dispatch mechanism. You must explicitly call them or use data types in the module using fully-qualified notation. (Example 4 and 5).
+9. You can use function redirection to work with FQ functions (Example 6) or use type alias to work with FQ type names (Example 7).
+10. `import` supports other systems too. By default it imports modules from local file-system. But depending on the prefix used you can import from other sources too (Example 8).
+
+# Binding
 
 **Semantic**: Used to declare a unique binding name and assign an expression to it.
 
@@ -123,7 +192,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 9. Note that assignment operator, makes a copy of the right side variable and assign it to the left side variable.
 10. Assignment is a statement and not an operator. So you cannot combine it with other things in one line.
 
-## Primitives
+# Simple types
 
 **Semantics**: Provide basic feature to define most commonly used data types.
 
@@ -141,6 +210,27 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 2. `float` is double-precision 8-byte floating point number.
 3. `char` is a single character, represented as an unsigned byte.
 4. Character literals should be enclosed in single-quote.
+
+## Basic types
+
+**Semantics**: These important data types are some basic and well known types with simple definition.
+
+**Syntax**: `nothing`, `bool`, `string`
+
+**Examples**
+
+1. `let g: bool = true`
+3. `let str: string = "Hello world!"`
+
+**Notes**
+
+1. `string` is defined as an array of `char` data type. The conversion from/to string literals is handled by the compiler.
+2. String literals should be enclosed in double quotes. 
+3. String litearls enclosed in backtick can be multi-line and escape character `\` will not be processed in them.
+4. `nothing` is a label type which is used in union types, specially `maybe` type.
+5. `bool` type is a union of two label types: `true` and `false`.
+
+# Compound types
 
 ## Array
 
@@ -215,63 +305,6 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 5. `int | flotOrString` will be simplified to `int | float | string`
 6. Example 6 shows using `@` operator to fetch real type of a union variable.
 
-## Basic types
-
-**Semantics**: These important data types are some basic and well known types with simple definition.
-
-**Syntax**: `nothing`, `bool`, `string`
-
-**Examples**
-
-1. `let g: bool = true`
-3. `let str: string = "Hello world!"`
-
-**Notes**
-
-1. `string` is defined as an array of `char` data type. The conversion from/to string literals is handled by the compiler.
-2. String literals should be enclosed in double quotes. 
-3. String litearls enclosed in backtick can be multi-line and escape character `\` will not be processed in them.
-4. `nothing` is a label type which is used in union types, specially `maybe` type.
-5. `bool` type is a union of two label types: `true` and `false`.
-
-## Type alias
-
-**Semantics**: To define alternative names for a type.
-
-**Syntax**: `type NewName : CurrentName`
-
-**Examples**
-
-1. `type MyInt : int`
-
-**Notes**
-
-1. In the above example, `MyInt` will be exactly same as `int`, without any difference.
-2. This can be used in refactoring process or when there is a name conflict between types imported from different modules. See `import` section for more information.
-3. There must be a single space between `type` and alias name.
-
-## Named type
-
-**Semantics**: To introduce new types based on existing types (called underlying type).
-
-**Syntax**: `type NewType := UnderlyingType`
-
-**Examples**
-
-1. `type MyInt := int`
-2. `type IntArray := array[int]`
-3. `type Point := {x: int, y: int}`
-4. `type bool := true | false`
-5. `let x: MyInt = 10`, `let y: MyInt = MyInt{10}`
-
-**Notes**
-
-1. There must be a single space between `type` and type name.
-2. Example number 4, is the standard definition of `bool` extended primitive type based on `union` and label types.
-3. Although their binary data representations are the same, `MyInt` and `int` are two separate types. This will affect function dispatch. Please refer to corresponding section for more information.
-4. You can use casting operator to convert between a named type and it's underlying type (Example 5).
-5. If a type is implemented in the runtime, it's definition will be `{...}`. For example `type array[T] := {...}`
- 
 ## Struct
 
 **Semantice**: As a product type, this data type is used to defined a set of coherent variables of different types.
@@ -328,6 +361,46 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 6. We use closed recursion to dispatch function calls. This means if a function call is forwarded from `Circle` to `Shape` and inside that function another second function is called which has candidates for both `Circle` and `Shape` the one for `Shape` will be called.
 7. `|{T}|` where T is a named type can be used to indicate all structs that embed that type (Example 4).
 
+# Type system
+
+## Type alias
+
+**Semantics**: To define alternative names for a type.
+
+**Syntax**: `type NewName : CurrentName`
+
+**Examples**
+
+1. `type MyInt : int`
+
+**Notes**
+
+1. In the above example, `MyInt` will be exactly same as `int`, without any difference.
+2. This can be used in refactoring process or when there is a name conflict between types imported from different modules. See `import` section for more information.
+3. There must be a single space between `type` and alias name.
+
+## Named type
+
+**Semantics**: To introduce new types based on existing types (called underlying type).
+
+**Syntax**: `type NewType := UnderlyingType`
+
+**Examples**
+
+1. `type MyInt := int`
+2. `type IntArray := array[int]`
+3. `type Point := {x: int, y: int}`
+4. `type bool := true | false`
+5. `let x: MyInt = 10`, `let y: MyInt = MyInt{10}`
+
+**Notes**
+
+1. There must be a single space between `type` and type name.
+2. Example number 4, is the standard definition of `bool` extended primitive type based on `union` and label types.
+3. Although their binary data representations are the same, `MyInt` and `int` are two separate types. This will affect function dispatch. Please refer to corresponding section for more information.
+4. You can use casting operator to convert between a named type and it's underlying type (Example 5).
+5. If a type is implemented in the runtime, it's definition will be `{...}`. For example `type array[T] := {...}`
+
 ## Casting
 
 **Semantics**: To change type of data without changing the semantics of the data (Used for union, named types and primitives)
@@ -350,6 +423,73 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 4. Similarly, when a function expects an unnamed type, you cannot pass a named type with same underlying type. 
 5. Another usage of casting is to cast between `int` and `float` and `char` (Example 1).
 6. When casting for union types, you get two outputs: Target type and a boolean flag indicating whether cast was successful.
+
+## Type-id operator
+
+# Generics
+
+## Declaration
+
+**Semantics**: To define a function or data type which has one or more types defined like variables. These types will get their values when the function is called or the data type is used to initialize a value.
+
+**Syntax**: 
+
+1. `func funcName[T1, T2, T3, ...](input1: type1, input2: T1, input3: T3, ...)->T2`
+2. `type TypeName[T1, T2, T3, ...] := { field1: int, field2: T2, field3: float, ...}`
+
+**Example**
+
+01. `type Stack[T] := array[T]`
+02. `type Tree[T] := {x: T, left: Tree[T], right: Tree[T]}`
+03. `type optional[T] := nothing|T`
+04. `type BoxedValue[T] := {value:T}`
+05. `func push[T](s: Stack[T], data: T) ...`
+06. `func pop[T](s: Stack[T])->T...`
+07. `func length[T](s: Stack[T])->int`
+08. `func extract[T](that: BoxedValue[T])->T that.value`
+09. `func push[int](s: Stack[int], data:int)...`
+10. `x = optional[int]{12}`
+11. `x = BoxedValue[int]{1}`
+12. `y = BoxedValue[string]{value: "a"}`
+13. `xx = extract(x)`
+14. `yy = extract[string](y)`
+
+**Notes**:
+
+1. Compiler will scan body of generic functions and extract their expected methods. If you invoke those functions with inappropriate types, it will give you list of required methods to implement.
+2. When calling a generic function, you can include type specifier if it cannot be deduced from input or for purpose of documenting the code (Example 13 includes type to document that `yy` will be of type `string`).
+3. You can specialize generic functions for a specific type or types (Example 9 specializes function defined in example 5).
+
+## Phantom types
+
+**Semantics**: To document compile time constrcints on the data without runtime cost using generics or named types (When generic type is not used on the right side of type definition, it will be only for compile time check)
+
+**Syntax**: Like generic data types
+
+**Examples**
+
+1. `type HashType := MD5|SHA1`
+2. `type HashStr[T] := string`
+3. `type Md5Hash := HashStr[MD5]` 
+4. `type Sha1Hash := HashStr[SHA1]`
+5. `func md5(s: string)->Md5Hash { ... }`
+6. `func sha1(s: string)->Sha1Hash { ... }`
+7. `t = Md5Hash{sha1("A")} //ERROR!`
+8. `type SafeString := string`
+9. `func processString(s: string)->SafeString`
+10. `func work(s: SafeString)`
+11. `type DoorState := Open|Closed`
+12. `type Door[T] := string`
+13. `func closeDoor(x: Door[Open]) -> Door[Closed]`
+14. `func openDoor(x: Door[Closed]) -> Door[Open]`
+
+**Notes**
+
+1. Phantom are compile-time label/state attached to a type. You can use these labels to do some compile-time checks and validations. 
+2. You can implement these labels using a named type or a generic type.
+3. Examples 1 to 7 show a et of hash functions that returns a specific type which is derived from `string`. This will prevent the developer sending a md-5 hash to a function which expects sha-1 hash (Example 7 will give compiler error).
+4. Examples 8 to 10 indicate using named functions to represent a "sanitized string" data type. Using this named type as the input for `work` function will prevent calling it with normal strings which are not sanitized through `processString` function.
+5. Examples 11 to 14 indicate a door data type which can only be opened if it is already closed properly and vice versa.
 
 # Functions
 
@@ -483,100 +623,15 @@ Merge with function?
 8. You can put multiple statements in a lambda and separate them with comma (Example 10).
 9. In a range operator, you can specify two lambdas. In this case, the first lambda will return the next element and the second lambda will return output of the current iteration round. The second lambda will not be called if output of the first lambda is same as the end marker.
 
-# Generics
+## assert
 
-## Declaration
+**Semantics**: Early return if a condition is not satisfied
 
-**Semantics**: To define a function or data type which has one or more types defined like variables. These types will get their values when the function is called or the data type is used to initialize a value.
-
-**Syntax**: 
-
-1. `func funcName[T1, T2, T3, ...](input1: type1, input2: T1, input3: T3, ...)->T2`
-2. `type TypeName[T1, T2, T3, ...] := { field1: int, field2: T2, field3: float, ...}`
-
-**Example**
-
-01. `type Stack[T] := array[T]`
-02. `type Tree[T] := {x: T, left: Tree[T], right: Tree[T]}`
-03. `type optional[T] := nothing|T`
-04. `type BoxedValue[T] := {value:T}`
-05. `func push[T](s: Stack[T], data: T) ...`
-06. `func pop[T](s: Stack[T])->T...`
-07. `func length[T](s: Stack[T])->int`
-08. `func extract[T](that: BoxedValue[T])->T that.value`
-09. `func push[int](s: Stack[int], data:int)...`
-10. `x = optional[int]{12}`
-11. `x = BoxedValue[int]{1}`
-12. `y = BoxedValue[string]{value: "a"}`
-13. `xx = extract(x)`
-14. `yy = extract[string](y)`
-
-**Notes**:
-
-1. Compiler will scan body of generic functions and extract their expected methods. If you invoke those functions with inappropriate types, it will give you list of required methods to implement.
-2. When calling a generic function, you can include type specifier if it cannot be deduced from input or for purpose of documenting the code (Example 13 includes type to document that `yy` will be of type `string`).
-3. You can specialize generic functions for a specific type or types (Example 9 specializes function defined in example 5).
-
-## Phantom types
-
-**Semantics**: To document compile time constrcints on the data without runtime cost using generics or named types (When generic type is not used on the right side of type definition, it will be only for compile time check)
-
-**Syntax**: Like generic data types
+**Syntax**: `assert predicate, expression`
 
 **Examples**
 
-1. `type HashType := MD5|SHA1`
-2. `type HashStr[T] := string`
-3. `type Md5Hash := HashStr[MD5]` 
-4. `type Sha1Hash := HashStr[SHA1]`
-5. `func md5(s: string)->Md5Hash { ... }`
-6. `func sha1(s: string)->Sha1Hash { ... }`
-7. `t = Md5Hash{sha1("A")} //ERROR!`
-8. `type SafeString := string`
-9. `func processString(s: string)->SafeString`
-10. `func work(s: SafeString)`
-11. `type DoorState := Open|Closed`
-12. `type Door[T] := string`
-13. `func closeDoor(x: Door[Open]) -> Door[Closed]`
-14. `func openDoor(x: Door[Closed]) -> Door[Open]`
-
-**Notes**
-
-1. Phantom are compile-time label/state attached to a type. You can use these labels to do some compile-time checks and validations. 
-2. You can implement these labels using a named type or a generic type.
-3. Examples 1 to 7 show a et of hash functions that returns a specific type which is derived from `string`. This will prevent the developer sending a md-5 hash to a function which expects sha-1 hash (Example 7 will give compiler error).
-4. Examples 8 to 10 indicate using named functions to represent a "sanitized string" data type. Using this named type as the input for `work` function will prevent calling it with normal strings which are not sanitized through `processString` function.
-5. Examples 11 to 14 indicate a door data type which can only be opened if it is already closed properly and vice versa.
-
-
-# Operators
-
-## Basic operators
-
-**Semantics**: All non-alpabetical notations operators used in the language.
-
-**Syntax**:
-
-1. Conditional operators: `and, or, not, =, !=, >=, <=`
-2. Arithmetic: `+, -, *, /, %, %%, +=, -=, *=, /=`
-3. Assignment: `=`
-4. Type-id: `@`
-6. Casting `{}`
-
-**Examples**
-
-01. `g = @int`, `g = @my_union`
-02. `y:int = x`
-03. `y: int|float = 12`
-
-**Notes**:
-
-1. `=` operator copies data from right-side into the left-side.
-2. `==` will do comparison on a binary-level. If you need custom comparison, you can do in a custom function.
-3. Operators for bitwise operations and exponentiation are defined as functions.
-4. `@`: returns type-id of a named or primitive type as an integer number, or a union variable (Example 1).
-5. `{}`: To cast from named to unnamed type you can use: `Type{value}` notation (Example 2).
-6. `{}`: To cast from variable to a union-type (Example 3).
+1. `assert x>0, error("x must be positive")` 
 
 ## Chain operator
 
@@ -612,72 +667,37 @@ Merge with function?
 11. You can use chain operator to read from map and array too.
 12. The approach of Example 6 and 7 can also be used to do error checking and early return in case of invalid inputs. For example `return validate_data(x,y,z) ~ process1(_)`. If output of `validate_data` is not what `process1` expects, it will be result of the expression.
 
-# Summary of notations
+# Operators
 
-01. `~` chain operator
-02. `@`  type-id operator
-03. `|`  union data type
-04. `_`  placeholder (lambda creator or unknown variable in assignments or function input)
-05. `:`  type declaration for struct and function input and values, map literal, type alias
-06. `:=` Binding declaration
-07. `=`  equality check
-08. `..` range generator
-09. `->` function declaration, import alias
-10. `[]` generics, custom literals
-11. `{}` code block, struct definition and struct literal, casting
-12. `()` function declaration and call
-13. `.`  access struct fields
+## Basic operators
 
-Keywords: `import`, `type`, `let`, `return`, `assert`
+**Semantics**: All non-alpabetical notations operators used in the language.
 
-Primitive data types: `int`, `float`, `char`, `array`, `map`, `func`
+**Syntax**:
 
-Extended primitive type: `nothing`, `bool`, `string`
-
-# Miscellaneous
-
-## import
-
-**Semantics**: Import public type definitions and functions from another module into a new namespace or default namespace.
-
-**Example**
-
-1. `import //code/st/Socket` import all type and bindings in this module into current namespace
-2. `import //core/st/Socket -> mod1` same as above but import into `mod1` namespace
-2. `import //core/std/{Queue, Stack, Heap} -> A,B,C`, we have three new modules imported under A,B,C names
-`let createSocket := mod1::createSocket`
-`type socketType := mod1::SocketType`
-2. `import //core/std/{Queue, Stack, Heap}`
-8. `import git:/github.com/adsad/dsada`
-9. `import svn:/bitcucket.com/adsad/dsada`
-
-**Notes**
-
-0. Each module has it's own namespace which is called default namespace. You can define new namespaces using `import`.
-Any definition using type or let, adds to the default namespace. You can also merge other modules into default namespace using `import _ := ...` statement.
-`//` is shortcut for `/file/`. Namespace path starts with protocl which determines the location for file for namespace.
-`A::B` means A is alias name and B is name of a type or function or binding.
-**TODO Update**
-1. You cannot import multiple modules using wildcards. Each one must be imported in a separate command.
-2. You can import multiple modules with same package using notation in Example 2.
-3. There must be a single space between `import` keyword and it's parameter.
-4. Import paths starting with `/` mean they are absolute path (Regarding dotLang's runtime import path).
-5. If an import path does not start with `/` means the module path is relative to the current module.
-6. It is an error if as a result of imports, there are two exactly similar functions (same name, input and output). In this case, none of conflicting functions will be available for call. 
-7. If you add a slash at the end of import file, it means import symbols using fully qualified name (Example 3)
-8. Functions imported with fully-qualified method won't be used in method dispatch mechanism. You must explicitly call them or use data types in the module using fully-qualified notation. (Example 4 and 5).
-9. You can use function redirection to work with FQ functions (Example 6) or use type alias to work with FQ type names (Example 7).
-10. `import` supports other systems too. By default it imports modules from local file-system. But depending on the prefix used you can import from other sources too (Example 8).
-
-## assert
-
-**Semantics**: Early return if a condition is not satisfied
-
-**Syntax**: `assert predicate, expression`
+1. Conditional operators: `and, or, not, =, !=, >=, <=`
+2. Arithmetic: `+, -, *, /, %, %%, +=, -=, *=, /=`
+3. Assignment: `=`
+4. Type-id: `@`
+6. Casting `{}`
 
 **Examples**
 
-1. `assert x>0, error("x must be positive")`
+01. `g = @int`, `g = @my_union`
+02. `y:int = x`
+03. `y: int|float = 12`
+
+**Notes**:
+
+1. `=` operator copies data from right-side into the left-side.
+2. `==` will do comparison on a binary-level. If you need custom comparison, you can do in a custom function.
+3. Operators for bitwise operations and exponentiation are defined as functions.
+4. `@`: returns type-id of a named or primitive type as an integer number, or a union variable (Example 1).
+5. `{}`: To cast from named to unnamed type you can use: `Type{value}` notation (Example 2).
+6. `{}`: To cast from variable to a union-type (Example 3).
+
+
+# Features
 
 ## Conditionals and pattern matching
 
@@ -782,20 +802,6 @@ TODO: update
 6. The struct defined in example 1 is called a protocol struct because it only contains function pointers. These structs are just like normal structs, so for example you can embed other structs inside them and as long as they only contains function pointers, they will be protocol structs.
 7. `autoBind` works only on protocol structs.
 
-## General rules
-
-- **Encoding**: Modules are encoded in UTF-8 format.
-- **Whitespace**: Any instance of space(' '), tab(`\t`), newline(`\r` and `\n`) are whitespace and will be ignored. 
-- **Indentation**: Indentation must be done using spaces, not tabs. Using 4 spaces is advised but not mandatory.
-- **Comments**: `//` is used to start a comment.
-- **Literals**: `123` integer literal, `'c'` character literal, `'this is a test'` string literal, `0xffe` hexadecimal number, `0b0101011101` binary number. You can separate digits using undescore: `1_000_000`.
-- **Terminator**: Each statement must be in a separate line and must not end with semicolon.
-- **Order**: Each module contains 3 sections: import and binding. The order of the contents of source code file matters: `import` section must come first. If the order is not met, compiler will give errors.
-- Import section is used to reference other modules that are being used in this module.
-- Definitions section is used to define data types.
-- Function section is used to define function bodies.
-- **Encapsulation**: If a name (of a type or function) starts with underscore, means that it is private to the module. If not, it is public and can be used from outside using `import` statement.
-- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeDataType`, `my_package_dir`, `my_modue_file`, `my_namespace`. If these are not met, compiler will give warnings. Primitive data types and basic types defined in core (`array`, `map`, `bool`, `string` and `nothing`) are the only exceptions to naming rules.
 
 # Examples
 
