@@ -1328,6 +1328,10 @@ But what if there is no type?
 This will be translated to this function call: `create_from_literal(["A", "B", "C"], [1,2,3])` and if there is only one such function it will be called without a problem. If there are multiple such functions with same input type, the output type will be important. So it must be specified in the literal definition either by casting or by assigning a type to lvalue or type should be inferred from the context.
 
 ? - If we add support for varargs functions, we can easily support array and map out of core.
+`[1,2,3]` will be converted to: `create` function call with varargs.
+`let create[T] : func(items:VarArg[T])`
+You can call core functions to get ith element from var arg.
+core also has a memory allocation function to allocate and initialize memory of size X with given vararg.
 
 
 ! - Maybe we can use a set of rules or regex to convert code to LLVM IR.
