@@ -1302,7 +1302,7 @@ we may have two types of array: normal linear array with sequential allocated me
 we can think of `[a,b]` notation as a concatenation. So it will create a block of memory which is a concatenated to b in binary representation. this is similar to a struct. an untyped literal: `{field1, field2, ...}`.
 we also have string type with it's special behavior by compiler. So let's just make array a built-in type defined in core and compiler will automatically convert `[1,2,3,...]` type literals to appropriate arrays.
 
-? - proposal: remove map from language and move it to std. 
+Y - proposal: remove map from language and move it to std. 
 We only need array. Also make the literal general. So any other type can use those literals.
 we can do conditionals with array. If we have map, we can also use std.
 q: What about `a(0)` notation?
@@ -1327,7 +1327,7 @@ But what if there is no type?
 `let y := ["A":1, "B":2, "C":3]`
 This will be translated to this function call: `create_from_literal(["A", "B", "C"], [1,2,3])` and if there is only one such function it will be called without a problem. If there are multiple such functions with same input type, the output type will be important. So it must be specified in the literal definition either by casting or by assigning a type to lvalue or type should be inferred from the context.
 
-? - If we add support for varargs functions, we can easily support array and map out of core.
+N - If we add support for varargs functions, we can easily support array and map out of core.
 `[1,2,3]` will be converted to: `create` function call with varargs.
 `let create[T] : func(items:VarArg[T])`
 You can call core functions to get ith element from var arg.
@@ -1377,12 +1377,19 @@ let create := func[T](items: VarArg[T])-> Array[T]
 let malloc[T] := (size: int, data: VarArg[T])->binary[T]
 ```
 There can be other memory allocation functins for other purposes.
+why not replace binary with array? array is more intuitive, let's compiler more optimizations and also you can use array for other purposes. `binary` can be used to allocate custom sized buffers. We can use array for this purpose too.
 
+Y - Remove maps from lang syntax.
+1. State that compiler handles `[1,2,3,...]` and `["A":1, "B":2, ...]` and `[1..10]` literals with function calls to `create`.
+2. `"ABCD"` will be converted to `['A', 'B', ...]` by the compiler.
+3. State that `true` and `false` are 1 and 0 in int context.
+4. `var(1,2,3)` will be converted to `get(var, 1, 2, 3)` function call.
+5. Map will be defined in std and is not part of the language.
 
-? - I think we should add another shortcut: `variable(a,b,c)` will become `get(variable, a, b, c)`. 
+Y - I think we should add another shortcut: `variable(a,b,c)` will become `get(variable, a, b, c)`. 
 So reading from array and map and conditionals will become easier.
 
-? - Can we move loop functions to std? Because of immutability, we cannot have loops with counters. 
+Y - Can we move loop functions to std? Because of immutability, we cannot have loops with counters. 
 `while(x<10) print(x), x++`.
 what is the fundamental things that we need in loops? Can we add it to the core or to the language syntax?
 `while : func(predicate: func(int)->bool, body: func(int)->int`
