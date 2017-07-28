@@ -1332,7 +1332,100 @@ This will be translated to this function call: `create_from_literal(["A", "B", "
 `let create[T] : func(items:VarArg[T])`
 You can call core functions to get ith element from var arg.
 core also has a memory allocation function to allocate and initialize memory of size X with given vararg.
+A `[1,2,3,...]` will be converted to function call: `create[T]` where T is type of elements inside brackets.
+A `["A":1, "B":2, "C":3, ...]` will be converted to function call `create[K,V]` where K,V are key and value types.
+`let create[K,V] : func(array[K], array[V])->map[K,V]`.
+read: `get`
+write: `set`
+But then shall we name them Array and Map like the naming convention? I think we should.
+What will happen to string type then?
+And bool?
+`type String := array[char]`
+`let str: String = "ABCD"` 
+"ABCD" will be converted to `['a', 'b', 'c', 'd']` by compiler.
+1. State that compiler handles `[1,2,3,...]` and `["A":1, "B":2, ...]` and `[1..10]` literals with function calls to `create`.
+2. `"ABCD"` will be converted to `['A', 'B', ...]` by the compiler.
+3. Functions can define to have variable arguments by using special struct defined in core: `VarArg[T]`.
+4. core provides functions to allocate and initialize a piece of memory and get size of a type.
+5. State that `true` and `false` are 1 and 0 in int context.
+6. `var(1,2,3)` will be converted to `get(var, 1, 2, 3)` function call.
+7. Array and Map will be defined in std and are not part of the language.
+But then, how is compiler going to optimize if conditionals? if everything is implemented in std.
+`let cases := [100,0]`
+`let result := cases(x>0)`
+Below should be the same:
+`let result := [100,0](x>0)`
+First compiler needs to call `create` to create something which we don't know.
+q: When we create an array using core, what is type of the output of the function call? buffer?
+We can have a binary type which represents a sequentially allocated memory region. 
+But again, we need to have `binary` primitive type. Why not have `array` primitive type?
+q: How can compiler optimize for conditionals when it cannot provide special behavior for array and map? Maybe we should use another way. Maybe compiler should create `binary` by seeing `[1,2,3,...]`. Then it can assign it to an array maybe.
+`let result := get([100,0],x>0)`. We need to make `get` function call. But if we make it inline, it will be:
+`let result := int{binBufferPtr + int{x>0}`.
+I think this is optimized enough.
+q: When we create an array using core, what is type of the output of the function call? buffer?
+We can have a primitive data type called: `binary` which represent a memory buffer. An array is simply a binary with an additional info: cell size. Binary is more flexible than array.
+So `[1,2,3]` will create a binary or an array?
+compiler will see `[1,2,3]` and call `create[int](1,2,3)`:
+```
+type Array[T] := binary[T]`
+let create := func[T](items: VarArg[T])-> Array[T]
+{
+  return Array[T]{malloc(len(items)*sizeof[T](), items)}
+}
+//in core:
+let malloc[T] := (size: int, data: VarArg[T])->binary[T]
+```
+There can be other memory allocation functins for other purposes.
 
+
+? - I think we should add another shortcut: `variable(a,b,c)` will become `get(variable, a, b, c)`. 
+So reading from array and map and conditionals will become easier.
+
+? - Can we move loop functions to std? Because of immutability, we cannot have loops with counters. 
+`while(x<10) print(x), x++`.
+what is the fundamental things that we need in loops? Can we add it to the core or to the language syntax?
+`while : func(predicate: func(int)->bool, body: func(int)->int`
+we may want to create an array based on output of a loop body's lambda.
+if we define array and map in std, we need to either define loops independent from array and map and put it into core/lang or define it based on map and put it in std.
+Putting them in std is better because it makes language simpler. But note that std should be written in pure dotlang.
+So suppose that I want to write `loop` function to execute a lambda over an array.
+```
+let loop := func(arr: array[T], body: func(T)->U)->array[U]
+{
+  let len := length(arr)
+  return create[T](len*sizeof(T), arr >> body(_))
+  //what does >> do? A >> closure(_)
+}
+```
+Another solution: create an iterator for type X. but we then need `while`.
+we can implement this using recursive function. which accepts an iterator and if it is eof, then return. else call itself again.
+```
+let loop := func(iterator: Iter[T], body: func(T)->U, outputIterator: VarArgIterator[U])->nothing
+{
+  assert !finished(iterator), nothing
+  
+  outputIterator = save(outputIterator, body(getValue(iterator)))
+  iterator = forward(iteartor)
+  outputIterator = forward(outputIterator)
+  return loop(iterator, body, outputIteartor)
+}
+```
+solution: You can't assign output of a loop to an array. You have to use a list. Then you can convert the list to array.
+```
+let innerLoop := func(iterator: Iter[T], body: func(T)->U, head: ListElement[U])->{ListElement[U], Iter[T]}
+{
+  assert !finished(iterator), head
+  let current_loop_value := getValue(iterator)
+  let current_loop_output := body(current_loop_value)
+  
+  return innerLoop(forward(iteartor), body, {data: current_loop_output, next: head})
+}
+let loop := func(arr: Array[T], body: func(T)->U)->LinkedList[U]
+{
+  return innerLoop(getIterator(arr), body, emptyList[U])
+}
+```
 
 ! - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
