@@ -390,7 +390,8 @@ Y - cant user write this?
 struct1
 .
 field1
-```?
+```
+?
 won't it be confusing with chain operator?
 No. user is not support to do that and that will be a syntax error.
 but relying on whitespace around dot is like Python relying on indentation.
@@ -1325,6 +1326,8 @@ If binding has a type specified, then compiler knows the output:
 But what if there is no type?
 `let y := ["A":1, "B":2, "C":3]`
 This will be translated to this function call: `create_from_literal(["A", "B", "C"], [1,2,3])` and if there is only one such function it will be called without a problem. If there are multiple such functions with same input type, the output type will be important. So it must be specified in the literal definition either by casting or by assigning a type to lvalue or type should be inferred from the context.
+
+? - If we add support for varargs functions, we can easily support array and map out of core.
 
 
 ! - Maybe we can use a set of rules or regex to convert code to LLVM IR.
