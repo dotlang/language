@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow operator overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding
+- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs
 
 # Introduction
 
@@ -104,7 +104,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 06. `:=` Binding declaration, named types
 07. `..` range generator
 08. `->` function declaration, module alias
-09. `[]` generics, array and map literals, reading from array and map
+09. `[]` generics, literals
 10. `{}` code block, struct definition and struct literal, casting
 11. `()` function declaration and call
 12. `.`  access struct fields
@@ -112,7 +112,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 **Keywords**: `import`, `type`, `let`, `return`, `assert`
 
-**Primitive data types**: `int`, `float`, `char`, `array`, `map`, `func`
+**Primitive data types**: `int`, `float`, `char`, `array`, `func`
 
 **Extended primitive types**: `nothing`, `bool`, `string`
 
@@ -130,7 +130,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 - Type section is used to define data types.
 - Bindings section is used to define function bodies.
 - **Encapsulation**: If a name (of a type or binding) starts with underscore, means that it is private to the module. If not, it is public and can be used from outside using `import` statement.
-- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeDataType`, `my_package_dir`, `my_modue_file`. If these are not met, compiler will give warnings. Primitive data types and basic types defined in core (`array`, `map`, `bool`, `string` and `nothing`) are the only exceptions to naming rules.
+- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeDataType`, `my_package_dir`, `my_modue_file`. If these are not met, compiler will give warnings. Primitive data types and basic types defined in core (`array`, `bool`, `string` and `nothing`) are the only exceptions to naming rules.
 
 # import
 
@@ -247,6 +247,8 @@ Any definition using type or let, adds to the default namespace. You can also me
 
 ## Array
 
+Compiler handles `["A":1, "B":2, ...]` type of literal with a call to a function `create[K,V]` with two array input for keys and values.
+
 **Semantics**: Define a fixed-size sequence of elements of the same type.
 
 **Syntax**: `array[type]`
@@ -267,32 +269,7 @@ Any definition using type or let, adds to the default namespace. You can also me
 2. In example 7, the range operator `..` is used to generate an array literal. Note that the end number is not included in the result.
 3. You can explicitly state array literal type like in example 8.
 5. You can use array name as a lambda and use chaining operator to read it's data (Example 9) for more information refer to operators and lambda sections.
-6. array is not a function. It acts like a function when reading or writing data.
 7. If you refer to an index outside array bounds, it will give you zero-value + a false flag. Similar to `map`.
-
-## Map
-
-**Semantics**: Represent a mapping from key to value.
-
-**Syntax**: `map[key, value]`
-
-**Examples**
-
-1. `let my_map = ["A": 1, "B": 2, "C": 3]`
-2. `let item1, found = my_map("A")`
-3. `set(my_map, "A", 2)`
-4. `let my_map: map[string,int] = ["A": 1, "B": 2, "C": 3]`
-5. `"A" ~ myMap(_)`
-
-
-**Notes**
-
-1. You need to use core functions to manipulate a map, because (like everything else), they are immutable.
-2. If you query a map for something which does not exist, it will return zero-value for that type + a false flag.
-3. You can explicitly state type of a map literal like example 4.
-4. You can use prefix or suffix notation to read from map (Example 2).
-5. You can use map name as a lambda and use chain operator to read or write values (Example 5). For more information refer to operators and lambda sections.
-6. map is not a function. It acts like a function when reading or writing data.
 
 ## Union
 
@@ -505,6 +482,7 @@ Any definition using type or let, adds to the default namespace. You can also me
 5. Examples 11 to 14 indicate a door data type which can only be opened if it is already closed properly and vice versa.
 
 # Functions
+`var(1,2,3)` will be converted to `get(var, 1, 2, 3)` function call.
 When type of the function indicates input types, in the literal part just mention input names.
 
 ## Declaration
@@ -932,5 +910,21 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Parallel compilation
 - Managing name conflict in large projects
 - Add slice functions to core to return array as a pointer to another array
-- Loop functions in core
+- Add map data type to Std
+- Loop functions in std using recursion and iterators
 - Decide if we can provide std as an external package rather than a built-in.
+- Example of loop:
+```
+let innerLoop := func(iterator: Iter[T], body: func(T)->U, head: ListElement[U])->{ListElement[U], Iter[T]}
+{
+  assert !finished(iterator), head
+  let current_loop_value := getValue(iterator)
+  let current_loop_output := body(current_loop_value)
+  
+  return innerLoop(forward(iteartor), body, {data: current_loop_output, next: head})
+}
+let loop := func(arr: Array[T], body: func(T)->U)->LinkedList[U]
+{
+  return innerLoop(getIterator(arr), body, emptyList[U])
+}
+```
