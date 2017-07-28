@@ -1287,6 +1287,46 @@ But their shortcut should not be special case.
 `var(a1,a2,...)` maps to `get(var, a1, a2, ...)`
 `var(a1, a2, ...)` maps to `var ~ get(_, a1, a2, ...)`.
 
+Y - DRY - When type of the function indicates input types, in the literal part just mention input names.
+`let add:func(int,int)->int := (x,y) -> { return x+y }`
+
+N - If we move map to std, can we also move array?
+we already use functions to read/write.
+The only problem would be processing literals.
+compiler needs to compiler a literal to a set of function calls. It cannot do it in a single function call. Because then, what would be input type of that function?
+`let a := [1,2,3]`
+will be translated to:
+`let a := create_from_literal(3, create_from_literal(2, create_from_literal(1, empty_array)))`
+we may have two types of array: normal linear array with sequential allocated memory, immutable array with tree-based allocation system.
+we can think of `[a,b]` notation as a concatenation. So it will create a block of memory which is a concatenated to b in binary representation. this is similar to a struct. an untyped literal: `{field1, field2, ...}`.
+we also have string type with it's special behavior by compiler. So let's just make array a built-in type defined in core and compiler will automatically convert `[1,2,3,...]` type literals to appropriate arrays.
+
+? - proposal: remove map from language and move it to std. 
+We only need array. Also make the literal general. So any other type can use those literals.
+we can do conditionals with array. If we have map, we can also use std.
+q: What about `a(0)` notation?
+q: but when we have a map-like literal, how can we know the type?
+hashtable can be implemented using linked-list which we can have with struct and generics.
+`myArray(0)` or `get(myArray, 0)`? Simple: second solution. uses already available features of the language. no exceptions.
+how can we implement conditionals with this get notation?
+`return get([0,1], x==0)` means `return 1 if x==0 else return 0`
+If array is going to be built-in type, let's keep `a(0)` notation for them.
+the only concern is about literals. We want the language to be expressibe. so user should be able to easily write array and map literals.
+`[1,2,3]` is an array literal.
+`let y:=[1:2, 3:4, 5:6]` is another literal form which compiler will compile to this:
+`let y := set([1,3,5], [2,4,6])`?
+How are we going to specify type of the data. Compiler is not supposed to infer the type for us, because it can be anything. Note that `map` is no longer part of the lang manual or compiler or even core.
+It is going to be part of std.
+`let y := ["A":1, "B":2, "C":3]`
+`let set:func(array[string], array[int])->map[string, int] := (a,b)->{...}`
+What if someone wants to use above literal for another type?
+If binding has a type specified, then compiler knows the output:
+`let y:map[string,int] := ["A":1, "B":2, "C":3]` So compiler must call the set function which gives `map[string,int]`.
+But what if there is no type?
+`let y := ["A":1, "B":2, "C":3]`
+This will be translated to this function call: `create_from_literal(["A", "B", "C"], [1,2,3])` and if there is only one such function it will be called without a problem. If there are multiple such functions with same input type, the output type will be important. So it must be specified in the literal definition either by casting or by assigning a type to lvalue or type should be inferred from the context.
+
+
 ! - Maybe we can use a set of rules or regex to convert code to LLVM IR.
 or a set of macros. 
 these can indicate micro-commands to be executed by the compiler so we will be coding our compiler into that notation.
