@@ -90,7 +90,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 09. **Map**: `let countryPopulation: map[string, int] := [ "US": 300, "CA": 180, "UK": 80 ]`
 10. **Generics**: `type Stack[T] := { data: array[T], info: int }`
 11. **Union type**: `type Maybe[T] := T | nothing`
-12. **Function**: `let calculate := (x: int, y: string) -> float { return x/y  }`
+12. **Function**: `let calculate: func(int,string)->float := (x, y) -> float { return x/y  }`
 
 # Summary of notations
 
@@ -505,6 +505,7 @@ Any definition using type or let, adds to the default namespace. You can also me
 5. Examples 11 to 14 indicate a door data type which can only be opened if it is already closed properly and vice versa.
 
 # Functions
+When type of the function indicates input types, in the literal part just mention input names.
 
 ## Declaration
 
