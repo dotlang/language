@@ -122,7 +122,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 2. `type`: Used to specify a name for a type.
 3. `let`: Used to define a binding (Assigning a typed-value to a name).
 4. `return`: Used to specify return value of a function.
-5. `assert`: Same as `return` but with a conditional.
+5. `assert`: Conditional `return`.
 
 **Primitive data types**: `int`, `float`, `char`, `array`, `func`
 
@@ -185,7 +185,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 1. `let` keyword is used to assign a unique name to a definition or value. By default type of the name (or binding) is inferred from the value but you can also explicitly specify the type.
 2. Note that the result of `let` is an immutable value. So you cannot re-assign it.
-3. The type of the rvalue (What comes on the right side of `:=`), can be any possible data type including function.
+3. The type of the rvalue (What comes on the right side of `:=`), can be any possible data type including function. Refer to following sections for explanation of different available data types.
 4. If the rvalue is a struct (Refer to corresponding section for more info about struct), You can destruct it to it's elements using this keyword (Example 3 and 5).
 
 **Examples**
@@ -196,25 +196,11 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 4. `let x := y`
 5. `let a,b := {1, 100}`
 
-**Notes**
+# Primitive data types
 
-6. If right side of `=` is a struct type, you can destruct it's type and assign it's value to different bindings (Example 3 and 7). See struct section for more information.
-7. Declaration makes a copy of the right side if it is a simple identifier (Example 4). So any future change to `x` will not affect `y`.
-8. You can use a block as the expression and the last evaluated value inside the block will be bound to the given identifier (Example 5).
-9. Note that assignment operator, makes a copy of the right side variable and assign it to the left side variable.
-10. Assignment is a statement and not an operator. So you cannot combine it with other things in one line.
-
-# Simple types
-
-**Semantics**: Provide basic feature to define most commonly used data types.
+## Simple types
 
 **Syntax**: `int`, `float`, `char`
-
-**Examples**
-
-1. `let x = 12`
-2. `let x = 1.918`
-3. `let x = 'c'`
 
 **Notes**:
 
@@ -222,60 +208,51 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 2. `float` is double-precision 8-byte floating point number.
 3. `char` is a single character, represented as an unsigned byte.
 4. Character literals should be enclosed in single-quote.
-
-## Basic types
-
-**Semantics**: These important data types are some basic and well known types with simple definition.
-
-**Syntax**: `nothing`, `bool`, `string`
+5. Primitive data types include simple types and compound types (array, struct and union).
 
 **Examples**
 
-1. `let g: bool = true`
-3. `let str: string = "Hello world!"`
+1. `let x := 12`
+2. `let x := 1.918`
+3. `let x := 'c'`
 
-**Notes**
+## Compound types
 
-1. `string` is defined as an array of `char` data type. The conversion from/to string literals is handled by the compiler.
-2. String literals should be enclosed in double quotes. 
-3. String litearls enclosed in backtick can be multi-line and escape character `\` will not be processed in them.
-4. `nothing` is a label type which is used in union types, specially `maybe` type.
-5. `bool` type is a union of two label types: `true` and `false`.
-
-# Compound types
-
-## Array
-
-Compiler handles `["A":1, "B":2, ...]` type of literal with a call to a function `create[K,V]` with two array input for keys and values.
-
-**Semantics**: Define a fixed-size sequence of elements of the same type.
+### Array
 
 **Syntax**: `array[type]`
 
+**Notes**
+
+1. Define a fixed-size sequence of elements of the same type.
+2. `array(0)` is a syntax sugar for `get(array, 0)` which returns a data item at a specific index of the array.
+3. In example 7, the range operator `..` is used to generate an array literal.
+4. If you refer to an index outside array bounds, there will be a runtime error.
+5. Compiler handles `["A":1, "B":2, ...]` type of literal with a call to a function `create[K,V]` with two array input for keys and values. This can be used to create associative arrays.
+
 **Examples**
 
-1. `let arr = [1, 2, 3]`
-2. `let g = arr(0)`, `arr = set(arr, 0, 100)`
-4. `let two_d_array: array[array[int]] = [ [1,2,3], [4,5,6] ]`
-5. `let two_d_array = [ [1,2,3], [4,5,6] ]`
-6. `let p = two_d_array(0, 0)`
-7. `let arr2 = [0..10]`
-8. `let arrx: array[int] = [1, 2, 3]`
+1. `let arr := [1, 2, 3]`
+2. `let arrx: array[int] := [1, 2, 3]`
+3. `let g := arr(0)`, `let arr2 := set(arr, 0, 100)`
+4. `let two_d_array: array[array[int]] := [ [1,2,3], [4,5,6] ]`
+5. `let two_d_array := [ [1,2,3], [4,5,6] ]`
+6. `let p := two_d_array(0, 0)`
+7. `let arr2 := [0..10]`
+
+### Union
+
+**Syntax**: `type1 | type2 | IDENTIFIER1 | ...`
 
 **Notes**
 
-`array(0)` becomes a call to `get(array, 0)`.
-1. Above examples show definition and how to read/update array.
-2. In example 7, the range operator `..` is used to generate an array literal. Note that the end number is not included in the result.
-3. You can explicitly state array literal type like in example 8.
-5. You can use array name as a lambda and use chaining operator to read it's data (Example 9) for more information refer to operators and lambda sections.
-7. If you refer to an index outside array bounds, there will be a runtime error.
-
-## Union
-
-**Semantics**: A primitive meta-type to provide same interface which can contain different types.
-
-**Syntax**: `type1 | type2 | IDENTIFIER1 | ...`
+1. A primitive meta-type which can contain different types and identifiers.
+2. You can use either types or identifiers for types of data a union can contain. If you use an identifier you must use a capital letter identifier and it's name should be unique.
+3. Example 1 shows usage of union to define an enum type to represent days of week.
+4. Example 2, defines a union with explicit type and changes it's value to other types in next two examples.
+5. You can use the syntax in example 5 to cast a union to another type. Result will have two parts: data and a flag. If flag is set to false, the conversion is failed.
+6. `int | flotOrString` will be simplified to `int | float | string`
+7. Example 6 shows using `@` operator to fetch real type of a union variable.
 
 **Examples**
 
@@ -286,16 +263,9 @@ Compiler handles `["A":1, "B":2, ...]` type of literal with a call to a function
 5. `int_value, done = int{my_union}`
 6. `let has_int = (@my_int_or_float == @int)`
 
-**Notes**
 
-1. You can use either types or identifiers for union cases. If you use an identifier you must use a capital identifier and it's name should be unique.
-2. Example number 1 shows usage of label types to define an enum type to represent days of week.
-3. Example 2, defines a union with explicit type and changes it's value to other types in next two examples.
-4. You can use the syntax in example 5 to cast a union to another type. Result will have two parts: data and a flag.
-5. `int | flotOrString` will be simplified to `int | float | string`
-6. Example 6 shows using `@` operator to fetch real type of a union variable.
 
-## Struct
+### Struct
 
 **Semantice**: As a product type, this data type is used to defined a set of coherent variables of different types.
 
@@ -329,7 +299,7 @@ Compiler handles `["A":1, "B":2, ...]` type of literal with a call to a function
 5. Example 9 indicates you cannot choose field names for an untyped struct literal.
 6. You can use `.0,.1,.2,...` notaion to access fields inside an untyped tuple (Example 10).
 
-## Composition
+### Composition
 
 **Semantics**: To include (or embed) the data defined in another struct type.
 
@@ -350,6 +320,23 @@ Compiler handles `["A":1, "B":2, ...]` type of literal with a call to a function
 5. Note that polymorphism does not apply to generics. So `array[Circle]` cannot substitute `array[Shape]`. But you can have `array[Circle|Square]` to have a mixed array of different types.
 6. We use closed recursion to dispatch function calls. This means if a function call is forwarded from `Circle` to `Shape` and inside that function another second function is called which has candidates for both `Circle` and `Shape` the one for `Shape` will be called.
 7. `|{T}|` where T is a named type can be used to indicate all structs that embed that type (Example 4).
+
+# Extended primitive types
+
+**Syntax**: `nothing`, `bool`, `string`
+
+**Notes**
+
+1. `string` is defined as an array of `char` data type. The conversion from/to string literals is handled by the compiler.
+2. String literals should be enclosed in double quotes. 
+3. String litearls enclosed in backtick can be multi-line and escape character `\` will not be processed in them.
+4. `nothing` is a special type which is used to denote empty/invalid/missing data.
+5. `bool` type is a union of two label types: `true` and `false`.
+
+**Examples**
+
+1. `let g: bool := true`
+2. `let str: string := "Hello world!"`
 
 # Type system
 
@@ -393,6 +380,7 @@ Compiler handles `["A":1, "B":2, ...]` type of literal with a call to a function
 
 ## Casting
 
+Cast int to char
 **Semantics**: To change type of data without changing the semantics of the data (Used for union, named types and primitives)
 
 **Syntax**: `Type{identifier}`
