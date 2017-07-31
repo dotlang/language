@@ -83,24 +83,23 @@ core
 
 In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages. Each package can potentially contain zero or more modules.
 
-## Language in a nutshell
+# Language in a nutshell
+
+## Main features
 
 01. **Import a module**: `import /core/std/queue` (you can also import from external sources like Github)
-02. **Primitive types**: `int`, `float`, `char`, `array`, `map`, `func`
-03. **Bindings**: `let my_var:int = 19` (type can be automatically inferred, everything is immutable)
-04. **Named type**: `type MyInt := int` (This defines a new type with same binary representation as `int`).
+02. **Primitive types**: `int`, `float`, `char`, `array`, `func`
+03. **Bindings**: `let my_var:int := 19` (type can be automatically inferred, everything is immutable)
+04. **Named type**: `type MyInt := int` (Defines a new type with same binary representation as `int`).
 05. **Struct type**: `type Point := {x: int, y:int, data: float}` (Like `struct` in C)
 06. **Struct literal**: `let location := Point{x=10, y=20, data=1.19}`
-07. **Composition of structs**: By embedding, `type Circle := {Shape, radius: float}`
+07. **Composition**: `type Circle := {Shape, radius: float}` (`Circle` embeds fields of `Shape`)
 08. **Array**: `let jobQueue: array[int] := [0, 1, 2, 3]`
-09. **Map**: `let countryPopulation: map[string, int] := [ "US": 300, "CA": 180, "UK": 80 ]`
-10. **Generics**: `type Stack[T] := { data: array[T], info: int }`
-11. **Union type**: `type Maybe[T] := T | nothing`
-12. **Function**: `let calculate: func(int,string)->float := (x, y) -> float { return x/y  }`
+09. **Generics**: `type Stack[T] := { data: array[T], info: int }` (Defines a blueprint to create new types)
+10. **Union type**: `type Maybe[T] := T | nothing` (Can store either of possible types)
+11. **Function**: `let calculate: func(int,string)->float := (x, y) -> float { return x/y  }`
 
-# Summary of notations
-
-**List of symbols**
+## Symbols
 
 01. `~`  chain operator (To chain function calls)
 02. `@`  type-id operator (Return unique identifier of types)
@@ -116,7 +115,14 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 12. `.`  access struct fields
 13. `::` address inside a module alias
 
-**Keywords**: `import`, `type`, `let`, `return`, `assert`
+## Reserved identifiers
+
+**Keywords**: 
+1. `import`: Used to import types and bindings from another modules.
+2. `type`: Used to specify a name for a type.
+3. `let`: Used to define a binding (Assigning a typed-value to a name).
+4. `return`: Used to specify return value of a function.
+5. `assert`: Same as `return` but with a conditional.
 
 **Primitive data types**: `int`, `float`, `char`, `array`, `func`
 
@@ -135,55 +141,47 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 - Import section is used to reference other modules that are being used in this module.
 - Type section is used to define data types.
 - Bindings section is used to define function bodies.
-- **Encapsulation**: If a name (of a type or binding) starts with underscore, means that it is private to the module. If not, it is public and can be used from outside using `import` statement.
-- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_var_name`, `SomeDataType`, `my_package_dir`, `my_modue_file`. If these are not met, compiler will give warnings. Primitive data types and basic types defined in core (`array`, `bool`, `string` and `nothing`) are the only exceptions to naming rules.
+- **Encapsulation**: If name (of a type or binding) starts with underscore, means that it is private to the module. If not, it is public and can be used from outside using `import` statement.
+- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_binding_name`, `func_arg_name`, `SomeDataType`, `my_package_dir`, `my_modue_file`. If these are not met, compiler will give warnings. Primitive data types and basic types defined in core (`bool`, `string` and `nothing`) are the only exceptions to naming rules.
+- **Spacing**: There must be a single space between `import`, `let` and `type` keywords with their argument that comes after them.
 
-# import
-
-1. This keyword is used to import another module into current module's namespace. After importing a module, you can use it's types, call it's functions or work with the baindings in the module in any way.
-2. You can import a module into a separate named namespace. If you do this, you can only access the definitions by prefixing namespace name.
-3. Note that elements that start with underscore are considered private and will not be available when you import their module.
+# import keyword
 
 **Syntax**
 
 1. `import /path/to/module`
 2. `import /path/to/module -> Name`
 
+**Notes**
+
+1. This keyword is used to import definitions from another module into current module's namespace. After importing a module, you can use it's types, call it's functions or work with the bindings that are defined in that module.
+
+2. You can import a module into a named namespace. If you do this, you can only access it's definitions by prefixing namespace name (`namespace::definition`) (Example 2)
+
+3. Note that elements that start with underscore are considered private and will not be available when you import their module.
+
+4. Any definition using `type` or `let` keywords at module-level, adds to the default namespace. This is what will be imported when you import the module.
+
+5. `/` in the beginning is shortcut for `file/`. Namespace path starts with protocl which determines the location for file for namespace. You can also use other namespace protocols like `Github` (`import git/path/to/module`).
+
+6. You can import multiple modules with same package using notation in Example 3.
+
+5. If an import path starts with `./` or `../` means the module path is relative to the current module.
+
+6. It is an error if as a result of imports, there are two exactly similar bindings (same name and type). In this case, none of conflicting bindings will be available for use.
+
 **Example**
 
 1. `import /core/st/Socket` 
+2. Import another module under a new namespace: `import /core/st/Socket -> mod1` 
+3. Import multiple modules: `import /core/std/{Queue, Stack, Heap}`
+4. `import git/github.com/adsad/dsada`
+5. `import svn/bitcucket.com/adsad/dsada`
+6. Import and rename multiple modules: `import /core/std/{Queue, Stack, Heap} -> A,B,C`
+7. Assign a binding to a definition inside another namespace: `let createSocket := mod1::createSocket`
+8. `type socketType := mod1::SocketType`
 
-Imports all type and bindings in this module into current namespace
-
-2. `import /core/st/Socket -> mod1` 
-
-same as above but import into `mod1` namespace
-2. `import /core/std/{Queue, Stack, Heap} -> A,B,C`, we have three new modules imported under A,B,C names
-`let createSocket := mod1::createSocket`
-`type socketType := mod1::SocketType`
-2. `import /core/std/{Queue, Stack, Heap}`
-8. `import git/github.com/adsad/dsada`
-9. `import svn/bitcucket.com/adsad/dsada`
-
-**Notes**
-
-0. Each module has it's own namespace which is called default namespace. You can define new namespaces using `import`.
-Any definition using type or let, adds to the default namespace. You can also merge other modules into default namespace using `import _ := ...` statement.
-`/` in the beginning is shortcut for `file/`. Namespace path starts with protocl which determines the location for file for namespace.
-`A::B` means A is alias name and B is name of a type or function or binding.
-**TODO Update**
-1. You cannot import multiple modules using wildcards. Each one must be imported in a separate command.
-2. You can import multiple modules with same package using notation in Example 2.
-3. There must be a single space between `import` keyword and it's parameter.
-4. Import paths starting with `/` mean they are absolute path (Regarding dotLang's runtime import path).
-5. If an import path does not start with `/` means the module path is relative to the current module.
-6. It is an error if as a result of imports, there are two exactly similar functions (same name, input and output). In this case, none of conflicting functions will be available for call. 
-7. If you add a slash at the end of import file, it means import symbols using fully qualified name (Example 3)
-8. Functions imported with fully-qualified method won't be used in method dispatch mechanism. You must explicitly call them or use data types in the module using fully-qualified notation. (Example 4 and 5).
-9. You can use function redirection to work with FQ functions (Example 6) or use type alias to work with FQ type names (Example 7).
-10. `import` supports other systems too. By default it imports modules from local file-system. But depending on the prefix used you can import from other sources too (Example 8).
-
-# Binding
+# Bindings (`let` keyword)
 
 **Semantic**: Used to declare a unique binding name and assign an expression to it.
 
@@ -271,6 +269,7 @@ Compiler handles `["A":1, "B":2, ...]` type of literal with a call to a function
 
 **Notes**
 
+`array(0)` becomes a call to `get(array, 0)`.
 1. Above examples show definition and how to read/update array.
 2. In example 7, the range operator `..` is used to generate an array literal. Note that the end number is not included in the result.
 3. You can explicitly state array literal type like in example 8.
@@ -695,7 +694,7 @@ Merge with function?
 6. `{}`: To cast from variable to a union-type (Example 3).
 
 
-# Features
+# Other Features
 
 ## Conditionals and pattern matching
 
