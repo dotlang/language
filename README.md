@@ -155,22 +155,15 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 **Notes**
 
 1. This keyword is used to import definitions from another module into current module's namespace. After importing a module, you can use it's types, call it's functions or work with the bindings that are defined in that module.
-
 2. You can import a module into a named namespace. If you do this, you can only access it's definitions by prefixing namespace name (`namespace::definition`) (Example 2)
-
 3. Note that elements that start with underscore are considered private and will not be available when you import their module.
-
 4. Any definition using `type` or `let` keywords at module-level, adds to the default namespace. This is what will be imported when you import the module.
-
 5. `/` in the beginning is shortcut for `file/`. Namespace path starts with protocl which determines the location for file for namespace. You can also use other namespace protocols like `Github` (`import git/path/to/module`).
-
 6. You can import multiple modules with same package using notation in Example 3.
+7. If an import path starts with `./` or `../` means the module path is relative to the current module.
+8. It is an error if as a result of imports, there are two exactly similar bindings (same name and type). In this case, none of conflicting bindings will be available for use.
 
-5. If an import path starts with `./` or `../` means the module path is relative to the current module.
-
-6. It is an error if as a result of imports, there are two exactly similar bindings (same name and type). In this case, none of conflicting bindings will be available for use.
-
-**Example**
+**Examples**
 
 1. `import /core/st/Socket` 
 2. Import another module under a new namespace: `import /core/st/Socket -> mod1` 
@@ -183,9 +176,17 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 # Bindings (`let` keyword)
 
-**Semantic**: Used to declare a unique binding name and assign an expression to it.
+**Syntax**: 
 
-**Syntax**: `let identifier [: Type] = expression`, `identifier = expression`
+1. `let identifier := definition`
+2. `let identifier : type := definition`
+
+**Notes**
+
+1. `let` keyword is used to assign a unique name to a definition or value. By default type of the name (or binding) is inferred from the value but you can also explicitly specify the type.
+2. Note that the result of `let` is an immutable value. So you cannot re-assign it.
+3. The type of the rvalue (What comes on the right side of `:=`), can be any possible data type including function.
+4. If the rvalue is a struct (Refer to corresponding section for more info about struct), You can destruct it to it's elements using this keyword (Example 3 and 5).
 
 **Examples**
 
@@ -193,16 +194,10 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 2. `let g := 19.8`
 3. `let a,b := process()`
 4. `let x := y`
-6. `let x := y`
-7. `let a,b := {1, 100}`
+5. `let a,b := {1, 100}`
 
 **Notes**
 
-1. `expression` can be a literal, function call, another binding or a combination.
-2. You cannot re-assign a name to a new value, because everything is immutable.
-3. Example 1 defines a binding called `x` which is of type `integer` and stores value of `12` in it.
-4. Compiler automatically infers the type of binding from expression, so type is optional except in special cases (e.g. `unions`)
-5. There should be one space after `let` and before binding name.
 6. If right side of `=` is a struct type, you can destruct it's type and assign it's value to different bindings (Example 3 and 7). See struct section for more information.
 7. Declaration makes a copy of the right side if it is a simple identifier (Example 4). So any future change to `x` will not affect `y`.
 8. You can use a block as the expression and the last evaluated value inside the block will be bound to the given identifier (Example 5).
