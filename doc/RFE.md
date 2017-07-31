@@ -1574,3 +1574,26 @@ union will be rendered as `tag + buffer`. if all cases are primitives or label t
 ! - Allow overloading based on return type and give error if assignments like `x=func1()` are ambiguous.
 We already have this by `autoBind` function.
 So either you have to write: `x: Type1 = func1(1,2,3)` or if it is generic with generic output argument: `x = func1[Type1](1, 2, 3)`
+
+? - Enable writing things like `[1,2, str, ...]` an array of different types and compiler will automatically store them in the memory with level of access same as type. Obviously compiler cannot infer type of `[1,2, "A"]` so it must be specified and it will give developer ability to access inside a data.
+`let x:array[char] = [121212112]` this will create an 8 cell array populated with this integer value.
+In this way we can access internal bytes of an integer or any other data (struct, union, ...).
+
+? - Remove `array` and `map` from core. They will be in std. We can implement them using a linked list.
+Why do we need array? With immutability, we can only use array with hard coded values. Anything else needs a linked-list, including a map. So for example, reading lines of a file into an array is not possible because we cannot mutate the array as we are reading file lines. Haskell uses lists everywhere.
+Maybe we should move array to std and treat it like `map[int,T]` and make `map` a primitive data type.
+And `[1,2,3]` will become `[0:1, 1:2, 2:3]` map literal.
+but can't we make map non-primitive?
+What are operations on a map?
+map is a linked list. Each cell has a data (key) and another linked-list.
+read: hash, get to the data, find key in the list.
+we can create hashtable with fixed bucket count for some cases. 
+e.g. `x = new HashTbl(150)`.
+The thing that we need is `O(1)` access time to elements in a linked list. If we can achieve that, we have an array.
+q: How can we have `O(1)` read for a linked list without using a map? We can have a different data type like `treemap` which uses tree to provide `O(lgn)` access to list elements.
+q: How can I initialize a complex/compond data structure?
+q: How can I read all lines of a file into a hash table with key=line number and value=line contents?
+q: What happens to array and map literals?
+q: What happens to conditionals and loops?
+q: How can I create a map with a lambda which returns map entries?
+q: How can I read lines of a file into a normal linked list?
