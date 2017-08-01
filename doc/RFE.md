@@ -1763,5 +1763,7 @@ Shall we provide a specific notation to destruct a sequence?
 `let x:string := ["A", "BC", "DEF"]` this is a string `"ABCDEF"`
 `let x: seq[string] := ["A", "CD", "DEF"]` this is a sequence of 3 strings
 
-? - How can we represent 2d array?
+N - How can we represent 2d array?
 `[[1,2], [3,4],[5,6]]` is a valid literal.
+
+? - Can we remove `let` keyword? Because it needs to appear with `:=` so just use `:=` to denote a new binding.
