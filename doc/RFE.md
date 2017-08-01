@@ -1706,7 +1706,7 @@ or:
 `let x:Map[string, int] = ["A":1, "B":2]`
 So if type is specified in the context (function output, function argument, binding has a type), compiler will call appropriate functions. If not, it will call default ones.
 
-? - What happens to string concatentation?
+Y - What happens to string concatentation?
 `let a := ["AB", "CD", "EF"]`. Is it a string? or array of strings? or binary?
 String is binary. The size of that binary is specified by the compiler.
 `a` is `"ABCDEF"` which is 6 characters in a binary data. If you call `get` for the string, it will give you the character.
@@ -1745,6 +1745,23 @@ but `let x:binary[string] := ["A", "B", "CDEF"]` will make `x` contain 3 strings
 4. core will provide functions for string search, regex, replace, trim, concat, ....
 5. `[bin1, bin2, bin3]` where type of all bini values is `binary[T]` can be either `binary[T]` or `binary[binary[T]]`. This will depend on the context. `binary[binary[T]]` is the default case unless in the context, it should be `binary[T]`.
 `let x:binary[int] = getSlice(array1, 0)` will give you a binary which points to a space inside another binary. this is provided by core.
+With current definition, what is the difference between binary and array?
+If we are looking for just a different name, binary is not descriptive.
+`block`, `buffer`, `seq`. Let's go with `seq[T]` which is array for all practical reasons.
+It also embeds the self-similar property of the data structure.
+1. the primitive type is `seq[T]` where T denoted type of elements inside the memory block.
+2. binary literal must have items of the same type.
+3. `let x:string := ["A", "B", "CDEF"]` If a binary literal has a specific type with specific T, compiler will convert. So `x` in this example will be `"ABCDEF"` and not 3 strings lied in a binary.
+but `let x:seq[string] := ["A", "B", "CDEF"]` will make `x` contain 3 strings (3 references).
+4. core will provide functions for string search, regex, replace, trim, concat, ....
+5. `[bin1, bin2, bin3]` where type of all bini values is `seq[T]` can be either `seq[T]` or `seq[seq[T]]`. This will depend on the context. `seq[seq[T]]` is the default case unless in the context, type is `seq[T]`.
+`let x:seq[int] = getSlice(array1, 3)` will give you a binary which points to a space inside another sequence. this is provided by core.
+Shall we provide a specific notation to destruct a sequence?
+`let x,y,z := str` x,y,z will catch first 3 characters? No. it does not make sense. this notation is only for struct.
+`let x:seq[seq[int]] := [seq[int], seq[int], seq[int]]` this is 3 pointers. 
+`let x:seq[int] := [seq[int], seq[int], seq[int]]` this is 3 concatenated sequences.
+`let x:string := ["A", "BC", "DEF"]` this is a string `"ABCDEF"`
+`let x: seq[string] := ["A", "CD", "DEF"]` this is a sequence of 3 strings
 
 ? - How can we represent 2d array?
 `[[1,2], [3,4],[5,6]]` is a valid literal.
