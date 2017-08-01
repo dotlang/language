@@ -229,6 +229,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 3. In example 7, the range operator `..` is used to generate an array literal.
 4. If you refer to an index outside array bounds, there will be a runtime error.
 5. Compiler handles `["A":1, "B":2, ...]` type of literal with a call to a function `create[K,V]` with two array input for keys and values. This can be used to create associative arrays.
+6. A `createArray` function is provided by core to generate and initialize dynamic size arrays.
 
 **Examples**
 
