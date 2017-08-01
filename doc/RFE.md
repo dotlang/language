@@ -1705,3 +1705,22 @@ We can always write:
 or:
 `let x:Map[string, int] = ["A":1, "B":2]`
 So if type is specified in the context (function output, function argument, binding has a type), compiler will call appropriate functions. If not, it will call default ones.
+
+? - What happens to string concatentation?
+`let a := ["AB", "CD", "EF"]`. Is it a string? or array of strings? or binary?
+String is binary. The size of that binary is specified by the compiler.
+`a` is `"ABCDEF"` which is 6 characters in a binary data. If you call `get` for the string, it will give you the character.
+What if we want to have array of string?
+`let a: array[string] := ["AB", "CDEE", "EFGHHHHHH"]`
+In this case, size of strings can differ. How can we fetch 2nd item in this array then?
+q: What is the difference between `["A", "B"]` an `[v1, v2]`? Nothing. Data inside v1 and v2 will be copied to the result binary buffer.
+`let a: array[string] := ["AB", "CDEE", "EFGHHHHHH"]`.
+Treating `["A", "B", "C"]` as concatenation of strings is not intuitive and general and will be confusing when people have array too. So let's handle it differently. e.g. `+`.
+`"A" + "B"` will give you `"AB"` string.
+`["A", "BCD", "EFG"]` will give you a binary which has 7 characters.
+`["A", "BCD", "EFG"]` as array of string, will give you an array with 3 pointers.
+`[point1, point2, point3]` what will this binary look like? Will it be 3 pointers? or 3 point data?
+which approach is more general and intuitive?
+
+? - How can we represent 2d array?
+`[[1,2], [3,4],[5,6]]` is a valid literal.
