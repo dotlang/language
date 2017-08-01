@@ -1579,7 +1579,7 @@ So either you have to write: `x: Type1 = func1(1,2,3)` or if it is generic with 
 `let x:array[char] = [121212112]` this will create an 8 cell array populated with this integer value.
 In this way we can access internal bytes of an integer or any other data (struct, union, ...).
 
-? - Remove `array` and `map` from core. They will be in std. We can implement them using a linked list.
+N - Remove `array` and `map` from core. They will be in std. We can implement them using a linked list.
 Why do we need array? With immutability, we can only use array with hard coded values. Anything else needs a linked-list, including a map. So for example, reading lines of a file into an array is not possible because we cannot mutate the array as we are reading file lines. Haskell uses lists everywhere.
 Maybe we should move array to std and treat it like `map[int,T]` and make `map` a primitive data type.
 And `[1,2,3]` will become `[0:1, 1:2, 2:3]` map literal.
@@ -1591,9 +1591,81 @@ we can create hashtable with fixed bucket count for some cases.
 e.g. `x = new HashTbl(150)`.
 The thing that we need is `O(1)` access time to elements in a linked list. If we can achieve that, we have an array.
 q: How can we have `O(1)` read for a linked list without using a map? We can have a different data type like `treemap` which uses tree to provide `O(lgn)` access to list elements.
-q: How can I initialize a complex/compond data structure?
-q: How can I read all lines of a file into a hash table with key=line number and value=line contents?
-q: What happens to array and map literals?
-q: What happens to conditionals and loops?
-q: How can I create a map with a lambda which returns map entries?
-q: How can I read lines of a file into a normal linked list?
+q: How can I initialize an array or map data structure? Done.
+q: How can I read all lines of a file into a hash table with key=line number and value=line contents? Done.
+q: What happens to array and map literals? Done.
+q: What happens to conditionals and loops? Done.
+q: How can I create a map with a lambda which returns map entries? Done.
+q: How can I read lines of a file into a normal linked list? Done.
+a: initialize array and map
+we can use convention: `x := [1,2,3]` or `[1..3]` will call:
+`a=iterate[int](1, nothing)` 
+`b=iterate[int](2, a)`
+`c=iterate[int](3, b)`
+`x=iterate[int](nothing, c)`
+`iterate[T] : func(input:T, state: Iterator[T])`
+`iterate[T] : func(input:nothing, state: Iterator[T])`
+similarly: `x := ["A":1, "B":2, "C":3]` will become:
+`a=iterate[string, int]("A", 1, nothing)`
+`b=iterate[string, int]("B", 2, a)`
+`c=iterate[string, int]("C", 3, b)`
+`x=iterate[string,int](nothing, nothing, c)`
+a: read file lines into a map
+`lines := [readLine(iterator)]`
+every iteration has two outputs: the data for the final output (key, value) and next iterator. But these are the same things. Iterator points to key and values.
+`lines := [filePosition:readLines(_)]` means while iterator?
+Let's use loop function: `loop := func(arr: Array[T], body: func(T)->U)->LinkedList[U]`
+we can have `loop : func(fp: FilePosition, body: func(FilePosition)->{K,V}, forward: func (FilePosition)->FilePosition)->Map[K,V]`. The key is using iterator to create a map.
+suggestion: we can provide `map` function in core. to process a list or any iteratable.
+suggestion: In a hashtable which needs 1024 buckets, create a list of that size.
+a: conditionals and loops. Loops can be implemented using map and loop functions.
+For conditionals we can use assert + lambda: `x=(y:int)->{assert y>0, 100 ; return 200}(current_y)`
+`ifelse: func(predicate: bool, if_true: T, if_false: T)...`
+`ifelseLambda: func(predicate: bool, if_true: func()->T, if_false: func()->T)`
+compiler can inline these calls to make them efficient.
+we can have `treelist` type and `get[T](treelist, index)` will return data at position index after address of treemap.
+But how can we model this? we need a linked list which it's next is calculated automatically. It cannot be extended.
+`type treelist[T] := {data: T, next: treeList[T]|nothing}`
+actually, we can treat an array like a linked-list. so if data points to memory 100 and next points to memory 108 then it is an array. 
+we can have a function in core which receives a size and returns a linkedlist of that size which you cannot extend. The list will be allocated in a consecutive memory block. 
+`type ArrayList[T] := { data:T, next: ArrayList[T]|nothing }`
+`mylist := coreMallocArrayList[ArrayList](100 * sizeof[T])`.
+`let get := func(arr:ArrayList[T], index:int) -> coreGetMemory[T](arr, index*sizeof[T]())`
+We want to have a data structure which is treated differently. Normally a struct field, is a pointer to a memory location. But we want to have it as a value, instead of a pointer.
+Actually we want to `x.field1` return a pointer which is `addr(x)+offset`. where `field1` is a struct (so is `x`).
+`type T := { field1: Point }`
+`let x:T := { field1={x=100, y=200} }`
+`x.field1.x` should be converted to a memory address by compiler. this address will be:
+`temp=addr(x)+offset_field1`
+`result=temp?`
+In arraylist we have a `next` field, we don't want to allocate memory for it. We will be calculating it at runtime.
+but this is against all other language rules.
+Let's just remove `next` field and provide the calculation using iterators and functions.
+`type ArrayList[T] := { data:T }`
+`type Array[T] := {size:int, raw: ArrayList[T]}`
+`mylist := coreMallocArray[ArrayList, Iter](100 * sizeof[T], iter0: Iter, valueGen: func(Iter)->{T, Iter})`.
+`let get := func(arr:ArrayList[T], index:int) -> coreGetMemory[T](arr, index*sizeof[T]())`
+still it's not very readable. We have `ArrayList` which is size of `T` but in practice, we allocate `100*sizeof T` memory to it. This is not readable.
+maybe we should add binary data type. With array we cannot create dynamic sized array. 
+I said "With immutability, we can only use array with hard coded values" But maybe that's not true. We can create an array and at the same time, provide a generation function to allocate it's cells.
+`let x: array[int] := createArray[int](count, iter0: Iter, gen: func(iter: Iter, index:int)->{int, Iter})`
+
+? - Make `binary` the primitive data type. And make `array` in std. But what will be the difference between these two?
+`binary` can be more general. It is a flat memory block. But array uses binary to store a number of data items of the same type. 
+`let x: binary = [1,2, "A", '4']` is valid and compiler will allocate appropriate memory block and set the values there.
+`let x: binary = allocBinary(byte_count, body: func(index:int)->binary)`.
+`get` for binary? it needs offset and output type.
+But for array, it can work with only index.
+generally binary is more general and maybe people can use it to implement O(1) linked-list.
+we can also simulate other things using a binary.
+`let x: binary = [1,2, "A", '4']`
+`let x = [1,2, "A", '4']`
+`let ax: array[int] = [1, 2, 3, 4]`
+`x(1)` means second byte of the binary data.
+`ax(1)` means second element.
+`get[T](a: binary,i: index)`
+`get[T](b: array[T], i: int)`
+`type array[T] := binary`
+array is a phantom type.
+`["A":1, "B":2, ...]`?
+We can generalize it to `[a:b:c:d:... e:f:g:h:... ]` all elements must have same count.
