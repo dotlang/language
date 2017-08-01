@@ -87,13 +87,14 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 ## Main features
 
-01. **Import a module**: `import /core/std/queue` (you can also import from external sources like Github)
-02. **Primitive types**: `int`, `float`, `char`, `seq`, `func`
-03. **Bindings**: `let my_var:int := 19` (type can be automatically inferred, everything is immutable)
-04. **Named type**: `type MyInt := int` (Defines a new type with same binary representation as `int`).
-05. **Struct type**: `type Point := {x: int, y:int, data: float}` (Like `struct` in C)
-06. **Struct literal**: `let location := Point{x=10, y=20, data=1.19}`
-07. **Composition**: `type Circle := {Shape, radius: float}` (`Circle` embeds fields of `Shape`)
+01. **Import a module**: `import /core/std/queue` (you can also import from external sources like Github).
+02. **Primitive types**: `int`, `float`, `char`, `seq`, `func`.
+03. **Bindings**: `let my_var:int := 19` (type can be automatically inferred, everything is immutable).
+04. **Sequence**: `let scores:seq[int] := [1,2,3,4]` (Similar to array).
+05. **Named type**: `type MyInt := int` (Defines a new type with same binary representation as `int`).
+06. **Struct type**: `type Point := {x: int, y:int, data: float}` (Like `struct` in C)
+07. **Struct literal**: `let location := Point{x=10, y=20, data=1.19}`
+08. **Composition**: `type Circle := {Shape, radius: float}` (`Circle` embeds fields of `Shape`)
 09. **Generics**: `type Stack[T] := { data: array[T], info: int }` (Defines a blueprint to create new types)
 10. **Union type**: `type Maybe[T] := T | nothing` (Can store either of possible types)
 11. **Function**: `let calculate: func(int,string)->float := (x, y) -> float { return x/y  }`
@@ -104,7 +105,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 02. `@`  type-id operator (Return unique identifier of types)
 03. `|`  union data type (Define different possible types)
 04. `_`  placeholder (lambda creator, unknown variable in assignments or function argument)
-05. `:`  type declaration for struct and function input and values, compound-literals, type alias
+05. `:`  type declaration for struct and function input and values, custom literals, type alias
 06. `:=` Binding declaration, named types
 07. `..` range generator
 08. `->` function declaration, module alias
@@ -129,6 +130,8 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 **Extended primitive types**: `nothing`, `bool`, `string`
 
 **Other reserved identifiers**: `true`, `false`
+
+**Compound types**: Struct and Union
 
 ## General rules
 
@@ -240,41 +243,43 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 4. Example 2, defines a union with explicit type and changes it's value to other types in next two examples.
 5. You can use the syntax in example 5 to cast a union to another type. Result will have two parts: data and a flag. If flag is set to false, the conversion is failed.
 6. `int | flotOrString` will be simplified to `int | float | string`
-7. Example 6 shows using `@` operator to fetch real type of a union variable.
+7. Example 6 shows using `@` operator to get internal type of a union binding. This operator also can be applied on an actual type.
 
 **Examples**
 
 1. `type day_of_week := SAT | SUN | MON | TUE | WED | THU | FRI`
 2. `let int_or_float: int | float = 11`
-3. `let int_or_float = 12.91`
-4. `let int_or_float = 100`
-5. `int_value, done = int{my_union}`
-6. `let has_int = (@my_int_or_float == @int)`
+3. `let int_or_float := 12.91`
+4. `let int_or_float := 100`
+5. `int_value, done := int{my_union}`
+6. `let has_int := (@my_int_or_float == @int)`
+
+>>>>>>>>>>>>>>>>>>>>
 
 ### Struct
 
-**Semantice**: As a product type, this data type is used to defined a set of coherent variables of different types.
+**Semantice**: As a product type, this data type is used to defined a set of related data items of different types.
 
 **Syntax**: 
 
 1. Declaration: `{field1: type1, field2: type2, field3: type3, ...}` 
-2. Typed Literal: `Type{field1=value1, field2=value2, field3=value3, ...}` 
+2. Typed Literal: `Type{field1:=value1, field2:=value2, field3:=value3, ...}` 
 3. Untyped literal: `{value1, value2, value3, ...}` 
 4. Update: `original_var{field1=value1, field2=value2, ...}` 
 
 **Examples**
 
 1. `type Point := {x:int, y:int}`
-4. `point1 = {100, 200}`
-2. `point2 = Point{x=100, y=200}`
-3. `point3 = Point{100, 200}`
-3. `point4 = point3{y=101}`
-5. `x,y = point1`
-6. `x,y = {100,200}`
-7. `another_point = Point{x=11, y=my_point.y + 200}`
-8. `another_point = my_point`
-9. `new_point = {a=100, b=200} //WRONG!`
-10. `let x = point1.1`
+4. `let point1 := {100, 200}`
+2. `let point2 := Point{x:=100, y:=200}`
+3. `let point3 := Point{100, 200}`
+3. `let point4 := point3{y:=101}`
+5. `let x,y := point1`
+6. `let x,y := {100,200}`
+7. `let another_point := Point{x=11, y=my_point.y + 200}`
+8. `let another_point := my_point`
+9. `let new_point := {a=100, b=200} //WRONG!`
+10. `let x := point1.1`
 
 **Notes**
 
