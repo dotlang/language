@@ -1575,10 +1575,6 @@ union will be rendered as `tag + buffer`. if all cases are primitives or label t
 We already have this by `autoBind` function.
 So either you have to write: `x: Type1 = func1(1,2,3)` or if it is generic with generic output argument: `x = func1[Type1](1, 2, 3)`
 
-? - Enable writing things like `[1,2, str, ...]` an array of different types and compiler will automatically store them in the memory with level of access same as type. Obviously compiler cannot infer type of `[1,2, "A"]` so it must be specified and it will give developer ability to access inside a data.
-`let x:array[char] = [121212112]` this will create an 8 cell array populated with this integer value.
-In this way we can access internal bytes of an integer or any other data (struct, union, ...).
-
 N - Remove `array` and `map` from core. They will be in std. We can implement them using a linked list.
 Why do we need array? With immutability, we can only use array with hard coded values. Anything else needs a linked-list, including a map. So for example, reading lines of a file into an array is not possible because we cannot mutate the array as we are reading file lines. Haskell uses lists everywhere.
 Maybe we should move array to std and treat it like `map[int,T]` and make `map` a primitive data type.
@@ -1650,7 +1646,7 @@ maybe we should add binary data type. With array we cannot create dynamic sized 
 I said "With immutability, we can only use array with hard coded values" But maybe that's not true. We can create an array and at the same time, provide a generation function to allocate it's cells.
 `let x: array[int] := createArray[int](count, iter0: Iter, gen: func(iter: Iter, index:int)->{int, Iter})`
 
-? - Make `binary` the primitive data type. And make `array` in std. But what will be the difference between these two?
+Y - Make `binary` the primitive data type. And make `array` in std. But what will be the difference between these two?
 `binary` can be more general. It is a flat memory block. But array uses binary to store a number of data items of the same type. 
 `let x: binary = [1,2, "A", '4']` is valid and compiler will allocate appropriate memory block and set the values there.
 `let x: binary = allocBinary(byte_count, body: func(index:int)->binary)`.
@@ -1669,3 +1665,43 @@ we can also simulate other things using a binary.
 array is a phantom type.
 `["A":1, "B":2, ...]`?
 We can generalize it to `[a:b:c:d:... e:f:g:h:... ]` all elements must have same count.
+which will be formed into a set of function calls. There is no other way than calling functions step by step to create the hashtable. We should design the map with iteration in mind. Something like a linked-list.
+So: `[a:b c:d e:f]` will become:
+`x=set(nothing, a, b)`
+`y=set(x, c, d)`
+`z=set(y, e, f)`
+`[a,b,c,d]` automatically allocates memory buffer.
+You can also use core functions to allocate and initialize the buffer.
+So what is type of `[1,2,3]`? binary or array?
+If we move array to std, it should be called `Array`. same as `Map`.
+Then it will be just like `int` and `MyInt`. You have to specify type.
+`let x := [1,2,3]` will create binary.
+`let x: Array[int] := [1,2,3]` will create array.
+`let x := Array[int][1,2,3]`
+As Array is no longer part of core, we cannot have a special behavior for it.
+We can just have a notation which determined type.
+`let x := Array[1,2,3]` This means the binary block should be of type `Array[T]`. Definitely the type should have a generic type parameter.
+What about map?
+`let x := Map[1:2, 3:4]` this means what? The type is specified by the available `set` methods. So we don't need to specify type here.
+`func set(mp: Map[K,V]|nothing, k: K, v: V) -> Map[K,V]`. But then again, we may have different set functions each with it's own output type. for example, a set for linked-list with two data points per element.
+`func set(mp: List[K,V]|nothing, k: K, v: V) -> List[K,V]`
+So with `[1:2, 3:4, 5:6]` both of these can be called.
+We can write: `let x := Map[1:2, 3:4, 5:6]` to denote output type we expect. The type of arguments for set if determined in the literal.
+So:
+1. array is removed from primitive types.
+2. binary is primitive now with support from core to initialize using a set of function calls.
+3. `[1,3,4]` is a binary literal but you can use a type prefix with one generic type argument to specialize the type: `Array[1,2,3]`.
+4. Still `array(0)` will be translated to `get(array, 0)` same for binary.
+5. `[a:b:c, d:e:f, ...]` with vairable number of arguments and variable but similar number of elements in each part, will be translated to a set of calls to `set` function. You can prefix this with type to specify which set function to call: `let x := Map["A":1, "B":2]` will call `x=set(nothing, "A", 1)` then `y=set(x, "B", 2)` and output of set is `Map[K,V]`.
+6. For binary literal, you can prefix with type if elements in the literal have the same type.
+
+Y - Enable writing things like `[1,2, str, ...]` an array of different types and compiler will automatically store them in the memory with level of access same as type. Obviously compiler cannot infer type of `[1,2, "A"]` so it must be specified and it will give developer ability to access inside a data.
+`let x:array[char] = [121212112]` this will create an 8 cell array populated with this integer value.
+In this way we can access internal bytes of an integer or any other data (struct, union, ...).
+
+Y - Should we remove type prefix from literals?
+We can always write:
+`let x:Array[int] = [1,2,3]`
+or:
+`let x:Map[string, int] = ["A":1, "B":2]`
+So if type is specified in the context (function output, function argument, binding has a type), compiler will call appropriate functions. If not, it will call default ones.
