@@ -1721,6 +1721,30 @@ Treating `["A", "B", "C"]` as concatenation of strings is not intuitive and gene
 `["A", "BCD", "EFG"]` as array of string, will give you an array with 3 pointers.
 `[point1, point2, point3]` what will this binary look like? Will it be 3 pointers? or 3 point data?
 which approach is more general and intuitive?
+we should handle string concat using functions. If we move string to Std, then maybe we can treat it more intuitively.]
+I think the idea that we can have different data types in a binary can cause confusion because later we will have no way of reading them back. Unless the owner know what is where. But then it can easily define a struct.
+So let's assume binary, is `binary[T]` where T denotes elements inside the memory slot.
+`type string := binary[char]`. means string is a memory buffer containing characters.
+`[1,2,3]` is of type `binary[int]`.
+What about string?
+`["A", "B", "CDEF"]` does it have 6 characters or 3 strings?
+By default it should contain 3 strings. `get(x,0)` should give you `"A"`.
+Can we cast it so that it concats the data? If we do, we should make it general.
+`let x := string["A", "B", "CDEF"]` will give you `"ABCDEF"` string.
+`binary[T][...]` means elements in place of `...` must be of type T or should be casted.
+`[pt1, pt2, pt3]` contains 3 pointers to 3 points.
+Everything in a binary literal is a pointer, except for primitives (int, float, char) which are values. But actually it makes no difference for us.
+`type list[T] := { data: T, next: list[T] }`?
+can we cast a part of a binary, as another binary? `x=[1,2,3,4]`
+I want to have a binary which is `[2,3,4]`. This should be possible using core, is similar to array slice.
+So as a summary:
+1. the primitive type is `binary[T]` where T denoted type of elements inside the memory block.
+2. binary literal must have items of the same type.
+3. `let x:string := ["A", "B", "CDEF"]` If a binary literal has a specific type with specific T, compiler will convert. So `x` in this example will be `"ABCDEF"` and not 3 strings lied in a binary.
+but `let x:binary[string] := ["A", "B", "CDEF"]` will make `x` contain 3 strings (3 references).
+4. core will provide functions for string search, regex, replace, trim, concat, ....
+5. `[bin1, bin2, bin3]` where type of all bini values is `binary[T]` can be either `binary[T]` or `binary[binary[T]]`. This will depend on the context. `binary[binary[T]]` is the default case unless in the context, it should be `binary[T]`.
+`let x:binary[int] = getSlice(array1, 0)` will give you a binary which points to a space inside another binary. this is provided by core.
 
 ? - How can we represent 2d array?
 `[[1,2], [3,4],[5,6]]` is a valid literal.
