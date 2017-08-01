@@ -88,7 +88,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 ## Main features
 
 01. **Import a module**: `import /core/std/queue` (you can also import from external sources like Github)
-02. **Primitive types**: `int`, `float`, `char`, `binary`, `func`
+02. **Primitive types**: `int`, `float`, `char`, `seq`, `func`
 03. **Bindings**: `let my_var:int := 19` (type can be automatically inferred, everything is immutable)
 04. **Named type**: `type MyInt := int` (Defines a new type with same binary representation as `int`).
 05. **Struct type**: `type Point := {x: int, y:int, data: float}` (Like `struct` in C)
@@ -124,7 +124,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 4. `return`: Used to specify return value of a function.
 5. `assert`: Conditional `return`.
 
-**Primitive data types**: `int`, `float`, `char`, `binary`, `func`
+**Primitive data types**: `int`, `float`, `char`, `seq`, `func`
 
 **Extended primitive types**: `nothing`, `bool`, `string`
 
@@ -200,7 +200,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 ## Simple types
 
-**Syntax**: `int`, `float`, `char`, `binary`
+**Syntax**: `int`, `float`, `char`, `seq`
 
 **Notes**:
 
@@ -209,18 +209,22 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 3. `char` is a single character, represented as an unsigned byte.
 4. Character literals should be enclosed in single-quote.
 5. Primitive data types include simple types and compound types (array, struct and union).
-7. `binary` type represents a block of memory space. You can use a binary literal or a function from core to initialize these variables. This type can be used to represent an array or list or any other data structure.
-8. You can use range generator operator `..` to create binary literals (Example 5).
+7. `seq` type represents a block of memory space with elements of the same type. You can use a sequence literal (Example 4) or a function from core to initialize these variables. This type can be used to represent an array or list or any other data structure.
+8. You can use range generator operator `..` to create sequence literals (Example 5).
 9. Any function call in the form of `variable(a,b,c)` will be converted to `get(variable, a, b, c)`. This can be used as a shortcut to read data from array or other data structures.
 10. There is an compound literal form which is written like `[a:b:c d:e:f ...]` where each element has same number of items (3 in this example). This is converted to a set of function calls by the compiler. In each call, one element will be passed to the function. So for example: `let x := ["A":1, "B":2]` will make two calls to create value of x: `x0 := set(nothing, "A", 1)` then `x1 := set(x0, "B", 2)` then `x1` is result of literal evaluation. This form can be used to define literals for more complex data structures when you have appropriate functions (e.g. hashtable literals). If the type of the literal can be inferred from the context, the compiler will call appropriate `set` functions, else the default `set` function based on element types will be called.
+11. A sequence literal which contains other sequence literals, can either be parsed as is, or destruct inner sequences and create a larger sequence. (Example 6 and 7). In example 7, result is a seqence of integers `1, 2, 3, 4, 5, 6`.
+12. Core provices functions to extract part of a sequence as another sequence (Like array slice).
 
 **Examples**
 
 1. `let x := 12`
 2. `let x := 1.918`
 3. `let x := 'c'`
-4. `let x: binary := [1,2, 3.1, "A"]`
+4. `let x: seq[int] := [1,2,3,4]`
 5. `let x := [1..10]`
+6. `let x: seq[seq[int]] := [ [1,2], [3,4], [5,6] ]`
+7. `let x: seq[int] := [ [1,2], [3,4], [5,6] ]`
 
 ## Compound types
 
@@ -311,7 +315,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 **Notes**
 
-1. `string` is defined as a series of `char` data type, represented as `binary` type. The conversion from/to string literals is handled by the compiler.
+1. `string` is defined as a sequence of `char` data type, represented as `binary` type. The conversion from/to string literals is handled by the compiler.
 2. String literals should be enclosed in double quotes. 
 3. String litearls enclosed in backtick can be multi-line and escape character `\` will not be processed in them.
 4. `nothing` is a special type which is used to denote empty/invalid/missing data.
