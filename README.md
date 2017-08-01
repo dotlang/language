@@ -117,6 +117,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 ## Reserved identifiers
 
 **Keywords**: 
+
 1. `import`: Used to import types and bindings from another modules.
 2. `type`: Used to specify a name for a type.
 3. `let`: Used to define a binding (Assigning a typed-value to a name).
@@ -199,7 +200,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 ## Simple types
 
-**Syntax**: `int`, `float`, `char`
+**Syntax**: `int`, `float`, `char`, `binary`
 
 **Notes**:
 
@@ -208,46 +209,20 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 3. `char` is a single character, represented as an unsigned byte.
 4. Character literals should be enclosed in single-quote.
 5. Primitive data types include simple types and compound types (array, struct and union).
+7. `binary` type represents a block of memory space. You can use a binary literal or a function from core to initialize these variables. This type can be used to represent an array or list or any other data structure.
+8. You can use range generator operator `..` to create binary literals (Example 5).
+9. Any function call in the form of `variable(a,b,c)` will be converted to `get(variable, a, b, c)`. This can be used as a shortcut to read data from array or other data structures.
+10. There is an compound literal form which is written like `[a:b:c d:e:f ...]` where each element has same number of items (3 in this example). This is converted to a set of function calls by the compiler. In each call, one element will be passed to the function. So for example: `let x := ["A":1, "B":2]` will make two calls to create value of x: `x0 := set(nothing, "A", 1)` then `x1 := set(x0, "B", 2)` then `x1` is result of literal evaluation. This form can be used to define literals for more complex data structures when you have appropriate functions (e.g. hashtable literals). If the type of the literal can be inferred from the context, the compiler will call appropriate `set` functions, else the default `set` function based on element types will be called.
 
 **Examples**
 
 1. `let x := 12`
 2. `let x := 1.918`
 3. `let x := 'c'`
+4. `let x: binary := [1,2, 3.1, "A"]`
+5. `let x := [1..10]`
 
 ## Compound types
-
-### Binary
-
-**Syntax**: `binary`
-
-**Notes**
-
-This represents a memory block. Can be used to store an array, a list or any other data structure. 
-support from core to initialize using a set of function calls.
-You can use simple literals in the form of `[a,b,c,d,...]` to define a binary literal. Types of elements inside brackets can be different.
-You can specify type for the literal: `let x: Array[int] := [1,2,3,4]`
-You can also use range generator.
-`binary_var(0)` will be translated to `get(binary_var, 0)`.
-
-`[a:b:c, d:e:f, ...]` with vairable number of arguments and variable but similar number of elements in each part, will be translated to a set of calls to `set` function. If type of the expression is obvious from the context, the appropriate set function will be called, else the default set is called. `let x: Map[string,int] := ["A":1, "B":2]` will call `x=set(nothing, "A", 1)` then `y=set(x, "B", 2)` and output of set is `Map[K,V]`. `map("A")` will be translated to `get(map, "A")` function call.
-
-1. Define a fixed-size sequence of elements of the same type.
-2. `array(0)` is a syntax sugar for `get(array, 0)` which returns a data item at a specific index of the array.
-3. In example 7, the range operator `..` is used to generate an array literal.
-4. If you refer to an index outside array bounds, there will be a runtime error.
-5. Compiler handles `["A":1, "B":2, ...]` type of literal with a call to a function `create[K,V]` with two array input for keys and values. This can be used to create associative arrays.
-6. A `createArray` function is provided by core to generate and initialize dynamic size arrays.
-
-**Examples**
-
-1. `let arr := [1, 2, 3]`
-2. `let arrx: array[int] := [1, 2, 3]`
-3. `let g := arr(0)`, `let arr2 := set(arr, 0, 100)`
-4. `let two_d_array: array[array[int]] := [ [1,2,3], [4,5,6] ]`
-5. `let two_d_array := [ [1,2,3], [4,5,6] ]`
-6. `let p := two_d_array(0, 0)`
-7. `let arr2 := [0..10]`
 
 ### Union
 
@@ -271,8 +246,6 @@ You can also use range generator.
 4. `let int_or_float = 100`
 5. `int_value, done = int{my_union}`
 6. `let has_int = (@my_int_or_float == @int)`
-
-
 
 ### Struct
 
@@ -315,6 +288,7 @@ You can also use range generator.
 **Syntax**: `{Parent1Type, field1: type1, Parent2Type, field2: type2, Parent2Type, ...}`
 
 **Examples**
+
 1. `type Shape := { id:int }`
 2. `type Circle := { Shape, radius: float}`
 3. `my_circle = Circle{id=100, radius=1.45}`
@@ -322,6 +296,7 @@ You can also use range generator.
 5. `someShapes = AllShapes[myCircle, mySquare, myRectangle, myTriangle]`
 
 **Notes**
+
 1. In the above example, `Shape` is the contained type and `Circle` is container type.
 2. The language provides pure "contain and delegate" mechanism as a limited form of polymorphism.
 3. A struct type can embed as many other struct types as it wants and forward function calls to embedded structs. Refer to function section for more information about forwarding functions.
@@ -336,7 +311,7 @@ You can also use range generator.
 
 **Notes**
 
-1. `string` is defined as an array of `char` data type. The conversion from/to string literals is handled by the compiler.
+1. `string` is defined as a series of `char` data type, represented as `binary` type. The conversion from/to string literals is handled by the compiler.
 2. String literals should be enclosed in double quotes. 
 3. String litearls enclosed in backtick can be multi-line and escape character `\` will not be processed in them.
 4. `nothing` is a special type which is used to denote empty/invalid/missing data.
