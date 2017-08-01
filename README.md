@@ -88,13 +88,12 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 ## Main features
 
 01. **Import a module**: `import /core/std/queue` (you can also import from external sources like Github)
-02. **Primitive types**: `int`, `float`, `char`, `array`, `func`
+02. **Primitive types**: `int`, `float`, `char`, `binary`, `func`
 03. **Bindings**: `let my_var:int := 19` (type can be automatically inferred, everything is immutable)
 04. **Named type**: `type MyInt := int` (Defines a new type with same binary representation as `int`).
 05. **Struct type**: `type Point := {x: int, y:int, data: float}` (Like `struct` in C)
 06. **Struct literal**: `let location := Point{x=10, y=20, data=1.19}`
 07. **Composition**: `type Circle := {Shape, radius: float}` (`Circle` embeds fields of `Shape`)
-08. **Array**: `let jobQueue: array[int] := [0, 1, 2, 3]`
 09. **Generics**: `type Stack[T] := { data: array[T], info: int }` (Defines a blueprint to create new types)
 10. **Union type**: `type Maybe[T] := T | nothing` (Can store either of possible types)
 11. **Function**: `let calculate: func(int,string)->float := (x, y) -> float { return x/y  }`
@@ -105,7 +104,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 02. `@`  type-id operator (Return unique identifier of types)
 03. `|`  union data type (Define different possible types)
 04. `_`  placeholder (lambda creator, unknown variable in assignments or function argument)
-05. `:`  type declaration for struct and function input and values, map literal, type alias
+05. `:`  type declaration for struct and function input and values, compound-literals, type alias
 06. `:=` Binding declaration, named types
 07. `..` range generator
 08. `->` function declaration, module alias
@@ -124,7 +123,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 4. `return`: Used to specify return value of a function.
 5. `assert`: Conditional `return`.
 
-**Primitive data types**: `int`, `float`, `char`, `array`, `func`
+**Primitive data types**: `int`, `float`, `char`, `binary`, `func`
 
 **Extended primitive types**: `nothing`, `bool`, `string`
 
@@ -218,11 +217,20 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 ## Compound types
 
-### Array
+### Binary
 
-**Syntax**: `array[type]`
+**Syntax**: `binary`
 
 **Notes**
+
+This represents a memory block. Can be used to store an array, a list or any other data structure. 
+support from core to initialize using a set of function calls.
+You can use simple literals in the form of `[a,b,c,d,...]` to define a binary literal. Types of elements inside brackets can be different.
+You can specify type for the literal: `let x: Array[int] := [1,2,3,4]`
+You can also use range generator.
+`binary_var(0)` will be translated to `get(binary_var, 0)`.
+
+`[a:b:c, d:e:f, ...]` with vairable number of arguments and variable but similar number of elements in each part, will be translated to a set of calls to `set` function. If type of the expression is obvious from the context, the appropriate set function will be called, else the default set is called. `let x: Map[string,int] := ["A":1, "B":2]` will call `x=set(nothing, "A", 1)` then `y=set(x, "B", 2)` and output of set is `Map[K,V]`. `map("A")` will be translated to `get(map, "A")` function call.
 
 1. Define a fixed-size sequence of elements of the same type.
 2. `array(0)` is a syntax sugar for `get(array, 0)` which returns a data item at a specific index of the array.
@@ -899,7 +907,7 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Parallel compilation
 - Managing name conflict in large projects
 - Add slice functions to core to return array as a pointer to another array
-- Add map data type to Std
+- Add map and array data type to Std
 - Loop functions in std using recursion and iterators
 - Decide if we can provide std as an external package rather than a built-in.
 - Example of loop:
