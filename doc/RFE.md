@@ -1770,5 +1770,247 @@ Y - What if we have `{1} ~ process(_)` and there are two process functions. one 
 If you write `1 ~ process(_)` it will definitely call `process(int)`. But with struct literal, and two process functions there will be ambiguity.
 Shall compiler give compilation error?
 
-? - Can we remove `let` keyword? Because it needs to appear with `:=` so just use `:=` to denote a new binding.
+N - There can be ambiguity between function boundaries and struct literal/definition.
+shall we change it?
+like:
+```
+let process := (x:int, y:int) -> int 
+{
+}
+```
+proposal 1: like Python, spaces.
+proposal 2: use two keywords to mark beginning and end of function body.
+```
+let process:func(int,int)->int := (x:int, y:int) -> int 
+  let a := 12
+  return x+y+a
+```
+we can say functions must end with `return` keyword. Then we have an end-marker.
+The start-marker is the literal. But this makes code less readable if we define a lambda inside a function.
+proposal 3: Use `$` prefix for tuple literals.
+proposal 4: use `$` prefix for code literals.
+```
+let process := (x:int, y:int) -> int 
+${
+  return x+y 
+}$
+```
+proposal 5: use double braces
+```
+let process := (x:int, y:int) -> int 
+{{
+  return x+y 
+}}
+```
+not good. it is still confusing with cases where we define nested struct literals.
+`{1,{2,3}}`
+proposal 6: begin/end
+proposal 7: Use something else for tuples.
+proposal 8: Dont change. This is not a major problem.
 
+N - `[0:"A", 1:"B", ...]` can be used as a linkedlist-
+
+N - Can we remove `let` keyword? Because it needs to appear with `:=` so just use `:=` to denote a new binding.
+pro: it makes reading easier. DRY. When I use `:=` it means `let`.
+con: Maybe text becomes less readable? So why not remove type too?
+`type MyInt := int`
+`MyInt := int`
+`MyVal:int := 10`
+Or maybe we should use different notations and remove both keywords?
+I think using keywords is better as it makes text more readable.
+`type A := B` type
+`let  A := B` data
+what comes on the left side of `:=` is an identifier and on the right side of `:=` is either a value (5, "A", 1+f(x)...) or a definition `{int,int}`.
+The nature of these two is different. That's why we use different keywords.
+`let` for data
+`type` for types
+`let process : func(int,int)->int := (x:int, y:int)->x+y`
+`func process(x:int, y:int)->x+y` this is shorter but less consistent with other notations that we have.
+But it may be good if we differentiate these two. type and binding definition.
+`type MyInt := int`
+`::value:int = 12`
+But `::` is used elsewhere for namespaces.
+If it is a blueprint, we should use a different keyword (and notation?).
+If it is a value binding, we should use a different keyword (and notation?).
+`let` is used for multiple purposes: define function, data.
+It is one purpose: define a binding. But that binding can be int, string or a function.
+
+N - If we have a binding which is union of functions which accept int, float, string and output int can I call it with a binding of type `int|float|string`?
+`let fn: func(int)->int|func(string)->int|func(float)->int := ...`
+`let data: int|float|string := ...`
+`let o := fn(data)`
+We should be able to do that because it makes sense. Unless of course, the union has a non-function case which does not match.
+But what if union has `func(int)->int` and the data is of type string?
+We should call it with possible inputs for all cases.
+`let fn: func(int)->int|func(string)->int|func(float)->int := ...`
+`let o := invoke(fn, int_var, string_var, float_var)`
+this can be even placed in std.
+Maybe we can even call it with an untyped struct.
+`let o := fn({int_var, string_var, float_var})` But this will be inconsistent with current notation.
+
+N - Can we have variadic templates?
+for example 
+`let fn: func(int)->int|func(string)->int|func(float)->int := ...`
+`let o := invoke(fn, int_var, string_var, float_var)`
+To support cases where we want to support flexible unions with any number of types (e.g. implement pattern matching).
+`let invoke : func(x: T|S|U, t: T, s: S, u: U) ...`
+what about the case with four types?
+We can write one function with 9 or 10 types and call it with any union with less cases? What about the rest of arguments?
+`let invoke : func(x: T|S|U, t: T, s: S, u: U) ...`
+`let invoke : func(x: T|S|U|V, t: T, s: S, u: U, v: V) ...`
+`let invoke : func(x: func(T)->int|func(S)->int|func(U)->int|func(V)->int, data: {T, S, U, V}) ...`
+It will make things complicated. Let's not add them to the language.
+
+Y - Candidates for adding a keyword which makes language more expressive: loop, switch (pattern matching).
+switch: we have a binding A and a list of candidates B1,...,Bn, Each Bi has a lambda.
+To whatever binding they are equal, the lambda will be executed which specifies result of expression:
+```
+let a := match data 1 -> 100, 2->200, 3->300, _->400
+```
+Note that we no longer have code-block. So any complicated calculation should be in a lambda.
+```
+let a := data = 1 -> 100, 2->200, 3->300, _->400
+```
+```
+let a := 200 if data=1 //else nothing, no. we need a more comprehensive system.
+```
+`let a := match data 1 -> 100, 2->200, 3->300, _->400`
+This syntax seems ugly.
+Let's do this: Function can have literals for their input. Use a sequence of lambdas with this format and match keyword which decides which function to call.
+```
+let a := match data [(1)->100, (2)->200, (3)->300, _->400]
+```
+`let a := match X [lambda1, lambda2, lambda3, ...]`
+The first lambda that can accept X will be called and the result will be stored in a.
+All functions must have same input/output type.
+pro: You can extend this. data can be a tuple and lambdas can have multiple inputs.
+con: specifying literal for lambda if made general, will make language more complex and less readable.
+`let a := match data [(1)->100, (2)->200, (3)->300, _->400]`
+Maybe we can add match function to std where we have maps.
+`let a := match(data, [1:100, 2:200, 3:300])`.
+Ok. What about loop?
+```
+let innerLoop := func(iterator: Iter[T], body: func(T)->U, head: ListElement[U])->{ListElement[U], Iter[T]}
+{
+  assert !finished(iterator), head
+  let current_loop_value := getValue(iterator)
+  let current_loop_output := body(current_loop_value)
+  
+  return innerLoop(forward(iteartor), body, {data: current_loop_output, next: head})
+}
+let loop := func(arr: Array[T], body: func(T)->U)->LinkedList[U]
+{
+  return innerLoop(getIterator(arr), body, emptyList[U])
+}
+```
+A loop in general (conditional, iteration, ...) needs these components:
+1. iteration lambda (a lambda which decides whether iteration should be finished).
+2. forward lambda: accepts current iterator and moves it to forward.
+3. body lambda: does the calculation, accepting current iterator, outputs some value or maybe nothing.
+4. Initial value for iterator lambda.
+`iter_lambda := (x:int) -> x<10`
+`fwd_lambda := (x:int) -> x+1`
+`body := (x:int, curr_output)-> print(x), return curr_output`
+`initial := 0`
+above config will print `0,1,2,...,10`
+How can we simplify, compress this and make it more intuitive and general?
+`let initial := 0`
+`let result := loop initial, iter_lambda, fwd_lambda, body` the most mechanical way.
+and also how are we supposed to set value of result?
+body should also accept output iterator too.
+Maybe we can combine body and fwd lambda.
+`let result := body while iter_lambda`
+we can send nothing on the first round.
+```
+let result := (x:int|nothing) -> 
+{ 
+  assert x!= nothing, 0
+  print(x)
+  return x+1 
+} while (x:int) -> x<10
+```
+we can say, the output of the last round of execution is what will be placed on result.
+loop for iteration is not useful right now because almost all collections are going to be placed inside std.
+So let's focus on conditional loop (while). OTOH this type of loop does not have a prefixed number of execution rounds. it may run for no round, 10 rounds or 1000 rounds. So what can we expect from output?
+We can create a linked-list and update it with respect to immutability restriction.
+q: How can we write a conditional which creates a singly linked list with numbers 0 to n where n is variable?
+```
+let n := 100
+//I want result to be 0->1->2->...->99
+//continue execution until the predicate returns nothing.
+let result := (x:int, lst: List[int]) -> 
+{ 
+  asset x<10, nothing
+  let newList := append(lst, x)
+  return newList
+} while (x:int) -> { assert x<10, nothing, return x+1 }
+```
+So we now have two components:
+1. Body lambda: accepts current round value and current intermediate result. does the processing and returns new result.
+2. Predicate: Accepts current round value, return nothing if loop must be finished. else returns next round value.
+We can say, if predicate input is nothing, it is the initial call and it should return the initial value (which can also be nothing if we want to stop loop without even one execution round).
+```
+let n := 100
+//I want result to be 0->1->2->...->99
+//continue execution until the predicate returns nothing.
+let result := (x:int, lst: List[int]|nothing) -> 
+{ 
+  let newList := append(lst, x)
+  return newList
+} 
+while (x:int|nothing) -> 
+{ 
+  assert x=nothing, 0
+  assert x<n, nothing
+  return x+1 
+}
+```
+`let A := body(x, o) while pred(x)`
+1. O := nothing (current loop result)
+2. X := nothing (current iterator value)
+3. X := pred(X)
+4. if X is nothing, return O as the output and finish the loop
+5. O := body(X, O)
+6. goto step 3
+In other words: `let A := body while pred` means run body as long as pred does not return nothing, at which point result of last execution of body will be stored in A.
+better name?
+
+Y - Can we merge assert and return?
+`return 10`
+`assert condition, 10`
+It is not very intuitive to read assert statement.
+`return 10 if x=10`
+problem is: if we add `if` and ban it's use with let, it will not be orth and gen. if we allow, then we will need else.
+`let x := if cond then 10 else 20` this is good but what happens to assert?
+if we use `if` as an expression it cannot replace `assert`.
+if we use `if` as an statement it will be incompatible with assert.
+`retif x>0, "ERROR"`
+`return 10 if x>10`?
+proposal:
+1. remove `assert`
+2. add `if` keyword but it can only be used with `return`.
+`let x := 10 if cond` no.
+`return 10 if x>10` is more readable than assert but it will be confusing because we cannot use it elsewhere.
+Let's not look for `if` because it will make things confusing.
+proposal: use a notation. `x>0 $ 100`. But then we should use the same notation for return.
+`x>0 $ 100` - assert
+`$ 1000` - return
+or:
+`x>0 return 100`
+`return 200`
+`x<100 and y!=100 return 100`
+let's prefix return with the conditional.
+it is not the most readable thing but: we will remove assert, no need to add it.
+It will be more readable than assert.
+
+Y - We really should have a notation for one line so writing two statements in one line should be possible:
+`let fn := (x:int) -> { print(x), return x+1 }`
+proposal: Enable semicolon as statement separator when multiple stmt in the same line.
+`let fn := (x:int) -> { print(x); return x+1 }`
+`let fn := (x:int) -> { print(x)$ return x+1 }`
+`let fn := (x:int) -> { let y := x+1; print(x); print(y); return x+1 }`
+
+Y - What is this:
+`let process := (x:int) -> {print(x)}`
+Does it return a tuple which includes nothing? or just returns nothing.
+Let's use `$` for tuple literals.
