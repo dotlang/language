@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow operator overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), 
+- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, Added `while` keyword, removed `assert` keyword and replace with conditional return,
 
 # Time table
 
@@ -98,6 +98,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 09. **Generics**: `type Stack[T] := { data: array[T], info: int }` (Defines a blueprint to create new types)
 10. **Union type**: `type Maybe[T] := T | nothing` (Can store either of possible types)
 11. **Function**: `let calculate: func(int,string)->float := (x, y) -> float { return x/y  }`
+12. **Loops**: `let countToTen := (x: int, _: int) -> x while (x:int|nothing) -> increaseUntil(x, 10)`
 
 ## Symbols
 
@@ -123,7 +124,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 2. `type`: Used to specify a name for a type.
 3. `let`: Used to define a binding (Assigning a typed-value to a name).
 4. `return`: Used to specify return value of a function.
-5. `assert`: Conditional `return`.
+5. `while`: Loops.
 
 **Primitive data types**: `int`, `float`, `char`, `seq`, `func`
 
@@ -243,6 +244,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 5. You can use the syntax in example 5 to cast a union to another type. Result will have two parts: data and a flag. If flag is set to false, the conversion is failed.
 6. `int | flotOrString` will be simplified to `int | float | string`
 7. Example 6 shows using `@` operator to get internal type of a union binding. This operator also can be applied on an actual type.
+8. If all union cases are function pointers, you can treat it like a function, but must pass appropriate input (Example 7)
 
 **Examples**
 
@@ -252,6 +254,10 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 4. `let int_or_float := 100`
 5. `int_value, done := int{my_union}`
 6. `let has_int := (@my_int_or_float == @int)`
+7. `let fn: func(int)->int|func(string)->int|func(float)->int := ...`
+A union of type function pointer with three possible function types.
+8. `let data: int|float|string := ...`, `let o := fn(data)`
+You can call `fn` like a normal function with an input which should be any of possible input types 
 
 ### Struct
 
@@ -460,13 +466,14 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 5. You cannot define types inside a function (with `type` keywords). All types must be defined at module level.
 6. As a syntax sugar, `var(1,2,3)` will be converted to `get(var, 1, 2, 3)` function call.
 7. Every function must return something which is specified using `return`. If it doesn't, compiler marks output type as `nothing` (Example 2).
-2. A function call with union data, means there must be functions defined for all possible types in the union. See Call resolution section for more information.
-6. You can omit braces and `return` keyword if you only want to return an expression (Examples 4, 5 and 6).
+8. A function call with union data, means there must be functions defined for all possible types in the union. See Call resolution section for more information.
+9. You can omit braces and `return` keyword if you only want to return an expression (Examples 4, 5 and 6).
 10. The function in example 7 will be invoked if the input is either `int` or `Point` or `int|Point`.
 11. There should not be ambiguity when calling a function. So having functions on examples 9 and 3 in same compilation is invalid.
-15. You can use `_` as the name of function input to state you don't need it's value (Example 9).
-16. You can use `_` to ignore a function output (Example 10).
-17. Parentheses are required when calling a function, even if there is no input.
+12. You can use `_` as the name of function input to state you don't need it's value (Example 9).
+13. You can use `_` to ignore a function output (Example 10).
+14. Parentheses are required when calling a function, even if there is no input.
+15. You can prefix `return` with a conditional in which case, return will be triggered only if consition is satisfied (Example 11).
 
 **Examples**
 
@@ -480,6 +487,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 08. `let fileOpen := (path: string) -> File {...}`
 09. `let process := (_:int) -> 10`
 10. `_,b = process2(myPoint)`
+11. `let process := (x:int) -> { x<0 return 100, return 200}` 
 
 ## Call forwarding
 
@@ -542,18 +550,6 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 8. `letlambda1 := process(10, _, _)`
 9. `let ff := (x:int) -> { ff(x+1) }`
 
-## `assert` keyword
-
-**Syntax**: `assert predicate, expression`
-
-**Notes**
-
-1.  Conditional return if a condition is not satisfied.
-
-**Examples**
-
-1. `assert x>0, error("x must be positive")` 
-
 ## Chain operator
 
 **Syntax**: 
@@ -585,6 +581,41 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 9. `func inc(x:int) -> x+1`, `let eleven = 10 . inc(_)`
 10. `func add(x:int, y:int) -> x+y`, `{10, 20} . add(_,_)`
 11. `{1} ~ process(_)`, `1 ~ process(_)`
+
+# `while` keyword
+
+**Syntax**: `let A := body(i, o) while pred(i)`
+
+**Notes**
+
+1. This is used to evaluate a lambda (body) until another lambda (pred) returns `nothing`, at which point, the last result of invoking `body` will be returned as the result of loop execution.
+2. Simple workflow of loops:
+  a. `O := nothing` (current loop result)
+  b. `I := nothing` (current iterator value)
+  c. `I := pred(I)`
+  d. if `I` is nothing, return `O` as the output and finish the loop
+  e. `O := body(I, O)`
+  f. goto step 3
+3. Example 1 creates a linked list starting from 0 up to `n` argument and stores it in `result` binding.
+
+**Examples**
+
+1. 
+```
+let n := 100
+//I want result to be 0->1->2->...->99 as a linked list
+let result := (x:int, lst: List[int]|nothing) -> 
+{ 
+  let newList := append(lst, x)
+  return newList
+} 
+while (x:int|nothing) -> 
+{ 
+  x=nothing return 0
+  x<n return nothing
+  return int{x}.0+1 
+}
+```
 
 # Operators
 
@@ -624,7 +655,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 **Notes**
 
-1. You can use sequence literals to implement conditionals and pattern matching. This is also possible by using lambdas and `assert`.
+1. You can use sequence literals to implement conditionals and pattern matching. This is also possible by using lambdas and conditional `return`.
 2. Example 1 shows a simple case of implementing pattern matching.
 3. You can also use sequence for conditionals. `true` will be mapped to index `1` and `false` to index `0`.
 4. Example 2 shows equivalent of `x = if a>0 then 200 else 100` pseudo-code.
@@ -818,18 +849,6 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Add map and array data type to Std
 - Loop functions in std using recursion and iterators
 - Decide if we can provide std as an external package rather than a built-in.
-- Example of loop:
-```
-let innerLoop := func(iterator: Iter[T], body: func(T)->U, head: ListElement[U])->{ListElement[U], Iter[T]}
-{
-  assert !finished(iterator), head
-  let current_loop_value := getValue(iterator)
-  let current_loop_output := body(current_loop_value)
-  
-  return innerLoop(forward(iteartor), body, {data: current_loop_output, next: head})
-}
-let loop := func(arr: Array[T], body: func(T)->U)->LinkedList[U]
-{
-  return innerLoop(getIterator(arr), body, emptyList[U])
-}
-```
+- Std: Functions to call a union which has a set of function pointers by accepting all possible inputs.
+`let fn: func(int)->int|func(string)->int|func(float)->int := ...`
+`let o := invoke(fn, int_var, string_var, float_var)`
