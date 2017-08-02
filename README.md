@@ -21,7 +21,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow operator overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, Added `while` keyword, removed `assert` keyword and replace with conditional return,
+- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, Added `while` keyword, removed `assert` keyword and replace with conditional return, added `;` and `$` notations
 
 # Time table
 
@@ -115,6 +115,8 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 11. `()` function declaration and call
 12. `.`  access struct fields
 13. `::` address inside a module alias
+14. `;`  Statement separator
+15. `$`  prefix for struct literals
 
 ## Reserved identifiers
 
@@ -140,7 +142,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 - **Indentation**: Indentation must be done using spaces, not tabs. Using 4 spaces is advised but not mandatory.
 - **Comments**: `//` is used to start a comment.
 - **Literals**: `123` is integer literal, `'c'` is character literal, `"this is a test"` string literal, `0xffe` hexadecimal number, `0b0101011101` for binary number. You can separate digits using undescore: `1_000_000`.
-- **Terminator**: Each statement must be in a separate line and must not end with semicolon.
+- **Terminator**: If a statement is in a separate line, it must not end with semicolon. If you want to put multiple statements in the same line, you should separate them using semi colon.
 - **Order**: Each module contains 3 sections: imports, types and binding. The order of the contents of source code file matters: `import` section must come first, then types and lastly bindings. If the order is not met, compiler will give errors.
 - Import section is used to reference other modules that are being used in this module.
 - Type section is used to define data types.
@@ -266,7 +268,7 @@ You can call `fn` like a normal function with an input which should be any of po
 1. Declaration: `{field1: type1, field2: type2, field3: type3, ...}` 
 2. Typed Literal: `Type{field1:=value1, field2:=value2, field3:=value3, ...}` 
 3. Typed Literal: `Type{value1, value2, value3, ...}` 
-4. Untyped literal: `{value1, value2, value3, ...}` 
+4. Untyped literal: `${value1, value2, value3, ...}` 
 5. Update: `original_var{field1=value1, field2=value2, ...}` 
 
 **Notes**
@@ -284,13 +286,13 @@ You can call `fn` like a normal function with an input which should be any of po
 1. `type Point := {x:int, y:int}`
 2. `let point2 := Point{x:=100, y:=200}`
 3. `let point3 := Point{100, 200}`
-4. `let point1 := {100, 200}`
+4. `let point1 := ${100, 200}`
 5. `let point4 := point3{y:=101}`
 6. `let x,y := point1`
-7. `let x,y := {100,200}`
+7. `let x,y := ${100,200}`
 8. `let another_point := Point{x:=11, y:=my_point.y + 200}`
 9. `let another_point := my_point`
-10. `let new_point := {a=100, b=200} //WRONG!`
+10. `let new_point := ${a=100, b=200} //WRONG!`
 11. `let x := point1.1`
 
 ### Composition
@@ -555,7 +557,7 @@ You can call `fn` like a normal function with an input which should be any of po
 **Syntax**: 
 
 1. `input ~ func(_,_,_,...)`
-2. `input ~ {_,_,_,...}`
+2. `input ~ ${_,_,_,...}`, `input ~ Type{_,_,...}`
 3. `input ~ var(_)`
 
 **Notes**
@@ -570,14 +572,14 @@ You can call `fn` like a normal function with an input which should be any of po
 
 **Examples**
 
-1. `{x,y,z} ~ {_,_,_}` => `{x,y,z}`
-2. `g = {5,9} ~ add(_, _)` => `g = add(5,9)`
-3. `{1,2} ~ processTwoData(_, _)` => `processTwoData(1,2)`
-4. `{1,2} ~ processStruct(_)` => `processStruct({1,2})`
+1. `${x,y,z} ~ ${_,_,_}` => `{x,y,z}`
+2. `g = ${5,9} ~ add(_, _)` => `g = add(5,9)`
+3. `${1,2} ~ processTwoData(_, _)` => `processTwoData(1,2)`
+4. `${1,2} ~ processStruct(_)` => `processStruct({1,2})`
 5. `6 ~ addTo(1, _)` => `addTo(1, 6)`
-6. `result = {input, check1(5, _)} ~ pipe(_,_) ~ {_, check3(1,2,_)} ~ pipe(_, _) ~ {_, check5(8,_,1) } ~ pipe(_,_)`
+6. `result = ${input, check1(5, _)} ~ pipe(_,_) ~ ${_, check3(1,2,_)} ~ pipe(_, _) ~ ${_, check5(8,_,1) } ~ pipe(_,_)`
 7. `func pipe[T, O](input: Maybe[T], handler: func(T)->Maybe[O])->Maybe[O] ...`
-8. `{1,2} ~ {_, _, 5} ~ process(_,_,_)` => `process(1,2,5)`.
+8. `${1,2} ~ {_, _, 5} ~ process(_,_,_)` => `process(1,2,5)`.
 9. `func inc(x:int) -> x+1`, `let eleven = 10 . inc(_)`
 10. `func add(x:int, y:int) -> x+y`, `{10, 20} . add(_,_)`
 11. `{1} ~ process(_)`, `1 ~ process(_)`
