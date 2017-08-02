@@ -566,11 +566,11 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 1. To put arguments before function or struct.
 2. You can treat `var(x,y,z)` shortcut like a function call and use it in chain operator. It will be converted to appropriate `get` function.
-1.  `X ~ F(_)` will be translated to `F(X)` unless `F` cannot accept input of type `x`, in which case it will be evaluated to `X`. Note that `X` can be a single value or a struct.
-2. right side of `~` must be either a function with expected inputs or a struct with underscores for substitition or a variable with appropriate `_` for placeholders.
-3. If right-side expects a single input but left side is a struct with multiple items, it will be treated as a struct for the single input of the function (Example 4) but if function expects multiple inputs they will be extracted from left side (Example 3). 
-8. You can also pass a single argument to right side of the chain by using non-struct value. If you pass a struct with single item to a function (Example 11) and there are two candidates for that call (one that accepts `int` and other accepts `{int}`) compiler will give error.
-9. You can use chain operator with custom functions as a monadic processing operator. For example you can streamline calling mutiple error-prone functions without checking for error on each call (Example 6 and 7).
+3.  `X ~ F(_)` will be translated to `F(X)` unless `F` cannot accept input of type `x`, in which case it will be evaluated to `X`. Note that `X` can be a single value or a struct.
+4. right side of `~` must be either a function with expected inputs or a struct with underscores for substitition or a variable with appropriate `_` for placeholders.
+5. If right-side expects a single input but left side is a struct with multiple items, it will be treated as a struct for the single input of the function (Example 4) but if function expects multiple inputs they will be extracted from left side (Example 3). 
+6. You can also pass a single argument to right side of the chain by using non-struct value. If you pass a struct with single item to a function (Example 11) and there are two candidates for that call (one that accepts `int` and other accepts `{int}`) compiler will give error.
+7. You can use chain operator with custom functions as a monadic processing operator. For example you can streamline calling mutiple error-prone functions without checking for error on each call (Example 6 and 7).
 
 **Examples**
 
@@ -584,15 +584,11 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 8. `{1,2} ~ {_, _, 5} ~ process(_,_,_)` => `process(1,2,5)`.
 9. `func inc(x:int) -> x+1`, `let eleven = 10 . inc(_)`
 10. `func add(x:int, y:int) -> x+y`, `{10, 20} . add(_,_)`
-11. `{1} ~ process(_)`
-
->>>>>>>>>>>>>>>>>>>>
+11. `{1} ~ process(_)`, `1 ~ process(_)`
 
 # Operators
 
 ## Basic operators
-
-**Semantics**: All non-alpabetical notations operators used in the language.
 
 **Syntax**:
 
@@ -600,66 +596,60 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 2. Arithmetic: `+, -, *, /, %, %%, +=, -=, *=, /=`
 3. Assignment: `=`
 4. Type-id: `@`
-6. Casting `{}`
+5. Casting `{}`
+6. Chain `~`
+7. Compound literal `[:]`
+
+**Notes**
+
+1. All non-alpabetical notations operators used in the language. The meaning for most of them is like C-based languages except for `=` which is used to check for equality.
+2. `:=` operator is used to define a named type or a binding.
+3. `=` will do comparison on a binary-level. 
+4. Operators for bitwise operations and exponentiation are defined as functions in core.
+5. `@`: returns type-id of a named or primitive type as an integer number, or a union variable (Example 1).
+6. `{}`: To cast from named to unnamed type you can use: `Type{value}` notation (Example 2).
+7. `{}`: To cast from variable to a union-type (Example 3).
+8. You can use compound literal to define a literal which is calculated by calling appropriate `set` functions. These literals have the form of `[a:b:c d:e:f ...]`. In this example the literal has a set of elements each of which has 3 items. This means that to calculate the value of the literal, compild will render `let x0 := set(nothing, a, b, c)`, then `let x1 := set(x0, d, e, f)` and continue until end of values. The final result will be the output value. This notation can be used to have map literals and other custom literals.
 
 **Examples**
 
-01. `g = @int`, `g = @my_union`
-02. `y:int = x`
-03. `y: int|float = 12`
-
-**Notes**:
-
-1. `:=` operator copies data from right-side into the left-side.
-2. `==` will do comparison on a binary-level. If you need custom comparison, you can do in a custom function.
-3. Operators for bitwise operations and exponentiation are defined as functions.
-4. `@`: returns type-id of a named or primitive type as an integer number, or a union variable (Example 1).
-5. `{}`: To cast from named to unnamed type you can use: `Type{value}` notation (Example 2).
-6. `{}`: To cast from variable to a union-type (Example 3).
-
-Compound-literal operator: 
-10. There is an compound literal form which is written like `[a:b:c d:e:f ...]` where each element has same number of items (3 in this example). This is converted to a set of function calls by the compiler. In each call, one element will be passed to the function. So for example: `let x := ["A":1, "B":2]` will make two calls to create value of x: `x0 := set(nothing, "A", 1)` then `x1 := set(x0, "B", 2)` then `x1` is result of literal evaluation. This form can be used to define literals for more complex data structures when you have appropriate functions (e.g. hashtable literals). If the type of the literal can be inferred from the context, the compiler will call appropriate `set` functions, else the default `set` function based on element types will be called.
-
+01. `let g = @int`, `g = @my_union`
+02. `type MyInt := int`, `let x: MyInt = 12`
+03. `let y:int = int{x}`
+04. `let y: int|float = 12`
 
 # Other Features
 
 ## Conditionals and pattern matching
 
-**Semantics**: We use array and map literals to implement conditionals, loops and pattern matching.
+**Notes**
+
+1. You can use sequence literals to implement conditionals and pattern matching. This is also possible by using lambdas and `assert`.
+2. Example 1 shows a simple case of implementing pattern matching.
+3. You can also use sequence for conditionals. `true` will be mapped to index `1` and `false` to index `0`.
+4. Example 2 shows equivalent of `x = if a>0 then 200 else 100` pseudo-code.
 
 **Examples**
 
 1.
 ```
-let y:int = switch(int_or_float_or_string, [@int: (x:int)->1+x, @string: (s:string)->10], ()->100)
-...
-type FF[T,X] := func(T)->X
-func switch[S,T,U,X](v: S|T|U, mp: map[int, FF[S,X]|FF[T,X]||FF[U,X]], else: func()->X)->X {
-  let func_to_call: FF[S,X]|FF[T,X]||FF[U,X], found:bool = [@S: mp[@S], @T: mp[@T], @U: mp[@U]](@v)
-  //reading from map, returns a maybe
-  let result,_ = [true: func_to_call(v), false: else()](found)
-  
-  result
-}
+let v: int|float|string = processData()
+//check: if predicate is satisfied, return lambda result, else nothing
+let x: int|nothing := check[int](@v=@int, ()->100)
+let y: int|nothing := ...
+let z: int|nothing := ...
+//merge takes multiple T|nothing values and returns the only non-nothing one.
+let result : int := merge(x,y,z)
+//or: combine them together
+let result : int := merge(check[int](@v=@int, ()->100), check[int](@v=@string, ()->200), check[int](true, ()->300))
 ```
+
 2.
 ```
-let y:int = switch(int_or_float_or_string, [@int: (x:int)->1+x, @string: (s:string)->10], ()->100)
-...
-type FF[T,X] := func(T)->X
-func switch[S,T,U,X](v: S|T|U, mp: map[int, FF[S,X]|FF[T,X]||FF[U,X]], else: func()->X)->X {
-  let func_to_call: FF[S,X]|FF[T,X]||FF[U,X], found:bool = [@S: mp[@S], @T: mp[@T], @U: mp[@U]](@v)
-  //reading from map, returns a maybe
-  let result,_ = [else(), func_to_call(v)](found)
-  
-  result
-}
+let x:int := [100,200](a>0)
 ```
 
-**Notes**
-
-1. Example 1 shows a simple case of implementing pattern matching.
-2. You can also use array for conditionals. `true` will be mapped to index `1` and `false` to index `0`.
+>>>>>>>>>>>>>>>>>>>>>>>
 
 ## dispose
 
