@@ -1766,4 +1766,9 @@ Shall we provide a specific notation to destruct a sequence?
 N - How can we represent 2d array?
 `[[1,2], [3,4],[5,6]]` is a valid literal.
 
+Y - What if we have `{1} ~ process(_)` and there are two process functions. one that accepts int and one that accepts `{int}`? 
+If you write `1 ~ process(_)` it will definitely call `process(int)`. But with struct literal, and two process functions there will be ambiguity.
+Shall compiler give compilation error?
+
 ? - Can we remove `let` keyword? Because it needs to appear with `:=` so just use `:=` to denote a new binding.
+
