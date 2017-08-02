@@ -649,41 +649,30 @@ let result : int := merge(check[int](@v=@int, ()->100), check[int](@v=@string, (
 let x:int := [100,200](a>0)
 ```
 
->>>>>>>>>>>>>>>>>>>>>>>
-
 ## dispose
-
-**Semantics**: This function is used to invalid a binding and release any memory or resources associated with it.
 
 **Syntax**: `dispose(x)`
 
 **Notes**
 
-1. You cannot use a variable after calling dispose on it. 
-2. You can call dispose on any variable.
-3. Dispose function will properly handle any resource release like closing file or socket or ... .
+1. This function is used to invalidate a binding and release any memory or resources associated with it.
+2. You cannot use a variable after calling dispose on it. 
+3. You can call dispose on any variable.
+4. Dispose function will properly handle any resource release like closing file or socket or ... .
 
-
-## Exclusive resource
-
-**Semantics**: Represents a system resource (file, network socket, database connection, ...) which needs to have an exclusive owner and cannot be duplicated like normal values.
+## Exclusive resources
 
 **Syntax**: Exclusive resources are defined in core (file descriptor, thread, sockets) and contain an identifier to indicate their owner thread.
 
 **Notes**
 
-1. These types are not supposed to be shared between two threads, because of their inherent mutability. If this happens, runtime will throw error. They all contain an owner thread identifier which is checked by core functions.
-2. If you are not returning an exclusive resource, you must explicitly call `dispose` on it. Else compiler will issue error.
+1. These represent a system resource (file, network socket, database connection, ...) which needs to have an exclusive owner thread.
+2. These types are not supposed to be shared between two threads, because of their inherent mutability. If this happens, runtime will throw error. They all contain an owner thread identifier which is checked by core functions.
+3. If you are not returning an exclusive resource created in the current function, you must explicitly call `dispose` on it. Else compiler will issue error.
 
 ## Exception handling
 
-**Semantics**: Handle unexpected and rare conditions.
-
-**Syntax**: `func process() -> int|exception { ... exception{...} }`
-
-**Examples**
-
-1. `result: int|exception] = invoke(my_function)`
+**Syntax**: `func process() -> int|exception { ... return exception{...} }`
 
 **Notes**
 
@@ -692,11 +681,22 @@ let x:int := [100,200](a>0)
 3. If a really unrecoverable error happens, you should exit the application by calling `exit` function in core.
 4. In special cases like a plugin system, where you must control exceptions, you can use core function `invoke` which will return an error result if the function which it calls exits.
 
+**Examples**
+
+1. `result: int|exception = invoke(my_function)`
+
 ## autoBind
 
-**Semantics**: We can cast a namespace to a struct. This act will map bindings with similar names to fields inside the struct.
-
 **Syntax**: `x = StructType{Alias}`, `x = StructType{::}`
+
+**Notes**
+
+1. There is a special usage for casting operator, when you cast a namespace (`::` or namespace alias) to a struct. This will map bindings with similar names to fields inside the struct.
+1. Example 1 defines a general struct which contains a function pointer field.
+2. Example 2 defines a function to sort any given array of any type. But to do the sort, it needs a function to compare data of that type. So it defines an input of type `Comparer[T]` to include a function to do the comparison.
+3. Example 3 shows how to call `sort` function defined in example 2. You simply cast current namespace to `Comparer` to create appropriate struct of appropriate function pointers by the compiler. So `f.compare` field will contain a function pointer to a function with the same name and signature defined in the current namespace.
+4. Example 4 is same as example 3 but with explicit types. You can omit these types as compiler will infer them.
+5. This mechanism can be used to define expected protocol (a set of functions and data) as a function input.
 
 **Examples**
 
@@ -705,30 +705,13 @@ let x:int := [100,200](a>0)
 3. `sort(myIntArray, Comparer{::})`
 4. `sort(myIntArray, Comparer[int]{::})`
 
-**Notes**
-
-TODO: update
-1. Example 1 defines a general struct which only contains function pointer fields.
-2. Example 2 defines a function to sort any given array of any type. But to do the sort, it needs a function to compare data of that type. So it defines an input of type `Comparer[T]` to include a function to do the comparison.
-3. Example 3 shows how to call `sort` function defined in example 2. You simply call `autoBind` to create appropriate struct of appropriate types by the compiler. So `f.compare` field will contain a function pointer to a function with the same name and signature.
-4. Example 4 is same as example 3 but with explicit types. You can omit these types as compiler will infer them.
-5. You can also create your own custom struct with appropriate function pointers to be used in sort function. `autoBind` just helps you create this set of function pointers easier.
-6. The struct defined in example 1 is called a protocol struct because it only contains function pointers. These structs are just like normal structs, so for example you can embed other structs inside them and as long as they only contains function pointers, they will be protocol structs.
-7. `autoBind` works only on protocol structs.
-
-
 # Examples
 
 ## Empty application
 
 ```
-func main() -> 
-{
-    0 
-}
+let main := () -> 0
 ```
-
-or even simpler: `func main() -> 0`
 
 This is a function, called `main` which returns `0` (very similar to C/C++ except `main` function has no input).
 
@@ -773,7 +756,7 @@ func innerEval(exp: Expression) -> float
 
 # Other components
 
-## Core package
+## Core packages
 
 A set of core packages will be included in the language which provide basic and low-level functionality (This part may be written in C):
 
