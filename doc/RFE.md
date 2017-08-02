@@ -2014,3 +2014,6 @@ Y - What is this:
 `let process := (x:int) -> {print(x)}`
 Does it return a tuple which includes nothing? or just returns nothing.
 Let's use `$` for tuple literals.
+
+Y - semicolon can be confusing.
+Let's use `&`. 
