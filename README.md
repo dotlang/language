@@ -215,7 +215,6 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 7. `seq` type represents a block of memory space with elements of the same type. You can use a sequence literal (Example 4) or a function from core to initialize these variables. This type can be used to represent an array or list or any other data structure.
 8. You can use range generator operator `..` to create sequence literals (Example 5).
 9. Any function call in the form of `variable(a,b,c)` will be converted to `get(variable, a, b, c)`. This can be used as a shortcut to read data from array or other data structures.
-10. There is an compound literal form which is written like `[a:b:c d:e:f ...]` where each element has same number of items (3 in this example). This is converted to a set of function calls by the compiler. In each call, one element will be passed to the function. So for example: `let x := ["A":1, "B":2]` will make two calls to create value of x: `x0 := set(nothing, "A", 1)` then `x1 := set(x0, "B", 2)` then `x1` is result of literal evaluation. This form can be used to define literals for more complex data structures when you have appropriate functions (e.g. hashtable literals). If the type of the literal can be inferred from the context, the compiler will call appropriate `set` functions, else the default `set` function based on element types will be called.
 11. A sequence literal which contains other sequence literals, can either be parsed as is, or destruct inner sequences and create a larger sequence. (Example 6 and 7). In example 7, result is a seqence of integers `1, 2, 3, 4, 5, 6`.
 12. Core provices functions to extract part of a sequence as another sequence (Like array slice).
 
@@ -254,65 +253,63 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 5. `int_value, done := int{my_union}`
 6. `let has_int := (@my_int_or_float == @int)`
 
->>>>>>>>>>>>>>>>>>>>
-
 ### Struct
-
-**Semantice**: As a product type, this data type is used to defined a set of related data items of different types.
 
 **Syntax**: 
 
 1. Declaration: `{field1: type1, field2: type2, field3: type3, ...}` 
 2. Typed Literal: `Type{field1:=value1, field2:=value2, field3:=value3, ...}` 
-3. Untyped literal: `{value1, value2, value3, ...}` 
-4. Update: `original_var{field1=value1, field2=value2, ...}` 
+3. Typed Literal: `Type{value1, value2, value3, ...}` 
+4. Untyped literal: `{value1, value2, value3, ...}` 
+5. Update: `original_var{field1=value1, field2=value2, ...}` 
+
+**Notes**
+
+1. Struct represents a set of related data items of different types.
+1. Example 1 defines a named type for a 2-D point and next 2 examples show how to initialise variables of that type. See "Named Types" section for more info about named types.
+2. If you define an untyped literal (Example 4), you can access it's component by destruction (Example 6).
+3. Examples 6 and 7 show how to destruct a struct and extract it's data.
+4. Example 8 and 9 are the same and show how to define a struct based on another struct.
+5. Example 10 indicates you cannot choose field names for an untyped struct literal.
+6. You can use `.0,.1,.2,...` notaion to access fields inside an untyped tuple (Example 11).
 
 **Examples**
 
 1. `type Point := {x:int, y:int}`
-4. `let point1 := {100, 200}`
 2. `let point2 := Point{x:=100, y:=200}`
 3. `let point3 := Point{100, 200}`
-3. `let point4 := point3{y:=101}`
-5. `let x,y := point1`
-6. `let x,y := {100,200}`
-7. `let another_point := Point{x=11, y=my_point.y + 200}`
-8. `let another_point := my_point`
-9. `let new_point := {a=100, b=200} //WRONG!`
-10. `let x := point1.1`
-
-**Notes**
-
-1. Example 1 defines a named type for a 2-D point and next 2 examples show how to initialise variables of that type.
-2. If you define an untyped literal (Example 4), you can access it's component by destruction (Example 5).
-3. Examples 5 and 6 show how to destruct a struct and extract it's data.
-4. Example 7 and 8 are the same and show how to define a struct based on another struct.
-5. Example 9 indicates you cannot choose field names for an untyped struct literal.
-6. You can use `.0,.1,.2,...` notaion to access fields inside an untyped tuple (Example 10).
+4. `let point1 := {100, 200}`
+5. `let point4 := point3{y:=101}`
+6. `let x,y := point1`
+7. `let x,y := {100,200}`
+8. `let another_point := Point{x:=11, y:=my_point.y + 200}`
+9. `let another_point := my_point`
+10. `let new_point := {a=100, b=200} //WRONG!`
+11. `let x := point1.1`
 
 ### Composition
 
-**Semantics**: To include (or embed) the data defined in another struct type.
-
 **Syntax**: `{Parent1Type, field1: type1, Parent2Type, field2: type2, Parent2Type, ...}`
+
+**Notes**
+
+1. Composition is used to include (or embed) a struct in another struct. This can be used to represent "is-a" or "has-a" relationship. 
+2. A struct can embed as many other structs as it wants.
+3. The language provides pure "contain and delegate" mechanism as a limited form of polymorphism.
+4. In Example 2, `Shape` is the contained type and `Circle` is container type.
+5. To have polymorphism in function calls, you should forward function calls to embedded structs (Calls on a `Circle` should be forwarded to calls on it's `Shape`). Refer to function section for more information about forwarding functions.
+6. You can define a union type which accepts all struct types which embed a specific struct type. See examples 4 and 5.
+7. Note that polymorphism does not apply to generics. So `seq[Circle]` cannot substitute `seq[Shape]`. But you can have `seq[Circle|Square]` to have a mixed sequence of different types.
+8. We use closed recursion to forward function calls. This means if a function call is forwarded from `Circle` to `Shape` and inside that function, a second function is called which has candidates for both `Circle` and `Shape` the one for `Shape` will be called.
+9. `|{T}|` where T is a named type can be used to indicate all structs that embed that type (Example 4).
 
 **Examples**
 
 1. `type Shape := { id:int }`
 2. `type Circle := { Shape, radius: float}`
-3. `my_circle = Circle{id=100, radius=1.45}`
+3. `let my_circle := Circle{id=100, radius=1.45}`
 4. `type AllShapes := |{Shape}|`
-5. `someShapes = AllShapes[myCircle, mySquare, myRectangle, myTriangle]`
-
-**Notes**
-
-1. In the above example, `Shape` is the contained type and `Circle` is container type.
-2. The language provides pure "contain and delegate" mechanism as a limited form of polymorphism.
-3. A struct type can embed as many other struct types as it wants and forward function calls to embedded structs. Refer to function section for more information about forwarding functions.
-4. You can define a union type which accepts all struct types which embed a specific struct type. See examples 4 and 5.
-5. Note that polymorphism does not apply to generics. So `array[Circle]` cannot substitute `array[Shape]`. But you can have `array[Circle|Square]` to have a mixed array of different types.
-6. We use closed recursion to dispatch function calls. This means if a function call is forwarded from `Circle` to `Shape` and inside that function another second function is called which has candidates for both `Circle` and `Shape` the one for `Shape` will be called.
-7. `|{T}|` where T is a named type can be used to indicate all structs that embed that type (Example 4).
+5. `let someShapes:AllShapes := [myCircle, mySquare, myRectangle, myTriangle]`
 
 # Extended primitive types
 
@@ -320,11 +317,12 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 **Notes**
 
-1. `string` is defined as a sequence of `char` data type, represented as `binary` type. The conversion from/to string literals is handled by the compiler.
-2. String literals should be enclosed in double quotes. 
-3. String litearls enclosed in backtick can be multi-line and escape character `\` will not be processed in them.
-4. `nothing` is a special type which is used to denote empty/invalid/missing data.
-5. `bool` type is a union of two label types: `true` and `false`.
+1. These types are not built-in types and are defined using other types, but due to their important role, they are defined in the core.
+2. `string` is defined as a sequence of `char` data type, represented as `seq[char]` type. The conversion from/to string literals is handled by the compiler.
+3. String literals should be enclosed in double quotes. 
+4. String litearls enclosed in backtick can be multi-line and escape character `\` will not be processed in them.
+5. `nothing` is a special type which is used to denote empty/invalid/missing data. This type has only one value which is the same identifier.
+6. `bool` type is a union of two special identifiers: `true` and `false`.
 
 **Examples**
 
@@ -335,78 +333,75 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 ## Type alias
 
-**Semantics**: To define alternative names for a type.
+**Syntax**: `type NewName : ExistingTypeName`
 
-**Syntax**: `type NewName : CurrentName`
+**Notes**
+
+1. This is used to define alternative names for the same type.
+2. The alias type is exactly same as the existing type (Unlike named type declaration which creates a new type).
+3. This can be used in refactoring process or when there is a name conflict between types imported from different modules. See `import` section for more information.
 
 **Examples**
 
 1. `type MyInt : int`
 
-**Notes**
-
-1. In the above example, `MyInt` will be exactly same as `int`, without any difference.
-2. This can be used in refactoring process or when there is a name conflict between types imported from different modules. See `import` section for more information.
-3. There must be a single space between `type` and alias name.
-
 ## Named type
 
-**Semantics**: To introduce new types based on existing types (called underlying type).
-
 **Syntax**: `type NewType := UnderlyingType`
+
+
+**Notes**
+
+1. To introduce new types based on existing types (called underlying type). The new type has same binary representation as the underlying type but it will be treated like a different type.
+2. Example number 4, is the standard definition of `bool` extended primitive type based on `union` and label types.
+3. Although their binary data representations are the same, `MyInt` and `int` are two separate types. This will affect function dispatch. Please refer to corresponding section for more information.
+4. You can use casting operator to convert between a named type and it's underlying type (Example 5).
 
 **Examples**
 
 1. `type MyInt := int`
-2. `type IntArray := array[int]`
+2. `type IntArray := seq[int]`
 3. `type Point := {x: int, y: int}`
 4. `type bool := true | false`
 5. `let x: MyInt = 10`, `let y: MyInt = MyInt{10}`
 
-**Notes**
-
-1. There must be a single space between `type` and type name.
-2. Example number 4, is the standard definition of `bool` extended primitive type based on `union` and label types.
-3. Although their binary data representations are the same, `MyInt` and `int` are two separate types. This will affect function dispatch. Please refer to corresponding section for more information.
-4. You can use casting operator to convert between a named type and it's underlying type (Example 5).
-5. If a type is implemented in the runtime, it's definition will be `{...}`. For example `type array[T] := {...}`
-
 ## Casting
 
-Cast int to char
-**Semantics**: To change type of data without changing the semantics of the data (Used for union, named types and primitives)
-
-**Syntax**: `Type{identifier}`
-
-**Examples**
-
-1. `x:int = 1.91`
-2. `int_value, has_int = int{int_or_float}`
-3. `type MyInt := int`
-4. `x:MyInt = 100`
-5. `y:int = x`
+**Syntax**: `TargetType{identifier}`
 
 **Notes**
 
-1. There is no implicit and automatic casting in the language. The only case is for `true` to be 1 and `false` to be 0 when used as an array index.
+1. There is no implicit and automatic casting in the language. The only case is for `true` to be 1 and `false` to be 0 when used as a sequence index.
 2. Casting is mostly used to cast between a union and it's internal type (Example 2) or between named and equal unnamed type (Example 4 and 5). 
 3. If function expects a named type, you cannot pass an equivalent unnamed type. 
 4. Similarly, when a function expects an unnamed type, you cannot pass a named type with same underlying type. 
-5. Another usage of casting is to cast between `int` and `float` and `char` (Example 1).
-6. When casting for union types, you get two outputs: Target type and a boolean flag indicating whether cast was successful.
+5. Another usage of casting is to cast between primitives: `int` and `float` and `char` (Example 1).
+6. When casting for union types, you get two outputs: Target type and a boolean flag indicating whether cast was successful (Example 2).
+7. For literals, casting between named and underlying type can be done automatically (Example 4).
 
-## Type-id operator
+**Examples**
+
+1. `let x:int = int{1.91}`
+2. `let int_value, has_int := int{int_or_float}`
+3. `type MyInt := int`
+4. `let x:MyInt = 100`
+5. `let y:int = x`
+
+>>>>>>>>>>>>>>>>>>>>
 
 # Generics
 
-## Declaration
-
-**Semantics**: To define a function or data type which has one or more types defined like variables. These types will get their values when the function is called or the data type is used to initialize a value.
-
 **Syntax**: 
 
-1. `func funcName[T1, T2, T3, ...](input1: type1, input2: T1, input3: T3, ...)->T2`
+1. `let funcName[T1, T2, T3, ...] := (input1: type1, input2: T1, input3: T3, ...)->T2`
 2. `type TypeName[T1, T2, T3, ...] := { field1: int, field2: T2, field3: float, ...}`
+
+**Notes**:
+
+1. To define a function or data type which has one or more types defined like variables. These types will get their values when the function is called or the data type is used to initialize a value.
+2. Compiler will scan body of generic functions and extract their expected methods. If you invoke those functions with inappropriate types, it will give you list of required methods to implement. So if `process[T]` function calls `save[T]` and you call `process[int]` there must be a definition for `save[int]`, or else compiler will issue error.
+3. When calling a generic function, you can include type specifier if it cannot be deduced from input or for purpose of documenting the code (Example 14 includes type to document that `yy` will be of type `string`).
+4. You can specialize generic functions for a specific type or types (Example 9 specializes function defined in example 5).
 
 **Example**
 
@@ -425,17 +420,16 @@ Cast int to char
 13. `xx = extract(x)`
 14. `yy = extract[string](y)`
 
-**Notes**:
-
-1. Compiler will scan body of generic functions and extract their expected methods. If you invoke those functions with inappropriate types, it will give you list of required methods to implement.
-2. When calling a generic function, you can include type specifier if it cannot be deduced from input or for purpose of documenting the code (Example 13 includes type to document that `yy` will be of type `string`).
-3. You can specialize generic functions for a specific type or types (Example 9 specializes function defined in example 5).
-
 ## Phantom types
 
-**Semantics**: To document compile time constrcints on the data without runtime cost using generics or named types (When generic type is not used on the right side of type definition, it will be only for compile time check)
+**Notes**
 
-**Syntax**: Like generic data types
+1. Phantom types are used to document compile time constrcints on the data without runtime cost using generics or named types (When generic type is not used on the right side of type definition, it will be only for compile time check)
+1. Phantom are compile-time label/state attached to a type. You can use these labels to do some compile-time checks and validations. 
+2. You can implement these labels using a named type or a generic type.
+3. Examples 1 to 7 show a et of hash functions that returns a specific type which is derived from `string`. This will prevent the developer sending a md-5 hash to a function which expects sha-1 hash (Example 7 will give compiler error).
+4. Examples 8 to 10 indicate using named functions to represent a "sanitized string" data type. Using this named type as the input for `work` function will prevent calling it with normal strings which are not sanitized through `processString` function.
+5. Examples 11 to 14 indicate a door data type which can only be opened if it is already closed properly and vice versa.
 
 **Examples**
 
@@ -454,13 +448,6 @@ Cast int to char
 13. `func closeDoor(x: Door[Open]) -> Door[Closed]`
 14. `func openDoor(x: Door[Closed]) -> Door[Open]`
 
-**Notes**
-
-1. Phantom are compile-time label/state attached to a type. You can use these labels to do some compile-time checks and validations. 
-2. You can implement these labels using a named type or a generic type.
-3. Examples 1 to 7 show a et of hash functions that returns a specific type which is derived from `string`. This will prevent the developer sending a md-5 hash to a function which expects sha-1 hash (Example 7 will give compiler error).
-4. Examples 8 to 10 indicate using named functions to represent a "sanitized string" data type. Using this named type as the input for `work` function will prevent calling it with normal strings which are not sanitized through `processString` function.
-5. Examples 11 to 14 indicate a door data type which can only be opened if it is already closed properly and vice versa.
 
 # Functions
 `var(1,2,3)` will be converted to `get(var, 1, 2, 3)` function call.
@@ -668,6 +655,9 @@ Merge with function?
 4. `@`: returns type-id of a named or primitive type as an integer number, or a union variable (Example 1).
 5. `{}`: To cast from named to unnamed type you can use: `Type{value}` notation (Example 2).
 6. `{}`: To cast from variable to a union-type (Example 3).
+
+Compound-literal operator: 
+10. There is an compound literal form which is written like `[a:b:c d:e:f ...]` where each element has same number of items (3 in this example). This is converted to a set of function calls by the compiler. In each call, one element will be passed to the function. So for example: `let x := ["A":1, "B":2]` will make two calls to create value of x: `x0 := set(nothing, "A", 1)` then `x1 := set(x0, "B", 2)` then `x1` is result of literal evaluation. This form can be used to define literals for more complex data structures when you have appropriate functions (e.g. hashtable literals). If the type of the literal can be inferred from the context, the compiler will call appropriate `set` functions, else the default `set` function based on element types will be called.
 
 
 # Other Features
