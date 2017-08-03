@@ -2017,3 +2017,47 @@ Let's use `$` for tuple literals.
 
 Y - semicolon can be confusing.
 Let's use `&`. 
+
+Y - Add nothing check operator:
+`let x := y ^ z ^ 1`
+`let x := y or z ^ 1`
+`let x := something(y, z, 1)`
+variadic function? but what will be type of input?
+if we want this, we should have variadic template.
+```
+let something[T...] := (data: T) -> 
+  (x:int, ???) -> { T[x] != nothing return T[x] & return nothing } 
+  while 
+  (k:int|nothing) -> k == nothing return 0 & k >= length(data) return nothing & return k+1
+```
+We cannot have the type for round output. it can be nothing OR type of T[x]. Also, this means result of the whole loop can be still nothing (which by the way makes sense).
+Maybe we can do this: Input is a normal array of union. possible types of the union are determined at compile time.
+```
+let something[^T] := (list: seq[|^T|]) -> 
+  (x:int, _:|^T|nothing) -> { list(x) != nothing return list(x) & return nothing } 
+  while 
+  (k:int|nothing) -> k = nothing return 0 & let y := int{k}.0 & y >= length(list) return nothing & return y+1
+```
+applications of variadic template: string concat with other types, invoke a union function with union input.
+`let fn: func(int)->int|func(string)->int|func(float)->int := ...`
+`let invoke[^T] := (function: |func(^T)->int|, input: |^T|) -> @func(input)->int = @function return function(input) & return nothing`
+or string creation:
+```
+let concat[^T] := (data: seq[|^T|]) ->
+  (x:int, result: string|nothing) -> { data == nothing return nothing & return concat(result, data(x)) }
+  while
+  (x:int|nothing) -> { x = nothing return 0 & let y := int{x}.0 & y >= length(data) return nothing & return y+1 }
+```
+Can we generalize this more? There is another case that we need to generate multiple types at compile time: embedding.
+`|{Shape}|`
+
+N - When type of x is `nothing|int` and we have `x=nothing return 0 & return x+1` compiler should deduce that `x+1` is adding 1 to an integer, not `int|nothing`.
+`x=nothing return 0 & return int{x}.0+1`
+this makes compiler code complex and reading code harder because these two may not be near each other and also the first return can have other conditions too.
+
+N - Can we extend `_` in destruction:
+`let x,_ := {1, 100}`
+`let x,_ := {1, 100, 200}`
+`let _,x := {1, 100, 200}`
+No.
+left side must have appropriate number of elements even for `_`.
