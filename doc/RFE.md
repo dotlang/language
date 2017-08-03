@@ -2061,3 +2061,82 @@ N - Can we extend `_` in destruction:
 `let _,x := {1, 100, 200}`
 No.
 left side must have appropriate number of elements even for `_`.
+
+Y - Formatting: braces on their own line unless the whole code is in one line.
+`x := { ... }`
+or
+```
+x := 
+{
+...
+}
+```
+
+N - Can't we generalize condition prefix for return?
+Of course this cannot be used with `let`. But with other types of statement like function call it should be usable.
+Also can we make it more explicit?
+like `=>`
+`x<0 => return 100`
+`x>0 => let t := 12` NO.
+How does this work with `&`?
+`let process := (x:int, y:int) -> { x>0 => return 100 & ... }`
+Maybe we should enclose boundary for the condition but it will be something like code block.
+`&` should break the bounday for the condition.
+What type of statements can we write?
+`let`, `function call (which also means let`, `return`.
+So we either have `let` or `return`.
+Why we cannot prefix a let with a condition?
+`let x := 10` what if condition is not satisfied? The value for x is not clear here.
+Unless we embed the condition into `:=` which is not good.
+`x<0 => return 100`
+
+N - A better way to specify initial value.
+```
+let x, result := 0, ()->... while ()->...
+```
+
+Y - We have two types of statements: `let` and `return`.
+Can we mrege them? or unify them?
+we cannot remove `let` because it is also used at module-level. And removing it will be so implicit.
+It should be explicit because it is important.
+instead of `let _ := process()` you can simply write `process()` but generally having let is a good thing.
+I may need to call dispose before return. But this is only needed for ex-res. So its not a big issue.
+I think we cannot merge these two because their nature is different:
+let means do some calculation and proceed.
+return means do some calculations and exit.
+Let's accept the fact that we may have two types of statements: let and return.
+Now, having pre-condition only for return seems a bit non-orth.
+If we can have a meaningful and good definition for let with pre-condition then it would be fine.
+`x<0 >> return 100`
+`x<0 && return 100` confusing with `&`.
+`retif` not very readable.
+`return 100 if x<0`
+`return 200`
+
+Y - With larger loops, reading code can be difficult because while can be placed far from initial assignment.
+`let A := do body(i, o) while pred(i)`
+
+N - Add a style section.
+
+Y - Can we add if suffix to let?
+`let x := 10 if t<10`
+this means if t is less than 10, x=10 else x will be nothing.
+So if there is an if suffix, compiler will infer `|nothing`.
+
+Y - nothing check operator?
+`let y := a | b | c`. This is confusing with union.
+`let y := x || y || z || nothing`
+
+Y - `let x := t if r<10 || 11`
+implements if/else.
+
+N - `&` can be confusing with and. can we choose another separator?
+`let fn := (x:int) -> { let y := x+1 & print(x) & print(y) & return x+1 }`
+`let fn := (x:int) -> { let y := x+1 then print(x) then print(y) then return x+1 }`
+`let fn := (x:int) -> { let y := x+1 then return 100 if x<0 then print(x) then print(y) then return x+1 }`
+then is not good because combined with if is can be misleading.
+`let fn := (x:int) -> { let y := x+1 then print(x) then print(y) then return x+1 }`
+`let fn := (x:int) -> { let y := x+1 , print(x) , print(y) , return x+1 }`
+`let fn := (x:int) -> { let y := x+1 , print(x) , print(y) , return x+1 }`
+`let fn := (x:int) -> { let y := x+1 then return 100 if x<0 then print(x) then print(y) then return x+1 }`
+
