@@ -9,6 +9,7 @@ Version 0.97
 June 26, 2017
 
 # History
+
 - **Version 0.1**: Sep 4, 2016 - Initial document created after more than 10 months of research, comparison and thinking.
 - **Version 0.2**: Sep 22, 2016 - Leaning towards Functional Programming.
 - **Version 0.3**: Oct 13, 2016 - Added clarifications for inheritance, polymorphism and templates
@@ -21,7 +22,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow operator overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, Added `while` keyword, removed `assert` keyword and replace with conditional return, added `&` and `$` notations, added variadic generic functions
+- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, Added `do/while` keywords, removed `assert` keyword and replace with conditional return, added `&` and `$` notations, added variadic generic functions, `if` for conditional return
 
 # Time table
 
@@ -127,7 +128,8 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 2. `type`: Used to specify a name for a type.
 3. `let`: Used to define a binding (Assigning a typed-value to a name).
 4. `return`: Used to specify return value of a function.
-5. `while`: Define loops.
+5. `return ... if ...` Conditional return.
+6. `do/while`: Define loops.
 
 **Primitive data types**: `int`, `float`, `char`, `seq`, `func`
 
@@ -139,18 +141,14 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 ## General rules
 
-- **Encoding**: Modules are encoded in UTF-8 format.
-- **Indentation**: Indentation must be done using spaces, not tabs. Using 4 spaces is advised but not mandatory.
 - **Comments**: `//` is used to start a comment.
-- **Literals**: `123` is integer literal, `'c'` is character literal, `"this is a test"` string literal, `0xffe` hexadecimal number, `0b0101011101` for binary number. You can separate digits using undescore: `1_000_000`.
-- **Terminator**: It is advised to put each statement on a separate line. If you want to put them on the same line, you should use `&` as a separator.
-- **Order**: Each module contains 3 sections: imports, types and binding. The order of the contents of source code file matters: `import` section must come first, then types and lastly bindings. If the order is not met, compiler will give errors.
-- Import section is used to reference other modules that are being used in this module.
-- Type section is used to define data types.
-- Bindings section is used to define function bodies.
-- **Encapsulation**: If name (of a type or binding) starts with underscore, means that it is private to the module. If not, it is public and can be used from outside using `import` statement.
-- **Naming**: (Highly advised but not mandatory) `someFunctionName`, `my_binding_name`, `func_arg_name`, `SomeDataType`, `my_package_dir`, `my_modue_file`. If these are not met, compiler will give warnings. Primitive data types and basic types defined in core (`bool`, `string` and `nothing`) are the only exceptions to naming rules.
-- **Spacing**: There must be a single space between `import`, `let` and `type` keywords with their argument that comes after them.
+- **Coding style**: 
+  - Indentation must be done using spaces, not tabs. Using 4 spaces is advised but not mandatory.
+  - It is advised to put each statement on a separate line. 
+  - Order of module definitions: `import`s then `type`s then `let`s.
+  - Naming: `someFunctionName`, `my_binding_name`, `func_arg_name`, `SomeDataType`, `my_package_dir`, `my_modue_file`.
+  - There must be a single space between language keywords with their argument that comes after them. 
+  - Braces should appear on their own line except when the whole lambda is one-line.
 
 # import keyword
 
@@ -163,7 +161,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 1. This keyword is used to import definitions from another module into current module's namespace. After importing a module, you can use it's types, call it's functions or work with the bindings that are defined in that module.
 2. You can import a module into a named namespace. If you do this, you can only access it's definitions by prefixing namespace name (`namespace::definition`) (Example 2)
-3. Note that elements that start with underscore are considered private and will not be available when you import their module.
+3. Note that definitions that start with underscore are considered private and will not be available when you import their module.
 4. Any definition using `type` or `let` keywords at module-level, adds to the default namespace. This is what will be imported when you import the module.
 5. `/` in the beginning is shortcut for `file/`. Namespace path starts with protocl which determines the location for file for namespace. You can also use other namespace protocols like `Github` (`import git/path/to/module`).
 6. You can import multiple modules with same package using notation in Example 3.
@@ -195,6 +193,8 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 3. The type of the rvalue (What comes on the right side of `:=`), can be any possible data type including function. Refer to following sections for explanation of different available data types.
 4. If the rvalue is a struct (Refer to corresponding section for more info about struct), You can destruct it to it's elements using this keyword (Example 3 and 5).
 5. You can use placeholder symbol `_` to denote you are not interested in a specific value (Example 6).
+6. You can use `0x` prefix for hexadecimal numbers and `0b` for binary.
+7. You can use `_` as digit separator in number literals.
 
 **Examples**
 
@@ -508,7 +508,7 @@ let concat[^T] := (data: seq[|^T|]) ->
 12. You can use `_` as the name of function input to state you don't need it's value (Example 9).
 13. You can use `_` to ignore a function output (Example 10).
 14. Parentheses are required when calling a function, even if there is no input.
-15. You can prefix `return` with a conditional in which case, return will be triggered only if consition is satisfied (Example 11).
+15. You can prefix `return` with a conditional with `if` in which case, return will be triggered only if consition is satisfied (Example 11).
 
 **Examples**
 
@@ -522,7 +522,7 @@ let concat[^T] := (data: seq[|^T|]) ->
 08. `let fileOpen := (path: string) -> File {...}`
 09. `let process := (_:int) -> 10`
 10. `let _,b := process2(myPoint)`
-11. `let process := (x:int) -> { x<0 return 100, return 200}` 
+11. `let process := (x:int) -> { return 100 if x<0 & return 200}` 
 
 ## Call forwarding
 
@@ -620,9 +620,9 @@ let concat[^T] := (data: seq[|^T|]) ->
 10. `func add(x:int, y:int) -> x+y`, `{10, 20} . add(_,_)`
 11. `{1} ~ process(_)`, `1 ~ process(_)`
 
-# `while` keyword
+# `do/while` keywords
 
-**Syntax**: `let A := body(i, o) while pred(i)`
+**Syntax**: `let A := do body(i, o) while pred(i)`
 
 **Notes**
 
@@ -641,15 +641,15 @@ let concat[^T] := (data: seq[|^T|]) ->
 ```
 let n := 100
 //I want result to be 0->1->2->...->99 as a linked list
-let result := (x:int, lst: List[int]|nothing) -> 
+let result := do (x:int, lst: List[int]|nothing) -> 
 { 
   let newList := append(lst, x)
   return newList
 } 
 while (x:int|nothing) -> 
 { 
-  x=nothing return 0
-  x<n return nothing
+  return 0 if x=nothing
+  return nothing if x<n
   return int{x}.0+1 
 }
 ```
@@ -789,10 +789,6 @@ This is a function, called `main` which returns `0` (very similar to C/C++ excep
 let main := () -> print("Hello world!")
 ```
 
-## Quick sort
-
-## Graph class
-
 ## Expression parser
 
 We want to write a function which accepts a string like `"2+4-3"` and returns the result (`3`).
@@ -809,13 +805,33 @@ let eval := (input: string) -> float
 
 func innerEval := (exp: Expression) -> float 
 {
-  @exp = @int return int{exp}.0
+  return int{exp}.0 if @exp = @int
   let y,_ := NormalExpression{x}
   
   y.op = '+' return innerEval(y.left) + innerEval(y.right)
   y.op = '-' return innerEval(y.left) - innerEval(y.right)
   y.op = '*' return innerEval(y.left) * innerEval(y.right)
   y.op = '/' return innerEval(y.left) / innerEval(y.right)
+}
+```
+
+## Quick sort
+
+```
+let quickSort:func(seq[int], int, int)->seq[int] := (list:seq[int], low: int, high: int) ->
+{
+  return list if high >= low
+  let pi,new_list := partition(list, low, high)
+  
+  let first := quickSort(new_list, low, pi-1)
+  let second := quickSort(new_list, pi+1, high)
+  
+  return merge(first, seq(pi), second)
+}
+
+let partition := (list: seq[int], low:int, high:int) ->
+{
+  
 }
 ```
 
