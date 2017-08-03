@@ -2142,3 +2142,49 @@ then is not good because combined with if is can be misleading.
 
 Y - remove variadic generics.
 It was initially used to support nothing check. But now that we have `||` it is mostly same as using a tuple.
+
+
+Y - The capital letters rule for union identifier it not convenient.
+Shall we add a prefix? like `!`?
+`type DoW := %Sat | %Sun | ...`
+`let x:DoW := %Sat`
+`if x = %Sat`
+Let's just have no prefix. Like Haskell and F# and almost all other languages.
+
+Y - Phantom types?
+```
+type State := Open | Closed
+type Socket[T] := { data: int }
+```
+But I cannot say T must be of type State. If you want to be strict you can write:
+```
+type State := Open | Closed
+type Socket[Open], Socket[Closed] := { data: int }
+```
+
+Y - Change comment char to `#` and nothing-check to `//`.
+`let x := 10 if x<10 // 200`
+
+Y - Can we change if notation. Because it becomes less readable when combined with `//`.
+`let x := 10 if x<10 // 200 & return 100`
+`return 100 if x<10`
+or:
+`let x := if x<10 then 10 // 200 & return 100`
+`if x<10 return 100`
+Let's remove support for if in let. Only in return.
+`return 100 if x<100`
+`let x := [200, 10](x<10)`
+
+? - Using `&` for continue execution is not intuitive. `&` in english means and.
+Maybe we should remove it?
+con: it may force reader to scroll horizontally
+con: typos may get hidden
+con: diff view will be more difficult to read
+
+? - `if` can we get rid of it?
+pro/con of having if:
+pro: makes code more readable.
+pro: early return
+con: if removed, we will have unification. everything will be let.
+con: 
+Write a piece of code without if and compare.
