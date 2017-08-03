@@ -22,7 +22,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow operator overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, Added `do/while` keywords, removed `assert` keyword and replace with conditional return, added `&` and `$` notations, added variadic generic functions, `if` for conditional return
+- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, Added `do/while` keywords, removed `assert` keyword and replace with conditional return, added `&` and `$` notations, added variadic generic functions, `if` for conditional return and let, added `||` as nothing-check
 
 # Time table
 
@@ -119,6 +119,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 14. `&`  Statement separator
 15. `$`  prefix for struct literals
 16. `^`  variadic generics
+17. `||` nothing-check operator
 
 ## Reserved identifiers
 
@@ -128,7 +129,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 2. `type`: Used to specify a name for a type.
 3. `let`: Used to define a binding (Assigning a typed-value to a name).
 4. `return`: Used to specify return value of a function.
-5. `return ... if ...` Conditional return.
+5. `...if ...` Conditional execution.
 6. `do/while`: Define loops.
 
 **Primitive data types**: `int`, `float`, `char`, `seq`, `func`
@@ -487,6 +488,24 @@ let concat[^T] := (data: seq[|^T|]) ->
 13. `func closeDoor(x: Door[Open]) -> Door[Closed]`
 14. `func openDoor(x: Door[Closed]) -> Door[Open]`
 
+# `if` keyword
+
+**Syntax**: `... if ...`
+
+**Notes**
+
+1. `if` can be used to conditionally execute a statement. If condition is satisfied, statement will be executed.
+2. `if` can be combined with `return` to provide conditional return and guard clauses.
+3. `if` can be mixed with `let` to provide maybe values. In example 1, if `t` is less than 10, x will be 12, else it will be `nothing`.
+4. You can combine if with `||` to implement if/else (Example 4).
+
+**Examples**
+
+1. `let x = 12 if t<10`
+2. `process_data(x) if t<10`
+3. `return nothing if x<0`
+4. `let x := t if r<10 || 11`
+
 # Functions
 
 **Syntax**: 
@@ -667,6 +686,7 @@ while (x:int|nothing) ->
 5. Casting `{}`
 6. Chain `~`
 7. Compound literal `[:]`
+8. Nothing check operator `||`
 
 **Notes**
 
@@ -678,6 +698,7 @@ while (x:int|nothing) ->
 6. `{}`: To cast from named to unnamed type you can use: `Type{value}` notation (Example 2).
 7. `{}`: To cast from variable to a union-type (Example 3).
 8. You can use compound literal to define a literal which is calculated by calling appropriate `set` functions. These literals have the form of `[a:b:c d:e:f ...]`. In this example the literal has a set of elements each of which has 3 items. This means that to calculate the value of the literal, compild will render `let x0 := set(nothing, a, b, c)`, then `let x1 := set(x0, d, e, f)` and continue until end of values. The final result will be the output value. This notation can be used to have map literals and other custom literals.
+10. `A || B` will evaluate to A is it is not nothing, else it will be evaluated to B.
 
 **Examples**
 
@@ -685,6 +706,7 @@ while (x:int|nothing) ->
 02. `type MyInt := int`, `let x: MyInt = 12`
 03. `let y:int = int{x}`
 04. `let y: int|float = 12`
+05. `let y = x || y || z || 0`
 
 # Other Features
 
