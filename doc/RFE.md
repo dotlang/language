@@ -2140,3 +2140,5 @@ then is not good because combined with if is can be misleading.
 `let fn := (x:int) -> { let y := x+1 , print(x) , print(y) , return x+1 }`
 `let fn := (x:int) -> { let y := x+1 then return 100 if x<0 then print(x) then print(y) then return x+1 }`
 
+Y - remove variadic generics.
+It was initially used to support nothing check. But now that we have `||` it is mostly same as using a tuple.
