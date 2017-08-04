@@ -22,7 +22,7 @@ June 26, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow operator overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, Added `do/while` keywords, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`.
+- **Version 0.98**: ?? ??? ???? - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, Added `do/while` keywords, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword
 
 # Time table
 
@@ -90,16 +90,16 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 01. **Import a module**: `import /core/std/queue` (you can also import from external sources like Github).
 02. **Primitive types**: `int`, `float`, `char`, `seq`, `func`.
-03. **Bindings**: `let my_var:int := 19` (type can be automatically inferred, everything is immutable).
-04. **Sequence**: `let scores:seq[int] := [1,2,3,4]` (Similar to array).
+03. **Bindings**: `my_var:int := 19` (type can be automatically inferred, everything is immutable).
+04. **Sequence**: `scores:seq[int] := [1,2,3,4]` (Similar to array).
 05. **Named type**: `type MyInt := int` (Defines a new type with same binary representation as `int`).
 06. **Struct type**: `type Point := {x: int, y:int, data: float}` (Like `struct` in C)
-07. **Struct literal**: `let location := Point{x=10, y=20, data=1.19}`
+07. **Struct literal**: `location := Point{x=10, y=20, data=1.19}`
 08. **Composition**: `type Circle := {Shape, radius: float}` (`Circle` embeds fields of `Shape`)
 09. **Generics**: `type Stack[T] := { data: array[T], info: int }` (Defines a blueprint to create new types)
 10. **Union type**: `type Maybe[T] := T | nothing` (Can store either of possible types)
-11. **Function**: `let calculate: func(int,string)->float := (x, y) -> float { return x/y  }`
-12. **Loops**: `let countToTen := (x: int, _: int) -> x while (x:int|nothing) -> increaseUntil(x, 10)`
+11. **Function**: `calculate: func(int,string)->float := (x, y) -> float { return x/y  }`
+12. **Loops**: `countToTen := (x: int, _: int) -> x while (x:int|nothing) -> increaseUntil(x, 10)`
 
 ## Symbols
 
@@ -126,9 +126,8 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 1. `import`: Used to import types and bindings from another modules.
 2. `type`: Used to specify a name for a type.
-3. `let`: Used to define a binding (Assigning a typed-value to a name).
-4. `return`: Used to specify return value of a function.
-5. `do/while`: Define loop.
+3. `return`: Used to specify return value of a function.
+4. `do/while`: Define loop.
 
 **Primitive data types**: `int`, `float`, `char`, `seq`, `func`
 
@@ -175,15 +174,15 @@ These rules are highly advised but not mandatory.
 4. `import git/github.com/adsad/dsada`
 5. `import svn/bitcucket.com/adsad/dsada`
 6. Import and rename multiple modules: `import /core/std/{Queue, Stack, Heap} -> A,B,C`
-7. Assign a binding to a definition inside another namespace: `let createSocket := mod1::createSocket`
+7. Assign a binding to a definition inside another namespace: `createSocket := mod1::createSocket`
 8. `type socketType := mod1::SocketType`
 
 # Bindings (`let` keyword)
 
 **Syntax**: 
 
-1. `let identifier := definition`
-2. `let identifier : type := definition`
+1. `identifier := definition`
+2. `identifier : type := definition`
 
 **Notes**
 
@@ -197,12 +196,12 @@ These rules are highly advised but not mandatory.
 
 **Examples**
 
-1. `let x: int := 12`
-2. `let g := 19.8`
-3. `let a,b := process()`
-4. `let x := y`
-5. `let a,b := {1, 100}`
-6. `let a,_ := {1, 100}`
+1. `x: int := 12`
+2. `g := 19.8`
+3. `a,b := process()`
+4. `x := y`
+5. `a,b := {1, 100}`
+6. `a,_ := {1, 100}`
 
 # Primitive data types
 
@@ -226,13 +225,13 @@ These rules are highly advised but not mandatory.
 
 **Examples**
 
-1. `let x := 12`
-2. `let x := 1.918`
-3. `let x := 'c'`
-4. `let x: seq[int] := [1,2,3,4]`
-5. `let x := [1..10]`
-6. `let x: seq[seq[int]] := [ [1,2], [3,4], [5,6] ]`
-7. `let x: seq[int] := [ [1,2], [3,4], [5,6] ]`
+1. `x := 12`
+2. `x := 1.918`
+3. `x := 'c'`
+4. `x: seq[int] := [1,2,3,4]`
+5. `x := [1..10]`
+6. `x: seq[seq[int]] := [ [1,2], [3,4], [5,6] ]`
+7. `x: seq[int] := [ [1,2], [3,4], [5,6] ]`
 
 ## Compound types
 
@@ -254,14 +253,14 @@ These rules are highly advised but not mandatory.
 **Examples**
 
 1. `type day_of_week := SAT | SUN | MON | TUE | WED | THU | FRI`
-2. `let int_or_float: int | float = 11`
-3. `let int_or_float := 12.91`
-4. `let int_or_float := 100`
+2. `int_or_float: int | float = 11`
+3. `int_or_float := 12.91`
+4. `int_or_float := 100`
 5. `int_value, done := int{my_union}`
-6. `let has_int := (@my_int_or_float == @int)`
-7. `let fn: func(int)->int|func(string)->int|func(float)->int := ...`
+6. `has_int := (@my_int_or_float == @int)`
+7. `fn: func(int)->int|func(string)->int|func(float)->int := ...`
 A union of type function pointer with three possible function types.
-8. `let data: int|float|string := ...`, `let o := fn(data)`
+8. `data: int|float|string := ...`, `o := fn(data)`
 You can call `fn` like a normal function with an input which should be any of possible input types 
 
 ### Struct
@@ -269,10 +268,10 @@ You can call `fn` like a normal function with an input which should be any of po
 **Syntax**: 
 
 1. Declaration: `{field1: type1, field2: type2, field3: type3, ...}` 
-2. Typed Literal: `Type{field1:=value1, field2:=value2, field3:=value3, ...}` 
+2. Typed Literal: `Type{field1:value1, field2:value2, field3:value3, ...}` 
 3. Typed Literal: `Type{value1, value2, value3, ...}` 
 4. Untyped literal: `${value1, value2, value3, ...}` 
-5. Update: `original_var{field1=value1, field2=value2, ...}` 
+5. Update: `original_var{field1:value1, field2:value2, ...}` 
 
 **Notes**
 
@@ -287,16 +286,16 @@ You can call `fn` like a normal function with an input which should be any of po
 **Examples**
 
 1. `type Point := {x:int, y:int}`
-2. `let point2 := Point{x:=100, y:=200}`
-3. `let point3 := Point{100, 200}`
-4. `let point1 := ${100, 200}`
-5. `let point4 := point3{y:=101}`
-6. `let x,y := point1`
-7. `let x,y := ${100,200}`
-8. `let another_point := Point{x:=11, y:=my_point.y + 200}`
-9. `let another_point := my_point`
-10. `let new_point := ${a=100, b=200} //WRONG!`
-11. `let x := point1.1`
+2. `point2 := Point{x:100, y:200}`
+3. `point3 := Point{100, 200}`
+4. `point1 := ${100, 200}`
+5. `point4 := point3{y:101}`
+6. `x,y := point1`
+7. `x,y := ${100,200}`
+8. `another_point := Point{x:11, y:my_point.y + 200}`
+9. `another_point := my_point`
+10. `new_point := ${a:100, b:200} //WRONG!`
+11. `x := point1.1`
 
 ### Composition
 
@@ -318,9 +317,9 @@ You can call `fn` like a normal function with an input which should be any of po
 
 1. `type Shape := { id:int }`
 2. `type Circle := { Shape, radius: float}`
-3. `let my_circle := Circle{id=100, radius=1.45}`
+3. `my_circle := Circle{id:100, radius:1.45}`
 4. `type AllShapes := |{Shape}|`
-5. `let someShapes:AllShapes := [myCircle, mySquare, myRectangle, myTriangle]`
+5. `someShapes:AllShapes := [myCircle, mySquare, myRectangle, myTriangle]`
 
 # Extended primitive types
 
@@ -337,8 +336,8 @@ You can call `fn` like a normal function with an input which should be any of po
 
 **Examples**
 
-1. `let g: bool := true`
-2. `let str: string := "Hello world!"`
+1. `g: bool := true`
+2. `str: string := "Hello world!"`
 
 # Type system
 
@@ -375,7 +374,7 @@ You can call `fn` like a normal function with an input which should be any of po
 2. `type IntArray := seq[int]`
 3. `type Point := {x: int, y: int}`
 4. `type bool := true | false`
-5. `let x: MyInt = 10`, `let y: MyInt = MyInt{10}`
+5. `x: MyInt = 10`, `y: MyInt = MyInt{10}`
 6. `type Socket[Open], Socket[Closed] := { data: int }`
 
 ## Casting
@@ -394,17 +393,17 @@ You can call `fn` like a normal function with an input which should be any of po
 
 **Examples**
 
-1. `let x:int = int{1.91}`
-2. `let int_value, has_int := int{int_or_float}`
+1. `x:int = int{1.91}`
+2. `int_value, has_int := int{int_or_float}`
 3. `type MyInt := int`
-4. `let x:MyInt = 100`
-5. `let y:int = x`
+4. `x:MyInt = 100`
+5. `y:int = x`
 
 # Generics
 
 **Syntax**: 
 
-1. `let funcName[T1, T2, T3, ...] := (input1: type1, input2: T1, input3: T3, ...)->T2`
+1. `funcName[T1, T2, T3, ...] := (input1: type1, input2: T1, input3: T3, ...)->T2`
 2. `type TypeName[T1, T2, T3, ...] := { field1: int, field2: T2, field3: float, ...}`
 
 **Notes**:
@@ -462,7 +461,7 @@ You can call `fn` like a normal function with an input which should be any of po
 # Functions
 
 **Syntax**: 
-`let functionName: func(type1, type2, type3, ...) -> OutputType := (name1: type1, name2: type2...) -> OutputType { code block }`
+`functionName: func(type1, type2, type3, ...) -> OutputType := (name1: type1, name2: type2...) -> OutputType { code block }`
 
 **Notes**
 
@@ -484,19 +483,19 @@ You can call `fn` like a normal function with an input which should be any of po
 
 **Examples**
 
-01. `let myFunc:(int, int) -> int := func(x:int, y:int)-> int { return 6+y+x }`
-02. `let log := (s: string) -> { print(s) }`
-03. `let process := (pt: Point)->int pt.x`
-04. `let process2 := (pt: Point) -> {pt.x, pt.y}`
-05. `let my_func := (x:int) -> x+9`
-06. `let myFunc9 := (x:int) -> {int} {12}`
-07. `let process := (x: int|Point])->int`
-08. `let fileOpen := (path: string) -> File {...}`
-09. `let process := (_:int) -> 10`
-10. `let _,b := process2(myPoint)`
+01. `myFunc:(int, int) -> int := func(x:int, y:int)-> int { return 6+y+x }`
+02. `log := (s: string) -> { print(s) }`
+03. `process := (pt: Point)->int pt.x`
+04. `process2 := (pt: Point) -> {pt.x, pt.y}`
+05. `my_func := (x:int) -> x+9`
+06. `myFunc9 := (x:int) -> {int} {12}`
+07. `process := (x: int|Point])->int`
+08. `fileOpen := (path: string) -> File {...}`
+09. `process := (_:int) -> 10`
+10. `_,b := process2(myPoint)`
 11. 
 ```
-let process := (x:int) -> 
+process := (x:int) -> 
 { 
   (x<0) return 100
   return 200
@@ -517,9 +516,9 @@ let process := (x:int) ->
 
 **Examples**
 
-1. `let draw := (Circle->Shape)`
-2. `let process := (Polygon|Square|Circle->Shape, GradientColor|SolidColor]->Color)`
-3. `let process := (float, |{Shape}|->Shape, string, int, GradientColor|SolidColor->Color, int)`
+1. `draw := (Circle->Shape)`
+2. `process := (Polygon|Square|Circle->Shape, GradientColor|SolidColor]->Color)`
+3. `process := (float, |{Shape}|->Shape, string, int, GradientColor|SolidColor->Color, int)`
 
 ## Function pointer
 
@@ -533,10 +532,10 @@ let process := (x:int) ->
 **Examples**
 
 1. `type adder := func(int,int)->int`
-2. `let myAdder := (x:int, y:int) -> x+y`
-3. `let adderPointer := adder{myAdder}`
-4. `let sort := (x: array[int], comparer: func(int,int) -> bool) -> array[int]`
-5. `let map[T, S] := (input: array[T], mapper: func(T) -> S) -> array[S]`
+2. `myAdder := (x:int, y:int) -> x+y`
+3. `adderPointer := adder{myAdder}`
+4. `sort := (x: array[int], comparer: func(int,int) -> bool) -> array[int]`
+5. `map[T, S] := (input: array[T], mapper: func(T) -> S) -> array[S]`
 
 ## Lambda
 
@@ -555,15 +554,15 @@ let process := (x:int) ->
 
 **Examples**
 
-1. `let f1 := (x: int, y:int) -> int { x+y }`
-2. `let f1 := (x: int, y:int) -> { x+y }` 
-3. `let rr := (x: int, y:int) -> x + y`  
-4. `let rr := () -> { return x + y }`
-5. `let test := (x:int) -> plusFunc { |y:int| -> y + x }`
+1. `f1 := (x: int, y:int) -> int { x+y }`
+2. `f1 := (x: int, y:int) -> { x+y }` 
+3. `rr := (x: int, y:int) -> x + y`  
+4. `rr := () -> { return x + y }`
+5. `test := (x:int) -> plusFunc { |y:int| -> y + x }`
 6. `(x:int)->int { x+1 } (10)`
-7. `let process := (x:int, y:float, z: string) -> { ... }`
+7. `process := (x:int, y:float, z: string) -> { ... }`
 8. `letlambda1 := process(10, _, _)`
-9. `let ff := (x:int) -> { ff(x+1) }`
+9. `ff := (x:int) -> { ff(x+1) }`
 
 ## Chain operator
 
@@ -593,13 +592,13 @@ let process := (x:int) ->
 6. `result = ${input, check1(5, _)} ~ pipe(_,_) ~ ${_, check3(1,2,_)} ~ pipe(_, _) ~ ${_, check5(8,_,1) } ~ pipe(_,_)`
 7. `func pipe[T, O](input: Maybe[T], handler: func(T)->Maybe[O])->Maybe[O] ...`
 8. `${1,2} ~ {_, _, 5} ~ process(_,_,_)` => `process(1,2,5)`.
-9. `func inc(x:int) -> x+1`, `let eleven = 10 . inc(_)`
-10. `func add(x:int, y:int) -> x+y`, `{10, 20} . add(_,_)`
+9. `func inc(x:int) -> x+1`, `eleven = 10 ~ inc(_)`
+10. `func add(x:int, y:int) -> x+y`, `{10, 20} ~ add(_,_)`
 11. `{1} ~ process(_)`, `1 ~ process(_)`
 
 # `do/while` keywords
 
-**Syntax**: `let A := do body(i, o) while pred(i)`
+**Syntax**: `A := do body(i, o) while pred(i)`
 
 **Notes**
 
@@ -616,11 +615,11 @@ let process := (x:int) ->
 
 1. 
 ```
-let n := 100
+n := 100
 //I want result to be 0->1->2->...->99 as a linked list
-let result := do (x:int, lst: List[int]|nothing) -> 
+result := do (x:int, lst: List[int]|nothing) -> 
 { 
-  let newList := append(lst, x)
+  newList := append(lst, x)
   return newList
 } 
 while (x:int|nothing) -> 
@@ -655,17 +654,17 @@ while (x:int|nothing) ->
 5. `@`: returns type-id of a named or primitive type as an integer number, or a union variable (Example 1).
 6. `{}`: To cast from named to unnamed type you can use: `Type{value}` notation (Example 2).
 7. `{}`: To cast from variable to a union-type (Example 3).
-8. You can use compound literal to define a literal which is calculated by calling appropriate `set` functions. These literals have the form of `[a:b:c d:e:f ...]`. In this example the literal has a set of elements each of which has 3 items. This means that to calculate the value of the literal, compild will render `let x0 := set(nothing, a, b, c)`, then `let x1 := set(x0, d, e, f)` and continue until end of values. The final result will be the output value. This notation can be used to have map literals and other custom literals.
+8. You can use compound literal to define a literal which is calculated by calling appropriate `set` functions. These literals have the form of `[a:b:c d:e:f ...]`. In this example the literal has a set of elements each of which has 3 items. This means that to calculate the value of the literal, compild will render `x0 := set(nothing, a, b, c)`, then `x1 := set(x0, d, e, f)` and continue until end of values. The final result will be the output value. This notation can be used to have map literals and other custom literals.
 10. `A // B` will evaluate to A if it is not nothing, else it will be evaluated to B.
 11. Conditional operators return `true` or `false` which actually are `1` and `0`.
 
 **Examples**
 
-01. `let g = @int`, `g = @my_union`
-02. `type MyInt := int`, `let x: MyInt = 12`
-03. `let y:int = int{x}`
-04. `let y: int|float = 12`
-05. `let y = x // y // z // 0`
+01. `g = @int`, `g = @my_union`
+02. `type MyInt := int`, `x: MyInt = 12`
+03. `y:int = int{x}`
+04. `y: int|float = 12`
+05. `y = x // y // z // 0`
 
 # Other Features
 
@@ -681,20 +680,20 @@ while (x:int|nothing) ->
 
 1.
 ```
-let v: int|float|string = processData()
+v: int|float|string = processData()
 //check: if predicate is satisfied, return lambda result, else nothing
-let x: int|nothing := check[int](@v=@int, ()->100)
-let y: int|nothing := ...
-let z: int|nothing := ...
+x: int|nothing := check[int](@v=@int, ()->100)
+y: int|nothing := ...
+z: int|nothing := ...
 //merge takes multiple T|nothing values and returns the only non-nothing one.
-let result : int := merge(x,y,z)
+result : int := merge(x,y,z)
 //or: combine them together
-let result : int := merge(check[int](@v=@int, ()->100), check[int](@v=@string, ()->200), check[int](true, ()->300))
+result : int := merge(check[int](@v=@int, ()->100), check[int](@v=@string, ()->200), check[int](true, ()->300))
 ```
 
 2.
 ```
-let x:int := [100,200](a>0)
+x:int := [100,200](a>0)
 ```
 
 ## dispose
@@ -758,7 +757,7 @@ let x:int := [100,200](a>0)
 ## Empty application
 
 ```
-let main := () -> 0
+main := () -> 0
 ```
 
 This is a function, called `main` which returns `0` (very similar to C/C++ except `main` function has no input).
@@ -766,7 +765,7 @@ This is a function, called `main` which returns `0` (very similar to C/C++ excep
 ## Hello world
 
 ```
-let main := () -> print("Hello world!")
+main := () -> print("Hello world!")
 ```
 
 ## Expression parser
@@ -777,16 +776,16 @@ We want to write a function which accepts a string like `"2+4-3"` and returns th
 type NormalExpression := {op: char, left: Expression, right: Expression}
 type Expression := int|NormalExpression
 
-let eval := (input: string) -> float 
+eval := (input: string) -> float 
 {
-  let exp := parse(input)
+  exp := parse(input)
   return innerEval(exp)
 }
 
 func innerEval := (exp: Expression) -> float 
 {
   (@exp = @int) return int{exp}.0
-  let y,_ := NormalExpression{x}
+  y,_ := NormalExpression{x}
   
   (y.op = '+') return innerEval(y.left) + innerEval(y.right) 
   (y.op = '-') return innerEval(y.left) - innerEval(y.right)
@@ -798,15 +797,15 @@ func innerEval := (exp: Expression) -> float
 ## Quick sort
 
 ```
-let quickSort:func(seq[int], int, int)->seq[int] := (list:seq[int], low: int, high: int) ->
+quickSort:func(seq[int], int, int)->seq[int] := (list:seq[int], low: int, high: int) ->
 {
   (high >= low) return list
   
-  let mid_index := (high+low)/2
-  let pivot := list(mid_index)
+  mid_index := (high+low)/2
+  pivot := list(mid_index)
   
-  let small_list := filter( list, (x:int)-> x<pivot )
-  let big_list   := filter( list, (x:int)-> x>pivot )
+  small_list := filter( list, (x:int)-> x<pivot )
+  big_list   := filter( list, (x:int)-> x>pivot )
   
   return merge(quickSort(small_list), pivot, quickSort(big_list))
 }
@@ -877,6 +876,6 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - Loop functions in std using recursion and iterators
 - Decide if we can provide std as an external package rather than a built-in.
 - Std: Functions to call a union which has a set of function pointers by accepting all possible inputs.
-`let fn: func(int)->int|func(string)->int|func(float)->int := ...`
-`let o := invoke(fn, int_var, string_var, float_var)`
+`fn: func(int)->int|func(string)->int|func(float)->int := ...`
+`o := invoke(fn, int_var, string_var, float_var)`
 - Std: Provide efficient implementation of common algorithms (quick sort, ...) to compensate for immutability.
