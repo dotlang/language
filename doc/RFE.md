@@ -2206,7 +2206,7 @@ So how can I define bool type when true is 1?
 No. union is not supposed to cover that. 
 Let's just say compiler will do the conversion.
 
-? - `if` can we get rid of it?
+Y - `if` can we get rid of it?
 pro/con of having if:
 pro: makes code more readable.
 pro: early return
@@ -2301,3 +2301,89 @@ important factors:
 we already have `do ... while ...` but they are together all the time. having return with optional if is a bit confusing.
 having `return nothing` not returning, is also confusing. 
 One meaning of simple is straightforward, without special/edge cases and easy to understand and act as expected.
+having forced to always return a struct is not simple.
+`retif` is also confusing because it sometimes can be hard to know which one is the condition.
+proposal 1: `return 100 if x<0`
+proposal 2: `x<0 => return 100`
+proposal 3: `return _` means don't return. then `return [100,_](x<100)` won't return if `x<100`.
+using `_` will be confusing. because normally it is used as a name, not a value. also:
+`return process(_)` what does it do? reading  `return [100,_](x<100)` is harder than `return 100 if x<100`.
+Maybe we can choose another symbol? But what will be it's type? Can I send it to another function? ...
+proposal 1: `return 100 if x<0`
+proposal 2: `x<0 => return 100`
+proposal 3: `(x<0) return 100` return 100 if `x<0`
+`(x<0) ~ (_:false) -> return 100`
+`(x<0) ~ return 100`
+We can give a new meaning to `(x)` comapred to `x`. but it won't be very useful.
+`return` means jump to the end of the function (position T). if we state it as a delta, it means just D bytes forward.
+`return 100` -> `result=100, jump $current+D` where D is determined at compile time.
+Now if we have access to D value, we can multiply it by 1 or 0. 1-> do the jump and return. 0-> don't do anything.
+If we separate return and jump, this means we should store return value somewhere which needs re-assignment feature.
+let's remove all of the return and jump and add a new keyword: `forward`. At any time `%` means distance to the end of the function as an integer number.
+`forward` has two arguments: value and size.
+`forward 100, % * (x<100)` if `x<100` then jump to the end of the function. If not, don't jump.
+if we remove return value from forward:
+```
+let x := err("invalid input")
+forward % * (data<0)
+let y := 100
+return y // x
+```
+if data is negative, return error else return y.
+this means a binding which is not yet introduced (because of the jump), will be nothing. which might be confusing.
+If we remove `%` from forward and just give it 0 or 1?
+```
+let x := err("invalid input")
+forward (data<0)
+let y := 100
+return y // x
+```
+It is better in the sense that prevents a lot of mis-uses. But still, we are referring to `y`. The main problem is calaculations. By forward we want to eliminate doing calculations.
+`forward` keyword makes sense and can be added but what about return?
+```
+let x := [nothing,err("invalid input")](data<0)
+forward (data<0)
+let y := 100
+return x // y
+```
+This is better. we return x if it is not nothing. else y.
+with forward, we jump initializing y. 
+but still there is room for mis-use and also we repeat the condition twice.
+```
+let x := nothing
+forward (data<0)
+let y := 100
+return x // y
+```
+what should this do? x is definitely nothing. Then return y. What is value of y?
+Maybe like `while` we should use `nothing` definition.
+proposal 1: `return 100 if x<0`
+proposal 3: `(x<0) return 100` return 100 if `x<0`
+proposal 4: `return` to return nothing. `return XXX` to return XXX if it is not nothing.
+`return [nothing, 100](x>100)` means return 100 if `x>100`.
+q: what is type of `[nothing, 100]`? it is `seq[int|nothing]`. Then the output type of the function should be `int|nothing`?
+what if I have `let x := nothing, return x` should it return or no? It will be confusing.
+proposal 5: `return ${data, predicate}`. q: what about this? `adder := () -> ${1,false}` What does this do?
+no. it can make the code less readable and confusing.
+proposal 1: `return 100 if x<0`
+proposal 3: `(x<0) return 100` return 100 if `x<0`
+define a re-assignable special variable which should hold result of the function. add forward to jump to the end of function.
+e.g. a binding with the same name as the function:
+```
+let adder := (x:int, y:int) -> 
+{
+  adder := [0, 100](x<100)
+  forward (x<100)
+}
+```
+proposal 4: provide a strong return which returns from caller.
+the nature of conditional is mutability. we are changing something. but in runtime, it will only be set once. although in the code there are multiple places where we set it.
+we can define a binding which as soon as it is set, fucntion execution is finished.
+as soon as it is set to something other than nothing. Like unnamed symbol
+`let := 12` means return 12.
+proposal 5: `let := 12` to return. How can we say, don't return if ... ?
+proposal 6: use a lambda. 
+proposal 1: `return 100 if x<0`
+proposal 3: `(x<0) return 100` return 100 if `x<0`
+can we use `(x<0)` in other places? It is just an expression.
+pro `(x<0) return 10` - no new keyword. reads fluently: if ... retur ...
