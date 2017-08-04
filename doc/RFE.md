@@ -2433,3 +2433,49 @@ type of `[nothing, "A"]` will be `seq[nothing|string]`.
 `( x := ... ) return 1`
 what does this mean? `(x) return 100` means if x is true.
 
+? - 
+```
+routers := ...
+if ( condition ) routers = append(routers, ...)
+```
+we write:
+```
+routers := ...
+new_routers := [routers, () -> append(routers, x)](condition)
+```
+now `new_routers` can be either a routers list or a lambda which returns router list.
+we don't know.
+we can have a function which resolves this:
+`new_routers := [routers, () -> append(routers, x)](condition)`
+`new_routers2 := simplify(new_routers)`
+```
+simplify[T] := (data: T|func()->T) -> [data(), data](@data == @T)
+```
+but this won't work. Because we cannot calculate the sequence. If data is T then `data()` will fail!
+```
+simplify[T] := (data: T|func()->T) -> 
+{
+	result := [nothing, data](@data = @T)
+	return result // data()
+}
+```
+What does this mean? `var()`? If variable is a function pointers this has a meaning!
+`var(1,2,3)` if var is a function pointer, will call the function.
+So this notation is ambiguous because it has 3 meanings: call function, call function pointer or call `get`.
+proposal: replace it with `<>`
+`x := [1,2]<x=0>`
+`var<1,2,3>` will be translated to `get(var, 1, 2, 3)`.
+and it won't be ambiguous with calling function ponter.
+Can it be ambiguous with int compare operator? `func(var<1>2`.
+The only place we have used the `var(...)` notation is for reading from seq.
+q: Can it be used with lambda maker and chain operator?
+q: What about the original issue? A sequence this has both T and `()->T` lambda, how can we simplify?
+proposal: `var()` means var. But this is not good because if there is a mistake, we would silently ignore it.
+`var<>` can use get notation to merge these two notations.
+`var<1>` will call `get(var, 1)`
+`var<>` will call `get(var)` which will return var if it is not function pointer. If it is, it will invoke and return the result.
+`get[T] := (x: ()->T ) -> T x()`
+`get[T] := (x: T) -> T`
+So:
+`new_routers := [routers, () -> append(routers, x)](condition)`
+`x := new_routers<>`
