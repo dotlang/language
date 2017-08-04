@@ -2175,16 +2175,129 @@ Let's remove support for if in let. Only in return.
 `return 100 if x<100`
 `let x := [200, 10](x<10)`
 
-? - Using `&` for continue execution is not intuitive. `&` in english means and.
+N - We should allow both single and double-quote. but what is type of this? `'c'`? Is it string or char?
+`'c'`
+`"DSADSAD"`
+
+Y - remove `&` Using `&` for continue execution is not intuitive. `&` in english means and.
 Maybe we should remove it?
 con: it may force reader to scroll horizontally
 con: typos may get hidden
 con: diff view will be more difficult to read
 
+N - Should we throw runtime error if seq index is out of bounds? yes.
+if we return struct with result and bool, it can be directly used in return.
+`return [100](condition)` acts like an assert.
+This is determined by the output type of `get := (arr: seq[T])->` but as it is part of core, we must specify it in lanref.
+OTOH if we remove index-out-of-bounds error, a conditional like: `let x := [100, 200](x<100)` won't be possible.
+You will need to add `.0` to fetch the actual result from the tuple.
+Let's keep runtime error. conditionals will be easier and for return, we have a good alternative.
+
+Y - We don't need booleans as a separate type.
+bool can be considered `true|false` and `true=1, false=0`. 
+We need it but it will be based on int. 
+So `true` is int 1. we don't need to cast true to 1.
+
+N - Can I write union with values?
+`type Data := 1 | float`? No.
+So how can I define bool type when true is 1?
+`let true := 1`
+`let false := 0`
+No. union is not supposed to cover that. 
+Let's just say compiler will do the conversion.
+
 ? - `if` can we get rid of it?
 pro/con of having if:
 pro: makes code more readable.
 pro: early return
-con: if removed, we will have unification. everything will be let.
-con: 
+con: if removed, we will have unification. everything will be let. NO. but we can do it. either make the last exp, the return value or use a special case of let.
+`let := 12` means assign the return value.
 Write a piece of code without if and compare.
+what if we can say, set this value if it is not `nothing`? use `//`.
+But I don't want to make the whole function a big `let`:
+`let output := [1,2](11) // [3,4](cond2) // ...`
+`output`
+1. make output value explicit.
+2. we should either have an early return or some mechanism to prevent execution of a let if we already have our output.
+```
+let output := [-1, nothing](x<0)
+let expensive_result := ...
+let output2 := 
+```
+But if we treat function output as a binding, we may need to re-assign to it.
+problems with implicit return:
+1. invisibility
+2. error prone, you may add some let after return.
+Ok let's keep explicit return. But what about if?
+A two-part keyword if not very good.
+But assert is also misleading.
+`return 10` definite return
+`returnif 10, x<10` what would the order be then?
+having a keyword with two parameters makes reading code difficult.
+so either we should make it one argument or ?
+`return [100, nothing](x<100)`
+one argument: a tuple with two elements. return value, and condition result.
+`return [${100, true}, ${0, false}](x<100)` redundant code.
+`return [100](x<100)` if `x<100` is false, it will return 100. if not, element is missing! so maybe instead of runtime error we can return a tuple. But then it will also affect to legitimate case: let's make return aware of this. return always receives a tuple. returns the first element if the second element is true.
+so: `return 10` will be wrong. we should write: `return ${10, true}`
+or we can add a new keyword: retif. return is non-conditional return. retif expects a tuple.
+`return 10` -> `return [10](false)` boiler plate! not very intuitive.
+proposal 1: `return ${retval, do_ret}`, `return [100](0)` (this needs removing runtime error for seq access outo of bounds)
+`return (100)` can be shortcut for a function call which will return `${input, 0}`
+proposal 2: `return 1`, `retif 1, x<10`
+proposal 3: `return 1`, `return 100 if x<0`
+why not remove conditional?
+```
+let lambda1 := ...
+let lambda2 := ...
+return [lambda1, lambda2](condition).0()
+```
+in complex logic this will make code less readable.
+what is the main goal of the language: simplicity. Now which one of proposals is simpler?
+can we have `return (100)`? `var(1)` will be converted to `get(var, 1)`.
+what about the case there is no var? what will `(1)` be translated to? it can be translated to `get(1)`.
+if so, we can write `return (100)` to have a normal return.
+and `return ${100, condition}` for conditional and these two are the same.
+so:
+proposal: keep `return` keyword but it needs a tuple with exactly two elements: return value and condition.
+if condition is met, it will return the given value. else, does nothing.
+what if I want to evaluate and return a lambda if a condition is met? write two statements: first evaluate if condition is satisfied. `return [()->100](0)()`? no. let's no make it more complicated.
+evaluating a lambda and returning a value are two different things. Let's not mix them.
+proposal:
+1. `return` needs a tuple with two elements: value and flag.
+2. we still can have index out of bounds runtime error. so conditionals with array can be done more easily.
+3. to return a value: `return ${100, true}` or `return (100)`
+4. `let get[T] := (data: T) -> ${data, true}`
+5. to return conditionally: `return ${data, predicate}` or `return ${[100,200](predicate), true}`
+q: what happens to the shortcut: `let adder := (x:int, y:int)->x+y`?????
+shall we write: `let adder := (x:int, y:int)-> ${x+y, true)` ?
+or `let adder := (x:int, y:int)-> (x+y)` ?
+what if I write: `let adder := (x:int, y:int)-> ${x+y, x<100)` ? then it will be a compiler error?
+should it return nothing in this case?
+`let adder := (x:int, y:int)-> ${x+y, x<100)` means if `x<100` return x+y else return nothing.
+But it is making things more and more hidden. `(a)` is `get(a)`.
+defining `(a)` as `${a, true}` is also irrational. Why not write `${a, true}` instead?
+`var(1)` is more readable and is meant for seq access.
+Also `let adder := (x:int, y:int)-> ${x+y, x<100)` can be a bit confusing. becase nothing return type is not visible.
+current proposal: `return ${value, predicate}`
+q1: `let adder := (x:int, y:int)-> ${x+y, x<100)` what does this do?
+q2: can I write `let adder := (x:int, y:int)->x+y`?
+we can say, without `{}` everything on the right side of `->` will be returned. But it will make things confusing. Two different way of operation for the same thing.
+`let adder := (x:int, y:int)->x+y` should be a shortcut for:
+`let adder := (x:int, y:int)->{return x+y}`
+one solution: write `let adder := (x:int, y:int)-> (x+y)`
+Can we just merge `var(1,2,3)` and `(var, 1, 2, 3)` notation?
+`[100,200](100)` -> `get([100,200], 100)`.
+proposal 3: `return 1`, `return 100 if x<0`
+Then we can get rid of `(a,b,c)`->`get(a,b,c)` notation.
+it is clearer and more readable.
+proposal 1: `return ${retval, cond}`, pro: simple, no new keyword. con: complex, tuple all over the place, shortcut notation will be confusing `()->10` won't work. 
+proposal 5: provide an un-returnable value which cancels return.
+`return nothing` does not work. so `return [100, nothing](x<100)` will only return if `x>=100`.
+important factors:
+1. we should preserve the shortcut notation: `()->10`
+2. it should not pulloute all over the place with boilder plate.
+3. better not to have a two-part keyword `return ... if ...`
+we already have `do ... while ...` but they are together all the time. having return with optional if is a bit confusing.
+having `return nothing` not returning, is also confusing. 
+One meaning of simple is straightforward, without special/edge cases and easy to understand and act as expected.
