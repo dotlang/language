@@ -113,7 +113,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 08. `->` function declaration, module alias
 09. `[]` generics, literals
 10. `{}` code block, struct definition and struct literal, casting
-11. `()` function declaration and call
+11. `()` function declaration and call, condition for return
 12. `.`  access struct fields
 13. `::` address inside a module alias
 14. `$`  prefix for struct literals
