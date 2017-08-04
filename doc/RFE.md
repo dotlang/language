@@ -2387,3 +2387,49 @@ proposal 1: `return 100 if x<0`
 proposal 3: `(x<0) return 100` return 100 if `x<0`
 can we use `(x<0)` in other places? It is just an expression.
 pro `(x<0) return 10` - no new keyword. reads fluently: if ... retur ...
+
+N - Mention compared to go, we dont have pointers.
+
+Y - Struct literal in Go uses `field: value`.
+
+N - Do we need a shortcut for checking something is nothing?
+`!x` if x is boolean will work normally as expected.
+we can say 0 and `nothing` evaluate to false boolean.
+Anything else is true.
+so `(x) return 100` means return 100 if x is not 0 or false or nothing.
+But it might make some mistakes possible.
+Let say this:
+Everything is the same about true, false and 0 and 1.
+`!x` applied to a variable which could be nothing means not nothing.
+alternative:
+`(x==nothing) return 100`
+Let's don't change this behavior.
+`!` works only on booleans. no shortcut for nothing.
+
+Y - remove `let`: Like Go, let's have this syntax: `x := ....` and remove `let`.
+
+N - nested if/else if?
+```
+if lower == "" 
+{
+				flag.Value = "true"
+} else if lower == "true" || lower == "false" 
+{
+				flag.Value = lower
+} else 
+{
+				return fmt.Errorf("Expecting boolean value for flag %s, not: %s", arg, value)
+}
+```
+`flag_value := [nothing, "true"](lower = "")`
+`flag_value2 := flag_value // [nothing, "lower"](lower = "true" or lower = "false")`
+`(flag_value2 = nothing) return error("ERR")`
+can we simplify above by removing nothing checks?
+`flag_value := [nothing, "true"](lower = "")`
+`flag_value2 := flag_value // [nothing, "lower"](lower = "true" or lower = "false")`
+`(flag_value2 = nothing) return error("ERR")`
+In this case we need nothing marker for return. 
+type of `[nothing, "A"]` will be `seq[nothing|string]`.
+`( x := ... ) return 1`
+what does this mean? `(x) return 100` means if x is true.
+
