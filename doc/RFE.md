@@ -2579,3 +2579,88 @@ What if the array already supports nothing?
 
 Y - Add `with` keyword to do/while to specify defult loop output:
 `with default do body(T,I) while pred(I)`
+
+Y - Why not throw runtime error for index out of bounds?
+90% of the time we are traversing the sequence
+9% we use an index which should reside inside
+only 1% of the time there may be an index which lies outside.
+So for that 1% we need to pollute all the code with `.0`
+
+N - Why `arr[index]` notation can be confusing.
+`arr[po](1)` it is calling `arr[T]` func with `1` input or fetching an item from arr which is a fp and calling it?
+
+N - Do we have something for pattern matching?
+we have `int|float` with two functions that accept int or float. We want to call on of these functions with the input.
+`x:int|float = ...`
+`f1: func(int)->string`
+`f2:func(float)->string`
+we want to call `f1` if x is int, or f2 if x is float.
+we have a `nothing|int` input. on the first line we return if it is nothing.
+Rest? define a new binding and cast.
+`x:int|float = ...`
+`f1: func(int)->string`
+`f2:func(float)->string`
+we want to call `f1` if x is int, or f2 if x is float.
+```
+result:string := ()->
+{
+	(@x=@int) return f1(int.{x})
+	return f2(float.{x})
+}
+result := (f1|f2)(x)
+```
+we can add a new notation: `(a|b|c)(x,y,z)` which means call either of a or b or c with input `(x,y,z)`.
+whichever matches with the input. so a,b,c must be 3 functions or lambdas with 3 inputs. The one that matches with type of x,y,z will be called. x,y,z can be union types and their actual type will be used.
+what if we have a function which accepts `int|float` and another which accepts `int` and input is int?
+There should not be confusion about method call.
+Maybe we can extend `.()` notation. On the left can be `T|func()->T`
+or it can be any union with functions that have same output.
+`(f1|f2).(x,y,z)`.
+but `|` in this context is not usable.
+we have to decide about if we allow multiple items in triple operators:
+`array.[index]` only one
+`type.{a,b,c}` multiple value but only one type.
+`var.(1,2,3)` ? it we allow multiple items on the left `.()` will become even more complicated.
+So how shall we handle function call with a union? Use a map when std is available.
+```
+result := [@int: fInt, @float: fFloat](@data).()
+```
+suppose that we have this: `x: fInt|fFloat = getData()` x is a function pointer which returns string but input can be either int or string.
+if we have a union of two function pointers with same input but different output types, we can call it just like a normal function and output will be union of their output types. This makes sense but still will make reading code difficult.
+Why not implement this with a function?
+`invoke := (f: func()->T|func()->U)->T|U { ... }`
+`x.(1)` is only valid if x is union of two types?
+if x is a non-fp, `x.(1)` is `x`. else if it is fp, it will be called with the input.
+x can be `int|f()->int|g()->int`? no.
+x can either be `T` or `(???)->T`. We can define it using Opt type:
+`type Opt[T] := T | func()->T` but the function can have some inputs.
+Suppose that we have a sequence of fps. All of them have the same output but their input is different.
+One takes nothing, the other takes int the third takes float. 
+Now we have a `nothing|float|int` data.
+`x:nothing|float|int := processData()`
+`result := [(_:nothing)->1, (x: float) -> 2, (y: int) -> 3].(x)`
+This means that `a.(...)` if a is function pointer will invoke it, if a is union of function pointers will invoke the appropriate function, else will evaluate to a itself. No. It will be confusing.
+`result := [@nothing: (_:nothing)->1, @float: (x: float) -> 2, @int: (y: int) -> 3].[@x]`
+result is a union of all possible function pointers! and hence we cannot invoke it!
+We should be able to invoke a union of function pointers. then we can write:
+`result := [@nothing: (_:nothing)->1, @float: (x: float) -> 2, @int: (y: int) -> 3].[@x].(x)`
+so if we have:
+`fp: func(nothing)->string|func(int)->string|func(float)->string := getData()`
+then we can invoke fp: `fp(?)` but what should be the input? it must have nothing and int and float. because fp can be any of them.
+suppose that we don't have a union, we have a struct with all possible cases or a sequence with all possible cases.
+not struct. suppose that we have a sequence of functions. if we read from this seqence, it can be any of those functions.
+what if we don't read from the sequence first.
+we invoke the sequence with a value which is one of expected inputs
+`invoke := (sq: seq[func(nothing)->string|func(int)->string|func(float)->string], input: nothing|int|float)`
+invoke can call the first appropriate function pointer in the given sequence with `input`.
+it will find the first element in the sq which is a fp of input equal to type of `input`.
+So this can be easily done with a function.
+What about `.()`?
+```
+tryCall := (x: T|func()->T) -> T
+{ 
+	(@x == @T) return T.{x}
+	return (func()->T).{x}()
+}
+```
+this is fine unless func has some input. then we will need to write tryCall for each input count (because we don't have variadic templates). Also this will be quite popular I think so better to have a notation for it.
