@@ -2563,11 +2563,19 @@ Let's handle this strange logic in a function:
 `handle[T,U] := (data:T, f: func(U)->X) -> ...`
 We used this initially to handle error return but now with conditional if and `//` it is not very needed.
 
-? - What does `T.{}` mean?
+Y - What does `T.{}` mean?
 What does `var.[]` for sequence mean?
 `var.()` has its own meaning.
 `var.[]` will call `get(var)`.
 For custom types, it is up to the developer.
 But what about sequence? `get(my_array)`? 
 What does it mean? It must be compatible with normal get: It return something of the same type as sequence elements.
-`arr.[]` or maybe not?
+`arr.[]` or maybe not? It is not defined in the core. 
+Although user can write `get[T] := (arr: seq[T])` function and add support for it.
+
+N - Another reason reading from array MUST give you a tuple not T|nothing:
+What if the array already supports nothing?
+`x := seq.[0]` if `x` is `nothing` How can I know if it was nothing inside the array and `0` is a valid index or whether `0` is invalid index and `nothing` is because it was missing?
+
+Y - Add `with` keyword to do/while to specify defult loop output:
+`with default do body(T,I) while pred(I)`
