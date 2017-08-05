@@ -2433,7 +2433,7 @@ type of `[nothing, "A"]` will be `seq[nothing|string]`.
 `( x := ... ) return 1`
 what does this mean? `(x) return 100` means if x is true.
 
-? - 
+Y - 
 ```
 routers := ...
 if ( condition ) routers = append(routers, ...)
@@ -2453,10 +2453,11 @@ simplify[T] := (data: T|func()->T) -> [data(), data](@data == @T)
 ```
 but this won't work. Because we cannot calculate the sequence. If data is T then `data()` will fail!
 ```
-simplify[T] := (data: T|func()->T) -> 
+type F[T] := func()->T
+simplify[T] := (data: T|F[T]) -> T
 {
 	result := [nothing, data](@data = @T)
-	return result // data()
+	return result // F[T]{data}.0()
 }
 ```
 What does this mean? `var()`? If variable is a function pointers this has a meaning!
@@ -2479,3 +2480,94 @@ proposal: `var()` means var. But this is not good because if there is a mistake,
 So:
 `new_routers := [routers, () -> append(routers, x)](condition)`
 `x := new_routers<>`
+ambiguity: `let x := var<a>(b)>(d)`
+it can be: `var< [a>(b)] > (d)`
+or: `[var<a> (b)] > (d)`.
+goal: to provide a mechanism to read data from sequence easily (and later for custom data like map).
+goal: provide a mechanism to convert `T|()->T` to `T` easily -> this can be done with functions so don't make syntax more ambiguous. Doing it with a function is not difficult but adding a new notation for this, makes a code harder to read and may arise some real parsing ambiguity cases (unless of course if we add a completely new notation which is also not good).
+so our purpose is to have a shortcut for a function call like opCall or get: `get(a,b,c)` should be written easier.
+`seq1(0)` reads first element of the sequence. It is not a magic notation. It calls `get(seq1, 0)`.
+but if variable is a function pointer, this can be confusing.
+we can write: `0 ~ get(seq1, _)` but still it is long. this is a very common notation and will be used in many cases. So it's better if we have a notation for it.
+`a//b`
+`var<a>(b)>(c)`
+another way to implement simplify: `data ~ callFunc(_)` it will be evaluated to `T` is data is not a function pointer.
+`var[1]` -> `get(var, 1)`, `var[[1]]` -> `get(var, [1])`, `var[var[1]]` -> `get(get(var, 1))`
+`var[]` -> `get(var)`
+we use `[]` for generics, sequence and custom literals.
+`[]` is definitely not ambiguoug because nowhere else it is usable except for empty sequence.
+But if it is prefixed with an identifier or literal, `5[]` it means it is not an empty sequence literal.
+`var%1` -> `get(var, 1)`
+`var%(1,2)` -> `get(var, 1, 2)`
+`var.(0)`
+`var.[0]`
+`.` is only used to fetch data from struct and nothing else. struct fields cannot start with `(` or `[`.
+So maybe we can even use both of them.
+`var.()` -> `invoke(var)`
+`var.[]` -> `get(var)`
+`var.(a,b,c)` -> `invoke(var, a, b, c)`
+`var.[a,b,c])` -> `get(var, a, b, c)`
+just because we can, doesn't mean we should do this.
+`new_routers := [routers, () -> append(routers, x)](condition).()`
+`a.(b,c,d,...)` is for the case where `a` is either T or a function pointer that returns T. In this case, if it is T this doesn't do anything. If not, it will call that function pointer. result will be of type T.
+What if a has other cases? like nothing? then this notation is not useful.
+What if type of a is `func()->T|func()->func()->T`. Then `a.()` will be of type `func()->T`.
+This notation can be used for lazy calculation. The function can accept `int|func()->int` and by `.()` it can convert it to a real int whener it wants to.
+`a.[b,c]` is customizable. it will be translated to `get(a, b, c)`. For sequence, this is done in core to fetch element at index b. `seq1.[0]`
+`new_routers := [routers, () -> append(routers, x)].[condition].()`
+so: proposal:
+1. `a.(b,c,d)` will convert `T|func(b,c,d)->T` to `T` by calling `a` if it is a function pointer or doing nothing if it is not.
+2. `a.[b,c,d]` is a syntax sugar for calling: `get(a,b,c,d)`. For sequence it is used to fetch element at a specific index.
+what about `.{}`? Maybe we can use it for casting.
+`int.{a}`. `func()->int.{a}`. we need to enclose both arguments. `(func()->int).{a}`
+`int.{x}`, `float.{x}`, `MyInt.{x}`. So it won't be confused with struct.
+`Point.{x}` converts x to Point structure.
+`Point{100,200}` creates a new struct with given values.
+So inside `.{}` we can only have one element. yes. the binding we want to cast.
+`Type.{binding}` 
+maybe we can have multiple items which does conversion for all of them in a tuple.
+`mx, my, mz := MyInt.{x,y,z}`
+`mx, my, mz := (func()->int).{a,b,c}`
+3. `T.{b,c,d}` or `(T).{b,c,d}` where T is a type, will cast data to T.
+
+N - Isn't casting notation ambiguous with tuple?
+`Type{A}`
+`StructType{100}`
+I don't think so. They are compatible.
+What if target cast type is not simple. We may need it. `(func()->T){a}`
+1. if type to cast to, is not simple (one identifier), it should be enclosed in paren.
+
+Y - Should we return maybe[int] when reading from int sequence?
+`x := array.[0] // exit(0)`
+there are 3 options:
+1. throw runtime error
+2. return `T|nothing`
+3. return `{T, bool}`
+if we use 3, and have `_,d := arr.[0]` the compiler may be able to optimize the operation.
+we have similar issue when casting a union type to non-union.
+in that case, we definitely have to use tuple because it is a union itself, we should not be returning another union.
+if we return a struct, conditionals will change:
+struct:    `[100,200].[x<100].0`
+maybe int: `int.{[100,200].[x<100]}`
+The code is easier to read in struct case because we can directly read the data.
+The struct case is shorter (4 characters) and has less nested surrounders. The maybe case needs `int.{}` which forces us to mention the type name which is also redundant.
+So either return a struct or throw runtime error.
+
+Y - How does chain work with `.{}, .(), .[]`?
+with `.()` the chain operator has it's own logic too.
+`x ~ a.(_)` may result in a (if a is not function pointer) or x (if a is fp and it's input it not x) or `a(x)`.
+
+Y - The chain operator is a bit confusing. `~` acts magically. apply X to F if it matches with it else return X.
+`ivar ~ processFloat(_)` will give you `ivar` which may be unexpected and code is also not readable.
+Let's handle this strange logic in a function:
+`handle[T,U] := (data:T, f: func(U)->X) -> ...`
+We used this initially to handle error return but now with conditional if and `//` it is not very needed.
+
+? - What does `T.{}` mean?
+What does `var.[]` for sequence mean?
+`var.()` has its own meaning.
+`var.[]` will call `get(var)`.
+For custom types, it is up to the developer.
+But what about sequence? `get(my_array)`? 
+What does it mean? It must be compatible with normal get: It return something of the same type as sequence elements.
+`arr.[]` or maybe not?
