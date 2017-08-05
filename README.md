@@ -223,7 +223,7 @@ These rules are highly advised but not mandatory.
 8. You can use range generator operator `..` to create sequence literals (Example 5).
 9. A sequence literal which contains other sequence literals, can either be parsed as is, or destruct inner sequences and create a larger sequence. (Example 6 and 7). In example 7, result is a seqence of integers `1, 2, 3, 4, 5, 6`.
 10. Core provices functions to extract part of a sequence as another sequence (Like array slice).
-11. Referring to an index outside sequence will return in a tuple consisting of default value for that type and false flag.(Example 8 for reading from a sequence).
+11. Referring to an index outside sequence will cause a runtime error.(Example 8 for reading from a sequence).
 
 **Examples**
 
@@ -234,7 +234,7 @@ These rules are highly advised but not mandatory.
 5. `x := [1..10]`
 6. `x: seq[seq[int]] := [ [1,2], [3,4], [5,6] ]`
 7. `x: seq[int] := [ [1,2], [3,4], [5,6] ]`
-8. `n, exists := x.[10]`
+8. `n := x.[10]`
 
 ## Compound types
 
@@ -678,7 +678,7 @@ while (x:int|nothing) ->
 03. `y:int = int{x}`
 04. `y: int|float = 12`
 05. `y = x // y // z // 0`
-06. `result := [data, () -> processBigBuffer(buffer)].[condition].0.()`
+06. `result := [data, () -> processBigBuffer(buffer)].[condition].()`
 
 # Other Features
 
@@ -815,7 +815,7 @@ quickSort:func(seq[int], int, int)->seq[int] := (list:seq[int], low: int, high: 
   (high >= low) return list
   
   mid_index := (high+low)/2
-  pivot := list(mid_index)
+  pivot := list.[mid_index]
   
   small_list := filter( list, (x:int)-> x<pivot )
   big_list   := filter( list, (x:int)-> x>pivot )
@@ -838,6 +838,42 @@ filteredSum := (data: seq[int]) -> int
       (i = nothing) return 0
       (i<len) return i+1
       return nothing
+    }
+}
+```
+
+## Digit extractor
+A function which accepts a number and returns it's digits in a sequence of characters.
+Generally for this purpose, using a linked-list is better because it will provide better performance.
+```
+extractor := (n: number, result: seq[char]) ->
+{
+  (n<10) return append(result, char.{48+n})
+  digit := n % 10
+  return extractor(n/10, append(result, char.{48+digit})
+}
+```
+
+## Max sum
+A function which accepts two sequences of numbers and returns maximum of sum of any any two numbers chosen from each of them.
+This can be done by finding maximum element in each of the arrays but we want to do it with a nested loop.
+```
+maxSum := (a: seq[int], b: seq[int]) -> int 
+{
+  return
+    with 0
+    do (index: {int, int}, max: int) ->
+    {
+      current_max := a.[index.0] + b.[index.1]
+      return [max, current_max].[current_max>max]
+    }
+    while (index: nothing|{int, int}) -> {int, int}
+    {
+      (index = nothing) return ${0,0}
+      index2 := ({int,int}).{index}
+      return inc(index2, length(a), length(b))
+      //OR (invoke is a normal function which accepts a sequence of function pointers and a potential input):
+      return invoke([(_:nothing)->${0,0}, (x: {int, int})->inc(x, length(a), length(b))], index)
     }
 }
 ```
