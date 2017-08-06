@@ -2690,4 +2690,80 @@ while (x:int) ->
 }, (x: nothing) -> 0
 ```
 
-? - Maybe we can use `while` predicates to simulate local function matching.
+N - Maybe we can use `while` predicates to simulate local function matching.
+No.
+
+? - Instead of `do, while, with` just add a single keyword or symbol to call current function (just useful when function is anonymous lambda). then instead of:
+```
+filteredSum := (data: seq[int]) -> int
+{
+  len := length(data)
+  return 
+    with 0
+    do (i:int, sum: int) -> sum + data.[i] * ( 1 - (data.[i] % 2) )
+    while (i: int) -> 
+    {
+      (i<len) return i+1
+      return nothing
+    }, (i: nothing) -> 0
+}
+```
+we can write:
+```
+calc := (index: int, sum: int)->
+{
+	(index>=length(data)) return sum
+	return calc(index+1, sum+data.[index])
+}
+filteredSum := calc(0, 0)
+```
+Is this general enough?
+`x := do body while pred`
+```
+x := (i: int, data: string) -> 
+{
+	new_i := pred(i)
+	(new_i = nothing) return data
+	return x(new_i, process(data))
+}(with_value, default_result)
+```
+yes it is.
+How can I read lines of a file into an array?
+We can provide a function in core like this:
+`fill[T] := (size: int, filler: func()->T) -> seq[T]`
+worst case: read lines into a list then convert. if file is small, it won't be a big overhead.
+If file is large, list is still better.
+proposal: remove do, while, with and loop altogether. implement loop using recursion.
+but provide helper methods like map and filter and reduce in core.
+```
+maxSum := (a: seq[int], b: seq[int]) -> int 
+{
+  return
+    with 0
+    do (index: {int, int}, max: int) ->
+    {
+      current_max := a.[index.0] + b.[index.1]
+      return [max, current_max].[current_max>max]
+    }
+    while (index: {int, int}) -> {int, int}
+    {
+      return inc(index, length(a), length(b))
+    }, (_: nothing) -> ${0,0}
+}
+```
+becomes:
+```
+maxSum := (a: seq[int], b: seq[int]) -> int
+{
+	calc := (idx1: int, idx2: int, current_max: int) -> 
+	{
+		(idx2 >= length(b)) return current_max
+		sum := a.[idx1] + b.[idx2]
+		next1 := (idx1+1) % length(a)
+		next2 := idx2 + (idx1+1)/length(a)
+		return calc(next1, next2, max(current_max, sum))
+	}
+	
+	return calc(0, 0, 0)
+}
+```
