@@ -606,19 +606,20 @@ process := (x:int) ->
 
 # `with/do/while` keywords
 
-**Syntax**: `A := with default do body(I, T) while pred(I)`
+**Syntax**: `A := with default do body(I, T) while pred(I), pred2(I), ...`
 
 **Notes**
 
 1. This is used to evaluate a lambda (body) until another lambda (pred) returns `nothing`, at which point, the last result of invoking `body` will be returned as the result of loop execution. The initial value fot `T` is the `default` which will be returned if `pred` returns `nothing` upon the very first call.
 2. Simple workflow of loops:
-  a. `T := nothing` (current loop result) and `I := nothing` (current iterator value)
+  a. `T := default` (current loop result) and `I := pred(nothing)` (current iterator value)
   b. `I := pred(I)`
   c. if `I` is nothing, return `T` as the output and finish the loop
   d. `T := body(I, T)`
   e. goto step b
 3. Example 1 creates a linked list starting from 0 up to `n` argument and stores it in `result` binding.
 4. Type of `default` and `T` and output of `body` lambda must be the same.
+5. You can have multiple predicates for `while` section, the one with `nothing` will be called initially, and other will be called according to the current value of the itertion binding.
 
 **Examples**
 
@@ -626,17 +627,17 @@ process := (x:int) ->
 ```
 n := 100
 //I want result to be 0->1->2->...->99 as a linked list
-result := do (x:int, lst: List[int]|nothing) -> 
+result := with nothing do (x:int, lst: List[int]) -> 
 { 
   newList := append(lst, x)
   return newList
-} 
-while (x:int|nothing) -> 
+},
+while (x:int) -> 
 { 
-  (x=nothing) return 0
   (x<n) return nothing
-  return int.{x}.0+1 
-}
+  return x+1 
+},
+(x: nothing) -> 0
 ```
 
 # Operators
@@ -833,12 +834,11 @@ filteredSum := (data: seq[int]) -> int
   return 
     with 0
     do (i:int, sum: int) -> sum + data.[i]
-    while (i: int|nothing) -> 
+    while (i: int) -> 
     {
-      (i = nothing) return 0
       (i<len) return i+1
       return nothing
-    }
+    }, (i: nothing) -> 0
 }
 ```
 
@@ -867,14 +867,10 @@ maxSum := (a: seq[int], b: seq[int]) -> int
       current_max := a.[index.0] + b.[index.1]
       return [max, current_max].[current_max>max]
     }
-    while (index: nothing|{int, int}) -> {int, int}
+    while (index: {int, int}) -> {int, int}
     {
-      (index = nothing) return ${0,0}
-      index2 := ({int,int}).{index}
-      return inc(index2, length(a), length(b))
-      //OR (invoke is a normal function which accepts a sequence of function pointers and a potential input):
-      return invoke([(_:nothing)->${0,0}, (x: {int, int})->inc(x, length(a), length(b))], index)
-    }
+      return inc(index, length(a), length(b))
+    }, (index: nothing) -> ${0,0}
 }
 ```
 
