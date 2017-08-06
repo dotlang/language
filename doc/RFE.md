@@ -2664,3 +2664,30 @@ tryCall := (x: T|func()->T) -> T
 }
 ```
 this is fine unless func has some input. then we will need to write tryCall for each input count (because we don't have variadic templates). Also this will be quite popular I think so better to have a notation for it.
+
+Y - specify starting index value in while
+`A := with default do body(I, T) while pred(I)`
+default is the initial value for T, so type of T does not need to be `T|nothing`.
+we need a default for I too. So that initial call to pred is done with that value.
+`A := with default_output at default_iterator do body(I, T) while pred(I)`
+in C we write:
+`for(x=0;x=pred(x) != nothing) body(x, t)`
+Or maybe we can say, initial call to pred will be done with the default value of I. 0 or empty.
+or we can write:
+`A := with default_output do body(I, T) while pred(I) while pred(nothing)`
+```
+n := 100
+//I want result to be 0->1->2->...->99 as a linked list
+result := with nothing do (x:int, lst: List[int]) -> 
+{ 
+  newList := append(lst, x)
+  return newList
+} 
+while (x:int) -> 
+{ 
+  (x<n) return nothing
+  return x+1 
+}, (x: nothing) -> 0
+```
+
+? - Maybe we can use `while` predicates to simulate local function matching.
