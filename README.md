@@ -6,7 +6,7 @@ Perfection is finally attained not when there is no longer anything to add, but 
 
 Version 0.98
 
-August 5, 2017
+August 7, 2017
 
 # History
 
@@ -22,7 +22,7 @@ August 5, 2017
 - **Version 0.95**: May 23, 2017 - Refined notation for loop and match, Re-organize and complete the document, remove pre and post condition, add `defer` keyword, remove `->>` operator in match, change tuple assignment notation from `:` to `=`, clarifications as to speciying type of a tuple literal, some clarifications about `&` and `//`, replaced `match` keyword with `::` operator, clarified sub-typing, removed `//`, discarded templates, allow operator overloading, change name to `dotlang`, re-introduces type specialization, make `loop, if, else` keyword, unified numberic types, dot as a chain operator, some clarifications about sum types and type system, added `ref` keyword, replace `where` with normal functions, added type-copy and local-anything type operator (`^` and `%`).
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
-- **Version 0.98**: August 5, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, Added `with/do/while` keywords, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` insted of `var()`, added `.()` operator
+- **Version 0.98**: August 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` insted of `var()`, added `.()` operator
 - **Version 1.00**: ???? ?? ????? - 
 
 # Time table
@@ -99,7 +99,6 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 09. **Generics**: `type Stack[T] := { data: array[T], info: int }` (Defines a blueprint to create new types)
 10. **Union type**: `type Maybe[T] := T | nothing` (Can store either of possible types)
 11. **Function**: `calculate: func(int,string)->float := (x, y) -> float { return x/y  }`
-12. **Loops**: `countToTen := (x: int, _: int) -> x while (x:int|nothing) -> increaseUntil(x, 10)`
 
 ## Symbols
 
@@ -130,7 +129,6 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 1. `import`: Used to import types and bindings from another modules.
 2. `type`: Used to specify a name for a type.
 3. `return`: Used to specify return value of a function.
-4. `do/while`: Define loop.
 
 **Primitive data types**: `int`, `float`, `char`, `seq`, `func`
 
@@ -604,42 +602,6 @@ process := (x:int) ->
 10. `func add(x:int, y:int) -> x+y`, `{10, 20} ~ add(_,_)`
 11. `{1} ~ process(_)`, => `1 ~ process(_)`
 
-# `with/do/while` keywords
-
-**Syntax**: `A := with default do body(I, T) while pred(I), pred2(I)`
-
-**Notes**
-
-1. This is used to evaluate a lambda (body) until another lambda (pred) returns `nothing`, at which point, the last result of invoking `body` will be returned as the result of loop execution. The initial value fot `T` is the `default` which will be returned if `pred` returns `nothing` upon the very first call.
-2. Simple workflow of loops:
-  a. `T := default` (current loop result) and `I := pred(nothing)` (current iterator value)
-  b. `I := pred(I)`
-  c. if `I` is nothing, return `T` as the output and finish the loop
-  d. `T := body(I, T)`
-  e. goto step b
-3. Example 1 creates a linked list starting from 0 up to `n` argument and stores it in `result` binding.
-4. Type of `default` and `T` and output of `body` lambda must be the same.
-5. You can have two predicates for `while` section, the one with `nothing` will be called initially, and the other one will be called according to the current value of the itertion binding.
-
-**Examples**
-
-1. 
-```
-n := 100
-//I want result to be 0->1->2->...->99 as a linked list
-result := with nothing do (x:int, lst: List[int]) -> 
-{ 
-  newList := append(lst, x)
-  return newList
-},
-while (x:int) -> 
-{ 
-  (x<n) return nothing
-  return x+1 
-},
-(_: nothing) -> 0
-```
-
 # Operators
 
 ## Basic operators
@@ -830,15 +792,13 @@ A function which accepts a list of numbers and returns sum of even numbers.
 ```
 filteredSum := (data: seq[int]) -> int
 {
-  len := length(data)
-  return 
-    with 0
-    do (i:int, sum: int) -> sum + data.[i] * ( 1 - (data.[i] % 2) )
-    while (i: int) -> 
-    {
-      (i<len) return i+1
-      return nothing
-    }, (i: nothing) -> 0
+  calc := (index: int, sum: int)->
+  {
+    (index>=length(data)) return sum
+    return calc(index+1, sum+data.[index])
+  }
+  
+  return calc(0,0)
 }
 ```
 
@@ -858,19 +818,18 @@ extractor := (n: number, result: seq[char]) ->
 A function which accepts two sequences of numbers and returns maximum of sum of any any two numbers chosen from each of them.
 This can be done by finding maximum element in each of the arrays but we want to do it with a nested loop.
 ```
-maxSum := (a: seq[int], b: seq[int]) -> int 
+maxSum := (a: seq[int], b: seq[int]) -> int
 {
-  return
-    with 0
-    do (index: {int, int}, max: int) ->
-    {
-      current_max := a.[index.0] + b.[index.1]
-      return [max, current_max].[current_max>max]
-    }
-    while (index: {int, int}) -> {int, int}
-    {
-      return inc(index, length(a), length(b))
-    }, (_: nothing) -> ${0,0}
+	calc := (idx1: int, idx2: int, current_max: int) -> 
+	{
+		(idx2 >= length(b)) return current_max
+		sum := a.[idx1] + b.[idx2]
+		next1 := (idx1+1) % length(a)
+		next2 := idx2 + (idx1+1)/length(a)
+		return calc(next1, next2, max(current_max, sum))
+	}
+	
+	return calc(0, 0, 0)
 }
 ```
 
