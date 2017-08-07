@@ -2693,7 +2693,7 @@ while (x:int) ->
 N - Maybe we can use `while` predicates to simulate local function matching.
 No.
 
-? - Instead of `do, while, with` just add a single keyword or symbol to call current function (just useful when function is anonymous lambda). then instead of:
+Y - Instead of `do, while, with` just add a single keyword or symbol to call current function (just useful when function is anonymous lambda). then instead of:
 ```
 filteredSum := (data: seq[int]) -> int
 {
@@ -2767,3 +2767,6 @@ maxSum := (a: seq[int], b: seq[int]) -> int
 	return calc(0, 0, 0)
 }
 ```
+" A properly tail-call-optimized recursive function is mostly equivalent to an iterative loop at the machine code level."
+
+? - Do we need named types? Can't we unify them with alias types?
