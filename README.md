@@ -625,9 +625,9 @@ process := (x:int) ->
 2. `:=` operator is used to define a named type or a binding.
 3. `=` will do comparison on a binary-level. 
 4. Operators for bitwise operations and exponentiation are defined as functions in core.
-5. `@`: returns type-id of a named or primitive type as an integer number, or a union variable (Example 1).
+5. `@`: returns type-id of then given union variable or type name (Example 1).
 6. `{}`: To cast from named to unnamed type you can use: `Type{value}` notation (Example 2).
-7. `{}`: To cast from variable to a union-type (Example 3).
+7. `{}`: To cast from variable to a union-type (Example 7).
 8. You can use compound literal to define a literal which is calculated by calling appropriate `set` functions. These literals have the form of `[a:b:c d:e:f ...]`. In this example the literal has a set of elements each of which has 3 items. This means that to calculate the value of the literal, compild will render `x0 := set(nothing, a, b, c)`, then `x1 := set(x0, d, e, f)` and continue until end of values. The final result will be the output value. This notation can be used to have map literals and other custom literals.
 10. `A // B` will evaluate to A if it is not nothing, else it will be evaluated to B.
 11. Conditional operators return `true` or `false` which actually are `1` and `0`.
@@ -637,11 +637,12 @@ process := (x:int) ->
 **Examples**
 
 01. `g = @int`, `g = @my_union`
-02. `type MyInt := int`, `x: MyInt = 12`
+02. `type MyInt := int`, `x: MyInt = MyInt{int_var}`
 03. `y:int = int{x}`
 04. `y: int|float = 12`
 05. `y = x // y // z // 0`
 06. `result := [data, () -> processBigBuffer(buffer)].[condition].()`
+07. `data, successs := int{int_or_float}`
 
 # Other Features
 
