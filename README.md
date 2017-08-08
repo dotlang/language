@@ -23,7 +23,7 @@ August 7, 2017
 - **Version 0.96**: June 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: June 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` placeholder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is types statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
 - **Version 0.98**: August 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` insted of `var()`, added `.()` operator
-- **Version 1.00**: ???? ?? ????? - 
+- **Version 1.00**: ???? ?? ????? - Added `^` operator, Sequence and custom literals are separatad by space, Use parentheses for custom literals 
 
 # Time table
 
@@ -106,18 +106,19 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 02. `.`   access struct fields
 03. `()`  function declaration and call, condition for return
 04. `{}`  code block, struct definition and struct literal
-05. `[]`  generics, literals
+05. `[]`  generics, literals (for sequence and custom literals)
 06. `|`   union data type (Define different possible types)
 07. `->`  function declaration, module alias
-08. `..`  range generator
+08. `..`  range generator for sequence literal
 09. `::`  address inside a module alias
 10. `//`  nothing-check operator
 11. `$`   prefix for struct literals
-12. `:`   type declaration for struct and function input and values, custom literals, type alias
+12. `:`   type declaration for struct, function inputs and bindings, struct literals, type alias
 13. `:=`  Binding declaration, named types
-14. `@`   type-id operator (Return unique identifier of types)
+14. `@`   get internal type of union 
+14. `^`   type-id operator (Return unique identifier of types)
 15. `~`   chain operator (To chain function calls)
-16. `_`   placeholder (lambda creator, unknown variable in assignments or function argument)
+16. `_`   placeholder (lambda creator, unknown variable in assignments or function input)
 17. `.{}` casting
 18. `.()` optional call (call if it is a function pointer, do nothing otherwise)
 19. `.[]` custom get
@@ -228,10 +229,10 @@ These rules are highly advised but not mandatory.
 1. `x := 12`
 2. `x := 1.918`
 3. `x := 'c'`
-4. `x: seq[int] := [1,2,3,4]`
+4. `x: seq[int] := [1 2 3 4]`
 5. `x := [1..10]`
-6. `x: seq[seq[int]] := [ [1,2], [3,4], [5,6] ]`
-7. `x: seq[int] := [ [1,2], [3,4], [5,6] ]`
+6. `x: seq[seq[int]] := [ [1 2] [3 4] [5,6] ]`
+7. `x: seq[int] := [ [1 2] [3 4] [5 6] ]`
 8. `n := x.[10]`
 
 ## Compound types
@@ -248,7 +249,7 @@ These rules are highly advised but not mandatory.
 4. Example 2, defines a union with explicit type and changes it's value to other types in next two examples.
 5. You can use the syntax in example 5 to cast a union to another type. Result will have two parts: data and a flag. If flag is set to false, the conversion is failed.
 6. `int | flotOrString` will be simplified to `int | float | string`
-7. Example 6 shows using `@` operator to get internal type of a union binding. This operator also can be applied on an actual type.
+7. Example 6 shows using `@` operator to get internal type of a union binding. 
 8. If all union cases are function pointers, you can treat it like a function, but must pass appropriate input (Example 7)
 
 **Examples**
@@ -258,7 +259,7 @@ These rules are highly advised but not mandatory.
 3. `int_or_float := 12.91`
 4. `int_or_float := 100`
 5. `int_value, done := int{my_union}`
-6. `has_int := (@my_int_or_float == @int)`
+6. `has_int := (@my_int_or_float = ^int)`
 7. `fn: func(int)->int|func(string)->int|func(float)->int := ...`
 A union of type function pointer with three possible function types.
 8. `data: int|float|string := ...`, `o := fn(data)`
@@ -556,7 +557,7 @@ process := (x:int) ->
 4. Example 5 shows a function that returns a lambda.
 5. Example 6 shows invoking a lambda at the point of definition.
 6. You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normall call and replace the lambda inputs with `_`. Example 8 defines a lambda to call `process` functions with `x=10` but `y` and `z` will be inputs.
-7. If lambda is assigned to a variable, you can invoke itself from inside (Example 9).
+7. If lambda is assigned to a variable, you can invoke itself from inside (Example 9). This is used to implement iteration loops.
 
 **Examples**
 
@@ -611,10 +612,10 @@ process := (x:int) ->
 1. Conditional operators: `and, or, not, =, !=, >=, <=`
 2. Arithmetic: `+, -, *, /, %, %%`
 3. Assignment: `=`
-4. Type-id: `@`
+4. Type-id: `@` and `^`
 5. Casting `{}`
 6. Chain `~`
-7. Compound literal `[:]`
+7. Custom literal `[()]`
 8. Nothing check operator `//`
 9. Optional call `.()`
 10. Custom get `.[]`
@@ -624,11 +625,10 @@ process := (x:int) ->
 1. The meaning for most of the operators is like C-based languages except for `=` which is used to check for equality.
 2. `:=` operator is used to define a named type or a binding.
 3. `=` will do comparison on a binary-level. 
-4. Operators for bitwise operations and exponentiation are defined as functions in core.
-5. `@`: returns type-id of then given union variable or type name (Example 1).
+5. `@`: returns type-id of the data inside a union binding, `^` returns unique identifier of a type (Example 1). Both operators return an integer number which can be used to compare with another type identifier.
 6. `{}`: To cast from named to unnamed type you can use: `Type{value}` notation (Example 2).
 7. `{}`: To cast from variable to a union-type (Example 7).
-8. You can use compound literal to define a literal which is calculated by calling appropriate `set` functions. These literals have the form of `[a:b:c d:e:f ...]`. In this example the literal has a set of elements each of which has 3 items. This means that to calculate the value of the literal, compild will render `x0 := set(nothing, a, b, c)`, then `x1 := set(x0, d, e, f)` and continue until end of values. The final result will be the output value. This notation can be used to have map literals and other custom literals.
+8. You can use compound literal to define a literal which is calculated by calling appropriate `set` functions repeatedly. These literals have the form of `[(a,b,c) (d,e,f) ...]`. In this example the literal has a set of elements each of which has 3 items. This means that to calculate the value of the literal, compild will render `x0 := set(nothing, a, b, c)`, then `x1 := set(x0, d, e, f)` and continue until end of values. The final result will be the output value. This notation can be used to have map literals and other custom literals.
 10. `A // B` will evaluate to A if it is not nothing, else it will be evaluated to B.
 11. Conditional operators return `true` or `false` which actually are `1` and `0`.
 12. Optional call: `a.(b,c,d)` will convert `T|func(b,c,d)->T` to `T` by calling `a` if it is a function pointer or doing nothing if it is not. This is useful in conditionals where you have a value in some case but for the other case you want a lambda (Maybe due to high computation cost). And want to merge them both after the condition is evaluated (Example 6).
@@ -636,7 +636,7 @@ process := (x:int) ->
 
 **Examples**
 
-01. `g = @int`, `g = @my_union`
+01. `g := ^int`, `g := @int_or_float`
 02. `type MyInt := int`, `x: MyInt = MyInt{int_var}`
 03. `y:int = int{x}`
 04. `y: int|float = 12`
@@ -660,18 +660,18 @@ process := (x:int) ->
 ```
 v: int|float|string = processData()
 //check: if predicate is satisfied, return lambda result, else nothing
-x: int|nothing := check[int](@v=@int, ()->100)
+x: int|nothing := check[int](@v=^int, ()->100)
 y: int|nothing := ...
 z: int|nothing := ...
 //merge takes multiple T|nothing values and returns the only non-nothing one.
 result : int := merge(x,y,z)
 //or: combine them together
-result : int := merge(check[int](@v=@int, ()->100), check[int](@v=@string, ()->200), check[int](true, ()->300))
+result : int := merge(check[int](@v=^int, ()->100), check[int](@v=^string, ()->200), check[int](true, ()->300))
 ```
 
 2.
 ```
-x:int := [100,200].[a>0]
+x:int := [100 200].[a>0]
 ```
 
 ## dispose
@@ -762,7 +762,7 @@ eval := (input: string) -> float
 
 func innerEval := (exp: Expression) -> float 
 {
-  (@exp = @int) return int.{exp}.0
+  (@exp = ^int) return int.{exp}.0
   y,_ := NormalExpression{x}
   
   (y.op = '+') return innerEval(y.left) + innerEval(y.right) 
