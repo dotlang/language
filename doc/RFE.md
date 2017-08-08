@@ -2769,4 +2769,32 @@ maxSum := (a: seq[int], b: seq[int]) -> int
 ```
 " A properly tail-call-optimized recursive function is mostly equivalent to an iterative loop at the machine code level."
 
-? - Do we need named types? Can't we unify them with alias types?
+Y - Break type-id into two operators: `@int` returns id of the given type.
+`^union` returns type inside the union variable.
+It is better to have two notations that do a simple thing rather than having a single notation that does a complex job. 
+With multiple notations, there is more room form flexibility by combining them (orth).
+
+N - Do we need named types? Can't we unify them with alias types?
+
+Y - `:` is used in a lot of different places. can we use different notations?
+```
+Ok x:int
+Ok type MyInt: int
+${x:10, y:20}
+[1:2, 3:4] -> [(1,2) (3,4)]
+```
+for custom literl we can use sequence literal with `(a,b,c)` format.
+or what about `=:`? for struct literals: `${x=:10, y=:20}`. its ugly.
+but with this notation for custom literal, we should use `[1 2 3]` for sequence.
+sequence of int: `[1 2 3 4]`
+custom literal: `[("UK", 65) ("US", 300) ...]`
+now we have: `["UK":65, "US": 300, ...]`.
+advantage of suggested literal: no re-use of `:`.
+`()` notation is only used for function decl and call and conditional return.
+we can write `(1,2,3)` to call a function whose name is provided by context: for custom literal, name is `get`.
+`[1 2 3]` is also better because it is differentiated from generics where comma is used.
+proposal:
+1. sequence literal items are separated using space and not comma.
+2. custom literals are enclosed in parentheses and separated by space: `[("US", 300) ("UK", 65) ("CA", 200)]`
+this notation does not re-use `:` which is good. Also it is more like function call.
+in this new notation we can also have custom literals with only one elements: `[(1) (2) (3)]` is different from `[1 2 3]`. The second one is a sequence but the first one will call get function.
