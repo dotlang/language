@@ -2798,3 +2798,10 @@ proposal:
 2. custom literals are enclosed in parentheses and separated by space: `[("US", 300) ("UK", 65) ("CA", 200)]`
 this notation does not re-use `:` which is good. Also it is more like function call.
 in this new notation we can also have custom literals with only one elements: `[(1) (2) (3)]` is different from `[1 2 3]`. The second one is a sequence but the first one will call get function.
+
+N - More general call forwarding
+`process := (x:int, y:int) -> x+y`
+`process := (x:int) -> process(x,0)`
+`process := (x:int) -> process(x,0)`
+`draw := (Circle->Shape)`
+`draw: func(Circle) := (c: Circle) -> draw(c.Shape)`
