@@ -94,7 +94,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 04. **Sequence**: `scores:seq[int] := [1,2,3,4]` (Similar to array).
 05. **Named type**: `type MyInt := int` (Defines a new type with same binary representation as `int`).
 06. **Struct type**: `type Point := {x: int, y:int, data: float}` (Like `struct` in C)
-07. **Struct literal**: `location := Point{x=10, y=20, data=1.19}`
+07. **Struct literal**: `location := Point{x:10, y:20, data:1.19}`
 08. **Composition**: `type Circle := {Shape, radius: float}` (`Circle` embeds fields of `Shape`)
 09. **Generics**: `type Stack[T] := { data: array[T], info: int }` (Defines a blueprint to create new types)
 10. **Union type**: `type Maybe[T] := T | nothing` (Can store either of possible types)
@@ -194,7 +194,7 @@ These rules are highly advised but not mandatory.
 4. If the rvalue is a struct (Refer to corresponding section for more info about struct), You can destruct it to it's elements using this keyword (Example 3 and 5).
 5. You can use placeholder symbol `_` to denote you are not interested in a specific value (Example 6).
 6. You can use `0x` prefix for hexadecimal numbers and `0b` for binary.
-7. You can use `_` as digit separator in number literals.
+7. You can use `,` as digit separator in number literals.
 
 **Examples**
 
@@ -202,8 +202,8 @@ These rules are highly advised but not mandatory.
 2. `g := 19.8`
 3. `a,b := process()`
 4. `x := y`
-5. `a,b := {1, 100}`
-6. `a,_ := {1, 100}`
+5. `a,b := ${1, 100}`
+6. `a,_ := ${1, 100}`
 
 # Primitive data types
 
@@ -221,7 +221,7 @@ These rules are highly advised but not mandatory.
 7. `seq` type represents a block of memory space with elements of the same type. You can use a sequence literal (Example 4) or a function from core to initialize these variables. This type can be used to represent an array or list or any other data structure.
 8. You can use range generator operator `..` to create sequence literals (Example 5).
 9. A sequence literal which contains other sequence literals, can either be parsed as is, or destruct inner sequences and create a larger sequence. (Example 6 and 7). In example 7, result is a seqence of integers `1, 2, 3, 4, 5, 6`.
-10. Core provices functions to extract part of a sequence as another sequence (Like array slice).
+10. Core provides functions to extract part of a sequence as another sequence (Like array slice).
 11. Referring to an index outside sequence will cause a runtime error.(Example 8 for reading from a sequence).
 
 **Examples**
@@ -231,7 +231,7 @@ These rules are highly advised but not mandatory.
 3. `x := 'c'`
 4. `x: seq[int] := [1 2 3 4]`
 5. `x := [1..10]`
-6. `x: seq[seq[int]] := [ [1 2] [3 4] [5,6] ]`
+6. `x: seq[seq[int]] := [ [1 2] [3 4] [5 6] ]`
 7. `x: seq[int] := [ [1 2] [3 4] [5 6] ]`
 8. `n := x.[10]`
 
@@ -255,7 +255,7 @@ These rules are highly advised but not mandatory.
 **Examples**
 
 1. `type day_of_week := SAT | SUN | MON | TUE | WED | THU | FRI`
-2. `int_or_float: int | float = 11`
+2. `int_or_float: int | float := 11`
 3. `int_or_float := 12.91`
 4. `int_or_float := 100`
 5. `int_value, done := int{my_union}`
@@ -376,7 +376,7 @@ You can call `fn` like a normal function with an input which should be any of po
 2. `type IntArray := seq[int]`
 3. `type Point := {x: int, y: int}`
 4. `type bool := true | false`
-5. `x: MyInt = 10`, `y: MyInt = MyInt{10}`
+5. `x: MyInt := 10`, `y: MyInt := MyInt{10}`
 6. `type Socket[Open], Socket[Closed] := { data: int }`
 
 ## Casting
@@ -398,11 +398,11 @@ You can call `fn` like a normal function with an input which should be any of po
 
 **Examples**
 
-1. `x:int = int.{1.91}`
+1. `x:int := int.{1.91}`
 2. `int_value, has_int := int.{int_or_float}`
 3. `type MyInt := int`
-4. `x:MyInt = 100`
-5. `y:int = x`
+4. `x:MyInt := 100`
+5. `y:int := x`
 6. `x := (func()->T).{t}`
 7. `a, b, c := MyInt.{x,y,z}`
 
@@ -431,11 +431,11 @@ You can call `fn` like a normal function with an input which should be any of po
 07. `func length[T](s: Stack[T])->int`
 08. `func extract[T](that: BoxedValue[T])->T that.value`
 09. `func push[int](s: Stack[int], data:int)...`
-10. `x = optional[int]{12}`
-11. `x = BoxedValue[int]{1}`
-12. `y = BoxedValue[string]{value: "a"}`
-13. `xx = extract(x)`
-14. `yy = extract[string](y)`
+10. `x := optional[int]{12}`
+11. `x := BoxedValue[int]{1}`
+12. `y := BoxedValue[string]{value: "a"}`
+13. `xx := extract(x)`
+14. `yy := extract[string](y)`
 
 ## Phantom types
 
@@ -456,7 +456,7 @@ You can call `fn` like a normal function with an input which should be any of po
 4. `type Sha1Hash := HashStr[SHA1]`
 5. `func md5(s: string)->Md5Hash { ... }`
 6. `func sha1(s: string)->Sha1Hash { ... }`
-7. `t = Md5Hash{sha1("A")} //ERROR!`
+7. `t := Md5Hash{sha1("A")} //ERROR!`
 8. `type SafeString := string`
 9. `func processString(s: string)->SafeString`
 10. `func work(s: SafeString)`
@@ -556,7 +556,7 @@ process := (x:int) ->
 4. Lambdas are closures and can capture variables (as read-only) in the parent function (Example 4 and 5).
 4. Example 5 shows a function that returns a lambda.
 5. Example 6 shows invoking a lambda at the point of definition.
-6. You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normall call and replace the lambda inputs with `_`. Example 8 defines a lambda to call `process` functions with `x=10` but `y` and `z` will be inputs.
+6. You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normall call and replace the lambda inputs with `_`. Example 8 defines a lambda to call `process` functions with `x:=10` but `y` and `z` will be inputs.
 7. If lambda is assigned to a variable, you can invoke itself from inside (Example 9). This is used to implement iteration loops.
 
 **Examples**
@@ -592,28 +592,26 @@ process := (x:int) ->
 **Examples**
 
 1. `${x,y,z} ~ ${_,_,_}` => `{x,y,z}`
-2. `g = ${5,9} ~ add(_, _)` => `g = add(5,9)`
+2. `g := ${5,9} ~ add(_, _)` => `g := add(5,9)`
 3. `${1,2} ~ processTwoData(_, _)` => `processTwoData(1,2)`
 4. `${1,2} ~ processStruct(_)` => `processStruct(${1,2})`
 5. `6 ~ addTo(1, _)` => `addTo(1, 6)`
-6. `result = ${input, check1(5, _)} ~ pipe(_,_) ~ ${_, check3(1,2,_)} ~ pipe(_, _) ~ ${_, check5(8,_,1) } ~ pipe(_,_)`
+6. `result := ${input, check1(5, _)} ~ pipe(_,_) ~ ${_, check3(1,2,_)} ~ pipe(_, _) ~ ${_, check5(8,_,1) } ~ pipe(_,_)`
 7. `func pipe[T, O](input: Maybe[T], handler: func(T)->Maybe[O])->Maybe[O] ...`
 8. `${1,2} ~ ${_, _, 5} ~ process(_,_,_)` => `process(1,2,5)`.
-9. `func inc(x:int) -> x+1`, `eleven = 10 ~ inc(_)`
+9. `func inc(x:int) -> x+1`, `eleven := 10 ~ inc(_)`
 10. `func add(x:int, y:int) -> x+y`, `{10, 20} ~ add(_,_)`
 11. `{1} ~ process(_)`, => `1 ~ process(_)`
 
 # Operators
 
-## Basic operators
-
 **Syntax**:
 
 1. Conditional operators: `and, or, not, =, !=, >=, <=`
 2. Arithmetic: `+, -, *, /, %, %%`
-3. Assignment: `=`
+3. Assignment: `:=`
 4. Type-id: `@` and `^`
-5. Casting `{}`
+5. Casting `.{}`
 6. Chain `~`
 7. Custom literal `[()]`
 8. Nothing check operator `//`
@@ -628,7 +626,7 @@ process := (x:int) ->
 5. `@`: returns type-id of the data inside a union binding, `^` returns unique identifier of a type (Example 1). Both operators return an integer number which can be used to compare with another type identifier.
 6. `{}`: To cast from named to unnamed type you can use: `Type{value}` notation (Example 2).
 7. `{}`: To cast from variable to a union-type (Example 7).
-8. You can use compound literal to define a literal which is calculated by calling appropriate `set` functions repeatedly. These literals have the form of `[(a,b,c) (d,e,f) ...]`. In this example the literal has a set of elements each of which has 3 items. This means that to calculate the value of the literal, compild will render `x0 := set(nothing, a, b, c)`, then `x1 := set(x0, d, e, f)` and continue until end of values. The final result will be the output value. This notation can be used to have map literals and other custom literals.
+8. `[(a,b,c) (d,e,f) ...]`: You can use compound literal to define a literal which is calculated by calling appropriate `set` functions repeatedly. These literals have the form of `[(a,b,c) (d,e,f) ...]`. In this example the literal has a set of elements each of which has 3 items. This means that to calculate the value of the literal, compild will render `x0 := set(nothing, a, b, c)`, then `x1 := set(x0, d, e, f)` and continue until end of values. The final result will be the output value. This notation can be used to have map literals and other custom literals.
 10. `A // B` will evaluate to A if it is not nothing, else it will be evaluated to B.
 11. Conditional operators return `true` or `false` which actually are `1` and `0`.
 12. Optional call: `a.(b,c,d)` will convert `T|func(b,c,d)->T` to `T` by calling `a` if it is a function pointer or doing nothing if it is not. This is useful in conditionals where you have a value in some case but for the other case you want a lambda (Maybe due to high computation cost). And want to merge them both after the condition is evaluated (Example 6).
@@ -637,10 +635,10 @@ process := (x:int) ->
 **Examples**
 
 01. `g := ^int`, `g := @int_or_float`
-02. `type MyInt := int`, `x: MyInt = MyInt{int_var}`
-03. `y:int = int{x}`
-04. `y: int|float = 12`
-05. `y = x // y // z // 0`
+02. `type MyInt := int`, `x: MyInt := MyInt{int_var}`
+03. `y:int := int{x}`
+04. `y: int|float := 12`
+05. `y := x // y // z // 0`
 06. `result := [data, () -> processBigBuffer(buffer)].[condition].()`
 07. `data, successs := int{int_or_float}`
 
@@ -652,13 +650,13 @@ process := (x:int) ->
 
 1. You can use sequence literals to implement conditionals and pattern matching. This is also possible by using lambdas and conditional `return`.
 2. Example 1 shows a simple case of implementing pattern matching.
-3. Example 2 shows equivalent of `x = if a>0 then 200 else 100` pseudo-code.
+3. Example 2 shows equivalent of `x := if a>0 then 200 else 100` pseudo-code.
 
 **Examples**
 
 1.
 ```
-v: int|float|string = processData()
+v: int|float|string := processData()
 //check: if predicate is satisfied, return lambda result, else nothing
 x: int|nothing := check[int](@v=^int, ()->100)
 y: int|nothing := ...
@@ -708,11 +706,11 @@ x:int := [100 200].[a>0]
 
 **Examples**
 
-1. `result: int|exception = invoke(my_function)`
+1. `result: int|exception := invoke(my_function)`
 
 ## autoBind
 
-**Syntax**: `x = StructType.{Alias}`, `x = StructType.{::}`
+**Syntax**: `x := StructType.{Alias}`, `x := StructType.{::}`
 
 **Notes**
 
