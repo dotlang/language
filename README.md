@@ -50,7 +50,7 @@ The underlying rules of design of this language are
 [KISS rule](https://en.wikipedia.org/wiki/KISS_principle) and
 [DRY rule](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  We have bindings (functions and immutable values) types (Blueprints to create bindings). Each function acts on a set of inputs and gives an output. Type system includes primitive data types, struct, union, array and map. Polymorphism, generics and lambda expression are also provided and everything is immutable.
+As a 10,000 foot view of the language, code is written in files (called modules) organised in directories (called packages).  We have bindings (first-class functions and values) and types (Blueprints to create bindings). Each function acts on a set of inputs and returns an output. Type system includes primitive data types (`int`, `float`, `char`, `function` and `sequence`), struct and union. Polymorphism, generics and lambda expression are also provided and everything is immutable.
 
 ## Comparison with other languages
 
@@ -91,14 +91,14 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 01. **Import a module**: `import /core/std/queue` (you can also import from external sources like Github).
 02. **Primitive types**: `int`, `float`, `char`, `seq`, `func`.
 03. **Bindings**: `my_var:int := 19` (type can be automatically inferred, everything is immutable).
-04. **Sequence**: `scores:seq[int] := [1,2,3,4]` (Similar to array).
+04. **Sequence**: `scores:seq[int] := [1 2 3 4]` (Similar to array).
 05. **Named type**: `type MyInt := int` (Defines a new type with same binary representation as `int`).
 06. **Struct type**: `type Point := {x: int, y:int, data: float}` (Like `struct` in C)
 07. **Struct literal**: `location := Point{x:10, y:20, data:1.19}`
 08. **Composition**: `type Circle := {Shape, radius: float}` (`Circle` embeds fields of `Shape`)
 09. **Generics**: `type Stack[T] := { data: array[T], info: int }` (Defines a blueprint to create new types)
 10. **Union type**: `type Maybe[T] := T | nothing` (Can store either of possible types)
-11. **Function**: `calculate: func(int,string)->float := (x, y) -> float { return x/y  }`
+11. **Function**: `calculate: func(int,int)->float := (x, y) -> float { return x/y  }`
 
 ## Symbols
 
@@ -122,6 +122,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 17. `.{}` casting
 18. `.()` optional call (call if it is a function pointer, do nothing otherwise)
 19. `.[]` custom get
+20. `|{}|` generic union (Union of a group of types)
 
 ## Reserved identifiers
 
@@ -130,6 +131,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 1. `import`: Used to import types and bindings from another modules.
 2. `type`: Used to specify a name for a type.
 3. `return`: Used to specify return value of a function.
+
 
 **Primitive data types**: `int`, `float`, `char`, `seq`, `func`
 
@@ -511,21 +513,22 @@ process := (x:int) ->
 
 ## Call forwarding
 
-**Syntax**: `func funcName(type1->type2, type3, type4->type5, ...)`
+**Syntax**: `funcName := (type1->type2, type3, type4->type5, ...)`
 
 **Notes**
 
-1. To forward a function call to another function, used to implement subtyping.
-1. Example 1, indicates any call to function `draw` with a parameter of type `Circle` must be sent to a function with the same name and `Shape` input. In this process, the argument will be converted to a `Shape`.
-2. Example 2, will forward any call to function `process` with first input of type `Polygon`, `Square` or `Circle` and second argument of `GradientColor` or `SolidColor` to the same name function with inputs `Shape` and `Color` type. All other inputs which are not forwarded are the same between original and forwarded function. This definition is for 6 functions and forwarding all of them to a single function.
-3. Example 3, is like example 2 but uses a generic union to indicate all types that embed a Shape.
-4. Note that left side of `->` must embed the type on the right side.
+1. To forward a function call to another function with the same name, used to implement subtyping (This notation provides a syntax sugar).
+2. Example 1, indicates any call to function `draw` with a parameter of type `Circle` must be sent to a function with the same name and `Shape` input. In this process, the argument will be converted to a `Shape` (Example 4 represents equivalent definition without using call forwarding notations).
+3. Example 2, will forward any call to function `process` with first input of type `Polygon`, `Square` or `Circle` and second argument of `GradientColor` or `SolidColor` to the same name function with inputs `Shape` and `Color` type. All other inputs which are not forwarded are the same between original and forwarded function. This definition is for 6 functions and forwarding all of them to a single function.
+4. Example 3, is like example 2 but uses a generic union to indicate all types that embed a Shape.
+5. Note that left side of `->` must embed the type on the right side.
 
 **Examples**
 
 1. `draw := (Circle->Shape)`
 2. `process := (Polygon|Square|Circle->Shape, GradientColor|SolidColor]->Color)`
 3. `process := (float, |{Shape}|->Shape, string, int, GradientColor|SolidColor->Color, int)`
+4. `draw: func(Circle) := (c: Circle) -> draw(c.Shape)`
 
 ## Function pointer
 
@@ -714,7 +717,7 @@ x:int := [100 200].[a>0]
 
 **Notes**
 
-1. There is a special usage for casting operator, when you cast a namespace (`::` or namespace alias) to a struct. This will map bindings with similar names to fields inside the struct.
+1. There is a special usage for casting operator, when you cast a namespace (`::` or namespace alias) to a struct. This will map bindings with similar name and type to fields inside the struct. So for example if the struct has `age:int` and the namespace contains a binding the the same name and type, the result of cast will have `age` assigned to `age` from within the namespace.
 1. Example 1 defines a general struct which contains a function pointer field.
 2. Example 2 defines a function to sort any given array of any type. But to do the sort, it needs a function to compare data of that type. So it defines an input of type `Comparer[T]` to include a function to do the comparison.
 3. Example 3 shows how to call `sort` function defined in example 2. You simply cast current namespace to `Comparer` to create appropriate struct of appropriate function pointers by the compiler. So `f.compare` field will contain a function pointer to a function with the same name and signature defined in the current namespace.
