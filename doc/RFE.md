@@ -2805,3 +2805,12 @@ N - More general call forwarding
 `process := (x:int) -> process(x,0)`
 `draw := (Circle->Shape)`
 `draw: func(Circle) := (c: Circle) -> draw(c.Shape)`
+
+N - We use end of line as statement separator. What if a line is too long?
+For example an import statement?
+
+N - We can alias a function using normal `:=`:
+`process := OtherModule::innerProcess`
+For type:
+`type MyInt := int` creates a new type
+`type MyInt: int` defines an alias
