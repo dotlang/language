@@ -168,15 +168,15 @@ These rules are highly advised but not mandatory.
 5. `/` in the beginning is shortcut for `file/`. Namespace path starts with protocl which determines the location for file for namespace. You can also use other namespace protocols like `Github` (`import git/path/to/module`).
 6. You can import multiple modules with same package using notation in Example 3.
 7. If an import path starts with `./` or `../` means the module path is relative to the current module.
-8. It is an error if as a result of imports, there are two exactly similar bindings (same name and type). In this case, none of conflicting bindings will be available for use.
+8. It is an error if as a result of imports, there are two exactly similar bindings (same name and type) in use. In this case, none of conflicting bindings will be available for use.
 
 **Examples**
 
 1. `import /core/st/Socket` 
-2. Import another module under a new namespace alias: `import /core/st/Socket -> mod1` 
+2. Import another module under a new namespace alias: `import /core/std/Socket -> mod1` 
 3. Import multiple modules: `import /core/std/{Queue, Stack, Heap}`
-4. `import git/github.com/adsad/dsada`
-5. `import svn/bitcucket.com/adsad/dsada`
+4. `import git/github.com/net/server`
+5. `import svn/bitbucket.com/net/server`
 6. Import and rename multiple modules: `import /core/std/{Queue, Stack, Heap} -> A,B,C`
 7. Assign a binding to a definition inside another namespace: `createSocket := mod1::createSocket`
 8. `type socketType := mod1::SocketType`
