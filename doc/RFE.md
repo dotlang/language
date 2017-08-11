@@ -2814,3 +2814,7 @@ N - We can alias a function using normal `:=`:
 For type:
 `type MyInt := int` creates a new type
 `type MyInt: int` defines an alias
+
+Y - Replace `^` with another better more intuitive notation.
+`@int_or_float`
+`@[int]` return internal type of a union which has int.
