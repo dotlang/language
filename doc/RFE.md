@@ -2818,3 +2818,49 @@ For type:
 Y - Replace `^` with another better more intuitive notation.
 `@int_or_float`
 `@[int]` return internal type of a union which has int.
+
+N - 
+`process := () -> int|error { ... }`
+`x:=process()` 
+x can be either int or an error.
+`x ~ (s: error) -> { print(s) }` if x is an error, the lambda will be executed.
+`(@x = @[error]) return false`
+`(@x = @[error]) return error.{x}.0.code`
+`r := int.{x}.0`
+
+Y - Fibonacci with dynamic programming
+```
+fib := (n: int, cache: seq[int|nothing])->int
+{
+	(seq[n] != nothing) return int.{seq[n]}.0
+	seq_final1 := set(seq, n-1, fib(n-1, cache))
+	seq_final2 := set(seq_final1, n-2, fib(n-2, seq_final1))
+
+	return seq_final2.[n-1]+seq_final2.[n-2]
+}
+```
+
+Y - Change `~` behavior to accept multiple candidates as the target.
+You can use `~` operator to handle union types.
+`r:int := int_or_float ~ (x:int)->x ~ (y:float)->1`
+But it is not appropriate.
+`int_or_float ~ `?
+How can we store multiple lambdas in the same place?
+`a ~ (x:int)->1, (y:float)->2, (z:string)->3`
+`input ~ f1, f2, f3` input will be applied against any of f1,f2,f3 which can accept type of input.
+Can we replace the behavior of `~` with this?
+`error_or_int ~ (x:error)->... ~ (y:int)->...` current status to handle error.
+`error_or_int ~ (x:error)->..., (y:int)->...` new status. more readable less ambiguous and error-prone.
+`error_or_int ~ (x:error)->10 ~ (y:int)->20` this will always returns 20 (whether input is error or int).
+`error_or_int ~ (x:error)->10, (y:int)->20` this will work correctly.
+How can we handle monadic error handling then?
+`${input, f1(_)} ~ pipe(_, _) ~ ${_, f2(_)} ~ pipe(_,_) ~ ${_, f3(_)} ~ pipe(_,_)` 
+
+? - We can extend usage of channels for IO too.
+Reading from a file is same as reading from a channel which is connected to the file by runtime.
+Writing to console is sending data to a channel.
+Even for cursor location, we can have a channel. write to it to set location, read from it to get current location.
+What about closing channels? Do we need `defer close(channel)`?
+print is sending something to console channel.
+
+
