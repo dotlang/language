@@ -2866,4 +2866,17 @@ print is sending something to console channel.
 ? - `<int>` for a channel of int. `.<1>`?
 `chn: <int> := createChannel[int]()`
 `data.<chn>` send
-`t := <chn>` receive
+`t := <chn>` receive.
+`chn.<data>` send
+`chn.<>` receive
+or:
+`chn.[]` call get on channel = read from channel
+`chn.[data]` send = `get(chn, data)`
+r/o or w/o channels?
+maybe a function accepts a r/o channel but we can also send a r/w channel to it.
+it makes things complicated. let's say you can cast a r/w channel to r/o channel before sending.
+its good to have a syntax which includes notation for w and r and r/o channel includes only the notation for reading. w has notation for writing.
+shall read/write actions be expressions or no? what should be result of read?
+what happens if we read from a closed channel? How can we know if a channel is closed?
+How can we mix multiple channels into a single expression, like `select`?
+
