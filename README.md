@@ -868,29 +868,18 @@ Java without maven has a packaging but not a dependency management system. For d
 C# has dll method which is contains byte-code of the source package. DLL has a version meta data but no dependency management. For dependency it has NuGet.
 
 ## ToDo
-- Add native concurrency and communication tools (green thread, channels, spinlock, STM, mutex) and async i/o, 
-- Build, dependency management, versioning, packaging, and distribution
-- Plugin system to load/unload libraries at runtime without need to recompile
-- Debugger and plugins for Editors
-- Testing and profiling features
-- Distributed processing: Moving code to another machine and running there (Actor model + channel)
-- Define notation to write low-level (Assembly or IR) code in a function body and also force inline.
-- Add notation for axioms and related operators like `=>` to protocol structs to be able to define semantics of a protocol.
-- Vet to format code based on the standard (indentation, spacing, brace placement, warning about namings, ...).
-- The compiler will detect local variable updates which do not escape and optimize them to use mutable variable (for example for numerical calculations which happens only inside a function).
-- Channels are the main tool for concurrency and coordination.
-- Provide ability to update used libraries without need to re-compile main application.
-- Parallel compilation
-- Managing name conflict in large projects
-- Add slice functions to core to return array as a pointer to another array
-- Add map and array data type to Std
-- Loop functions in std using recursion and iterators
-- Decide if we can provide std as an external package rather than a built-in.
-- Std: Functions to call a union which has a set of function pointers by accepting all possible inputs.
-`fn: func(int)->int|func(string)->int|func(float)->int := ...`
-`o := invoke(fn, int_var, string_var, float_var)`
-- Std: Provides an efficient implementation of common algorithms (quick sort, ...) to compensate for immutability.
-
+- **Language**: Notation for axioms and related operators like `=>` to define semantics of a data structure or function.
+- **Compiler**: test, debug and profiling code, plugins for Editors (e.g. vim, emacs), code vetting for format the code based on the standard (indentation, spacing, brace placement, warning about namings, ...), escape analysis and optimize them to use mutable variable (for example for numerical calculations which happens only inside a function), parallel compilation
+- **`std` package**: `map` data type, loop helper functions for iteartion, 
+- **`core` package**: sequence slice functions
+- **Concurrency and parallelism**: Add native concurrency and communication tools (green thread, channels, spinlock, STM, mutex) and async i/o, Channels are the main tool for concurrency and coordination.
+- **Others**: 
+  1. Build, dependency management, versioning, packaging, and distribution
+  2. Plugin system to load/unload libraries at runtime without need to recompile
+  3. Distributed processing: Moving code to another machine and running there (Actor model + channel), or creating a channel which is bound to a remote process
+  4. Define notation to write low-level (Assembly or IR) code in a function body and also force inline.
+  5. Provide ability to update used libraries without need to re-compile main application.
+  
 # History
 
 - **Version 0.1**: Sep 4, 2016 - Initial document created after more than 10 months of research, comparison and thinking.
@@ -910,5 +899,6 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 
 # Time table
 
-Aug 25th - Write proposal for Apache incubator
-Aug 31st - Write compiler skeleton which compiles most basic app
+Aug 25th - Check eligibility for Apache Incubator
+
+Aug 31st - Write compiler skeleton which compiles the most basic app
