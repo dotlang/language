@@ -2881,3 +2881,17 @@ what happens if we read from a closed channel? How can we know if a channel is c
 How can we mix multiple channels into a single expression, like `select`?
 Notations should be nestable. So we can have a channel which can transmit int channels.
 Maybe we can simply use a normal data structure like a Queu and then convert is to a channel by binding it to a thread.
+There are multiple notations needed: channel, r/o, w/o, read. write, ...
+I think it's better to use current notation instead of adding new ones. Just like sequence.
+We can have `pipe` class, `rpipe` and `wpipe`.
+For receiving data: acts like reading from sequence: `pipe.[]` which means `get(pipe)`
+For sending data: It's simpler to re-use existing `.[]` notation. but the meaning of this is tied to `get` operation.
+Maybe we should rename `get` to something more general, like `process`.
+Then for sending data: `pipe1.[data]` can be used. result of this expression can denote some information about status of send operation.
+Also upon `pipe1.[]` we can return two things: received data and a flag indicating whether the channel is still open or closed.
+How can we easily and simply differentiate a read-only pipe and a write-only pipe and a bi-dir pipe?
+we should be able to cast pipe to r/o or w/o pipe but not reverse.
+Maybe we should call `.[]` as `opProcess` or `opBracket`.
+option 1: All pipes are r/o. but upon creation, we are given a function pointer which can be used to write to the pipe. So if someones needs to write, they will need the fp too.
+`myChannel, writer := createPipe()`
+`myChannel, _ := createChannel()`
