@@ -2863,4 +2863,7 @@ Even for cursor location, we can have a channel. write to it to set location, re
 What about closing channels? Do we need `defer close(channel)`?
 print is sending something to console channel.
 
-
+? - `<int>` for a channel of int. `.<1>`?
+`chn: <int> := createChannel[int]()`
+`data.<chn>` send
+`t := <chn>` receive
