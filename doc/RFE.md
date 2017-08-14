@@ -2880,4 +2880,4 @@ shall read/write actions be expressions or no? what should be result of read?
 what happens if we read from a closed channel? How can we know if a channel is closed?
 How can we mix multiple channels into a single expression, like `select`?
 Notations should be nestable. So we can have a channel which can transmit int channels.
-
+Maybe we can simply use a normal data structure like a Queu and then convert is to a channel by binding it to a thread.
