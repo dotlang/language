@@ -2879,4 +2879,5 @@ its good to have a syntax which includes notation for w and r and r/o channel in
 shall read/write actions be expressions or no? what should be result of read?
 what happens if we read from a closed channel? How can we know if a channel is closed?
 How can we mix multiple channels into a single expression, like `select`?
+Notations should be nestable. So we can have a channel which can transmit int channels.
 
