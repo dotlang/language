@@ -2903,3 +2903,10 @@ Any process which has `writer` fp, can call it to send data through the channel.
 proposal: Instead of closing, processes detach from channels. When there is no attachments to channel, it is considered closed.
 For `select` statement we can pass a sequence of channels to a core function to perform receive on one of them.
 Erlang provides a lambda to be executec when data is received through channel. 
+Problems: Notation to declare channel, make it read only, how to send, how to receive, select statement, ...
+The most important issues are notations and semantics to send/receive.
+We have notations for send/receive: 
+Send: call given fp: `sender(100)`
+Receive: `data := chnl.[]`
+We need to examine some examples.
+E.g. a Web server needs to run a function for each new client.
