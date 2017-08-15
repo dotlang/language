@@ -2895,3 +2895,11 @@ Maybe we should call `.[]` as `opProcess` or `opBracket`.
 option 1: All pipes are r/o. but upon creation, we are given a function pointer which can be used to write to the pipe. So if someones needs to write, they will need the fp too.
 `myChannel, writer := createPipe()`
 `myChannel, _ := createChannel()`
+Maybe we can enable buffering using another function + channel.
+Can we use channels with immutables? In Erlang, they use recursion and lambdas to handle data receive.
+Seems we should define a lambda to be executed when data is received from a channel.
+But how can we share receive part between multiple processes?
+Any process which has `writer` fp, can call it to send data through the channel.
+proposal: Instead of closing, processes detach from channels. When there is no attachments to channel, it is considered closed.
+For `select` statement we can pass a sequence of channels to a core function to perform receive on one of them.
+Erlang provides a lambda to be executec when data is received through channel. 
