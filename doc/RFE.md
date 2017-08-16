@@ -2910,3 +2910,26 @@ Send: call given fp: `sender(100)`
 Receive: `data := chnl.[]`
 We need to examine some examples.
 E.g. a Web server needs to run a function for each new client.
+We dont need to sacrifice immutability or add any special notations. If there is a need to receive or send multiple data, the function can use recursion.
+Note: A buffered channel is a mux of a sequence of normal channels. We should try to create buffered channels using normal channels + other existing notations in the language.
+We should write some examples of common use cases (trivial, normal and advanced), to see if the current tools (channel, fp for send, functions and recursion) suffice for this purposes.
+Examples to try:
+1. Echo server
+2. Web server using TCP sockets
+3. A buffered channel for multiple producers and single consumer (aggregate multiple files into a stream to network)
+4. Single producer, multiple consumers (even processing)
+5. Multiple producer, multiple consumer (search engine, crawlers produce links which is consumed by crawlers)
+6. Feed server (Single producer of price feed, multiple consumers which are pricing servers)
+7. ping/pong servers
+8. Multiplex channels
+9. Buffered channel
+10. timeout (combine special timed channel and select statement)
+read from a sequence of pipes can act like select statement. But select can combine send and receive.
+What should happen when we send-to/receive-from a closed channel?
+Proposal: `invoke` keyword returns a channel object which can be used to send/receive data to that thread.
+Proposal: we can have two pipes for each direction instead of bi-dir pipe. One pipe for send, one for receive.
+
+? - We can prevent index out of bounds error by defining sequences as cricular.
+
+
+idea: select can accept a sequence of channels.
