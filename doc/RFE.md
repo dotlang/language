@@ -2928,8 +2928,10 @@ read from a sequence of pipes can act like select statement. But select can comb
 What should happen when we send-to/receive-from a closed channel?
 Proposal: `invoke` keyword returns a channel object which can be used to send/receive data to that thread.
 Proposal: we can have two pipes for each direction instead of bi-dir pipe. One pipe for send, one for receive.
+Proposa: `invoke` will also accept pipe for read and write for the thread.
+
 
 ? - We can prevent index out of bounds error by defining sequences as cricular.
 
 
-idea: select can accept a sequence of channels.
+? - idea: select can accept a sequence of channels.
