@@ -2856,12 +2856,21 @@ Can we replace the behavior of `~` with this?
 How can we handle monadic error handling then?
 `${input, f1(_)} ~ pipe(_, _) ~ ${_, f2(_)} ~ pipe(_,_) ~ ${_, f3(_)} ~ pipe(_,_)` 
 
+Y - Explain `.()` better. If x is a lambda, it will be called, else nothing will happen.
+
 ? - We can extend usage of channels for IO too.
 Reading from a file is same as reading from a channel which is connected to the file by runtime.
 Writing to console is sending data to a channel.
 Even for cursor location, we can have a channel. write to it to set location, read from it to get current location.
 What about closing channels? Do we need `defer close(channel)`?
 print is sending something to console channel.
+We can explicitly indicate functions that have a side-effect by specifying the channel as their input. 
+So if a function writes to console or reads from stdin, it needs a channel input.
+What about a function which wants to read from a file? Who is responsible to "create" that channel?
+For stdin, stdout we can pass channels to the main fucntion but we then need to pass it explicitly to all functions called, to reach the final consumer.
+Other option: Have a special struct which contains IO channels. Then searching for that name will give functions that have I/O side effect. But if they don't have access to the source code and only function signature, then this won't be possible.
+We can force these functions to include the channel in their output. So if a function writes to a file, it will need to return `FileChannel` as one of it's outputs.
+Goal: Make it explicit that a function has side-effects (network, console, filesystem, ...)
 
 ? - `<int>` for a channel of int. `.<1>`?
 `chn: <int> := createChannel[int]()`
@@ -2929,9 +2938,25 @@ What should happen when we send-to/receive-from a closed channel?
 Proposal: `invoke` keyword returns a channel object which can be used to send/receive data to that thread.
 Proposal: we can have two pipes for each direction instead of bi-dir pipe. One pipe for send, one for receive.
 Proposa: `invoke` will also accept pipe for read and write for the thread.
+Proposal: Creating a channel will give us two connected channels: r/o and w/o When you write to w/o channel, data will be available on r/o channel. `rpipe`, `wpipe`
+Make channels consistent and orth. Closed channel, multiple calls to close, sharing a channel with mutiple producer threads, mux-ing multiple channels, buffered channels, ....
+Proposal: For buffered channel, we can simply define it as a named type and re-implement `process` function for them.
 
+? - Send notation: `chn.[a,b,c,d]`
+Receive notation: `data := chn.[]`
 
 ? - We can prevent index out of bounds error by defining sequences as cricular.
+This can be easily implemented by adding a named type and re-implementing `get` function for that type.
+`type CircularSeq[T] := seq[T]`
+`get[T] := (c: CircularSeq[T], idx: int) -> get(seq[T].{c}, idx%len(c))`
 
+? - method dispathc: `type MyInt := int` if a function is called which has no candidate for `MyInt` the version for `int` will be called.
 
-? - idea: select can accept a sequence of channels.
+? - idea: select can accept a sequence of channels. This can let developer select on a variable number of channels.
+
+? - We can have mutex and use them if we add a keyword like `synchronized`.
+```
+synchronized(value1) lambda1
+```
+
+? - Provide unlimited buffered channel (acts like a queue).
