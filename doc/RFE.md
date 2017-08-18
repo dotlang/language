@@ -2960,3 +2960,6 @@ synchronized(value1) lambda1
 ```
 
 ? - Provide unlimited buffered channel (acts like a queue).
+Channel can accept a storage for it's data. If `nothing` is provided, it will be a normal channel which blocks on send/receive
+If we provide an int variable, it wil be a buffer with 1 cell storage.
+If it is a list of ints, linked-list, it will be unlimited storage.
