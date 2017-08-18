@@ -96,7 +96,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 16. `_`   Place holder (lambda creator, unknown variable in assignments or function input)
 17. `.{}` Casting
 18. `.()` Optional call (call if it is a function pointer, do nothing otherwise)
-19. `.[]` Custom get
+19. `.[]` Custom process
 20. `|{}|` Generic union (Union of a group of types)
 
 ## Reserved identifiers
@@ -454,7 +454,7 @@ You can call `fn` like a normal function with an input which should be any of po
 3. When defining a function, just like a normal binding, you can omit type which will be inferred from rvalue (Function literal).
 4. Note that `func(int,int)->int` is a function type, but `(x:int, y:int)->{x+y}` is function literal.
 5. You cannot define types inside a function (with `type` keywords). All types must be defined at the module level.
-6. As a syntax sugar, `var.[1,2,3]` will be converted to `get(var, 1, 2, 3)` function call.
+6. As a syntax sugar, `var.[1,2,3]` will be converted to `process(var, 1, 2, 3)` function call.
 7. Every function must return something which is specified using `return`. If it doesn't, compiler marks output type as `nothing` (Example 2).
 8. A function call with union data means there must be functions defined for all possible types in the union. See Call resolution section for more information.
 9. You can omit braces and `return` keyword if you only want to return an expression (Examples 4, 5 and 6).
@@ -594,7 +594,7 @@ process := (x:int) ->
 7. Custom literal `[()]`
 8. Nothing check operator `//`
 9. Optional call `.()`
-10. Custom get `.[]`
+10. Custom process `.[]`
 
 **Notes**
 
@@ -607,8 +607,8 @@ process := (x:int) ->
 8. `[(a,b,c) (d,e,f) ...]`: You can use compound literal to define a literal which is calculated by calling appropriate `set` functions repeatedly. These literals have the form of `[(a,b,c) (d,e,f) ...]`. In this example the literal has a set of elements each of which has 3 items. This means that to calculate the value of the literal, the compiler will render `x0 := set(nothing, a, b, c)`, then `x1 := set(x0, d, e, f)` and continue until end of values. The final result will be the output value. This notation can be used to have map literals and other custom literals.
 10. `A // B` will evaluate to A if it is not `nothing`, else it will be evaluated to B.
 11. Conditional operators return `true` or `false` which actually are `1` and `0`.
-12. Optional call: `a.(b,c,d)` will convert `T|func(b,c,d)->T` to `T` by calling `a` if it is a function pointer or doing nothing if it is not. This is useful in conditionals where you have a value in some case but for the other case you want a lambda (Maybe due to high computation cost). And want to merge them both after the condition is evaluated (Example 6).
-13. Custom get: `a.[b,c,d]` is a syntax sugar for calling: `get(a,b,c,d)`. For sequence, it is used to fetch element at a specific index.
+12. Optional call: `a.(b,c,d)` will call `a` if it is a function pointer, else it will do nothing. This is useful in conditionals where you have a value in some case but for the other case you want a lambda (Maybe due to high computation cost). And want to merge them both after the condition is evaluated (Example 6).
+13. Custom get: `a.[b,c,d]` is a syntax sugar for calling: `process(a,b,c,d)`. For sequence, it is used to fetch element at a specific index.
 
 **Examples**
 
@@ -895,7 +895,7 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.96**: Jun 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: Jun 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` place holder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is typed statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
-- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to,
+- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator
 
 # Time table
 
