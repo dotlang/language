@@ -2858,6 +2858,8 @@ How can we handle monadic error handling then?
 
 Y - Explain `.()` better. If x is a lambda, it will be called, else nothing will happen.
 
+Y - method dispathc: `type MyInt := int` if a function is called which has no candidate for `MyInt` the version for `int` will be called.
+
 ? - We can extend usage of channels for IO too.
 Reading from a file is same as reading from a channel which is connected to the file by runtime.
 Writing to console is sending data to a channel.
@@ -2942,7 +2944,7 @@ Proposal: Creating a channel will give us two connected channels: r/o and w/o Wh
 Make channels consistent and orth. Closed channel, multiple calls to close, sharing a channel with mutiple producer threads, mux-ing multiple channels, buffered channels, ....
 Proposal: For buffered channel, we can simply define it as a named type and re-implement `process` function for them.
 
-? - Send notation: `chn.[a,b,c,d]`
+? - Send notation: `chn.[a,b,c,d]` send multiple data
 Receive notation: `data := chn.[]`
 
 ? - We can prevent index out of bounds error by defining sequences as cricular.
@@ -2950,9 +2952,9 @@ This can be easily implemented by adding a named type and re-implementing `get` 
 `type CircularSeq[T] := seq[T]`
 `get[T] := (c: CircularSeq[T], idx: int) -> get(seq[T].{c}, idx%len(c))`
 
-? - method dispathc: `type MyInt := int` if a function is called which has no candidate for `MyInt` the version for `int` will be called.
-
 ? - idea: select can accept a sequence of channels. This can let developer select on a variable number of channels.
+But generally we need to know whih channel was triggered.
+select can accept a sequence of channels and lambdas to be executed if that channel is active.
 
 ? - We can have mutex and use them if we add a keyword like `synchronized`.
 ```
@@ -2963,3 +2965,4 @@ synchronized(value1) lambda1
 Channel can accept a storage for it's data. If `nothing` is provided, it will be a normal channel which blocks on send/receive
 If we provide an int variable, it wil be a buffer with 1 cell storage.
 If it is a list of ints, linked-list, it will be unlimited storage.
+Or we can say all channels are buffered. If buffer size is 0, channel will block upon send/receive until the other party receives or sends.
