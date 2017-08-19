@@ -346,6 +346,7 @@ You can call `fn` like a normal function with an input which should be any of po
 3. Although their binary data representations are the same, `MyInt` and `int` are two separate types. This will affect function dispatch. Please refer to the corresponding section for more information.
 4. You can use casting operator to convert between a named type and its underlying type (Example 5).
 5. You can define multiple named types in one type statement (Example 6).
+6. If a function is called which has no candidate for the named type, the candidate for underlying type will be invoked.
 
 **Examples**
 
@@ -463,7 +464,7 @@ You can call `fn` like a normal function with an input which should be any of po
 12. You can use `_` as the name of function input to state you don't need its value (Example 9).
 13. You can use `_` to ignore a function output (Example 10).
 14. Parentheses are required when calling a function, even if there is no input.
-15. You can prefix `return` with a conditional enclosed in parentheses. Return will be triggered only if the condition is satisfied (Example 11).
+15. You can prefix `return` with a conditional, enclosed in parentheses. Return will be triggered only if the condition is satisfied (Example 11).
 
 **Examples**
 
