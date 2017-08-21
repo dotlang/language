@@ -869,7 +869,7 @@ Java without maven has a packaging but not a dependency management system. For d
 C# has dll method which is contains byte-code of the source package. DLL has a version meta data but no dependency management. For dependency it has NuGet.
 
 ## ToDo
-- **Language**: Notation for axioms and related operators like `=>` to define semantics of a data structure or function.
+- **Language**: Notation for axioms and related operators like `=>` to define semantics of a data structure or function, dependent types
 - **Compiler**: test, debug and profiling code, plugins for Editors (e.g. vim, emacs), code vetting for format the code based on the standard (indentation, spacing, brace placement, warning about namings, ...), escape analysis and optimize them to use mutable variable (for example for numerical calculations which happens only inside a function), parallel compilation
 - **`std` package**: `map` data type, loop helper functions for iteartion, 
 - **`core` package**: sequence slice functions
