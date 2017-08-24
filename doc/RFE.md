@@ -2860,6 +2860,15 @@ Y - Explain `.()` better. If x is a lambda, it will be called, else nothing will
 
 Y - method dispathc: `type MyInt := int` if a function is called which has no candidate for `MyInt` the version for `int` will be called.
 
+N - Can we include input validation built-in?
+Something like phantom types but with a logic.
+But this can be done with functions and phantom types.
+We can define functions that accept input string and output a SafeString for example.
+And the functions can accept SafeString type. Then user can either cast manually:
+`process(SafeString.{data})`. which sometimes can be difficult or impossible, especially if type of `data` is not compatible with `SafeString`. Or he can use an already provided function:
+`checkSafe := ...`
+`process := (d: SafeString) -> { ... }`
+
 ? - We can extend usage of channels for IO too.
 Reading from a file is same as reading from a channel which is connected to the file by runtime.
 Writing to console is sending data to a channel.
