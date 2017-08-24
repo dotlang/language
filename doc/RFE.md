@@ -2869,6 +2869,19 @@ And the functions can accept SafeString type. Then user can either cast manually
 `checkSafe := ...`
 `process := (d: SafeString) -> { ... }`
 
+N - How can we make it mandatory to call a function for casting?
+suppose that we have `SafeString` type. User can simply write `SafeString.{data}` and bypass the whole logic for safeString, instead of calling an appropriate function which accepts string and outputs a SafeString.
+option 1: when defining the type, determine name of the function for casting (from what?).
+option 2: convention! For casting from underlying type to named type, call function `cast` if it exists. else normal cast.
+option 3: when defining a named-type just indicate it cannot be casted with `.{}` syntax. But how is the creator function going to create it's output?
+Option 1 and 2 also have a problem: infinite loop. When you call a function to do the cast, behind the scene, the function itself will need to do the casting at some point.
+`data := SafeString.{unsafe_string}`
+`data := makeSafe(unsafe_string)`
+`makeSafe := (x: string) -> SafeString { (...) exit ...}`
+Doing this behind the scene and transparently is not good. Both because of the philosophy that we have and also for infinite loop effect. User casts to SafeString, function is called, function casts input to SafeString (if everything is fine), function is called again, ... . This is not good. Resolving the infinite loop is possible but will add further rules to the language.
+So we need to make it explicit to call the casting function. Maybe we can formalize the naming.
+`createSafeString` to cast string to SafeString, and do the checks. User can either bypass this and do the cast manually, or call this function to do it correctly.
+
 ? - We can extend usage of channels for IO too.
 Reading from a file is same as reading from a channel which is connected to the file by runtime.
 Writing to console is sending data to a channel.
@@ -2975,3 +2988,4 @@ Channel can accept a storage for it's data. If `nothing` is provided, it will be
 If we provide an int variable, it wil be a buffer with 1 cell storage.
 If it is a list of ints, linked-list, it will be unlimited storage.
 Or we can say all channels are buffered. If buffer size is 0, channel will block upon send/receive until the other party receives or sends.
+
