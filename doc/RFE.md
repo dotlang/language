@@ -3008,8 +3008,15 @@ select is a complex operation by it's nature: read or write, multiple channels, 
 Can we simplify it?
 `select [(rpipe1, lambda1)], [(wpipe1, data_to_write, lambda)], [...]`
 select can accept a variable number of compound literals. we can even combine them into a 2d literal:
-`select [ [(rpipe1, lambda1)] [(wpipe1, data_to_write, lambda)] [...]]`
+`select [ [(rpipe1, lambda1)] [(wpipe1, data_to_write, lambda)] [...]]` a sequence of compound literals
 `select [ pipe1_data pipe2_data pipe3_data ...]`
 `pipei_data = (wpip1, data_to_write, lambda) or (rpip2, lambda)`
 or maybe we can use structs.
 `select [ pipe1_struct pipe2_struct ...]`
+`select [ ${rpipe1, lambda1} ${wpipe1, data_to_write, lambda} ${...} ]`
+
+
+? - We can pass a sequence to the function to create channels but it will imply the sequence will be mutated!
+The storage must be fully hidden from the code. 
+`rpipe, wpipe := createPipe[int]()`
+`rpipe, wpipe := createPipe[int](100)` buffer size
