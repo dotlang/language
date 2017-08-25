@@ -2969,7 +2969,7 @@ Proposal: For buffered channel, we can simply define it as a named type and re-i
 ? - Send notation: `chn.[a,b,c,d]` send multiple data
 Receive notation: `data := chn.[]`
 
-? - We can prevent index out of bounds error by defining sequences as cricular.
+N - We can prevent index out of bounds error by defining sequences as cricular.
 This can be easily implemented by adding a named type and re-implementing `get` function for that type.
 `type CircularSeq[T] := seq[T]`
 `get[T] := (c: CircularSeq[T], idx: int) -> get(seq[T].{c}, idx%len(c))`
@@ -2977,6 +2977,7 @@ This can be easily implemented by adding a named type and re-implementing `get` 
 ? - idea: select can accept a sequence of channels. This can let developer select on a variable number of channels.
 But generally we need to know whih channel was triggered.
 select can accept a sequence of channels and lambdas to be executed if that channel is active.
+`select [(rpipe1, (x:int)->...) (ch2, (_:int)->...) ...]`
 
 ? - We can have mutex and use them if we add a keyword like `synchronized`.
 ```
@@ -2991,3 +2992,22 @@ Or we can say all channels are buffered. If buffer size is 0, channel will block
 
 
 ? - Use links for ToC.
+
+? - Things that we need for concurrency: keyword to create a new thread, select, channels (send, receive, buffer)
+`invoke, pipe, select`
+receive: `data, closed := pipe.[]`
+send: `result, closed := pipe.[a,b,c,d]`
+You can write to `sinkpipe`, `wpipe`
+You can read from `sourcepipe`, `rpipe`
+`select [(rpipe1, (x:int)->...) (wpipe1, data_to_write, ()->...) ...]`
+`data := select [rpipe1, wpipe1] [(x:int)->print("read data x") (wpipe1, data_to_send, ()->...) ...]`
+`select ()->rpipe1.[], (data:int)->wpipe1.[data]` no. this is too general. user may write other things inside lambdas.
+`data := select rpipe1, wpipe1] [(x:int)->print("read data x") (wpipe1, data_to_send, ()->...) ...]`
+`select [(rpipe1, nothing) (wpipe1, data_to_write)], [(x:int)->... ()->...]`
+select is a complex operation by it's nature: read or write, multiple channels, multiple data, multiple actions.
+Can we simplify it?
+`select [(rpipe1, lambda1)], [(wpipe1, data_to_write, lambda)], [...]`
+select can accept a variable number of compound literals. we can even combine them into a 2d literal:
+`select [ [(rpipe1, lambda1)] [(wpipe1, data_to_write, lambda)] [...]]`
+`select [ pipe1_data pipe2_data pipe3_data ...]`
+`pipei_data = (wpip1, data_to_write, lambda) or (rpip2, lambda)`
