@@ -2989,3 +2989,5 @@ If we provide an int variable, it wil be a buffer with 1 cell storage.
 If it is a list of ints, linked-list, it will be unlimited storage.
 Or we can say all channels are buffered. If buffer size is 0, channel will block upon send/receive until the other party receives or sends.
 
+
+? - Use links for ToC.
