@@ -3011,3 +3011,5 @@ select can accept a variable number of compound literals. we can even combine th
 `select [ [(rpipe1, lambda1)] [(wpipe1, data_to_write, lambda)] [...]]`
 `select [ pipe1_data pipe2_data pipe3_data ...]`
 `pipei_data = (wpip1, data_to_write, lambda) or (rpip2, lambda)`
+or maybe we can use structs.
+`select [ pipe1_struct pipe2_struct ...]`
