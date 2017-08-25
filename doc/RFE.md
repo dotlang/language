@@ -3020,3 +3020,6 @@ or maybe we can use structs.
 The storage must be fully hidden from the code. 
 `rpipe, wpipe := createPipe[int]()`
 `rpipe, wpipe := createPipe[int](100)` buffer size
+We can easily separate r/o and w/o pipes.
+we have `process := (r: rpipe) -> ...` so we can write: `x := rpipe1.[]` and only this way
+we have `process := (w: wpipe, d: data) -> ...` so we can write: `x := wpipe.[data]`
