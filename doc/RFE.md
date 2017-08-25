@@ -3014,6 +3014,10 @@ select can accept a variable number of compound literals. we can even combine th
 or maybe we can use structs.
 `select [ pipe1_struct pipe2_struct ...]`
 `select [ ${rpipe1, lambda1} ${wpipe1, data_to_write, lambda} ${...} ]`
+Why not define a new syntax to make it simpler and easier to read? (But keep it general).
+Adding new syntax like `a: code, b: code` is good but will make it less extendable.
+If we want to select on a variable number of channels, the `a:b` syntax won't work.
+But using a compound literal will support that case. That's why re-using existing mechanisms is better.
 
 
 ? - We can pass a sequence to the function to create channels but it will imply the sequence will be mutated!
