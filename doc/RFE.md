@@ -3037,3 +3037,14 @@ we have `process := (r: rpipe) -> ...` so we can write: `x := rpipe1.[]` and onl
 we have `process := (w: wpipe, d: data) -> ...` so we can write: `x := wpipe.[data]`
 
 ? - Other suggested names: port
+
+? - q: if there are multiple candidates for a function ponter assignment, what should happen?
+```
+process := (x:int)->...
+process := (y: string)->...
+...
+g := process(_)
+```
+Now g is a function pointer but to which process? Can we make it a meta-function which can be redirected to any of the two candidates? It can accept either int or string, and depending on the type of the input, it will call appropriate candidate.
+We can even have a lot of different functions with same name and number of inputs and one function pointer which points to all of them.
+`g := (x:int|string) -> process(x)` this one is more readable.
