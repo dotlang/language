@@ -3048,3 +3048,27 @@ g := process(_)
 Now g is a function pointer but to which process? Can we make it a meta-function which can be redirected to any of the two candidates? It can accept either int or string, and depending on the type of the input, it will call appropriate candidate.
 We can even have a lot of different functions with same name and number of inputs and one function pointer which points to all of them.
 `g := (x:int|string) -> process(x)` this one is more readable.
+One way to resolve the ambiguity:
+`g := process(_:int)`
+
+? - `_` is the most confusing notation in the language. Let's limit it's scope or break it into multiple items.
+1. lambda creator `process(_, _)`
+2. unknown variable in assignment: `x, _ := ...`
+3. function input `process(_:int)`
+We can eliminate item 3 and force user to just write some argument name.
+Also for 1 we have some cases:
+```
+1. input ~ func(_,_,_,...)
+2. input ~ ${_,_,_,...}
+3. input ~ Type.{_,_,...}
+4. input ~ var.(_) => var.(input)
+5. input ~ var.[_] => var.[input]
+```
+Here also we can remove 3 (type cast). Cases 4 and 5 are simply special cases for 1.
+So:
+proposal: remove `_` used in type casting and also used in no-named function input.
+Shall we force user to write name for function output arguments?
+`x, _ := process()` vs `x, isClosed := process()`?
+second one: user needs to deal and pay attention to the second argument.
+all uses for `_`: lambda creator, func output ignore
+`var.(_)` is this a lambda creator? yes. If `var` is non-fp it will return what?
