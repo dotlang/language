@@ -3018,7 +3018,15 @@ Why not define a new syntax to make it simpler and easier to read? (But keep it 
 Adding new syntax like `a: code, b: code` is good but will make it less extendable.
 If we want to select on a variable number of channels, the `a:b` syntax won't work.
 But using a compound literal will support that case. That's why re-using existing mechanisms is better.
-
+We can re-use `.()` notation for seq to implement select.
+`[ [(rpipe1, lambda1)] [(wpipe1, data_to_write, lambda)].()` select one of possible items.
+Because sequence is not a func. `seq` and `func` are two distinct types.
+pro: no need to add new keyword.
+pro: we use existing mechanisms.
+con: it might be a bit confusing.
+Technically we can have compound literals with variable number of elements:
+`[(1,2) (3,4,5)]`. Because, after all, it is a set of function calls.
+`[ (rpipe1, lambda1) (wpipe1, data_to_write, lambda)]`
 
 ? - We can pass a sequence to the function to create channels but it will imply the sequence will be mutated!
 The storage must be fully hidden from the code. 
@@ -3027,3 +3035,5 @@ The storage must be fully hidden from the code.
 We can easily separate r/o and w/o pipes.
 we have `process := (r: rpipe) -> ...` so we can write: `x := rpipe1.[]` and only this way
 we have `process := (w: wpipe, d: data) -> ...` so we can write: `x := wpipe.[data]`
+
+? - Other suggested names: port
