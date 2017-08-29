@@ -2882,6 +2882,31 @@ Doing this behind the scene and transparently is not good. Both because of the p
 So we need to make it explicit to call the casting function. Maybe we can formalize the naming.
 `createSafeString` to cast string to SafeString, and do the checks. User can either bypass this and do the cast manually, or call this function to do it correctly.
 
+Y - `_` is the most confusing notation in the language. Let's limit it's scope or break it into multiple items.
+1. lambda creator `process(_, _)`
+2. unknown variable in assignment: `x, _ := ...`
+3. function input `process(_:int)`
+We can eliminate item 3 and force user to just write some argument name.
+Also for 1 we have some cases:
+```
+1. input ~ func(_,_,_,...)
+2. input ~ ${_,_,_,...}
+3. input ~ Type.{_,_,...}
+4. input ~ var.(_) => var.(input)
+5. input ~ var.[_] => var.[input]
+```
+Here also we can remove 3 (type cast). Cases 4 and 5 are simply special cases for 1.
+So:
+proposal: remove `_` used in type casting and also used in no-named function input.
+Shall we force user to write name for function output arguments?
+`x, _ := process()` vs `x, isClosed := process()`?
+second one: user needs to deal and pay attention to the second argument.
+all uses for `_`: lambda creator, func output ignore
+`var.(_)` is this a lambda creator? NO. 
+`var.[_]` is a lambda creator: `process(var, _)`.
+Can we say `${_,_}` is same as: `(x:int, y:int) -> ${x, y}`?
+What is type of `1 ~ ${_, 10, _}`? structs with `_` must be filled immediately with `~` operator.
+
 ? - We can extend usage of channels for IO too.
 Reading from a file is same as reading from a channel which is connected to the file by runtime.
 Writing to console is sending data to a channel.
@@ -3051,24 +3076,3 @@ We can even have a lot of different functions with same name and number of input
 One way to resolve the ambiguity:
 `g := process(_:int)`
 
-? - `_` is the most confusing notation in the language. Let's limit it's scope or break it into multiple items.
-1. lambda creator `process(_, _)`
-2. unknown variable in assignment: `x, _ := ...`
-3. function input `process(_:int)`
-We can eliminate item 3 and force user to just write some argument name.
-Also for 1 we have some cases:
-```
-1. input ~ func(_,_,_,...)
-2. input ~ ${_,_,_,...}
-3. input ~ Type.{_,_,...}
-4. input ~ var.(_) => var.(input)
-5. input ~ var.[_] => var.[input]
-```
-Here also we can remove 3 (type cast). Cases 4 and 5 are simply special cases for 1.
-So:
-proposal: remove `_` used in type casting and also used in no-named function input.
-Shall we force user to write name for function output arguments?
-`x, _ := process()` vs `x, isClosed := process()`?
-second one: user needs to deal and pay attention to the second argument.
-all uses for `_`: lambda creator, func output ignore
-`var.(_)` is this a lambda creator? yes. If `var` is non-fp it will return what?
