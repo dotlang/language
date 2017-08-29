@@ -3076,3 +3076,9 @@ We can even have a lot of different functions with same name and number of input
 One way to resolve the ambiguity:
 `g := process(_:int)`
 
+? - Can we remove/ban function overloading?
+Why do we need function overloading?
+pro: overloading makes code less readable.
+What about argument count? Can we overload based on argument count?
+In Go almost all the functions are bound to a class or receiver. So you can easily have two functions named `process` belonging to two different receivers. 
+con: we cannot have generic functions. Or maybe we can allow for this type of function overloading? But definitely we cannot have specialized generic functions.
