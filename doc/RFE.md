@@ -2907,6 +2907,31 @@ all uses for `_`: lambda creator, func output ignore
 Can we say `${_,_}` is same as: `(x:int, y:int) -> ${x, y}`?
 What is type of `1 ~ ${_, 10, _}`? structs with `_` must be filled immediately with `~` operator.
 
+
+N - We can prevent index out of bounds error by defining sequences as cricular.
+This can be easily implemented by adding a named type and re-implementing `get` function for that type.
+`type CircularSeq[T] := seq[T]`
+`get[T] := (c: CircularSeq[T], idx: int) -> get(seq[T].{c}, idx%len(c))`
+
+
+N - Can we remove/ban function overloading?
+Why do we need function overloading?
+pro: overloading makes code less readable.
+What about argument count? Can we overload based on argument count?
+In Go almost all the functions are bound to a class or receiver. So you can easily have two functions named `process` belonging to two different receivers. 
+con: we cannot have generic functions. Or maybe we can allow for this type of function overloading? But definitely we cannot have specialized generic functions.
+No.
+
+Y - Simplify `_`
+`result := ${input, check1(5, _)} ~ pipe(_,_) ~ ${_, check3(1,2,_)} ~ pipe(_, _) ~ ${_, check5(8,_,1) } ~ pipe(_,_)`
+`result := ${input, check1(5, _)} ~ pipe(_,_) ~ pipe(_, check3(1,2,_)) ~ pipe(_,check5(8,_,1))`
+`result := (input, check1(5, _)) ~ pipe(_,_) ~ pipe(_, check3(1,2,_)) ~ pipe(_,check5(8,_,1))`
+Maybe we should simply use `()` in chaining, instead of struct literal.
+`output := (input1, input2, input3) ~ lambda(_,_,_)`
+The we won't need `_` to create a struct literal.
+`1 ~ process(_)` and `(1) ~ process(_)` are the same, but for more inputs, you must use `()`.
+Banning `_` to create input in chain will make writing complex expressions harder which is a good thing.
+
 ? - We can extend usage of channels for IO too.
 Reading from a file is same as reading from a channel which is connected to the file by runtime.
 Writing to console is sending data to a channel.
@@ -2994,11 +3019,6 @@ Proposal: For buffered channel, we can simply define it as a named type and re-i
 ? - Send notation: `chn.[a,b,c,d]` send multiple data
 Receive notation: `data := chn.[]`
 
-N - We can prevent index out of bounds error by defining sequences as cricular.
-This can be easily implemented by adding a named type and re-implementing `get` function for that type.
-`type CircularSeq[T] := seq[T]`
-`get[T] := (c: CircularSeq[T], idx: int) -> get(seq[T].{c}, idx%len(c))`
-
 ? - idea: select can accept a sequence of channels. This can let developer select on a variable number of channels.
 But generally we need to know whih channel was triggered.
 select can accept a sequence of channels and lambdas to be executed if that channel is active.
@@ -3075,10 +3095,3 @@ We can even have a lot of different functions with same name and number of input
 `g := (x:int|string) -> process(x)` this one is more readable.
 One way to resolve the ambiguity:
 `g := process(_:int)`
-
-? - Can we remove/ban function overloading?
-Why do we need function overloading?
-pro: overloading makes code less readable.
-What about argument count? Can we overload based on argument count?
-In Go almost all the functions are bound to a class or receiver. So you can easily have two functions named `process` belonging to two different receivers. 
-con: we cannot have generic functions. Or maybe we can allow for this type of function overloading? But definitely we cannot have specialized generic functions.
