@@ -18,7 +18,7 @@ I call the paradigm of this language "Data-oriented". This is a combination of O
 Two main objectives are pursued in the design and implementation of this programming language:
 
 1. **Simplicity**: The code written in dotLang should be consistent, easy to write, read and understand. There has been a lot of effort to make sure there are as few exceptions and rules as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them. Very few things are done implicitly and transparently by the compiler or runtime system. Also, I tried to reduce the need for nested blocks and parentheses as much as possible. Another aspect of simplicity is minimalism in the language. It has very few keywords and rules to remember.
-2. **Performance**: The compiler will compile to native code which will result in higher performance compared to interpreted languages. The compiler tries to do as much as possible (optimizations, dereferencing, in-place mutation, sending by copy or reference, type checking, phantom types, inlining, disposing, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in core library will be implemented in a lower level language.
+2. **Performance**: The source will be compiled to native code which will result in higher performance compared to interpreted languages. The compiler tries to do as much as possible (optimizations, dereferencing, in-place mutation, sending by copy or reference, type checking, phantom types, inlining, disposing, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in core library will be implemented in a lower level language.
 
 Achieving both of the above goals at the same time is impossible so there will definitely be trade-offs and exceptions.
 The underlying rules of design of this language are 
@@ -30,9 +30,9 @@ As a 10,000 foot view of the language, the code is written in files (called modu
 
 ## Comparison with other languages
 
-**Compared to C**: C language + Garbage collector + first-class functions + template programming + better union data types + module system + flexible polymorphism + simple and powerful standard library + lambda expressions + closure + powerful built-in data types (map, string,...) + simpler primitives + multiple dispatch + sane defaults + full immutability - ambiguities - pointers - macros - header files.
+**Compared to C**: C language + Garbage collector + first-class functions + template programming + better union data types + module system + flexible polymorphism + simple and powerful standard library + lambda expressions + closure + simpler primitives + multiple dispatch + sane defaults + full immutability - ambiguities - pointers - macros - header files.
 
-**Compared to Scala**: Scala + multiple dispatch + full immutability + simpler primitives - *dependency on JVM* - *cryptic syntax* - trait - custom operators - variance - implicit parameters.
+**Compared to Scala**: Scala + multiple dispatch + full immutability + simpler primitives - *dependency on JVM* - cryptic syntax - trait - custom operators - variance - implicit parameters.
 
 **Compared to Go**: Go + *generics* + full immutability + multiple dispatch + union types + sane defaults + better orthogonality (e.g. creating maps) + simpler primitives - pointers - interfaces - global variables.
 
@@ -43,7 +43,7 @@ dotLang consists of these components:
 1. The language manual (this document).
 2. A command line tool to compile, debug and package source code.
 3. Runtime system: Responsible for memory allocation and management, interaction with the Operating System and other external libraries and handling concurrency.
-4. Core library: This package is used to implement some basic, low-level features which can not be simply implemented using pure dotLang language.
+4. Core library: This package is used to implement some basic, low-level features which can not be simply implemented using pure dotLang.
 5. Standard library: A layer above runtime and core which contains some general-purpose and common functions and data structures.
 
 ## Code organization
