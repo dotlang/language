@@ -2932,6 +2932,20 @@ The we won't need `_` to create a struct literal.
 `1 ~ process(_)` and `(1) ~ process(_)` are the same, but for more inputs, you must use `()`.
 Banning `_` to create input in chain will make writing complex expressions harder which is a good thing.
 
+Y - q: if there are multiple candidates for a function ponter assignment, what should happen?
+```
+process := (x:int)->...
+process := (y: string)->...
+...
+g := process(_)
+```
+Now g is a function pointer but to which process? Can we make it a meta-function which can be redirected to any of the two candidates? It can accept either int or string, and depending on the type of the input, it will call appropriate candidate.
+We can even have a lot of different functions with same name and number of inputs and one function pointer which points to all of them.
+`g := (x:int|string) -> process(x)` this one is more readable.
+One way to resolve the ambiguity:
+`g := process(_:int)`
+So: When using `_` as a lambda make, you can add `:type` to it to remove ambiguity.
+
 ? - We can extend usage of channels for IO too.
 Reading from a file is same as reading from a channel which is connected to the file by runtime.
 Writing to console is sending data to a channel.
@@ -3083,15 +3097,3 @@ we have `process := (w: wpipe, d: data) -> ...` so we can write: `x := wpipe.[da
 
 ? - Other suggested names: port
 
-? - q: if there are multiple candidates for a function ponter assignment, what should happen?
-```
-process := (x:int)->...
-process := (y: string)->...
-...
-g := process(_)
-```
-Now g is a function pointer but to which process? Can we make it a meta-function which can be redirected to any of the two candidates? It can accept either int or string, and depending on the type of the input, it will call appropriate candidate.
-We can even have a lot of different functions with same name and number of inputs and one function pointer which points to all of them.
-`g := (x:int|string) -> process(x)` this one is more readable.
-One way to resolve the ambiguity:
-`g := process(_:int)`
