@@ -124,8 +124,7 @@ These rules are highly advised but not mandatory.
 2. It is advised to put each statement on a separate line. 
 3. Order of module definitions: `import`s then `type`s then `let`s.
 4. Naming: `someFunctionName`, `my_binding_name`, `func_arg_name`, `SomeDataType`, `my_package_dir`, `my_modue_file`.
-5. There must be a single space between language keywords with their argument that comes after them. 
-6. Braces should appear on their own line except when the whole lambda is one-line.
+5. Braces should appear on their own line except when the whole expression is one-line.
 
 # import keyword
 
