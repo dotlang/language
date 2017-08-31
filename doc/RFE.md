@@ -3097,3 +3097,40 @@ we have `process := (w: wpipe, d: data) -> ...` so we can write: `x := wpipe.[da
 
 ? - Other suggested names: port
 
+N - can we assume `return` to be a special lambda which returns from parent function?
+`return(10)` 
+when called, it will return from current function.
+it's not a normal function.
+
+? - `type` keyword simplification.
+`type MyInt := int`
+`MyInt := int`
+we also have type alias:
+`type A : int`
+`process := (x:int) -> x+1`
+we can use convention: if it starts with capital letter, its a type, else its a binding.
+Do we really need type alias?
+If we have `MyInt := int` and there is no method for `MyInt` calls will be automatically redirected to `int`. 
+So it will have same effect as a type alias.
+If it starts with capital letter or `_Capital` it is a type. else its a binding.
+
+? - Determine rules of assignability. What can be assigned to what?
+Same type.
+Literals can be assigned to bindings of different types if they match with their underlying type.
+value V can be assigned to binding of type T if:
+1. V is a binding or literal and type of V is identical to T
+What does it mean if two types are identical?
+type T1 and T2 are identical if:
+1. Both are same named or unnamed type (defined in the same place in the code)
+2. T1 is named and T2 is identical to T1's underlying type, or vice versa.
+unnamed type: `seq[int], bool, int, {int, int}...`
+For now let's just remove type alias.
+What about `type` keyword?
+What about import?
+`import /code/std/q`
+`:: := /code/std/q`
+No lets keep import.
+proposal:
+1. remove type alias
+2. remove type kwyrod
+3. add explanation about type assignability and comparability and replacability.
