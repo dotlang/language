@@ -3147,3 +3147,7 @@ we have `process := (r: rpipe) -> ...` so we can write: `x := rpipe1.[]` and onl
 we have `process := (w: wpipe, d: data) -> ...` so we can write: `x := wpipe.[data]`
 
 ? - Other suggested names for channel: port, pipe
+
+? - 
+Function call: You can always use named type where underlying type is expected but not the other way around.
+Assign: You must cast?
