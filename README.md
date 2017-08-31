@@ -535,7 +535,7 @@ process := (x:int) ->
 5. `test := (x:int) -> plusFunc { |y:int| -> y + x }`
 6. `(x:int)->int { x+1 } (10)`
 7. `process := (x:int, y:float, z: string) -> { ... }`
-8. `letlambda1 := process(10, _, _)`
+8. `lambda1 := process(10, _, _)`
 9. `ff := (x:int) -> { ff(x+1) }`
 10. 
 ```
@@ -722,8 +722,8 @@ main := () -> print("Hello world!")
 We want to write a function which accepts a string like `"2+4-3"` and returns the result (`3`).
 
 ```
-type NormalExpression := {op: char, left: Expression, right: Expression}
-type Expression := int|NormalExpression
+NormalExpression := {op: char, left: Expression, right: Expression}
+Expression := int|NormalExpression
 
 eval := (input: string) -> float 
 {
@@ -865,7 +865,7 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 ## ToDo
 - **Language**: Notation for axioms and related operators like `=>` to define semantics of a data structure or function, dependent types
 - **Compiler**: test, debug and profiling code, plugins for Editors (e.g. vim, emacs), code vetting for format the code based on the standard (indentation, spacing, brace placement, warning about namings, ...), escape analysis and optimize them to use mutable variable (for example for numerical calculations which happens only inside a function), parallel compilation
-- **`std` package**: `map` data type, loop helper functions for iteartion, 
+- **`std` package**: `map` data type, loop helper functions for iteration, 
 - **`core` package**: sequence slice functions
 - **Concurrency and parallelism**: Add native concurrency and communication tools (green thread, channels, spinlock, STM, mutex) and async i/o, Channels are the main tool for concurrency and coordination.
 - **Others**: 
