@@ -2946,6 +2946,57 @@ One way to resolve the ambiguity:
 `g := process(_:int)`
 So: When using `_` as a lambda make, you can add `:type` to it to remove ambiguity.
 
+
+N - can we assume `return` to be a special lambda which returns from parent function?
+`return(10)` 
+when called, it will return from current function.
+it's not a normal function.
+
+Y - `type` keyword simplification.
+`type MyInt := int`
+`MyInt := int`
+we also have type alias:
+`type A : int`
+`process := (x:int) -> x+1`
+we can use convention: if it starts with capital letter, its a type, else its a binding.
+Do we really need type alias?
+If we have `MyInt := int` and there is no method for `MyInt` calls will be automatically redirected to `int`. 
+So it will have same effect as a type alias.
+If it starts with capital letter or `_Capital` it is a type. else its a binding.
+
+Y - Determine rules of assignability. What can be assigned to what?
+Same type.
+Literals can be assigned to bindings of different types if they match with their underlying type.
+value V can be assigned to binding of type T if:
+1. V is a binding or literal and type of V is identical to T
+What does it mean if two types are identical?
+type T1 and T2 are identical if:
+1. Both are same named or unnamed type (defined in the same place in the code)
+2. T1 is named and T2 is identical to T1's underlying type, or vice versa.
+unnamed type: `seq[int], bool, int, {int, int}...`
+For now let's just remove type alias.
+What about `type` keyword?
+What about import?
+`import /code/std/q`
+`:: := /code/std/q`
+No lets keep import.
+proposal:
+done 1. remove type alias
+2. remove `type` kyword
+3. add explanation about type assignability and comparability and replacability.
+4. In naming, state binding names start with lowercase.
+Basically, named types are type alias unless for function dispatch where they are considered different.
+
+Y - Why we cannot define a new type inside a function? (Line 441)
+Now that types are similar to bindings, why not let people define types inside function. Why ban?
+```
+process := (x:int) -> 
+{
+	dsad()
+	G := {int, int}
+}
+```
+
 ? - We can extend usage of channels for IO too.
 Reading from a file is same as reading from a channel which is connected to the file by runtime.
 Writing to console is sending data to a channel.
@@ -3095,42 +3146,4 @@ We can easily separate r/o and w/o pipes.
 we have `process := (r: rpipe) -> ...` so we can write: `x := rpipe1.[]` and only this way
 we have `process := (w: wpipe, d: data) -> ...` so we can write: `x := wpipe.[data]`
 
-? - Other suggested names: port
-
-N - can we assume `return` to be a special lambda which returns from parent function?
-`return(10)` 
-when called, it will return from current function.
-it's not a normal function.
-
-? - `type` keyword simplification.
-`type MyInt := int`
-`MyInt := int`
-we also have type alias:
-`type A : int`
-`process := (x:int) -> x+1`
-we can use convention: if it starts with capital letter, its a type, else its a binding.
-Do we really need type alias?
-If we have `MyInt := int` and there is no method for `MyInt` calls will be automatically redirected to `int`. 
-So it will have same effect as a type alias.
-If it starts with capital letter or `_Capital` it is a type. else its a binding.
-
-? - Determine rules of assignability. What can be assigned to what?
-Same type.
-Literals can be assigned to bindings of different types if they match with their underlying type.
-value V can be assigned to binding of type T if:
-1. V is a binding or literal and type of V is identical to T
-What does it mean if two types are identical?
-type T1 and T2 are identical if:
-1. Both are same named or unnamed type (defined in the same place in the code)
-2. T1 is named and T2 is identical to T1's underlying type, or vice versa.
-unnamed type: `seq[int], bool, int, {int, int}...`
-For now let's just remove type alias.
-What about `type` keyword?
-What about import?
-`import /code/std/q`
-`:: := /code/std/q`
-No lets keep import.
-proposal:
-1. remove type alias
-2. remove type kwyrod
-3. add explanation about type assignability and comparability and replacability.
+? - Other suggested names for channel: port, pipe
