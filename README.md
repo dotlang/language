@@ -68,12 +68,12 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 02. **Primitive types**: `int`, `float`, `char`, `seq`, `func`.
 03. **Bindings**: `my_var:int := 19` (type can be automatically inferred, everything is immutable).
 04. **Sequence**: `scores:seq[int] := [1 2 3 4]` (Similar to array).
-05. **Named type**: `type MyInt := int` (Defines a new type with same binary representation as `int`).
-06. **Struct type**: `type Point := {x: int, y:int, data: float}` (Like `struct` in C)
+05. **Named type**: `MyInt := int` (Defines a new type with same binary representation as `int`).
+06. **Struct type**: `Point := {x: int, y:int, data: float}` (Like `struct` in C)
 07. **Struct literal**: `location := Point{x:10, y:20, data:1.19}`
-08. **Composition**: `type Circle := {Shape, radius: float}` (`Circle` embeds fields of `Shape`)
-09. **Generics**: `type Stack[T] := { data: array[T], info: int }` (Defines a blueprint to create new types)
-10. **Union type**: `type Maybe[T] := T | nothing` (Can store either of possible types)
+08. **Composition**: `Circle := {Shape, radius: float}` (`Circle` embeds fields of `Shape`)
+09. **Generics**: `Stack[T] := { data: array[T], info: int }` (Defines a blueprint to create new types)
+10. **Union type**: `Maybe[T] := T | nothing` (Can store either of possible types)
 11. **Function**: `calculate: func(int,int)->float := (x, y) -> float { return x/y  }`
 
 ## Symbols
@@ -89,7 +89,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 09. `::`  Address inside a module alias
 10. `//`  Nothing-check operator
 11. `$`   Prefix for struct literals
-12. `:`   Type declaration for struct, function inputs and bindings, struct literals, type alias
+12. `:`   Type declaration for struct, function inputs and bindings, struct literals
 13. `:=`  Binding declaration, named types
 14. `@`   Get internal type of union 
 15. `~`   Chain operator (To chain function calls)
@@ -104,9 +104,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 **Keywords**: 
 
 1. `import`: Used to import types and bindings from other modules.
-2. `type`: Used to specify a name for a type.
-3. `return`: Used to specify return value of a function.
-
+2. `return`: Used to specify result of a function.
 
 **Primitive data types**: `int`, `float`, `char`, `seq`, `func`
 
@@ -122,7 +120,7 @@ These rules are highly advised but not mandatory.
 
 1. Indentation must be done using spaces, not tabs. Using 4 spaces is advised but not mandatory.
 2. It is advised to put each statement on a separate line. 
-3. Order of module definitions: `import`s then `type`s then `let`s.
+3. `import` statements must come first, then type definitions, then bindings.
 4. Naming: `someFunctionName`, `my_binding_name`, `func_arg_name`, `SomeDataType`, `my_package_dir`, `my_modue_file`.
 5. Braces should appear on their own line except when the whole expression is one-line.
 
@@ -138,7 +136,7 @@ These rules are highly advised but not mandatory.
 1. This keyword is used to import definitions from another module into current module's namespace. After importing a module, you can use its types, call its functions or work with the bindings that are defined in that module.
 2. You can import a module into a named namespace. If you do this, you can only access its definitions by prefixing namespace name (`namespace::definition`) (Example 2)
 3. Note that definitions that start with an underscore are considered private and will not be available when you import their module.
-4. Any definition using `type` or `let` keywords at module-level, adds to the default namespace. This is what will be imported when you import the module.
+4. Any binding definition at module-level, is added to the default namespace. This is what will be imported when you import the module.
 5. `/` in the beginning is a shortcut for `file/`. Namespace path starts with a protocol which determines the location of the file for a namespace. You can also use other namespace protocols like `Github` (`import git/path/to/module`).
 6. You can import multiple modules with the same package using notation in Example 3.
 7. If an import path starts with `./` or `../` means the module path is relative to the current module.
@@ -153,9 +151,9 @@ These rules are highly advised but not mandatory.
 5. `import svn/bitbucket.com/net/server`
 6. Import and rename multiple modules: `import /core/std/{Queue, Stack, Heap} -> A, B, C`
 7. Assign a binding to a definition inside another namespace: `createSocket := mod1::createSocket`
-8. `type socketType := mod1::SocketType`
+8. `SocketType := mod1::SocketType`
 
-# Bindings (`let` keyword)
+# Bindings
 
 **Syntax**: 
 
@@ -164,8 +162,8 @@ These rules are highly advised but not mandatory.
 
 **Notes**
 
-1. `let` keyword is used to assign a unique name to a definition or value. By default, type of the name (or binding) is inferred from the value but you can also explicitly specify the type.
-2. Note that the result of `let` is an immutable value. So you cannot re-assign it.
+1. By default, type of the binding is inferred from the value but you can also explicitly specify the type.
+2. Note that bindings are immutable, so you cannot re-assign them.
 3. The type of the rvalue (What comes on the right side of `:=`), can be any possible data type including function. Refer to following sections for an explanation of different available data types.
 4. If the rvalue is a struct (Refer to the corresponding section for more info about struct), You can destruct it to its elements using this keyword (Example 3 and 5).
 5. You can use place holder symbol `_` to denote you are not interested in a specific value (Example 6).
@@ -230,7 +228,7 @@ These rules are highly advised but not mandatory.
 
 **Examples**
 
-1. `type day_of_week := SAT | SUN | MON | TUE | WED | THU | FRI`
+1. `Day_of_week := SAT | SUN | MON | TUE | WED | THU | FRI`
 2. `int_or_float: int | float := 11`
 3. `int_or_float := 12.91`
 4. `int_or_float := 100`
@@ -263,7 +261,7 @@ You can call `fn` like a normal function with an input which should be any of po
 
 **Examples**
 
-1. `type Point := {x:int, y:int}`
+1. `Point := {x:int, y:int}`
 2. `point2 := Point{x:100, y:200}`
 3. `point3 := Point{100, 200}`
 4. `point1 := ${100, 200}`
@@ -293,10 +291,10 @@ You can call `fn` like a normal function with an input which should be any of po
 
 **Examples**
 
-1. `type Shape := { id:int }`
-2. `type Circle := { Shape, radius: float}`
+1. `Shape := { id:int }`
+2. `Circle := { Shape, radius: float}`
 3. `my_circle := Circle{id:100, radius:1.45}`
-4. `type AllShapes := |{Shape}|`
+4. `AllShapes := |{Shape}|`
 5. `someShapes:AllShapes := [myCircle, mySquare, myRectangle, myTriangle]`
 
 # Extended primitive types
@@ -319,24 +317,15 @@ You can call `fn` like a normal function with an input which should be any of po
 
 # Type system
 
-## Type alias
+Two types T1 and T2 are identical/assignable in any of below cases:
+1. Both are named types defined in the same place in the code.
+2. Both are unnamed types with similar definition (e.g. `int|string` vs `int|string` or `seq[int]` vs `seq[int]`).
+2. T1 is named and T2 is identical to T1's underlying type, or vice versa.
 
-**Syntax**: `type NewName : ExistingTypeName`
-
-**Notes**
-
-1. This is used to define alternative names for the same type.
-2. The alias type is exactly same as the existing type (Unlike named type declaration which creates a new type).
-3. This can be used in refactoring process or when there is a name conflict between types imported from different modules. See `import` section for more information.
-
-**Examples**
-
-1. `type MyInt : int`
 
 ## Named type
 
-**Syntax**: `type NewType := UnderlyingType`
-
+**Syntax**: `NewType := UnderlyingType`
 
 **Notes**
 
@@ -346,15 +335,16 @@ You can call `fn` like a normal function with an input which should be any of po
 4. You can use casting operator to convert between a named type and its underlying type (Example 5).
 5. You can define multiple named types in one type statement (Example 6).
 6. If a function is called which has no candidate for the named type, the candidate for underlying type will be invoked.
+7. Visually, the naming differentiates a named type from a binding (type names start with a capital letter).
 
 **Examples**
 
-1. `type MyInt := int`
-2. `type IntArray := seq[int]`
-3. `type Point := {x: int, y: int}`
-4. `type bool := true | false`
+1. `MyInt := int`
+2. `IntArray := seq[int]`
+3. `Point := {x: int, y: int}`
+4. `bool := true | false`
 5. `x: MyInt := 10`, `y: MyInt := MyInt{10}`
-6. `type Socket[Open], Socket[Closed] := { data: int }`
+6. `Socket[Open], Socket[Closed] := { data: int }`
 
 ## Casting
 
@@ -365,7 +355,7 @@ You can call `fn` like a normal function with an input which should be any of po
 1. There is no implicit and automatic casting in the language. The only case is for `true` to be 1 and `false` to be 0 when used as a sequence index.
 2. Casting is mostly used to cast between a union and its internal type (Example 2) or between named and equal unnamed type (Example 4 and 5). 
 3. If a function expects a named type, you cannot pass an equivalent unnamed type. 
-4. Similarly, when a function expects an unnamed type, you cannot pass a named type with same underlying type. 
+4. Similarly, when a function expects an unnamed type, you cannot pass a named type with same underlying type, unless there is no function with that name expecting the named type.
 5. Another usage of casting is to cast between primitives: `int` and `float` and `char` (Example 1).
 6. When casting for union types, you get two outputs: Target type and a boolean flag indicating whether cast was successful (Example 2).
 7. For literals, casting between named and underlying type can be done automatically (Example 4).
@@ -377,7 +367,7 @@ You can call `fn` like a normal function with an input which should be any of po
 
 1. `x:int := int.{1.91}`
 2. `int_value, has_int := int.{int_or_float}`
-3. `type MyInt := int`
+3. `MyInt := int`
 4. `x:MyInt := 100`
 5. `y:int := x`
 6. `x := (func()->T).{t}`
@@ -388,7 +378,7 @@ You can call `fn` like a normal function with an input which should be any of po
 **Syntax**: 
 
 1. `funcName[T1, T2, T3, ...] := (input1: type1, input2: T1, input3: T3, ...)->T2`
-2. `type TypeName[T1, T2, T3, ...] := { field1: int, field2: T2, field3: float, ...}`
+2. `TypeName[T1, T2, T3, ...] := { field1: int, field2: T2, field3: float, ...}`
 
 **Notes**:
 
@@ -399,10 +389,10 @@ You can call `fn` like a normal function with an input which should be any of po
 
 **Example**
 
-01. `type Stack[T] := array[T]`
-02. `type Tree[T] := {x: T, left: Tree[T], right: Tree[T]}`
-03. `type optional[T] := nothing|T`
-04. `type BoxedValue[T] := {value:T}`
+01. `Stack[T] := array[T]`
+02. `Tree[T] := {x: T, left: Tree[T], right: Tree[T]}`
+03. `optional[T] := nothing|T`
+04. `BoxedValue[T] := {value:T}`
 05. `func push[T](s: Stack[T], data: T) ...`
 06. `func pop[T](s: Stack[T])->T...`
 07. `func length[T](s: Stack[T])->int`
@@ -427,18 +417,18 @@ You can call `fn` like a normal function with an input which should be any of po
 
 **Examples**
 
-1. `type HashType := MD5|SHA1`
-2. `type HashStr[T] := string`
-3. `type Md5Hash := HashStr[MD5]` 
-4. `type Sha1Hash := HashStr[SHA1]`
+1. `HashType := MD5|SHA1`
+2. `HashStr[T] := string`
+3. `Md5Hash := HashStr[MD5]` 
+4. `Sha1Hash := HashStr[SHA1]`
 5. `func md5(s: string)->Md5Hash { ... }`
 6. `func sha1(s: string)->Sha1Hash { ... }`
 7. `t := Md5Hash{sha1("A")} //ERROR!`
-8. `type SafeString := string`
+8. `SafeString := string`
 9. `func processString(s: string)->SafeString`
 10. `func work(s: SafeString)`
-11. `type DoorState := Open|Closed`
-12. `type Door[T] := string`
+11. `DoorState := Open|Closed`
+12. `Door[T] := string`
 13. `func closeDoor(x: Door[Open]) -> Door[Closed]`
 14. `func openDoor(x: Door[Closed]) -> Door[Open]`
 
@@ -453,7 +443,7 @@ You can call `fn` like a normal function with an input which should be any of po
 2. Lambda or a function pointer is defined similarly to a normal function in a module. They use the same syntax.
 3. When defining a function, just like a normal binding, you can omit type which will be inferred from rvalue (Function literal).
 4. Note that `func(int,int)->int` is a function type, but `(x:int, y:int)->{x+y}` is function literal.
-5. You cannot define types inside a function (with `type` keywords). All types must be defined at the module level.
+5. You can define types inside a function. These types will only be available inside the function.
 6. As a syntax sugar, `var.[1,2,3]` will be converted to `process(var, 1, 2, 3)` function call.
 7. Every function must return something which is specified using `return`. If it doesn't, compiler marks output type as `nothing` (Example 2).
 8. A function call with union data means there must be functions defined for all possible types in the union. See Call resolution section for more information.
@@ -505,7 +495,7 @@ process := (x:int) ->
 
 ## Function pointer
 
-**Syntax**: `type Fp := func(type1, type2, ...)->OutputType`
+**Syntax**: `Fp := func(type1, type2, ...)->OutputType`
 
 1. A special data type which can hold a reference to a function.
 2. Example 4 indicates a function which accepts a function pointer.
@@ -514,7 +504,7 @@ process := (x:int) ->
 
 **Examples**
 
-1. `type adder := func(int,int)->int`
+1. `adder := func(int,int)->int`
 2. `myAdder := (x:int, y:int) -> x+y`
 3. `adderPointer := adder{myAdder}`
 4. `sort := (x: array[int], comparer: func(int,int) -> bool) -> array[int]`
@@ -618,7 +608,7 @@ g := process(_:int)
 **Examples**
 
 01. `g := @[int]`, `g := @int_or_float`
-02. `type MyInt := int`, `x: MyInt := MyInt{int_var}`
+02. `MyInt := int`, `x: MyInt := MyInt{int_var}`
 03. `y:int := int{x}`
 04. `y: int|float := 12`
 05. `y := x // y // z // 0`
@@ -706,7 +696,7 @@ x:int := [100 200].[a>0]
 
 **Examples**
 
-1. `type Comparer[T] := { compare: func(T,T)->bool }`
+1. `Comparer[T] := { compare: func(T,T)->bool }`
 2. `func sort[T](x: array[T], f: Comparer[T])->array[T] { ... }`
 3. `sort(myIntArray, Comparer.{::})`
 4. `sort(myIntArray, Comparer[int].{::})`
@@ -900,7 +890,7 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.96**: Jun 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: Jun 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` place holder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is typed statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
-- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs, enable type after `_`
+- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity. 
 
 # Time table
 
