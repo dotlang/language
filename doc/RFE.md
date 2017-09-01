@@ -3178,7 +3178,52 @@ There are different functions to create different types of Stream. So `Type` wil
 What if I have a function which accepts a `PipeReader` but I expect it to be reading from a file? This cannot be decoded into type. And as we don't have polymorphism, we cannot pass `FileReader` when a `PipeReader` is expected. Except using the general union notation:
 `process := (pipe: |{PipeReader}|)->...`
 input to process can be any struct type that embeds `PipeReader`.
+Or we can have all of them of the same type: `PipeReader` but have a tag field which denotes type of underlying 
 
+? - We can combine pipes. e.g. zip/unzip or digest. 
+For example we have `StreamWriter`. We can also have another `StreamWriter` that wraps the first one and outputs hash.
+How can we model this? Is this a StreamWriter + lambda to call for reading?
+We can provide a lambda when creating a new `StreamWriter` which will be called when writing (same for reading).
+Or we can separate them. We can have normal StreamWriters crated to write to a file or socket or ... .
+And we can have lambda-based StreamWriters. But then they will need to embed another StreamWriter.
+We write to container, it will process data and write to the internal sw.
+But then it won't be transparent.
+It's better if we can create a streamwriter with two additional arguments: Parent writer and lambda.
+So when I write to sw, it will invoke lambda, which will decide to write to parent or do something else.
+How can this work with buffered channels?
+You can create channel other using core calls or based on another channel + lambda.
+for ReadOnlyChannel, any read operation will call the lambda.
+for WriteOnlyChannel, any write, will call the lambda.
+Lambda then will decide to process, store, ignore or redirect the operation to the internal channel.
+And the channel parameter can be anything as long as the lambda knows it.
+`ReadOnlyChannel[T] := {inner: ReadOnlyChannel[T]|nothing, lambda: nothing|func(T)->bool}`
+`read[T] := (channel: ReadOnlyChannel[T])->T|nothing { ... }`
+Or maybe we can separate them! A channel that just reads, A lambda that just does some calculations.
+This won't be as transparent as the original solution but would be definitely simpler.
+So if a function expects a ChannelReader, that function needs to be modified to expect a lambda. And that lambda will have a channel reader and will apply it's own logic.
+But this is not extensible. Suppose that there is a function that we cannot change.
+This function expects a ChannelReader to read some data from a file.
+Now that file is compressed. I cannot send a lambda to the function to include the channel reader and unzip the data on the fly because that function does not accept a lambda.
+Can we make ChannelReader a lambda? Then we can easily impersonate a channel reader by writing our own lambda.
+ChannelWriter will be a lambda too.
+pro: we no longer need `rpipe` and `wpipe`.
+pro: It is more flexible and orth because now we are working with lambdas. So for example digest or unzip is possible.
+Of course the inner most lambda is created by core and has access to the thread-safe synchronized mutable buffered storage.
+So when we create a channel, we just receive two lambdas: writer and reader.
+`PipeReader[T] := func()->T`
+`PipeWriter[T] := func(T)->T`
+`openSocket[T] := (host: string) -> {PipeWriter[T], PipeReader[T]}`
+`writer, reader := openSocket(...)`
+pro: we already have composability because we use functions. 
+pro: No need to create a new concept.
+q: How does this work with buffered channels?
+q: How does this work with ex-res?
+
+? - To mark some type as to be only created by calling a function we can mark some/all of thier fields as private. So user is normally not supposed to fill it up and has to make an appropriate function call.
+
+? - Can we have multiple bindings with the same name?
+`read := (t: int)->t+1`
+`read := (s: string)->12`
 
 
 ? - The same notation for binding and type is a bit confusing.
