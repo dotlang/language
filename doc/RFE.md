@@ -3218,12 +3218,52 @@ pro: we already have composability because we use functions.
 pro: No need to create a new concept.
 q: How does this work with buffered channels?
 q: How does this work with ex-res?
+Buffered channel means the channel have it's own storage. When writing it will be written to that storage. When reading it will be read from that storage.
+This is not possible in dot. So buffered channels must be provided by core (e.g. thread communication, socket, ...).
+You can write your custom lambdas on top of an existing channel.
+`DigestPipeWriter[T] := func(T)->T`
+`createDigestPipeWriter[T] := (original: PipeWriter[T])->DigestPipeWriter[T] { return (input: T)->write(original, input)...}`
+So:
+Pipe is something user cannot see. He works with writer and reader which are lambdas.
+You can compose pipes by composing their lambdas.
+When you create a pipe, you are given two lambdas (or maybe one), to read/write.
+select: can be implemented by applying `.()` on a sequence.
+So: `A.()` if A is a lambda will invoke it, if it is a sequence, will do select, otherwise will return `A` itself.
+This is a bit confusing. We can implement select using a core function but it should be built-in.
+Maybe adding a new operator?
+`seq1.<>`?
+Can't we use existing tools that we have?
+select: try to read/write on some channels -> try to invoke some lambdas. 
+What happens if I have a lambda which wraps a normal channel. How can I know if it will block? How can core know? How can `select` know? 
+If it is just a normal lambda, How is select supposed to know if it will block upon read/write? How can we do a peek/tryRead/tryWrite?
+
+
+? - The element that comes inside a compound literal, is not orth. It's something new, does not have a type. Can we use exisintg tools like tuple literal?
+`[(1,2) (3,4) ...]` What is type of `(1,2)`? Can I accept it as a function argument?
+If we replace it with struct literal, will it become a normal seq?
+`[${1,2} ${3,4} ...]` If structure of all of them is the same, then yes. This is a `seq[{int,int}]`
+`seq[int] => [1 2 3 4]`
+`seq[string] => ["A" "B" "C"]`
+What if I really want to have a sequence of structs?
+What happens to compound literal then?
+Purpose of compound literal is to define a map (key and value).
+What should be the difference between a map literal and a sequence of structs that has two elements?
+`x := [(1,2) (3,4) (5,6)]` 
+`x := [${1,2} ${3,4} ${5,6}]`
+I think this is fine. There should be enought discrimination between these two. 
+Also this is supposed to be for "literals". So everything is written in the source code statically.
+To create this dynamically, you need to make appropriate calls.
+What about making it simpler:
+`x := [1,2 3,4 5,6]`?
+`population := ["US",100 "UK",200 ...]` It's not very readable. But `()` is also confusing.
+
 
 ? - To mark some type as to be only created by calling a function we can mark some/all of thier fields as private. So user is normally not supposed to fill it up and has to make an appropriate function call.
 
 ? - Can we have multiple bindings with the same name?
 `read := (t: int)->t+1`
 `read := (s: string)->12`
+we should.
 
 
 ? - The same notation for binding and type is a bit confusing.
