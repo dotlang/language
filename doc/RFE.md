@@ -3147,6 +3147,45 @@ we have `process := (r: rpipe) -> ...` so we can write: `x := rpipe1.[]` and onl
 we have `process := (w: wpipe, d: data) -> ...` so we can write: `x := wpipe.[data]`
 
 ? - Other suggested names for channel: port, pipe
+We must have channel/pipe ready for IO, because of mutable nature of them.
+Can we implement all ex-res as channels?
+non-threading candidates for channels: stdout, stdin, file, network, ...
+`Stdin := Input<Std>`
+`Stdin := ReadOnlyChannel<char>`
+When writing to a channel, we should be able to write a single data item or a sequence. But this is impl-related.
+All of ex-res have a communication nature, so they fit with channel model. They might be shared across threads, which also fits with usage of channels. They embed a mutable state, also fitting with channels.
+You can dispose an channel or let it open. When it's no longer referenced, it will be GCd.
+But we have 3 arguments here: Pipe(r/w), type (thread, file, network, io) and data (char, string, int, ...).
+Can we merge and unify them?
+`stdout := CreatePipe<Write, Std, char>()`
+`socket1 := CreatePipe<Write, Socket, char>()`
+`Dir := Write | Read`
+`CreatePipe[Dir, Kind, Value] := () -> pipe[Dir, Kind, Value] ...`
+`CreatePipe[Kind, Value] := () -> {rpipe[Kind, Value], rpipe[Kind, Value]}`
+`wpipe[Type, Value] := {...}`
+`StdOut[Value] := wpipe[StdIO, Value]`
+We can define two other primitive types: `wpipe` and `rpipe`.
+What does `wpipe[Type, Value]` mean? `Value` is type of data we want to read from or write to.
+r and w pipes are related most of the time. So it's better to have a single API which gives out both of them.
+You can just ignore the one you don't need. 
+But what does `Type` mean? We need a mechanism to know this read-only pipe which you can read only `int` from, where is it connected to? Is it reading from a file? or network? ...
+This can be thought of like a stream reader/writer. `StreamReader`, `StreamWriter`. We don't care what is it. We just read or write. Is that possible? Does it make sense?
+We have a `StreamWriter[char]` binding. We can write using `x.[a]` notation. It will write to somewhere. Maybe a file or a socket or standard output. We don't care.
+There are different functions to create different types of Stream. So `Type` will be embedded inside different functions.
+`OpenFile[T] := (s: String) -> {PipeWriter[T], PipeReader[T]}`
+`OpenFileReadOnly[T] := (s: String) -> PipeReader[T]`
+`OpenSocket[T] := (host: string) -> {PipeWriter[T], PipeReader[T]}`
+What if I have a function which accepts a `PipeReader` but I expect it to be reading from a file? This cannot be decoded into type. And as we don't have polymorphism, we cannot pass `FileReader` when a `PipeReader` is expected. Except using the general union notation:
+`process := (pipe: |{PipeReader}|)->...`
+input to process can be any struct type that embeds `PipeReader`.
+
+
+
+? - The same notation for binding and type is a bit confusing.
+`data := { ... }` is this a code or struct? It's a struct. Code starts with `(...)->...`
+`A := B` means A is a name for B. They can be types or lambdas.
+Why not treat type like a lambda? In this case, A is name of the lambda, B is it's body and it's output will be a new type.
+But it will only complicate the code. That lambda will need to create a new type (union or struct or sequence or ...). We just write that.
 
 ? - 
 Function call: You can always use named type where underlying type is expected but not the other way around.
