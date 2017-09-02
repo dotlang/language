@@ -3236,7 +3236,41 @@ Can't we use existing tools that we have?
 select: try to read/write on some channels -> try to invoke some lambdas. 
 What happens if I have a lambda which wraps a normal channel. How can I know if it will block? How can core know? How can `select` know? 
 If it is just a normal lambda, How is select supposed to know if it will block upon read/write? How can we do a peek/tryRead/tryWrite?
+One solution: Each read/write can return `nothing` indicating that it cannot do that action.
+We should be able to invoke read/write in two modes: sync, async.
+In normal mode it will block if it cannot do the action.
+In peek mode, it will return immediately with `nothing` if it cannot perform the action.
+Select needs these lambdas prepared to be invoked in peek mode. 
+So, we have a list of lambdas. The first one that does not return `nothing` will be invoked. Else we will be blocked.
+So we have a sequence of lambdas. Their input can be empty or T, output can be nothing or something else.
+`[lambda1 lambda2 lambda3].<>`
+Actually, those lambdas have no input. Because their input is already provided.
+`select := (x: seq[func()->T|nothing])->...`
+We simply call `select` function from core with a sequence of lambdas. BUT, for reading, we also need a lambda to process it.
+We will need a sequence of `{lambda1, lambda2}`. l1 is the action. l2 is the processor of the result.
+For read, it will process read data.
+For write, it will process written data (mostly dummy, but to make it consistent).
+`select := (x: seq[{func()->T|nothing, func(T)->nothing}])->...`
 
+? - `|` can be ambiguous:
+`T1 := func()->int|nothing` is nothing for the whole type of function's output?
+In these cases, the advantage of using `union` becomes more clear.
+For all other types either they are simple (int) or their boundary is specified (`{...}` or `seq[...]`).
+So as we try to be as simple as possible, it's better to have union boundary specified.
+solution1: enclose all cases with `|`.
+`T1 := func()->|int|nothing|`
+`T1 := |nothing|func()->int|`
+But what if they get nested?
+`T1 := |nothing|func()->|int|float||`
+This is not very readable.
+solution2: `union`?
+`T1 := func()->union[int,nothing]`
+`T1 := union[nothing, func()->int]`
+then we will need to modify general type filter rule: `|{Type}|`
+We can write: `union[Type]`.
+Then we can use `|` notation elsewhere.
+
+? - Shall we use a keyword to specify struct's type? Just like union?
 
 ? - The element that comes inside a compound literal, is not orth. It's something new, does not have a type. Can we use exisintg tools like tuple literal?
 `[(1,2) (3,4) ...]` What is type of `(1,2)`? Can I accept it as a function argument?
@@ -3256,7 +3290,8 @@ To create this dynamically, you need to make appropriate calls.
 What about making it simpler:
 `x := [1,2 3,4 5,6]`?
 `population := ["US",100 "UK",200 ...]` It's not very readable. But `()` is also confusing.
-
+Compound literal is a shortcut for calling some methods. That's all.
+`x := [(1,2) (3,4) (5,6)]`?
 
 ? - To mark some type as to be only created by calling a function we can mark some/all of thier fields as private. So user is normally not supposed to fill it up and has to make an appropriate function call.
 
