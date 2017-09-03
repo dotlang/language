@@ -2997,6 +2997,41 @@ process := (x:int) ->
 }
 ```
 
+Y - To mark some type as to be only created by calling a function we can mark some/all of thier fields as private. So user is normally not supposed to fill it up and has to make an appropriate function call.
+
+N - Can we have multiple bindings with the same name?
+`read := (t: int)->t+1`
+`read := (s: string)->12`
+we should.
+
+N - The same notation for binding and type is a bit confusing.
+`data := { ... }` is this a code or struct? It's a struct. Code starts with `(...)->...`
+`A := B` means A is a name for B. They can be types or lambdas.
+Why not treat type like a lambda? In this case, A is name of the lambda, B is it's body and it's output will be a new type.
+But it will only complicate the code. That lambda will need to create a new type (union or struct or sequence or ...). We just write that.
+
+N - The element that comes inside a compound literal, is not orth. It's something new, does not have a type. Can we use exisintg tools like tuple literal?
+`[(1,2) (3,4) ...]` What is type of `(1,2)`? Can I accept it as a function argument?
+If we replace it with struct literal, will it become a normal seq?
+`[${1,2} ${3,4} ...]` If structure of all of them is the same, then yes. This is a `seq[{int,int}]`
+`seq[int] => [1 2 3 4]`
+`seq[string] => ["A" "B" "C"]`
+What if I really want to have a sequence of structs?
+What happens to compound literal then?
+Purpose of compound literal is to define a map (key and value).
+What should be the difference between a map literal and a sequence of structs that has two elements?
+`x := [(1,2) (3,4) (5,6)]` 
+`x := [${1,2} ${3,4} ${5,6}]`
+I think this is fine. There should be enought discrimination between these two. 
+Also this is supposed to be for "literals". So everything is written in the source code statically.
+To create this dynamically, you need to make appropriate calls.
+What about making it simpler:
+`x := [1,2 3,4 5,6]`?
+`population := ["US",100 "UK",200 ...]` It's not very readable. But `()` is also confusing.
+Compound literal is a shortcut for calling some methods. That's all.
+`x := [(1,2) (3,4) (5,6)]`?
+If you want it to be more flexible and dynamic, just call the function directly.
+
 ? - We can extend usage of channels for IO too.
 Reading from a file is same as reading from a channel which is connected to the file by runtime.
 Writing to console is sending data to a channel.
@@ -3011,7 +3046,7 @@ Other option: Have a special struct which contains IO channels. Then searching f
 We can force these functions to include the channel in their output. So if a function writes to a file, it will need to return `FileChannel` as one of it's outputs.
 Goal: Make it explicit that a function has side-effects (network, console, filesystem, ...)
 
-? - `<int>` for a channel of int. `.<1>`?
+? - `<int>` for a channel of int. `.<1>`? No. It's better to have lambdas, they are more flexible, composable and extendable.
 `chn: <int> := createChannel[int]()`
 `data.<chn>` send
 `t := <chn>` receive.
@@ -3269,44 +3304,19 @@ solution2: `union`?
 then we will need to modify general type filter rule: `|{Type}|`
 We can write: `union[Type]`.
 Then we can use `|` notation elsewhere.
+Another option: When there is ambiguity, use `()`.
+`T1 := func()->(int|nothing)`
+`T1 := func()->int|nothing`.
+`func(input)->(output)`
+So when using sum types, if there is ambiguity, use `()`.
+`A | B` or `(A) | (B)`
+
+? - The general union is not orth. `|{Shape}|`. 
+If this is a type, I should be able to use it whenever a type is expected, including defining a new union.
+Also isn't it confusing? `|{Shape}|` if combined with other things, may mean that one option is a anon-struct with a Shape struct in it.
+`|{Shape}|` How can it be mixed with other types?
 
 ? - Shall we use a keyword to specify struct's type? Just like union?
 
-? - The element that comes inside a compound literal, is not orth. It's something new, does not have a type. Can we use exisintg tools like tuple literal?
-`[(1,2) (3,4) ...]` What is type of `(1,2)`? Can I accept it as a function argument?
-If we replace it with struct literal, will it become a normal seq?
-`[${1,2} ${3,4} ...]` If structure of all of them is the same, then yes. This is a `seq[{int,int}]`
-`seq[int] => [1 2 3 4]`
-`seq[string] => ["A" "B" "C"]`
-What if I really want to have a sequence of structs?
-What happens to compound literal then?
-Purpose of compound literal is to define a map (key and value).
-What should be the difference between a map literal and a sequence of structs that has two elements?
-`x := [(1,2) (3,4) (5,6)]` 
-`x := [${1,2} ${3,4} ${5,6}]`
-I think this is fine. There should be enought discrimination between these two. 
-Also this is supposed to be for "literals". So everything is written in the source code statically.
-To create this dynamically, you need to make appropriate calls.
-What about making it simpler:
-`x := [1,2 3,4 5,6]`?
-`population := ["US",100 "UK",200 ...]` It's not very readable. But `()` is also confusing.
-Compound literal is a shortcut for calling some methods. That's all.
-`x := [(1,2) (3,4) (5,6)]`?
-
-? - To mark some type as to be only created by calling a function we can mark some/all of thier fields as private. So user is normally not supposed to fill it up and has to make an appropriate function call.
-
-? - Can we have multiple bindings with the same name?
-`read := (t: int)->t+1`
-`read := (s: string)->12`
-we should.
-
-
-? - The same notation for binding and type is a bit confusing.
-`data := { ... }` is this a code or struct? It's a struct. Code starts with `(...)->...`
-`A := B` means A is a name for B. They can be types or lambdas.
-Why not treat type like a lambda? In this case, A is name of the lambda, B is it's body and it's output will be a new type.
-But it will only complicate the code. That lambda will need to create a new type (union or struct or sequence or ...). We just write that.
-
-? - 
-Function call: You can always use named type where underlying type is expected but not the other way around.
+? - Function call: You can always use named type where underlying type is expected but not the other way around.
 Assign: You must cast?
