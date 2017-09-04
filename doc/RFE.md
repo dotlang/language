@@ -3286,6 +3286,13 @@ We will need a sequence of `{lambda1, lambda2}`. l1 is the action. l2 is the pro
 For read, it will process read data.
 For write, it will process written data (mostly dummy, but to make it consistent).
 `select := (x: seq[{func()->T|nothing, func(T)->nothing}])->...`
+Idea: in addition to two lambdas, we can return a Channel ID which can be used in other operations like check if channel is ready. But then can't we use that ID for read/write? IT we can, the we cannot have r/o or w/o channels. If we cannot, it will be a bit unintuitive.
+We can simulate default in select, with a special channel which is always ready for read or write.
+Can't we simulate select with a special channel?
+Like a channel where you send it will send to any of available channels. No. We can combine read and write in a select.
+select needs to peek a lambda for read/write, if it is ready, locks it, then does the operation.
+peek and lock are internal low-level operations which cannot be ?
+As an example of ambiguity: we have docker-create and docker-build commands. This is totally confusing.
 
 ? - `|` can be ambiguous:
 `T1 := func()->int|nothing` is nothing for the whole type of function's output?
@@ -3314,7 +3321,11 @@ So when using sum types, if there is ambiguity, use `()`.
 ? - The general union is not orth. `|{Shape}|`. 
 If this is a type, I should be able to use it whenever a type is expected, including defining a new union.
 Also isn't it confusing? `|{Shape}|` if combined with other things, may mean that one option is a anon-struct with a Shape struct in it.
-`|{Shape}|` How can it be mixed with other types?
+`|{Shape}|` How can it be mixed with other types? It shold be orth.
+`A|B`
+`union[A,B]` this is not very intuitive and good looking.
+`|{Shape}|int`
+` `
 
 ? - Shall we use a keyword to specify struct's type? Just like union?
 
