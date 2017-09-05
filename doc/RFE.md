@@ -3305,6 +3305,10 @@ Maybe we can give out two channel-ids. One for read and one for write.
 `writeable.[output_data]`
 So `createChannel` will give out, a struct including a `OutChannel` and `InChannel` types. 
 How can we combine them? Like a channel that reads from a file and outputs uncompressed data?
+Maybe upon creation, we can also attach two lambdas: One to execute before writing, one to execute after reading.
+`reader, writer := createFileChannel[int]("/tmp/a.txt", read_lambda, write_lambda)`
+But if we are going to have separate reader and writer, why not have read/write lambdas?
+But then what can select do? Maybe runtime can keep a mapping between these lambdas and their internal channel.
 
 ? - `|` can be ambiguous:
 `T1 := func()->int|nothing` is nothing for the whole type of function's output?
@@ -3382,3 +3386,6 @@ No.
 Assign: You must cast?
 
 ? - As an example of ambiguity: we have docker-create and docker-build commands. This is totally confusing.
+
+N - Again: Why can't we have named args?
+For function call. Maybe they have different name for their inputs.
