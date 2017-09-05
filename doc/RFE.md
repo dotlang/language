@@ -3292,7 +3292,14 @@ Can't we simulate select with a special channel?
 Like a channel where you send it will send to any of available channels. No. We can combine read and write in a select.
 select needs to peek a lambda for read/write, if it is ready, locks it, then does the operation.
 peek and lock are internal low-level operations which cannot be ?
-As an example of ambiguity: we have docker-create and docker-build commands. This is totally confusing.
+Maybe instead of peek we can have a bool flag which indicates whether the operation should block or no.
+Select will call it with `block=false` so it will be notified instantly whether action is performed.
+But in this case, select can even be called with any other non-related function as long as they support this protocol. But there is not a protocol for block. It is provided by caller of select. It provides a lambda which given an input, will call appropriate function with `block=false`, select will process call result and if it is `nothing` means action is not successfull.
+`select := (x: seq[{func()->T|nothing, func(T)->nothing}])->...`
+Another solution: calback, the first channel that is ready for send/receive will call a code block to do the operation.
+The internal OS call, needs a set of file descriptors. So we will definitely need something other than lambda.
+If we only use a channel-id, then how are we going to mix channels? Maybe we shouldn't.
+
 
 ? - `|` can be ambiguous:
 `T1 := func()->int|nothing` is nothing for the whole type of function's output?
@@ -3317,6 +3324,36 @@ Another option: When there is ambiguity, use `()`.
 `func(input)->(output)`
 So when using sum types, if there is ambiguity, use `()`.
 `A | B` or `(A) | (B)`
+`T1 := func()->int|nothing`.
+`T1 := func(int|string)->int|func(string)->string|int`
+`T1 := union[func(int|string)->int,func(string)->union[string,int]]`
+Another idea: define union just like struct with special notation.
+`T1 := {x:int|y:float}`. Then maybe we can change `@` notation too.
+`T1 := {f:func()->int|nothing,g:int}`.
+`T1 := {f:func()->int|g:nothing}`.
+What about enums?
+`T1 := {SAT|SUN|MON}`?
+`T1 := {_:SAT|_:SUN|_:MON}`?
+With this notation we can have multiple ints in a union. it can be `g:int|h:int`.
+It will affect function dispatch and set.
+q: what will be the notation to check the current data inside union?
+q: what will be notation to read current data?
+q: what will be above two notations for enums?
+Giving name to union cases, will make things more complex: need for notation to check them, enums, function dispatch, ...
+What is we don't give it a name but use `{a|b}` notation?
+`T1 := {func()->int|nothing}`.
+Or:
+`T1 := |func()->int,nothing|`. This is not very readable.
+The only case of ambiguity is for function type with union.
+`func()->{int|string}` No.
+Problem is not with `|` but its with function. `func(int)->string` the output type does not have a finish marker. 
+Adding a finish marker will make it difficult to write but maybe easier to read.
+Like enclosing in `()` if type is not simple.
+`func(int)->string`
+`func(int)->(string|int)`
+This makes sense and is intuitive.
+proposal: For `func` type, if output is not simple one word identifier, it should be enclosed in paren.
+So: `T := func(int)->string|nothing` means nothing belongs to T, not function.
 
 ? - The general union is not orth. `|{Shape}|`. 
 If this is a type, I should be able to use it whenever a type is expected, including defining a new union.
@@ -3325,9 +3362,18 @@ Also isn't it confusing? `|{Shape}|` if combined with other things, may mean tha
 `A|B`
 `union[A,B]` this is not very intuitive and good looking.
 `|{Shape}|int`
-` `
+The notation that indicates union of all types that embed type T, should not need `|`. So it can be combined with other types. So `^Shape` can denote a union type including all types that embed type Shape.
+So we can easily write: `^Shape|int`.
+Or it can be `<Shape>`?
+or `$Shape`.
+or `[Shape]`.
+No these are not intuitive. 
+Proposal: `^Shape` instead of `|{Shape}|`.
 
 ? - Shall we use a keyword to specify struct's type? Just like union?
+No.
 
 ? - Function call: You can always use named type where underlying type is expected but not the other way around.
 Assign: You must cast?
+
+? - As an example of ambiguity: we have docker-create and docker-build commands. This is totally confusing.
