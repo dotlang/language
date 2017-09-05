@@ -3299,7 +3299,12 @@ But in this case, select can even be called with any other non-related function 
 Another solution: calback, the first channel that is ready for send/receive will call a code block to do the operation.
 The internal OS call, needs a set of file descriptors. So we will definitely need something other than lambda.
 If we only use a channel-id, then how are we going to mix channels? Maybe we shouldn't.
-
+Maybe we can give out two channel-ids. One for read and one for write.
+`readable, writeable := createChannel[int]...`
+`data := readable.[]`
+`writeable.[output_data]`
+So `createChannel` will give out, a struct including a `OutChannel` and `InChannel` types. 
+How can we combine them? Like a channel that reads from a file and outputs uncompressed data?
 
 ? - `|` can be ambiguous:
 `T1 := func()->int|nothing` is nothing for the whole type of function's output?
