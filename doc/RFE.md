@@ -3389,4 +3389,4 @@ Maybe upon creation, we can also attach two lambdas: One to execute before writi
 `reader, writer := createFileChannel[int]("/tmp/a.txt", read_lambda, write_lambda)`
 But if we are going to have separate reader and writer, why not have read/write lambdas?
 But then what can select do? Maybe runtime can keep a mapping between these lambdas and their internal channel.
-
+But having lambdas without ability to mix them with other lambdas is not very useful. Maybe we can mix lambda and channel-id. So we pass channel-id to the lambda. So we have them both now. And we can enclose lambda inside another lambda, as long as it behaves as expected: has an input for channel-id. So when creating a channel, we will have 4 outputs: two lambdas for read and write and two ids for read/write operations. It's a bit too much!
