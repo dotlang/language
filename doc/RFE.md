@@ -3399,6 +3399,25 @@ createFileChannel[T] := (path: string) -> {ChannelId[T], ChannelReader[T], Chann
 id, r, w := createFileChannel("/tmp/a.log")
 [(id, r) (id2, w, x)].<> ???
 ```
+We can introduce a new syntax, but then we won't be able to run it for unlimited number of channels. Maybe we can create a special channel which will acts just as a mux over a variable number of channels. Readin from it, will read from any of available channels. writing to it will? It can only be read from. When writing, you have to specify which channel to write to.
+```
+result := select
+	ch1.[], (x:int) -> process(x),
+	ch2.[y] 
+```
+`index := [(readable, lambda) (writeable, data)].<>`
+What if `select` becomes just a normal function in core?
+What should be it's input? Using struct here is not really intuitive and elegant.
+Maybe we need a new notation. Maybe we need a new data structure and methods to process a literal to create that structure.
+`SendDS[T] := {c: ChannelWriter, x: T}`
+`ReceiveDS[T] := {c: ChannelReader, f: func(T)->T}`
+`SelectDS := { data: seq[SendDS[T]|ReceiveDS[T]] }`
+But each send or receive can have it's own type!
+solution 1: variadic templates
+solution 2: special notation
+
+
+
 
 ? - How can we define types that are internal and dont have anything on right side of `:=`
 e.g int
