@@ -3032,6 +3032,86 @@ Compound literal is a shortcut for calling some methods. That's all.
 `x := [(1,2) (3,4) (5,6)]`?
 If you want it to be more flexible and dynamic, just call the function directly.
 
+Y - `|` can be ambiguous:
+`T1 := func()->int|nothing` is nothing for the whole type of function's output?
+In these cases, the advantage of using `union` becomes more clear.
+For all other types either they are simple (int) or their boundary is specified (`{...}` or `seq[...]`).
+So as we try to be as simple as possible, it's better to have union boundary specified.
+solution1: enclose all cases with `|`.
+`T1 := func()->|int|nothing|`
+`T1 := |nothing|func()->int|`
+But what if they get nested?
+`T1 := |nothing|func()->|int|float||`
+This is not very readable.
+solution2: `union`?
+`T1 := func()->union[int,nothing]`
+`T1 := union[nothing, func()->int]`
+then we will need to modify general type filter rule: `|{Type}|`
+We can write: `union[Type]`.
+Then we can use `|` notation elsewhere.
+Another option: When there is ambiguity, use `()`.
+`T1 := func()->(int|nothing)`
+`T1 := func()->int|nothing`.
+`func(input)->(output)`
+So when using sum types, if there is ambiguity, use `()`.
+`A | B` or `(A) | (B)`
+`T1 := func()->int|nothing`.
+`T1 := func(int|string)->int|func(string)->string|int`
+`T1 := union[func(int|string)->int,func(string)->union[string,int]]`
+Another idea: define union just like struct with special notation.
+`T1 := {x:int|y:float}`. Then maybe we can change `@` notation too.
+`T1 := {f:func()->int|nothing,g:int}`.
+`T1 := {f:func()->int|g:nothing}`.
+What about enums?
+`T1 := {SAT|SUN|MON}`?
+`T1 := {_:SAT|_:SUN|_:MON}`?
+With this notation we can have multiple ints in a union. it can be `g:int|h:int`.
+It will affect function dispatch and set.
+q: what will be the notation to check the current data inside union?
+q: what will be notation to read current data?
+q: what will be above two notations for enums?
+Giving name to union cases, will make things more complex: need for notation to check them, enums, function dispatch, ...
+What is we don't give it a name but use `{a|b}` notation?
+`T1 := {func()->int|nothing}`.
+Or:
+`T1 := |func()->int,nothing|`. This is not very readable.
+The only case of ambiguity is for function type with union.
+`func()->{int|string}` No.
+Problem is not with `|` but its with function. `func(int)->string` the output type does not have a finish marker. 
+Adding a finish marker will make it difficult to write but maybe easier to read.
+Like enclosing in `()` if type is not simple.
+`func(int)->string`
+`func(int)->(string|int)`
+This makes sense and is intuitive.
+proposal: For `func` type, if output is not simple one word identifier, it should be enclosed in paren.
+So: `T := func(int)->string|nothing` means nothing belongs to T, not function.
+
+Y - The general union is not orth. `|{Shape}|`. 
+If this is a type, I should be able to use it whenever a type is expected, including defining a new union.
+Also isn't it confusing? `|{Shape}|` if combined with other things, may mean that one option is a anon-struct with a Shape struct in it.
+`|{Shape}|` How can it be mixed with other types? It shold be orth.
+`A|B`
+`union[A,B]` this is not very intuitive and good looking.
+`|{Shape}|int`
+The notation that indicates union of all types that embed type T, should not need `|`. So it can be combined with other types. So `^Shape` can denote a union type including all types that embed type Shape.
+So we can easily write: `^Shape|int`.
+Or it can be `<Shape>`?
+or `$Shape`.
+or `[Shape]`.
+No these are not intuitive. 
+Proposal: `^Shape` instead of `|{Shape}|`.
+
+N - Shall we use a keyword to specify struct's type? Just like union?
+No.
+
+N - Function call: You can always use named type where underlying type is expected but not the other way around.
+Assign: You must cast?
+
+N - As an example of ambiguity: we have docker-create and docker-build commands. This is totally confusing.
+
+N - Again: Why can't we have named args?
+For function call. Maybe they have different name for their inputs.
+
 ? - We can extend usage of channels for IO too.
 Reading from a file is same as reading from a channel which is connected to the file by runtime.
 Writing to console is sending data to a channel.
@@ -3310,82 +3390,3 @@ Maybe upon creation, we can also attach two lambdas: One to execute before writi
 But if we are going to have separate reader and writer, why not have read/write lambdas?
 But then what can select do? Maybe runtime can keep a mapping between these lambdas and their internal channel.
 
-? - `|` can be ambiguous:
-`T1 := func()->int|nothing` is nothing for the whole type of function's output?
-In these cases, the advantage of using `union` becomes more clear.
-For all other types either they are simple (int) or their boundary is specified (`{...}` or `seq[...]`).
-So as we try to be as simple as possible, it's better to have union boundary specified.
-solution1: enclose all cases with `|`.
-`T1 := func()->|int|nothing|`
-`T1 := |nothing|func()->int|`
-But what if they get nested?
-`T1 := |nothing|func()->|int|float||`
-This is not very readable.
-solution2: `union`?
-`T1 := func()->union[int,nothing]`
-`T1 := union[nothing, func()->int]`
-then we will need to modify general type filter rule: `|{Type}|`
-We can write: `union[Type]`.
-Then we can use `|` notation elsewhere.
-Another option: When there is ambiguity, use `()`.
-`T1 := func()->(int|nothing)`
-`T1 := func()->int|nothing`.
-`func(input)->(output)`
-So when using sum types, if there is ambiguity, use `()`.
-`A | B` or `(A) | (B)`
-`T1 := func()->int|nothing`.
-`T1 := func(int|string)->int|func(string)->string|int`
-`T1 := union[func(int|string)->int,func(string)->union[string,int]]`
-Another idea: define union just like struct with special notation.
-`T1 := {x:int|y:float}`. Then maybe we can change `@` notation too.
-`T1 := {f:func()->int|nothing,g:int}`.
-`T1 := {f:func()->int|g:nothing}`.
-What about enums?
-`T1 := {SAT|SUN|MON}`?
-`T1 := {_:SAT|_:SUN|_:MON}`?
-With this notation we can have multiple ints in a union. it can be `g:int|h:int`.
-It will affect function dispatch and set.
-q: what will be the notation to check the current data inside union?
-q: what will be notation to read current data?
-q: what will be above two notations for enums?
-Giving name to union cases, will make things more complex: need for notation to check them, enums, function dispatch, ...
-What is we don't give it a name but use `{a|b}` notation?
-`T1 := {func()->int|nothing}`.
-Or:
-`T1 := |func()->int,nothing|`. This is not very readable.
-The only case of ambiguity is for function type with union.
-`func()->{int|string}` No.
-Problem is not with `|` but its with function. `func(int)->string` the output type does not have a finish marker. 
-Adding a finish marker will make it difficult to write but maybe easier to read.
-Like enclosing in `()` if type is not simple.
-`func(int)->string`
-`func(int)->(string|int)`
-This makes sense and is intuitive.
-proposal: For `func` type, if output is not simple one word identifier, it should be enclosed in paren.
-So: `T := func(int)->string|nothing` means nothing belongs to T, not function.
-
-? - The general union is not orth. `|{Shape}|`. 
-If this is a type, I should be able to use it whenever a type is expected, including defining a new union.
-Also isn't it confusing? `|{Shape}|` if combined with other things, may mean that one option is a anon-struct with a Shape struct in it.
-`|{Shape}|` How can it be mixed with other types? It shold be orth.
-`A|B`
-`union[A,B]` this is not very intuitive and good looking.
-`|{Shape}|int`
-The notation that indicates union of all types that embed type T, should not need `|`. So it can be combined with other types. So `^Shape` can denote a union type including all types that embed type Shape.
-So we can easily write: `^Shape|int`.
-Or it can be `<Shape>`?
-or `$Shape`.
-or `[Shape]`.
-No these are not intuitive. 
-Proposal: `^Shape` instead of `|{Shape}|`.
-
-? - Shall we use a keyword to specify struct's type? Just like union?
-No.
-
-? - Function call: You can always use named type where underlying type is expected but not the other way around.
-Assign: You must cast?
-
-? - As an example of ambiguity: we have docker-create and docker-build commands. This is totally confusing.
-
-N - Again: Why can't we have named args?
-For function call. Maybe they have different name for their inputs.
