@@ -3415,9 +3415,23 @@ Maybe we need a new notation. Maybe we need a new data structure and methods to 
 But each send or receive can have it's own type!
 solution 1: variadic templates
 solution 2: special notation
-
-
-
+What about this notation?
+`result := [ch1|ch2|ch3].[]` to read from a sequence of channels or block
+`result := [ch1|ch2|ch3].[data]` to write to any of channels which is ready to write
+`result, index := ch1.[] | ch2.[] | ch3.[data] | ch4.[data]`
+`result, index := rch_sequence.[]`
+`result, index := wch_sequence.[data]` try to send `data` over the first ready channel
+`result, index := [ch1 ch2 ch3].[]`
+`result, index := [wch1 wch2 wch3].[data]`
+`result, index := ch1.[] ^ ch2.[] ^ ch3.[data] ^ ch4.[data2]`
+`result, index := [ch1 ch2].[] ^ [ch3 ch4].[data1 data2]`
+or add a new operator to make it more readable and explicit:
+`result, index := [ch1 ch2].<> ^ [ch3 ch4].<data1 data2>`
+`result, index := [rch1 rch2 wch3 wch4].<nothing nothing data1 data2>`
+But if we add a totally new notation, then we won't be able to run select on a sequence.
+We want to be able to run select on sequence of channel reader or writer or both.
+`result, index := [rch1 rch2 wch3 wch4].<nothing nothing data1 data2>`
+Seems that select is not compatible with functional approach.
 
 ? - How can we define types that are internal and dont have anything on right side of `:=`
 e.g int
