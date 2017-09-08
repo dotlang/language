@@ -3433,5 +3433,7 @@ We want to be able to run select on sequence of channel reader or writer or both
 `result, index := [rch1 rch2 wch3 wch4].<nothing nothing data1 data2>`
 Seems that select is not compatible with functional approach.
 
+? - When creating a channel, in Clojure you can also provide a transducer.
+
 ? - How can we define types that are internal and dont have anything on right side of `:=`
 e.g int
