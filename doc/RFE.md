@@ -3498,7 +3498,32 @@ result := [
 ] ~ findReadyChannel(_).()
 ```
 `findReadyChannel` will return the lambda for the channel which is ready.
-
+```
+result := [
+	(rchan1, () -> rchan1.[])
+	(rchan2, () -> rchan2.[])
+	(wchan1, () -> wchan1.[data1])
+	(wchan2, () -> wchan2.[data2])
+].[].()
+```
+`.[]` on a sequence of channel and lambdas, will return lambda for the channel which is ready.
+Because of using `.()` you can use an expression (non-lambda) instead of lambda. But it won't make sense because you need to do the read/write operation asap.
+q: Does this conflict with future plans for map and compound literals?
+q: How can we embed code for a channel? Its part of the API that cretes that channel.
+q: How can we have a dynamic/variable-sized sequence like above example?
+The syntax above is for compound literal. What if we don't want to use a literal?
+solution 1: Using two sequences. Problem: channel and it's lambda will be far from each other, visually.
+solution 2: Struct
+```
+result := [
+	${rchan1, () -> rchan1.[]}
+	${rchan2, () -> rchan2.[]}
+	${wchan1, () -> wchan1.[data1]}
+	${wchan2, () -> wchan2.[data2]}
+].[].()
+```
+Type of the first expression is: `Select[T] := seq[{rchan|wchan, func()->T}]`.
+If there are different functions with different outputs, `T` should become union of those types.
 
 ? - When creating a channel, in Clojure you can also provide a transducer.
 
