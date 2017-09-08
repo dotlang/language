@@ -3432,6 +3432,73 @@ But if we add a totally new notation, then we won't be able to run select on a s
 We want to be able to run select on sequence of channel reader or writer or both.
 `result, index := [rch1 rch2 wch3 wch4].<nothing nothing data1 data2>`
 Seems that select is not compatible with functional approach.
+`result, index := [rch1 rch2 (wch3, data1) (wch4, data2)].<>`
+`result := [(channel1, d1) (channel2,d2) (channel3,d3)].<>`
+```
+result, index := <
+data1 := chan1.[]
+data2 := chan2.[]
+result3 := chan3.[d1]
+result4 := chan4.[d2]
+>
+```
+```
+result, index := [
+chan1.[]
+chan2.[]
+chan3.[d1]
+chan4.[d2]
+]
+```
+There should be a mechanism to invoke channel operations in non-blocking way.
+Above sample includes expressions. Unless we change semantics of sequence, it's elements are expected to be evaluated on the spot.
+```
+result, index := [
+() -> chan1.[]
+() -> chan2.[]
+(data: int) -> chan3.[data]
+(data: int) -> chan4.[data]
+].(d1, d2)
+```
+This one is better, but can we put anything inside those lambdas?
+`result, index := [ch1 ch2 ch3 ch4].<(idx: int, data: int|nothing) -> {...}>`
+```
+result, index := [
+() -> chan1.[]
+() -> chan2.[]
+chan3.[_]
+chan4.[_]
+].(d1, d2)
+``` 
+What if we can separate read and writes?
+```
+result, index := [chan1 chan2].[]
+result2, index2 := [chan3 chan4].[data]
+``` 
+the `process` function for a sequence of channels, is implemented in core and implements select statement. It should be either a sequence of r/o or w/o channels.
+We can unify read and write by using transducers. We need to have a channel and a lambda. When channel is ready, the lambda will be executed. That's all.
+```
+result, index := [
+	(rchan1, () -> rchan1.[])
+	(rchan2, () -> rchan2.[])
+	(wchan1, () -> wchan1.[data1])
+	(wchan2, () -> wchan2.[data2])
+].()
+```
+When any of channels are ready, the corresponding lambda will be executed.
+Result of the lambda + index of the channel in the sequence which is activated, will be returned.
+This is simpler, a unified structure: channel + lambda. Can be extended to a variable number of channels, because it is a sequence.
+`.()` does not make sense here. Unless we combine it with something else that returns the lambda.
+```
+result := [
+	(rchan1, () -> rchan1.[])
+	(rchan2, () -> rchan2.[])
+	(wchan1, () -> wchan1.[data1])
+	(wchan2, () -> wchan2.[data2])
+] ~ findReadyChannel(_).()
+```
+`findReadyChannel` will return the lambda for the channel which is ready.
+
 
 ? - When creating a channel, in Clojure you can also provide a transducer.
 
