@@ -3524,6 +3524,11 @@ result := [
 ```
 Type of the first expression is: `Select[T] := seq[{rchan|wchan, func()->T}]`.
 If there are different functions with different outputs, `T` should become union of those types.
+`[ ${1, "A"} ]` and 
+`[ (1, "A") ]` 
+are different.
+You can still use compound literal model with variable sized data. Just call appropriate methods.
+
 
 ? - When creating a channel, in Clojure you can also provide a transducer.
 
