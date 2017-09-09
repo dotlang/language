@@ -3528,6 +3528,31 @@ If there are different functions with different outputs, `T` should become union
 `[ (1, "A") ]` 
 are different.
 You can still use compound literal model with variable sized data. Just call appropriate methods.
+So we have:
+`x := [ (ch1, lambda1) (ch2, lambda2) ]`
+will translate to these calls:
+`x0 := set(nothing, ch1, lambda1)`
+`x := set(x0, ch2, lambda2)`
+And what would be signature of `set` and type of `x` here?
+`set[T] := (x: nothing, ch: ChannelReader[T]|ChannelWriter[T], lambda: func()->T) -> { ... }`
+`set[T,S] := (x: Chn[S], ch: ChannelReader[T]|ChannelWriter[T], lambda: func()->T) -> { ... }`
+X can be a linked-list or any other suitable data structure.
+Problems:
+1. Type of input is `ChannelReader` so we don't have (And can't) anything to differentiate between network or file or ... channel. So, how should they be organized?
+2. What will be type of the data structure that hold above compound literal?
+They must be different, at least internally. A file channel and a socket are different. So, either we should make it another template argument, or use `^T` notation.
+`set[K, T, S] := (x: DStr[S], ch: ChannelReader[K, T]|ChannelWriter[T], lambda: func()->T) -> { ... }`
+In select input, we have a list of channels (of kind K and type T), with lambdas with no input and output of type T.
+So we have two template argument per each element. We can have a general type T and another function with output S and assume T will be some kind of channel but it is not correct.
+Generally, we need to be able to say the input for this function must be a channel of type reader, and it should be able to accept r/o channels of any type and kinds (socket-int-reader or file-string-reader).
+So, if sequence has 4 rows, we have 8 types. What shall be the data structure for it?
+```
+DStr[K,T, K2, T2] := { ch: ChannelReader[K,T]|ChannelWriter[K,T], lambda: func()->T, next: DStr[K2,T2] }
+```
+The compound literal is used for similar-typed literals like map. But if type of each item changes, its hard.
+Solution: From the beginning, specify type using union.
+`DStr[K,T] := { ch: ChannelReader[K,T]|ChannelWriter[K,T], lambda: func()->T }`
+`DStr[K,T] := { ch: ChannelReader[_,T], lambda: func()->T }`
 
 
 ? - When creating a channel, in Clojure you can also provide a transducer.
