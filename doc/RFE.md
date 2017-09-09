@@ -3571,8 +3571,17 @@ solution 1: keep this. use notation `.[]` for sequences to act as select. But do
 Normally we write `.[0]` to get an element from the array.
 solution 2: Add a new notation.
 We can also write: `cases.[]()` If all items are lambdas.
-Anyway, calling `.[]` on a sequence whose elements have a channel at `.0`, will invoke core select function.
-
+Anyway, calling `.[]` on a sequence whose elements are of type `AltCase[T]` will invoke core select function.
+`AltCase[T] := { c: ChannelReader[T]|ChannelWriter[T], lambda: func()->T }`
+`cases: seq[AltCase[T1]|AltCase[T2]|AltCase[T3]] := processCases()`
+```
+result := [
+	AltCase[int]{rchan1, () -> rchan1.[]}
+	AltCase[string]{rchan2, () -> rchan2.[]}
+	AltCase[int]{wchan1, () -> wchan1.[data1]}
+	AltCase[float]{wchan2, () -> wchan2.[data2]}
+].[].()
+```
 
 ? - When creating a channel, in Clojure you can also provide a transducer.
 
