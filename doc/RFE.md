@@ -3582,6 +3582,11 @@ result := [
 	AltCase[float]{wchan2, () -> wchan2.[data2]}
 ].[].()
 ```
+So:
+```
+stdout := createStdOut()
+```
+Why include type in channel type? We have a channel we can read from. You can read anything from it. int or string or ... . Just like stdout where we can print anything to it. By removing T from channel type, the select data structure becomes simpler, And we won't be able to use `.[]` because it doesn't specify output type.
 
 ? - When creating a channel, in Clojure you can also provide a transducer.
 
