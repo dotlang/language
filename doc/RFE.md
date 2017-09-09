@@ -3553,6 +3553,25 @@ The compound literal is used for similar-typed literals like map. But if type of
 Solution: From the beginning, specify type using union.
 `DStr[K,T] := { ch: ChannelReader[K,T]|ChannelWriter[K,T], lambda: func()->T }`
 `DStr[K,T] := { ch: ChannelReader[_,T], lambda: func()->T }`
+`Chr[T] := ChannelReader[T] | ChannelWriter[T]`
+`DStr[T1, T2, T3] := { ch: Chr[T1]|Chr[T2]|Chr[T3], lambda: func()->T1|T2|T3 }` But here we cannot enforce that lambda for chr-t1 should output t1 not t2 or t3.
+`Chr[T] := { c: ChannelReader[T]|ChannelWriter[T], lambda: func()->T }`
+`DStr[T1, T2, T3] := {Chr[T1], Chr[T2], Chr[T3] }`
+`DStr[T1, T2, T3] := seq[Chr[T1]|Chr[T2]|Chr[T3]]`
+`select := (cases: seq[Chr[_]])->???`
+It seems that `select` should be handled in the syntax level without using a normal function.
+So user just writes `[(ch1, l1) (ch2, l2)].[].()` and core will handle it to generate data and do the call.
+But what about the case when we have a variable size/dynamic input? Just specify it's type explicitly:
+```
+cases: seq[Chr[T1]|Chr[T2]|Chr[T3]] := processCases()
+cases.[].()
+```
+But then `.[]` becomes confusing. It is supposed to read something.
+solution 1: keep this. use notation `.[]` for sequences to act as select. But doesn't `.[]` have other usages?
+Normally we write `.[0]` to get an element from the array.
+solution 2: Add a new notation.
+We can also write: `cases.[]()` If all items are lambdas.
+Anyway, calling `.[]` on a sequence whose elements have a channel at `.0`, will invoke core select function.
 
 
 ? - When creating a channel, in Clojure you can also provide a transducer.
