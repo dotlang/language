@@ -3587,6 +3587,18 @@ So:
 stdout := createStdOut()
 ```
 Why include type in channel type? We have a channel we can read from. You can read anything from it. int or string or ... . Just like stdout where we can print anything to it. By removing T from channel type, the select data structure becomes simpler, And we won't be able to use `.[]` because it doesn't specify output type.
+```
+stdout := createStdOut(lambda_processor, buffer_size)
+stdout.["A"]
+stdout.[12]
+stdout.[myF_float]
+stdin := createStdIn(lambda_processor, buffer_size)
+x: int := stdin.[int][]
+x: string := stdin.[string][]
+```
+Then any channel is basically a tag (r/o or w/o), internal file descriptor, a lambda. 
+But what should lambda do? If it doesn't know it's input type?
+The lambda, should be generic. It should be based on type T, or it should be specialized for some types. If we read/write some type which is not supported by that lambda, there will be compiler error.
 
 ? - When creating a channel, in Clojure you can also provide a transducer.
 
