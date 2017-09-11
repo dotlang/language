@@ -3599,6 +3599,54 @@ x: string := stdin.[string][]
 Then any channel is basically a tag (r/o or w/o), internal file descriptor, a lambda. 
 But what should lambda do? If it doesn't know it's input type?
 The lambda, should be generic. It should be based on type T, or it should be specialized for some types. If we read/write some type which is not supported by that lambda, there will be compiler error.
+But it's always better to be strong typed. Just like a function's input which has a specific input type, channels should have a specific type.
+For stdout, output type is normally string where we convert everything else to string before sending to the channel.
+```
+AltCase[T] := { c: ChannelReader[T]|ChannelWriter[T], lambda: func()->T }
+
+result := [
+	AltCase[int]{rchan1, () -> rchan1.[]}
+	AltCase[string]{rchan2, () -> rchan2.[]}
+	AltCase[int]{wchan1, () -> wchan1.[data1]}
+	AltCase[float]{wchan2, () -> wchan2.[data2]}
+].[].()
+#or
+result := [ 
+	(rchan1, ()->rchan1.[]) (rchan2, ()->rchan2.[]) (wchan1, ()->wchan1.[data1]) (wchan2, ()->wchan2.[data2]) 
+].[].()
+
+std_reader, std_writer := createStd[string]()
+stdout_reader.[]
+stdout_wrter.["Hello"]
+```
+But we cannot separate the part that finds the available channel and the part that runs the corresponding lambda.
+This should be an atomic thing. Find channel and run corresponding lambda.
+Maybe we can map `.[]` to do this.
+If the method is run on a sequence of AltCases, it will act as a select.
+```
+AltCase[T] := { c: ChannelReader[T]|ChannelWriter[T], lambda: func()->T }
+
+result, index := [
+	AltCase[int]{rchan1, () -> rchan1.[]}
+	AltCase[string]{rchan2, () -> rchan2.[]}
+	AltCase[int]{wchan1, () -> wchan1.[data1]}
+	AltCase[float]{wchan2, () -> wchan2.[data2]}
+].[]
+#or
+result, index := [ 
+	(rchan1, ()->rchan1.[]) (rchan2, ()->rchan2.[]) (wchan1, ()->wchan1.[data1]) (wchan2, ()->wchan2.[data2]) 
+].[]
+#type of result is int|string|float
+
+std_reader, std_writer := createStd[string]()
+data := std_reader.[]
+std_write.["Hello"]
+
+net_reader, net_writer := createSocket[int](host, port, settings, (x:int)->x+1)
+data := net_reader.[]
+net_writer.[10]
+```
+
 
 ? - When creating a channel, in Clojure you can also provide a transducer.
 
