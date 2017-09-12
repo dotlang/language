@@ -97,7 +97,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 17. `.{}` Casting
 18. `.()` Optional call (call if it is a function pointer, do nothing otherwise)
 19. `.[]` Custom process
-20. `|{}|` Generic union (Union of a group of types)
+20. `^`   Generic union (Union of a group of types)
 
 ## Reserved identifiers
 
@@ -287,14 +287,14 @@ You can call `fn` like a normal function with an input which should be any of po
 6. You can define a union type which accepts all struct types which embed a specific struct type. See examples 4 and 5.
 7. Note that polymorphism does not apply to generics. So `seq[Circle]` cannot substitute `seq[Shape]`. But you can have `seq[Circle|Square]` to have a mixed sequence of different types.
 8. We use closed recursion to forward function calls. This means if a function call is forwarded from `Circle` to `Shape` and inside that function, a second function is called which has candidates for both `Circle` and `Shape` the one for `Shape` will be called.
-9. `|{T}|` where T is a named type can be used to indicate all structs that embed that type (Example 4).
+9. `^T` where T is a named type can be used to indicate all structs that embed that type (Example 4).
 
 **Examples**
 
 1. `Shape := { id:int }`
 2. `Circle := { Shape, radius: float}`
 3. `my_circle := Circle{id:100, radius:1.45}`
-4. `AllShapes := |{Shape}|`
+4. `AllShapes := ^Shape`
 5. `someShapes:AllShapes := [myCircle, mySquare, myRectangle, myTriangle]`
 
 # Extended primitive types
@@ -492,7 +492,7 @@ process := (x:int) ->
 
 1. `draw := (Circle->Shape)`
 2. `process := (Polygon|Square|Circle->Shape, GradientColor|SolidColor]->Color)`
-3. `process := (float, |{Shape}|->Shape, string, int, GradientColor|SolidColor->Color, int)`
+3. `process := (float, ^Shape->Shape, string, int, GradientColor|SolidColor->Color, int)`
 4. `draw: func(Circle) := (c: Circle) -> draw(c.Shape)`
 
 ## Function pointer
@@ -892,10 +892,7 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.96**: Jun 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: Jun 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` place holder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is typed statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
-- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, 
+- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type
 
 # Time table
 
-Aug 25th - Check eligibility for Apache Incubator
-
-Aug 31st - Write compiler skeleton which compiles the most basic app
