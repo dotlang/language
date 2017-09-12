@@ -3112,7 +3112,7 @@ N - As an example of ambiguity: we have docker-create and docker-build commands.
 N - Again: Why can't we have named args?
 For function call. Maybe they have different name for their inputs.
 
-? - We can extend usage of channels for IO too.
+N - We can extend usage of channels for IO too.
 Reading from a file is same as reading from a channel which is connected to the file by runtime.
 Writing to console is sending data to a channel.
 Even for cursor location, we can have a channel. write to it to set location, read from it to get current location.
@@ -3626,13 +3626,14 @@ If the method is run on a sequence of AltCases, it will act as a select.
 ```
 AltCase[T] := { c: ChannelReader[T]|ChannelWriter[T], lambda: func()->T }
 
-result, index := [
+cases: seq[AltCase[int]|AltCase[string]|AltCase[float]] := [
 	AltCase[int]{rchan1, () -> rchan1.[]}
 	AltCase[string]{rchan2, () -> rchan2.[]}
 	AltCase[int]{wchan1, () -> wchan1.[data1]}
 	AltCase[float]{wchan2, () -> wchan2.[data2]}
-].[]
-#or
+]
+result, index := cases.[]
+#or, compiler will automatically generate appropriate cases here and set type for base sequence
 result, index := [ 
 	(rchan1, ()->rchan1.[]) (rchan2, ()->rchan2.[]) (wchan1, ()->wchan1.[data1]) (wchan2, ()->wchan2.[data2]) 
 ].[]
@@ -3652,3 +3653,4 @@ net_writer.[10]
 
 ? - How can we define types that are internal and dont have anything on right side of `:=`
 e.g int
+
