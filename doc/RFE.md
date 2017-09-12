@@ -3126,7 +3126,7 @@ Other option: Have a special struct which contains IO channels. Then searching f
 We can force these functions to include the channel in their output. So if a function writes to a file, it will need to return `FileChannel` as one of it's outputs.
 Goal: Make it explicit that a function has side-effects (network, console, filesystem, ...)
 
-? - `<int>` for a channel of int. `.<1>`? No. It's better to have lambdas, they are more flexible, composable and extendable.
+N - `<int>` for a channel of int. `.<1>`? No. It's better to have lambdas, they are more flexible, composable and extendable.
 `chn: <int> := createChannel[int]()`
 `data.<chn>` send
 `t := <chn>` receive.
@@ -3196,29 +3196,26 @@ Proposal: Creating a channel will give us two connected channels: r/o and w/o Wh
 Make channels consistent and orth. Closed channel, multiple calls to close, sharing a channel with mutiple producer threads, mux-ing multiple channels, buffered channels, ....
 Proposal: For buffered channel, we can simply define it as a named type and re-implement `process` function for them.
 
-? - Send notation: `chn.[a,b,c,d]` send multiple data
+N - Send notation: `chn.[a,b,c,d]` send multiple data
 Receive notation: `data := chn.[]`
 
-? - idea: select can accept a sequence of channels. This can let developer select on a variable number of channels.
+N - idea: select can accept a sequence of channels. This can let developer select on a variable number of channels.
 But generally we need to know whih channel was triggered.
 select can accept a sequence of channels and lambdas to be executed if that channel is active.
 `select [(rpipe1, (x:int)->...) (ch2, (_:int)->...) ...]`
 
-? - We can have mutex and use them if we add a keyword like `synchronized`.
+N - We can have mutex and use them if we add a keyword like `synchronized`.
 ```
 synchronized(value1) lambda1
 ```
 
-? - Provide unlimited buffered channel (acts like a queue).
+N - Provide unlimited buffered channel (acts like a queue).
 Channel can accept a storage for it's data. If `nothing` is provided, it will be a normal channel which blocks on send/receive
 If we provide an int variable, it wil be a buffer with 1 cell storage.
 If it is a list of ints, linked-list, it will be unlimited storage.
 Or we can say all channels are buffered. If buffer size is 0, channel will block upon send/receive until the other party receives or sends.
 
-
-? - Use links for ToC.
-
-? - Things that we need for concurrency: keyword to create a new thread, select, channels (send, receive, buffer)
+N - Things that we need for concurrency: keyword to create a new thread, select, channels (send, receive, buffer)
 `invoke, pipe, select`
 receive: `data, closed := pipe.[]`
 send: `result, closed := pipe.[a,b,c,d]`
@@ -3253,7 +3250,7 @@ Technically we can have compound literals with variable number of elements:
 `[(1,2) (3,4,5)]`. Because, after all, it is a set of function calls.
 `[ (rpipe1, lambda1) (wpipe1, data_to_write, lambda)]`
 
-? - We can pass a sequence to the function to create channels but it will imply the sequence will be mutated!
+N - We can pass a sequence to the function to create channels but it will imply the sequence will be mutated!
 The storage must be fully hidden from the code. 
 `rpipe, wpipe := createPipe[int]()`
 `rpipe, wpipe := createPipe[int](100)` buffer size
@@ -3261,7 +3258,7 @@ We can easily separate r/o and w/o pipes.
 we have `process := (r: rpipe) -> ...` so we can write: `x := rpipe1.[]` and only this way
 we have `process := (w: wpipe, d: data) -> ...` so we can write: `x := wpipe.[data]`
 
-? - Other suggested names for channel: port, pipe
+N - Other suggested names for channel: port, pipe
 We must have channel/pipe ready for IO, because of mutable nature of them.
 Can we implement all ex-res as channels?
 non-threading candidates for channels: stdout, stdin, file, network, ...
@@ -3295,7 +3292,7 @@ What if I have a function which accepts a `PipeReader` but I expect it to be rea
 input to process can be any struct type that embeds `PipeReader`.
 Or we can have all of them of the same type: `PipeReader` but have a tag field which denotes type of underlying 
 
-? - We can combine pipes. e.g. zip/unzip or digest. 
+N - We can combine pipes. e.g. zip/unzip or digest. 
 For example we have `StreamWriter`. We can also have another `StreamWriter` that wraps the first one and outputs hash.
 How can we model this? Is this a StreamWriter + lambda to call for reading?
 We can provide a lambda when creating a new `StreamWriter` which will be called when writing (same for reading).
@@ -3623,9 +3620,12 @@ But we cannot separate the part that finds the available channel and the part th
 This should be an atomic thing. Find channel and run corresponding lambda.
 Maybe we can map `.[]` to do this.
 If the method is run on a sequence of AltCases, it will act as a select.
+
+? - Summary:
 ```
 AltCase[T] := { c: ChannelReader[T]|ChannelWriter[T], lambda: func()->T }
 
+;The corresponding channel will be acquired during execution of appropriate lambda.
 cases: seq[AltCase[int]|AltCase[string]|AltCase[float]] := [
 	AltCase[int]{rchan1, () -> rchan1.[]}
 	AltCase[string]{rchan2, () -> rchan2.[]}
@@ -3648,9 +3648,18 @@ data := net_reader.[]
 net_writer.[10]
 ```
 
+? - Instead of closing, processes detach from channels. When there is no attachments to channel, it is considered closed.
+Make channels consistent and orth. Closed channel, multiple calls to close, sharing a channel with mutiple producer threads, mux-ing multiple channels, buffered channels, ....
+Provide unlimited buffered channel (acts like a queue).
+Keyword to create new green thread
+Replace ex-res with channels
+How do we manage different channel types? Note that for select and AltCase, we need the same data type for all R-Channels and W-Channels.
+What if I have a function which expects a file to write to? This will provide some kind of polymorphism. 
+The channel data structure (r or w) will have a channel-id, channel-type, buffer-specs and functor.
 
-? - When creating a channel, in Clojure you can also provide a transducer.
+N - When creating a channel, in Clojure you can also provide a transducer.
 
 ? - How can we define types that are internal and dont have anything on right side of `:=`
 e.g int
 
+? - Use links for ToC.
