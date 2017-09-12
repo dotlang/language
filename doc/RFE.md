@@ -3637,7 +3637,7 @@ cases: seq[AltCase[int]|AltCase[string]|AltCase[float]] := [
 result, index := cases.[]
 #or, compiler will automatically generate appropriate cases here and set type for base sequence
 result, index := [ 
-	(rchan1, ()->rchan1.[]) (rchan2, ()->rchan2.[]) (wchan1, ()->wchan1.[data1]) (wchan2, ()->wchan2.[data2]) 
+	(rchan1) (rchan2) (wchan1, data1) (wchan2, data2) 
 ].[]
 #type of result is int|string|float
 
@@ -3649,6 +3649,59 @@ net_reader, net_writer := createSocket[int](host, port, settings, (x:int)->x+1)
 data := net_reader.[]
 net_writer.[10]
 ```
+
+? - What about adding a new syntax for select?
+```
+data, index := select rch1, rch2, wch1:data1, wch2:data2
+data, index := [rchan1 rchan2 wchan1 wchan2].[(2 data1) (3 data2)]
+```
+What if we want to also check for another conditions, in addition to channel being ready?
+What if we say `.[]` and `.[x]` can be done in a non-blocking way.
+```
+data := rch.[] #will block if data is not ready
+data := NonBlocking.{rch}.[] #if data is not ready, will return nothing
+wch.[data] #will block if there is no one to read
+NonBlocking.{wch}.[data] #will not block
+```
+If we combine this with recursive function, we can implement select as a function.
+`select := (cases: seq[rch|{wch[T], T}])->{?}`
+But what will be the input type of that function? we can define a select with 1, 2, 3 or 4 type of input. 
+or maybe simply add `||` operator?
+`data, index := rch1.[] || rch2.[] || wch3.[data1] || wch4.[data2]`
+`data, index := [rch1 rch2].[] || [wch3 wch4].[data]`
+I really prefer not to add a new syntax/notation and just use existing notations: `.[]`, `.()`, functions.
+Suppose that you are reading/write files and want to check which file is available for read/write:
+`data, index := [rfile1 rfile2 wfile3 wfile4].[(2 data1) (3 data2)]`
+We can split it into read and write channels:
+`data, index := [rfile1 rfile2].[]`
+`data, index := [wfile3 wfile4].[data1 data2]`
+How can we combine them?
+`data, index := [rfile1 rfile2] /// [wfile3 wfile4].[data1 data2]`
+Another solution: Use a try-write optin.
+`x := tryWrite(wch1, data1)`
+`y := tryWrite(wch2, data2)`
+`data, index := [rch1 rch2 x y].[]`
+What about this as a shortcut to create appropriate ds?
+`data, index := [wch1 wch2].[data1 data2].[rch1 rch2].[]`
+or
+`data, index := [rch1 rch2].[wch1 wch2].[data1 data2].[]`
+`[rch1 rch2].[wch1 wch2]` will create a data structure to hold these call it A
+`A.[data1 data2]` will append data1 and data2 to writer channels.
+`[wch1 wch2].[data1 data2]` will create a data structure to hold these writer and their data, call it A.
+`A.[rch1 rch2]` appends writers to the data structure
+So this data structure will be something like:
+`DS := {writers: seq[CW[int]|CW[float]|CW[string]], writeData: seq[int|float|string], readers: seq[CR[int]|CR[string]}`
+A `.[]` call on DS will invoke select and return data + index.
+A `.[rch1 rch2 rch3 ...]` will update list of readers
+A `.[wch1 wch2 wch3...]` will update list of writers
+A `.[other1 other2 other3]` will update list of data to write.
+Of course number and type of data to write must match with writers and their types.
+`.[]` will invoke some core function which is unnamed.
+A call to `.[]` on any DS of the format above will act as select.
+How can we define the general data type for DS? Above example is only for int, float and string.
+`DS[T, U, V] := {writers: seq[CW[T]|CW[U]|CW[V]], writeData: seq[T|U|V], readers: seq[CR[T]|CR[U]|CR[V]]}`
+Maybe support for variadic templates solves this but it would add complexity.
+We just define DS with 1, 2, ..., 6 different data types. It would be enough.
 
 ? - Name?
 We can use phantom type to separate read and write.
