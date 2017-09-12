@@ -3621,6 +3621,8 @@ This should be an atomic thing. Find channel and run corresponding lambda.
 Maybe we can map `.[]` to do this.
 If the method is run on a sequence of AltCases, it will act as a select.
 
+N - When creating a channel, in Clojure you can also provide a transducer.
+
 ? - Summary:
 ```
 AltCase[T] := { c: ChannelReader[T]|ChannelWriter[T], lambda: func()->T }
@@ -3648,6 +3650,26 @@ data := net_reader.[]
 net_writer.[10]
 ```
 
+? - Name?
+We can use phantom type to separate read and write.
+```
+ReadOnly :=
+WriteOnly := 
+Channel := { id: int, buffer_size: int }
+ReadOnlyChannel := { Channel, reader_lambda}
+WriteOnlyChannel := Channel, writer_lambda}
+FileWriterChannel := WriteOnlyChannel
+FileReaderChannel := ReadOnlyChannel
+openFileReader := () -> FileReaderChannel ...
+8
+```
+
+? - We can have different types for different channel types: For example file based or socket based channels.
+But in cases that we need a general capture, like in select, we need to use `^` notation.
+```
+
+```
+
 ? - Instead of closing, processes detach from channels. When there is no attachments to channel, it is considered closed.
 Make channels consistent and orth. Closed channel, multiple calls to close, sharing a channel with mutiple producer threads, mux-ing multiple channels, buffered channels, ....
 Provide unlimited buffered channel (acts like a queue).
@@ -3656,8 +3678,6 @@ Replace ex-res with channels
 How do we manage different channel types? Note that for select and AltCase, we need the same data type for all R-Channels and W-Channels.
 What if I have a function which expects a file to write to? This will provide some kind of polymorphism. 
 The channel data structure (r or w) will have a channel-id, channel-type, buffer-specs and functor.
-
-N - When creating a channel, in Clojure you can also provide a transducer.
 
 ? - How can we define types that are internal and dont have anything on right side of `:=`
 e.g int
