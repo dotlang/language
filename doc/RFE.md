@@ -3702,8 +3702,16 @@ How can we define the general data type for DS? Above example is only for int, f
 `DS[T, U, V] := {writers: seq[CW[T]|CW[U]|CW[V]], writeData: seq[T|U|V], readers: seq[CR[T]|CR[U]|CR[V]]}`
 Maybe support for variadic templates solves this but it would add complexity.
 We just define DS with 1, 2, ..., 6 different data types. It would be enough.
+What if we have channels that send channels? Then a `.[wch1 wch2]` can be either sender channels or the data to be sent.
+So the order should be: add readers, add writers, add write data. 
+Or: add writers, add write data, add readers.
+After DS is created and before `.[]` we can ammend it with adding readers or writer+data.
+If what is being added to DS is channel-reader then its for reading.
+If it's channel-writer it for writing and the data to write will/must come next (it can be int, string, channel-reader or writer or anything).
+To prevent issue with index and cases where DS is created in multiple steps (reader, writer+data, reader, reader, writer+data, writer+data), instead of returning index, we return the actual channel which is being triggered.
+`data, channel := [rch1 rch2].[wch1 wch2].[data1 data2].[]`
 
-? - Name?
+? - Name? channel, pipe, port, InPort, OutPort, 
 We can use phantom type to separate read and write.
 ```
 ReadOnly :=
