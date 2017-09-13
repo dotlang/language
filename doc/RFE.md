@@ -3628,7 +3628,6 @@ Make channels consistent and orth. Closed channel, multiple calls to close, shar
 Provide unlimited buffered channel (acts like a queue).
 How do we manage different channel types? Note that for select and AltCase, we need the same data type for all R-Channels and W-Channels.
 
-
 N - Can we mix select with custom conditions?
 
 N - If a channel has multiple senders and multiple receivers, how can we indicate that senders are finished?
@@ -3638,8 +3637,7 @@ Then we can have a core function to return number of senders waiting or receiver
 keeping track of senders/receivers for a channel is not good. It's dynamic tool. Anytime any thread can read/write to/from it. 
 If channel is closed, receiver will know that there is no more data.
 
-
-? - Summary:
+N - Summary:
 ```
 AltCase[T] := { c: ChannelReader[T]|ChannelWriter[T], lambda: func()->T }
 
@@ -3666,7 +3664,7 @@ data := net_reader.[]
 net_writer.[10]
 ```
 
-? - What about adding a new syntax for select?
+N - What about adding a new syntax for select?
 ```
 data, index := select rch1, rch2, wch1:data1, wch2:data2
 data, index := [rchan1 rchan2 wchan1 wchan2].[(2 data1) (3 data2)]
@@ -3727,7 +3725,7 @@ If it's channel-writer it for writing and the data to write will/must come next 
 To prevent issue with index and cases where DS is created in multiple steps (reader, writer+data, reader, reader, writer+data, writer+data), instead of returning index, we return the actual channel which is being triggered.
 `data, channel := [rch1 rch2].[wch1 wch2].[data1 data2].[]`
 
-? - Name? channel, pipe, port, InPort, OutPort, 
+N - Name? channel, pipe, port, InPort, OutPort, 
 We can use phantom type to separate read and write.
 ```
 ReadOnly :=
@@ -3769,30 +3767,45 @@ parallel execution is not supposed to return anything. If it does, we need to wa
 `(x:int)->process(100+x).(12)`
 `data := process.(10)`
 We cannot use data until after process is finished. 
+`|| 1 ~ process(_) ~ data(_) ~ write (_)`
+Any line starting with `||` means that line will be evaluated in parallel. You cannot use it with bindings.
+`|| expression`
+Another option: You can capture output of a parallel execution, but as soon as you try to read it, you will be blocked until that execution is finished.
+`x := process.(10)`
+`write(x)`
+No. This will make impl more complex and decrease performance.
+`|| process(20)`
+`invoke process(20)`
+`process.(20)` This is simple and elegant but what happens to optional call?
+`process|20|` generally `|` might be confusing with union data type.
+If we say that `.()` call cannot be chained to another call? Why? It is possible. We want to define a process where we want to do somethings after task A is finished. This can be done with channels too but forbidding it here, does not make sense.
+`process.(10) ~ write(_)`
+should be the same as:
+`x := process.(10)`
+`write(x)` here code will be blocked, until process is finished.
+What about this?
+any binding assignment is valid but code will be blocked on the first case of refering to that binding, until task is finished.
+`data := process.(10) ~ write(_)`
+code will start to run in parallel and when finished, output will be sent to write. Result of write will be written to `data`. But if in any following line, `data` is used, code will block.
+`data := process.(10) ~ write(_)`
+is same as:
+`data := () -> { return process.(10) ~ write(_) }()`
+So basically, any line that contains `.()` will be converted to a lambda which will return result of it's last expression.
+Compiler will check future references to `data` and if there is any, will place a mutex waiting for the task to finish.
+`.()` is not very intuitive.
+what about using a core function? It would be more readable to have a syntax for this.
+`data := process.(10) ~ write.(_)`. This will start process in parallel, wait for it's finish, then feed it's output to write in parallel?
+`:()`? `:` can imply parallel. No.
+`.()` is not good because parallelism should be explicitly readable in the code.
+`_ :=| process(10)`
+`data :== process(10)`. This is better and easier to type.
+`data ::= process(10)`
+`data :=: process(10)`
+So `a :== expression` means evaluate expression in another thread.
 
+N - Keyword to create new green thread: `&`?
 
-? - We can have different types for different channel types: For example file based or socket based channels.
-But in cases that we need a general capture, like in select, we need to use `^` notation.
-```
-Cases := seq[^InPort|^OutPort]
-```
-
-
-? - Replace ex-res with channels
-What if I have a function which expects a file to write to? This will provide some kind of polymorphism. 
-The channel data structure (r or w) will have a channel-id, channel-type, buffer-specs and functor.
-
-? - Keyword to create new green thread: `&`?
-
-? - How can we define types that are internal and dont have anything on right side of `:=`
-e.g int
-`int := ...`
-
-? - Use links for ToC.
-
-? - What about `default` in select? Just use a core function to get a simulated channel which always has some default value.
-
-? - What happens if we close/dispose a channel twice? If we read/write from a closed channel?
+N - What happens if we close/dispose a channel twice? If we read/write from a closed channel?
 multiple close should work without error.
 read/write will return data+bool which indicates whether channel is closed.
 solution: channe-r and w each have a subscriber count. Upon first send or receive, it will be increased if the thread-id is new. It will be decreased with each call to close or dispose. When number is 0 then channel is considered completely closed.
@@ -3801,4 +3814,72 @@ What if sender is finished by receiver has not started yet? There should be a wa
 A buffered channel is closed when there is no subscribed sender and the buffer is empty.
 Sending to a closed channel (which has no receivers or all receivers have closed the channel), means sending data to channel after calling close or dispose on it. This will fail with runtime error.
 Reading from closed channel (Where there is no sender and buffer is empty) will return 0 + false (indicating channel is closed). As long as the buffered channel has data, even if all senders have closed the channel, receivers can receive data without a problem.
+
+? - Summary
+`X :== expression` evaluate expression in parallel and when its finished, store result in X. If we refer to X later, code will be blocked until task is finished.
+`data, channel := [wch1 wch2].[data1 data2].[rch1 rch2].[]`
+or
+`data, channel := [rch1 rch2].[wch1 wch2].[data1 data2].[]`
+```
+std_reader, std_writer := createStd[string]()
+data := std_reader.[]
+std_write.["Hello"]
+reader, writer := createChannel[int](100) #specify buffer size
+```
+channe-r and channel-w each have a subscriber count. Upon first send or receive, it will be increased if the thread-id is new. It will be decreased with each call to close or dispose. When number is 0 then channel is considered completely closed.
+And any action on it will return `nothing, false`.
+A buffered channel is closed when there is no subscribed sender and the buffer is empty.
+Sending to a closed channel (which has no receivers or all receivers have closed the channel), means sending data to channel after calling close or dispose on it. This will fail with runtime error.
+Reading from closed channel (Where there is no sender and buffer is empty) will return 0 + false (indicating channel is closed). As long as the buffered channel has data, even if all senders have closed the channel, receivers can receive data without a problem.
+name? types? (file, socket, console, general)
+```
+chan := { id: int, buffer_size: int }
+rchan := { chan, reader_lambda }
+wchan := { chan, writer_lambda }
+FileWriterChannel := WChannel
+```
+If we define `chan` as a built-in type, then we cannot have `^???` type specifier.
+option 1: define two built-in types: `wchan` and `rchan`. Everything else is phantom typed around these.
+option 2: define normal structs for channel, then phantom reader and writer, then phantom typed channels.
+```
+getStdOut[T] := (lambda: (T)->T) -> wchan[T] ...
+getStdIn[T] := (lambda: (T)->T) -> rchan[T] ...
+getSocketReader[T] := (s: Socket, lambda: (T)->T) -> rchan[T] ...
+getSocketWriter[T] := (s: Socket, lambda: (T)->T) -> wchan[T] ...
+getFileReader[T] := (path: string, lambda: (T)->T) -> rchan[T] ...
+getFileWriter[T] := (path: string, lambda: (T)->T) -> wchan[T] ...
+```
+Inside wchan or rchan is not visible for developer. 
+Options for all channels: buffer size, transformation function.
+channel can have external (file, network, console) or internal (buffer) data source.
+file writer channel with buffer? what does that mean?
+console writer with buffer?
+suppose that I have a file reader with `int` type, if it is buffered, it will first read the whole buffer, then will read from the buffer. So it makes sense for rchan to have buffer. But for wchan? Same. They have a buffer, they write to the buffer. When buffer is full they flush the buffer.
+```
+rch1,_ := createChannel[int](10, lambda1)
+```
+What does it mean to have buffer size for channel of string? It will be number of strings that it holds.
+If you want correct control, you must define char channel.
+So if I have `wchan[int]` it is something I can use to write. The destination, buffering and transformations are not visible to me. Normall channels can be used for synchronization. But others with external source? No.
+If a file is finished, reading will return zero + false. When writing to a file, there is always room to write.
+So even if you run select on a file writer channel, it will always proceed.
+
+
+? - We can have different types for different channel types: For example file based or socket based channels.
+But in cases that we need a general capture, like in select, we need to use `^` notation.
+```
+Cases := seq[^InPort|^OutPort]
+```
+
+? - Replace ex-res with channels
+What if I have a function which expects a file to write to? This will provide some kind of polymorphism. 
+The channel data structure (r or w) will have a channel-id, channel-type, buffer-specs and functor.
+
+? - How can we define types that are internal and dont have anything on right side of `:=`
+e.g int
+`int := ...`
+
+? - Use links for ToC.
+
+? - What about `default` in select? Just use a core function to get a simulated channel which always has some default value.
 
