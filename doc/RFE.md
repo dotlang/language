@@ -3623,6 +3623,22 @@ If the method is run on a sequence of AltCases, it will act as a select.
 
 N - When creating a channel, in Clojure you can also provide a transducer.
 
+N - Instead of closing, processes detach from channels. When there is no attachments to channel, it is considered closed.
+Make channels consistent and orth. Closed channel, multiple calls to close, sharing a channel with mutiple producer threads, mux-ing multiple channels, buffered channels, ....
+Provide unlimited buffered channel (acts like a queue).
+How do we manage different channel types? Note that for select and AltCase, we need the same data type for all R-Channels and W-Channels.
+
+
+N - Can we mix select with custom conditions?
+
+N - If a channel has multiple senders and multiple receivers, how can we indicate that senders are finished?
+How can we indicate that receivers are not reading anymore?
+we can simply stop running select on them. 
+Then we can have a core function to return number of senders waiting or receivers waiting on that channel. But this number can be zero when a s/r is doing some temp process. 
+keeping track of senders/receivers for a channel is not good. It's dynamic tool. Anytime any thread can read/write to/from it. 
+If channel is closed, receiver will know that there is no more data.
+
+
 ? - Summary:
 ```
 AltCase[T] := { c: ChannelReader[T]|ChannelWriter[T], lambda: func()->T }
@@ -3722,36 +3738,36 @@ WriteOnlyChannel := Channel, writer_lambda}
 FileWriterChannel := WriteOnlyChannel
 FileReaderChannel := ReadOnlyChannel
 openFileReader := () -> FileReaderChannel ...
-8
 ```
 
 ? - We can have different types for different channel types: For example file based or socket based channels.
 But in cases that we need a general capture, like in select, we need to use `^` notation.
 ```
-
+Cases := seq[^InPort|^OutPort]
 ```
 
-? - Instead of closing, processes detach from channels. When there is no attachments to channel, it is considered closed.
-Make channels consistent and orth. Closed channel, multiple calls to close, sharing a channel with mutiple producer threads, mux-ing multiple channels, buffered channels, ....
-Provide unlimited buffered channel (acts like a queue).
-Keyword to create new green thread
-Replace ex-res with channels
-How do we manage different channel types? Note that for select and AltCase, we need the same data type for all R-Channels and W-Channels.
+
+? - Replace ex-res with channels
 What if I have a function which expects a file to write to? This will provide some kind of polymorphism. 
 The channel data structure (r or w) will have a channel-id, channel-type, buffer-specs and functor.
 
+? - Keyword to create new green thread: `&`?
+
 ? - How can we define types that are internal and dont have anything on right side of `:=`
 e.g int
+`int := ...`
 
 ? - Use links for ToC.
 
-? - Can we mix select with custom conditions?
-
-? - What about `default` in select?
+? - What about `default` in select? Just use a core function to get a simulated channel which always has some default value.
 
 ? - What happens if we close/dispose a channel twice? If we read/write from a closed channel?
+multiple close should work without error.
+read/write will return data+bool which indicates whether channel is closed.
+solution: channe-r and w each have a subscriber count. Upon first send or receive, it will be increased if the thread-id is new. It will be decreased with each call to close or dispose. When number is 0 then channel is considered completely closed.
+And any action on it will return `nothing, false`.
+What if sender is finished by receiver has not started yet? There should be a way to just signal that I want to subscribe for this channel. Like `subscribe(rch)` or `subscribe(wch)`. And, of course they are idempotent.
+A buffered channel is closed when there is no subscribed sender and the buffer is empty.
+Sending to a closed channel (which has no receivers or all receivers have closed the channel), means sending data to channel after calling close or dispose on it. This will fail with runtime error.
+Reading from closed channel (Where there is no sender and buffer is empty) will return 0 + false (indicating channel is closed). As long as the buffered channel has data, even if all senders have closed the channel, receivers can receive data without a problem.
 
-? - If a channel has multiple senders and multiple receivers, how can we indicate that senders are finished?
-How can we indicate that senders are not reading anymore?
-we can simply stop running select on them. 
-Then we can have a core function to return number of senders waiting or receivers waiting on that channel. But this number can be zero when a s/r is doing some temp process. 
