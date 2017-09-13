@@ -3744,3 +3744,14 @@ The channel data structure (r or w) will have a channel-id, channel-type, buffer
 e.g int
 
 ? - Use links for ToC.
+
+? - Can we mix select with custom conditions?
+
+? - What about `default` in select?
+
+? - What happens if we close/dispose a channel twice? If we read/write from a closed channel?
+
+? - If a channel has multiple senders and multiple receivers, how can we indicate that senders are finished?
+How can we indicate that senders are not reading anymore?
+we can simply stop running select on them. 
+Then we can have a core function to return number of senders waiting or receivers waiting on that channel. But this number can be zero when a s/r is doing some temp process. 
