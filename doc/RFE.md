@@ -3739,6 +3739,37 @@ FileWriterChannel := WriteOnlyChannel
 FileReaderChannel := ReadOnlyChannel
 openFileReader := () -> FileReaderChannel ...
 ```
+port is confusing. 
+Channel is very clear but a bit ong.
+`invoke`?
+What about `((...))` to make a function call in parallel?
+or `(|...|)`.
+or `&` prefix.
+`process(10)` normal execution
+`&process(10)` run in parallel
+How does it mix with chain operator?
+`(1) ~ process(_)`
+What if we parallel run a function which is chained to another function?
+`(1) ~ &process(_) ~ writeOutput(_)`
+Here `process(1)` will be executed in parallel and when finished, it's output will be sent to writeOutput function.
+`&process(1)`
+`writeOutput(?)`
+No. It's not good. Because `&process` need to return quickly (this is supposed to be in parallel).
+What if that function has an input? It mustn't. Because no one will be there to capture it.
+So it cannot have any output. If it does, just wrap it in a lambda: `()->{process(10) , return nothing}`.
+So return type must be nothing.
+If we use `&` it won't be composable with chain operator.
+We an start a line with this keyword which will execute that line in parallel.
+`invoke process(10)`
+`invoke (x:int)->process(100+x)(12)`
+What about `.()`? It can mean call in parallel.
+`process.(10)` run this function call in parallel.
+`(10) ~ process.(_)`
+parallel execution is not supposed to return anything. If it does, we need to wait for it to finish to have access to that data.
+`(x:int)->process(100+x).(12)`
+`data := process.(10)`
+We cannot use data until after process is finished. 
+
 
 ? - We can have different types for different channel types: For example file based or socket based channels.
 But in cases that we need a general capture, like in select, we need to use `^` notation.
