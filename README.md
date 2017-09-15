@@ -8,11 +8,21 @@ August 7, 2017
 
 # Table of Contents
 
-1. [Introduction] (https://github.com/dotlang/language/blob/master/README.md#introduction)
-2. [Comparison] (https://github.com/dotlang/language/blob/master/README.md#comparison-with-other-languages)
-3. [Components] (https://github.com/dotlang/language/blob/master/README.md#components)
-4. [Code organization] (https://github.com/dotlang/language/blob/master/README.md#code-organization)
-5. 
+1. [Introduction](https://github.com/dotlang/language/blob/master/README.md#introduction)
+2. [Language in a nutshell](https://github.com/dotlang/language/blob/master/README.md#language-in-a-nutshell)
+3. https://github.com/dotlang/language/blob/master/README.md#import-keyword
+4. https://github.com/dotlang/language/blob/master/README.md#bindings
+5. https://github.com/dotlang/language/blob/master/README.md#primitive-data-types
+6. https://github.com/dotlang/language/blob/master/README.md#extended-primitive-types
+7. https://github.com/dotlang/language/blob/master/README.md#type-system
+8. https://github.com/dotlang/language/blob/master/README.md#generics
+9. https://github.com/dotlang/language/blob/master/README.md#functions
+10. https://github.com/dotlang/language/blob/master/README.md#operators
+11. https://github.com/dotlang/language/blob/master/README.md#concurrency
+12. https://github.com/dotlang/language/blob/master/README.md#other-features
+13. https://github.com/dotlang/language/blob/master/README.md#examples
+14. https://github.com/dotlang/language/blob/master/README.md#other-components
+15. https://github.com/dotlang/language/blob/master/README.md#history
 
 # Introduction
 
@@ -931,5 +941,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
 - **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select
 
-# Time table
 
