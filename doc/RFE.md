@@ -3815,22 +3815,16 @@ A buffered channel is closed when there is no subscribed sender and the buffer i
 Sending to a closed channel (which has no receivers or all receivers have closed the channel), means sending data to channel after calling close or dispose on it. This will fail with runtime error.
 Reading from closed channel (Where there is no sender and buffer is empty) will return 0 + false (indicating channel is closed). As long as the buffered channel has data, even if all senders have closed the channel, receivers can receive data without a problem.
 
-? - Summary
-`X :== expression` evaluate expression in parallel and when its finished, store result in X. If we refer to X later, code will be blocked until task is finished.
-`data, channel := [wch1 wch2].[data1 data2].[rch1 rch2].[]`
-or
-`data, channel := [rch1 rch2].[wch1 wch2].[data1 data2].[]`
-```
-std_reader, std_writer := createStd[string]()
-data := std_reader.[]
-std_write.["Hello"]
-reader, writer := createChannel[int](100) #specify buffer size
-```
-channe-r and channel-w each have a subscriber count. Upon first send or receive, it will be increased if the thread-id is new. It will be decreased with each call to close or dispose. When number is 0 then channel is considered completely closed.
-And any action on it will return `nothing, false`.
-A buffered channel is closed when there is no subscribed sender and the buffer is empty.
-Sending to a closed channel (which has no receivers or all receivers have closed the channel), means sending data to channel after calling close or dispose on it. This will fail with runtime error.
-Reading from closed channel (Where there is no sender and buffer is empty) will return 0 + false (indicating channel is closed). As long as the buffered channel has data, even if all senders have closed the channel, receivers can receive data without a problem.
+N - Is it possible to have two references to the same channel?
+`data, channel := select operation`.
+I think so. When we send a struct to a function, it has a refernce to it + the caller has another reference.
+So it should be fine.
+
+N - Can we combine `:==` and select?
+`data, channel :== [wch1 wch2].[data1 data2].[rch1 rch2].[]`
+should be possible.
+
+N - 
 name? types? (file, socket, console, general)
 ```
 chan := { id: int, buffer_size: int }
@@ -3849,7 +3843,7 @@ getSocketWriter[T] := (s: Socket, lambda: (T)->T) -> wchan[T] ...
 getFileReader[T] := (path: string, lambda: (T)->T) -> rchan[T] ...
 getFileWriter[T] := (path: string, lambda: (T)->T) -> wchan[T] ...
 ```
-Inside wchan or rchan is not visible for developer. 
+Inside wchan or rchan is not visible to developer. 
 Options for all channels: buffer size, transformation function.
 channel can have external (file, network, console) or internal (buffer) data source.
 file writer channel with buffer? what does that mean?
@@ -3860,16 +3854,63 @@ rch1,_ := createChannel[int](10, lambda1)
 ```
 What does it mean to have buffer size for channel of string? It will be number of strings that it holds.
 If you want correct control, you must define char channel.
-So if I have `wchan[int]` it is something I can use to write. The destination, buffering and transformations are not visible to me. Normall channels can be used for synchronization. But others with external source? No.
+So if I have `wchan[int]` it is something I can use to write. The destination, buffering and transformations are not visible to me. Normal channels can be used for synchronization. But others with external source? No.
 If a file is finished, reading will return zero + false. When writing to a file, there is always room to write.
 So even if you run select on a file writer channel, it will always proceed.
 
-
-? - We can have different types for different channel types: For example file based or socket based channels.
+N - We can have different types for different channel types: For example file based or socket based channels.
 But in cases that we need a general capture, like in select, we need to use `^` notation.
 ```
 Cases := seq[^InPort|^OutPort]
 ```
+Why not have a single type? `wchan[T]` and `rchan[T]`.
+
+? - Summary
+== Parallel execution:
+`X :== expression` evaluate expression in parallel and when its finished, store result in X. If we refer to X later, code will be blocked until task is finished. Type of X will be same as type of the expression.
+If expression returns a struct, you can destruct it by having multiple bindings on the left side.
+== Select:
+`data, channel := [wch1 wch2].[data1 data2].[rch1 rch2].[]`
+or
+`data, channel := [rch1 rch2].[wch1 wch2].[data1 data2].[]`
+== Read and write
+```
+std_reader, std_writer := createStd[string]()
+data := std_reader.[]
+std_write.["Hello"]
+reader, writer := createChannel[int](100) #specify buffer size
+
+#Options for all channels: buffer size, transformation function.
+getStdOut[T] := (lambda: (T)->T) -> wchan[T] ...
+getStdIn[T] := (lambda: (T)->T) -> rchan[T] ...
+getSocketReader[T] := (s: Socket, lambda: (T)->T) -> rchan[T] ...
+getSocketWriter[T] := (s: Socket, lambda: (T)->T) -> wchan[T] ...
+getFileReader[T] := (path: string, lambda: (T)->T) -> rchan[T] ...
+getFileWriter[T] := (path: string, lambda: (T)->T) -> wchan[T] ...
+```
+== closed channel
+If channel is closed, any action on it will return `nothing, false`.
+A buffered channel is closed when there is no subscribed sender and the buffer is empty.
+Sending to a closed channel (which has no receivers or all receivers have closed the channel), means sending data to channel after calling close or dispose on it. This will fail with runtime error.
+Reading from closed channel (Where there is no sender and buffer is empty) will return 0 + false (indicating channel is closed). As long as the buffered channel has data, even if all senders have closed the channel, receivers can receive data without a problem.
+
+? - channe-r and channel-w each have a subscriber count. Upon first send or receive, it will be increased if the thread-id is new. It will be decreased with each call to close or dispose. When number is 0 then channel is considered completely closed. This can be used by receivers to know if there are more senders. We need to keep two coutners: subscribed, unsubscribed. If both are 0 means they are not started yet. If subscribed>ubsub means there are active senders. If subsc=unsub>0 means all senders are done. 
+But what if first sender starts and finishes, but rest of senders have not started yet?
+What does it mean to close a rchan?
+Close can be used as a signal from sender to receiver to say there is no more data (so using subscribe and unsub count).
+But what if receivers can close the channel? This cannot be a signal from them to sender. Because nature of the channel is for reading not writing a signal.
+
+? - There should be a way to just signal that I want to subscribe for this channel. Like `subscribe(rch)` or `subscribe(wch)`. And, of course they are idempotent.
+Other solution: Sending nothing means I want to subcribe on this channel.
+But what about receive side?
+Suppose that there is a channel which has a sender S and receiver R. Both are working on something else now.
+S starts sending and finishes. After a little while, R starts listening. 
+Is channel is not buffered, S will be blocked until R is ready.
+Else, data will be buffered. When R starts, it will read from the buffer.
+Why not do this?
+1. Its advised to dispose/close channel when you are done with it.
+2. Working with a disposed channel or sending it to other functions is error.
+
 
 ? - Replace ex-res with channels
 What if I have a function which expects a file to write to? This will provide some kind of polymorphism. 
