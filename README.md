@@ -60,7 +60,7 @@ core
 
 In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages. Each package can potentially contain zero or more modules.
 
-# Language in a nutshell
+# Language in a \ell
 
 ## Main features
 
@@ -91,13 +91,14 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 11. `$`   Prefix for struct literals
 12. `:`   Type declaration for struct, function inputs and bindings, struct literals
 13. `:=`  Binding declaration, named types
-14. `@`   Get internal type of union 
-15. `~`   Chain operator (To chain function calls)
-16. `_`   Place holder (lambda creator, place-holder in assignments)
-17. `.{}` Casting
-18. `.()` Optional call (call if it is a function pointer, do nothing otherwise)
-19. `.[]` Custom process
-20. `^`   Generic union (Union of a group of types)
+14. `:==` Parallel execution
+15. `@`   Get internal type of union 
+16. `~`   Chain operator (To chain function calls)
+17. `_`   Place holder (lambda creator, place-holder in assignments)
+18. `.{}` Casting
+19. `.()` Optional call (call if it is a function pointer, do nothing otherwise)
+20. `.[]` Custom process
+21. `^`   Generic union (Union of a group of types)
 
 ## Reserved identifiers
 
@@ -393,11 +394,11 @@ Two types T1 and T2 are identical/assignable in any of below cases:
 02. `Tree[T] := {x: T, left: Tree[T], right: Tree[T]}`
 03. `optional[T] := nothing|T`
 04. `BoxedValue[T] := {value:T}`
-05. `func push[T](s: Stack[T], data: T) ...`
-06. `func pop[T](s: Stack[T])->T...`
-07. `func length[T](s: Stack[T])->int`
-08. `func extract[T](that: BoxedValue[T])->T that.value`
-09. `func push[int](s: Stack[int], data:int)...`
+05. `push[T] := (s: Stack[T], data: T) ...`
+06. `pop[T] := (s: Stack[T])->T...`
+07. `length[T] := (s: Stack[T])->int`
+08. `extract[T] := (that: BoxedValue[T])->T that.value`
+09. `push[int] := (s: Stack[int], data:int)...`
 10. `x := optional[int]{12}`
 11. `x := BoxedValue[int]{1}`
 12. `y := BoxedValue[string]{value: "a"}`
@@ -421,16 +422,16 @@ Two types T1 and T2 are identical/assignable in any of below cases:
 2. `HashStr[T] := string`
 3. `Md5Hash := HashStr[MD5]` 
 4. `Sha1Hash := HashStr[SHA1]`
-5. `func md5(s: string)->Md5Hash { ... }`
-6. `func sha1(s: string)->Sha1Hash { ... }`
+5. `md5 := (s: string)->Md5Hash { ... }`
+6. `sha1 := (s: string)->Sha1Hash { ... }`
 7. `t := Md5Hash{sha1("A")} //ERROR!`
 8. `SafeString := string`
-9. `func processString(s: string)->SafeString`
-10. `func work(s: SafeString)`
+9. `processString := (s: string)->SafeString`
+10. `work := (s: SafeString)`
 11. `DoorState := Open|Closed`
 12. `Door[T] := string`
-13. `func closeDoor(x: Door[Open]) -> Door[Closed]`
-14. `func openDoor(x: Door[Closed]) -> Door[Open]`
+13. `closeDoor := (x: Door[Open]) -> Door[Closed]`
+14. `openDoor := (x: Door[Closed]) -> Door[Open]`
 
 # Functions
 
@@ -572,9 +573,9 @@ g := process(_:int)
 3. `(${1,2}) ~ processStruct(_)` => `processStruct(${1,2})`
 4. `(6) ~ addTo(1, _)` => `addTo(1, 6)`
 5. `result := (input, check1(5, _)) ~ pipe(_,_) ~ pipe(_, check3(1,2,_)) ~ pipe(_,check5(8,_,1))`
-6. `func pipe[T, O](input: Maybe[T], handler: func(T)->Maybe[O])->Maybe[O] ...`
-7. `func inc(x:int) -> x+1`, `eleven := 10 ~ inc(_)`
-8. `func add(x:int, y:int) -> x+y`, `(10, 20) ~ add(_,_)`
+6. `pipe[T, O] := (input: Maybe[T], handler: func(T)->Maybe[O])->Maybe[O] ...`
+7. `inc := (x:int) -> x+1`, `eleven := 10 ~ inc(_)`
+8. `add := (x:int, y:int) -> x+y`, `(10, 20) ~ add(_,_)`
 9. `(1) ~ process(_)`, = `1 ~ process(_)`
 10. `result := error_or_int ~ (x:error)->10, (y:int)->20`
 
@@ -617,6 +618,45 @@ g := process(_:int)
 06. `result := [data, () -> processBigBuffer(buffer)].[condition].()`
 07. `data, successs := int{int_or_float}`
 
+# Concurrency
+
+**Syntax**
+1. Parallel execute `result :== expression` 
+2. Create `reader: rchan[T], writer: wchan[T] := createChannel[T](buffer_size, r_lambda, w_lambda)`
+3. Read data `data := reader.[]`
+4. Write data `writer.[data]`
+5. Select `data, channel := [wch1 wch2].[data1 data2].[rch1 rch2].[]`
+6. Select `data, channel := [rch1 rch2].[wch1 wch2].[data1 data2].[]`
+
+**Notes**
+1. Channels are a data transportation mechanism which are open the moment they are created and closed when they are GC'd.
+2. They can be read-only (`rchan[T]`) or write-only (`wchan[T]`). 
+3. Channels can be buffered or have a transformation function (`func(T)->T`) which will be applied before write or after read.
+4. You can use `:==` syntax to evaluate an expression in parallel and when its finished, store result in `result`. If expression creates a struct you can destruct it using `a,b,c :=` syntax or use `_` to ignore expression result. Any reference to `result` after parallel execution will pause the code until execution is finished.
+5. Any party can close/dispose their channel. Send or receive on a channel where there is no receiver or sender will cause blocking forever. If you want to prevent this, you need to implement this separately using another channel or any other mechanism.
+6. There are utility functions to create timed or always on channels (to be used as default in a select)
+7. Exclusive resources (sockets, file, ...) are implemented using channels to hide inherent mutability of their underlying resource.
+
+**Examples**
+1. 
+```
+std_reader, std_writer := createStd[string]()
+data := std_reader.[]
+std_write.["Hello"]
+reader, writer := createChannel[int](100) #specify buffer size
+
+#Options for all channels: buffer size, transformation function.
+getStdOut[T] := (lambda: (T)->T) -> wchan[T] ...
+getStdIn[T] := (lambda: (T)->T) -> rchan[T] ...
+getSocketReader[T] := (s: Socket, lambda: (T)->T) -> rchan[T] ...
+getSocketWriter[T] := (s: Socket, lambda: (T)->T) -> wchan[T] ...
+getFileReader[T] := (path: string, lambda: (T)->T) -> rchan[T] ...
+getFileWriter[T] := (path: string, lambda: (T)->T) -> wchan[T] ...
+```
+2. `data :== processInfo(1,2,a)`
+3. 
+
+
 # Other Features
 
 ## Conditionals and pattern matching
@@ -658,19 +698,9 @@ x:int := [100 200].[a>0]
 3. You can call dispose on any variable.
 4. Dispose function will properly handle any resource release like closing file or socket or ... .
 
-## Exclusive resources
-
-**Syntax**: Exclusive resources are defined in core (file descriptor, thread, sockets) and contain an identifier to indicate their owner thread.
-
-**Notes**
-
-1. These represent a system resource (file, network socket, database connection, ...) which needs to have an exclusive owner thread.
-2. These types are not supposed to be shared between two threads, because of their inherent mutability. If this happens, runtime will throw an error. They all contain an owner thread identifier which is checked by core functions.
-3. If you are not returning an exclusive resource created in the current function, you must explicitly call `dispose` on it. Else compiler will issue an error.
-
 ## Exception handling
 
-**Syntax**: `func process() -> int|exception { ... return exception{...} }`
+**Syntax**: `process := () -> int|exception { ... return exception{...} }`
 
 **Notes**
 
@@ -699,7 +729,7 @@ x:int := [100 200].[a>0]
 **Examples**
 
 1. `Comparer[T] := { compare: func(T,T)->bool }`
-2. `func sort[T](x: array[T], f: Comparer[T])->array[T] { ... }`
+2. `sort[T] := (x: array[T], f: Comparer[T])->array[T] { ... }`
 3. `sort(myIntArray, Comparer.{::})`
 4. `sort(myIntArray, Comparer[int].{::})`
 
@@ -733,7 +763,7 @@ eval := (input: string) -> float
   return innerEval(exp)
 }
 
-func innerEval := (exp: Expression) -> float 
+innerEval := (exp: Expression) -> float 
 {
   (@exp = @[int]) return int.{exp}.0
   y,_ := NormalExpression{x}
@@ -892,7 +922,7 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.96**: Jun 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: Jun 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` place holder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is typed statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
-- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type
+- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select
 
 # Time table
 
