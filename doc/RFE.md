@@ -3905,7 +3905,7 @@ e.g int
 
 N - What about `default` in select? Just use a core function to get a simulated channel which always has some default value.
 
-? - Summary
+Y - Summary
 Channels are a data transportation mechanism which are open the moment they are created. They are read-only (`rchan[T]`) or write-only (`wchan[T]`). They can be buffered or have a transformation function (`func(T)->T`) which will be applied before write or after read.
 
 == Parallel execution:
@@ -3938,12 +3938,18 @@ Any party can close/dispose their channel. Send or receive on a channel where th
 Of course if channel is buffered, the buffer will be used for read/write.
 == core
 There are utility functions to create timed or always on channels (to be used as default in a select)
+== Ex res
+Exclusive resources (sockets, file, ...) are implemented using channels to hide inherent mutability of their underlying resource.
 
-? - Replace ex-res with channels
+Y - Replace ex-res with channels
 What if I have a function which expects a file to write to? This will provide some kind of polymorphism. 
 The channel data structure (r or w) will have a channel-id, channel-type, buffer-specs and functor.
 
+N - A binding can be either data, function or a type.
+Type
+functionName
+dataName
+Don't we need a keyword to separate them?
+No.
+
 ? - Use links for ToC.
-
-
-
