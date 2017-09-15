@@ -636,6 +636,7 @@ g := process(_:int)
 5. Any party can close/dispose their channel. Send or receive on a channel where there is no receiver or sender will cause blocking forever. If you want to prevent this, you need to implement this separately using another channel or any other mechanism.
 6. There are utility functions to create timed or always on channels (to be used as default in a select)
 7. Exclusive resources (sockets, file, ...) are implemented using channels to hide inherent mutability of their underlying resource.
+8. In select notation, you provide a list of read-only channels and a list of write-only channels + same number of data to write and append `.[]` to the list. The result will be the data which is being sent/received and the channel which executed that operation. Select will try any of given channels for read/write operation and will do the operation on the first available channel.
 
 **Examples**
 1. 
@@ -654,8 +655,6 @@ getFileReader[T] := (path: string, lambda: (T)->T) -> rchan[T] ...
 getFileWriter[T] := (path: string, lambda: (T)->T) -> wchan[T] ...
 ```
 2. `data :== processInfo(1,2,a)`
-3. 
-
 
 # Other Features
 
