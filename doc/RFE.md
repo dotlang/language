@@ -3865,14 +3865,53 @@ Cases := seq[^InPort|^OutPort]
 ```
 Why not have a single type? `wchan[T]` and `rchan[T]`.
 
+
+N - Problem is about having multiple users for a channel (read or write).
+Sending or receiving is ok. but what about closing?
+What if we also add `opening` to a channel? So each thread that opens, must also close the channel.
+If everybody closes, then channel is not usable anymore.
+If senders all close their channels, receive operations on the corresponding `rchan` will fail.
+But what if we have sender 1 open and close and sender 2 has not started yet! in that case, receivers will not be able to read anymore, until sender 2 starts working.
+So a close channel might be opened later.
+But what if sender closes but receiver opens? 
+No. The whole open/close concept is just confusing.
+Why not remove them all?
+A channel is a transport mechanism for data to somewhere else. If you don't need it, just don't use it or dispose it.
+If you want to send other meta-data (no more senders, no more receivers, ...) just use another channel.
+Its simpler to use two simple channels than to use one complex channel.
+Of course if senders all dispose/close their channel, a receive will be blocked forever, waiting for a send.
+Or if all receivers have disposed their rchan, a sender to wchan will be blocked forever. If they are interested to be informed about this, they can use another channel.
+
+N - channe-r and channel-w each have a subscriber count. Upon first send or receive, it will be increased if the thread-id is new. It will be decreased with each call to close or dispose. When number is 0 then channel is considered completely closed. This can be used by receivers to know if there are more senders. We need to keep two coutners: subscribed, unsubscribed. If both are 0 means they are not started yet. If subscribed>ubsub means there are active senders. If subsc=unsub>0 means all senders are done. 
+But what if first sender starts and finishes, but rest of senders have not started yet?
+What does it mean to close a rchan?
+Close can be used as a signal from sender to receiver to say there is no more data (so using subscribe and unsub count).
+But what if receivers can close the channel? This cannot be a signal from them to sender. Because nature of the channel is for reading not writing a signal.
+
+N - There should be a way to just signal that I want to subscribe for this channel. Like `subscribe(rch)` or `subscribe(wch)`. And, of course they are idempotent.
+Other solution: Sending nothing means I want to subcribe on this channel.
+But what about receive side?
+Suppose that there is a channel which has a sender S and receiver R. Both are working on something else now.
+S starts sending and finishes. After a little while, R starts listening. 
+Is channel is not buffered, S will be blocked until R is ready.
+Else, data will be buffered. When R starts, it will read from the buffer.
+Why not do this?
+1. Its advised to dispose/close channel when you are done with it.
+2. Working with a disposed channel or sending it to other functions is error.
+
+N - How can we define types that are internal and dont have anything on right side of `:=`
+e.g int
+`int := ...`
+
+N - What about `default` in select? Just use a core function to get a simulated channel which always has some default value.
+
 ? - Summary
+Channels are a data transportation mechanism which are open the moment they are created. They are read-only (`rchan[T]`) or write-only (`wchan[T]`). They can be buffered or have a transformation function (`func(T)->T`) which will be applied before write or after read.
+
 == Parallel execution:
-`X :== expression` evaluate expression in parallel and when its finished, store result in X. If we refer to X later, code will be blocked until task is finished. Type of X will be same as type of the expression.
+`result :== expression` evaluate expression in parallel and when its finished, store result in `result`. If we refer to `result` later, code will be blocked until task is finished. Type of `result` will be same as type of the expression.
 If expression returns a struct, you can destruct it by having multiple bindings on the left side.
-== Select:
-`data, channel := [wch1 wch2].[data1 data2].[rch1 rch2].[]`
-or
-`data, channel := [rch1 rch2].[wch1 wch2].[data1 data2].[]`
+You can use `_` to ignore expression result.
 == Read and write
 ```
 std_reader, std_writer := createStd[string]()
@@ -3888,39 +3927,23 @@ getSocketWriter[T] := (s: Socket, lambda: (T)->T) -> wchan[T] ...
 getFileReader[T] := (path: string, lambda: (T)->T) -> rchan[T] ...
 getFileWriter[T] := (path: string, lambda: (T)->T) -> wchan[T] ...
 ```
+== Select:
+`data, channel := [wch1 wch2].[data1 data2].[rch1 rch2].[]`
+or
+`data, channel := [rch1 rch2].[wch1 wch2].[data1 data2].[]`
+Applying `.[]` on a specific data structure (containing rchan and wchan+data) will acts like a select.
+
 == closed channel
-If channel is closed, any action on it will return `nothing, false`.
-A buffered channel is closed when there is no subscribed sender and the buffer is empty.
-Sending to a closed channel (which has no receivers or all receivers have closed the channel), means sending data to channel after calling close or dispose on it. This will fail with runtime error.
-Reading from closed channel (Where there is no sender and buffer is empty) will return 0 + false (indicating channel is closed). As long as the buffered channel has data, even if all senders have closed the channel, receivers can receive data without a problem.
-
-? - channe-r and channel-w each have a subscriber count. Upon first send or receive, it will be increased if the thread-id is new. It will be decreased with each call to close or dispose. When number is 0 then channel is considered completely closed. This can be used by receivers to know if there are more senders. We need to keep two coutners: subscribed, unsubscribed. If both are 0 means they are not started yet. If subscribed>ubsub means there are active senders. If subsc=unsub>0 means all senders are done. 
-But what if first sender starts and finishes, but rest of senders have not started yet?
-What does it mean to close a rchan?
-Close can be used as a signal from sender to receiver to say there is no more data (so using subscribe and unsub count).
-But what if receivers can close the channel? This cannot be a signal from them to sender. Because nature of the channel is for reading not writing a signal.
-
-? - There should be a way to just signal that I want to subscribe for this channel. Like `subscribe(rch)` or `subscribe(wch)`. And, of course they are idempotent.
-Other solution: Sending nothing means I want to subcribe on this channel.
-But what about receive side?
-Suppose that there is a channel which has a sender S and receiver R. Both are working on something else now.
-S starts sending and finishes. After a little while, R starts listening. 
-Is channel is not buffered, S will be blocked until R is ready.
-Else, data will be buffered. When R starts, it will read from the buffer.
-Why not do this?
-1. Its advised to dispose/close channel when you are done with it.
-2. Working with a disposed channel or sending it to other functions is error.
-
+Any party can close/dispose their channel. Send or receive on a channel where there is no receiver or sender will cause blocking forever. If you want to prevent this, you need to implement this separately using another channel or any other mechanism.
+Of course if channel is buffered, the buffer will be used for read/write.
+== core
+There are utility functions to create timed or always on channels (to be used as default in a select)
 
 ? - Replace ex-res with channels
 What if I have a function which expects a file to write to? This will provide some kind of polymorphism. 
 The channel data structure (r or w) will have a channel-id, channel-type, buffer-specs and functor.
 
-? - How can we define types that are internal and dont have anything on right side of `:=`
-e.g int
-`int := ...`
-
 ? - Use links for ToC.
 
-? - What about `default` in select? Just use a core function to get a simulated channel which always has some default value.
+
 
