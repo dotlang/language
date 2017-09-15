@@ -6,6 +6,14 @@ Version 0.98
 
 August 7, 2017
 
+# Table of Contents
+
+1. [Introduction] (https://github.com/dotlang/language/blob/master/README.md#introduction)
+2. [Comparison] (https://github.com/dotlang/language/blob/master/README.md#comparison-with-other-languages)
+3. [Components] (https://github.com/dotlang/language/blob/master/README.md#components)
+4. [Code organization] (https://github.com/dotlang/language/blob/master/README.md#code-organization)
+5. 
+
 # Introduction
 
 After having worked with a lot of different languages (C\#, Java, Perl, Javascript, C, C++, Python) and being familiar with some others (including Go, D, Scala, Rust and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions to keep in mind. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
@@ -60,7 +68,7 @@ core
 
 In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages. Each package can potentially contain zero or more modules.
 
-# Language in a \ell
+# Language in a nutshell
 
 ## Main features
 
