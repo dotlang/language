@@ -10,8 +10,8 @@ August 7, 2017
 
 1. [Introduction](https://github.com/dotlang/language/blob/master/README.md#introduction)
 2. [Language in a nutshell](https://github.com/dotlang/language/blob/master/README.md#language-in-a-nutshell)
-3. https://github.com/dotlang/language/blob/master/README.md#import-keyword
-4. https://github.com/dotlang/language/blob/master/README.md#bindings
+3. [import keyword](https://github.com/dotlang/language/blob/master/README.md#import-keyword)
+4. [Bindings](https://github.com/dotlang/language/blob/master/README.md#bindings)
 5. https://github.com/dotlang/language/blob/master/README.md#primitive-data-types
 6. https://github.com/dotlang/language/blob/master/README.md#extended-primitive-types
 7. https://github.com/dotlang/language/blob/master/README.md#type-system
