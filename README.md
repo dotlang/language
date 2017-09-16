@@ -10,19 +10,16 @@ August 7, 2017
 
 1. [Introduction](https://github.com/dotlang/language/blob/master/README.md#introduction)
 2. [Language in a nutshell](https://github.com/dotlang/language/blob/master/README.md#language-in-a-nutshell)
-3. [import keyword](https://github.com/dotlang/language/blob/master/README.md#import-keyword)
-4. [Bindings](https://github.com/dotlang/language/blob/master/README.md#bindings)
-5. https://github.com/dotlang/language/blob/master/README.md#primitive-data-types
-6. https://github.com/dotlang/language/blob/master/README.md#extended-primitive-types
-7. https://github.com/dotlang/language/blob/master/README.md#type-system
-8. https://github.com/dotlang/language/blob/master/README.md#generics
-9. https://github.com/dotlang/language/blob/master/README.md#functions
-10. https://github.com/dotlang/language/blob/master/README.md#operators
-11. https://github.com/dotlang/language/blob/master/README.md#concurrency
-12. https://github.com/dotlang/language/blob/master/README.md#other-features
-13. https://github.com/dotlang/language/blob/master/README.md#examples
-14. https://github.com/dotlang/language/blob/master/README.md#other-components
-15. https://github.com/dotlang/language/blob/master/README.md#history
+3. [Bindings](https://github.com/dotlang/language/blob/master/README.md#bindings)
+4. [Type system](https://github.com/dotlang/language/blob/master/README.md#type-system)
+5. [Generics](https://github.com/dotlang/language/blob/master/README.md#generics)
+6. [Functions](https://github.com/dotlang/language/blob/master/README.md#functions)
+7. [Operators](https://github.com/dotlang/language/blob/master/README.md#operators)
+8. [Concurrency](https://github.com/dotlang/language/blob/master/README.md#concurrency)
+9. [Other features](https://github.com/dotlang/language/blob/master/README.md#other-features)
+10. [Examples](https://github.com/dotlang/language/blob/master/README.md#examples)
+11. [Other components](https://github.com/dotlang/language/blob/master/README.md#other-components)
+12. [History](https://github.com/dotlang/language/blob/master/README.md#history)
 
 # Introduction
 
@@ -127,7 +124,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 **Primitive data types**: `int`, `float`, `char`, `seq`, `func`
 
-**Extended primitive types**: `nothing`, `bool`, `string`
+**Extended primitive types**: `nothing`, `bool`, `string`, `rchan`, `wchan`
 
 **Other reserved identifiers**: `true`, `false`
 
@@ -143,7 +140,33 @@ These rules are highly advised but not mandatory.
 4. Naming: `someFunctionName`, `my_binding_name`, `func_arg_name`, `SomeDataType`, `my_package_dir`, `my_modue_file`.
 5. Braces should appear on their own line except when the whole expression is one-line.
 
-# import keyword
+# Bindings
+
+**Syntax**: 
+
+1. `identifier := definition`
+2. `identifier : type := definition`
+
+**Notes**
+
+1. By default, type of the binding is inferred from the value but you can also explicitly specify the type.
+2. Note that bindings are immutable, so you cannot re-assign them.
+3. The type of the rvalue (What comes on the right side of `:=`), can be any possible data type including function. Refer to following sections for an explanation of different available data types.
+4. If the rvalue is a struct (Refer to the corresponding section for more info about struct), You can destruct it to its elements using this keyword (Example 3 and 5).
+5. You can use place holder symbol `_` to denote you are not interested in a specific value (Example 6).
+6. You can use `0x` prefix for hexadecimal numbers and `0b` for binary.
+7. You can use `,` as digit separator in number literals.
+
+**Examples**
+
+1. `x: int := 12`
+2. `g := 19.8`
+3. `a,b := process()`
+4. `x := y`
+5. `a,b := ${1, 100}`
+6. `a,_ := ${1, 100}`
+
+## import keyword
 
 **Syntax**
 
@@ -172,35 +195,16 @@ These rules are highly advised but not mandatory.
 7. Assign a binding to a definition inside another namespace: `createSocket := mod1::createSocket`
 8. `SocketType := mod1::SocketType`
 
-# Bindings
+# Type system
 
-**Syntax**: 
+Two types T1 and T2 are identical/assignable in any of below cases:
+1. Both are named types defined in the same place in the code.
+2. Both are unnamed types with similar definition (e.g. `int|string` vs `int|string` or `seq[int]` vs `seq[int]`).
+2. T1 is named and T2 is identical to T1's underlying type, or vice versa.
 
-1. `identifier := definition`
-2. `identifier : type := definition`
+## Primitive data types
 
-**Notes**
-
-1. By default, type of the binding is inferred from the value but you can also explicitly specify the type.
-2. Note that bindings are immutable, so you cannot re-assign them.
-3. The type of the rvalue (What comes on the right side of `:=`), can be any possible data type including function. Refer to following sections for an explanation of different available data types.
-4. If the rvalue is a struct (Refer to the corresponding section for more info about struct), You can destruct it to its elements using this keyword (Example 3 and 5).
-5. You can use place holder symbol `_` to denote you are not interested in a specific value (Example 6).
-6. You can use `0x` prefix for hexadecimal numbers and `0b` for binary.
-7. You can use `,` as digit separator in number literals.
-
-**Examples**
-
-1. `x: int := 12`
-2. `g := 19.8`
-3. `a,b := process()`
-4. `x := y`
-5. `a,b := ${1, 100}`
-6. `a,_ := ${1, 100}`
-
-# Primitive data types
-
-## Simple types
+### Simple types
 
 **Syntax**: `int`, `float`, `char`, `seq`
 
@@ -227,8 +231,6 @@ These rules are highly advised but not mandatory.
 6. `x: seq[seq[int]] := [ [1 2] [3 4] [5 6] ]`
 7. `x: seq[int] := [ [1 2] [3 4] [5 6] ]`
 8. `n := x.[10]`
-
-## Compound types
 
 ### Union
 
@@ -316,9 +318,9 @@ You can call `fn` like a normal function with an input which should be any of po
 4. `AllShapes := ^Shape`
 5. `someShapes:AllShapes := [myCircle, mySquare, myRectangle, myTriangle]`
 
-# Extended primitive types
+## Extended primitive types
 
-**Syntax**: `nothing`, `bool`, `string`
+**Syntax**: `nothing`, `bool`, `string`, `wchan`, `rchan`
 
 **Notes**
 
@@ -334,15 +336,7 @@ You can call `fn` like a normal function with an input which should be any of po
 1. `g: bool := true`
 2. `str: string := "Hello world!"`
 
-# Type system
-
-Two types T1 and T2 are identical/assignable in any of below cases:
-1. Both are named types defined in the same place in the code.
-2. Both are unnamed types with similar definition (e.g. `int|string` vs `int|string` or `seq[int]` vs `seq[int]`).
-2. T1 is named and T2 is identical to T1's underlying type, or vice versa.
-
-
-## Named type
+## Named types
 
 **Syntax**: `NewType := UnderlyingType`
 
@@ -605,10 +599,10 @@ g := process(_:int)
 2. Arithmetic: `+, -, *, /, %, %%`
 3. Assignment: `:=`
 4. Type-id: `@` and `@[TypeName]`
-5. Casting `.{}`
-6. Chain `~`
-7. Custom literal `[()]`
-8. Nothing check operator `//`
+5. Chain `~`
+6. Custom literal `[()]`
+7. Nothing check operator `//`
+8. Casting `.{}`
 9. Optional call `.()`
 10. Custom process `.[]`
 
@@ -912,11 +906,11 @@ Java without maven has a packaging but not a dependency management system. For d
 C# has dll method which is contains byte-code of the source package. DLL has a version meta data but no dependency management. For dependency it has NuGet.
 
 ## ToDo
+
 - **Language**: Notation for axioms and related operators like `=>` to define semantics of a data structure or function, dependent types
 - **Compiler**: test, debug and profiling code, plugins for Editors (e.g. vim, emacs), code vetting for format the code based on the standard (indentation, spacing, brace placement, warning about namings, ...), escape analysis and optimize them to use mutable variable (for example for numerical calculations which happens only inside a function), parallel compilation
-- **`std` package**: `map` data type, loop helper functions for iteration, 
+- **`std` package**: `map` data type, loop helper functions for iteration 
 - **`core` package**: sequence slice functions
-- **Concurrency and parallelism**: Add native concurrency and communication tools (green thread, channels, spinlock, STM, mutex) and async i/o, Channels are the main tool for concurrency and coordination.
 - **Others**: 
   1. Build, dependency management, versioning, packaging, and distribution
   2. Plugin system to load/unload libraries at runtime without need to recompile
