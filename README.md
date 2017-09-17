@@ -646,10 +646,11 @@ g := process(_:int)
 2. They can be read-only (`rchan[T]`) or write-only (`wchan[T]`). 
 3. Channels can be buffered or have a transformation function (`func(T)->T`) which will be applied before write or after read.
 4. You can use `:==` syntax to evaluate an expression in parallel and when its finished, store result in `result`. If expression creates a struct you can destruct it using `a,b,c :=` syntax or use `_` to ignore expression result. Any reference to `result` after parallel execution will pause the code until execution is finished.
-5. Any party can close/dispose their channel. Send or receive on a channel where there is no receiver or sender will cause blocking forever. If you want to prevent this, you need to implement this separately using another channel or any other mechanism.
-6. There are utility functions to create timed or always on channels (to be used as default in a select)
-7. Exclusive resources (sockets, file, ...) are implemented using channels to hide inherent mutability of their underlying resource.
-8. In select notation, you provide a list of read-only channels and a list of write-only channels + same number of data to write and append `.[]` to the list. The result will be the data which is being sent/received and the channel which executed that operation. Select will try any of given channels for read/write operation and will do the operation on the first available channel.
+5. You can refer to output of a parallel execution inside body of a lambda, and code won't be stopped unless the lambda is invoked (Example 2 and 3).
+6. Any party can close/dispose their channel. Send or receive on a channel where there is no receiver or sender will cause blocking forever. If you want to prevent this, you need to implement this separately using another channel or any other mechanism.
+7. There are utility functions to create timed or always on channels (to be used as default in a select)
+8. Exclusive resources (sockets, file, ...) are implemented using channels to hide inherent mutability of their underlying resource.
+9. In select notation, you provide a list of read-only channels and a list of write-only channels + same number of data to write and append `.[]` to the list. The result will be the data which is being sent/received and the channel which executed that operation. Select will try any of given channels for read/write operation and will do the operation on the first available channel.
 
 **Examples**
 1. 
@@ -668,6 +669,7 @@ getFileReader[T] := (path: string, lambda: (T)->T) -> rchan[T] ...
 getFileWriter[T] := (path: string, lambda: (T)->T) -> wchan[T] ...
 ```
 2. `data :== processInfo(1,2,a)`
+3. `getData := ()->data`
 
 # Other Features
 
