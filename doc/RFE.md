@@ -3952,4 +3952,9 @@ dataName
 Don't we need a keyword to separate them?
 No.
 
-? - Use links for ToC.
+Y - Use links for ToC.
+
+Y - What if I write a lambda which returns x which is to be calculated in parallel?
+`x :== process()`
+`y := ()->x`
+this will not cause stop of the code, unless `y` is invoked.
