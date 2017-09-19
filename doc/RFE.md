@@ -3958,3 +3958,6 @@ Y - What if I write a lambda which returns x which is to be calculated in parall
 `x :== process()`
 `y := ()->x`
 this will not cause stop of the code, unless `y` is invoked.
+
+? - If a lambda is on a single line, it must be a single expression, so it won't need braces.
+So can we braces must always be on their own line?
