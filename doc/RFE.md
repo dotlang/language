@@ -3961,3 +3961,6 @@ this will not cause stop of the code, unless `y` is invoked.
 
 ? - If a lambda is on a single line, it must be a single expression, so it won't need braces.
 So can we braces must always be on their own line?
+
+? - Merge multiple modules into same namespace by:
+`import a,b,c -> ns` So ns will contain all symbols from a and b and c.
