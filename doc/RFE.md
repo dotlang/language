@@ -3963,12 +3963,12 @@ N - Remove import statement:
 `:: := /core/net/socket`
 No.
 
-? - If a lambda is on a single line, it must be a single expression, so it won't need braces.
-So can we braces must always be on their own line?
-
-? - Merge multiple modules into same namespace by:
+Y - Merge multiple modules into same namespace by:
 `import a,b,c -> ns` So ns will contain all symbols from a and b and c.
 But obviously, its not possible to have multiple ns on the right and one module on the left.
+
+Y - If a lambda is on a single line, it must be a single expression, so it won't need braces.
+So can we braces must always be on their own line?
 
 ? - Types are bindings too. 
 But they are compile time bindings which are used by compiler at the time of compilation.
