@@ -3959,8 +3959,32 @@ Y - What if I write a lambda which returns x which is to be calculated in parall
 `y := ()->x`
 this will not cause stop of the code, unless `y` is invoked.
 
+N - Remove import statement:
+`:: := /core/net/socket`
+No.
+
 ? - If a lambda is on a single line, it must be a single expression, so it won't need braces.
 So can we braces must always be on their own line?
 
 ? - Merge multiple modules into same namespace by:
 `import a,b,c -> ns` So ns will contain all symbols from a and b and c.
+But obviously, its not possible to have multiple ns on the right and one module on the left.
+
+? - Types are bindings too. 
+But they are compile time bindings which are used by compiler at the time of compilation.
+They are not stored in the final executable.
+But functions and values are.
+So we only have a collection of bindings.
+`MyInt := int`
+This binding has a name (MyInt) and a type (int). 
+`f := (x:int)->x+1`
+This binding has a name (f) and a type (`func(int)->int`). and a body.
+`x := 10`
+This binding has a name (x) and a type (int) and a value/body (10).
+for func type we also need two other types: input and output.
+(Later for generics we will need to add other options, but for now we don't need them).
+So, fields for a binding:
+`name` - what comes on the left side of `:=`
+`type` - `int` or `float` or `func(int)->int`
+`body` -> only for non-types
+
