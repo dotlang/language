@@ -3997,12 +3997,14 @@ But what if I want a specific module inside that project? Shall we repeat the fu
 `import github/apache/cassandra[mybranch] -> T` This is not a namespace because namespace must point to a module.
 But inside `cassandra/mybranch` there are a lot of packages and modules.
 What if we treat import like a string? So we can easily concat them.
-`T := "github/apache/cassandra[mybranch]"`
+`T := "github/apache/cassandra/mybranch"`
 `import [T "/path/module"]`
 `import [T "/path/module"] -> A` alias
 `import [T "/path/{m1, m2}"] -> A,B` import multiple modules
 `import [T "/path/{m1,m2}," T "/path/m3"] -> A` merge multiple modules into same namespace
-What if the repository has a dir with the same name as the branch?
+`import "github/apache/cassandra/master/dir`
+What if the repository has a dir with the same name as the branch? branch name is mandatory.
+`import "github/org/repo/branch/dir1/dir2/module"`
 
 ? - There should be no "global" or "system-wide" libraries. Except core which is bundled with the compiler and runtime, everything else must be imported (explicitly or implicitly) and installed inside project folder.
 e.g. `src` for source and `dep` for dependencies.
@@ -4019,3 +4021,10 @@ Anyway, we won't need a big Makefile, requirements.txt or Gemfile.
 ? - How can we work on multiple interrelated projects at the same time?
 How can we have different versions of the same dependency?
 What if we need libA any version and libB but libB needs a specific version of libA?
+
+? - What about versioning?
+We can write a custom function which can be used to decide whether a specific branch/tag can be used for import.
+`import "github/apache/cassandra/thisOrLater("1.4"`?
+Or use star:
+`import "github/apache/cassandra/v1.*.*"`
+star means in this place there will be one or more numbers. Choose the largest one.
