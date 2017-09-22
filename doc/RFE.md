@@ -3997,3 +3997,9 @@ e.g. `src` for source and `dep` for dependencies.
 Other dirs: `res` for resources
 `doc` for documentations
 `t` for tests.
+
+? - How should this work with Docker?
+Suppose that our app is going to be installed inside a Docker vm.
+First copy the source, then run `dot update` and it will automatically scan the source and fetch required packages.
+`dot ls-req` will give you a list of dependencies.
+Anyway, we won't need a big Makefile, requirements.txt or Gemfile.
