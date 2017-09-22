@@ -3988,3 +3988,12 @@ So, fields for a binding:
 `type` - `int` or `float` or `func(int)->int`
 `body` -> only for non-types
 
+? - Provide ability to import from github a specific tag or branch.
+In the code you write `import github/a/b` but code will be checked out only during the first compilation time.
+Afterwards, it will only use local cache. Unless you run `clean` command or manually delete the corresponding dir.
+
+? - There should be no "global" or "system-wide" libraries. Except core which is bundled with the compiler and runtime, everything else must be imported (explicitly or implicitly) and installed inside project folder.
+e.g. `src` for source and `dep` for dependencies.
+Other dirs: `res` for resources
+`doc` for documentations
+`t` for tests.
