@@ -3991,6 +3991,18 @@ So, fields for a binding:
 ? - Provide ability to import from github a specific tag or branch.
 In the code you write `import github/a/b` but code will be checked out only during the first compilation time.
 Afterwards, it will only use local cache. Unless you run `clean` command or manually delete the corresponding dir.
+`import github/apache/cassandra` this will import master branch and create master dir in `github/apache/cassandra`
+`import github/apache/cassandra/tag|branch|commit-id`
+But what if I want a specific module inside that project? Shall we repeat the full path each time?
+`import github/apache/cassandra[mybranch] -> T` This is not a namespace because namespace must point to a module.
+But inside `cassandra/mybranch` there are a lot of packages and modules.
+What if we treat import like a string? So we can easily concat them.
+`T := "github/apache/cassandra[mybranch]"`
+`import [T "/path/module"]`
+`import [T "/path/module"] -> A` alias
+`import [T "/path/{m1, m2}"] -> A,B` import multiple modules
+`import [T "/path/{m1,m2}," T "/path/m3"] -> A` merge multiple modules into same namespace
+What if the repository has a dir with the same name as the branch?
 
 ? - There should be no "global" or "system-wide" libraries. Except core which is bundled with the compiler and runtime, everything else must be imported (explicitly or implicitly) and installed inside project folder.
 e.g. `src` for source and `dep` for dependencies.
@@ -4003,3 +4015,7 @@ Suppose that our app is going to be installed inside a Docker vm.
 First copy the source, then run `dot update` and it will automatically scan the source and fetch required packages.
 `dot ls-req` will give you a list of dependencies.
 Anyway, we won't need a big Makefile, requirements.txt or Gemfile.
+
+? - How can we work on multiple interrelated projects at the same time?
+How can we have different versions of the same dependency?
+What if we need libA any version and libB but libB needs a specific version of libA?
