@@ -4005,6 +4005,14 @@ What if we treat import like a string? So we can easily concat them.
 `import "github/apache/cassandra/master/dir`
 What if the repository has a dir with the same name as the branch? branch name is mandatory.
 `import "github/org/repo/branch/dir1/dir2/module"`
+If we allow this, it can be used as a dependency definition. We have a main module which only defines dependencies + their versions. Other modules import this one and append the module they need to import.
+
+? - How should an import path be resolved and where should the data be looked up or saved?
+suppose we have `import /a/b/c` Where should we look for a directory?
+option 1: The location we run the compiler (pwd): `pwd/deps/a/b/c`
+option 2: Use env-var
+option 3: You can use option 1 + an optional argument to the compiler for root path.
+by using option 3, we can have a shared deps dir for multiple projects.
 
 ? - There should be no "global" or "system-wide" libraries. Except core which is bundled with the compiler and runtime, everything else must be imported (explicitly or implicitly) and installed inside project folder.
 e.g. `src` for source and `dep` for dependencies.
@@ -4028,3 +4036,5 @@ We can write a custom function which can be used to decide whether a specific br
 Or use star:
 `import "github/apache/cassandra/v1.*.*"`
 star means in this place there will be one or more numbers. Choose the largest one.
+
+? - name of file (module) and dir (package) must include lowercase letters, numbers and underscore.
