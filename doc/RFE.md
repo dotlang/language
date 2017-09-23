@@ -3970,7 +3970,7 @@ But obviously, its not possible to have multiple ns on the right and one module 
 Y - If a lambda is on a single line, it must be a single expression, so it won't need braces.
 So can we braces must always be on their own line?
 
-? - Types are bindings too. 
+N - Types are bindings too. 
 But they are compile time bindings which are used by compiler at the time of compilation.
 They are not stored in the final executable.
 But functions and values are.
@@ -3988,7 +3988,7 @@ So, fields for a binding:
 `type` - `int` or `float` or `func(int)->int`
 `body` -> only for non-types
 
-? - Provide ability to import from github a specific tag or branch.
+Y - Provide ability to import from github a specific tag or branch.
 In the code you write `import github/a/b` but code will be checked out only during the first compilation time.
 Afterwards, it will only use local cache. Unless you run `clean` command or manually delete the corresponding dir.
 `import github/apache/cassandra` this will import master branch and create master dir in `github/apache/cassandra`
@@ -4007,18 +4007,18 @@ What if the repository has a dir with the same name as the branch? branch name i
 `import "github/org/repo/branch/dir1/dir2/module"`
 If we allow this, it can be used as a dependency definition. We have a main module which only defines dependencies + their versions. Other modules import this one and append the module they need to import.
 
+N - There should be no "global" or "system-wide" libraries. Except core which is bundled with the compiler and runtime, everything else must be imported (explicitly or implicitly) and installed inside project folder.
+e.g. `src` for source and `dep` for dependencies.
+Other dirs: `res` for resources
+`doc` for documentations
+`t` for tests.
+
 ? - How should an import path be resolved and where should the data be looked up or saved?
 suppose we have `import /a/b/c` Where should we look for a directory?
 option 1: The location we run the compiler (pwd): `pwd/deps/a/b/c`
 option 2: Use env-var
 option 3: You can use option 1 + an optional argument to the compiler for root path.
 by using option 3, we can have a shared deps dir for multiple projects.
-
-? - There should be no "global" or "system-wide" libraries. Except core which is bundled with the compiler and runtime, everything else must be imported (explicitly or implicitly) and installed inside project folder.
-e.g. `src` for source and `dep` for dependencies.
-Other dirs: `res` for resources
-`doc` for documentations
-`t` for tests.
 
 ? - How should this work with Docker?
 Suppose that our app is going to be installed inside a Docker vm.
