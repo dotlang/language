@@ -4038,3 +4038,13 @@ Or use star:
 star means in this place there will be one or more numbers. Choose the largest one.
 
 ? - name of file (module) and dir (package) must include lowercase letters, numbers and underscore.
+
+? - Can we make `import` a function in core?
+No. Because it won't be executed at run-time. It is a compile time notation.
+`import A,B -> X`
+`X := import("A")`
+`X := import("A", "B", "C")`
+what if we say import is a special function which will be executed at compile time?
+Then the developer cannot use runtime bindings in import input:
+`R := getInput()`
+`X := import(R)`
