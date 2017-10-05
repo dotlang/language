@@ -4050,3 +4050,60 @@ Then the developer cannot use runtime bindings in import input:
 `X := import(R)`
 
 ? - Can we remove generics?
+Where do we need generics?
+containers, array, hash/map, compound literals, stack, queue, graph, tree
+algorithms: sort, search, 
+We can have type checks in functions which can be enforced at compile time.
+`(x @ y)` in a single line will enforce x and y are of the same type.
+this means:
+1. extend `@` for easier type checking
+2. remove generics
+3. remove compound literals, we have only seq and map literals.
+4. add special notation for map and sequence types.
+5. add new? notation for read from sequence and map.
+Maybe extend autoBind notation to replace interface in Go.
+OTOH we can keep the current status, find out the problem with generics and try to resolve them as much as possible.
+e.g. readability: force call on functions and creation of types to include `[int]` part to specify their type.
+applications: container, algo, map/reduce/higher-order-funcs
+alternative: use type variable in module file-name. `/core/std/Socket[T].dot`
+So you must specify type in import and nowhere else.
+So you define `Stack` module with a type like `T` which is initially some default value like int.
+Then: `import /core/Stack[T := string]` and you will have Stack type and methods specialized with string.
+You can define `T` in the module based on a specific struct and then during import, you can only replace it with another tuple which embeds that struct (derived type).
+Advantage: We only need to modify import syntax. Nothing else.
+Con: What if we want to import a module with different types?
+Con: Circular reference. A package defines type A and B which refer to each other using a generic type.
+Pro: Function and type names during definition and call won't need to include `[int]` notation.
+`import "/path/to/module" [T: int, S:string, D:float] -> AliasName`
+We can also add specialization by adding extra modules.
+`Stack[T].dot` and `Stack[int].dot`
+We can even remove `[T]` part from module name. Then specialization will become difficult, but import will becomemore natural?
+`import /core/Stack [T:string]`
+`import /code/Stack[string]`
+The second format seems more intuitive. But how can we import the default type? By using `[T]` in module name.
+`import /code/Stack[T]` import the default stack implementation.
+How can we define a Server type which have a Set of clients and a Client type which has a set of servers?
+```
+Server := ...
+Client := ...
+
+import /core/Set[Server] -> srv_set
+import /core/Set[Client] -> cli_set
+
+Server := { c: cli_set::Set }
+Client := { s: srv_set::Set }
+
+```
+This is an example pseudo-code for Go: https://gist.github.com/egonelbre/d6787bfff0684cddbd10
+What if there is T in module name but not inside it? Then there is no way for others to customize module code.
+If you want to have a generic module, use `[T]` notation in file-name and define/use type named T inside the module.
+How can we write an inverse-map function which receives a map of int to string and returns map of string to int? define two types and use them in the code.
+You write normal code. Just append `[T,S,Y,...]` to the filename. And upon import, you can either import normally: `import /core/Stack[T]` or you can replace T with a real type.
+compiler can give warnings if module name has `[T]` but no type T is defined inside the module.
+```
+import /core/map[int] -> mm
+#if binding name start with uppercase, its a type else its a value binding.
+mymap := mm::map
+```
+We do not have a mechanism/type/container to hold a set of bindings. We just use module alias.
+importing a map twice for different types will give you error if you use types inside the module. We cannot have two types with the same name. But for functions it's ok because we can have multiple functions with the same name but for different types.
