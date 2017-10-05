@@ -4048,3 +4048,5 @@ what if we say import is a special function which will be executed at compile ti
 Then the developer cannot use runtime bindings in import input:
 `R := getInput()`
 `X := import(R)`
+
+? - Can we remove generics?
