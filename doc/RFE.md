@@ -4108,3 +4108,26 @@ mymap := mm::map
 We do not have a mechanism/type/container to hold a set of bindings. We just use module alias.
 importing a map twice for different types will give you error if you use types inside the module. We cannot have two types with the same name. But for functions it's ok because we can have multiple functions with the same name but for different types.
 q: can we extend this to package level? So we have directories with `[T]` in their name. And all of their modules will inherit that T? No. It makes things complicated and less readable.
+What if we have `Stack[T].dot` and `Stack[S].dot` files in the same package?
+That would be a compiler error, just like defining two functions the same singature.
+
+? - Define a new binding type: module
+So we can use `:=` notation and right side implies a module path.
+For example, if binding name starts with `&`.
+Then if the difference is more explicit, we can even re-use dot notation and remove `::`.
+Because `A.b` is for struct and `&A.b` is for module.
+`&m := "/code/st/Stack[int]"`
+We use string on the right side so that we can use string operations (e.g. re-use a prefix).
+q: what about merging two or more modules into each other?
+q: how to import multiple modules?
+`import /core/{Stack, Vector}`
+`import /core/A, /core/B]`
+We can merge if we import a sequence of strings.
+`&multiple := ["/core/Socket" "/core/Data"]`
+And if we use `&_` module will be imported into current namespace.
+`&_ := "/core/net/HttpServer"`
+`&_ := "/core/std/{Queue, Stack, Heap}"` This is a bit un-intuitive.
+`pref := "/core/std/";`
+`&_ := "/core/std/{Queue, Stack, Heap}` This is a bit un-intuitive.
+Sometimes we want to import multiple modules but not merge them.
+`&A, &B := "/core/std/{Queue, Stack}"` Import two modules into two namespaces.
