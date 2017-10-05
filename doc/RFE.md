@@ -4107,3 +4107,4 @@ mymap := mm::map
 ```
 We do not have a mechanism/type/container to hold a set of bindings. We just use module alias.
 importing a map twice for different types will give you error if you use types inside the module. We cannot have two types with the same name. But for functions it's ok because we can have multiple functions with the same name but for different types.
+q: can we extend this to package level? So we have directories with `[T]` in their name. And all of their modules will inherit that T? No. It makes things complicated and less readable.
