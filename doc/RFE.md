@@ -4013,33 +4013,13 @@ Other dirs: `res` for resources
 `doc` for documentations
 `t` for tests.
 
-? - How should an import path be resolved and where should the data be looked up or saved?
-suppose we have `import /a/b/c` Where should we look for a directory?
-option 1: The location we run the compiler (pwd): `pwd/deps/a/b/c`
-option 2: Use env-var
-option 3: You can use option 1 + an optional argument to the compiler for root path.
-by using option 3, we can have a shared deps dir for multiple projects.
+N - Can we have this binding in module level?
+`person := ${"A", "B"}`
+We can.
 
-? - How should this work with Docker?
-Suppose that our app is going to be installed inside a Docker vm.
-First copy the source, then run `dot update` and it will automatically scan the source and fetch required packages.
-`dot ls-req` will give you a list of dependencies.
-Anyway, we won't need a big Makefile, requirements.txt or Gemfile.
+N - name of file (module) and dir (package) must include lowercase letters, numbers and underscore.
 
-? - How can we work on multiple interrelated projects at the same time?
-How can we have different versions of the same dependency?
-What if we need libA any version and libB but libB needs a specific version of libA?
-
-? - What about versioning?
-We can write a custom function which can be used to decide whether a specific branch/tag can be used for import.
-`import "github/apache/cassandra/thisOrLater("1.4"`?
-Or use star:
-`import "github/apache/cassandra/v1.*.*"`
-star means in this place there will be one or more numbers. Choose the largest one.
-
-? - name of file (module) and dir (package) must include lowercase letters, numbers and underscore.
-
-? - Can we make `import` a function in core?
+N - Can we make `import` a function in core?
 No. Because it won't be executed at run-time. It is a compile time notation.
 `import A,B -> X`
 `X := import("A")`
@@ -4049,7 +4029,95 @@ Then the developer cannot use runtime bindings in import input:
 `R := getInput()`
 `X := import(R)`
 
-? - Can we remove generics?
+Y - Enable defining types inside a struct.
+So what happens to struct embedding? Types are added too. And of course any conflict will result in compiler error.
+So we can have `myPerson.MyInt` as a type.
+Also `myPerson.createData` as a function (this is not new).
+Pro: Less restriction, prepares way for module import and remove `import` keyword
+Pro: We can define inline modules. Because module is just a struct.
+q: Can we use `$` notation to merge two structs? No.
+Struct fields which start with lowercase are binding. Uppercase are type.
+```
+Point := {x:int, y:int, Customer := int}
+```
+So we can define a struct in two ways: Condensed and Expanded.
+Condensed is defining inside a module.
+Exnapded is to define it in it's own module.
+What happens to autoBind? You cast a struct literal to a struct type.
+`compare_functions := Comparator.{personStruct}`
+So all bindings and types that are defined inside `personStruct` and match with `Comparator` type will be copied to a new struct and assigned to `compare_functions` binding.
+And similarly, types starting with underscore are considered private and won't be exported to outside modules.
+So if you import a module into a struct, you will only have access to items without underscore.
+So `myModule.Str1.Str2.Struct3.MyInt` can be a type.
+Types start with uppercase letters.
+Bindings start with lowercase letters. (functions have `someFunction` nameing and others are separated with underscore).
+**Summary**
+1. Allow defining types inside struct. Nothing else will change.
+`Model := {x:int, y:int, CustomerCode := int}`
+When we instantiate, obviously we assign value to bindings only.
+So you can define types inside a struct or at module level.
+2. Update `autoBind` documentation
+
+Y - Module as a struct
+q: Can I add `.` and refer to stuff inside an imported struct right after `$`?
+`CustomerModel := $"/core/Customer".Customer`
+This should be possible, but then how can you reach any function defined inside that module? If you just pick a type, then what happens when you want to invoke a function inside that module?
+```
+CustomerModel := $["/core/Customer"].Customer
+x: CustomerModel := createCustomer() #error! function is not defined.
+#you must import the module or use $ notation again!
+x: CustomerModel := $["/core/Customer"].createCustomer()
+```
+Or maybe we can make it more beautiful. 
+`$[...]` import multiple modules into one or more structs
+`${"/core/Socket"}` import a single.
+Why not merge two syntax! A sequence with only one member.
+**Summary**:
+1. Remove import keyword.
+2. Importing a module means assigning it to a struct binding using `$` notation.
+```
+Socket := $["/core/Socket"]
+Socket, Stack := $"/core/{Socket, Stack}"
+IntStack := $"/core/Stack[int]"
+A, B := $["/core/Socket" "/core/Stack"]
+A := $["/core/Socket" "/core/Stack"]
+```
+Result of import is just a normal struct binding that we can use in our functions. We can also use `_` to merge the module into current namespace.
+Update `autoBind` documentation
+**End Summary**
+Define a new binding type: module. Name must be prefixed with `&` and you can use `_` if you don't want to alias.
+So we can use `:=` notation and right side implies a module path.
+For example, if binding name starts with `&`.
+Then if the difference is more explicit, we can even re-use dot notation and remove `::`.
+Because `A.b` is for struct and `&A.b` is for module.
+`&m := "/code/st/Stack[int]"`
+We use string on the right side so that we can use string operations (e.g. re-use a prefix).
+q: what about merging two or more modules into each other?
+q: how to import multiple modules?
+`import /core/{Stack, Vector}`
+`import /core/A, /core/B]`
+We can merge if we import a sequence of strings.
+`&multiple := ["/core/Socket" "/core/Data"]`
+And if we use `&_` module will be imported into current namespace.
+`&_ := "/core/net/HttpServer"`
+`&_ := "/core/std/{Queue, Stack, Heap}"` This is a bit un-intuitive.
+`pref := "/core/std/";`
+`&_ := "/core/std/{Queue, Stack, Heap}` This is a bit un-intuitive.
+Sometimes we want to import multiple modules but not merge them.
+`&A, &B := "/core/std/{Queue, Stack}"` Import two modules into two namespaces.
+`&`
+`&x := "/core/Socket"`
+What if we change `:=` notation?
+`xn :: "core/Socket"`
+But xn is supposed to behave similar to a binding (we can address inside using `.`).
+`&A, &B := "/core/std/{Queue, Stack}"` Import two modules into two namespaces.
+`&multiple := ["/core/Socket" "/core/Data"]` merge 
+`&_ := "/core/Socket"`
+As the namespace is a super-type, it's name should be similar to a type: `AliasName`
+`|~±§`.
+Using `*%!` is not advised because they can be used in other places (math and comparison).
+
+Y - Can we remove generics? Not exactly but we can simplify it by using package templates.
 Where do we need generics?
 containers, array, hash/map, compound literals, stack, queue, graph, tree
 algorithms: sort, search, 
@@ -4126,8 +4194,14 @@ Can the module add static compile-time checks on it's type?
 T := int
 ```
 You must use a named type for generic type replacement: `/core/Stack[MyCustomer]`
+**Summary**:
+1. No change in defining a module. Remove `[T]` notation for type or bindings.
+2. module file name can have `[S,T,U,...]` suffix with types with the same name defined inside the module. If not, compiler will give error.
+3. When importing that module you can either import `my_module[T]` or `my_module[int]`. Where `int` can be replaced with any primitive type, named type or any type defined inside an available struct.
+`IntStackModule := $"/core/Stack[int]"`
+`IntStackType := IntStackModule.Stack`
 
-? - Can we treat a module similar to a class?
+N - Can we treat a module similar to a class?
 `&Car := "/data/std/CarModel"`
 `cc: &Car.Car := &Car.createCar(1)`
 Can we use a different naming and replace `&A.` with something simpler?
@@ -4159,42 +4233,104 @@ Below one is better than others. Suffix notation is not intuitive and readable.
 But `!Car` is not intuitive. It can be read 'not car'.
 `!Car := "/data/std/CarModel"`
 `cc: !Car.CarModel := !Car.createCar(1)`
+`??Car := "/data/std/CarModel"`
+`cc: !Car.CarModel := !Car.createCar(1)`
+What if we use existing mechanisms? 
+We have a set of bindings (value, function, ...) and types inside a module. 
+For bindings, we have struct.
+If we can define a type inside a struct, then we can simply define a new struct instance binding and import a module into it.
+`x := Point{x:100, y:200}`
+`y := "/core/Socket"{};
+Basically, then, a module will be a struct definition.
+```
+Person := {
+	x:int := 10, 
+	y:float := 1.19, 
+	IntList := seq[int]
+}
+```
+`Person := [["/core/PersonInfo"]]`
+cases: import single module, import multiple modules, merge modules
+Basically we are defining a struct literal here. So let's use `$` notation.
+```
+Socket := $"/core/Socket"
+Socket, Stack := $"/core/{Socket, Stack}"
+IntStack := $"/core/Stack[int]"
+A, B := $["/core/Socket" "/core/Stack"]
+A := $["/core/Socket" "/core/Stack"]
+```
+So if we have `{...}` after `$` it is a normal struct literal.
+If we have `""` or `[...]` we have a struct literal which will be imported from another module.
+Of course we can use existing `_` to say we don't need aliasing.
+`A := $"..."` import the given module and store it's bindings and types into A
 
+N - How should this work with Docker?
+Suppose that our app is going to be installed inside a Docker vm.
+First copy the source, then run `dot update` and it will automatically scan the source and fetch required packages.
+`dot ls-req` will give you a list of dependencies.
+Anyway, we won't need a big Makefile, requirements.txt or Gemfile.
 
-N - Can we have this binding in module level?
-`person := ${"A", "B"}`
-We can.
+N - How can we do DFS, BFS in dot?
 
-? - Define a new binding type: module. Name must be prefixed with `&` and you can use `_` if you don't want to alias.
-So we can use `:=` notation and right side implies a module path.
-For example, if binding name starts with `&`.
-Then if the difference is more explicit, we can even re-use dot notation and remove `::`.
-Because `A.b` is for struct and `&A.b` is for module.
-`&m := "/code/st/Stack[int]"`
-We use string on the right side so that we can use string operations (e.g. re-use a prefix).
-q: what about merging two or more modules into each other?
-q: how to import multiple modules?
-`import /core/{Stack, Vector}`
-`import /core/A, /core/B]`
-We can merge if we import a sequence of strings.
-`&multiple := ["/core/Socket" "/core/Data"]`
-And if we use `&_` module will be imported into current namespace.
-`&_ := "/core/net/HttpServer"`
-`&_ := "/core/std/{Queue, Stack, Heap}"` This is a bit un-intuitive.
-`pref := "/core/std/";`
-`&_ := "/core/std/{Queue, Stack, Heap}` This is a bit un-intuitive.
-Sometimes we want to import multiple modules but not merge them.
-`&A, &B := "/core/std/{Queue, Stack}"` Import two modules into two namespaces.
-`&`
-`&x := "/core/Socket"`
-What if we change `:=` notation?
-`xn :: "core/Socket"`
-But xn is supposed to behave similar to a binding (we can address inside using `.`).
-`&A, &B := "/core/std/{Queue, Stack}"` Import two modules into two namespaces.
-`&multiple := ["/core/Socket" "/core/Data"]` merge 
-`&_ := "/core/Socket"`
-As the namespace is a super-type, it's name should be similar to a type: `AliasName`
-`|~±§`.
-Using `*%!` is not advised because they can be used in other places (math and comparison).
+N - We can create bindings used for import:
+```
+#module1
+mname := "/core/Stack[int]"
 
-? - How can we do DFS, BFS in dot?
+#module2
+x := "./module1"
+_ := x::mname
+```
+
+N - How can we write a function which compares two stacks?
+```
+#comparer[T]
+T := ...
+S1 := import "/core/Stack[T]"
+compare := func(a: S1.Stack, b: S1.Stack)
+```
+
+N - We currently have `${...}` and `$[...]`.
+We maybe able to use `$(...)` notation too.
+Where can this be useful?
+It must be related to structs.
+`x := $(1,2,3)`
+
+? - How should an import path be resolved and where should the data be looked up or saved?
+suppose we have `import /a/b/c` Where should we look for a directory?
+option 1: The location we run the compiler (pwd): `pwd/deps/a/b/c`
+option 2: Use env-var
+option 3: You can use option 1 + an optional argument to the compiler for root path.
+by using option 3, we can have a shared deps dir for multiple projects.
+
+? - How can we work on multiple interrelated projects at the same time?
+How can we have different versions of the same dependency?
+What if we need libA any version and libB but libB needs a specific version of libA?
+
+? - What about versioning?
+We can write a custom function which can be used to decide whether a specific branch/tag can be used for import.
+`import "github/apache/cassandra/thisOrLater("1.4"`?
+Or use star:
+`import "github/apache/cassandra/v1.*.*"`
+star means in this place there will be one or more numbers. Choose the largest one.
+
+? - We should have a clear distinction between string concat and a sequence of two strings.
+6. `base_cassandra := "github/apache/cassandra/mybranch"`
+7. `_ := $[base_cassandra "/path/module"]`
+Is above a sequence of one string or two?
+
+? - With this new generics design, what happens to `seq`?
+Or `func` or `wchan` or `rchan`?
+`x : seq[int] := [1 2 3 4]`
+`x : $["seq[int]"].Type := [1 2 3 4]`
+Can we say `seq[int]` is a shortcut for `$["seq[int]"].Type`?
+Anything that I use here, should be applicable to other types too.
+```
+#seq[T].dot file, assume seq is implemented as a linked-list
+type T := int
+type Type := {data: T, next: Type}
+```
+Then usage:
+`SeqInt := $["/core/seq[string]"].Type`
+option 1: define `X[T]` a shortcut for `$[X[T]].Type`. But it won't be much useful for other cases. Because they will need a path for their module.
+option 2: Do not use `seq[int]` notation.
