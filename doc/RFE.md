@@ -4125,7 +4125,45 @@ Can the module add static compile-time checks on it's type?
 #file: Stack[T].dot
 T := int
 ```
+You must use a named type for generic type replacement: `/core/Stack[MyCustomer]`
 
+? - Can we treat a module similar to a class?
+`&Car := "/data/std/CarModel"`
+`cc: &Car.Car := &Car.createCar(1)`
+Can we use a different naming and replace `&A.` with something simpler?
+Prefixing symbol with `&` is a bit hard to type.
+Option1: Use dot to separate namespace from binding or type name but use a prefix to separate namespace from a struct.
+Option2: Use a special notation to separate namespace from binding but no prefix or special naming for namespace.
+` := "/data/std/CarModel"`
+`cc: &Car.Car := &Car.createCar(1)`
+What about `[Name]`?
+`[Car] := "/data/std/CarModel"`
+`cc: [Car].Car := [Car].createCar(1)`
+The only possibility for ambiguity is sequence and compound literals.
+`x := [1 2 3]`
+`x := [Car]`
+`[[Car]] := "/data/std/CarModel"`
+`cc: [[Car]].Car := [[Car]].createCar(1)`
+Is there a no-surround alternative which is also easy to type?
+`Car:: := "/data/std/CarModel"`
+`cc: Car::Car := Car::createCar(1)`
+
+`Car& := "/data/std/CarModel"`
+`cc: Car&Car := Car&createCar(1)`
+
+`Car! := "/data/std/CarModel"`
+`cc: Car!CarModel := Car!createCar(1)`
+Below one is better than others. Suffix notation is not intuitive and readable.
+`!Car := "/data/std/CarModel"`
+`cc: !Car.CarModel := !Car.createCar(1)`
+But `!Car` is not intuitive. It can be read 'not car'.
+`!Car := "/data/std/CarModel"`
+`cc: !Car.CarModel := !Car.createCar(1)`
+
+
+N - Can we have this binding in module level?
+`person := ${"A", "B"}`
+We can.
 
 ? - Define a new binding type: module. Name must be prefixed with `&` and you can use `_` if you don't want to alias.
 So we can use `:=` notation and right side implies a module path.
