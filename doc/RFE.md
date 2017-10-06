@@ -4132,3 +4132,5 @@ And if we use `&_` module will be imported into current namespace.
 `&_ := "/core/std/{Queue, Stack, Heap}` This is a bit un-intuitive.
 Sometimes we want to import multiple modules but not merge them.
 `&A, &B := "/core/std/{Queue, Stack}"` Import two modules into two namespaces.
+
+? - How can we do DFS, BFS in dot?
