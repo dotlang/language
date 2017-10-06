@@ -4111,8 +4111,23 @@ q: can we extend this to package level? So we have directories with `[T]` in the
 What if we have `Stack[T].dot` and `Stack[S].dot` files in the same package?
 That would be a compiler error, just like defining two functions the same singature.
 q: What about nested generics? e.g. Map of string to a list of integers. or a list of list of integers.
+e.g. `Stack<List<int>>`
+```
+import "List[int]" -> Lint
+import "Stack[Lint::List]" -> St
+#Now St is a Stack which contains List of int
+#OR
+&Lint := "/core/List[int]"
+&St := "Stack[&Lint.List]"
+```
+Can the module add static compile-time checks on it's type?
+```
+#file: Stack[T].dot
+T := int
+```
 
-? - Define a new binding type: module
+
+? - Define a new binding type: module. Name must be prefixed with `&` and you can use `_` if you don't want to alias.
 So we can use `:=` notation and right side implies a module path.
 For example, if binding name starts with `&`.
 Then if the difference is more explicit, we can even re-use dot notation and remove `::`.
@@ -4132,5 +4147,16 @@ And if we use `&_` module will be imported into current namespace.
 `&_ := "/core/std/{Queue, Stack, Heap}` This is a bit un-intuitive.
 Sometimes we want to import multiple modules but not merge them.
 `&A, &B := "/core/std/{Queue, Stack}"` Import two modules into two namespaces.
+`&`
+`&x := "/core/Socket"`
+What if we change `:=` notation?
+`xn :: "core/Socket"`
+But xn is supposed to behave similar to a binding (we can address inside using `.`).
+`&A, &B := "/core/std/{Queue, Stack}"` Import two modules into two namespaces.
+`&multiple := ["/core/Socket" "/core/Data"]` merge 
+`&_ := "/core/Socket"`
+As the namespace is a super-type, it's name should be similar to a type: `AliasName`
+`|~±§`.
+Using `*%!` is not advised because they can be used in other places (math and comparison).
 
 ? - How can we do DFS, BFS in dot?
