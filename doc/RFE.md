@@ -4110,6 +4110,7 @@ importing a map twice for different types will give you error if you use types i
 q: can we extend this to package level? So we have directories with `[T]` in their name. And all of their modules will inherit that T? No. It makes things complicated and less readable.
 What if we have `Stack[T].dot` and `Stack[S].dot` files in the same package?
 That would be a compiler error, just like defining two functions the same singature.
+q: What about nested generics? e.g. Map of string to a list of integers. or a list of list of integers.
 
 ? - Define a new binding type: module
 So we can use `:=` notation and right side implies a module path.
