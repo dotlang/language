@@ -4318,6 +4318,14 @@ star means in this place there will be one or more numbers. Choose the largest o
 6. `base_cassandra := "github/apache/cassandra/mybranch"`
 7. `_ := $[base_cassandra "/path/module"]`
 Is above a sequence of one string or two?
+option1: Use `+` for string concat
+`_ := $[base_cassandra+"/path/module"]`
+But then `+` will not be only available for string, it will be allowed for all sequences.
+It will give us a notaion to merge two sequences.
+option 2: `&`. `a&b` will generate a new sequence as result of merge of two given sequences.
+`"A"&"B"`
+How can we define a 2d sequence?
+`SeqI`
 
 ? - With this new generics design, what happens to `seq`?
 Or `func` or `wchan` or `rchan`?
@@ -4334,3 +4342,26 @@ Then usage:
 `SeqInt := $["/core/seq[string]"].Type`
 option 1: define `X[T]` a shortcut for `$[X[T]].Type`. But it won't be much useful for other cases. Because they will need a path for their module.
 option 2: Do not use `seq[int]` notation.
+Using `A[B]` notation for a type will be source of confusion which we want to avoid by using module template.
+Because then we can use `A[B[C[D]]]]` and ...
+`x1: seq[seq[int]]`
+`x2: wchan[seq[int]]`
+`x3: rchan[seq[seq[int]]]`
+`x1t := $["seq"]`
+`x1: x1t.Type`
+If we want to be consistent, we must use the same approach and don't take an exception for seq and chans.
+We define sequence type just like other types that a developer will define.
+`SeqInt := $["seq[int]"]`.
+For literals, compiler will handle the type generation when it should be implied.
+`SeqInt := $["seq[int]"]`.
+`ss: SeqInt := [1 2 3 4]`
+
+? - Note that, importing a module, will give us a type not a binding. So we cannot send it to a function.
+It may contain bindings which we can send to a function.
+We have two concepts: Type and Binding.
+Bindings have Types.
+Types are blueprints used to instantiate bindings.
+
+? - Shall wechange the notation of `[]` in template packages to prevent confusion with `$[...]`?
+`SeqInt := $["seq[int]"]`.
+`SeqInt := $["seq(int)"]`. And we will need to change module filename accordingly.
