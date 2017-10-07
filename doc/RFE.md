@@ -4296,6 +4296,41 @@ Where can this be useful?
 It must be related to structs.
 `x := $(1,2,3)`
 
+Y - We should have a clear distinction between string concat and a sequence of two strings.
+6. `base_cassandra := "github/apache/cassandra/mybranch"`
+7. `_ := $[base_cassandra "/path/module"]`
+Is above a sequence of one string or two?
+option1: Use `+` for string concat
+`_ := $[base_cassandra+"/path/module"]`
+But then `+` will not be only available for string, it will be allowed for all sequences.
+It will give us a notaion to merge two sequences.
+option 2: `&`. `a&b` will generate a new sequence as result of merge of two given sequences.
+`"A"&"B"`
+How can we define a 2d sequence?
+`SeqI := [ [1 2] [3 4]]`
+
+N - Note that, importing a module, will give us a type not a binding. So we cannot send it to a function.
+It may contain bindings which we can send to a function.
+We have two concepts: Type and Binding.
+Bindings have Types.
+Types are blueprints used to instantiate bindings.
+
+N - What if I want to have a sequence of type T where T can also be changed as a generic argument.
+```
+T := int
+MyType := $["seq[T]"].Type
+```
+putting module name inside quote implies not being parametric, while `[T]` is the parametric part.
+`T` will be replaced at compile time by real type of T.
+Maybe we can add one more chain to the mechanism and both remove this and also casing.
+```
+#my_module[t].dot
+T := int
+MyType := $["/core/Stack(T)"].Type
+x: MyType := [1 2 3]
+```
+Anything inside `()` in module path, will be processed by the compiler to generate module code, based on the given arguments.
+
 ? - How should an import path be resolved and where should the data be looked up or saved?
 suppose we have `import /a/b/c` Where should we look for a directory?
 option 1: The location we run the compiler (pwd): `pwd/deps/a/b/c`
@@ -4313,19 +4348,6 @@ We can write a custom function which can be used to decide whether a specific br
 Or use star:
 `import "github/apache/cassandra/v1.*.*"`
 star means in this place there will be one or more numbers. Choose the largest one.
-
-? - We should have a clear distinction between string concat and a sequence of two strings.
-6. `base_cassandra := "github/apache/cassandra/mybranch"`
-7. `_ := $[base_cassandra "/path/module"]`
-Is above a sequence of one string or two?
-option1: Use `+` for string concat
-`_ := $[base_cassandra+"/path/module"]`
-But then `+` will not be only available for string, it will be allowed for all sequences.
-It will give us a notaion to merge two sequences.
-option 2: `&`. `a&b` will generate a new sequence as result of merge of two given sequences.
-`"A"&"B"`
-How can we define a 2d sequence?
-`SeqI`
 
 ? - With this new generics design, what happens to `seq`?
 Or `func` or `wchan` or `rchan`?
@@ -4353,15 +4375,19 @@ If we want to be consistent, we must use the same approach and don't take an exc
 We define sequence type just like other types that a developer will define.
 `SeqInt := $["seq[int]"]`.
 For literals, compiler will handle the type generation when it should be implied.
-`SeqInt := $["seq[int]"]`.
+`SeqInt := $["seq[int]"].Type`.
 `ss: SeqInt := [1 2 3 4]`
+`SeqInt2 := $["seq(SeqInt)"].Type`.
+But this is difficult to type and everytime, user must import seq or chans and use their type.
+Even in go, you can define these generic types easily.
 
-? - Note that, importing a module, will give us a type not a binding. So we cannot send it to a function.
-It may contain bindings which we can send to a function.
-We have two concepts: Type and Binding.
-Bindings have Types.
-Types are blueprints used to instantiate bindings.
-
-? - Shall wechange the notation of `[]` in template packages to prevent confusion with `$[...]`?
+? - Shall we change the notation of `[]` in template packages to prevent confusion with `$[...]`?
 `SeqInt := $["seq[int]"]`.
 `SeqInt := $["seq(int)"]`. And we will need to change module filename accordingly.
+
+? - module names must be lowercase, but type names must be CamelCase.
+So `Socket[T].dot` is not a valid module name.
+It must be `socket[t].dot`.
+But the type inside the module must not be lowercase.
+Easiest solution: Just keep it this way. Use lower-cased type name in module file name.
+
