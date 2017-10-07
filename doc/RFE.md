@@ -4434,3 +4434,16 @@ If you want to import a module into current namespace, you shouldn't use `_ :=` 
 ```
 But then again, this should become part of the current module's struct. So when others import `module1` they should also see `Stack` inside module, which makes the module dirty.
 Solution? Merge all modules you want into same type. or re-use `_` to add to passive namespace.
+```
+#module1.dot
+!["/core/Stack"] #this embeds Stack type INTO current module's active namespace
+_ := !["/Core/Queue"] #this embeds Queue into passive namespace
+A := !["/Core/Tree"] #this will define A point to the struct represented by Tree
+```
+active namespace: direct namespace
+passive: indirect
+When using a binding or type, first direct namespace then indirect namespace will be searched.
+When importing a module, their direct namespace will be imported into current direct or indirect namespace or a new type.
+direct namespace: direct context
+indirect context
+
