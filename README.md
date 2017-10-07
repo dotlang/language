@@ -171,9 +171,9 @@ These rules are highly advised but not mandatory.
 
 **Notes**
 
-1. Basically, modules can be represented as untyped structs. You use `$` to denote they are untyped and add a sequence of one or more strings to represent their path.
+1. Basically, modules are represented as untyped structs. You use `$` to denote they are untyped and add a sequence of one or more strings to represent their path.
 2. After importing a module, you can use its types, call its functions or work with the bindings that are defined in that module.
-3. You can import a module as a new type (Example 1) or into current namespace (Example 2).
+3. You can import a module as a new type (Example 1) or into current namespace (Example 2). Note that in example 1 you are basically defining a new named type based on imported module.
 4. Note that definitions that start with an underscore are considered private and will not be available when you import their container module.
 5. `/` in the beginning is a shortcut for `file/`. Namespace path starts with a protocol which determines the location of the file for a namespace. You can also use other namespace protocols like `Github` (`git/path/to/module`) (Example 5).
 6. You can import multiple modules (with the same prefix) using notation in Example 3. If you assign the output to a TypeName, it will contain a merged set of all given modules (Example 4 and 8).
