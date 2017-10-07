@@ -4397,3 +4397,40 @@ Easiest solution: Just keep it this way. Use lower-cased type name in module fil
 
 ? - Add a section "Why dot" and say conditions which rule out competitors.
 Like "Why zimbu" in http://www.zimbu.org/
+
+? - Each module has an active namespace and a passive namespace.
+Active: Bindings and types defined directly inside the module
+Passive: Bindings and types imported into current namespace using `_`.
+When writing code inside module, you have access to both.
+When importing the module, you import their "active" namespace. You can import it into current passive namespace or put it inside a struct type.
+Namespace is a type. Actually it is a struct.
+So each module is defining a new struct.
+Importing a module is similar to embeding.
+`Circle := {Shape, r: float}`
+Why not use the same notation?
+`Circle := { $["Socket"], r: float}`
+```
+#module1.dot
+${x:int} #you embed this inside current struct(module) which is same as defining x:int
+$["/core/Socket"]
+```
+We also should allow for both types of defining struct: comma separated or newline separated.
+When you write `$["/core/Socket"]` you are embedding Socket module inside current module (struct).
+**Summary**: Modules are same as struct.
+When you write `x: Shape` you define a new binding of type Shape and name it x, but without a value
+When you write `MyInt := int` you define a new named type.
+When you write `MyInt := $["/core/Socket"]` you define a new named type.
+Problem: `$` is used to define a struct literal, so it is only for values or bindings.
+It is not supposed to work for TYPES.
+`x := ${1,2,3}` define a new value, not a new type
+`MyInt := $["/Core/Socket"]` This is defining a new type! Totally confusing.
+option 1: use `!`
+`@$%^&*`
+So `!` operator will work on a sequence of strings and will define new types based on those modules.
+If you want to import a module into current namespace, you shouldn't use `_ :=` notation because it is used to ignore output of right side. You should do it just like embedding, write the type name.
+```
+#module1.dot
+!["/core/Stack"] #this will import Stack (it's types and bindings) and put them (embed them) inside the current module
+```
+But then again, this should become part of the current module's struct. So when others import `module1` they should also see `Stack` inside module, which makes the module dirty.
+Solution? Merge all modules you want into same type. or re-use `_` to add to passive namespace.
