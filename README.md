@@ -87,7 +87,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 06. **Struct type**: `Point := {x: int, y:int, data: float}` (Like `struct` in C)
 07. **Struct literal**: `location := Point{x:10, y:20, data:1.19}`
 08. **Composition**: `Circle := {Shape, radius: float}` (`Circle` embeds fields of `Shape`)
-09. **Generics**: `Stack := { data: array[T], info: int }` (Defines a blueprint to create new types when importing module)
+09. **Generics**: `IntStack := $["/core/Stack(int)"].Type` (Generics are defined as templated modules)
 10. **Union type**: `MaybeInt := int | nothing` (Can store either of possible types)
 11. **Function**: `calculate: func(int,int)->float := (x, y) -> float { return x/y  }`
 12. **Concurrency**: `result :== processData(x,y,z)` (Evaluate an expression in parallel)
@@ -190,11 +190,12 @@ These rules are highly advised but not mandatory.
 4. `MergedType := $["/core/std/{Queue, Stack, Heap}"]`
 5. `MyModule := $["git/github.com/net/server/branch1/dir1/dir2/module"]`
 6. `base_cassandra := "github/apache/cassandra/mybranch"`
-7. `_ := $[base_cassandra "/path/module"]`
+7. `_ := $[base_cassandra&"/path/module"]`
 8. `Q, S, H := $["/core/std/{Queue, Stack, Heap}"]`
 
 # Type system
 
+Types are blueprints which are used to create bindings.
 Two types T1 and T2 are identical/assignable in any of below cases:
 1. Both are named types defined in the same place in the code.
 2. Both are unnamed types with similar definition (e.g. `int|string` vs `int|string` or `seq[int]` vs `seq[int]`).
@@ -213,9 +214,9 @@ Two types T1 and T2 are identical/assignable in any of below cases:
 3. `char` is a single character, represented as an unsigned byte.
 4. Character literals should be enclosed in single-quote.
 5. Primitive data types include simple types and compound types (array, struct, and union).
-7. `seq` type represents a block of memory space with elements of the same type. You can use a sequence literal (Example 4) or a function from core to initialize these variables. This type can be used to represent an array or list or any other data structure.
+7. `seq` type represents a fixed-size block of memory space with elements of the same type. You can use a sequence literal (Example 4) to initialize sequence variables. This type can be used to represent an array.
 8. You can use range generator operator `..` to create sequence literals (Example 5).
-9. A sequence literal which contains other sequence literals, can either be parsed as is or destruct inner sequences and create a larger sequence. (Example 6 and 7). In example 7, the result is a sequence of integers `1, 2, 3, 4, 5, 6`.
+9. You can use `&` operator to merge two sequences of the same type, into a larger sequence (Example 7).
 10. Core provides functions to extract part of a sequence as another sequence (Like array slice).
 11. Referring to an index outside sequence will cause a runtime error.(Example 8 for reading from a sequence).
 
@@ -227,7 +228,7 @@ Two types T1 and T2 are identical/assignable in any of below cases:
 4. `x: seq[int] := [1 2 3 4]`
 5. `x := [1..10]`
 6. `x: seq[seq[int]] := [ [1 2] [3 4] [5 6] ]`
-7. `x: seq[int] := [ [1 2] [3 4] [5 6] ]`
+7. `x: seq[int] := [1 2]&[3 4]&[5 6]`
 8. `n := x.[10]`
 
 ### Union
@@ -391,17 +392,18 @@ You can call `fn` like a normal function with an input which should be any of po
 
 **Syntax**: 
 
-1. `MyType := $["/code/module[type1, type2]"]`
+1. `MyType := $["/code/module(type1, type2)"]`
 
 **Notes**:
 
-1. Generics are implemented at module level. You need to define a named type in your module (e.g. `T`) and then add `[T]` to the name of the module file.
-2. When importing a generic module, you can either import `module_name[T]` which will import using default type defined inside the module code, or replace `T` parameter with a valid type (e.g. `module_name[int]`).
-3. You can specialize a generic module for known types by writing appropriately named module file (e.g. `module_name[string].dot`).
+1. Generics are implemented at module level. You need to define a named type in your module (e.g. `T`) and then add `(T)` to the name of the module file.
+2. Anything inside `()` in module path, will be processed by the compiler to generate module code, based on the given arguments.
+3. When importing a generic module, you can either import `module_name(T)` which will import using default type defined inside the module code, or replace `T` parameter with a valid type (e.g. `module_name(int)`).
+4. You can specialize a generic module for known types by writing appropriately named module file (e.g. `module_name(string).dot`).
 
 **Example**
 
-1. `IntStackModule := $["/core/Stack[int]]"`
+1. `IntStackModule := $["/core/Stack(int)]"`
 2. `x: IntStackModule.Stack := IntStackModule.createStack()`
 
 ## Phantom types
@@ -415,9 +417,9 @@ You can call `fn` like a normal function with an input which should be any of po
 
 **Examples**
 
-1. `Door[T].dot`: `Door := string`
-2. `OpenDoor := $["/Door[Open]"].Door`
-3. `ClosedDoor := $["/Door[Open]"].Door`
+1. `Door(T).dot file`: `Door := string`
+2. `OpenDoor := $["/Door(Open)"].Door`
+3. `ClosedDoor := $["/Door(Open)"].Door`
 4. `closeDoor := (x: OpenDoor) -> ClosedDoor`
 5. `openDoor := (x: ClosedDoor) -> OpenDoor`
 
