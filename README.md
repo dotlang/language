@@ -171,27 +171,27 @@ These rules are highly advised but not mandatory.
 
 **Notes**
 
-1. Basically, modules are represented as untyped structs. You use `$` to denote they are untyped and add a sequence of one or more strings to represent their path.
-2. After importing a module, you can use its types, call its functions or work with the bindings that are defined in that module.
-3. You can import a module as a new type (Example 1) or into current namespace (Example 2). Note that in example 1 you are basically defining a new named type based on imported module.
-4. Note that definitions that start with an underscore are considered private and will not be available when you import their container module.
-5. `/` in the beginning is a shortcut for `file/`. Namespace path starts with a protocol which determines the location of the file for a namespace. You can also use other namespace protocols like `Github` (`git/path/to/module`) (Example 5).
-6. You can import multiple modules (with the same prefix) using notation in Example 3. If you assign the output to a TypeName, it will contain a merged set of all given modules (Example 4 and 8).
+1. Basically, modules are untyped structs. You use `!` compile-time function import them into a namespace or as a named type.
+2. Each module (and struct) has two namespaces: Direct and indirect. If you ignore result of `!` using `_` it will be imported into indirect namespace. If you embed it's output, it will be in direct namespace. Direct namespace consitsts of definitions which are explicitly mentioned inside a struct or module. Indirect namespace is definitions which are imported and ignored using `_` (So they are not part of direct namespace but still available).
+3. When using a binding or type, first direct namespace then indirect namespace will be searched in a hierarchical manner (Current struct, parent struct, ..., module) respectively. 
+4. You can also assign output of `!` to a new named type (Example 2). If you import multiple modules they will all be merged (Example 5).
+5. `/` in the beginning is a shortcut for `file/`. Namespace path starts with a protocol which determines the location of the file for a namespace. You can also use other namespace protocols like `Github` (`git/path/to/module`) (Example 6).
+6. You can import multiple modules (with the same prefix) using notation in Example 4.
 7. If an import path starts with `./` or `../` means the module path is relative to the current module.
 8. It is an error if as a result of imports, there are two exactly similar bindings or types (same name and type) in use. In this case, only none of conflicting bindings will be available for use.
-9. You can import from a specific branch and use a binding to build import path (Example 6 and 7).
+9. You can import from a specific branch and use a binding to build import path (Example 7 and 8).
 10. You have to add a branch/tag/commit name after repository name when importing from GitHub.
 
 **Examples**
 
-1. `SocketType := $["/core/st/Socket"]`
-2. `_ := $["/core/st/Socket"]`
-3. `_ := $["/core/std/{Queue, Stack, Heap}"]`
-4. `MergedType := $["/core/std/{Queue, Stack, Heap}"]`
-5. `MyModule := $["git/github.com/net/server/branch1/dir1/dir2/module"]`
-6. `base_cassandra := "github/apache/cassandra/mybranch"`
-7. `_ := $[base_cassandra&"/path/module"]`
-8. `Q, S, H := $["/core/std/{Queue, Stack, Heap}"]`
+1. `!("/core/st/Socket") #embed into current module's direct namespace`
+2. `SocketType := !("/core/st/Socket") #assign to a new named type`
+3. `_ := !("/core/st/Socket") #import into indirect namespace`
+4. `_ := !("/core/std/{Queue, Stack, Heap}")`
+5. `MergedType := !("/core/std/{Queue, Stack, Heap}")`
+6. `MyModule := !("git/github.com/net/server/branch1/dir1/dir2/module")`
+7. `base_cassandra := "github/apache/cassandra/mybranch"`
+8. `_ := !(base_cassandra&"/path/module")`
 
 # Type system
 
