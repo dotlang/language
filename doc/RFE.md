@@ -4380,6 +4380,10 @@ For literals, compiler will handle the type generation when it should be implied
 `SeqInt2 := $["seq(SeqInt)"].Type`.
 But this is difficult to type and everytime, user must import seq or chans and use their type.
 Even in go, you can define these generic types easily.
+Another option: Use similar syntax `()` but without extra notation:
+`x: seq(int) := [1 2 3]`
+`y: wchan(string) ...`
+Note that this can be confused with function call.
 
 ? - Shall we change the notation of `[]` in template packages to prevent confusion with `$[...]`?
 `SeqInt := $["seq[int]"]`.
