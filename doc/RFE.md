@@ -4395,3 +4395,5 @@ It must be `socket[t].dot`.
 But the type inside the module must not be lowercase.
 Easiest solution: Just keep it this way. Use lower-cased type name in module file name.
 
+? - Add a section "Why dot" and say conditions which rule out competitors.
+Like "Why zimbu" in http://www.zimbu.org/
