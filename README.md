@@ -79,7 +79,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 ## Main features
 
-01. **Import a module**: `ModuleType := $["/core/std/queue"]` (you can also import from external sources like Github).
+01. **Import a module**: `ModuleType := !("/core/std/queue")` (you can also import from external sources like Github).
 02. **Primitive types**: `int`, `float`, `char`, `seq`, `func`.
 03. **Bindings**: `my_var:int := 19` (type can be automatically inferred, everything is immutable).
 04. **Sequence**: `scores:seq[int] := [1 2 3 4]` (Similar to array).
@@ -133,9 +133,8 @@ These rules are highly advised but not mandatory.
 
 1. Indentation must be done using spaces, not tabs. Using 4 spaces is advised but not mandatory.
 2. It is advised to put each statement on a separate line. 
-3. `import` statements must come first, then type definitions, then bindings.
-4. Naming: `someFunctionName`, `my_binding_name`, `func_arg_name`, `SomeDataType`, `my_package_dir`, `my_modue_file`.
-5. Braces must appear on their own line. For lambdas which are a single expression you should omit braces.
+3. Naming: `someFunctionName`, `my_binding_name`, `func_arg_name`, `SomeDataType`, `my_package_dir`, `my_modue_file`.
+4. Braces must appear on their own line. For lambdas which are a single expression you should omit braces.
 
 # Bindings
 
@@ -167,7 +166,7 @@ These rules are highly advised but not mandatory.
 
 **Syntax**
 
-`TypeName := $["/path/to/module" "/path/to/other_module]`
+`TypeName := !("/path/to/module")`
 
 **Notes**
 
@@ -175,7 +174,7 @@ These rules are highly advised but not mandatory.
 2. Each module (and struct) has two namespaces: Direct and indirect. If you ignore result of `!` using `_` it will be imported into indirect namespace. If you embed it's output, it will be in direct namespace. Direct namespace consitsts of definitions which are explicitly mentioned inside a struct or module. Indirect namespace is definitions which are imported and ignored using `_` (So they are not part of direct namespace but still available).
 3. When using a binding or type, first direct namespace then indirect namespace will be searched in a hierarchical manner (Current struct, parent struct, ..., module) respectively. 
 4. You can also assign output of `!` to a new named type (Example 2). If you import multiple modules they will all be merged (Example 5).
-5. `/` in the beginning is a shortcut for `file/`. Namespace path starts with a protocol which determines the location of the file for a namespace. You can also use other namespace protocols like `Github` (`git/path/to/module`) (Example 6).
+5. `/` in the beginning is a shortcut for `file/`. Namespace path starts with a protocol which determines the location of the file for a namespace. You can also use other namespace protocols like `Github` (Example 6).
 6. You can import multiple modules (with the same prefix) using notation in Example 4.
 7. If an import path starts with `./` or `../` means the module path is relative to the current module.
 8. It is an error if as a result of imports, there are two exactly similar bindings or types (same name and type) in use. In this case, only none of conflicting bindings will be available for use.
@@ -392,18 +391,18 @@ You can call `fn` like a normal function with an input which should be any of po
 
 **Syntax**: 
 
-1. `MyType := $["/code/module(type1, type2)"]`
+1. `MyType := !("/code/module[type1, type2]")`
 
 **Notes**:
 
-1. Generics are implemented at module level. You need to define a named type in your module (e.g. `T`) and then add `(T)` to the name of the module file.
-2. Anything inside `()` in module path, will be processed by the compiler to generate module code, based on the given arguments.
-3. When importing a generic module, you can either import `module_name(T)` which will import using default type defined inside the module code, or replace `T` parameter with a valid type (e.g. `module_name(int)`).
-4. You can specialize a generic module for known types by writing appropriately named module file (e.g. `module_name(string).dot`).
-
+1. Generics are implemented at module level. You need to define a named type in your module (e.g. `T`) and then add `[t]` to the name of the module file. Note that in the file name, the name of type must be lowercased.
+2. Anything inside `[]` in module path, will be processed by the compiler to generate module code, based on the given arguments.
+3. When importing a generic module, you can either import `module_name[T]` which will import using default type defined inside the module code, or replace `T` parameter with a valid type (e.g. `module_name(int)`).
+4. You can specialize a generic module for known types by writing appropriately named module file (e.g. `module_name[string].dot`).
+5. You don't need to follow this notation for built-in types: `seq`, `wchan` and `rcan`
 **Example**
 
-1. `IntStackModule := $["/core/Stack(int)]"`
+1. `IntStackModule := !("/core/Stack[int])"`
 2. `x: IntStackModule.Stack := IntStackModule.createStack()`
 
 ## Phantom types
@@ -418,14 +417,15 @@ You can call `fn` like a normal function with an input which should be any of po
 **Examples**
 
 1. `Door(T).dot file`: `Door := string`
-2. `OpenDoor := $["/Door(Open)"].Door`
-3. `ClosedDoor := $["/Door(Open)"].Door`
+2. `OpenDoor := !("/Door[Open]").Door`
+3. `ClosedDoor := !("/Door[Open]").Door`
 4. `closeDoor := (x: OpenDoor) -> ClosedDoor`
 5. `openDoor := (x: ClosedDoor) -> OpenDoor`
 
 # Functions
 
 **Syntax**: 
+
 `functionName: func(type1, type2, type3, ...) -> (OutputType) := (name1: type1, name2: type2...) -> OutputType { code block }`
 
 **Notes**
@@ -500,8 +500,8 @@ process := (x:int) ->
 1. `adder := func(int,int)->int`
 2. `myAdder := (x:int, y:int) -> x+y`
 3. `adderPointer := adder{myAdder}`
-4. `sort := (x: array[int], comparer: func(int,int) -> bool) -> array[int]`
-5. `map[T, S] := (input: array[T], mapper: func(T) -> S) -> array[S]`
+4. `sort := (x: seq[int], comparer: func(int,int) -> bool) -> seq[int]`
+5. `map[T, S] := (input: seq[T], mapper: func(T) -> S) -> seq[S]`
 
 ## Lambda
 
@@ -912,6 +912,6 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.96**: Jun 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: Jun 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` place holder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is typed statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
-- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, Modules are structs (remove `import` keyword), re-define generics using module-level types
+- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, Modules are structs (remove `import` keyword and replaced with `!` operator), re-defined generics using module-level types
 
 
