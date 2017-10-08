@@ -4471,3 +4471,22 @@ no: setting value for a field means it is a constant that can never change.
 
 ? - Shall we add `map` as another built-in?
 Then we can throw away the syntax for compound literals.
+
+? - If we allow `seq[T]` what about their functions?
+e.g.
+`r,w := createChannel[int](...)`
+option 1: Make type one of the arguments: `r,w := createChannel(@[int], ...);`
+and compiler will handle to have it's output channel of int.
+it can make life more difficult for readers because type or r,w may not be very clear.
+option 2: replace function with syntax. 
+anyway we will have lots of array/map related functions. we need to come up with a consistent solution.
+proposal: functions are just like normal functions but compiler will import appropriate functions for us. 
+So we cannot write `createChannel[int]`. We should write `createChannel` and make the expected output type explicit.
+So let's say: Eveything in core is like normal code but compiler will import appropriate functions for you.
+So something like: extract method which extracts part of a sequence, it is generic. So it is defined like:
+```
+type T := ...
+extract := (x: seq[T], start: int, end: int)->seq[T] ...
+```
+Similarly, sequence, wchan and rchan are defined in core in some semi-dot modules. But compiler will import them for us.
+As a result, if a function is already imported which is `extract` for int sequence from some non-core module, compiler will not import from core.
