@@ -4396,6 +4396,14 @@ Of course if there is a conflict, it should be handled appropriately.
 7. `base_cassandra := "github/apache/cassandra/mybranch"`
 8. `_ := !(base_cassandra&"/path/module")`
 
+Y - module names must be lowercase, but type names must be CamelCase.
+So `Socket[T].dot` is not a valid module name.
+It must be `socket[t].dot`.
+But the type inside the module must not be lowercase.
+Easiest solution: Just keep it this way. Use lower-cased type name in module file name.
+
+? - Add a section "Why dot" and say conditions which rule out competitors.
+Like "Why zimbu" in http://www.zimbu.org/
 
 
 
@@ -4452,16 +4460,9 @@ Another option: Use similar syntax `()` but without extra notation:
 `x: seq(int) := [1 2 3]`
 `y: wchan(string) ...`
 Note that this can be confused with function call.
-
-? - module names must be lowercase, but type names must be CamelCase.
-So `Socket[T].dot` is not a valid module name.
-It must be `socket[t].dot`.
-But the type inside the module must not be lowercase.
-Easiest solution: Just keep it this way. Use lower-cased type name in module file name.
-
-? - Add a section "Why dot" and say conditions which rule out competitors.
-Like "Why zimbu" in http://www.zimbu.org/
-
+option 1: define `X[T]` a shortcut for `$[X[T]].Type`. But it won't be much useful for other cases. Because they will need a path for their module. So mentioning `seq[int]` will automatically import corresponding functions into indirect namespace.
+And this is only valid for seq, wchan, rchan.
+and map?
 
 ? - Suppose we have this struct:
 `XS := {x:int, y:int := 10}`
@@ -4471,6 +4472,19 @@ no: setting value for a field means it is a constant that can never change.
 
 ? - Shall we add `map` as another built-in?
 Then we can throw away the syntax for compound literals.
+can we implement map with existing mechanisms? yes. but then it will not enjoy the compiler helpers that seq has.
+```
+m: map[string, int] := ["A",1 "B",2 "C",3]
+#vs
+MyType := !("map[string, int]").Type
+m: MyType := ["A",1 "B",2 "C",3]
+```
+Another option: Force to import even seq and core but provide syntax sugars
+`MapType := !("map[string, int]").Type`
+Shortcut: Instead of above you can write: `map[strig, int]`. But this is not good as it is not general.
+
+? - For example `length` function can work on seq. If we want to use it on `seq[Customer]` shall we import `/core/length_utils[Customer"]` module?
+It would be difficult to do that and it would be non-general to not do that.
 
 ? - If we allow `seq[T]` what about their functions?
 e.g.
