@@ -87,7 +87,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 06. **Struct type**: `Point := {x: int, y:int, data: float}` (Like `struct` in C)
 07. **Struct literal**: `location := Point{x:10, y:20, data:1.19}`
 08. **Composition**: `Circle := {Shape, radius: float}` (`Circle` embeds fields of `Shape`)
-09. **Generics**: `IntStack := $["/core/Stack(int)"].Type` (Generics are defined as templated modules)
+09. **Generics**: `IntStack := !("/core/Stack(int)").Type` (Generics are defined as templated modules)
 10. **Union type**: `MaybeInt := int | nothing` (Can store either of possible types)
 11. **Function**: `calculate: func(int,int)->float := (x, y) -> float { return x/y  }`
 12. **Concurrency**: `result :== processData(x,y,z)` (Evaluate an expression in parallel)
@@ -317,7 +317,7 @@ You can call `fn` like a normal function with an input which should be any of po
 2. `Circle := { Shape, radius: float}`
 3. `my_circle := Circle{id:100, radius:1.45}`
 4. `AllShapes := ^Shape`
-5. `someShapes:AllShapes := [myCircle, mySquare, myRectangle, myTriangle]`
+5. `someShapes:AllShapes := [myCircle mySquare myRectangle myTriangle]`
 
 ## Extended primitive types
 
