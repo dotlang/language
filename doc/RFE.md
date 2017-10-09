@@ -4402,110 +4402,12 @@ It must be `socket[t].dot`.
 But the type inside the module must not be lowercase.
 Easiest solution: Just keep it this way. Use lower-cased type name in module file name.
 
-? - Add a section "Why dot" and say conditions which rule out competitors.
-Like "Why zimbu" in http://www.zimbu.org/
+N - A function can also import modules into it's own direct or indirect ns.
+But it cannot embed them. So `!("socket")` is not valid inside a function. The output must be assigned either to `_` (indirect) or to an identifier (direct).
 
+Y - direct/indirect -> explicit/implicit
 
-
-? - How should an import path be resolved and where should the data be looked up or saved?
-suppose we have `import /a/b/c` Where should we look for a directory?
-option 1: The location we run the compiler (pwd): `pwd/deps/a/b/c`
-option 2: Use env-var
-option 3: You can use option 1 + an optional argument to the compiler for root path.
-by using option 3, we can have a shared deps dir for multiple projects.
-
-? - How can we work on multiple interrelated projects at the same time?
-How can we have different versions of the same dependency?
-What if we need libA any version and libB but libB needs a specific version of libA?
-
-? - What about versioning?
-We can write a custom function which can be used to decide whether a specific branch/tag can be used for import.
-`import "github/apache/cassandra/thisOrLater("1.4"`?
-Or use star:
-`import "github/apache/cassandra/v1.*.*"`
-star means in this place there will be one or more numbers. Choose the largest one.
-
-? - With this new generics design, what happens to `seq`?
-Or `func` or `wchan` or `rchan`?
-`x : seq[int] := [1 2 3 4]`
-`x : $["seq[int]"].Type := [1 2 3 4]`
-Can we say `seq[int]` is a shortcut for `$["seq[int]"].Type`?
-Anything that I use here, should be applicable to other types too.
-```
-#seq[T].dot file, assume seq is implemented as a linked-list
-type T := int
-type Type := {data: T, next: Type}
-```
-Then usage:
-`SeqInt := $["/core/seq[string]"].Type`
-option 1: define `X[T]` a shortcut for `$[X[T]].Type`. But it won't be much useful for other cases. Because they will need a path for their module.
-option 2: Do not use `seq[int]` notation.
-Using `A[B]` notation for a type will be source of confusion which we want to avoid by using module template.
-Because then we can use `A[B[C[D]]]]` and ...
-`x1: seq[seq[int]]`
-`x2: wchan[seq[int]]`
-`x3: rchan[seq[seq[int]]]`
-`x1t := $["seq"]`
-`x1: x1t.Type`
-If we want to be consistent, we must use the same approach and don't take an exception for seq and chans.
-We define sequence type just like other types that a developer will define.
-`SeqInt := $["seq[int]"]`.
-For literals, compiler will handle the type generation when it should be implied.
-`SeqInt := $["seq[int]"].Type`.
-`ss: SeqInt := [1 2 3 4]`
-`SeqInt2 := $["seq(SeqInt)"].Type`.
-But this is difficult to type and everytime, user must import seq or chans and use their type.
-Even in go, you can define these generic types easily.
-Another option: Use similar syntax `()` but without extra notation:
-`x: seq(int) := [1 2 3]`
-`y: wchan(string) ...`
-Note that this can be confused with function call.
-option 1: define `X[T]` a shortcut for `$[X[T]].Type`. But it won't be much useful for other cases. Because they will need a path for their module. So mentioning `seq[int]` will automatically import corresponding functions into indirect namespace.
-And this is only valid for seq, wchan, rchan.
-and map?
-
-? - Suppose we have this struct:
-`XS := {x:int, y:int := 10}`
-Can people change value of y when they create instances of XS?
-yes: they should be able to change upon creation.
-no: setting value for a field means it is a constant that can never change.
-
-? - Shall we add `map` as another built-in?
-Then we can throw away the syntax for compound literals.
-can we implement map with existing mechanisms? yes. but then it will not enjoy the compiler helpers that seq has.
-```
-m: map[string, int] := ["A",1 "B",2 "C",3]
-#vs
-MyType := !("map[string, int]").Type
-m: MyType := ["A",1 "B",2 "C",3]
-```
-Another option: Force to import even seq and core but provide syntax sugars
-`MapType := !("map[string, int]").Type`
-Shortcut: Instead of above you can write: `map[strig, int]`. But this is not good as it is not general.
-
-? - For example `length` function can work on seq. If we want to use it on `seq[Customer]` shall we import `/core/length_utils[Customer"]` module?
-It would be difficult to do that and it would be non-general to not do that.
-
-? - If we allow `seq[T]` what about their functions?
-e.g.
-`r,w := createChannel[int](...)`
-option 1: Make type one of the arguments: `r,w := createChannel(@[int], ...);`
-and compiler will handle to have it's output channel of int.
-it can make life more difficult for readers because type or r,w may not be very clear.
-option 2: replace function with syntax. 
-anyway we will have lots of array/map related functions. we need to come up with a consistent solution.
-proposal: functions are just like normal functions but compiler will import appropriate functions for us. 
-So we cannot write `createChannel[int]`. We should write `createChannel` and make the expected output type explicit.
-So let's say: Eveything in core is like normal code but compiler will import appropriate functions for you.
-So something like: extract method which extracts part of a sequence, it is generic. So it is defined like:
-```
-type T := ...
-extract := (x: seq[T], start: int, end: int)->seq[T] ...
-```
-Similarly, sequence, wchan and rchan are defined in core in some semi-dot modules. But compiler will import them for us.
-As a result, if a function is already imported which is `extract` for int sequence from some non-core module, compiler will not import from core.
-
-? - There are two ways to declare a struct: inline and module.
+Y - There are two ways to declare a struct: inline and module.
 intline: `Customer := {name:string, age:int}`
 module: in a separate file, no need for comma
 ```
@@ -4519,13 +4421,13 @@ module: `my_customer := !("customer"){name:"A", age:30}`
 module another way: `CustomerType := !("customer")`
 `my_customer := CustomerType{name:"A", age:30}`
 
-? - A module provides a number of types and bindings. Those bindings can be abstract `name: string` or concrete `name: string := "ali"`. When you import a module, you have a type. You can initialize new bindigns based on that type and during that operation, you can provide values for abstract bindings.
+Y - A module provides a number of types and bindings. Those bindings can be abstract `name: string` or concrete `name: string := "ali"`. When you import a module, you have a type. You can initialize new bindigns based on that type and during that operation, you can provide values for abstract bindings.
 
-? - There are two types of bindings: Concrete and abstract.
+N - There are two types of bindings: Concrete and abstract.
 Concrete has a value but abstract does not.
 When you create a binding of type struct, you must provide value for abstract bindings and must not provide value for concrete bindings.
 
-? - mark items that must be specified when importing the module. This is just like a struct definition where you provide values.
+Y - mark items that must be specified when importing the module. This is just like a struct definition where you provide values.
 `Customer := {name: string, age: int}`
 How can we define a module for sorted list so that it has a generic type + requires compare function?
 ```
@@ -4568,6 +4470,164 @@ proposal: `...` for a type or binding means it must be specified during import, 
 So either direct importer or indirect importer should provide concrete values.
 Also we can use import when providing values in another import.
 
+N - Suppose we have this struct:
+`XS := {x:int, y:int := 10}`
+Can people change value of y when they create instances of XS?
+yes: they should be able to change upon creation.
+no: setting value for a field means it is a constant that can never change.
+
+N - Why we cannot provide generics in struct level?
+```
+Stack := { T, push: func(data:T)->... }
+x: Stack[int]
+```
+It might be possible but to simplify things, it's been decided to have them only at module level.
+
+ - With this new generics design, what happens to `seq`?
+Or `func` or `wchan` or `rchan`?
+`x : seq[int] := [1 2 3 4]`
+`x : $["seq[int]"].Type := [1 2 3 4]`
+Can we say `seq[int]` is a shortcut for `$["seq[int]"].Type`?
+Anything that I use here, should be applicable to other types too.
+```
+#seq[T].dot file, assume seq is implemented as a linked-list
+type T := int
+type Type := {data: T, next: Type}
+```
+Then usage:
+`SeqInt := $["/core/seq[string]"].Type`
+option 1: define `X[T]` a shortcut for `$[X[T]].Type`. But it won't be much useful for other cases. Because they will need a path for their module.
+option 2: Do not use `seq[int]` notation.
+Using `A[B]` notation for a type will be source of confusion which we want to avoid by using module template.
+Because then we can use `A[B[C[D]]]]` and ...
+`x1: seq[seq[int]]`
+`x2: wchan[seq[int]]`
+`x3: rchan[seq[seq[int]]]`
+`x1t := $["seq"]`
+`x1: x1t.Type`
+If we want to be consistent, we must use the same approach and don't take an exception for seq and chans.
+We define sequence type just like other types that a developer will define.
+`SeqInt := $["seq[int]"]`.
+For literals, compiler will handle the type generation when it should be implied.
+`SeqInt := $["seq[int]"].Type`.
+`ss: SeqInt := [1 2 3 4]`
+`SeqInt2 := $["seq(SeqInt)"].Type`.
+But this is difficult to type and everytime, user must import seq or chans and use their type.
+Even in go, you can define these generic types easily.
+Another option: Use similar syntax `()` but without extra notation:
+`x: seq(int) := [1 2 3]`
+`y: wchan(string) ...`
+Note that this can be confused with function call.
+option 1: define `X[T]` a shortcut for `$[X[T]].Type`. But it won't be much useful for other cases. Because they will need a path for their module. So mentioning `seq[int]` will automatically import corresponding functions into indirect namespace.
+And this is only valid for seq, wchan, rchan.
+and map?
+
+N - New notation for sequence `[int]` and map `[int,string]`
+Maybe we should also stress on ease of use: writing code more easily.
+So things like forcing to import a module in core for each type of sequence user wants to use is not a good idea.
+Maybe we can use this notation:
+`[int]` for a sequence of int
+`[int, string]` for a map
+Not having to use `seq` or `map` keywords makes it a bit more separate from normal generics syntax.
+`x: [int] = [1 2 3 4]`
+`y:[string, int] = ["A",1 "B",2 ...]`
+So why they cannot have 3 items?
+`z: [string, int, int] = ["A",1,2 "B",4,3 ...]`
+What does this mean? How can you read it back?
+pro: Just like struct and union, seq and map will use notation. Not identifiers.
+pro: It won't be confusing with generics notation.
+pro: easier to type.
+But still for functions which are generic (like let), we need some exceptions. So user does not need to import them for each type they use.
+`z: [string, int, int] = ["A",1,2 "B",4,3 ...]`
+`z: [string, {int, int}] = ["A",${1,2} "B",{3,4} ...]`
+`z.["A"].0`
+`z.["A"].1`
+what about 2d array?
+`x: [[int]]`
+`x.[0].[1]`
+`[string, {int, int}]` is a better notation because it build on existing notations and also does not raise the quetion of using 3,4,... items. We only have 2 items.
+
+N - What about notation for wchan and rchan? `int+`, `int-`
+`w: wchan[int] = ...`? `w.[data]` writing to w-o channel
+`x: rchan[int] = ...` `data := x.[]` reading from r-o channel
+`x: =int>` r/o channel
+`y: =int<` w/o channel
+`x: %int` r/o channel
+`y: %%int` w/o channel
+why not use generic import? it will be hard to read and write. We want to make it easy.
+`x: int[]` r/o channel
+`y: []int` w/o channel
+`x: int[]` r/o channel
+`y: []int` w/o channel
+`int, float, char, string, [int], [int, string] (int) (int)`
+What about `()`?
+`(int)` w/o channel
+`)int(` r/o channel
+`int+` w/o
+`int-` r/o
+`x: int+ ...`, `x.[10]`
+`y: int- ...`, `data := y.[]`
+`z := (int+).{ch}`
+
+N - Shall we add `map` as another built-in?
+Then we can throw away the syntax for compound literals.
+can we implement map with existing mechanisms? yes. but then it will not enjoy the compiler helpers that seq has.
+```
+m: map[string, int] := ["A",1 "B",2 "C",3]
+#vs
+MyType := !("map[string, int]").Type
+m: MyType := ["A",1 "B",2 "C",3]
+```
+Another option: Force to import even seq and core but provide syntax sugars
+`MapType := !("map[string, int]").Type`
+Shortcut: Instead of above you can write: `map[strig, int]`. But this is not good as it is not general.
+
+N - For example `length` function can work on seq. If we want to use it on `seq[Customer]` shall we import `/core/length_utils[Customer"]` module?
+It would be difficult to do that and it would be non-general to not do that.
+
+N  - If we allow `seq[T]` what about their functions?
+e.g.
+`r,w := createChannel[int](...)`
+option 1: Make type one of the arguments: `r,w := createChannel(@[int], ...);`
+and compiler will handle to have it's output channel of int.
+it can make life more difficult for readers because type or r,w may not be very clear.
+option 2: replace function with syntax. 
+anyway we will have lots of array/map related functions. we need to come up with a consistent solution.
+proposal: functions are just like normal functions but compiler will import appropriate functions for us. 
+So we cannot write `createChannel[int]`. We should write `createChannel` and make the expected output type explicit.
+So let's say: Eveything in core is like normal code but compiler will import appropriate functions for you.
+So something like: extract method which extracts part of a sequence, it is generic. So it is defined like:
+```
+type T := ...
+extract := (x: seq[T], start: int, end: int)->seq[T] ...
+```
+Similarly, sequence, wchan and rchan are defined in core in some semi-dot modules. But compiler will import them for us.
+As a result, if a function is already imported which is `extract` for int sequence from some non-core module, compiler will not import from core.
+
+==============
+
+? - Add a section "Why dot" and say conditions which rule out competitors.
+Like "Why zimbu" in http://www.zimbu.org/
+
+? - How should an import path be resolved and where should the data be looked up or saved?
+suppose we have `import /a/b/c` Where should we look for a directory?
+option 1: The location we run the compiler (pwd): `pwd/deps/a/b/c`
+option 2: Use env-var
+option 3: You can use option 1 + an optional argument to the compiler for root path.
+by using option 3, we can have a shared deps dir for multiple projects.
+
+? - How can we work on multiple interrelated projects at the same time?
+How can we have different versions of the same dependency?
+What if we need libA any version and libB but libB needs a specific version of libA?
+
+? - What about versioning?
+We can write a custom function which can be used to decide whether a specific branch/tag can be used for import.
+`import "github/apache/cassandra/thisOrLater("1.4"`?
+Or use star:
+`import "github/apache/cassandra/v1.*.*"`
+star means in this place there will be one or more numbers. Choose the largest one.
+
+
 ? - In struct update change `:` to `:=` because it makes more sense. Also in literal.
 `Customer := {name: string, age: int}`
 ```
@@ -4576,13 +4636,25 @@ name: string
 age: int
 ```
 
-? - A function can also import modules into it's own direct or indirect ns.
-But it cannot embed them. So `!("socket")` is not valid. The output must be assigned either to `_` (indirect) or to an identifier (direct).
-
 ? - Default is import into indirect namespace.
 But this will result in lots of name duplicates: suppose we import stack and queue. probably they both have a type `t` which is their generic type. How are we supposed to handle this?
 The rule is: As long as you don't refer to a type or binding, no check for conflict will be done. So when you import another module, into direct or indirect ns, they will live separate from other modules. When you refer to something, if at any stage in the search there is more than one candidate, there will be compiler error.
 So compiler will search direct ns in current func, then current struct, then parent struct, ..., then module.
 If not found, it will do the same for indirect (indirect ns in current func, current struct, ..., module).
 
-? - direct/indirect -> explicit/implicit
+? - Review whole spec for new changes in module system and generics
+
+? - When defining uninitialized fields, we write `name: string` but what about types?
+For generics.
+`x: int`
+`y`
+
+? - Is there a better solution for case change in type definition and module file name?
+
+? - New notations for primitives: 
+sequence `[int]` 
+map `[string, int]`
+wchan: `int+`
+rchan: `int-`
+
+? - How can we define a generic type without implying it is embedded into the module's struct type?
