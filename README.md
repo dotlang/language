@@ -721,7 +721,7 @@ x:int := [100 200].[a>0]
 1. `Comparer := { compare: func(int,int)->bool }`
 2. `sort := (x: seq[int], f: Comparer)->seq[int] { ... }`
 3. `sort(myIntArray, Comparer.{})`
-4. `sort(myIntArray, Comparer.{$["/core/HelperFuncs"]})`
+4. `sort(myIntArray, Comparer.{!("/core/HelperFuncs")})`
 
 # Examples
 
