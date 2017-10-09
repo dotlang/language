@@ -4483,7 +4483,7 @@ x: Stack[int]
 ```
 It might be possible but to simplify things, it's been decided to have them only at module level.
 
- - With this new generics design, what happens to `seq`?
+N - With this new generics design, what happens to `seq`?
 Or `func` or `wchan` or `rchan`?
 `x : seq[int] := [1 2 3 4]`
 `x : $["seq[int]"].Type := [1 2 3 4]`
@@ -4622,6 +4622,76 @@ name: string
 age: int
 ```
 
+Y - Using space for separator is not good.
+`result := [data () -> processBigBuffer(buffer)].[condition].()`
+Here `()` and `->` can be separated with space which makes reading the code difficult.
+Let's rever back to comma.
+`x := [1,2,3,4]` sequence
+`y := ["A",1, "B",2, "C",3]` map
+
+Y - To make things more consistent use `$` prefix for sequence and map literals too.
+`{}` is also used for function and lambda. That's why `$` is used for discrimination.
+`[]`? Is used for sequence and map type. Something like `[A,B]` is a map type definition.
+option 1: use `$` for seq and map literlas and `[]` to refer
+option 2: No prefix for literals but `.[]` to refer.
+Having `$` prefix does not fit well with `&` operator to merge sequences.
+
+Y - Can we use `[]` instead of `.[]`?
+`x[0]`
+`rch[]`
+`wch[10]`
+Applications of `[]`: module filename for generics, define sequence and map type, define sequence and map literal.
+1. filename
+2. `[int]` `[int, string]`
+3. `[1 2 3]`
+4. `[1,2 3,4 5,6]`
+So `A[b,c,d]` will be translated to a call to `process(A,a,b,c,d)` which for seq and map has it's own impl.
+Then, can we eliminate `.()` and `.{}`? For the second one, no. We need casting operator.
+Can we replace `.()` with `[]`?
+So calling process on a function pointer will invoke it. Otherwise, nothing will happen.
+`result := [data, () -> processBigBuffer(buffer)].[condition].()`
+But `[]` has another meaning for reading from channels too.
+`result := [data,() -> processBigBuffer(buffer)].[condition].()`
+Let's keep `.()`
+Problem: When I see `[1,2]` it is custom process call or it's a sequence literal?
+It depends on what comes before this.
+`[1][2][3]` 1 is sequence, 2 and 3 are custom process
+
+Y - Remove `$` for struct literals.
+What confusion can it bring?
+With what can it be confused?
+Lambda? They have `->` before them.
+
+Y - Generics type: No need to declare them, add all lowercase to the file name and use all capital in the code. No separator is allowed.
+When defining uninitialized fields, we write `name: string` but what about types?
+For generics.
+`x: int`
+`y`
+`MyInt := ...`
+How can we define a generic type without implying it is embedded into the module's struct type?
+Is there a better solution for case change in type definition and module file name?
+Maybe we can solve both problems with one move:
+If type does not have value and it is generic, do not mention it in the module. Because then it will mean it is embedded.
+Instead, add it to the file-name. 
+`stack.dot` becomes `stack[t].dot`
+Then use `T` type freely in your code. Compiler will know that t type will be provided when importing this module.
+If they do not provide value for T, there will be compiler errors.
+Anything inside `[]` after module name, can be assumed to be defined in the code as a type.
+`stack[t].dot`
+proposal: For these types, they must be all capital in the code. Also these must be one word identifiers, there is no separator.
+pro: more readable and explicit
+pro: problem of case is somehow solved. in filename all lowercase in code capital
+
+Y - New notations for primitives: 
+sequence `[int]` 
+map `[string, int]`
+wchan: `int+`
+rchan: `int-`
+
+Y - `T-` can be a bit confusing when combined with other things.
+`T?` for reader
+`T!` for writer
+
 ==============
 
 ? - Add a section "Why dot" and say conditions which rule out competitors.
@@ -4645,61 +4715,10 @@ Or use star:
 `import "github/apache/cassandra/v1.*.*"`
 star means in this place there will be one or more numbers. Choose the largest one.
 
-? - Generics type: No need to declare them, add all lowercase to the file name and use all capital in the code. No separator is allowed.
-When defining uninitialized fields, we write `name: string` but what about types?
-For generics.
-`x: int`
-`y`
-`MyInt := ...`
-How can we define a generic type without implying it is embedded into the module's struct type?
-Is there a better solution for case change in type definition and module file name?
-Maybe we can solve both problems with one move:
-If type does not have value and it is generic, do not mention it in the module. Because then it will mean it is embedded.
-Instead, add it to the file-name. 
-`stack.dot` becomes `stack[t].dot`
-Then use `T` type freely in your code. Compiler will know that t type will be provided when importing this module.
-If they do not provide value for T, there will be compiler errors.
-Anything inside `[]` after module name, can be assumed to be defined in the code as a type.
-`stack[t].dot`
-proposal: For these types, they must be all capital in the code. Also these must be one word identifiers, there is no separator.
-pro: more readable and explicit
-pro: problem of case is somehow solved. in filename all lowercase in code capital
-
-
-? - New notations for primitives: 
-sequence `[int]` 
-map `[string, int]`
-wchan: `int+`
-rchan: `int-`
 
 ? - Review manual and Check order of the manual. Now modules refer to structs. Maybe we should mention them after structs.
+Changed/new notations: `!, $, ?` generics, modules, sequence and map type and literals, channels, 
 
-? - To make things more consistent use `$` prefix for sequence and map literals too.
-`{}` is also used for function and lambda. That's why `$` is used for discrimination.
-`[]`? Is used for sequence and map type. Something like `[A,B]` is a map type definition.
-
-? - Can we use `[]` instead of `.[]`?
-`x[0]`
-`rch[]`
-`wch[10]`
-Applications of `[]`: module filename for generics, define sequence and map type, define sequence and map literal.
-1. filename
-2. `[int]` `[int, string]`
-3. `[1 2 3]`
-4. `[1,2 3,4 5,6]`
-So `A[b,c,d]` will be translated to a call to `process(A,a,b,c,d)` which for seq and map has it's own impl.
-Then, can we eliminate `.()` and `.{}`? For the second one, no. We need casting operator.
-Can we replace `.()` with `[]`?
-So calling process on a function pointer will invoke it. Otherwise, nothing will happen.
-`result := [data, () -> processBigBuffer(buffer)].[condition].()`
-But `[]` has another meaning for reading from channels too.
-`result := [data,() -> processBigBuffer(buffer)].[condition].()`
-Let's keep `.()`
-
-? - Using space for separator is not good.
-`result := [data () -> processBigBuffer(buffer)].[condition].()`
-Here `()` and `->` can be separated with space which makes reading the code difficult.
-Let's rever back to comma.
-`x := [1,2,3,4]` sequence
-`y := ["A",1, "B",2, "C",3]` map
-
+? - Review the new modules notation and how it works with struct. 
+What is different and what is common? Also about function's ns.
+Explain lookup mechanism for type and symbol names.
