@@ -170,9 +170,10 @@ These rules are highly advised but not mandatory.
 
 **Notes**
 
-1. Basically, modules are untyped structs. You use `!` compile-time function import them into a namespace or as a named type.
-2. Each module (and struct) has two namespaces: Direct and indirect. If you ignore result of `!` using `_` it will be imported into indirect namespace. If you embed it's output, it will be in direct namespace. Direct namespace consitsts of definitions which are explicitly mentioned inside a struct or module. Indirect namespace is definitions which are imported and ignored using `_` (So they are not part of direct namespace but still available).
-3. When using a binding or type, first direct namespace then indirect namespace will be searched in a hierarchical manner (Current struct, parent struct, ..., module) respectively. 
+1. Basically, modules are untyped structs defined in their own separate file.
+2. You use `!` compile-time function import them into a namespace or as a named type.
+2. Each module (and struct) has two namespaces: Explicit and implicit. If you ignore result of `!` using `_` it will be imported into implicit namespace. If you embed it's output, it will be in explicit namespace. Explicit namespace consitsts of definitions which are explicitly mentioned inside a struct or module. Implicit namespace is definitions which are imported and ignored using `_` (So they are not part of explicit namespace but still available).
+3. When using a binding or type, first explicit namespace then implicit namespace will be searched in a hierarchical manner (Current struct, parent struct, ..., module) respectively. 
 4. You can also assign output of `!` to a new named type (Example 2). If you import multiple modules they will all be merged (Example 5).
 5. `/` in the beginning is a shortcut for `file/`. Namespace path starts with a protocol which determines the location of the file for a namespace. You can also use other namespace protocols like `Github` (Example 6).
 6. You can import multiple modules (with the same prefix) using notation in Example 4.
@@ -183,9 +184,9 @@ These rules are highly advised but not mandatory.
 
 **Examples**
 
-1. `!("/core/st/Socket") #embed into current module's direct namespace`
+1. `!("/core/st/Socket") #embed into current module's explicit namespace`
 2. `SocketType := !("/core/st/Socket") #assign to a new named type`
-3. `_ := !("/core/st/Socket") #import into indirect namespace`
+3. `_ := !("/core/st/Socket") #import into implicit namespace`
 4. `_ := !("/core/std/{Queue, Stack, Heap}")`
 5. `MergedType := !("/core/std/{Queue, Stack, Heap}")`
 6. `MyModule := !("git/github.com/net/server/branch1/dir1/dir2/module")`
@@ -271,6 +272,7 @@ You can call `fn` like a normal function with an input which should be any of po
 **Notes**
 
 1. Struct represents a set of related bindings and types.
+2. There are two ways to declare a struct: inline and using module. This section explains inline (defining struct inside a module). The module method is explained in `import` section where you write struct contents inside a file of it's own.
 1. Example 1 defines a named type for a 2-D point and next 2 examples show how to initialize variables of that type. See "Named Types" section for more info about named types.
 2. If you define an untyped literal (Example 4), you can access its component by destruction (Example 6).
 3. Examples 6 and 7 show how to destruct a struct and extract its data.
@@ -278,6 +280,7 @@ You can call `fn` like a normal function with an input which should be any of po
 5. Example 10 indicates you cannot choose field names for an untyped struct literal.
 6. You can use `.0,.1,.2,...` notation to access fields inside an untyped tuple (Example 11).
 7. Example 12 shows defining a type inside a struct and example 13 shows how to refer to it.
+8. When you create a new instance of a struct, you cannot change value of bindings which already have their own value and also you must initialize bindings that do not have assigned value. This can be used to enforce expected interface for a generic type. (Example 14)
 
 **Examples**
 
@@ -294,6 +297,7 @@ You can call `fn` like a normal function with an input which should be any of po
 11. `x := point1.1`
 12. `Customer := { name: string, age: int, CustomerId := int }`
 13. `g: Customer.CustomerId := 100`
+14. `compare: func(x:T, y:T)->int #A binding without value means user should provide a value when importing`
 
 ### Composition
 
@@ -399,7 +403,9 @@ You can call `fn` like a normal function with an input which should be any of po
 2. Anything inside `[]` in module path, will be processed by the compiler to generate module code, based on the given arguments.
 3. When importing a generic module, you can either import `module_name[T]` which will import using default type defined inside the module code, or replace `T` parameter with a valid type (e.g. `module_name(int)`).
 4. You can specialize a generic module for known types by writing appropriately named module file (e.g. `module_name[string].dot`).
-5. You don't need to follow this notation for built-in types: `seq`, `wchan` and `rcan`
+5. You don't need to follow this notation for built-in types: `seq`, `wchan` and `rcan`.
+6. When you import a module, you must provide values for bindings that do not have value and types for generic types.
+
 **Example**
 
 1. `IntStackModule := !("/core/Stack[int])"`
