@@ -85,7 +85,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 04. **Sequence**: `scores:seq[int] := [1 2 3 4]` (Similar to array).
 05. **Named type**: `MyInt := int` (Defines a new type with same binary representation as `int`).
 06. **Struct type**: `Point := {x: int, y:int, data: float}` (Like `struct` in C)
-07. **Struct literal**: `location := Point{x:10, y:20, data:1.19}`
+07. **Struct literal**: `location := Point{x:=10, y:=20, data:=1.19}`
 08. **Composition**: `Circle := {Shape, radius: float}` (`Circle` embeds fields of `Shape`)
 09. **Generics**: `IntStack := !("/core/Stack(int)").Type` (Generics are defined as templated modules)
 10. **Union type**: `MaybeInt := int | nothing` (Can store either of possible types)
@@ -103,6 +103,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 07. `->`  Function declaration
 08. `..`  Range generator for sequence literal
 09. `//`  Nothing-check operator
+10. `!`   Import one or more modules
 10. `$`   Prefix for struct literals
 11. `:`   Type declaration for struct, function inputs and bindings, struct literals
 12. `:=`  Binding declaration, named types
@@ -181,6 +182,8 @@ These rules are highly advised but not mandatory.
 8. It is an error if as a result of imports, there are two exactly similar bindings or types (same name and type) in use. In this case, only none of conflicting bindings will be available for use.
 9. You can import from a specific branch and use a binding to build import path (Example 7 and 8).
 10. You have to add a branch/tag/commit name after repository name when importing from GitHub.
+11. You can have namespaces in structs and functions. 
+
 
 **Examples**
 
@@ -264,10 +267,10 @@ You can call `fn` like a normal function with an input which should be any of po
 **Syntax**: 
 
 1. Declaration: `{field1: type1, field2: type2, field3: type3, ..., TypeName1 := TypeDecl, TypeName2 := TypeDecl2, ...}` 
-2. Typed Literal: `Type{field1:value1, field2:value2, ...}` 
+2. Typed Literal: `Type{field1:=value1, field2:=value2, ...}` 
 3. Typed Literal: `Type{value1, value2, value3, ...}` 
 4. Untyped literal: `${value1, value2, value3, ...}` 
-5. Update a struct: `original_var{field1:new_value1, field2:new_value2, ...}` 
+5. Update a struct: `original_var{field1:=new_value1, field2:=new_value2, ...}` 
 
 **Notes**
 
@@ -285,15 +288,15 @@ You can call `fn` like a normal function with an input which should be any of po
 **Examples**
 
 1. `Point := {x:int, y:int}`
-2. `point2 := Point{x:100, y:200}`
+2. `point2 := Point{x:=100, y:=200}`
 3. `point3 := Point{100, 200}`
 4. `point1 := ${100, 200}`
-5. `point4 := point3{y:101}`
+5. `point4 := point3{y:=101}`
 6. `x,y := point1`
 7. `x,y := ${100,200}`
-8. `another_point := Point{x:11, y:my_point.y + 200}`
+8. `another_point := Point{x:=11, y:=my_point.y + 200}`
 9. `another_point := my_point`
-10. `new_point := ${a:100, b:200} //WRONG!`
+10. `new_point := ${a:=100, b:=200} //WRONG!`
 11. `x := point1.1`
 12. `Customer := { name: string, age: int, CustomerId := int }`
 13. `g: Customer.CustomerId := 100`
@@ -451,6 +454,7 @@ You can call `fn` like a normal function with an input which should be any of po
 13. Parentheses are required when calling a function, even if there is no input.
 14. You can prefix `return` with a conditional, enclosed in parentheses. Return will be triggered only if the condition is satisfied (Example 10).
 15. If function output is a single identifier, you can omit parentheses in output type, otherwise they are mandatory (Example 11).
+16. You can also import a module into a functions implicit namespace. Functions cannot have explicit namespace because they cannot contain definitions. You can either use a named type to hold an import or assign it to implicit namespace.
 
 **Examples**
 
@@ -918,6 +922,6 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.96**: Jun 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: Jun 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` place holder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is typed statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
-- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, Modules are structs (remove `import` keyword and replaced with `!` operator), re-defined generics using module-level types
+- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, Modules are structs (remove `import` keyword and replaced with `!` operator), re-defined generics using module-level types, introduced explicit and implicit namespaces for structs and functions.
 
 
