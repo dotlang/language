@@ -4546,6 +4546,7 @@ what about 2d array?
 `x: [[int]]`
 `x.[0].[1]`
 `[string, {int, int}]` is a better notation because it build on existing notations and also does not raise the quetion of using 3,4,... items. We only have 2 items.
+Moved to summary note.
 
 N - What about notation for wchan and rchan? `int+`, `int-`
 `w: wchan[int] = ...`? `w.[data]` writing to w-o channel
@@ -4568,6 +4569,7 @@ What about `()`?
 `x: int+ ...`, `x.[10]`
 `y: int- ...`, `data := y.[]`
 `z := (int+).{ch}`
+Moved to summary note.
 
 N - Shall we add `map` as another built-in?
 Then we can throw away the syntax for compound literals.
@@ -4581,6 +4583,7 @@ m: MyType := ["A",1 "B",2 "C",3]
 Another option: Force to import even seq and core but provide syntax sugars
 `MapType := !("map[string, int]").Type`
 Shortcut: Instead of above you can write: `map[strig, int]`. But this is not good as it is not general.
+Moved to summary note.
 
 N - For example `length` function can work on seq. If we want to use it on `seq[Customer]` shall we import `/core/length_utils[Customer"]` module?
 It would be difficult to do that and it would be non-general to not do that.
@@ -4602,7 +4605,22 @@ type T := ...
 extract := (x: seq[T], start: int, end: int)->seq[T] ...
 ```
 Similarly, sequence, wchan and rchan are defined in core in some semi-dot modules. But compiler will import them for us.
-As a result, if a function is already imported which is `extract` for int sequence from some non-core module, compiler will not import from core.
+As a result, if a function is already imported which is `extract` for int sequence from some non-core module, compiler will not import from core. 
+
+Y - Default is import into indirect namespace.
+But this will result in lots of name duplicates: suppose we import stack and queue. probably they both have a type `t` which is their generic type. How are we supposed to handle this?
+The rule is: As long as you don't refer to a type or binding, no check for conflict will be done. So when you import another module, into direct or indirect ns, they will live separate from other modules. When you refer to something, if at any stage in the search there is more than one candidate, there will be compiler error.
+So compiler will search direct ns in current func, then current struct, then parent struct, ..., then module.
+If not found, it will do the same for indirect (indirect ns in current func, current struct, ..., module).
+Only structs have a namespace.
+
+Y - In struct update change `:` to `:=` because it makes more sense. Also in literal.
+`Customer := {name: string, age: int}`
+```
+#customer.dot
+name: string
+age: int
+```
 
 ==============
 
@@ -4627,29 +4645,26 @@ Or use star:
 `import "github/apache/cassandra/v1.*.*"`
 star means in this place there will be one or more numbers. Choose the largest one.
 
-
-? - In struct update change `:` to `:=` because it makes more sense. Also in literal.
-`Customer := {name: string, age: int}`
-```
-#customer.dot
-name: string
-age: int
-```
-
-? - Default is import into indirect namespace.
-But this will result in lots of name duplicates: suppose we import stack and queue. probably they both have a type `t` which is their generic type. How are we supposed to handle this?
-The rule is: As long as you don't refer to a type or binding, no check for conflict will be done. So when you import another module, into direct or indirect ns, they will live separate from other modules. When you refer to something, if at any stage in the search there is more than one candidate, there will be compiler error.
-So compiler will search direct ns in current func, then current struct, then parent struct, ..., then module.
-If not found, it will do the same for indirect (indirect ns in current func, current struct, ..., module).
-
-? - Review whole spec for new changes in module system and generics
-
-? - When defining uninitialized fields, we write `name: string` but what about types?
+? - Generics type: No need to declare them, add all lowercase to the file name and use all capital in the code. No separator is allowed.
+When defining uninitialized fields, we write `name: string` but what about types?
 For generics.
 `x: int`
 `y`
+`MyInt := ...`
+How can we define a generic type without implying it is embedded into the module's struct type?
+Is there a better solution for case change in type definition and module file name?
+Maybe we can solve both problems with one move:
+If type does not have value and it is generic, do not mention it in the module. Because then it will mean it is embedded.
+Instead, add it to the file-name. 
+`stack.dot` becomes `stack[t].dot`
+Then use `T` type freely in your code. Compiler will know that t type will be provided when importing this module.
+If they do not provide value for T, there will be compiler errors.
+Anything inside `[]` after module name, can be assumed to be defined in the code as a type.
+`stack[t].dot`
+proposal: For these types, they must be all capital in the code. Also these must be one word identifiers, there is no separator.
+pro: more readable and explicit
+pro: problem of case is somehow solved. in filename all lowercase in code capital
 
-? - Is there a better solution for case change in type definition and module file name?
 
 ? - New notations for primitives: 
 sequence `[int]` 
@@ -4657,4 +4672,4 @@ map `[string, int]`
 wchan: `int+`
 rchan: `int-`
 
-? - How can we define a generic type without implying it is embedded into the module's struct type?
+? - Review manual and Check order of the manual. Now modules refer to structs. Maybe we should mention them after structs.
