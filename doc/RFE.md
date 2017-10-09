@@ -4504,3 +4504,85 @@ extract := (x: seq[T], start: int, end: int)->seq[T] ...
 ```
 Similarly, sequence, wchan and rchan are defined in core in some semi-dot modules. But compiler will import them for us.
 As a result, if a function is already imported which is `extract` for int sequence from some non-core module, compiler will not import from core.
+
+? - There are two ways to declare a struct: inline and module.
+intline: `Customer := {name:string, age:int}`
+module: in a separate file, no need for comma
+```
+#customer.dot
+name: string
+age: int
+```
+usage:
+inline: `x: Customer := Customer{name:"A", age:30}`
+module: `my_customer := !("customer"){name:"A", age:30}`
+module another way: `CustomerType := !("customer")`
+`my_customer := CustomerType{name:"A", age:30}`
+
+? - A module provides a number of types and bindings. Those bindings can be abstract `name: string` or concrete `name: string := "ali"`. When you import a module, you have a type. You can initialize new bindigns based on that type and during that operation, you can provide values for abstract bindings.
+
+? - There are two types of bindings: Concrete and abstract.
+Concrete has a value but abstract does not.
+When you create a binding of type struct, you must provide value for abstract bindings and must not provide value for concrete bindings.
+
+? - mark items that must be specified when importing the module. This is just like a struct definition where you provide values.
+`Customer := {name: string, age: int}`
+How can we define a module for sorted list so that it has a generic type + requires compare function?
+```
+#ordered_item[t].dot
+t := int
+compare := (a:t)->int ...
+
+#ordered_set[t].dot
+t := int
+_ := !("ordered_item[t]")
+OrderedSet := { ... }
+add := (x:t, s: OrderedSet)-> { ... }
+
+#main.dot
+Customer := { ... }
+compare := (a:Customer)->int ...
+_ := !("ordered_items[Customer]")
+```
+solution 1: You should be able to override bindings in a module when importing it. So you can re-write compare function of ordered_item
+solution 2: You can override only empty items. So the ordered_item module, provides empty binding, but main should provide an implementation for that.
+```
+#ordered_item[t].dot
+t := ...
+compare: func(a:t)->int := ...
+
+#ordered_set[t].dot
+t := ...
+_ := !("ordered_item[t]")
+OrderedSet := { ... }
+add := (x:t, s: OrderedSet)-> { ... }
+
+#main.dot
+Customer := { ... }
+
+_ := !("ordered_items[Customer]"){compare := (a:Customer)->int ...}
+#another way: using another import with exactly the same bindings as we expect here
+_ := !("ordered_items[Customer]"){!("default_customer_order")}
+```
+proposal: `...` for a type or binding means it must be specified during import, else it is not callable.
+So either direct importer or indirect importer should provide concrete values.
+Also we can use import when providing values in another import.
+
+? - In struct update change `:` to `:=` because it makes more sense. Also in literal.
+`Customer := {name: string, age: int}`
+```
+#customer.dot
+name: string
+age: int
+```
+
+? - A function can also import modules into it's own direct or indirect ns.
+But it cannot embed them. So `!("socket")` is not valid. The output must be assigned either to `_` (indirect) or to an identifier (direct).
+
+? - Default is import into indirect namespace.
+But this will result in lots of name duplicates: suppose we import stack and queue. probably they both have a type `t` which is their generic type. How are we supposed to handle this?
+The rule is: As long as you don't refer to a type or binding, no check for conflict will be done. So when you import another module, into direct or indirect ns, they will live separate from other modules. When you refer to something, if at any stage in the search there is more than one candidate, there will be compiler error.
+So compiler will search direct ns in current func, then current struct, then parent struct, ..., then module.
+If not found, it will do the same for indirect (indirect ns in current func, current struct, ..., module).
+
+? - direct/indirect -> explicit/implicit
