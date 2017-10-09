@@ -4673,3 +4673,33 @@ wchan: `int+`
 rchan: `int-`
 
 ? - Review manual and Check order of the manual. Now modules refer to structs. Maybe we should mention them after structs.
+
+? - To make things more consistent use `$` prefix for sequence and map literals too.
+`{}` is also used for function and lambda. That's why `$` is used for discrimination.
+`[]`? Is used for sequence and map type. Something like `[A,B]` is a map type definition.
+
+? - Can we use `[]` instead of `.[]`?
+`x[0]`
+`rch[]`
+`wch[10]`
+Applications of `[]`: module filename for generics, define sequence and map type, define sequence and map literal.
+1. filename
+2. `[int]` `[int, string]`
+3. `[1 2 3]`
+4. `[1,2 3,4 5,6]`
+So `A[b,c,d]` will be translated to a call to `process(A,a,b,c,d)` which for seq and map has it's own impl.
+Then, can we eliminate `.()` and `.{}`? For the second one, no. We need casting operator.
+Can we replace `.()` with `[]`?
+So calling process on a function pointer will invoke it. Otherwise, nothing will happen.
+`result := [data, () -> processBigBuffer(buffer)].[condition].()`
+But `[]` has another meaning for reading from channels too.
+`result := [data,() -> processBigBuffer(buffer)].[condition].()`
+Let's keep `.()`
+
+? - Using space for separator is not good.
+`result := [data () -> processBigBuffer(buffer)].[condition].()`
+Here `()` and `->` can be separated with space which makes reading the code difficult.
+Let's rever back to comma.
+`x := [1,2,3,4]` sequence
+`y := ["A",1, "B",2, "C",3]` map
+
