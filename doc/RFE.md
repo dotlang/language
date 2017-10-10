@@ -4715,10 +4715,34 @@ Or use star:
 `import "github/apache/cassandra/v1.*.*"`
 star means in this place there will be one or more numbers. Choose the largest one.
 
-
 ? - Review manual and Check order of the manual. Now modules refer to structs. Maybe we should mention them after structs.
 Changed/new notations: `!, $, ?` generics, modules, sequence and map type and literals, channels, 
 
 ? - Review the new modules notation and how it works with struct. 
 What is different and what is common? Also about function's ns.
 Explain lookup mechanism for type and symbol names.
+
+? - If a module contains a function and we import it as a named type, can we call that function without creating a new instance of that type?
+We should.
+so `a.f` is refering to f field inside struct binding `a`.
+`A.f` is refering to f binding inside named type `A`.
+`A := {x:int, f:=(x:int)->x+1}`
+`y := A.f(10)`
+
+? - two important questions:
+Can we define types inside struct?
+Can we define types inside function?
+Currently answer to both of these is yes.
+Can you define bindings inside a struct?
+```
+Point := {x:int, y:int, process := (x:int)->x+1}
+...
+g := Point.process(10)
+pp := Point{10,20}
+g := pp.process(10)
+```
+So as a summary:
+1. We have types (e.g. struct) and bindings (e.g. functions)
+2. Among types only struct/module and among binsings only functions can contain other things.
+2. You can define bindings and types inside types (structs)
+3. You can define bindings and types inside bindings (functions)
