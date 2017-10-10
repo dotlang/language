@@ -164,42 +164,9 @@ These rules are highly advised but not mandatory.
 5. `a,b := {1, 100}`
 6. `a,_ := {1, 100}`
 
-## import
-
-**Syntax**
-
-`TypeName := $("/path/to/module")`
-
-**Notes**
-
-1. Basically, modules are untyped structs defined in their own separate file.
-2. You use `$` compile-time function import them into a namespace or as a named type.
-2. Each module (and struct) has two namespaces: Explicit and implicit. If you ignore result of `$` using `_` it will be imported into implicit namespace. If you embed it's output, it will be in explicit namespace. Explicit namespace consitsts of definitions which are explicitly mentioned inside a struct or module. Implicit namespace is definitions which are imported and ignored using `_` (So they are not part of explicit namespace but still available).
-3. When using a binding or type, first explicit namespace then implicit namespace will be searched in a hierarchical manner (Current struct, parent struct, ..., module) respectively. 
-4. You can also assign output of `$` to a new named type (Example 2). If you import multiple modules they will all be merged (Example 5).
-5. `/` in the beginning is a shortcut for `file/`. Namespace path starts with a protocol which determines the location of the file for a namespace. You can also use other namespace protocols like `Github` (Example 6).
-6. You can import multiple modules (with the same prefix) using notation in Example 4.
-7. If an import path starts with `./` or `../` means the module path is relative to the current module.
-8. It is an error if as a result of imports, there are two exactly similar bindings or types (same name and type) in use. In this case, only none of conflicting bindings will be available for use.
-9. You can import from a specific branch and use a binding to build import path (Example 7 and 8).
-10. You have to add a branch/tag/commit name after repository name when importing from GitHub.
-11. You can have namespaces in structs and functions. 
-
-
-**Examples**
-
-1. `$("/core/st/Socket") #embed into current module's explicit namespace`
-2. `SocketType := $("/core/st/Socket") #assign to a new named type`
-3. `_ := $("/core/st/Socket") #import into implicit namespace`
-4. `_ := $("/core/std/{Queue, Stack, Heap}")`
-5. `MergedType := $("/core/std/{Queue, Stack, Heap}")`
-6. `MyModule := $("git/github.com/net/server/branch1/dir1/dir2/module")`
-7. `base_cassandra := "github/apache/cassandra/mybranch"`
-8. `_ := $(base_cassandra&"/path/module")`
-
 # Type system
 
-Types are blueprints which are used to create bindings.
+Types are blueprints which are used to create bindings. 
 Two types T1 and T2 are identical/assignable in any of below cases:
 1. Both are named types defined in the same place in the code.
 2. Both are unnamed types with similar definition (e.g. `int|string` vs `int|string` or `seq[int]` vs `seq[int]`).
@@ -279,15 +246,15 @@ You can call `fn` like a normal function with an input which should be any of po
 **Notes**
 
 1. Struct represents a set of related bindings and types.
-2. There are two ways to declare a struct: inline and using module. This section explains inline (defining struct inside a module). The module method is explained in `import` section where you write struct contents inside a file of it's own.
-1. Example 1 defines a named type for a 2-D point and next 2 examples show how to initialize variables of that type. See "Named Types" section for more info about named types.
-2. If you define an untyped literal (Example 4), you can access its component by destruction (Example 6).
-3. Examples 6 and 7 show how to destruct a struct and extract its data.
-4. Example 8 and 9 are the same and show how to define a struct based on another struct.
-5. Example 10 indicates you cannot choose field names for an untyped struct literal.
-6. You can use `.0,.1,.2,...` notation to access fields inside an untyped tuple (Example 11).
-7. Example 12 shows defining a type inside a struct and example 13 shows how to refer to it.
-8. When you create a new instance of a struct, you cannot change value of bindings which already have their own value and also you must initialize bindings that do not have assigned value. This can be used to enforce expected interface for a generic type. (Example 14)
+2. There are two ways to declare a struct: inline and using module. This section explains inline (defining struct inside a module file). The module method is explained in `import` section where you write struct contents inside a file of it's own.
+3. Example 1 defines a named type for a 2-D point and next 2 examples show how to initialize variables of that type. See "Named Types" section for more info about named types.
+4. If you define an untyped literal (Example 4), you can access its component by destruction (Example 6).
+5. Examples 6 and 7 show how to destruct a struct and extract its data.
+6. Example 8 and 9 are the same and show how to define a struct based on another struct.
+7. Example 10 indicates you cannot choose field names for an untyped struct literal.
+8. You can use `.0,.1,.2,...` notation to access fields inside an untyped tuple (Example 11).
+9. Example 12 shows defining a type inside a struct and example 13 shows how to refer to it.
+10. When you create a new instance of a struct, you cannot change value of bindings which already have their own value and also you must initialize bindings that do not have assigned value. This can be used to enforce expected interface for a generic type. (Example 14)
 
 **Examples**
 
@@ -398,6 +365,46 @@ You can call `fn` like a normal function with an input which should be any of po
 6. `x := (func()->T).{t}`
 7. `a, b, c := MyInt.{x,y,z}`
 
+## Modules
+
+We have seen how `struct` is defined and used. There is another way to define a struct: In a module file. In this approach, you don't need to use comma to separate elements inside the struct. You just write contents of the struct (bindings and types) in a module file.
+
+You can import a module inside another module by using `$` compile time function. This function just loads the contents of the module file and provides a struct based on that module. You can do 3 things with result of a call to `$`:
+1. You can ignore it's output, which will cause bindings and types of that module imported into implicit namespace.
+2. You can embed that type which will cause definitions inside that modules, becomes part of the current module or function (Example 1).
+3. You can assign the output to a named type which you can later use (Example 2).
+
+All identifiers (bindings and types) are stored in namespaces. 
+Each type (struct or module) or function has two namespaces: explicit and implicit.
+Explicit namespace is the collection of all identifiers which are explicitly mentioned inside the struct, module or function. Note that inside a function, you can only have bindings and not types.
+Implicit namespace is identifiers that are imported using `$` and it's output is ignored.
+The collections of namespaces, functions, structs and modules create a hierarchy of lookup locations which are used when compiler/runtime search for a type or a binding: Whenever there is a referenec to a symbol, first the local function's explicit namespace will be searched, then implicit namespace will be searched. If nothing is found, search will be repeated similarly in the parent struct, then in the module level.
+
+**Syntax**
+
+`TypeName := $("/path/to/module")`
+
+**Notes**
+
+4. If you import multiple modules they will all be merged (Example 5).
+5. `/` in the beginning is a shortcut for `file/`. Namespace path starts with a protocol which determines the location of the file for a namespace. You can also use other namespace protocols like `Github` (Example 6).
+6. You can import multiple modules (with the same prefix) using notation in Example 4.
+7. If an import path starts with `./` or `../` means the module path is relative to the current module.
+8. It is an error if as a result of imports, there are two exactly similar bindings or types (same name and type) in use. In this case, only none of conflicting bindings will be available for use.
+9. You can import from a specific branch and use a binding to build import path (Example 7 and 8).
+10. You have to add a branch/tag/commit name after repository name when importing from GitHub.
+
+**Examples**
+
+1. `$("/core/st/Socket") #embed into current module's explicit namespace`
+2. `SocketType := $("/core/st/Socket") #assign to a new named type`
+3. `_ := $("/core/st/Socket") #import into implicit namespace`
+4. `_ := $("/core/std/{Queue, Stack, Heap}")`
+5. `MergedType := $("/core/std/{Queue, Stack, Heap}")`
+6. `MyModule := $("git/github.com/net/server/branch1/dir1/dir2/module")`
+7. `base_cassandra := "github/apache/cassandra/mybranch"`
+8. `_ := $(base_cassandra&"/path/module")`
+
 # Generics
 
 **Syntax**: 
@@ -459,6 +466,7 @@ You can call `fn` like a normal function with an input which should be any of po
 14. You can prefix `return` with a conditional, enclosed in parentheses. Return will be triggered only if the condition is satisfied (Example 10).
 15. If function output is a single identifier, you can omit parentheses in output type, otherwise they are mandatory (Example 11).
 16. You can also import a module into a functions implicit namespace. Functions cannot have explicit namespace because they cannot contain definitions. You can either use a named type to hold an import or assign it to implicit namespace.
+17. You can define new types inside a function, which will be available inside that function only.
 
 **Examples**
 
