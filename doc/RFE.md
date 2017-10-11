@@ -4746,3 +4746,122 @@ So as a summary:
 2. Among types only struct/module and among binsings only functions can contain other things.
 2. You can define bindings and types inside types (structs)
 3. You can define bindings and types inside bindings (functions)
+This is too complicated! We can almost define everything everywhere.
+
+? - Evaluate effects of adding `anything` to the language and removing generics.
+How does it affect struct, function, types, module system, import, namespaces?
+1. Import inside a function
+2. Define type inside a struct
+3. Define type inside a function
+4. Define binding inside a struct
+What can we do with an import? ignore (implicit ns), named type, embed
+We can have interface polymorphism in the data and types we have.
+if we have `process(anything)` and send it an integer and process calls `refine` on it's input, it will first try to call `refine(int)`.
+In go they need to write 67 function for different sortings. what about here with anything?
+```
+sort := (x: [anything], compare: func(anything, anything)->int) ...
+```
+What if we can mix these two? Above can be considered a generic function with only one type arg. When calling it, compiler will automatically assign type to replace anything. So you cannot declare a variable of type anything. But when calling `sort` function above, the type of argument you use, will specify what type `anything` is in real.
+There are lots of limitations to this but maybe they are worth it.
+What about maps?
+We can consider `anything` to be union of all universal types that we have.
+In which case, we can call above sort function with int array and a function which compares float with string.
+But we can then do some checks inside sort function:
+```
+sort := (x: [anything], compare: func(anything, anything)->int) ->
+{
+    @compare = @[func([x],[x])->int]
+}
+```
+anything acts like `void*` in C++. You can also define a binding of type anything.
+Compiler will decide about code generation for these functions. For example if sort calls `process(x)` based on the type of x passed to sort, different functions can be called.
+```
+List := {x:anything, next: List}
+```
+How can we write a function to compare two lists?
+`cmp := (a: List, b: List) -> { @a.x=@b.x ... `
+questions:
+1. implement stack
+2. implement sorting
+3. implement search 
+4. implement binary tree
+5. implement set
+6. reverse map
+`reverse := (x: [anything, anything])->[anything, anything]`
+
+? - What if we have `sort(x:[?], cmp: func(?,?)->int)` and want to make sure cmp is a good function for comparing data of type x? How can we use `@` for that purpose?
+q: How to get type of data inside an array?
+q: How to get type of key and value inside a map?
+one solution: Use named types
+```
+Anything1 := anything
+sort(x:[Anything1], cmp: func(Anything1,Anything1)->int)
+```
+Not very elegant.
+solution: `@` returns int. 
+`Type := @[x[0]]`
+This wont work for map.
+what if the array is empty.
+
+
+
+N - Can we force everything to be addressed from their import? (no ignore for import)?
+Then if user wants to use an additional set of functions for a type, they can just merge corresponding modules.
+This will become very similar to OOP. module is a type of class.
+
+? - Casting will just return something with bindings pointed to original value. Types won't be affected.
+
+? - Can we simulate interfaces now? With casting an imported module to a type which has only function pointer bindings.
+```
+#my_module.dot
+process := (x:int)->x+1
+
+#intr.dot
+process: func(int)->int
+
+#main.dot
+MyModule = $("my_module")
+Intr = $("intr")
+Refined = Intr.{MyModule}
+```
+So:
+proposal: You can cast from type A to type B...
+
+? - Proposal: Remove concept of type.
+Named struct types can include bindings. So why not think of them as normal bindings with abstract values.
+Then we can either update them (make a copy and provide values for those missing) or just use them.
+`MyInt := int`
+`MyPerson := {x:int, y:int, z:=10}`
+MyPerson is an abstract binding which has two placeholder bindings (x and y) and one normal binding.
+A binding which does not have a value...
+The fact that we can define binding inside a struct (which we have to support to support modules as struct) makes things more complicated. How can we simplify them?
+solution 1: Define a new type: module. result of import is of that new type.
+But module is exactly same as struct? struct can have bindings with or without value. But (initially) it was not supposed to contain named types. Also embeding a module (upon import) that contains named types, will make things more complicated.
+Why not import module normally first and then embed it's typs inside a struct?
+solution 1: struct cannot contain type definitions. modules can. when importing module you can import into implicit ns 
+one problem we need to solve is when import will add duplicate binding/types. In that case we need to cover that or alias that. What if we can rename them? In this case we can just eliminate alias.
+We just import a module and it will go to implicit ns. No named type and no embed.
+Then it won't be expression! it will be statement.
+The biggest advantage of expression is composability, but here we dont want to compose expressions.
+```
+import "module1"
+import "module2" { process2 := proess, f2 := f1, MyType := ModuleType } #this block is evaluated in the context of module2
+process2(100) #this will call process inside module2
+```
+proposal: remove `$` and add `import` statement. you can alias names when importing.
+review autobind. with this new import, we may also need autobind for current implicit ns.
+So `A.x` will only be used when A is a struct.
+
+N - Does this work?
+```
+process := (x:int)->x+1
+process2 := process
+```
+can process2 be an alias for process? yes. it should work.
+
+? - If a struct contains a function with impl, can we call it without creating an instance of that struct?
+If we can, this will become OOP like. Something like static functions.
+But this is not good. struct is supposed to define a pattern to hold data. 
+We are not supposed to provide any initial value for them. If there are any, do it in a creator function.
+So:
+proposal: Struct can only contain un-initialized bindings. Nothing else (no values, no named types, ...)
