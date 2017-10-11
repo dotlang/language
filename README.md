@@ -112,7 +112,6 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 14. `@`   Get internal type of union 
 15. `~`   Chain operator (To chain function calls)
 16. `_`   Place holder (lambda creator, place-holder in assignments)
-20. `^`   Generic union (Union of a group of types)
 
 ## Reserved identifiers
 
@@ -277,18 +276,14 @@ You can call `fn` like a normal function with an input which should be any of po
 3. The language provides pure "contain and delegate" mechanism as a limited form of polymorphism.
 4. In Example 2, `Shape` is the contained type and `Circle` is container type.
 5. To have polymorphism in function calls, you should forward function calls to embedded structs (Calls on a `Circle` should be forwarded to calls on its `Shape`). Refer to function section for more information about forwarding functions.
-6. You can define a union type which accepts all struct types which embed a specific struct type. See examples 4 and 5.
 7. Note that polymorphism does not apply to generics. So `[Circle]` cannot substitute `[Shape]`. But you can have `[Circle|Square]` to have a mixed sequence of different types.
 8. We use closed recursion to forward function calls. This means if a function call is forwarded from `Circle` to `Shape` and inside that function, a second function is called which has candidates for both `Circle` and `Shape` the one for `Shape` will be called.
-9. `^T` where T is a named type can be used to indicate all structs that embed that type (Example 4).
 
 **Examples**
 
 1. `Shape := { id:int }`
 2. `Circle := { Shape, radius: float}`
 3. `my_circle := Circle{id:100, radius:1.45}`
-4. `AllShapes := ^Shape`
-5. `someShapes:AllShapes := [myCircle mySquare myRectangle myTriangle]`
 
 ## Extended primitive types
 
@@ -396,15 +391,31 @@ You can call `fn` like a normal function with an input which should be any of po
 
 1. Generics are implemented at module level. Just append generics types in lower case (e.g. `stack[t].dot`)to the module file name and compiler will assume their existence. Any module importing it, must provide concrete types for them or else there will be compiler error.
 2. In the code, you must use generics types in all caps (e.g `T`) as one identifier without separator. 
+3. If a generic modules, defines the type `T`, anyone who wants to import it, must provide a concrete type which embeds that type. But it `T` is not defined, they can provide any type.
 3. Anything inside `[]` in module path, will be processed by the compiler to generate module code, based on the given arguments.
 4. When importing a generic module, you can either import `module_name[T]` which will import using default type defined inside the module code, or replace `T` parameter with a valid type (e.g. `module_name(int)`).
 5. You can specialize a generic module for known types by writing appropriately named module file (e.g. `module_name[string].dot`).
 6. When you import a module, you must provide values for bindings that do not have value and types for generic types.
+7. You can use abstract functions and define named type for generic types to indicate expected interface in terms of data and functions (Examples 3 and 4).
 
 **Example**
 
 1. `import "/core/Stack[int]"`
 2. `x: Stack := createStack()`
+3.
+```
+#set[t].dot
+#T is not defined. This means T can be anything, but this function must be defined
+compare := (a:T, b:T)->int
+```
+4.
+```
+#set[t].dot
+#this means T must contain a data field of type string.
+T := {data: string}
+#and a function with below syntax
+process := (a:T)->int
+```
 
 ## Phantom types
 
@@ -435,7 +446,6 @@ You can call `fn` like a normal function with an input which should be any of po
 2. Lambda or a function pointer is defined similarly to a normal function in a module. They use the same syntax.
 3. When defining a function, just like a normal binding, you can omit type which will be inferred from rvalue (Function literal).
 4. Note that `func(int,int)->int` is a function type, but `(x:int, y:int)->{x+y}` is function literal.
-5. You can define types inside a function. These types will only be available inside the function.
 7. Every function must return something which is specified using `return`. If it doesn't, compiler marks output type as `nothing` (Example 2).
 8. A function call with union data means there must be functions defined for all possible types in the union. See Call resolution section for more information.
 9. You can omit braces and `return` keyword if you only want to return an expression (Examples 4, 5 and 6).
@@ -446,6 +456,7 @@ You can call `fn` like a normal function with an input which should be any of po
 14. You can prefix `return` with a conditional, enclosed in parentheses. Return will be triggered only if the condition is satisfied (Example 10).
 15. If function output is a single identifier, you can omit parentheses in output type, otherwise they are mandatory (Example 11).
 18. You can alias a function by defining another binding pointing to it.
+19. You can define a function without body (Example 11). Calling these functions will result in runtime error. They are mostly used to define expected interfaces in generic modules.
 
 **Examples**
 
@@ -485,7 +496,6 @@ process := (x:int) ->
 
 1. `draw := (Circle->Shape)`
 2. `process := (Polygon|Square|Circle->Shape, GradientColor|SolidColor]->Color)`
-3. `process := (float, ^Shape->Shape, string, int, GradientColor|SolidColor->Color, int)`
 4. `draw: func(Circle) := (c: Circle) -> draw(c.Shape)`
 
 ## Function pointer
@@ -907,4 +917,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.96**: Jun 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: Jun 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` place holder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is typed statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
-- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting
+- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting, removed `^` operator and replaced with generics
