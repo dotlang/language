@@ -4902,12 +4902,39 @@ N - If we follow module generics, can we just enable import without providing ty
 Maybe not. because the code is supposed to be working with some types.
 
 
-? - Review manual and Check order of the manual. Now modules refer to structs. Maybe we should mention them after structs.
+N - Review manual and Check order of the manual. Now modules refer to structs. Maybe we should mention them after structs.
 Changed/new notations: `!, $, ?` generics, modules, sequence and map type and literals, channels, 
 
-? - Review the new modules notation and how it works with struct. 
+N - Review the new modules notation and how it works with struct. 
 What is different and what is common? Also about function's ns.
 Explain lookup mechanism for type and symbol names.
 
+Y - `.()` only seems to be useful when dealing with reading from array or sequence in conditions.
+`[1, ()->12][condition].()`
+`x:=[1, ()->12][condition] #type of x is int|func()->int`
+We want to "compress" a union to a specific type.
+`x:int|float := ...`
+`(@x != @[int]) int.{x}`
+compress is too general, the union variable is either a function or non-function. If it is a function, invoke it.
+`x := [1, 10][condition]`
+`x := [1, expensive_call()][condition]`
+Can we use `//`?
+`x := [nothing, 1][condition] // expensive_call()`
+above means: `if condition then 1 else expensive_call`
 
+? - Review manual document organization. What is the best order of titles and document titles?
 
+Y - `.{}` is for casting, create zero-value and autoBind.
+`Int.{x}`
+`Int.{nothing}`
+`Comparer.{}`
+Alternative: Just use the type name as a function.
+`y := int(x)`
+`z := int(nothing)`
+`t := Comparer()`
+It is more convenient, shorter and more intuitive.
+It is easily separable because type name starts with capital.
+
+? - Can we eliminate `^` notation?
+It is supposed to generate a union of all types that embed a specific type:
+`^Shape` all structs that embed shape.
