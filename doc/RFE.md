@@ -4787,9 +4787,12 @@ questions:
 4. implement binary tree
 5. implement set
 6. reverse map
+7. a function which filters a hashmap
 `reverse := (x: [anything, anything])->[anything, anything]`
 What if compile does nothing at compile time for anything functions and just calls them. And user needs to handle type casting. But a function call inside that function, in go this is handled at runtime with runtime dynamic dispatch.
 But we want to do it at compile time. That's why we need to generate appropriate code based on input type at compile time.
+module level or any? Which one is better?
+Use the original factor: Simplicity in writing and reading and maintaining
 
 ? - What if we have `sort(x:[?], cmp: func(?,?)->int)` and want to make sure cmp is a good function for comparing data of type x? How can we use `@` for that purpose?
 q: How to get type of data inside an array?
@@ -4804,7 +4807,6 @@ solution: `@` returns int.
 `Type := @[x[0]]`
 This wont work for map.
 what if the array is empty.
-
 
 
 N - Can we force everything to be addressed from their import? (no ignore for import)?
