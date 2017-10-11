@@ -4788,6 +4788,8 @@ questions:
 5. implement set
 6. reverse map
 `reverse := (x: [anything, anything])->[anything, anything]`
+What if compile does nothing at compile time for anything functions and just calls them. And user needs to handle type casting. But a function call inside that function, in go this is handled at runtime with runtime dynamic dispatch.
+But we want to do it at compile time. That's why we need to generate appropriate code based on input type at compile time.
 
 ? - What if we have `sort(x:[?], cmp: func(?,?)->int)` and want to make sure cmp is a good function for comparing data of type x? How can we use `@` for that purpose?
 q: How to get type of data inside an array?
