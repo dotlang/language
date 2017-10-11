@@ -4692,44 +4692,81 @@ Y - `T-` can be a bit confusing when combined with other things.
 `T?` for reader
 `T!` for writer
 
-==============
+N - Can we force everything to be addressed from their import? (no ignore for import)?
+Then if user wants to use an additional set of functions for a type, they can just merge corresponding modules.
+This will become very similar to OOP. module is a type of class.
 
-? - Add a section "Why dot" and say conditions which rule out competitors.
-Like "Why zimbu" in http://www.zimbu.org/
+N - Does this work?
+```
+process := (x:int)->x+1
+process2 := process
+```
+can process2 be an alias for process? yes. it should work.
 
-? - How should an import path be resolved and where should the data be looked up or saved?
-suppose we have `import /a/b/c` Where should we look for a directory?
-option 1: The location we run the compiler (pwd): `pwd/deps/a/b/c`
-option 2: Use env-var
-option 3: You can use option 1 + an optional argument to the compiler for root path.
-by using option 3, we can have a shared deps dir for multiple projects.
+N - Casting will just return something with bindings pointed to original value. Types won't be affected.
 
-? - How can we work on multiple interrelated projects at the same time?
-How can we have different versions of the same dependency?
-What if we need libA any version and libB but libB needs a specific version of libA?
+N - Can we simulate interfaces now? With casting an imported module to a type which has only function pointer bindings.
+```
+#my_module.dot
+process := (x:int)->x+1
 
-? - What about versioning?
-We can write a custom function which can be used to decide whether a specific branch/tag can be used for import.
-`import "github/apache/cassandra/thisOrLater("1.4"`?
-Or use star:
-`import "github/apache/cassandra/v1.*.*"`
-star means in this place there will be one or more numbers. Choose the largest one.
+#intr.dot
+process: func(int)->int
 
-? - Review manual and Check order of the manual. Now modules refer to structs. Maybe we should mention them after structs.
-Changed/new notations: `!, $, ?` generics, modules, sequence and map type and literals, channels, 
+#main.dot
+MyModule = $("my_module")
+Intr = $("intr")
+Refined = Intr.{MyModule}
+```
+So:
+proposal: You can cast from type A to type B...
 
-? - Review the new modules notation and how it works with struct. 
-What is different and what is common? Also about function's ns.
-Explain lookup mechanism for type and symbol names.
+N - Proposal: Remove concept of type.
+Named struct types can include bindings. So why not think of them as normal bindings with abstract values.
+Then we can either update them (make a copy and provide values for those missing) or just use them.
+`MyInt := int`
+`MyPerson := {x:int, y:int, z:=10}`
+MyPerson is an abstract binding which has two placeholder bindings (x and y) and one normal binding.
+A binding which does not have a value...
+The fact that we can define binding inside a struct (which we have to support to support modules as struct) makes things more complicated. How can we simplify them?
+solution 1: Define a new type: module. result of import is of that new type.
+But module is exactly same as struct? struct can have bindings with or without value. But (initially) it was not supposed to contain named types. Also embeding a module (upon import) that contains named types, will make things more complicated.
+Why not import module normally first and then embed it's typs inside a struct?
+solution 1: struct cannot contain type definitions. modules can. when importing module you can import into implicit ns 
+one problem we need to solve is when import will add duplicate binding/types. In that case we need to cover that or alias that. What if we can rename them? In this case we can just eliminate alias.
+We just import a module and it will go to implicit ns. No named type and no embed.
+Then it won't be expression! it will be statement.
+The biggest advantage of expression is composability, but here we dont want to compose expressions.
+```
+import "module1"
+import "module2" { process2 := proess, f2 := f1, MyType := ModuleType } #this block is evaluated in the context of module2
+process2(100) #this will call process inside module2
+```
 
-? - If a module contains a function and we import it as a named type, can we call that function without creating a new instance of that type?
+Y - proposal: remove `$` and add back `import` statement. you can alias names when importing.
+review autobind. with this new import, we may also need autobind for current implicit ns.
+So `A.x` will only be used when A is a struct.
+q: What if we import a generic module two times? There will definitely be overlapping types with different implementations.
+q: How shall we handle phantom types based on generics?
+`import "MapHelper[int,string]"`
+`import "MapHelper[int,float]"`
+Just use the functions. For types which are common, you can alias them if you need to refer to them explicitly.
+
+Y - If a struct contains a function with impl, can we call it without creating an instance of that struct?
+If we can, this will become OOP like. Something like static functions.
+But this is not good. struct is supposed to define a pattern to hold data. 
+We are not supposed to provide any initial value for them. If there are any, do it in a creator function.
+So:
+proposal: Struct can only contain un-initialized bindings. Nothing else (no values, no named types, ...)
+
+N - If a module contains a function and we import it as a named type, can we call that function without creating a new instance of that type?
 We should.
 so `a.f` is refering to f field inside struct binding `a`.
 `A.f` is refering to f binding inside named type `A`.
 `A := {x:int, f:=(x:int)->x+1}`
 `y := A.f(10)`
 
-? - two important questions:
+N - two important questions:
 Can we define types inside struct?
 Can we define types inside function?
 Currently answer to both of these is yes.
@@ -4748,7 +4785,7 @@ So as a summary:
 3. You can define bindings and types inside bindings (functions)
 This is too complicated! We can almost define everything everywhere.
 
-? - Evaluate effects of adding `anything` to the language and removing generics.
+N - Evaluate effects of adding `anything` to the language and removing generics.
 How does it affect struct, function, types, module system, import, namespaces?
 1. Import inside a function
 2. Define type inside a struct
@@ -4792,9 +4829,57 @@ questions:
 What if compile does nothing at compile time for anything functions and just calls them. And user needs to handle type casting. But a function call inside that function, in go this is handled at runtime with runtime dynamic dispatch.
 But we want to do it at compile time. That's why we need to generate appropriate code based on input type at compile time.
 module level or any? Which one is better?
-Use the original factor: Simplicity in writing and reading and maintaining
+Use the original factor: Simplicity in writing and reading and maintaining.
+option 1: generics as templated modules
+option 2: `any` type
+```
+Stack := [any]
+push := (s: Stack, x: any)...
+pop := (s: Stack)->any ...
+#example: a function which filters a map by a predicate
+#filter[K,V].dot
+filter := (m: [K,V], pred: func(K)->bool)->[K,V]
+{
+	...
+}
+#main.dot
+import "filter[int, string]" {intFilter := filter}
+import "filter[int, Customer]" {customerFilter := filter}
+a := filter(m,pred)
+#how can we run filter on a map of string and list of int?
+import "list[int]" { ListInt := List }
+import "filter[int, ListInt]"
 
-? - What if we have `sort(x:[?], cmp: func(?,?)->int)` and want to make sure cmp is a good function for comparing data of type x? How can we use `@` for that purpose?
+### using any type
+#filter.dot
+filter := (m: [any,any], pred:func(any)->bool)->[any,any]
+{
+	
+}
+```
+
+N - Add a section "Why dot" and say conditions which rule out competitors.
+Like "Why zimbu" in http://www.zimbu.org/
+
+N - How should an import path be resolved and where should the data be looked up or saved?
+suppose we have `import /a/b/c` Where should we look for a directory?
+option 1: The location we run the compiler (pwd): `pwd/deps/a/b/c`
+option 2: Use env-var
+option 3: You can use option 1 + an optional argument to the compiler for root path.
+by using option 3, we can have a shared deps dir for multiple projects.
+
+N - How can we work on multiple interrelated projects at the same time?
+How can we have different versions of the same dependency?
+What if we need libA any version and libB but libB needs a specific version of libA?
+
+N - What about versioning?
+We can write a custom function which can be used to decide whether a specific branch/tag can be used for import.
+`import "github/apache/cassandra/thisOrLater("1.4"`?
+Or use star:
+`import "github/apache/cassandra/v1.*.*"`
+star means in this place there will be one or more numbers. Choose the largest one.
+
+N - What if we have `sort(x:[?], cmp: func(?,?)->int)` and want to make sure cmp is a good function for comparing data of type x? How can we use `@` for that purpose?
 q: How to get type of data inside an array?
 q: How to get type of key and value inside a map?
 one solution: Use named types
@@ -4808,64 +4893,21 @@ solution: `@` returns int.
 This wont work for map.
 what if the array is empty.
 
+Y - Review autobind and phantom types section for the new import notation.
 
-N - Can we force everything to be addressed from their import? (no ignore for import)?
-Then if user wants to use an additional set of functions for a type, they can just merge corresponding modules.
-This will become very similar to OOP. module is a type of class.
+Y - What about auto-bind?
+cast current namespace into a struct. fill struct fields with bindings with same name and type in current ns.
 
-? - Casting will just return something with bindings pointed to original value. Types won't be affected.
+N - If we follow module generics, can we just enable import without providing types?
+Maybe not. because the code is supposed to be working with some types.
 
-? - Can we simulate interfaces now? With casting an imported module to a type which has only function pointer bindings.
-```
-#my_module.dot
-process := (x:int)->x+1
 
-#intr.dot
-process: func(int)->int
+? - Review manual and Check order of the manual. Now modules refer to structs. Maybe we should mention them after structs.
+Changed/new notations: `!, $, ?` generics, modules, sequence and map type and literals, channels, 
 
-#main.dot
-MyModule = $("my_module")
-Intr = $("intr")
-Refined = Intr.{MyModule}
-```
-So:
-proposal: You can cast from type A to type B...
+? - Review the new modules notation and how it works with struct. 
+What is different and what is common? Also about function's ns.
+Explain lookup mechanism for type and symbol names.
 
-? - Proposal: Remove concept of type.
-Named struct types can include bindings. So why not think of them as normal bindings with abstract values.
-Then we can either update them (make a copy and provide values for those missing) or just use them.
-`MyInt := int`
-`MyPerson := {x:int, y:int, z:=10}`
-MyPerson is an abstract binding which has two placeholder bindings (x and y) and one normal binding.
-A binding which does not have a value...
-The fact that we can define binding inside a struct (which we have to support to support modules as struct) makes things more complicated. How can we simplify them?
-solution 1: Define a new type: module. result of import is of that new type.
-But module is exactly same as struct? struct can have bindings with or without value. But (initially) it was not supposed to contain named types. Also embeding a module (upon import) that contains named types, will make things more complicated.
-Why not import module normally first and then embed it's typs inside a struct?
-solution 1: struct cannot contain type definitions. modules can. when importing module you can import into implicit ns 
-one problem we need to solve is when import will add duplicate binding/types. In that case we need to cover that or alias that. What if we can rename them? In this case we can just eliminate alias.
-We just import a module and it will go to implicit ns. No named type and no embed.
-Then it won't be expression! it will be statement.
-The biggest advantage of expression is composability, but here we dont want to compose expressions.
-```
-import "module1"
-import "module2" { process2 := proess, f2 := f1, MyType := ModuleType } #this block is evaluated in the context of module2
-process2(100) #this will call process inside module2
-```
-proposal: remove `$` and add `import` statement. you can alias names when importing.
-review autobind. with this new import, we may also need autobind for current implicit ns.
-So `A.x` will only be used when A is a struct.
 
-N - Does this work?
-```
-process := (x:int)->x+1
-process2 := process
-```
-can process2 be an alias for process? yes. it should work.
 
-? - If a struct contains a function with impl, can we call it without creating an instance of that struct?
-If we can, this will become OOP like. Something like static functions.
-But this is not good. struct is supposed to define a pattern to hold data. 
-We are not supposed to provide any initial value for them. If there are any, do it in a creator function.
-So:
-proposal: Struct can only contain un-initialized bindings. Nothing else (no values, no named types, ...)
