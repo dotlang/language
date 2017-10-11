@@ -4922,8 +4922,6 @@ Can we use `//`?
 `x := [nothing, 1][condition] // expensive_call()`
 above means: `if condition then 1 else expensive_call`
 
-? - Review manual document organization. What is the best order of titles and document titles?
-
 Y - `.{}` is for casting, create zero-value and autoBind.
 `Int.{x}`
 `Int.{nothing}`
@@ -4935,6 +4933,58 @@ Alternative: Just use the type name as a function.
 It is more convenient, shorter and more intuitive.
 It is easily separable because type name starts with capital.
 
-? - Can we eliminate `^` notation?
+N - Can we eliminate `^` notation?
 It is supposed to generate a union of all types that embed a specific type:
 `^Shape` all structs that embed shape.
+example of a function to return name of shapes.
+`process := (x: ^Shape)->x.name`
+Can't we write it like:
+`process := (x: Shape)->x.name`
+`process := (x:???`
+Maybe this can be solved via generics:
+`process := (x: T)->x.name`
+
+Y - In generics, how can we explain our expectations?
+e.g. we expect generic type to embed Shape?
+```
+#module[T].dot
+#here we assume T is a struct which must embed Shape
+process := (x:T)->x.name
+#main.dot
+import "module[int]" #!!!
+```
+we want to make sure type T embeds type X.
+solution 1: Let compiler throw errors at compile time.
+solution 2: Provide a syntax to check type of T at compile time so people will know.
+solution 3: If module does not define type T, this means it can be anything. If it does, T should be substitued with something that embeds that type.
+proposal: In generic modules, if T is not declared, it can be anything upon import. If it is declared, importer can substitute it with something that embeds that type.
+remove `^` notation.
+
+Y - Can we express expected functions in a generic module?
+like, we have a set module on type T, but we expect type T to be comparable.
+```
+#set[t].dot
+#this means T can be anything, but this function must be defined
+compare := (a:T, b:T)->int ...
+#this means T must contain a data field of type string.
+T := {data: string}
+#and a function with below syntax
+process := (a:T)->int
+```
+
+Y - Define a syntax to declare abstract functions.
+`process := (x:int)->int`
+but there is no body, any call to this will result in runtime error
+
+Y - Can a struct embed another struct implicitly by having fields with same name and type?
+
+? - Can we Get internal type of union with a more intuitive notation and remove `@`?
+`@x` will return type of x (only if x is union typed or generic)
+`@[int]` will return integer identifier of type int.
+Why can't we combine these two? Is there any use case where we need the integer value?
+Why not use casting notation?
+`int_val, has_int := int(int_or_float)`
+`(int(int_or_float).1) return 100` if var has a int, return 100
+
+
+? - Review manual document organization. What is the best order of titles and document titles?
