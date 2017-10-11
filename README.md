@@ -467,6 +467,7 @@ The collections of namespaces, functions, structs and modules create a hierarchy
 15. If function output is a single identifier, you can omit parentheses in output type, otherwise they are mandatory (Example 11).
 16. You can also import a module into a functions implicit namespace. Functions cannot have explicit namespace because they cannot contain definitions. You can either use a named type to hold an import or assign it to implicit namespace.
 17. You can define new types inside a function, which will be available inside that function only.
+18. You can alias a function by defining another binding pointing to it.
 
 **Examples**
 
@@ -488,6 +489,7 @@ process := (x:int) ->
 }
 ``` 
 11. `T1 := func(int)->(int|string)`
+12. `process := (x:int)->x+1`, `process2 := process`
 
 ## Call forwarding
 
