@@ -41,15 +41,15 @@ The underlying rules of design of this language are
 [KISS rule](https://en.wikipedia.org/wiki/KISS_principle) and
 [DRY rule](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-As a 10,000 foot view of the language, the code is written in files (called modules) organized in directories (called packages).  We have bindings (immutable definitions which include first-class functions and values) and types (Blueprints to create bindings). Each function acts on a set of inputs and returns an output. Type system includes primitive data types (`int`, `float`, `char`, `function` and `sequence`), struct and union. Generics, concurrency and lambda expression are also provided and everything is immutable.
+As a 10,000 foot view of the language, the code is written in files (called modules) organized in directories (called packages).  We have bindings (immutable data definitions which include first-class functions and values) and types (Blueprints to create bindings). Type system includes primitive data types (`int`, `float`, `char`, `function`, `sequence` and `map`), struct and union. Generics, concurrency and lambda expression are also provided and everything is immutable.
 
-## Comparison with other languages
+## Comparison
 
-**Compared to C**: C language + garbage collector + first-class functions + template programming + better union data types + module system + flexible polymorphism + simple and powerful standard library + lambda expressions + closure + simpler primitives + multiple dispatch + sane defaults + full immutability - ambiguities - pointers - macros - header files.
+**Compared to C**: C language + garbage collector + first-class functions + template programming + sum types + module system + simple and powerful standard library + lambda expressions + multiple dispatch + full immutability - undefined behavior - pointers - macros - header files.
 
-**Compared to Scala**: Scala + multiple dispatch + full immutability + simpler primitives - *dependency on JVM* - cryptic syntax - traits - custom operators - variance - implicit parameters.
+**Compared to Scala**: Scala + multiple dispatch + full immutability + simpler primitives - *dependency on JVM* - traits - custom operators - implicit parameters.
 
-**Compared to Go**: Go + *generics* + full immutability + multiple dispatch + union types + better orthogonality (e.g. creating maps) + simpler primitives - pointers - interfaces - global variables.
+**Compared to Go**: Go + *generics* + full immutability + multiple dispatch + union types + simpler primitives - pointers - interfaces - global variables - `interface{}`.
 
 ## Components
 
@@ -82,44 +82,41 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 01. **Import a module**: `ModuleType := !("/core/std/queue")` (you can also import from external sources like Github).
 02. **Primitive types**: `int`, `float`, `char`, `sequence`, `map`, `func`.
 03. **Bindings**: `my_var:int := 19` (type can be automatically inferred, everything is immutable).
-04. **Sequence**: `scores:seq[int] := [1, 2, 3, 4]` (Similar to array).
-05. **Named type**: `MyInt := int` (Defines a new type with same binary representation as `int`).
-06. **Struct type**: `Point := {x: int, y:int, data: float}` (Like `struct` in C)
-07. **Struct literal**: `location := Point{x:=10, y:=20, data:=1.19}`
-08. **Composition**: `Circle := {Shape, radius: float}` (`Circle` embeds fields of `Shape`)
-09. **Generics**: `IntStack := !("/core/Stack(int)").Type` (Generics are defined as templated modules)
-10. **Union type**: `MaybeInt := int | nothing` (Can store either of possible types)
-11. **Function**: `calculate: func(int,int)->float := (x, y) -> float { return x/y  }`
-12. **Concurrency**: `result :== processData(x,y,z)` (Evaluate an expression in parallel)
+04. **Sequence**: `scores:[int] := [1, 2, 3, 4]` (Similar to array).
+05. **Map**: `scores:[string, int] := ["A",1, "B",2, "C",3, "D", 4]` (Similar to array).
+06. **Named type**: `MyInt := int` (Defines a new type with same binary representation as `int`).
+07. **Struct type**: `Point := {x: int, y:int, data: float}` (Like `struct` in C)
+08. **Struct literal**: `location := Point{x:=10, y:=20, data:=1.19}`
+09. **Composition**: `Circle := {Shape, radius: float}` (`Circle` embeds fields of `Shape`)
+10. **Generics**: `import "/core/Stack[int]"` (Generics are defined as templated modules)
+11. **Union type**: `MaybeInt := int | nothing` (Can store either of possible types)
+12. **Function**: `calculate: func(int,int)->float := (x, y) -> float { return x/y  }`
+13. **Concurrency**: `result :== processData(x,y,z)` (Evaluate an expression in parallel)
 
 ## Symbols
 
 01. `#`   Comment
 02. `.`   Access struct fields (bindings and types)
-03. `()`  Function declaration and call, condition for return
+03. `()`  Function declaration and call, condition for return, cast
 04. `{}`  Code block, struct definition and struct literal
-05. `[]`  Literals (for sequence and custom literals)
+05. `[]`  Literals and type definition (map, sequence), Generic modules, concurrency
 06. `|`   Union data type (Define different possible types)
 07. `->`  Function declaration
 08. `..`  Range generator for sequence literal
 09. `//`  Nothing-check operator
 10. `!`   Write-only channel
 11. `?`   Read-only channel
-10. `$`   Import one or more modules
 11. `:`   Type declaration for struct, function inputs and bindings, struct literals
 12. `:=`  Binding declaration, named types
 13. `:==` Parallel execution
 14. `@`   Get internal type of union 
 15. `~`   Chain operator (To chain function calls)
 16. `_`   Place holder (lambda creator, place-holder in assignments)
-17. `.{}` Casting
-18. `.()` Optional call (call if it is a function pointer, do nothing otherwise)
-19. `[]` Custom process
 20. `^`   Generic union (Union of a group of types)
 
 ## Reserved identifiers
 
-**Keywords**: `return`
+**Keywords**: `return`, `import`
 
 **Primitive data types**: `int`, `float`, `char`, `sequence`, `map`, `func`
 
@@ -169,7 +166,7 @@ These rules are highly advised but not mandatory.
 Types are blueprints which are used to create bindings. 
 Two types T1 and T2 are identical/assignable in any of below cases:
 1. Both are named types defined in the same place in the code.
-2. Both are unnamed types with similar definition (e.g. `int|string` vs `int|string` or `seq[int]` vs `seq[int]`).
+2. Both are unnamed types with similar definition (e.g. `int|string` vs `int|string` or `[int]` vs `[int]`).
 2. T1 is named and T2 is identical to T1's underlying type, or vice versa.
 
 ## Primitive data types
@@ -201,7 +198,7 @@ Two types T1 and T2 are identical/assignable in any of below cases:
 5. `x := [1..10]`
 6. `x: [[int]] := [ [1, 2], [3, 4], [5, 6] ]`
 7. `x: [int] := [1, 2]&[3, 4]&[5, 6]`
-8. `n := x.[10]`
+8. `n := x[10]`
 9. `pop: [string, int] := ["A",1,"B",2,"C",3]`
 10. `data, is_found := pop["A"]`
 
@@ -226,7 +223,7 @@ Two types T1 and T2 are identical/assignable in any of below cases:
 2. `int_or_float: int | float := 11`
 3. `int_or_float := 12.91`
 4. `int_or_float := 100`
-5. `int_value, done := int{my_union}`
+5. `int_value, done := int(my_union)`
 6. `has_int := (@my_int_or_float = @[int])`
 7. `fn: func(int)->int|func(string)->int|func(float)->int := ...`
 A union of type function pointer with three possible function types.
@@ -237,7 +234,7 @@ You can call `fn` like a normal function with an input which should be any of po
 
 **Syntax**: 
 
-1. Declaration: `{field1: type1, field2: type2, field3: type3, ..., TypeName1 := TypeDecl, TypeName2 := TypeDecl2, ...}` 
+1. Declaration: `{field1: type1, field2: type2, field3: type3, ...}` 
 2. Typed Literal: `Type{field1:=value1, field2:=value2, ...}` 
 3. Typed Literal: `Type{value1, value2, value3, ...}` 
 4. Untyped literal: `{value1, value2, value3, ...}` 
@@ -245,16 +242,14 @@ You can call `fn` like a normal function with an input which should be any of po
 
 **Notes**
 
-1. Struct represents a set of related bindings and types.
-2. There are two ways to declare a struct: inline and using module. This section explains inline (defining struct inside a module file). The module method is explained in `import` section where you write struct contents inside a file of it's own.
+1. Struct represents a set of related bindings which do not have values.
 3. Example 1 defines a named type for a 2-D point and next 2 examples show how to initialize variables of that type. See "Named Types" section for more info about named types.
 4. If you define an untyped literal (Example 4), you can access its component by destruction (Example 6).
 5. Examples 6 and 7 show how to destruct a struct and extract its data.
 6. Example 8 and 9 are the same and show how to define a struct based on another struct.
 7. Example 10 indicates you cannot choose field names for an untyped struct literal.
 8. You can use `.0,.1,.2,...` notation to access fields inside an untyped tuple (Example 11).
-9. Example 12 shows defining a type inside a struct and example 13 shows how to refer to it.
-10. When you create a new instance of a struct, you cannot change value of bindings which already have their own value and also you must initialize bindings that do not have assigned value. This can be used to enforce expected interface for a generic type. (Example 14)
+
 
 **Examples**
 
@@ -270,8 +265,6 @@ You can call `fn` like a normal function with an input which should be any of po
 10. `new_point := {a:=100, b:=200} //WRONG!`
 11. `x := point1.1`
 12. `Customer := { name: string, age: int, CustomerId := int }`
-13. `g: Customer.CustomerId := 100`
-14. `compare: func(x:T, y:T)->int #A binding without value means user should provide a value when importing`
 
 ### Composition
 
@@ -285,7 +278,7 @@ You can call `fn` like a normal function with an input which should be any of po
 4. In Example 2, `Shape` is the contained type and `Circle` is container type.
 5. To have polymorphism in function calls, you should forward function calls to embedded structs (Calls on a `Circle` should be forwarded to calls on its `Shape`). Refer to function section for more information about forwarding functions.
 6. You can define a union type which accepts all struct types which embed a specific struct type. See examples 4 and 5.
-7. Note that polymorphism does not apply to generics. So `seq[Circle]` cannot substitute `seq[Shape]`. But you can have `seq[Circle|Square]` to have a mixed sequence of different types.
+7. Note that polymorphism does not apply to generics. So `[Circle]` cannot substitute `[Shape]`. But you can have `[Circle|Square]` to have a mixed sequence of different types.
 8. We use closed recursion to forward function calls. This means if a function call is forwarded from `Circle` to `Shape` and inside that function, a second function is called which has candidates for both `Circle` and `Shape` the one for `Shape` will be called.
 9. `^T` where T is a named type can be used to indicate all structs that embed that type (Example 4).
 
@@ -304,7 +297,7 @@ You can call `fn` like a normal function with an input which should be any of po
 **Notes**
 
 1. These types are not built-in types and are defined using other types, but due to their important role, they are defined in the core.
-2. `string` is defined as a sequence of `char` data type, represented as `seq[char]` type. The conversion from/to string literals is handled by the compiler.
+2. `string` is defined as a sequence of `char` data type, represented as `[char]` type. The conversion from/to string literals is handled by the compiler.
 3. String literals should be enclosed in double quotes. 
 4. String literals enclosed in backtick can be multiline and escape character `\` will not be processed in them.
 5. `nothing` is a special type which is used to denote empty/invalid/missing data. This type has only one value which is the same identifier.
@@ -332,7 +325,7 @@ You can call `fn` like a normal function with an input which should be any of po
 **Examples**
 
 1. `MyInt := int`
-2. `IntArray := seq[int]`
+2. `IntArray := [int]`
 3. `Point := {x: int, y: int}`
 4. `bool := true | false`
 5. `x: MyInt := 10`, `y: MyInt := MyInt{10}`
@@ -340,7 +333,7 @@ You can call `fn` like a normal function with an input which should be any of po
 
 ## Casting
 
-**Syntax**: `TargetType.{data}`
+**Syntax**: `TargetType(data)`
 
 **Notes**
 
@@ -353,40 +346,31 @@ You can call `fn` like a normal function with an input which should be any of po
 7. For literals, casting between named and underlying type can be done automatically (Example 4).
 8. If the target type is not a simple identifier, you should enclose it in parentheses (Example 6).
 9. You can cast multiple items at once (Example 7).
-10. The `Type.{}` notation gives you the default value for the given type (empty/zero value).
+10. The `Type(nothing)` notation gives you the default value for the given type (empty/zero value).
+11. The `Type()` notation, casts all currently defined bindings to the given Type based on their name and type (See "autoBind" section for more information).
 
 **Examples**
 
-1. `x:int := int.{1.91}`
-2. `int_value, has_int := int.{int_or_float}`
+1. `x:int := int(1.91)`
+2. `int_value, has_int := int(int_or_float)`
 3. `MyInt := int`
 4. `x:MyInt := 100`
 5. `y:int := x`
-6. `x := (func()->T).{t}`
-7. `a, b, c := MyInt.{x,y,z}`
+6. `x := MyFuncType.(t)`
+7. `a, b, c := MyInt(x,y,z)`
 
 ## Modules
 
-We have seen how `struct` is defined and used. There is another way to define a struct: In a module file. In this approach, you don't need to use comma to separate elements inside the struct. You just write contents of the struct (bindings and types) in a module file.
-
-You can import a module inside another module by using `$` compile time function. This function just loads the contents of the module file and provides a struct based on that module. You can do 3 things with result of a call to `$`:
-1. You can ignore it's output, which will cause bindings and types of that module imported into implicit namespace.
-2. You can embed that type which will cause definitions inside that modules, becomes part of the current module or function (Example 1).
-3. You can assign the output to a named type which you can later use (Example 2).
-
-All identifiers (bindings and types) are stored in namespaces. 
-Each type (struct or module) or function has two namespaces: explicit and implicit.
-Explicit namespace is the collection of all identifiers which are explicitly mentioned inside the struct, module or function. Note that inside a function, you can only have bindings and not types.
-Implicit namespace is identifiers that are imported using `$` and it's output is ignored.
-The collections of namespaces, functions, structs and modules create a hierarchy of lookup locations which are used when compiler/runtime search for a type or a binding: Whenever there is a referenec to a symbol, first the local function's explicit namespace will be searched, then implicit namespace will be searched. If nothing is found, search will be repeated similarly in the parent struct, then in the module level.
-
 **Syntax**
 
-`TypeName := $("/path/to/module")`
+`import "/path/to/module"`
+`import "/path/to/module" { name1 := name2, MyType := ModuleType, ... }`
 
 **Notes**
 
-4. If you import multiple modules they will all be merged (Example 5).
+1. You can import other modules into current module so you will be able to use their types and bindings.
+2. If there is going to be name conflict, you can rename some identifiers using notation in the second syntax above. Whatever comes before `:=` is parsed as a symbol in current module and what comes on the right side is processed as a symbol from inside the module which is being imported.
+4. You can also import multiple modules at the same time (Example 2).
 5. `/` in the beginning is a shortcut for `file/`. Namespace path starts with a protocol which determines the location of the file for a namespace. You can also use other namespace protocols like `Github` (Example 6).
 6. You can import multiple modules (with the same prefix) using notation in Example 4.
 7. If an import path starts with `./` or `../` means the module path is relative to the current module.
@@ -396,24 +380,21 @@ The collections of namespaces, functions, structs and modules create a hierarchy
 
 **Examples**
 
-1. `$("/core/st/Socket") #embed into current module's explicit namespace`
-2. `SocketType := $("/core/st/Socket") #assign to a new named type`
-3. `_ := $("/core/st/Socket") #import into implicit namespace`
-4. `_ := $("/core/std/{Queue, Stack, Heap}")`
-5. `MergedType := $("/core/std/{Queue, Stack, Heap}")`
-6. `MyModule := $("git/github.com/net/server/branch1/dir1/dir2/module")`
-7. `base_cassandra := "github/apache/cassandra/mybranch"`
-8. `_ := $(base_cassandra&"/path/module")`
+1. `import "/core/st/Socket"`
+2. `import "/core/std/{Queue, Stack, Heap}"`
+3. `import "git/github.com/net/server/branch1/dir1/dir2/module"`
+4. `base_cassandra := "github/apache/cassandra/mybranch"`
+5. `import base_cassandra&"/path/module"`
 
 # Generics
 
 **Syntax**: 
 
-1. `MyType := $("/code/module[type1, type2]")`
+1. `import "/code/module[type1, type2]"`
 
 **Notes**:
 
-1. Generics are implemented at module level. Just append generics types in lower case (e.g. `stack[t].dot`)to the module file name and compiler will assume their existence. Any user must define types for them or else there will be compiler error.
+1. Generics are implemented at module level. Just append generics types in lower case (e.g. `stack[t].dot`)to the module file name and compiler will assume their existence. Any module importing it, must provide concrete types for them or else there will be compiler error.
 2. In the code, you must use generics types in all caps (e.g `T`) as one identifier without separator. 
 3. Anything inside `[]` in module path, will be processed by the compiler to generate module code, based on the given arguments.
 4. When importing a generic module, you can either import `module_name[T]` which will import using default type defined inside the module code, or replace `T` parameter with a valid type (e.g. `module_name(int)`).
@@ -422,8 +403,8 @@ The collections of namespaces, functions, structs and modules create a hierarchy
 
 **Example**
 
-1. `IntStackModule := $("/core/Stack[int])"`
-2. `x: IntStackModule.Stack := IntStackModule.createStack()`
+1. `import "/core/Stack[int]"`
+2. `x: Stack := createStack()`
 
 ## Phantom types
 
@@ -436,9 +417,9 @@ The collections of namespaces, functions, structs and modules create a hierarchy
 
 **Examples**
 
-1. `Door(T).dot file`: `Door := string`
-2. `OpenDoor := $("/Door[Open]").Door`
-3. `ClosedDoor := $("/Door[Open]").Door`
+1. `door[t].dot module file`: `Door := string`
+2. `import "/Door[Open]" { OpenDoot := Door }`
+3. `import "/Door[Closed]" { ClosedDoor := Doot }`
 4. `closeDoor := (x: OpenDoor) -> ClosedDoor`
 5. `openDoor := (x: ClosedDoor) -> OpenDoor`
 
@@ -455,7 +436,6 @@ The collections of namespaces, functions, structs and modules create a hierarchy
 3. When defining a function, just like a normal binding, you can omit type which will be inferred from rvalue (Function literal).
 4. Note that `func(int,int)->int` is a function type, but `(x:int, y:int)->{x+y}` is function literal.
 5. You can define types inside a function. These types will only be available inside the function.
-6. As a syntax sugar, `var.[1,2,3]` will be converted to `process(var, 1, 2, 3)` function call.
 7. Every function must return something which is specified using `return`. If it doesn't, compiler marks output type as `nothing` (Example 2).
 8. A function call with union data means there must be functions defined for all possible types in the union. See Call resolution section for more information.
 9. You can omit braces and `return` keyword if you only want to return an expression (Examples 4, 5 and 6).
@@ -465,8 +445,6 @@ The collections of namespaces, functions, structs and modules create a hierarchy
 13. Parentheses are required when calling a function, even if there is no input.
 14. You can prefix `return` with a conditional, enclosed in parentheses. Return will be triggered only if the condition is satisfied (Example 10).
 15. If function output is a single identifier, you can omit parentheses in output type, otherwise they are mandatory (Example 11).
-16. You can also import a module into a functions implicit namespace. Functions cannot have explicit namespace because they cannot contain definitions. You can either use a named type to hold an import or assign it to implicit namespace.
-17. You can define new types inside a function, which will be available inside that function only.
 18. You can alias a function by defining another binding pointing to it.
 
 **Examples**
@@ -524,8 +502,8 @@ process := (x:int) ->
 1. `adder := func(int,int)->int`
 2. `myAdder := (x:int, y:int) -> x+y`
 3. `adderPointer := adder{myAdder}`
-4. `sort := (x: seq[int], comparer: func(int,int) -> bool) -> seq[int]`
-5. `map[T, S] := (input: seq[T], mapper: func(T) -> S) -> seq[S]`
+4. `sort := (x: [int], comparer: func(int,int) -> bool) -> [int]`
+5. `map[T, S] := (input: [T], mapper: func(T) -> S) -> [S]`
 
 ## Lambda
 
@@ -567,10 +545,8 @@ g := process(_:int)
 
 **Syntax**: 
 
-1. `input ~ lambda1, lambda2, ...`
-2. `(input1, input2, ...) ~ lambda1, lambda2, ...`
-3. `input ~ var.[_,_,...]`
-4. `input ~ var.(_,_,...)`
+1. `input ~ (lambda1, lambda2), ...`
+2. `(input1, input2, ...) ~ (lambda1, lambda2, ...)`
 
 **Notes**
 
@@ -579,7 +555,6 @@ g := process(_:int)
 3. You can also have multiple inputs put inside parenthesis (Example 1).
 4. If right-side expects a single input but the left side is a struct with multiple items, it will be treated as a struct for the single input of the function (Example 4) but if the function expects multiple inputs they will be extracted from the left side (Example 3). 
 5. You can also pass a single argument to right side of the chain by using non-struct value. If you pass a struct with a single item to a function (Example 11) and there are two candidates for that call (one that accepts `int` and other accepts `{int}`) compiler will give error.
-6. `input ~ var.[_]` is same as `process(var, input)`.
 
 **Examples**
 
@@ -605,9 +580,7 @@ g := process(_:int)
 5. Chain `~`
 6. Custom literal `[()]`
 7. Nothing check operator `//`
-8. Casting `.{}`
-9. Optional call `.()`
-10. Custom process `[]`
+8. Casting `()`
 
 **Notes**
 
@@ -620,8 +593,6 @@ g := process(_:int)
 8. `[(a,b,c) (d,e,f) ...]`: You can use compound literal to define a literal which is calculated by calling appropriate `set` functions repeatedly. These literals have the form of `[(a,b,c) (d,e,f) ...]`. In this example the literal has a set of elements each of which has 3 items. This means that to calculate the value of the literal, the compiler will render `x0 := set(nothing, a, b, c)`, then `x1 := set(x0, d, e, f)` and continue until end of values. The final result will be the output value. This notation can be used to have map literals and other custom literals.
 10. `A // B` will evaluate to A if it is not `nothing`, else it will be evaluated to B.
 11. Conditional operators return `true` or `false` which actually are `1` and `0`.
-12. Optional call: `a.(b,c,d)` will call `a` if it is a function pointer, else it will do nothing. This is useful in conditionals where you have a value in some case but for the other case you want a lambda (Maybe due to high computation cost). And want to merge them both after the condition is evaluated (Example 6).
-13. Custom get: `a.[b,c,d]` is a syntax sugar for calling: `process(a,b,c,d)`. For sequence, it is used to fetch element at a specific index.
 
 **Examples**
 
@@ -630,7 +601,7 @@ g := process(_:int)
 03. `y:int := int{x}`
 04. `y: int|float := 12`
 05. `y := x // y // z // 0`
-06. `result := [data, () -> processBigBuffer(buffer)].[condition].()`
+06. `result := [nothing, data][condition] // processBigBuffer(buffer)`
 07. `data, successs := int{int_or_float}`
 
 # Concurrency
@@ -640,7 +611,7 @@ g := process(_:int)
 1. Parallel execute `result :== expression` 
 2. Create `reader: T?, writer: T! := createChannel(buffer_size, r_lambda, w_lambda)`
 3. Read data `data := reader[]`
-4. Write data `writer.[data]`
+4. Write data `writer[data]`
 5. Select `data, channel := [wch1, wch2][data1, data2][rch1, rch2][]`
 6. Select `data, channel := [rch1, rch2][wch1, wch2][data1, data2][]`
 
@@ -660,7 +631,7 @@ g := process(_:int)
 ```
 std_reader, std_writer := createStd[string]()
 data := std_reader[]
-std_write.["Hello"]
+std_write["Hello"]
 reader, writer := createChannel[int](100) #specify buffer size
 
 #Options for all channels: buffer size, transformation function.
@@ -701,7 +672,7 @@ result : int := merge(check[int](@v=@[int], ()->100), check[int](@v=@[string], (
 
 2.
 ```
-x:int := [100 200].[a>0]
+x:int := [100, 200][a>0]
 ```
 
 ## dispose
@@ -732,21 +703,20 @@ x:int := [100 200].[a>0]
 
 ## autoBind
 
-**Syntax**: `x := TragetType.{Source}`
+**Syntax**: `x := TragetType(Source)`
 
 **Notes**
 
-1. When you cast a struct to another type, it will map bindings and types with similar name and type to fields inside the target struct. So for example, if the source struct has `age:int` and the namespace contains a binding the same name and type, the result of cast will have `age` assigned to `age` from within the struct.
+1. When you cast a struct value to another type, it will map fields defined inside that struct to fields inside TargetType which have the same name and type. So for example, if the source struct has `age:int` and the target type contains a binding the same name and type, the result of cast will have `age` assigned to `age` from within the struct.
 2. Example 1 and 2 define a `Comparer` type and `sort` function. Example 3 and 4 show how you can call the function.
-3. Example 3, shows you can capture existing functions with signature which matches with `Comparer` and store it in a struct, passed to `sort` function.
+3. Example 3, shows you can capture existing functions with signature which matches with `Comparer` and store it in a struct, passed to `sort` function. If the source data for casting is not specified, it will be all currently defined bindings.
 4. This mechanism can be used to define expected protocol (a set of functions and data) as a function input.
 
 **Examples**
 
 1. `Comparer := { compare: func(int,int)->bool }`
-2. `sort := (x: seq[int], f: Comparer)->seq[int] { ... }`
-3. `sort(myIntArray, Comparer.{})`
-4. `sort(myIntArray, Comparer.{$("/core/HelperFuncs")})`
+2. `sort := (x: [int], f: Comparer)->[int] { ... }`
+3. `sort(myIntArray, Comparer())`
 
 # Examples
 
@@ -780,7 +750,7 @@ eval := (input: string) -> float
 
 innerEval := (exp: Expression) -> float 
 {
-  (@exp = @[int]) return int.{exp}.0
+  (@exp = @[int]) return int(exp).0
   y,_ := NormalExpression{x}
   
   (y.op = '+') return innerEval(y.left) + innerEval(y.right) 
@@ -792,12 +762,12 @@ innerEval := (exp: Expression) -> float
 
 ## Quick sort
 ```
-quickSort:func(seq[int], int, int)->seq[int] := (list:seq[int], low: int, high: int) ->
+quickSort:func([int], int, int)->[int] := (list:[int], low: int, high: int) ->
 {
   (high >= low) return list
   
   mid_index := (high+low)/2
-  pivot := list.[mid_index]
+  pivot := list[mid_index]
   
   small_list := filter( list, (x:int)-> x<pivot )
   big_list   := filter( list, (x:int)-> x>pivot )
@@ -809,7 +779,7 @@ quickSort:func(seq[int], int, int)->seq[int] := (list:seq[int], low: int, high: 
 ## Filtered sum
 A function which accepts a list of numbers and returns sum of even numbers.
 ```
-filteredSum := (data: seq[int]) -> int
+filteredSum := (data: [int]) -> int
 {
   calc := (index: int, sum: int)->
   {
@@ -825,11 +795,11 @@ filteredSum := (data: seq[int]) -> int
 A function which accepts a number and returns it's digits in a sequence of characters.
 Generally for this purpose, using a linked-list is better because it will provide better performance.
 ```
-extractor := (n: number, result: seq[char]) ->
+extractor := (n: number, result: [char]) ->
 {
-  (n<10) return append(result, char.{48+n})
+  (n<10) return append(result, char(48+n))
   digit := n % 10
-  return extractor(n/10, append(result, char.{48+digit})
+  return extractor(n/10, append(result, char(48+digit))
 }
 ```
 
@@ -837,7 +807,7 @@ extractor := (n: number, result: seq[char]) ->
 A function which accepts two sequences of numbers and returns the maximum of sum of any any two numbers chosen from each of them.
 This can be done by finding maximum element in each of the arrays but we want to do it with a nested loop.
 ```
-maxSum := (a: seq[int], b: seq[int]) -> int
+maxSum := (a: [int], b: [int]) -> int
 {
 	calc := (idx1: int, idx2: int, current_max: int) -> 
 	{
@@ -854,9 +824,9 @@ maxSum := (a: seq[int], b: seq[int]) -> int
 
 ## Fibonacci
 ```
-fib := (n: int, cache: seq[int|nothing])->int
+fib := (n: int, cache: [int|nothing])->int
 {
-	(seq[n] != nothing) return int.{seq[n]}.0
+	(cache[n] != nothing) return int(cache[n]).0
 	seq_final1 := set(seq, n-1, fib(n-1, cache))
 	seq_final2 := set(seq_final1, n-2, fib(n-2, seq_final1))
 
@@ -937,6 +907,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.96**: Jun 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: Jun 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` place holder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is typed statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
-- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, Modules are structs (remove `import` keyword and replaced with `$` operator), re-defined generics using module-level types, introduced explicit and implicit namespaces for structs and functions, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel
-
-
+- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting
