@@ -101,16 +101,16 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 04. `{}`  Code block, struct definition and struct literal, return condition
 05. `[]`  Types and literals (map, sequence), Generic modules, concurrency
 06. `|`   Union data type 
-07. `->`  Function declaration, forwarding
-08. `..`  Range generator for sequence literal
+07. `->`  Function declaration
+08. `..`  Range generator for sequence
 09. `//`  Nothing-check operator
 10. `!`   Write-only channel
 11. `?`   Read-only channel
 11. `:`   Type declaration (struct, function inputs and bindings)
 12. `:=`  Binding declaration, named types
 13. `:==` Parallel execution
-15. `~`   Chain operator (To chain function calls)
-16. `_`   Place holder (lambda creator, place-holder in assignments)
+15. `~`   Chain operator
+16. `_`   Place holder (lambda creator and assignments)
 
 ## Reserved identifiers
 
@@ -272,9 +272,8 @@ You can call `fn` like a normal function with an input which should be any of po
 2. A struct can embed as many other structs as it wants.
 3. The language provides pure "contain and delegate" mechanism as a limited form of polymorphism.
 4. In Example 2, `Shape` is the contained type and `Circle` is container type.
-5. To have polymorphism in function calls, you should forward function calls to embedded structs (Calls on a `Circle` should be forwarded to calls on its `Shape`). Refer to function section for more information about forwarding functions.
+5. To have polymorphism in function calls, you should forward function calls to embedded structs (Calls on a `Circle` should be forwarded to calls on its `Shape`). 
 7. Note that polymorphism does not apply to generics. So `[Circle]` cannot substitute `[Shape]`. But you can have `[Circle|Square]` to have a mixed sequence of different types.
-8. We use closed recursion to forward function calls. This means if a function call is forwarded from `Circle` to `Shape` and inside that function, a second function is called which has candidates for both `Circle` and `Shape` the one for `Shape` will be called.
 
 **Examples**
 
@@ -477,24 +476,6 @@ process := (x:int) ->
 11. `T1 := func(int)->(int|string)`
 12. `process := (x:int)->x+1`, `process2 := process`
 
-## Call forwarding
-
-**Syntax**: `funcName := (type1->type2, type3, type4->type5, ...)`
-
-**Notes**
-
-1. To forward a function call to another function with the same name used to implement subtyping (This notation provides a syntax sugar).
-2. Example 1, indicates any call to function `draw` with a parameter of type `Circle` must be sent to a function with the same name and `Shape` input. In this process, the argument will be converted to a `Shape` (Example 4 represents equivalent definition without using call forwarding notations).
-3. Example 2, will forward any call to function `process` with the first input of type `Polygon`, `Square` or `Circle` and second argument of `GradientColor` or `SolidColor` to the same name function with inputs `Shape` and `Color` type. All other inputs which are not forwarded are the same between original and forwarding function. This definition is for 6 functions and forwarding all of them to a single function.
-4. Example 3, is like example 2 but uses a generic union to indicate all types that embed a Shape.
-5. Note that left side of `->` must embed the type on the right side.
-
-**Examples**
-
-1. `draw := (Circle->Shape)`
-2. `process := (Polygon|Square|Circle->Shape, GradientColor|SolidColor]->Color)`
-4. `draw: func(Circle) := (c: Circle) -> draw(c.Shape)`
-
 ## Function pointer
 
 **Syntax**: `Fp := func(type1, type2, ...)->OutputType`
@@ -612,10 +593,10 @@ g := process(_:int)
 
 1. Parallel execute `result :== expression` 
 2. Create `reader: T?, writer: T! := createChannel(buffer_size, r_lambda, w_lambda)`
-3. Read data `data := reader[]`
-4. Write data `writer[data]`
-5. Select `data, channel := [wch1, wch2][data1, data2][rch1, rch2][]`
-6. Select `data, channel := [rch1, rch2][wch1, wch2][data1, data2][]`
+3. Read data `data := reader?`
+4. Write data `writer!data`
+5. Select: `data, channel := ${rch1?, rch2?, wch1!data1, wch2!data2}`
+6. Select: `data, channel := ${rch1?, [rch2,rch3]?, wch1!data1, [wch2,wch3]!data2}`
 
 **Notes**
 1. Channels are a data transportation mechanism which are open the moment they are created and closed when they are GC'd.
@@ -626,7 +607,6 @@ g := process(_:int)
 6. Any party can close/dispose their channel. Send or receive on a channel where there is no receiver or sender will cause blocking forever. If you want to prevent this, you need to implement this separately using another channel or any other mechanism.
 7. There are utility functions to create timed or always on channels (to be used as default in a select)
 8. Exclusive resources (sockets, file, ...) are implemented using channels to hide inherent mutability of their underlying resource.
-9. In select notation, you provide a list of read-only channels and a list of write-only channels + same number of data to write and append `[]` to the list. The result will be the data which is being sent/received and the channel which executed that operation. Select will try any of given channels for read/write operation and will do the operation on the first available channel.
 
 **Examples**
 1. 
@@ -909,4 +889,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.96**: Jun 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: Jun 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` place holder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is typed statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
-- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting, removed `^` operator and replaced with generics, removed `@` (replaced with chain operator and casting)
+- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting, removed `^` operator and replaced with generics, removed `@` (replaced with chain operator and casting), removed function forwarding, removed compound literal, changed notation for channel read, write and select (Due to changes in generics and sequence and removal of compound literal)
