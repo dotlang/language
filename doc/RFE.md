@@ -5003,7 +5003,63 @@ Its better if we can reduce number of usages of `()` and `[]` so they will be le
 `int(exp).1->return int(exp).0`
 y `{int(exp).1} return int(exp).0`
 
-? - Can we eliminate function forwarding?
+N - Chain operator. Can we make notation simpler?
+We should be able to chain, chain operators together. So surrounding notations like `(...)` is not good.
+`f(x,y)`
+`(x,y)f(_,_)`
+`(x)f(_)`
+`(x)( f(_), g(_), h(_) )`
+1. `g := (5,9)add(_, _)` => `g := add(5,9)`
+2. `(1,2)processTwoData(_, _)` => `processTwoData(1,2)`
+3. `({1,2})processStruct(_)` => `processStruct({1,2})`
+4. `(6)addTo(1, _)` => `addTo(1, 6)`
+5. `result := (input, check1(5, _))pipe(_,_)pipe(_, check3(1,2,_)) ~ pipe(_,check5(8,_,1))`
+5. `result := (input, check1(5, _)) ~ pipe(_,_) ~ pipe(_, check3(1,2,_)) ~ pipe(_,check5(8,_,1))`
 
+6. `pipe[T, O] := (input: Maybe[T], handler: func(T)->Maybe[O])->Maybe[O] ...`
+7. `inc := (x:int) -> x+1`, `eleven := 10 ~ inc(_)`
+8. `add := (x:int, y:int) -> x+y`, `(10, 20) ~ add(_,_)`
+9. `(1) ~ process(_)`, = `1 ~ process(_)`
+10. `result := error_or_int ~ (x:error)->10, (y:int)->20`
 
-? - Review manual document organization. What is the best order of titles and document titles?
+Y - Can we eliminate function forwarding?
+1. `draw := (Circle->Shape)`
+2. `process := (Polygon|Square|Circle->Shape, GradientColor|SolidColor]->Color)`
+4. `draw: func(Circle) := (c: Circle) -> draw(c.Shape)`
+Why should we make it simpler by providing this shortcut? We are not oop and should not try to be.
+1. `draw := (c:Circle) -> draw(Shape(c))`
+2. `process := (Polygon|Square|Circle->Shape, GradientColor|SolidColor]->Color)`
+4. `draw: func(Circle) := (c: Circle) -> draw(c.Shape)`
+
+N - Idea: use `~` to return statement for conditions.
+`{x<0} return 100`
+`(x<0) ~ return 100`
+This is not intuitive and will be confusing.
+
+Y - Now that we have changed notation for seq and removed compound literal and generics, this notation is a bit weird:
+`data, channel := [wch1, wch2][data1, data2][rch1, rch2][]`
+`data, channel := [rch1, rch2][wch1, wch2][data1, data2][]`
+What about using a map? channel to data.
+`data, channel := [rch1, nothing, rch2, nothing, wch1, wch2, data1, data2][]`
+Why not have it as a function? So it can be composed with other functions, extended, ... .
+`data, channel := select([rch1, rch2], [wch1, data1, wch2, data2])`
+Pro: No need for confusing `[]` notation.
+Pro: Using existing mechanisms.
+But what will be the signature of this function?
+`data, channel := select([
+	rch1, ()->rch1., rch2], [wch1, data1, wch2, data2])`
+Maybe we also should change notation to read/write in channels. As `[]` will be confusing.
+3. Read data `data := reader?`
+4. Write data `writer!data`
+5. Select `data, channel := [wch1, wch2][data1, data2][rch1, rch2][]`
+6. Select `data, channel := [rch1, rch2][wch1, wch2][data1, data2][]`
+Maybe we can implement select by using `:==`.
+`data, channel :== rch1?, rch2?, wch1!data1, wch2!data2`
+No it should not be bound to `:==`. It should be generally possible to calculate and open to using `:==`.
+This can be a special notation like `$`.
+`data, channel := ${rch1?, rch2?, wch1!data1, wch2!data2}`
+But we also need to support variable number of operations.
+What if we apply `!` or `?` on an array?
+`data, channel := ${rch1?, [rch2,rch3]?, wch1!data1, [wch2,wch3]!data2}`
+
+Y - Review manual document organization. What is the best order of titles and document titles?
