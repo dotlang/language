@@ -4978,13 +4978,32 @@ but there is no body, any call to this will result in runtime error
 
 Y - Can a struct embed another struct implicitly by having fields with same name and type?
 
-? - Can we Get internal type of union with a more intuitive notation and remove `@`?
+Y - Can we Get internal type of union with a more intuitive notation and remove `@`?
 `@x` will return type of x (only if x is union typed or generic)
 `@[int]` will return integer identifier of type int.
 Why can't we combine these two? Is there any use case where we need the integer value?
 Why not use casting notation?
 `int_val, has_int := int(int_or_float)`
 `(int(int_or_float).1) return 100` if var has a int, return 100
+Usage of int for type: using map for selecting based on type
+`[@int, 100, @float, 200][@x]` this will give 100 if it is int or 200 if float.
+But we can do it via chain operator:
+`resut := x ~ (a:int)->100, (b:float)->200`
+But sometimes we need to return based on the type.
+`(@exp = @[int]) return int(exp).0`
+why not cast?
+`(int(exp).1) return int(exp).0`
+
+Y - For return's condition, shall we use something else? So we have less nested paren?
+Right now we use `()` for cast, return condition, function call
+`[]` for sequence and map literals, their types, select.
+Its better if we can reduce number of usages of `()` and `[]` so they will be less confusing.
+`(int(exp).1) return int(exp).0`
+`int(exp).1.return int(exp).0`
+`int(exp).1->return int(exp).0`
+y `{int(exp).1} return int(exp).0`
+
+? - Can we eliminate function forwarding?
 
 
 ? - Review manual document organization. What is the best order of titles and document titles?
