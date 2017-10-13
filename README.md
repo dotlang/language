@@ -357,8 +357,8 @@ You can call `fn` like a normal function with an input which should be any of po
 
 `import "/path/to/module"`
 `import "/path/to/module" { name1 := name2, MyType := ModuleType, ... }`
-`import "/path/to/module" { _ := name2, MyType := ModuleType, ... }`
-`import "/path/to/module" { _ := _, MyType := ModuleType, ... }`
+`import "/path/to/module" { name2, MyType := ModuleType, ... }`
+`import "/path/to/module" { _, MyType := ModuleType, ... }`
 
 **Notes**
 
@@ -380,8 +380,8 @@ You can call `fn` like a normal function with an input which should be any of po
 3. `import "git/github.com/net/server/branch1/dir1/dir2/module"`
 4. `base_cassandra := "github/apache/cassandra/mybranch"`
 5. `import base_cassandra&"/path/module"`
-6. `import "/path/to/module" { _ := ModuleType1 }`
-7. `import "/path/to/module" { _ := _, MyType1 := ModuleType1 }`
+6. `import "/path/to/module" { ModuleType1 }`
+7. `import "/path/to/module" { _, MyType1 := ModuleType1 }`
 
 # Generics
 
