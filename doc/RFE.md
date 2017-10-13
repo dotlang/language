@@ -5097,3 +5097,8 @@ How can we get rid of `*`? What if we say, by default everything is imported, bu
 `import "/path/to/module" { _ := _, MyType1 := ModuleType1 }` import everything but rename `ModuleType1`
 `import "/path/to/module" { MyType1 := ModuleType1 }` only import and rename `ModuleType1`
 `import "/path/to/module" { _ := ModuleType1 }` only import `ModuleType1` without rename.
+
+Y - better syntax for import with rename:
+`import "a" { item1, item2, item3}` only import these 3
+`import "a" { myname := item1, item2, item3}` import with filter and rename
+`import "a" { myname := item1, _ }` import with rename and everything
