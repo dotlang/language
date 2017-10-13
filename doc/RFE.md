@@ -5062,4 +5062,26 @@ But we also need to support variable number of operations.
 What if we apply `!` or `?` on an array?
 `data, channel := ${rch1?, [rch2,rch3]?, wch1!data1, [wch2,wch3]!data2}`
 
+Y - The bahvior of select is not intuitive and orth.
+`data, channel := ${rch1?, [rch2,rch3]?, wch1!data1, [wch2,wch3]!data2}`
+Can I use `!?` with arrays, outside `$`? what does that mean?
+`data, channel := ${rch1?, [rch2,rch3]?, wch1!data1, [wch2,wch3]!data2}`
+We can write name of channels only but it won't be very readable and also for write operations, we will need to mention data to send.
+`data, channel := ${rch1?, [rch2,rch3]?, wch1!data1, [wch2,wch3]!data2}`
+`data, channel := ${[rch2,rch3]?}`
+Also, we may want to send different data to different channels in an array: `wcharray!data`
+We can say in `wch_array!` we can either mention one item or a sequence. what if they are channels of sequence? Won't it cause confusion?
+Anything that comes after `!` is to be sent. If left side of `!` is an array, right side must also be an array one element per channel. For `?` we can have either a channel or seq of channels.
+BUT what if I write `[ch1, ch2]?` outside `$`? Will it acts like a select?
+I think it should. `[ch1, ch2]?` means read from any of these which is available to read.
+`[w1, w2]![d1, d2]` means try to write to any of these which is available.
+result of `[c1, c2]?` is `data, channel` indicating which channel used to read and which data was read.
+If you want to combine read and write you need to use `$` operator.
+What if we make `$` mandatory for all read/write for single/multi channels?
+`data,_ := ${r?}`
+`data,_ := ${w!data}`
+`data,ch := ${r?, w!data}`
+`data,ch := ${r1?, r2?, w1!data1, w2!data2}`
+`data,ch := ${[r1, r2]?, [w1, w2]![data1, data2]}`
+
 Y - Review manual document organization. What is the best order of titles and document titles?
