@@ -5085,3 +5085,15 @@ What if we make `$` mandatory for all read/write for single/multi channels?
 `data,ch := ${[r1, r2]?, [w1, w2]![data1, data2]}`
 
 Y - Review manual document organization. What is the best order of titles and document titles?
+
+Y - Should we have a mechanism to import only some specific items? (Type or binding).
+`import "module1"`
+`import "module1" {item1, item2, item3}"`
+`import "/path/to/module" { name1 := name2, MyType := ModuleType, ... }`
+Why not underscore and existing rename syntax?
+`import "/path/to/module" { _ := *, MyType1 := ModuleType1 }`
+Here we only import `ModuleType1` as `MyType1` and discard other bindings and types.
+How can we get rid of `*`? What if we say, by default everything is imported, but if you include `{}` only elements mentioned there will be imported. So you have a change to filter and rename imported identifiers.
+`import "/path/to/module" { _ := _, MyType1 := ModuleType1 }` import everything but rename `ModuleType1`
+`import "/path/to/module" { MyType1 := ModuleType1 }` only import and rename `ModuleType1`
+`import "/path/to/module" { _ := ModuleType1 }` only import `ModuleType1` without rename.
