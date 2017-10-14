@@ -8,8 +8,6 @@ August 7, 2017
 
 # Table of Contents
 
-
-
 1. [Introduction](https://github.com/dotlang/language/blob/master/README.md#introduction)
 2. [Language in a nutshell](https://github.com/dotlang/language/blob/master/README.md#language-in-a-nutshell)
 3. [Bindings](https://github.com/dotlang/language/blob/master/README.md#bindings)
@@ -75,7 +73,7 @@ core
 |-----|-----tcp  
 ```
 
-In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages. Each package can potentially contain zero or more modules.
+In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages. Each package can contain zero or more modules.
 
 # Language in a nutshell
 
@@ -185,137 +183,92 @@ Note that `func` is explain in the "Function" section and channel types are expl
 2. `float` is double-precision 8-byte floating point number.
 3. `char` is a single character, represented as an unsigned byte.
 4. Character literals should be enclosed in single-quote.
-5. Primitive data types include simple types and compound types (array, struct, and union).
-2. `string` is defined as a sequence of `char` data type, represented as `[char]` type. The conversion from/to string literals is handled by the compiler.
-3. String literals should be enclosed in double quotes. 
-4. String literals enclosed in backtick can be multiline and escape character `\` will not be processed in them.
-5. `nothing` is a special type which is used to denote empty/invalid/missing data. This type has only one value which is the same identifier.
-6. `bool` type is same as int and `true` is 1, `false` is 0.
-
+5. `string` is defined as a sequence of `char` data type, represented as `[char]` type. The conversion from/to string literals is handled by the compiler.
+6. String literals should be enclosed in double quotes. 
+7. String literals enclosed in backtick can be multiline and escape character `\` will not be processed in them.
+8. `bool` type is same as int and `true` is 1, `false` is 0.
+9. `nothing` is a special type which is used to denote empty/invalid/missing data. This type has only one value which is the same identifier.
 
 **Examples**
 
 1. `x := 12`
 2. `x := 1.918`
 3. `x := 'c'`
-1. `g: bool := true`
-2. `str: string := "Hello world!"`
-
+4. `g: bool := true`
+5. `str: string := "Hello world!"`
 
 ## Sequence
 
+Sequence is similar to array in other languages. It represents a fixed-size block of memory space with elements of the same type, T and is shows with `[T]` notation. You can initialize a sequence with a sequence literal (Example 1) or range operator (Example 2).
+
+You refer to elements inside sequence using `x[i]` notation where `i` is index number. Referring to an index outside sequence will cause a runtime error.
+
+**Examples**
+
+1. `x: [int] := [1, 2, 3, 4]`
+2. `x := [1..10] #initialize a sequence using range operator`
+3. `x: [[int]] := [ [1, 2], [3, 4], [5, 6] ] #a 2-D sequence of integer numbers`
+4. `x: [int] := [1, 2]&[3, 4]&[5, 6] #merging multiple sequences`
+5. `n := x[10]`
+
+
 ## Map
 
-7. `sequence` type represents a fixed-size block of memory space with elements of the same type. You can use a sequence literal (Example 4) to initialize sequence variables. This type can be used to represent an array.
-8. You can use range generator operator `..` to create sequence literals (Example 5).
-9. You can use `&` operator to merge two sequences of the same type, into a larger sequence (Example 7).
-10. Core provides functions to extract part of a sequence as another sequence (Like array slice).
-11. Referring to an index outside sequence will cause a runtime error.(Example 8 for reading from a sequence).
-12. You can use `[KeyType, ValueType]` to define a map (Example 9 and 10)
+You can use `[KeyType, ValueType]` to define a map type. When reading from a map, you will also receive a flag indicating whether the key exists in the map.
 
-4. `x: [int] := [1, 2, 3, 4]`
-5. `x := [1..10]`
-6. `x: [[int]] := [ [1, 2], [3, 4], [5, 6] ]`
-7. `x: [int] := [1, 2]&[3, 4]&[5, 6]`
-8. `n := x[10]`
-9. `pop: [string, int] := ["A",1,"B",2,"C",3]`
-10. `data, is_found := pop["A"]`
+**Examples**
+
+1. `pop: [string, int] := ["A",1,"B",2,"C",3]`
+2. `data, is_found := pop["A"]`
 
 ## Union
 
-**Syntax**: `type1 | type2 | Identifier1 | ...`
+Bindings of a union type, have ability to hold multiple different types and is shown as `T1|T2|T3|...`. You can also include identifiers as a valid value for a union type. These identifiers are types that have only one valid value which is same as their name. This can be used to define enumberations (Example 1).
 
-**Notes**
-
-1. A primitive meta-type which can contain different types and identifiers.
-2. You can use either types or identifiers for types of data a union can contain. If you use an identifier, its name should be unique.
-3. Example 1 shows usage of a union to define an enum type to represent days of a week.
-4. Example 2, defines a union with explicit type and changes it's value to other types in next two examples.
-5. You can use the syntax in example 5 to cast a union to another type. The result will have two parts: data and a flag. If the flag is set to false, the conversion is failed.
-6. `int | flotOrString` will be simplified to `int | float | string`
-8. If all union cases are function pointers, you can treat it like a function but must pass appropriate input (Example 7)
+When you convert a union variable to one of it's types (Example 3), you also get a boolean flag indicating whether conversion was successful.
 
 **Examples**
 
 1. `Day_of_week := SAT | SUN | MON | TUE | WED | THU | FRI`
 2. `int_or_float: int | float := 11`
-3. `int_or_float := 12.91`
-4. `int_or_float := 100`
-5. `int_value, done := int(my_union)`
-7. `fn: func(int)->int|func(string)->int|func(float)->int := ...`
-A union of type function pointer with three possible function types.
-8. `data: int|float|string := ...`, `o := fn(data)`
-You can call `fn` like a normal function with an input which should be any of possible input types 
+3. `int_value, is_valid := int(my_union)`
 
 ## Struct
 
-**Syntax**: 
+A struct (Similar to struct in C), represents a set of related binding definitions which do not have values. To provide a value for a struct, you can use either a typed struct literal (e.g. `Type{field1:=value1, field2:=value2, ...}`, note that field names are optional) or an untyped struct literal (e.g. `{value1, value2, value3, ...}`).
 
-1. Declaration: `{field1: type1, field2: type2, field3: type3, ...}` 
-2. Typed Literal: `Type{field1:=value1, field2:=value2, ...}` 
-3. Typed Literal: `Type{value1, value2, value3, ...}` 
-4. Untyped literal: `{value1, value2, value3, ...}` 
-5. Update a struct: `original_var{field1:=new_value1, field2:=new_value2, ...}` 
+You can update a struct binding and create a new binding (Example 5).
 
-**Notes**
-
-1. Struct represents a set of related bindings which do not have values.
-3. Example 1 defines a named type for a 2-D point and next 2 examples show how to initialize variables of that type. See "Named Types" section for more info about named types.
-4. If you define an untyped literal (Example 4), you can access its component by destruction (Example 6).
-5. Examples 6 and 7 show how to destruct a struct and extract its data.
-6. Example 8 and 9 are the same and show how to define a struct based on another struct.
-7. Example 10 indicates you cannot choose field names for an untyped struct literal.
-8. You can use `.0,.1,.2,...` notation to access fields inside an untyped tuple (Example 11).
-
+You can use `.0,.1,.2,...` notation to access fields inside an untyped struct (Example 11).
 
 **Examples**
 
 1. `Point := {x:int, y:int}`
 2. `point2 := Point{x:=100, y:=200}`
 3. `point3 := Point{100, 200}`
-4. `point1 := {100, 200}`
-5. `point4 := point3{y:=101}`
-6. `x,y := point1`
-7. `x,y := {100,200}`
-8. `another_point := Point{x:=11, y:=my_point.y + 200}`
-9. `another_point := my_point`
-10. `new_point := {a:=100, b:=200} //WRONG!`
-11. `x := point1.1`
-12. `Customer := { name: string, age: int, CustomerId := int }`
+4. `point1 := {100, 200} #untyped struct`
+5. `point4 := point3{y:=101} #update a struct`
+6. `x,y := point1 #destruction to access struct data`
+7. `another_point := Point{x:=11, y:=my_point.y + 200}`
+8. `x := point1.1 #another way to access struct data`
 
 ### Composition
 
-**Syntax**: `{Parent1Type, field1: type1, Parent2Type, field2: type2, Parent2Type, ...}`
-
-**Notes**
-
-1. Composition is used to include (or embed) a struct in another struct. This can be used to represent "is-a" or "has-a" relationship. Note that all fields and types will be merged into the conatiner struct.
-2. A struct can embed as many other structs as it wants.
-3. The language provides pure "contain and delegate" mechanism as a limited form of polymorphism.
-4. In Example 2, `Shape` is the contained type and `Circle` is container type.
-5. To have polymorphism in function calls, you should forward function calls to embedded structs (Calls on a `Circle` should be forwarded to calls on its `Shape`). 
-7. Note that polymorphism does not apply to generics. So `[Circle]` cannot substitute `[Shape]`. But you can have `[Circle|Square]` to have a mixed sequence of different types.
+You can use struct composition to represent "is-a" or "has-a" relationship. In this case, all fields of the contained struct will be merged into container struct. The language provides pure "contain and delegate" mechanism as a limited form of polymorphism.
 
 **Examples**
 
 1. `Shape := { id:int }`
-2. `Circle := { Shape, radius: float}`
-3. `my_circle := Circle{id:100, radius:1.45}`
-
+2. `Circle := { Shape, radius: float} #Shape is contained within a Circle`
+3. `my_circle := Circle{id:100, radius:1.45} #creating a Circle binding`
 
 ## Named types
 
-**Syntax**: `NewType := UnderlyingType`
+You can name a type so you will be able to refer to that type later in the code. Type names must start with a capital letter to be distinguished from bindings. You define a named type similar to a binding: `NewType := UnderlyingType`.The new type has same binary representation as the underlying type but it will be treated as a different type.
 
-**Notes**
+You can use casting operator to convert between a named type and its underlying type (Example 5).
 
-1. To introduce new types based on existing types (called underlying type). The new type has same binary representation as the underlying type but it will be treated as a different type.
-2. Example number 4, is the standard definition of `bool` extended primitive type based on `union` and label types.
-3. Although their binary data representations are the same, `MyInt` and `int` are two separate types. This will affect function dispatch. Please refer to the corresponding section for more information.
-4. You can use casting operator to convert between a named type and its underlying type (Example 5).
-5. You can define multiple named types in one type statement (Example 6).
-6. If a function is called which has no candidate for the named type, the candidate for underlying type will be invoked.
-7. Visually, the naming differentiates a named type from a binding (type names start with a capital letter).
+If a function is called which has no candidate for the named type, the candidate for underlying type will be invoked (if any).
 
 **Examples**
 
@@ -323,10 +276,11 @@ You can call `fn` like a normal function with an input which should be any of po
 2. `IntArray := [int]`
 3. `Point := {x: int, y: int}`
 4. `bool := true | false`
-5. `x: MyInt := 10`, `y: MyInt := MyInt{10}`
-6. `OpenSocket, ClosedSocket := { data: int }`
+5. `x: MyInt := 10`, `y: MyInt := MyInt(10)`
 
 ## Casting
+
+There is no implicit and automatic casting.
 
 **Syntax**: `TargetType(data)`
 
