@@ -8,6 +8,8 @@ August 7, 2017
 
 # Table of Contents
 
+
+
 1. [Introduction](https://github.com/dotlang/language/blob/master/README.md#introduction)
 2. [Language in a nutshell](https://github.com/dotlang/language/blob/master/README.md#language-in-a-nutshell)
 3. [Bindings](https://github.com/dotlang/language/blob/master/README.md#bindings)
@@ -79,16 +81,16 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 
 ## Main features
 
-01. **Import a module**: `ModuleType := !("/core/std/queue")` (you can also import from external sources like Github).
+01. **Import a module**: `import "/core/std/queue"` (you can also import from external sources like Github).
 02. **Primitive types**: `int`, `float`, `char`, `sequence`, `map`, `func`.
 03. **Bindings**: `my_var:int := 19` (type can be automatically inferred, everything is immutable).
-04. **Sequence**: `scores:[int] := [1, 2, 3, 4]` (Similar to array).
-05. **Map**: `scores:[string, int] := ["A",1, "B",2, "C",3, "D", 4]` (Similar to array).
+04. **Sequence**: `scores:[int] := [1, 2, 3, 4]`.
+05. **Map**: `scores:[string, int] := ["A",1, "B",2, "C",3, "D", 4]`.
 06. **Named type**: `MyInt := int` (Defines a new type with same binary representation as `int`).
 07. **Struct type**: `Point := {x: int, y:int, data: float}` (Like `struct` in C)
 08. **Struct literal**: `location := Point{x:=10, y:=20, data:=1.19}`
 09. **Composition**: `Circle := {Shape, radius: float}` (`Circle` embeds fields of `Shape`)
-10. **Generics**: `import "/core/Stack[int]"` (Generics are defined as templated modules)
+10. **Generics**: `import "/core/Stack[int]"` (Generics are defined as template modules)
 11. **Union type**: `MaybeInt := int | nothing` (Can store either of possible types)
 12. **Function**: `calculate: func(int,int)->float := (x, y) -> float { return x/y  }`
 13. **Concurrency**: `result :== processData(x,y,z)` (Evaluate an expression in parallel)
@@ -106,22 +108,24 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 09. `//`  Nothing-check operator
 10. `!`   Write-only channel
 11. `?`   Read-only channel
-11. `$`   Channel operations
-11. `:`   Type declaration (struct, function inputs and bindings)
-12. `:=`  Binding declaration, named types
-13. `:==` Parallel execution
-15. `~`   Chain operator
-16. `_`   Place holder (lambda creator and assignments)
+12. `$`   Channel select operations
+13. `:`   Type declaration (struct, function inputs and bindings)
+14. `:=`  Binding declaration, named types
+15. `:==` Parallel execution
+16. `~`   Chain operator
+17. `_`   Place holder (lambda creator and assignments)
 
 ## Reserved identifiers
 
 **Keywords**: `return`, `import`
 
-**Primitive data types**: `int`, `float`, `char`, `sequence`, `map`, `func`
+**Basic data types**: `int`, `float`, `char`, `string`, `bool`, `nothing`
 
-**Extended primitive types**: `nothing`, `bool`, `string`, `read-only channel`, `write-only channel`
+**Compound data types**: `sequence`, `map`, struct and union
 
-**Other reserved identifiers**: `true`, `false`
+**Other data types**: `func`, `read-only channel`, `write-only channel`
+
+**Reserved identifiers**: `true`, `false`
 
 **Compound types**: Struct and Union
 
@@ -130,49 +134,50 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 These rules are highly advised but not mandatory.
 
 1. Indentation must be done using spaces, not tabs. Using 4 spaces is advised but not mandatory.
-2. It is advised to put each statement on a separate line. 
-3. Naming: `someFunctionName`, `my_binding_name`, `func_arg_name`, `SomeDataType`, `my_package_dir`, `my_modue_file`.
-4. Braces must appear on their own line. For lambdas which are a single expression you should omit braces.
+2. You must put each statement on a separate line. 
+3. Naming: `SomeDataType`, `someFunctionName`, `my_binding_name`, `func_arg_name`, `my_package_dir`, `my_modue_file`.
+4. Braces must appear on their own line. For lambdas that are a single expression you should omit braces.
+5. You can use `0x` prefix for hexadecimal numbers and `0b` for binary.
+6. You can use `,` as digit separator in number literals.
 
 # Bindings
 
+A binding assigns an identifier to a value. The value can be of any valid type (integer number, function, struct literal, ...). Bindings must start with a lowercase letter.
+
+You can define bindings at module-level or inside a function. Module-level bindings can only have literals as their value, but function bindings can have expressions too. Type of a binding is automatically inferred from the value, but you can also explicitly state the type.
+
+Note that all bindings are immutable. So you cannot manipulate or re-assign them.
+
+If the value is a compound data structure, you can destruct it into it's elements (Example 5). In this process, you can also use underscore to indicate you are not interested in one or more of those elements (Example 6).
+
 **Syntax**: 
 
-1. `identifier := definition`
-2. `identifier : type := definition`
-
-**Notes**
-
-1. By default, type of the binding is inferred from the value but you can also explicitly specify the type.
-2. Note that bindings are immutable, so you cannot re-assign them.
-3. The type of the rvalue (What comes on the right side of `:=`), can be any possible data type including function. Refer to following sections for an explanation of different available data types.
-4. If the rvalue is a struct (Refer to the corresponding section for more info about struct), You can destruct it to its elements using this keyword (Example 3 and 5).
-5. You can use place holder symbol `_` to denote you are not interested in a specific value (Example 6).
-6. You can use `0x` prefix for hexadecimal numbers and `0b` for binary.
-7. You can use `,` as digit separator in number literals.
+1. `identifier := value/expression`
+2. `identifier : type := value/expression`
 
 **Examples**
 
 1. `x: int := 12`
-2. `g := 19.8`
-3. `a,b := process()`
+2. `g := 19.8 #type is inferred`
+3. `a,b := process() #call the function and store the result in two bindings: a and b`
 4. `x := y`
 5. `a,b := {1, 100}`
 6. `a,_ := {1, 100}`
 
 # Type system
 
-Types are blueprints which are used to create bindings. 
+Types are blueprints which are used to create values for bindings.
+
 Two types T1 and T2 are identical/assignable in any of below cases:
 1. Both are named types defined in the same place in the code.
 2. Both are unnamed types with similar definition (e.g. `int|string` vs `int|string` or `[int]` vs `[int]`).
 2. T1 is named and T2 is identical to T1's underlying type, or vice versa.
 
-## Primitive data types
+Note that `func` is explain in the "Function" section and channel types are explained in "Concurrency" section.
 
-### Simple types
+## Basic types
 
-**Syntax**: `int`, `float`, `char`, `sequence`, `map`
+**Syntax**: `int`, `float`, `char`, `string`, `bool`, `nothing`
 
 **Notes**:
 
@@ -181,6 +186,26 @@ Two types T1 and T2 are identical/assignable in any of below cases:
 3. `char` is a single character, represented as an unsigned byte.
 4. Character literals should be enclosed in single-quote.
 5. Primitive data types include simple types and compound types (array, struct, and union).
+2. `string` is defined as a sequence of `char` data type, represented as `[char]` type. The conversion from/to string literals is handled by the compiler.
+3. String literals should be enclosed in double quotes. 
+4. String literals enclosed in backtick can be multiline and escape character `\` will not be processed in them.
+5. `nothing` is a special type which is used to denote empty/invalid/missing data. This type has only one value which is the same identifier.
+6. `bool` type is same as int and `true` is 1, `false` is 0.
+
+
+**Examples**
+
+1. `x := 12`
+2. `x := 1.918`
+3. `x := 'c'`
+1. `g: bool := true`
+2. `str: string := "Hello world!"`
+
+
+## Sequence
+
+## Map
+
 7. `sequence` type represents a fixed-size block of memory space with elements of the same type. You can use a sequence literal (Example 4) to initialize sequence variables. This type can be used to represent an array.
 8. You can use range generator operator `..` to create sequence literals (Example 5).
 9. You can use `&` operator to merge two sequences of the same type, into a larger sequence (Example 7).
@@ -188,11 +213,6 @@ Two types T1 and T2 are identical/assignable in any of below cases:
 11. Referring to an index outside sequence will cause a runtime error.(Example 8 for reading from a sequence).
 12. You can use `[KeyType, ValueType]` to define a map (Example 9 and 10)
 
-**Examples**
-
-1. `x := 12`
-2. `x := 1.918`
-3. `x := 'c'`
 4. `x: [int] := [1, 2, 3, 4]`
 5. `x := [1..10]`
 6. `x: [[int]] := [ [1, 2], [3, 4], [5, 6] ]`
@@ -201,7 +221,7 @@ Two types T1 and T2 are identical/assignable in any of below cases:
 9. `pop: [string, int] := ["A",1,"B",2,"C",3]`
 10. `data, is_found := pop["A"]`
 
-### Union
+## Union
 
 **Syntax**: `type1 | type2 | Identifier1 | ...`
 
@@ -227,7 +247,7 @@ A union of type function pointer with three possible function types.
 8. `data: int|float|string := ...`, `o := fn(data)`
 You can call `fn` like a normal function with an input which should be any of possible input types 
 
-### Struct
+## Struct
 
 **Syntax**: 
 
@@ -282,23 +302,6 @@ You can call `fn` like a normal function with an input which should be any of po
 2. `Circle := { Shape, radius: float}`
 3. `my_circle := Circle{id:100, radius:1.45}`
 
-## Extended primitive types
-
-**Syntax**: `nothing`, `bool`, `string`, `write-only channel`, `read-only channel`
-
-**Notes**
-
-1. These types are not built-in types and are defined using other types, but due to their important role, they are defined in the core.
-2. `string` is defined as a sequence of `char` data type, represented as `[char]` type. The conversion from/to string literals is handled by the compiler.
-3. String literals should be enclosed in double quotes. 
-4. String literals enclosed in backtick can be multiline and escape character `\` will not be processed in them.
-5. `nothing` is a special type which is used to denote empty/invalid/missing data. This type has only one value which is the same identifier.
-6. `bool` type is same as int and `true` is 1, `false` is 0.
-
-**Examples**
-
-1. `g: bool := true`
-2. `str: string := "Hello world!"`
 
 ## Named types
 
@@ -351,7 +354,7 @@ You can call `fn` like a normal function with an input which should be any of po
 6. `x := MyFuncType.(t)`
 7. `a, b, c := MyInt(x,y,z)`
 
-## Modules
+# Modules
 
 **Syntax**
 
@@ -599,8 +602,8 @@ g := process(_:int)
 
 1. Parallel execute `result :== expression` 
 2. Create `reader: T?, writer: T! := createChannel(buffer_size, r_lambda, w_lambda)`
-3. Read data `data := ${reader?}`
-4. Write data `${writer!data}`
+3. Read data `data := reader?`
+4. Write data `writer!data`
 5. Select: `data, channel := ${rch1?, rch2?, wch1!data1, wch2!data2}`
 6. Select: `data, channel := ${rch1?, [rch2,rch3]?, wch1!data1, [wch2,wch3]![data2, data3]}`
 
@@ -614,8 +617,10 @@ g := process(_:int)
 6. Any party can close/dispose their channel. Send or receive on a channel where there is no receiver or sender will cause blocking forever. If you want to prevent this, you need to implement this separately using another channel or any other mechanism.
 7. There are utility functions to create timed or always on channels (to be used as default in a select)
 8. Exclusive resources (sockets, file, ...) are implemented using channels to hide inherent mutability of their underlying resource.
+9. Doing read/write operations outside `$` operator will make it non-blocking.
 
 **Examples**
+
 1. 
 ```
 std_reader, std_writer := createStd[string]()
