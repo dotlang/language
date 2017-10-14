@@ -5102,3 +5102,5 @@ Y - better syntax for import with rename:
 `import "a" { item1, item2, item3}` only import these 3
 `import "a" { myname := item1, item2, item3}` import with filter and rename
 `import "a" { myname := item1, _ }` import with rename and everything
+
+Y - Doing channel operations outside `$` will not be blocking.
