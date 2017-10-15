@@ -280,33 +280,24 @@ If a function is called which has no candidate for the named type, the candidate
 
 ## Casting
 
-There is no implicit and automatic casting.
+There is no implicit and automatic casting. The only exception is using boolean as a sequence index which will be translated to 0 and 1.
+
+Casting is mostly used to cast between a union and its internal type (Example 2), between named and equal unnamed type (Example 4 and 5) or for numerical values (Example 1). 
+
+Note that the target type should be either a primitive or a named type. You can also cast multiple items at once (Example 6).
+
+The `Type(nothing)` notation gives you the default value for the given type (empty/zero value). The `Type()` notation is used for autoBind (Please refer to the corresponding section).
 
 **Syntax**: `TargetType(data)`
-
-**Notes**
-
-1. There is no implicit and automatic casting in the language. The only case is for `true` to be 1 and `false` to be 0 when used as a sequence index.
-2. Casting is mostly used to cast between a union and its internal type (Example 2) or between named and equal unnamed type (Example 4 and 5). 
-3. If a function expects a named type, you cannot pass an equivalent unnamed type. 
-4. Similarly, when a function expects an unnamed type, you cannot pass a named type with same underlying type, unless there is no function with that name expecting the named type.
-5. Another usage of casting is to cast between primitives: `int` and `float` and `char` (Example 1).
-6. When casting for union types, you get two outputs: Target type and a boolean flag indicating whether cast was successful (Example 2).
-7. For literals, casting between named and underlying type can be done automatically (Example 4).
-8. If the target type is not a simple identifier, you should enclose it in parentheses (Example 6).
-9. You can cast multiple items at once (Example 7).
-10. The `Type(nothing)` notation gives you the default value for the given type (empty/zero value).
-11. The `Type()` notation, casts all currently defined bindings to the given Type based on their name and type (See "autoBind" section for more information).
 
 **Examples**
 
 1. `x:int := int(1.91)`
 2. `int_value, has_int := int(int_or_float)`
-3. `MyInt := int`
-4. `x:MyInt := 100`
-5. `y:int := x`
-6. `x := MyFuncType.(t)`
-7. `a, b, c := MyInt(x,y,z)`
+3. `MyInt := int`, `x:MyInt := MyInt(int_var)`
+4. `y:int := x`
+5. `x := MyFuncType.(t)`
+6. `a, b, c := MyInt(x,y,z)`
 
 # Modules
 
