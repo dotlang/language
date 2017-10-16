@@ -139,7 +139,7 @@ These rules are highly advised but not mandatory.
 
 # Bindings
 
-A binding assigns an identifier to a value. The value can be of any valid type (integer number, function, struct literal, ...). Bindings must start with a lowercase letter.
+A binding assigns an identifier to a literal value or an expression. The literal value can be of any valid type (integer number, function literal, struct literal, ...). Bindings must start with a lowercase letter.
 
 You can define bindings at module-level or inside a function. Module-level bindings can only have literals as their value, but function bindings can have expressions too. Type of a binding is automatically inferred from the value, but you can also explicitly state the type.
 
@@ -371,7 +371,7 @@ If function does not return anything, it's return type will be marked as `nothin
 
 A function call with union data (e.g. `int|string`) means there must be functions defined for all possible types in the union (e.g. for `int` and `string`). 
 
-You can prefix `::` with a conditional, enclosed in braces. Return will be triggered only if the condition is satisfied (Example 10).
+You can prefix `::` with a conditional, enclosed in braces. Return will be triggered and it's expression will be evaluated only if the condition is satisfied (Example 10).
 
 If function output is a single identifier, you can omit parentheses in output type, otherwise they are mandatory (Example 11).
 
