@@ -421,33 +421,25 @@ Bindings of this type can hold a reference to a function or a lambda. You can se
 
 ## Lambda
 
+Lambda or a function literal is used to specify value for a binding of function type. It is very similar to the way you define body of a function binding. Lambdas are closures and can capture bindings in the parent function (Example 3 and 4).
+
+You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normal call and replace the lambda inputs with `_` (Example 8). You can use `:Type` after `_` when creating lambda, to remove ambiguity (Example 9).
+
+If lambda is assigned to a variable, you can invoke itself from inside (Example 8). This is used to implement iteration loops.
+
 **Syntax**: `(name1: type1, name2: type2, ...) -> output_type { body }`
-
-**Notes**
-
-1. Lambda or function literal is used to define the body of a function.
-2. You can omit output type (Example 2 and 3).
-3. Even if a lambda has no inputs, you must include `()` (Example 4).
-4. Lambdas are closures and can capture variables (as read-only) in the parent function (Example 4 and 5).
-4. Example 5 shows a function that returns a lambda.
-5. Example 6 shows invoking a lambda at the point of definition.
-6. You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normal call and replace the lambda inputs with `_`. Example 8 defines a lambda to call `process` functions with `x:=10` but `y` and `z` will be inputs.
-7. You can use `:Type` after `_` when creating lambda, to remove ambiguity (Example 10).
-8. If lambda is assigned to a variable, you can invoke itself from inside (Example 9). This is used to implement iteration loops.
-9. If body of the lambda is a single expression you can omit braces and put it in front of `->`, else you need to include braces.
 
 **Examples**
 
 1. `f1 := (x: int, y:int) -> int { x+y }`
-2. `f1 := (x: int, y:int) -> { x+y }` 
-3. `rr := (x: int, y:int) -> x + y`  
-4. `rr := () -> { return x + y }`
-5. `test := (x:int) -> plusFunc { |y:int| -> y + x }`
-6. `(x:int)->int { x+1 } (10)`
-7. `process := (x:int, y:float, z: string) -> { ... }`
-8. `lambda1 := process(10, _, _)`
-9. `ff := (x:int) -> { ff(x+1) }`
-10. 
+2. `rr := (x: int, y:int) -> x + y #you can ignore return type and braces`  
+3. `rr := () -> { return x + y } #here x and y are captures from parent function`
+4. `test := (x:int) -> PlusFunc { (y:int) -> y + x } #this function returns a lambda`
+5. `(x:int)->int { x+1 } (10) #you can invoke a lambda at the point of declaration`
+6. `process := (x:int, y:float, z: string) -> { ... }`
+7. `lambda1 := process(10, _, _) #defining a lambda based on existing function`
+8. `ff := (x:int) -> { ff(x+1) }`
+9. 
 ```
 process := (x:int)->...
 process := (y:string)->...
@@ -457,31 +449,20 @@ g := process(_:int)
 
 ## Chain operator
 
+This operator is used to put arguments before a lambda and simulate a scoped function resolution. `X ~ F(_)` will be translated to `F(X)`. You can have multiple candidates in place of `F` and the one which can accept type of `X` will be invoked (Example 5). You can also have multiple inputs put inside parenthesis (Example 1).
+
 **Syntax**: 
 
 1. `input ~ (lambda1, lambda2), ...`
 2. `(input1, input2, ...) ~ (lambda1, lambda2, ...)`
 
-**Notes**
-
-1. This operator is used to put arguments before a lambda.
-2. `X ~ F(_)` will be translated to `F(X)`. You can have multiple candidates in place of `F` and the one which can accept type of `X` will be invoked (Example 12).
-3. You can also have multiple inputs put inside parenthesis (Example 1).
-4. If right-side expects a single input but the left side is a struct with multiple items, it will be treated as a struct for the single input of the function (Example 4) but if the function expects multiple inputs they will be extracted from the left side (Example 3). 
-5. You can also pass a single argument to right side of the chain by using non-struct value. If you pass a struct with a single item to a function (Example 11) and there are two candidates for that call (one that accepts `int` and other accepts `{int}`) compiler will give error.
-
 **Examples**
 
-1. `g := (5,9) ~ add(_, _)` => `g := add(5,9)`
-2. `(1,2) ~ processTwoData(_, _)` => `processTwoData(1,2)`
-3. `({1,2}) ~ processStruct(_)` => `processStruct({1,2})`
-4. `(6) ~ addTo(1, _)` => `addTo(1, 6)`
-5. `result := (input, check1(5, _)) ~ pipe(_,_) ~ pipe(_, check3(1,2,_)) ~ pipe(_,check5(8,_,1))`
-6. `pipe[T, O] := (input: Maybe[T], handler: func(T)->Maybe[O])->Maybe[O] ...`
-7. `inc := (x:int) -> x+1`, `eleven := 10 ~ inc(_)`
-8. `add := (x:int, y:int) -> x+y`, `(10, 20) ~ add(_,_)`
-9. `(1) ~ process(_)`, = `1 ~ process(_)`
-10. `result := error_or_int ~ (x:error)->10, (y:int)->20`
+1. `add := (x:int, y:int) -> x+y`, `(10, 20) ~ add(_,_)` => `add(10,20)`
+2. `({1,2}) ~ processStruct(_)` => `processStruct({1,2})`
+3. `(6) ~ addTo(1, _)` => `addTo(1, 6)`
+4. `result := (input, check1(5, _)) ~ pipe(_,_) ~ pipe(_, check3(1,2,_)) ~ pipe(_,check5(8,_,1))`
+5. `result := error_or_int ~ (x:error)->10, (y:int)->20`
 
 # Operators
 
