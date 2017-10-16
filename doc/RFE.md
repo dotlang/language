@@ -5104,3 +5104,32 @@ Y - better syntax for import with rename:
 `import "a" { myname := item1, _ }` import with rename and everything
 
 Y - Doing channel operations outside `$` will not be blocking.
+
+Y - Shall we rename chain operator to `@` so we can later use `~` for regex?
+
+Y - We have condition before return. What if the return statement's expresion has a side-effect.
+`{cond} return write_output()`
+It won't be clear if the side effect will be evaluated or no.
+Maybe we should force only using a binding for return.
+`data := writeOutput()`
+`{cond} return data`
+Can we automate this so it won't be possible to write it differently?
+`data := writeOutput()`
+Is there anywhere that we only allow identifier and not expression?
+The syntax must be very explicit because we use braces for function, lambda and struct.
+`{cond}>>data` for conditional return
+`{true}>>data` for normal return
+`{cond} return data` for conditional return
+`{true} return data` for normal return
+`{cond} :: data` for conditional return
+`:: data` for normal return
+But this is another feature that helps writing conditional execution code. Let's keep it. It makes code more expressive.
+
+Y - Replace import with a notation, so we don't really have any keyword.
+`import "/dasd/sadsa/dsad/asd"`
+1. `! "/core/st/Socket"`
+2. `! "../core/st/Socket" #import with relative path`
+6. `! base_cassandra&"/path/module"`
+
+
+
