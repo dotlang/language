@@ -303,8 +303,6 @@ The `Type(nothing)` notation gives you the default value for the given type (emp
 
 Modules are source code files. You can import them into current module and use their public types and bindings. You can import modules from local file-system, GitHub or any other external source which the compiler supports. You can also filter/rename imported identifiers to prevent name conflict.
 
-If an import path starts with `./` or `../` means the module path is relative to the current module.
-
 **Syntax**
 
 `import "/path/to/module"`
@@ -314,30 +312,22 @@ If an import path starts with `./` or `../` means the module path is relative to
 
 **Examples**
 
-1. `import "/core/st/Socket"`
-2. `import "/core/std/{Queue, Stack, Heap}" #import multiple modules`
-3. `import "git/github.com/net/server/branch1/dir1/dir2/module" #you need to specify branch/tag/commit name here`
-4. `base_cassandra := "github/apache/cassandra/mybranch"`
-5. `import base_cassandra&"/path/module"`
-6. `import "/path/to/module" { ModuleType1 } #only import one type`
-7. `import "/path/to/module" { _, MyType1 := ModuleType1 } #import everything but rename ModuleType1 to MyType1`
+1. `import "/core/st/Socket" #import with absolte path`
+2. `import "../core/st/Socket" #import with relative path`
+3. `import "/core/std/{Queue, Stack, Heap}" #import multiple modules`
+4. `import "git/github.com/net/server/branch1/dir1/dir2/module" #you need to specify branch/tag/commit name here`
+5. `base_cassandra := "github/apache/cassandra/mybranch"`
+6. `import base_cassandra&"/path/module"`
+7. `import "/path/to/module" { ModuleType1 } #only import one type`
+8. `import "/path/to/module" { _, MyType1 := ModuleType1 } #import everything but rename ModuleType1 to MyType1`
 
 # Generics
 
-**Syntax**: 
+Generics are implemented at module level. Just append generics types in lower case (e.g. `stack[t].dot`) to the module file name and you can use type `T` (all capital) in your code. Any module importing it, must provide concrete types for them or else there will be compiler error. So if a module imports `stack[int]`, compiler will re-write the module and replace any occurence of `T` with `int`.
 
-1. `import "/code/module[type1, type2]"`
+If you provide any existing definition for the generic type or abstract functions based on it, the importer should provide a compliant type (Example 4).
 
-**Notes**:
-
-1. Generics are implemented at module level. Just append generics types in lower case (e.g. `stack[t].dot`)to the module file name and compiler will assume their existence. Any module importing it, must provide concrete types for them or else there will be compiler error.
-2. In the code, you must use generics types in all caps (e.g `T`) as one identifier without separator. 
-3. If a generic modules, defines the type `T`, anyone who wants to import it, must provide a concrete type which embeds that type. But it `T` is not defined, they can provide any type.
-3. Anything inside `[]` in module path, will be processed by the compiler to generate module code, based on the given arguments.
-4. When importing a generic module, you can either import `module_name[T]` which will import using default type defined inside the module code, or replace `T` parameter with a valid type (e.g. `module_name(int)`).
-5. You can specialize a generic module for known types by writing appropriately named module file (e.g. `module_name[string].dot`).
-6. When you import a module, you must provide values for bindings that do not have value and types for generic types.
-7. You can use abstract functions and define named type for generic types to indicate expected interface in terms of data and functions (Examples 3 and 4).
+You can specialize a generic module for known types by writing appropriately named module file (e.g. `module_name[string].dot`).
 
 **Example**
 
@@ -360,12 +350,10 @@ process := (a:T)->int
 
 ## Phantom types
 
-**Notes**
+Phantom types are used to document compile time constraints on the data without runtime cost of using generics or named types (When generic type is not used on the right side of type definition, it will be only for compile time check)
+Phantoms are compile-time label/state attached to a type. You can use these labels to do some compile-time checks and validations. 
 
-1. Phantom types are used to document compile time constraints on the data without runtime cost using generics or named types (When generic type is not used on the right side of type definition, it will be only for compile time check)
-1. Phantoms are compile-time label/state attached to a type. You can use these labels to do some compile-time checks and validations. 
-2. You can implement these labels using a named type or a generic type.
-3. Examples 1 to 5 indicate a door data type which can only be opened if it is already closed properly and vice versa.
+You can implement phantom types using a named type or a generic type.
 
 **Examples**
 
@@ -377,39 +365,35 @@ process := (a:T)->int
 
 # Functions
 
+Functions are a type of binding which can accept a set of inputs and give an output. Lambda or a function pointer is defined similarly to a normal function in a module. They use the same syntax, except that, they are defined inside a function.
+3. When defining a function, just like a normal binding, you can omit type which will be inferred from rvalue (Function literal). For example `func(int,int)->int` is a function type, but `(x:int, y:int) -> {return x+y}` is function literal.
+
+If function does not return anything, it's return type will be marked as `nothing`. 
+
+A function call with union data (e.g. `int|string`) means there must be functions defined for all possible types in the union (e.g. for `int` and `string`). 
+
+You can prefix `return` with a conditional, enclosed in braces. Return will be triggered only if the condition is satisfied (Example 10).
+
+If function output is a single identifier, you can omit parentheses in output type, otherwise they are mandatory (Example 11).
+
+You can alias a function by defining another binding pointing to it (Example 12). You can define a function without body (Example 11). Calling these functions will result in runtime error. They are mostly used to define expected interfaces in generic modules.
+
+
 **Syntax**: 
 
 `functionName: func(type1, type2, type3, ...) -> (OutputType) := (name1: type1, name2: type2...) -> OutputType { code block }`
 
-**Notes**
-
-1. Functions are a specific type of binding which can accept a set of inputs and give an output.
-2. Lambda or a function pointer is defined similarly to a normal function in a module. They use the same syntax.
-3. When defining a function, just like a normal binding, you can omit type which will be inferred from rvalue (Function literal).
-4. Note that `func(int,int)->int` is a function type, but `(x:int, y:int)->{x+y}` is function literal.
-7. Every function must return something which is specified using `return`. If it doesn't, compiler marks output type as `nothing` (Example 2).
-8. A function call with union data means there must be functions defined for all possible types in the union. See Call resolution section for more information.
-9. You can omit braces and `return` keyword if you only want to return an expression (Examples 4, 5 and 6).
-10. The function in example 7 will be invoked if the input is either `int` or `Point` or `int|Point`.
-11. There should not be ambiguity when calling a function. So having functions in examples 9 and 3 in the same compilation is invalid.
-12. You can use `_` to ignore a function output (Example 9).
-13. Parentheses are required when calling a function, even if there is no input.
-14. You can prefix `return` with a conditional, enclosed in parentheses. Return will be triggered only if the condition is satisfied (Example 10).
-15. If function output is a single identifier, you can omit parentheses in output type, otherwise they are mandatory (Example 11).
-18. You can alias a function by defining another binding pointing to it.
-19. You can define a function without body (Example 11). Calling these functions will result in runtime error. They are mostly used to define expected interfaces in generic modules.
-
 **Examples**
 
 01. `myFunc:(int, int) -> int := func(x:int, y:int)-> int { return 6+y+x }`
-02. `log := (s: string) -> { print(s) }`
-03. `process := (pt: Point)->int pt.x`
-04. `process2 := (pt: Point) -> {pt.x, pt.y}`
-05. `my_func := (x:int) -> x+9`
-06. `myFunc9 := (x:int) -> {int} {12}`
-07. `process := (x: int|Point])->int`
+02. `log := (s: string) -> { print(s) } #this function returns nothing`
+03. `process := (pt: Point)->int pt.x #no need to use braces when body is a single expression`
+04. `process2 := (pt: Point) -> {pt.x, pt.y} #this function returns a struct`
+05. `my_func := (x:int) -> x+9 #no need to specify output type as it can be implied`
+06. `myFunc9 := (x:int) -> {int} {12} #this function returns a struct literal`
+07. `process := (x: int|Point])->int #this function can accept either int or Point type as input or int|Point type`
 08. `fileOpen := (path: string) -> File {...}`
-09. `_,b := process2(myPoint)`
+09. `_,b := process2(myPoint) #ignore function output`
 10. 
 ```
 process := (x:int) -> 
@@ -423,20 +407,17 @@ process := (x:int) ->
 
 ## Function pointer
 
-**Syntax**: `Fp := func(type1, type2, ...)->OutputType`
+Bindings of this type can hold a reference to a function or a lambda. You can send them to other functions or they can be used as output type of a function.
 
-1. A special data type which can hold a reference to a function.
-2. Example 4 indicates a function which accepts a function pointer.
-3. Example 5 indicates the definition for a mapping function. It is using generics features introduces in the corresponding section.
-4. The value of a function pointer can be either an existing function or a lambda. 
+**Syntax**: `Fp := func(type1, type2, ...)->OutputType`
 
 **Examples**
 
-1. `adder := func(int,int)->int`
-2. `myAdder := (x:int, y:int) -> x+y`
-3. `adderPointer := adder{myAdder}`
-4. `sort := (x: [int], comparer: func(int,int) -> bool) -> [int]`
-5. `map[T, S] := (input: [T], mapper: func(T) -> S) -> [S]`
+1. `Adder := func(int,int)->int #defining a named type based on a function type`
+2. `myAdder := (x:int, y:int) -> x+y #initialize a binding with a function literal`
+3. `adderPointer: Adder := myAdder #Store refernce to a function in a function pointer`
+4. `sort := (x: [int], comparer: func(int,int) -> bool) -> [int] #this function accepts a function pointers`
+5. `map := (input: [T], mapper: func(T) -> S) -> [S]`
 
 ## Lambda
 
