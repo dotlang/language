@@ -296,10 +296,14 @@ The `Type(nothing)` notation gives you the default value for the given type (emp
 2. `int_value, has_int := int(int_or_float)`
 3. `MyInt := int`, `x:MyInt := MyInt(int_var)`
 4. `y:int := x`
-5. `x := MyFuncType.(t)`
+5. `x := MyFuncType(t)`
 6. `a, b, c := MyInt(x,y,z)`
 
 # Modules
+
+Modules are source code files. You can import them into current module and use their public types and bindings. You can import modules from local file-system, GitHub or any other external source which the compiler supports. You can also filter/rename imported identifiers to prevent name conflict.
+
+If an import path starts with `./` or `../` means the module path is relative to the current module.
 
 **Syntax**
 
@@ -308,28 +312,15 @@ The `Type(nothing)` notation gives you the default value for the given type (emp
 `import "/path/to/module" { name2, MyType := ModuleType, ... }`
 `import "/path/to/module" { _, MyType := ModuleType, ... }`
 
-**Notes**
-
-1. You can import other modules into current module so you will be able to use their types and bindings.
-2. If there is going to be name conflict, you can include a clause to indicate what items you want to import and also you can rename them. Whatever comes before `:=` is parsed as a symbol in current module and what comes on the right side is processed as a symbol from inside the module which is being imported. You can use `_` to indicate everything (either locally or from module).
-4. You can also import multiple modules at the same time (Example 2).
-5. `/` in the beginning is a shortcut for `file/`. Namespace path starts with a protocol which determines the location of the file for a namespace. You can also use other namespace protocols like `Github` (Example 6).
-6. You can import multiple modules (with the same prefix) using notation in Example 4.
-7. If an import path starts with `./` or `../` means the module path is relative to the current module.
-8. It is an error if as a result of imports, there are two exactly similar bindings or types (same name and type) in use. In this case, only none of conflicting bindings will be available for use.
-9. You can import from a specific branch and use a binding to build import path (Example 7 and 8).
-10. You have to add a branch/tag/commit name after repository name when importing from GitHub.
-11. Example 6 imports only one identifier without rename and example 7 imports everything and renames one identifier.
-
 **Examples**
 
 1. `import "/core/st/Socket"`
-2. `import "/core/std/{Queue, Stack, Heap}"`
-3. `import "git/github.com/net/server/branch1/dir1/dir2/module"`
+2. `import "/core/std/{Queue, Stack, Heap}" #import multiple modules`
+3. `import "git/github.com/net/server/branch1/dir1/dir2/module" #you need to specify branch/tag/commit name here`
 4. `base_cassandra := "github/apache/cassandra/mybranch"`
 5. `import base_cassandra&"/path/module"`
-6. `import "/path/to/module" { ModuleType1 }`
-7. `import "/path/to/module" { _, MyType1 := ModuleType1 }`
+6. `import "/path/to/module" { ModuleType1 } #only import one type`
+7. `import "/path/to/module" { _, MyType1 := ModuleType1 } #import everything but rename ModuleType1 to MyType1`
 
 # Generics
 
