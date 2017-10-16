@@ -466,35 +466,38 @@ This operator is used to put arguments before a lambda and simulate a scoped fun
 
 # Operators
 
+Operators are mostly similar to C language and some of them which are different are explained in previous sections (Casting, Chain operator, range, underscore, ...).
+
+`=` will do a comparison based on contents of bindings.
+`A // B` will evaluate to A if it is not `nothing`, else it will be evaluated to B.
+Conditional operators return `true` or `false` which are `1` and `0` when used as index of a sequence.
+
 **Syntax**:
 
 1. Conditional operators: `and, or, not, =, !=, >=, <=`
 2. Arithmetic: `+, -, *, /, %, %%`
-3. Assignment: `:=`
-5. Chain `~`
-7. Nothing check operator `//`
-8. Casting `()`
-
-**Notes**
-
-1. The meaning for most of the operators is like C-based languages except for `=` which is used to check for equality.
-2. `:=` operator is used to define a named type or a binding.
-3. `=` will do a comparison on a binary-level. 
-6. `()`: To cast from named to unnamed type you can use: `Type(value)` notation (Example 2).
-7. `()`: To cast from variable to a union-type (Example 7).
-10. `A // B` will evaluate to A if it is not `nothing`, else it will be evaluated to B.
-11. Conditional operators return `true` or `false` which actually are `1` and `0`.
+3. Chain `~` 
+4. Casting `()`
+5. Nothing check operator `//`
 
 **Examples**
 
-02. `MyInt := int`, `x: MyInt := MyInt{int_var}`
-03. `y:int := int{x}`
-04. `y: int|float := 12`
-05. `y := x // y // z // 0`
-06. `result := [nothing, data][condition] // processBigBuffer(buffer)`
-07. `data, successs := int{int_or_float}`
+1. `y: int|float := 12`
+2. `y := x // y // z // 0`
+3. `result := [nothing, data][condition] // processBigBuffer(buffer)`
+4. `data, successs := int{int_or_float}`
 
 # Concurrency
+
+dotLang provides channels as a light-weight communication mechanism between two pieces of code and `:==` notation for parallel execution of an expression.
+
+Channels are a one-way (read-only or write-only) data transportation mechanism which are open the moment they are created and closed when they are GC'd (disposed). They can be buffered or have a transformation function (`func(T)->T`) which will be applied before write or after read.
+
+Any party can close/dispose their channel. Send or receive on a channel where there is no receiver or sender will return immediately with a flag indicating this. Doing channel operations inside `$` operator will make them blocking.
+
+Exclusive resources (sockets, file, standard I/O...) are implemented using channels to hide inherent mutability of their underlying resource.
+
+You can use `:==` syntax to evaluate an expression in parallel and when its finished, store result in `result`. If expression creates a struct you can destruct it using `a,b,c :=` syntax or use `_` to ignore expression result. Any reference to `result` after parallel execution will pause the code until execution is finished. You can refer to output of a parallel execution inside body of a lambda, and code won't be stopped unless the lambda is invoked (Example 2 and 3).
 
 **Syntax**
 
@@ -505,37 +508,17 @@ This operator is used to put arguments before a lambda and simulate a scoped fun
 5. Select: `data, channel := ${rch1?, rch2?, wch1!data1, wch2!data2}`
 6. Select: `data, channel := ${rch1?, [rch2,rch3]?, wch1!data1, [wch2,wch3]![data2, data3]}`
 
-**Notes**
-
-1. Channels are a data transportation mechanism which are open the moment they are created and closed when they are GC'd.
-2. They can be read-only (`T?`) or write-only (`T!`). 
-3. Channels can be buffered or have a transformation function (`func(T)->T`) which will be applied before write or after read.
-4. You can use `:==` syntax to evaluate an expression in parallel and when its finished, store result in `result`. If expression creates a struct you can destruct it using `a,b,c :=` syntax or use `_` to ignore expression result. Any reference to `result` after parallel execution will pause the code until execution is finished.
-5. You can refer to output of a parallel execution inside body of a lambda, and code won't be stopped unless the lambda is invoked (Example 2 and 3).
-6. Any party can close/dispose their channel. Send or receive on a channel where there is no receiver or sender will cause blocking forever. If you want to prevent this, you need to implement this separately using another channel or any other mechanism.
-7. There are utility functions to create timed or always on channels (to be used as default in a select)
-8. Exclusive resources (sockets, file, ...) are implemented using channels to hide inherent mutability of their underlying resource.
-9. Doing read/write operations outside `$` operator will make it non-blocking.
-
 **Examples**
 
 1. 
 ```
-std_reader, std_writer := createStd[string]()
-data := std_reader[]
-std_write["Hello"]
+std_reader, std_writer := createStd() #create pair of channels to interact with standard input and output
+data := std_reader? #read something from the channel which read from standard input
+std_write!"Hello" #send data to stndard output
 reader, writer := createChannel[int](100) #specify buffer size
-
-#Options for all channels: buffer size, transformation function.
-getStdOut[T] := (lambda: (T)->T) -> T! ...
-getStdIn[T] := (lambda: (T)->T) -> T? ...
-getSocketReader[T] := (s: Socket, lambda: (T)->T) -> T- ...
-getSocketWriter[T] := (s: Socket, lambda: (T)->T) -> T+ ...
-getFileReader[T] := (path: string, lambda: (T)->T) -> T- ...
-getFileWriter[T] := (path: string, lambda: (T)->T) -> T+ ...
 ```
-2. `data :== processInfo(1,2,a)`
-3. `getData := ()->data`
+2. `data :== processInfo(1,2,a) #evaluate the expression in parallel and store the output in data`
+3. `getData := ()->data #any call to getData will block current thread until the call to processInfo is finished`
 
 # Other Features
 
