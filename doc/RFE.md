@@ -5181,3 +5181,27 @@ Another solution: Force `_` for chain and eliminate sequence. For multiple candi
 `(x,y).f(_,_)`
 `(x,y).(f(_,_), g(_,_))`
 No. It doesn't povide much added value and makes things a bit confusing.
+
+N - One way to implement plugin system. Suppose that we have a yaml file for cluster setup.
+One field in the yaml file is "provider" which gives a key for a module which provides all appropriate communication mechanism with the infrastructure provider (GCP, AWS, ...).
+`provider := readProvider(yaml_file)`
+Now we want to have access to `create`, `update`, `delete`, ... methods but specific to this provider.
+Now we assume these modules have only functions. No data type. Obviously data types must be common.
+Not really! we can have them but the caller cannot deal with their data types. 
+This is a simulation of interface. So it only includes "behavior" or "functions".
+I want to have a struct of function pointers populated as a result of import.
+This is like autoBind but for an import.
+`import "/provider/aws" { ... }`
+`aws := import "/provider/aws"` No. This does not make any sense.
+Generally import will import all bindings and types.
+Maybe we can use `{...}` notation in front of import.
+It can be done this way, however:
+`import "provider/aws" { aws_create := create, aws_delete := delete, ...}`
+`aws_provider := Provider{create := aws_create, delete := aws_delete, ...}`
+But this is not interface!
+Or we can use autoBind:
+`import "providers/aws"`
+`import "providers/interface"`
+`aws_provider := ProviderInterface()`
+ProviderInterface is defined in `interface` module which has a set of field names and types which match binding names and types in `aws` module.
+Now anyone who imports above code, has `aws_provider` of type ProviderInterface, pointing to bindings in aws provider.
