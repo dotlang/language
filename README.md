@@ -448,7 +448,9 @@ g := process(_:int)
 
 ## Chain operator
 
-This operator is used to put arguments before a lambda and simulate a scoped function resolution. `X @ F(_)` will be translated to `F(X)`. You can have multiple candidates in place of `F` and the one which can accept type of `X` will be invoked (Example 5). You can also have multiple inputs put inside parenthesis (Example 1).
+This operator is used to put arguments before a lambda and simulate a scoped function resolution. `X @ F(_)` will be translated to `F(X)`. You can have multiple candidates (as a sequence literal) in place of `F` and the one which can accept type of `X` will be invoked (Example 5). You can also have multiple inputs put inside parenthesis (Example 1).
+
+Note that even if the function after the chain operator has one input, you must mention them using `_`. So instead of `x.f` you must write `x.f(_)` to prevent ambiguity with a reference to struct field.
 
 **Syntax**: 
 
