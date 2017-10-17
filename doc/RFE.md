@@ -5131,5 +5131,53 @@ Y - Replace import with a notation, so we don't really have any keyword.
 2. `! "../core/st/Socket" #import with relative path`
 6. `! base_cassandra&"/path/module"`
 
-
-
+N - Use dot for chain operator.
+`x.f(_)` - `f(x)`
+If what comes after dot is a lambda, it is chain operator.
+`(x,y).f(_,_)`
+`x.(f(_), g(_))`
+`x.[f(_), g(_)]`
+After chain you can present a sequence of lambdas and one which has a matching type will be invoked.
+`(x,y,z).[f(_,_,_), g(_,_,_)]`
+`x.f` is ambiguous. Because f can be a function name and a field name. It wont be readable.
+but f can be a lambda.
+`f:=process(_)` this means:`f:func(int)->int := (x:int)->process(x)`
+when you want to invoke f you must call it like: `f(8)`.
+`f` or `f()` does not make sense. Any type of function call must include `()`.
+So after dot you can have a lambda or a sequence of lambdas.
+1. `add := (x:int, y:int) -> x+y`, `(10, 20).add(_,_)` => `add(10,20)`
+2. `{1,2}.processStruct(_)` => `processStruct({1,2})`
+3. `(6).addTo(1, _)` => `addTo(1, 6)`
+4. `result := (input, check1(5, _)).pipe(_,_).pipe(_, check3(1,2,_)).pipe(_,check5(8,_,1))`
+5. `result := error_or_int.[(x:error)->10, (y:int)->20]`
+proposal:
+1. replace `@` with `.` operator
+what if I write `5.f` and f has only one input? It will cause ambiguity with struct.
+So just write: `5.f(_)`
+What if I already have a sequence of lambdas in sq1.
+can I write `data.sq1`?
+`sq1=[f(_), g(_)]`
+`g := data.sq1`
+this should be allowed.
+So why not have this?
+`ff := f(_)`
+`g := x.ff`
+Because what comes after dot must be a lambda. and ff is a lambda.
+`ff := f(_,_)`
+`g := (x,y).ff`
+But eliminating `()` is not a good idea.
+`data.f()` means `f(data)`
+`(x,y).f()` means `f(x,y)`
+`(x,y).person.fp()` means `person.fp(x,y)`
+`(x,y).person.fp().process()` => `process(person.fp(x,y))`
+`(x,y) @ person.fp() @ process(_)` => `process(person.fp(x,y))`
+It is a good idea to force using `_` to explicitly specify place of lambda inputs but it is not general and orth.
+`(x,y).f()` means `f(x,y)`
+This is a problem with `@` too.
+`x @ f()` if f is a lambda with only one input. if f has two inputs, this will result in compiler error.
+`x @ f()` if f is a lambda with only one input.
+Another solution: Force `_` for chain and eliminate sequence. For multiple candidates, use paren.
+`x.f(_)`
+`(x,y).f(_,_)`
+`(x,y).(f(_,_), g(_,_))`
+No. It doesn't povide much added value and makes things a bit confusing.
