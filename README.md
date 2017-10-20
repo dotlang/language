@@ -104,7 +104,7 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 07. `->`  Function declaration
 08. `..`  Range generator for sequence
 09. `//`  Nothing-check operator
-10. `!`   Write-only channel, import
+10. `!`   Write-only channel
 11. `?`   Read-only channel
 12. `$`   Channel select operations
 13. `:`   Type declaration (struct, function inputs and bindings)
@@ -300,7 +300,7 @@ The `Type(nothing)` notation gives you the default value for the given type (emp
 
 # Modules
 
-Modules are source code files. You can import them into current module and use their public types and bindings. You can import modules from local file-system, GitHub or any other external source which the compiler supports. You can also filter/rename imported identifiers to prevent name conflict.
+Modules are source code files. You can import them into current module and use their public types and bindings. You can import modules from local file-system, GitHub or any other external source which the compiler supports. You can also filter/rename imported identifiers to prevent name conflict, but not that by adding filter/rename clause, imported symbols will only be reduced to items mentioned in that clause.
 
 **Syntax**
 
@@ -317,7 +317,7 @@ Modules are source code files. You can import them into current module and use t
 4. `! "git/github.com/net/server/branch1/dir1/dir2/module" #you need to specify branch/tag/commit name here`
 5. `base_cassandra := "github/apache/cassandra/mybranch"`
 6. `! base_cassandra&"/path/module"`
-7. `! "/path/to/module" { ModuleType1 } #only import one type`
+7. `! "/path/to/module" { ModuleType1, processData } #only import these two types/bindings`
 8. `! "/path/to/module" { _, MyType1 := ModuleType1 } #import everything but rename ModuleType1 to MyType1`
 
 # Generics
@@ -475,7 +475,7 @@ Conditional operators return `true` or `false` which are `1` and `0` when used a
 
 1. Conditional operators: `and, or, not, =, !=, >=, <=`
 2. Arithmetic: `+, -, *, /, %, %%`
-3. Chain `@` 
+3. Chain `.[]` 
 4. Casting `()`
 5. Nothing check operator `//`
 
@@ -528,7 +528,7 @@ You can use sequence and maps for conditionals (Examples 2 and 3) and chain oper
 **Examples**
 
 1. `v: int|float|string := processData()`
-   `data := v @ (x:int)->10, (x:float)->20, (x:string)->30`
+   `data := v .[(x:int)->10, (x:float)->20, (x:string)->30]`
 2. `x:int := [100, 200][a>0]`
 3. `x:int := [nothing, 100][a>0] // processData(a)`
 
