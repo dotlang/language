@@ -56,24 +56,15 @@ As a 10,000 foot view of the language, the code is written in files (called modu
 dotLang consists of these components:
 
 1. The language manual (this document).
-2. A command line tool to compile, debug and package source code.
+2. `dot`: A command line tool to compile, debug and package source code.
 3. Runtime system: Responsible for memory allocation and management, interaction with the Operating System and other external libraries and handling concurrency.
-4. Core library: This package is used to implement some basic, low-level features which can not be simply implemented using pure dotLang.
-5. Standard library: A layer above runtime and core which contains some general-purpose and common functions and data structures.
+4. `core`: Core library: This package is used to implement some basic, low-level features which can not be simply implemented using pure dotLang.
+5. `std`: Standard library: A layer above runtime and core which contains some general-purpose and common functions and data structures.
 
 ## Code organization
 
-- **Module**: Source code is written inside files which are called "Modules". Modules contain definitions of data structures and functions. Each module can reference other modules to call their functions or use their data structures.
-- **Package**: Modules are organized into directories which are called packages. Each package is represented by a directory in the file-system. Packages have a hierarchical structure:
-```
-core  
-|-----sys  
-|-----net  
-|-----|-----http  
-|-----|-----tcp  
-```
-
-In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tcp` are all packages. Each package can contain zero or more modules.
+- **Module**: Source code is written inside files which are called "Modules". Modules contain definitions of data structures and bindings. Each module can reference other modules to call their functions or use their data structures.
+- **Package**: Any directory inside source code structure is called a package.
 
 # Language in a nutshell
 
@@ -98,34 +89,28 @@ In the above examples `/core, /core/sys, /core/net, /core/net/http, /core/net/tc
 01. `#`   Comment
 02. `.`   Access struct fields (bindings and types)
 03. `()`  Function declaration and call, cast
-04. `{}`  Code block, struct definition and struct literal, return condition
+04. `{}`  Code block, struct definition and struct literal
 05. `[]`  Types and literals (map, sequence), Generic modules, concurrency
 06. `|`   Union data type 
 07. `->`  Function declaration
 08. `..`  Range generator for sequence
 09. `//`  Nothing-check operator
-10. `!`   Write-only channel
-11. `?`   Read-only channel
-12. `$`   Channel select operations
-13. `:`   Type declaration (struct, function inputs and bindings)
-14. `:=`  Binding declaration, named types
-15. `:==` Parallel execution
-16. `.[]` Chain operator
-17. `_`   Place holder (lambda creator and assignments)
-18. `::`  Return operator
-19. `@`   Import
+10. `:`   Type declaration (struct, function inputs and bindings)
+11. `:=`  Binding declaration, named types
+12. `::`  Return operator
+13. `_`   Place holder (lambda creator and assignments)
+14. `@[]` Import
+15. `.[]` Chain operator
+16. `!`   Write-only channel
+17. `?`   Read-only channel
+18. `${}` Channel select operations
+19. `:==` Parallel execution
 
 ## Reserved identifiers
 
-**Basic data types**: `int`, `float`, `char`, `string`, `bool`, `nothing`
-
-**Compound data types**: `sequence`, `map`, struct and union
-
-**Other data types**: `func`, `read-only channel`, `write-only channel`
+**Data types**: `int`, `float`, `char`, `string`, `bool`, `nothing`, `func`
 
 **Reserved identifiers**: `true`, `false`
-
-**Compound types**: Struct and Union
 
 ## Coding style
 
@@ -140,13 +125,13 @@ These rules are highly advised but not mandatory.
 
 # Bindings
 
-A binding assigns an identifier to a literal value or an expression. The literal value can be of any valid type (integer number, function literal, struct literal, ...). Bindings must start with a lowercase letter.
+A binding assigns an identifier to a literal value, an expression or another binding. The literal value can be of any valid type (integer number, function literal, struct literal, ...). Bindings must start with a lowercase letter.
 
 You can define bindings at module-level or inside a function. Module-level bindings can only have literals as their value, but function bindings can have expressions too. Type of a binding is automatically inferred from the value, but you can also explicitly state the type.
 
 Note that all bindings are immutable. So you cannot manipulate or re-assign them.
 
-If the value is a compound data structure, you can destruct it into it's elements (Example 5). In this process, you can also use underscore to indicate you are not interested in one or more of those elements (Example 6).
+If the value is a struct, you can destruct it into it's elements (Example 5). In this process, you can also use underscore to indicate you are not interested in one or more of those elements (Example 6).
 
 **Syntax**: 
 
@@ -260,7 +245,7 @@ You can use struct composition to represent "is-a" or "has-a" relationship. In t
 
 1. `Shape := { id:int }`
 2. `Circle := { Shape, radius: float} #Shape is contained within a Circle`
-3. `my_circle := Circle{id:100, radius:1.45} #creating a Circle binding`
+3. `my_circle := Circle{id:=100, radius:=1.45} #creating a Circle binding`
 
 ## Named types
 
@@ -302,6 +287,8 @@ The `Type(nothing)` notation gives you the default value for the given type (emp
 # Modules
 
 Modules are source code files. You can import them into current module and use their public types and bindings. You can import modules from local file-system, GitHub or any other external source which the compiler supports. You can also filter/rename imported identifiers to prevent name conflict.
+
+Note that bindings and functions which start with underscore, won't be available outside their own module.
 
 **Syntax**
 
@@ -717,8 +704,8 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 
 - **Language**: Notation for axioms and related operators like `=>` to define semantics of a data structure or function, dependent types
 - **Compiler**: test, debug and profiling code, plugins for Editors (e.g. vim, emacs), code vetting for format the code based on the standard (indentation, spacing, brace placement, warning about namings, ...), escape analysis and optimize them to use mutable variable (for example for numerical calculations which happens only inside a function), parallel compilation
-- **`std` package**: `map` data type, loop helper functions for iteration 
-- **`core` package**: sequence slice functions
+- **`std` package**: loop helper functions for iteration 
+- **`core` package**: sequence slice functions, create special channels, I/O, OS
 - **Others**: 
   1. Build, dependency management, versioning, packaging, and distribution
   2. Plugin system to load/unload libraries at runtime without need to recompile
