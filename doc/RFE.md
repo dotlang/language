@@ -29,7 +29,7 @@ If the lambda has n inputs and left side has n items:
 `lambda := process(_)`
 `(x1,x2,...,xn).[lambda]`
 
-? - `!` is also used for write only channels. Can we use a better notation for import?
+Y - `!` is also used for write only channels. Can we use a better notation for import?
 `! "/core/socket"`
 `@`
 `types and bindings`
@@ -51,6 +51,61 @@ With this notation we can import one module multiple times:
 `SocketStat := @["/core/socket"]`
 `openSocket := @["/core/socket"]`
 
-? - Can we make return notation more intuitive?
+Y - Can we make return notation more intuitive?
 `:: 100`
 Whats the most intuitive notation to finish execution of current function?
+`:: 100`
+`{x<0} :: 100`
+What if we assume having a magic function?
+`ret(100)`
+`ret(100,x<10)`
+No. its not intuitive.
+Maybe we can combine it with chain operator.
+So chain operator can accept a special lambda called return.
+`x.[return]` means return x from current function.
+Its not intuitive.
+Anyway this is an exception because it is the only control structure that we have in the language.
+option 1: define a magic variable which stores result of the function call.
+What if I have access to the variable which is supposed to contain output of current function's call?
+`x := process()`
+and inside process, I have access to a storage which is supposed to contain result of the function call.
+Because of imm rules, I should only assign it once. So as soon as it is assigned, function execution should be finished.
+Even if you assign nothing.
+Let's call it `*` for now.
+`* := 100` means return 100 and exit current function.
+But this does not solve conditional part.
+I want to assign to `*` if and only if ...
+Can we make use of nothing here?
+`* := [nothing, 100][condition]`
+If we assign nothing to `*` it won't cause return from current function.
+So the only way to return nothing will be normal return.
+What if I have a function that will return `nothing|int` and there is some situation where I have to return `nothing`?
+Just handle it like fp paradigm: rest of the function goes into a lambda which will be only called if we want to return int.
+so `* := nothing` wont make sense and is same as `NOP`.
+If you want to return nothing, you must do it the hard way:
+```
+process := (x:int) -> int|nothing 
+{
+  #if x is negative return nothing
+  ...some processing code...
+  #if x>100 assign result of lambda1 to output and exit immediately
+  temp := [() -> nothing, lambda1][x>100]()
+  * := temp
+}
+```
+`* := x`
+means assign `x // rest of the function` to the expected output memory location. So we are looking for a shortcut for this:
+`* := xyz // rest`
+`return xyz // rest`
+`:: xyz`
+
+proposal:
+`:: := ????`
+`{} := 1000` this can also mean empty struct, a bit confusing
+`[] := 1000`
+`|| := 1000` 
+`<> := 1000` ugly
+`^ := 1000` 
+It's better to be similar/compatible with shortcut notation:
+`process := (x:int) -> :: x+1`
+
