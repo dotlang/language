@@ -298,7 +298,7 @@ Note that bindings and functions which start with underscore, won't be available
 
 **Examples**
 
-1. `_ := @["/core/st/Socket"] #import everything, with absolute path`
+1. `@["/core/st/Socket"] #import everything, addressed module with absolute path`
 2. `_ := @["../core/st/Socket"] #import with relative path`
 3. `_ := @["/core/std/{Queue, Stack, Heap}]" #import multiple modules from same path`
 4. `_ := @["git/github.com/net/server/branch1/dir1/dir2/module"] #you need to specify branch/tag/commit name here`
