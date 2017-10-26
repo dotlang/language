@@ -109,3 +109,6 @@ proposal:
 It's better to be similar/compatible with shortcut notation:
 `process := (x:int) -> :: x+1`
 
+? - Shall we make it mandatory to mention return type if there is a body? `{}`
+`process := (x:int)->int { return x+1}`
+`process := (x:int)-> x+1` if it is a single expression, you dont need to mention type
