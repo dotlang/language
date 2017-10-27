@@ -109,6 +109,20 @@ proposal:
 It's better to be similar/compatible with shortcut notation:
 `process := (x:int) -> :: x+1`
 
+N - Can `10` be a function which accepts 10 for every input? Then maybe we can chain to it.
+But then it won't have any use.
+`int_or_float.[(x:float)->100, 200]` this will always return 200.
+`int_or_float.[(x:float)->100, (_:int) -> 200]` this is correct.
+
+N - What if we chain to a function which does not accept that input?
+`error_or_int.[(x:error)->10]`?
+No. It will be ambiguous what happens if input is error.
+
+
 ? - Shall we make it mandatory to mention return type if there is a body? `{}`
 `process := (x:int)->int { return x+1}`
 `process := (x:int)-> x+1` if it is a single expression, you dont need to mention type
+
+? - We can use the same operator for loading modules at runtime `@`. but it won't be able to use `_`.
+So if load function's input is not compile-time value, it's output must be assigned to some identifiers.
+
