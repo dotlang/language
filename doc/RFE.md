@@ -126,3 +126,6 @@ No. It will be ambiguous what happens if input is error.
 ? - We can use the same operator for loading modules at runtime `@`. but it won't be able to use `_`.
 So if load function's input is not compile-time value, it's output must be assigned to some identifiers.
 
+? - We can reserve `/lang` for language constructs.
+`/core` for core functions.
+`/std` for additional functions.
