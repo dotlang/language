@@ -129,3 +129,7 @@ So if load function's input is not compile-time value, it's output must be assig
 ? - We can reserve `/lang` for language constructs.
 `/core` for core functions.
 `/std` for additional functions.
+
+? - Provide a command like `dot doc /core/process/net/socket processFunction`
+which gives information about a specific type/binding in a file.
+or `dot doc @/my/package/file/main.dot processData` will lookup for that type or function inside modules imported by main.dot or defined inside main.dot, and return it's definition 
