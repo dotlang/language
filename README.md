@@ -358,7 +358,7 @@ If function does not return anything, it's return type will be marked as `nothin
 
 A function call with union data (e.g. `int|string`) means there must be functions defined for all possible types in the union (e.g. for `int` and `string`). 
 
-`::` will evaluate and return it's expression if it is not `nothing`. Otherwise, the execution will continue. The only way to return `nothing` is normal function termination without a return (Example 10).
+`:: expression` will evaluate and return it's expression if it is not `nothing`. Otherwise, the execution will continue. The only way to return `nothing` is normal function termination without a return (Example 10). Basically this operator means return `expression // evaluate_rest_of_function()`.
 
 If function output is a single identifier, you can omit parentheses in output type, otherwise they are mandatory (Example 11).
 
