@@ -132,4 +132,20 @@ So if load function's input is not compile-time value, it's output must be assig
 
 ? - Provide a command like `dot doc /core/process/net/socket processFunction`
 which gives information about a specific type/binding in a file.
-or `dot doc @/my/package/file/main.dot processData` will lookup for that type or function inside modules imported by main.dot or defined inside main.dot, and return it's definition 
+or `dot doc @/my/package/file/main.dot processData` will lookup for that type or function inside modules imported by main.dot or defined inside main.dot, and return it's definition .
+It can start from given file and if not found, continue to referenced modules.
+`dot doc /my/package/file/main processFunction`
+
+
+? - For projects like kubernetes or minikube we need to run `make` with all different arguments.
+to run tests, e2e tests, make, clean, ...
+I think these are mostly job of bash/powershell/... OS scripting.
+`make clean` -> `rm -rf .build`
+`make tests` -> `dot test ...`
+`make` -> `dot build`
+`make amd64` ->
+`make test-ingeration` ->
+Maybe filter `dot test` to execute in a specific dir in source structure.
+`make bazel-generate-files` -> external cli tools
+`dot build|run|test`
+
