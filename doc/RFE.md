@@ -149,3 +149,8 @@ Maybe filter `dot test` to execute in a specific dir in source structure.
 `make bazel-generate-files` -> external cli tools
 `dot build|run|test`
 
+? - Some basic things need to be covered in core:
+1. Hash calculation on any data structure
+2. Serialization/Deserialization
+3. assert: `assert(x=1, "x must be 1")` - if failed, exit app
+`=` by default performs deep comparison of data structures.
