@@ -122,9 +122,12 @@ No. It will be ambiguous what happens if input is error.
 ? - Shall we make it mandatory to mention return type if there is a body? `{}`
 `process := (x:int)->int { return x+1}`
 `process := (x:int)-> x+1` if it is a single expression, you dont need to mention type
+Makes code more readable.
+Makes compiler's job easier.
 
 ? - We can use the same operator for loading modules at runtime `@`. but it won't be able to use `_`.
 So if load function's input is not compile-time value, it's output must be assigned to some identifiers.
+Loading at runtime: We are not supposed to load source code modules at runtime. they must be compiled.
 
 ? - We can reserve `/lang` for language constructs.
 `/core` for core functions.
@@ -154,3 +157,21 @@ Maybe filter `dot test` to execute in a specific dir in source structure.
 2. Serialization/Deserialization
 3. assert: `assert(x=1, "x must be 1")` - if failed, exit app
 `=` by default performs deep comparison of data structures.
+
+? - Add dependent types.
+Applications: binary tree or max-heap or RB tree or abs function as a dependent type, a list of max size N
+A dependent function's result depends on it's input.
+When that function is invoked or that data type is created, those rules are checked and if they don't match, there will be a runtime error. 
+`MyInt := int with (x:int)->x>0`
+`check := (x:int)->x>0`
+`MyInt := int with check`
+What can that piece of code do? Is it only supposed to do some checks without any side-effect?
+Can it be (mis)used to work as logging? or security? or caching?
+Not caching. Because this is not supposed to add a hidden execution path.
+Maybe we can even say that these rules will be executed in parallel in another thread (note that everything is immutable).
+So they should not interfere with main execution path in any way (change return value or input or ...).
+What about generic types. Can we use this to make sure T type in a generic module, has some functions? This is already provided in generics section.
+`PFunc := (x:int)->int with (x:int, y:int)->bool { ... }`
+`process: PFunc := (x:int)->int ...`
+So for functions, the check lambda's input is function input + function output. and output will be bool. 
+`PosInt := int with (x:int)->x>0`
