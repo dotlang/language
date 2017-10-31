@@ -272,3 +272,14 @@ Set := (data: [int]) ->
 ```
 basically allocate does not even need to "allocate" memory. Because we already have that data.
 We need to re-type an existing binding. Like casting but more low level.
+Like `reinterpret_cast` in C++.
+We need to prevent this: `x:SetInt := SetInt([1, 2, 3, 3, 3])`
+Why not use a softer enforcement method?
+Add a function which creates a set. It will return set and a flag.
+So user has more control over how to respond if data is not valid.
+With dependent type, either we need to exit app upon error or make things even more complicated.
+But how are we going to enforce users must use that function to create a set?
+Maybe we shouldn't. Just add a comment.
+`#use createSet to create`
+`SetInt := ...`
+We may also have a convention: `createXXX` will generate that data with validations in-place.
