@@ -118,27 +118,33 @@ N - What if we chain to a function which does not accept that input?
 `error_or_int.[(x:error)->10]`?
 No. It will be ambiguous what happens if input is error.
 
-
-? - Shall we make it mandatory to mention return type if there is a body? `{}`
+Y - Shall we make it mandatory to mention return type if there is a body? `{}`
 `process := (x:int)->int { return x+1}`
 `process := (x:int)-> x+1` if it is a single expression, you dont need to mention type
 Makes code more readable.
 Makes compiler's job easier.
 
+N - We can reserve `/lang` for language constructs.
+`/core` for core functions.
+`/std` for additional functions.
+
+Y - Some basic things need to be covered in core:
+1. Hash calculation on any data structure
+2. Serialization/Deserialization
+3. assert: `assert(x=1, "x must be 1")` - if failed, exit app
+`=` by default performs deep comparison of data structures.
+
 ? - We can use the same operator for loading modules at runtime `@`. but it won't be able to use `_`.
 So if load function's input is not compile-time value, it's output must be assigned to some identifiers.
 Loading at runtime: We are not supposed to load source code modules at runtime. they must be compiled.
-
-? - We can reserve `/lang` for language constructs.
-`/core` for core functions.
-`/std` for additional functions.
+Any use of `@` at module-level will load at compile time.
+`@` inside function will load compiled lib at runtime. and you cannot assign it's output to `_`.
 
 ? - Provide a command like `dot doc /core/process/net/socket processFunction`
 which gives information about a specific type/binding in a file.
 or `dot doc @/my/package/file/main.dot processData` will lookup for that type or function inside modules imported by main.dot or defined inside main.dot, and return it's definition .
 It can start from given file and if not found, continue to referenced modules.
 `dot doc /my/package/file/main processFunction`
-
 
 ? - For projects like kubernetes or minikube we need to run `make` with all different arguments.
 to run tests, e2e tests, make, clean, ...
@@ -151,12 +157,6 @@ I think these are mostly job of bash/powershell/... OS scripting.
 Maybe filter `dot test` to execute in a specific dir in source structure.
 `make bazel-generate-files` -> external cli tools
 `dot build|run|test`
-
-? - Some basic things need to be covered in core:
-1. Hash calculation on any data structure
-2. Serialization/Deserialization
-3. assert: `assert(x=1, "x must be 1")` - if failed, exit app
-`=` by default performs deep comparison of data structures.
 
 ? - Add dependent types.
 Applications: binary tree or max-heap or RB tree or abs function as a dependent type, a list of max size N
