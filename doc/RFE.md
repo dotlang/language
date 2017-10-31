@@ -175,3 +175,100 @@ What about generic types. Can we use this to make sure T type in a generic modul
 `process: PFunc := (x:int)->int ...`
 So for functions, the check lambda's input is function input + function output. and output will be bool. 
 `PosInt := int with (x:int)->x>0`
+We can thinkg of `(int)->int` as a generator of int. So we should be able to define constraints on that output which obviously needs to rely on input.
+`MyFunc := (int)->int with (x:int, y:int)-> ...` this code will be called after each call to a function of type MyFunc.
+It should be explicit and obvious what kind of constraint we have for each type.
+What if I have:
+`MyInt := int with ...`
+`MyInt2 := MyInt with ...`
+When I create a binding of type MyInt2, both checks will be done.
+What if `MyInt` is a part of a struct? Same.
+So when a binding is created, these rules will be checked:
+1. Rules on the type of struct and it's underlying types and so on
+2. Rules on each of it's members.
+`p: Point := Point{x:=100, y:= MyFloat(100.2)}`
+So checks for MyFloat and Point will be done.
+The checks will be executed when a binding of that type is created or casted from another type.
+How can we simplify this? Maybe by using a ctor-like function?
+So everytime you want to create a BST struct, you must do it through calling function X.
+So it won't be applicable to functions.
+But what should that function do? How is it suppose to actually "create" that type without calling itself again? We might need to introduce a new notation.
+1. Define types normally and have a notation to define constraint for a type/function.
+2. Define type with a specific function as ctor which will verify and create it.
+```
+MyInt := int
+MyInt := (x:int) -> MyInt { ... }
+..
+y := MyInt(100) #this will call MyInt function
+```
+So we are combining ctor and casting operator.
+But having a function named `MyInt` is against the rule.
+Maybe we can have this exception. 
+Because it also has generality. Because this is a normal function.
+What about then I write `x := MyPoint{x:=100, y:=200}`
+Will it call MyPoint function?
+Of course if there is no such function, compiler will handle it.
+But if we have:
+```
+MyPoint := {x:int, y:int}`
+MyPoint := (x:int, y:int) -> MyPoint 
+{
+  #make sure checks on x and y are satisfied
+  #return anonymous struct
+  :: {x,y}
+}
+...
+y := MyPoint{x:=100, y:=200} #this will call MyPoint function
+z := MyPoint(pt1) 
+```
+advantage of this method: No need to add a new notation.
+Also it is more flexible because we can define other casting options too. For example casting from string to MyPoint.
+What about non-struct?
+```
+MyPositiveInt := int
+MyPositiveInt := (x:int) -> MyPositiveInt
+{
+  #check if x>0
+  #return output
+  :: x
+}
+```
+The only point of confusion: We are returning an int in a place we should be returning `MyPositiveInt` or anonym struct where we should return `MyPoint`. Who does that part?
+We can add another notation to allocate a memory block (low level operations) and set it's value. Of course the developer can also do this to bypass constraint but it will be up to him.
+What will be name of that function? What should be it's output type?
+So `allocate` is a special function which it's output type must be inferred from context.
+Either binding must have a type or it should be in return. So it won't need size.
+It will probably be part of `lang` package, not even core.
+```
+MyPoint := {x:int, y:int}`
+MyPoint := (x:int, y:int) -> MyPoint 
+{
+  #make sure checks on x and y are satisfied
+  #return anonymous struct
+  :: allocate({x,y})
+  #or
+  :: allocate({x,y})
+}
+...
+y := MyPoint{x:=100, y:=200} #this will call MyPoint function
+z := MyPoint(pt1) 
+==========
+MyPositiveInt := int
+MyPositiveInt := (x:int) -> MyPositiveInt
+{
+  #check if x>0
+  #return output
+  :: allocate(x)
+}
+```
+What about a sequence?
+`Set := [int]`
+```
+Set := (data: [int]) -> 
+{
+  ...
+  :: allocate(data)
+}
+```
+basically allocate does not even need to "allocate" memory. Because we already have that data.
+We need to re-type an existing binding. Like casting but more low level.
