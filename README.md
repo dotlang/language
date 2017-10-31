@@ -352,9 +352,9 @@ You can implement phantom types using a named type or a generic type.
 # Functions
 
 Functions are a type of binding which can accept a set of inputs and give an output. Lambda or a function pointer is defined similarly to a normal function in a module. They use the same syntax, except that, they are defined inside a function.
-3. When defining a function, just like a normal binding, you can omit type which will be inferred from rvalue (Function literal). For example `func(int,int)->int` is a function type, but `(x:int, y:int) -> {:: x+y}` is function literal.
+When defining a function, just like a normal binding, you can omit type which will be inferred from rvalue (Function literal). For example `func(int,int)->int` is a function type, but `(x:int, y:int) -> int {:: x+y}` is function literal.
 
-If function does not return anything, it's return type will be marked as `nothing`. 
+If function does not return anything, it's return type will be marked as `nothing`. Otherwise, if function has a body, the output type must be specified after `->`.
 
 A function call with union data (e.g. `int|string`) means there must be functions defined for all possible types in the union (e.g. for `int` and `string`). 
 
@@ -371,9 +371,9 @@ You can alias a function by defining another binding pointing to it (Example 12)
 
 **Examples**
 
-01. `myFunc:(int, int) -> int := func(x:int, y:int)-> int { :: 6+y+x }`
+01. `myFunc:(int, int) -> int := func(x:int, y:int) -> int { :: 6+y+x }`
 02. `log := (s: string) -> { print(s) } #this function returns nothing`
-03. `process := (pt: Point)->int pt.x #no need to use braces when body is a single expression`
+03. `process := (pt: Point)-> pt.x #no need to use braces when body is a single expression`
 04. `process2 := (pt: Point) -> {pt.x, pt.y} #this function returns a struct`
 05. `my_func := (x:int) -> x+9 #no need to specify output type as it can be implied`
 06. `myFunc9 := (x:int) -> {int} {12} #this function returns a struct literal`
@@ -702,10 +702,10 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 
 ## ToDo
 
-- **Language**: Notation for axioms and related operators like `=>` to define semantics of a data structure or function, dependent types
+- **Language**: (`lang` package) Notation for axioms and related operators like `=>` to define semantics of a data structure or function, dependent types
 - **Compiler**: test, debug and profiling code, plugins for Editors (e.g. vim, emacs), code vetting for format the code based on the standard (indentation, spacing, brace placement, warning about namings, ...), escape analysis and optimize them to use mutable variable (for example for numerical calculations which happens only inside a function), parallel compilation
 - **`std` package**: loop helper functions for iteration 
-- **`core` package**: sequence slice functions, create special channels, I/O, OS
+- **`core` package**: hash, ser/deser, assert, sequence slice functions, create special channels, I/O, OS
 - **Others**: 
   1. Build, dependency management, versioning, packaging, and distribution
   2. Plugin system to load/unload libraries at runtime without need to recompile
