@@ -1,4 +1,5 @@
- 
+`!!` indicates the item is not related to the language (related to compiler, runtime, ...)
+
 N - Can we simplify conditional return.
 ```
 a := ...
@@ -134,6 +135,79 @@ Y - Some basic things need to be covered in core:
 3. assert: `assert(x=1, "x must be 1")` - if failed, exit app
 `=` by default performs deep comparison of data structures.
 
+Y - Shall we standadise `[]` or `{}` in the notation?
+`.[]` chain. maye this one can also change to `.{}`
+`@[]` import. maybe this can change to `{}`? We really cannot replace `[]` with a sequence and write `@seq1`. 
+`${}` channel ops. `[]` won't be good because we may need to have a sequence of channels inside. 
+both for chain and import we don't want to let user replace `[]` part with a sequence binding. even if it is fixed. because it won't be readable.
+so:
+`x.{lambda1, lambda2}`
+`_ := @{"mod1", "mod2"}`
+`x.{seq1}`
+`_ := @{seq2}`
+what about this?
+3. `_ := @{"/core/std/{Queue, Stack, Heap}}" #import multiple modules from same path`
+`_ := @{"/core/std/(Queue, Stack, Heap)}" #import multiple modules from same path`
+
+N - What about prefixing a function call with name of the module?
+It will make the code extremely more readable and easy to follow.
+Problem: If we have a function `process` defined in two places, we won't be able to have dynamic resolution.
+```
+#mod1
+process := (x:int)->5
+#mod2
+process := (x:float)->10
+#main
+_ := @["mod1"]
+_ := @["mod2"]
+work := (x:int|float) -> process(x)
+```
+Then maybe we won't need to "rename" single binding/types within the module. we may then only need to rename the whole prefix.
+```
+sc := @{"/core/st/socket"}
+x := sc.Socket{...}
+g := sc.process()
+gg := sc.b.g #sc is module name, b is a struct and g is a field inside that struct
+```
+Won't this make the language less flexible? We already have removed runtime polymorphism.
+How will this affect autoBind?
+Can we think of a module as an interface or a class implementing an interface?
+Suppose that we have a HistoryViewer interface which is created when we call "GetHistoryViewer(node)"
+And that function creates different types based on the given node. Then we can call `viewHistory` function which is defined for that interface to process history for different nodes.
+How can we have this in dotLang?
+one way would be returning a function pointer.
+```
+HistoryData := ArrayHD | MapHD | PrimitiveHD
+getHistoryViewer := (name: string) -> HistoryData { ... }
+viewHistory := (x: ArrayHD) -> ...
+viewHistory := (x: MapHD) -> ...
+viewHistory := (x: PrimitiveHD) -> ...
+#outside:
+g := getHistoryViewer("map")
+viewHistory(g)
+```
+This is related to the expression problem.
+How can we add a new operation? simply add the new function in that module or another module.
+How can we add a new data type? We can use generics.
+```
+#processor[t].dot
+T := { x: name }
+viewHistory := (x: T)->nothing {...}
+getHistoryViewer := (name: string) -> T { ... }
+
+#impl.dot
+viewHistory := (x: ArrayHD) -> ...
+viewHistory := (x: MapHD) -> ...
+viewHistory := (x: PrimitiveHD) -> ...
+
+#outside:
+_ := @{"processor[MapHD]"}
+g := getHistoryViewer("map")
+viewHistory(g)
+```
+Prefixing function with module name will break a lot of things.
+In above example, processor expects a function `viewHistory` for type T. It does not specify module name because it does not care what module it is coming from.
+
 ? - We can use the same operator for loading modules at runtime `@`. but it won't be able to use `_`.
 So if load function's input is not compile-time value, it's output must be assigned to some identifiers.
 Loading at runtime: We are not supposed to load source code modules at runtime. they must be compiled.
@@ -146,7 +220,56 @@ or `dot doc @/my/package/file/main.dot processData` will lookup for that type or
 It can start from given file and if not found, continue to referenced modules.
 `dot doc /my/package/file/main processFunction`
 
-? - For projects like kubernetes or minikube we need to run `make` with all different arguments.
+Y - Make notation for abstract functions more explicit
+`viewHistory := (x: T)->nothing {...}`
+
+N - How do we solve expression problem for adding a new shape?
+suppose we have Shape which can be triangle and square with area function.
+How can we add circle?
+```
+Shape := Triangle | Square
+area := (x: Triangle) ...
+area := (x: Square) ...
+...
+x: Shape := ...
+area(x)
+```
+solution:
+```
+#mod1[T].dot
+T := {Shape}
+Shape := {id: int}
+area := (x: Shape) -> int { ... }
+...
+#square.dot
+_ := @{"mod1[Square]"}
+Square := {Shape, size: int}
+area := (x: Square) -> area(x.Shape)
+
+#circle.dot
+Shape := @{"mod1[Circle]"}
+Circle := {Shape, radius: int}
+_ := @{"mod1[Circle]"}
+area := (x: Circle) -> area(x.Shape)
+
+#main.dot
+_ := @{"circle", "square"}
+
+
+```
+To add a new function like perimeter, without changing existing modules, just implemenet perimeter for all types:
+`perimeter := (x: Circle) -> ...`
+`perimeter := (z: Square) -> ...`
+To add a new shape type, add corresponding module which has it's own type and area function.
+Then, how can we define a function which can return any shape?
+`process := (s: Shape) -> ...`
+can we call process with a struct that includes/embeds Shape?
+We need to write forwarding functions.
+`process := (c: Circle) -> process(c.Shape)`
+`process := (s: Square) -> process(s.Shape)`
+This is flexible because we have the option to write or dont write these fwd functions.
+
+!! - For projects like kubernetes or minikube we need to run `make` with all different arguments.
 to run tests, e2e tests, make, clean, ...
 I think these are mostly job of bash/powershell/... OS scripting.
 `make clean` -> `rm -rf .build`
@@ -157,6 +280,13 @@ I think these are mostly job of bash/powershell/... OS scripting.
 Maybe filter `dot test` to execute in a specific dir in source structure.
 `make bazel-generate-files` -> external cli tools
 `dot build|run|test`
+
+!! - Using `@` for both compile time and runtime loading is confusing and not appropriate.
+For runtime we have a different path spec than compile time.
+Let's do a core function instead.
+
+!! - When loading a module at runtime, you can only import and invke it's functions.
+If you need to send or receive data types, you should either have them ready or destruct them.
 
 ? - Add dependent types.
 Applications: binary tree or max-heap or RB tree or abs function as a dependent type, a list of max size N
@@ -283,30 +413,4 @@ Maybe we shouldn't. Just add a comment.
 `#use createSet to create`
 `SetInt := ...`
 We may also have a convention: `createXXX` will generate that data with validations in-place.
-
-? - What about prefixing a function call with name of the module?
-It will make the code extremely more readable and easy to follow.
-Problem: If we have a function `process` defined in two places, we won't be able to have dynamic resolution.
-```
-#mod1
-process := (x:int)->5
-#mod2
-process := (x:float)->10
-#main
-_ := @["mod1"]
-_ := @["mod2"]
-work := (x:int|float) -> process(x)
-```
-Then maybe we won't need to "rename" single binding/types within the module. we may then only need to rename the whole prefix.
-
-? - Shall we standadise `[]` or `{}` in the notation?
-`.[]` chain. maye this one can also change to `.{}`
-`@[]` import. maybe this can change to `{}`? We really cannot replace `[]` with a sequence and write `@seq1`. 
-`${}` channel ops. `[]` won't be good because we may need to have a sequence of channels inside. 
-both for chain and import we don't want to let user replace `[]` part with a sequence binding. even if it is fixed. because it won't be readable.
-so:
-`x.{lambda1, lambda2}`
-`_ := @{"mod1", "mod2"}`
-`x.{seq1}`
-`_ := @{seq2}`
 
