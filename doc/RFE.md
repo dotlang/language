@@ -283,3 +283,30 @@ Maybe we shouldn't. Just add a comment.
 `#use createSet to create`
 `SetInt := ...`
 We may also have a convention: `createXXX` will generate that data with validations in-place.
+
+? - What about prefixing a function call with name of the module?
+It will make the code extremely more readable and easy to follow.
+Problem: If we have a function `process` defined in two places, we won't be able to have dynamic resolution.
+```
+#mod1
+process := (x:int)->5
+#mod2
+process := (x:float)->10
+#main
+_ := @["mod1"]
+_ := @["mod2"]
+work := (x:int|float) -> process(x)
+```
+Then maybe we won't need to "rename" single binding/types within the module. we may then only need to rename the whole prefix.
+
+? - Shall we standadise `[]` or `{}` in the notation?
+`.[]` chain. maye this one can also change to `.{}`
+`@[]` import. maybe this can change to `{}`? We really cannot replace `[]` with a sequence and write `@seq1`. 
+`${}` channel ops. `[]` won't be good because we may need to have a sequence of channels inside. 
+both for chain and import we don't want to let user replace `[]` part with a sequence binding. even if it is fixed. because it won't be readable.
+so:
+`x.{lambda1, lambda2}`
+`_ := @{"mod1", "mod2"}`
+`x.{seq1}`
+`_ := @{seq2}`
+
