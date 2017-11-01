@@ -306,12 +306,13 @@ Note that bindings and functions which start with underscore, won't be available
 6. `_ := @{base_cassandra&"/path/module"} #you can create string literals for import path`
 7. `ModuleType1, myFunction2 := @{"/path/to/module"} #only import these two types/bindings`
 8. `_ := @{"/path/to/module"} { MyType1 := ModuleType1 } #import everything but rename ModuleType1 to MyType1`
+9. `_ := @{"module1"} #import with relative path`
 
 # Generics
 
 Generics are implemented at module level. Just append generics types in lower case (e.g. `stack[t].dot`) to the module file name and you can use type `T` (all capital) in your code. Any module importing it, must provide concrete types for them or else there will be compiler error. So if a module imports `stack[int]`, compiler will re-write the module and replace any occurence of `T` with `int`.
 
-If you provide any existing definition for the generic type or abstract functions based on it, the importer should provide a compliant type (Example 4).
+If you provide any existing type definition for the generic type or abstract functions based on it, the importer should provide a compliant type (Example 4).
 
 You can specialize a generic module for known types by writing appropriately named module file (e.g. `module_name[string].dot`).
 
@@ -331,7 +332,7 @@ compare := (a:T, b:T)->int
 #this means T must contain a data field of type string.
 T := {data: string}
 #and a function with below syntax
-process := (a:T)->int
+process := (a:T)->int { ... }
 ```
 
 ## Phantom types
