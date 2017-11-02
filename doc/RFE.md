@@ -208,13 +208,13 @@ viewHistory(g)
 Prefixing function with module name will break a lot of things.
 In above example, processor expects a function `viewHistory` for type T. It does not specify module name because it does not care what module it is coming from.
 
-? - We can use the same operator for loading modules at runtime `@`. but it won't be able to use `_`.
+N - We can use the same operator for loading modules at runtime `@`. but it won't be able to use `_`.
 So if load function's input is not compile-time value, it's output must be assigned to some identifiers.
 Loading at runtime: We are not supposed to load source code modules at runtime. they must be compiled.
 Any use of `@` at module-level will load at compile time.
 `@` inside function will load compiled lib at runtime. and you cannot assign it's output to `_`.
 
-? - Provide a command like `dot doc /core/process/net/socket processFunction`
+!! - Provide a command like `dot doc /core/process/net/socket processFunction`
 which gives information about a specific type/binding in a file.
 or `dot doc @/my/package/file/main.dot processData` will lookup for that type or function inside modules imported by main.dot or defined inside main.dot, and return it's definition .
 It can start from given file and if not found, continue to referenced modules.
@@ -414,3 +414,12 @@ Maybe we shouldn't. Just add a comment.
 `SetInt := ...`
 We may also have a convention: `createXXX` will generate that data with validations in-place.
 
+? - Use `::` for defer too.
+`closeFile(f) ::`
+Adding `::` at the end of a line will cause it to be executed before exiting function (like defer)
+It cannot produce any output, if it has they will be ignored.
+```
+f := fopen("a.txt")
+close(f) ::
+:: 100
+```
