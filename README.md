@@ -12,9 +12,9 @@ August 7, 2017
 2. [Language in a nutshell](https://github.com/dotlang/language/blob/master/README.md#language-in-a-nutshell)
 3. [Bindings](https://github.com/dotlang/language/blob/master/README.md#bindings)
 4. [Type system](https://github.com/dotlang/language/blob/master/README.md#type-system)
-5. [Generics](https://github.com/dotlang/language/blob/master/README.md#generics)
-6. [Functions](https://github.com/dotlang/language/blob/master/README.md#functions)
-7. [Operators](https://github.com/dotlang/language/blob/master/README.md#operators)
+5. [Functions](https://github.com/dotlang/language/blob/master/README.md#functions)
+6. [Modules](https://github.com/dotlang/language#modules)
+7. [Generics](https://github.com/dotlang/language/blob/master/README.md#generics)
 8. [Concurrency](https://github.com/dotlang/language/blob/master/README.md#concurrency)
 9. [Other features](https://github.com/dotlang/language/blob/master/README.md#other-features)
 10. [Examples](https://github.com/dotlang/language/blob/master/README.md#examples)
@@ -122,6 +122,14 @@ These rules are highly advised but not mandatory.
 4. Braces must appear on their own line. For lambdas that are a single expression you should omit braces.
 5. You can use `0x` prefix for hexadecimal numbers and `0b` for binary.
 6. You can use `,` as digit separator in number literals.
+
+## Operators
+
+Operators are mostly similar to C language (Conditional operators: `and, or, not, =, !=, >=, <=`, Arithmetic: `+, -, *, /, %, %%`) and some of them which are different are explained in corresponding sections (Casting, Chain operator, range, underscore, ...).
+
+Note that `=` will do a comparison based on contents of bindings.
+`A // B` will evaluate to A if it is not `nothing`, else it will be evaluated to B (e.g. `y := x // y // z // 0`).
+Conditional operators return `true` or `false` which are `1` and `0` when used as index of a sequence.
 
 # Bindings
 
@@ -284,72 +292,6 @@ The `Type(nothing)` notation gives you the default value for the given type (emp
 5. `x := MyFuncType(t)`
 6. `a, b, c := MyInt(x,y,z)`
 
-# Modules
-
-Modules are source code files. You can import them into current module and use their public types and bindings. You can import modules from local file-system, GitHub or any other external source which the compiler supports. You can also filter/rename imported identifiers to prevent name conflict.
-
-Note that bindings and functions which start with underscore, won't be available outside their own module.
-
-**Syntax**
-
-`_ := @{"/path/to/module1", "path/to/module2", ...}`
-`_ := @{"/path/to/module" ...} { name1 := name2, MyType := ModuleType, ... }`
-`Item1, func2, Item3,... := @{"/path/to/module"} { name2, MyType := ModuleType, ... }`
-
-**Examples**
-
-1. `@{"/core/st/socket"} #import everything, addressed module with absolute path`
-2. `_ := @{"../core/st/socket"} #import with relative path`
-3. `_ := @{"/core/std/queue, stack, heap}" #import multiple modules from the same path`
-4. `_ := @{"git/github.com/net/server/branch1/dir1/dir2/module"} #you need to specify branch/tag/commit name here`
-5. `base_cassandra := "github/apache/cassandra/mybranch"`
-6. `_ := @{base_cassandra&"/path/module"} #you can create string literals for import path`
-7. `ModuleType1, myFunction2 := @{"/path/to/module"} #only import these two types/bindings`
-8. `_ := @{"/path/to/module"} { MyType1 := ModuleType1 } #import everything but rename ModuleType1 to MyType1`
-9. `_ := @{"module1"} #import with relative path`
-
-# Generics
-
-Generics are implemented at module level. Just append generics types in lower case (e.g. `stack[t].dot`) to the module file name and you can use type `T` (all capital) in your code. Any module importing it, must provide concrete types for them or else there will be compiler error. So if a module imports `stack[int]`, compiler will re-write the module and replace any occurence of `T` with `int`.
-
-If you provide any existing type definition for the generic type or abstract functions based on it, the importer should provide a compliant type (Example 4).
-
-You can specialize a generic module for known types by writing appropriately named module file (e.g. `module_name[string].dot`).
-
-**Example**
-
-1. `_ := @{"/core/Stack[int]"}`
-2. `x: Stack := createStack()`
-3.
-```
-#set[t].dot
-#T is not defined. This means T can be anything, but this function must be defined
-compare := (a:T, b:T)->int
-```
-4.
-```
-#set[t].dot
-#this means T must contain a data field of type string.
-T := {data: string}
-#and a function with below syntax
-process := (a:T)->int { ... }
-```
-
-## Phantom types
-
-Phantom types are used to document compile time constraints on the data without runtime cost of using generics or named types (When generic type is not used on the right side of type definition, it will be only for compile time check)
-Phantoms are compile-time label/state attached to a type. You can use these labels to do some compile-time checks and validations. 
-
-You can implement phantom types using a named type or a generic type.
-
-**Examples**
-
-1. `door[t].dot module file`: `Door := string`
-2. `_ := @{"/Door[Open]"} { OpenDoot := Door }`
-3. `_ := @{"/Door[Closed]"} { ClosedDoor := Doot }`
-4. `closeDoor := (x: OpenDoor) -> ClosedDoor`
-5. `openDoor := (x: ClosedDoor) -> OpenDoor`
-
 # Functions
 
 Functions are a type of binding which can accept a set of inputs and give an output. Lambda or a function pointer is defined similarly to a normal function in a module. They use the same syntax, except that, they are defined inside a function.
@@ -452,28 +394,71 @@ This operator is used to put arguments before a lambda and simulate a scoped fun
 4. `result := (input, check1(5, _)).{pipe(_,_)}.{pipe(_, check3(1,2,_))}.{pipe(_,check5(8,_,1))}`
 5. `result := error_or_int.{(x:error)->10, (y:int)->20}`
 
-# Operators
+# Modules
 
-Operators are mostly similar to C language and some of them which are different are explained in previous sections (Casting, Chain operator, range, underscore, ...).
+Modules are source code files. You can import them into current module and use their public types and bindings. You can import modules from local file-system, GitHub or any other external source which the compiler supports. You can also filter/rename imported identifiers to prevent name conflict.
 
-`=` will do a comparison based on contents of bindings.
-`A // B` will evaluate to A if it is not `nothing`, else it will be evaluated to B.
-Conditional operators return `true` or `false` which are `1` and `0` when used as index of a sequence.
+Note that bindings and functions which start with underscore, won't be available outside their own module.
 
-**Syntax**:
+**Syntax**
 
-1. Conditional operators: `and, or, not, =, !=, >=, <=`
-2. Arithmetic: `+, -, *, /, %, %%`
-3. Chain `.{}` 
-4. Casting `()`
-5. Nothing check operator `//`
+`_ := @{"/path/to/module1", "path/to/module2", ...}`
+`_ := @{"/path/to/module" ...} { name1 := name2, MyType := ModuleType, ... }`
+`Item1, func2, Item3,... := @{"/path/to/module"} { name2, MyType := ModuleType, ... }`
 
 **Examples**
 
-1. `y: int|float := 12`
-2. `y := x // y // z // 0`
-3. `result := [nothing, data][condition] // processBigBuffer(buffer)`
-4. `data, successs := int{int_or_float}`
+1. `@{"/core/st/socket"} #import everything, addressed module with absolute path`
+2. `_ := @{"../core/st/socket"} #import with relative path`
+3. `_ := @{"/core/std/queue, stack, heap}" #import multiple modules from the same path`
+4. `_ := @{"git/github.com/net/server/branch1/dir1/dir2/module"} #you need to specify branch/tag/commit name here`
+5. `base_cassandra := "github/apache/cassandra/mybranch"`
+6. `_ := @{base_cassandra&"/path/module"} #you can create string literals for import path`
+7. `ModuleType1, myFunction2 := @{"/path/to/module"} #only import these two types/bindings`
+8. `_ := @{"/path/to/module"} { MyType1 := ModuleType1 } #import everything but rename ModuleType1 to MyType1`
+9. `_ := @{"module1"} #import with relative path`
+
+# Generics
+
+Generics are implemented at module level. Just append generics types in lower case (e.g. `stack[t].dot`) to the module file name and you can use type `T` (all capital) in your code. Any module importing it, must provide concrete types for them or else there will be compiler error. So if a module imports `stack[int]`, compiler will re-write the module and replace any occurence of `T` with `int`.
+
+If you provide any existing type definition for the generic type or abstract functions based on it, the importer should provide a compliant type (Example 4).
+
+You can specialize a generic module for known types by writing appropriately named module file (e.g. `module_name[string].dot`).
+
+**Example**
+
+1. `_ := @{"/core/Stack[int]"}`
+2. `x: Stack := createStack()`
+3.
+```
+#set[t].dot
+#T is not defined. This means T can be anything, but this function must be defined
+compare := (a:T, b:T)->int
+```
+4.
+```
+#set[t].dot
+#this means T must contain a data field of type string.
+T := {data: string}
+#and a function with below syntax
+process := (a:T)->int { ... }
+```
+
+## Phantom types
+
+Phantom types are used to document compile time constraints on the data without runtime cost of using generics or named types (When generic type is not used on the right side of type definition, it will be only for compile time check)
+Phantoms are compile-time label/state attached to a type. You can use these labels to do some compile-time checks and validations. 
+
+You can implement phantom types using a named type or a generic type.
+
+**Examples**
+
+1. `door[t].dot module file`: `Door := string`
+2. `_ := @{"/Door[Open]"} { OpenDoot := Door }`
+3. `_ := @{"/Door[Closed]"} { ClosedDoor := Doot }`
+4. `closeDoor := (x: OpenDoor) -> ClosedDoor`
+5. `openDoor := (x: ClosedDoor) -> OpenDoor`
 
 # Concurrency
 
