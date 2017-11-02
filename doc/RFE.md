@@ -435,3 +435,11 @@ But why make it complicated? Any return value will be ignored.
 `()->10 ::` is noop.
 `()->close(file)` might return something but will be thrown away.
 
+? - Use visitor design pattern to build code.
+Create AST which is a tree.
+Then traverse it using Visitor.
+Visit root which will send visitor to others too.
+
+? - We should not need some tool like Bazel which makes development too complicated.
+Everything should be handled in the most minimalist way using the compiler.
+Study bazel and how it works + Make + CMake + go dep
