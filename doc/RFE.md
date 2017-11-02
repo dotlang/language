@@ -423,3 +423,15 @@ f := fopen("a.txt")
 close(f) ::
 :: 100
 ```
+Those lines will be parsed and executed after return is ready to leave the function. So any reference to bindings which are defined after it, is ok.
+`close(f) ::` means `()->close(f)`
+So why not make this more clear?
+Instead of a normal function call, you must write a lambda which has no input and no output.
+`() -> { ... } ::`
+this lambda will be invoked upon leaving the function.
+The `()->` part is really mandatory/extra but better to be there to make things more readable and consistent.
+And you cannot write `()->10 ::` because it is supposed to not return anything. Unless instead of 10 you call a function.
+But why make it complicated? Any return value will be ignored.
+`()->10 ::` is noop.
+`()->close(file)` might return something but will be thrown away.
+
