@@ -478,3 +478,8 @@ It would be good if we can follow swift model: "In Swift, compiler analyzes the 
 ARC: Automatic Reference Counting
 Disadvantage of ARC is problem with cycle in dependency. But I think in immutable world, you cannot have it (At least without laziness).
 Main advantage of ARC: It is simple and efficient (no pause).
+
+? - Q: What can we remove from the language without loosing much of it's power?
+`//`
+`x := y // z` ~ `x := [z, y][y=nothing]`
+`f(x)` `x.{f}`
