@@ -288,7 +288,7 @@ Let's do a core function instead.
 !! - When loading a module at runtime, you can only import and invke it's functions.
 If you need to send or receive data types, you should either have them ready or destruct them.
 
-? - Add dependent types.
+N - Add dependent types.
 Applications: binary tree or max-heap or RB tree or abs function as a dependent type, a list of max size N
 A dependent function's result depends on it's input.
 When that function is invoked or that data type is created, those rules are checked and if they don't match, there will be a runtime error. 
@@ -414,6 +414,23 @@ Maybe we shouldn't. Just add a comment.
 `SetInt := ...`
 We may also have a convention: `createXXX` will generate that data with validations in-place.
 
+!! - Use visitor design pattern to build code.
+Create AST which is a tree.
+Then traverse it using Visitor.
+Visit root which will send visitor to others too.
+
+!! - We should not need some tool like Bazel which makes development too complicated.
+Everything should be handled in the most minimalist way using the compiler.
+Study bazel and how it works + Make + CMake + go dep
+
+N - Is there a way to make it more explicit if a binding is function?
+`item_one` is value binding
+`processData` is a function binding.
+`MyData` is a type
+but we can have a value binding of type lambda.
+`processData := (x:int) -> x+1`
+This can be written inside a function.
+
 ? - Use `::` for defer too.
 `closeFile(f) ::`
 Adding `::` at the end of a line will cause it to be executed before exiting function (like defer)
@@ -434,12 +451,20 @@ And you cannot write `()->10 ::` because it is supposed to not return anything. 
 But why make it complicated? Any return value will be ignored.
 `()->10 ::` is noop.
 `()->close(file)` might return something but will be thrown away.
+But we can simply define TempFile type which has an appropriate dispose. So if you do not return that file, it's dispose will be executed and done.
+Usage of defer in Go: close channel, close temp file, flush logs, test teardown, remove a dir, close socket, restore something in environment we have changed (e.g. PATH), unlock mutex, log something
+Now we do not claim to be covering all those cases, but most of them can be done in a dispose.
+Call of dispose is one of those implicit things in the language. So shall we force user to do that?
+If any binding has a function in the form of `dispose := (x: Type) -> ...` it must be called before function exit.
+But it will make it difficult to write functions with multiple exit points.
+This is similar to how Rust manages resources.
+http://blog.skylight.io/rust-means-never-having-to-close-a-socket/
+How/when is a resource like file or socket freed/closed?
+Suppose `process` createsa file resource, write some, passes it to another function `process2` and writes more.
+When will that file be closed? At the end of `process`? Or at the end of `process2`?
+Can compiler decide that?
+What if `process2` creates some threads to write to that file?
+Note that we won't have a file. We will have a write-only channel.
+Solution 1: You cannot "pass" a channel to another function. You must close it. So each function will have it's own channel pointing to the same thing. When all of them are closed (which happens when the function is done), resource is deleted/disposed.
+Solution 2: You can pass and compiler cannot decide about dispose. At runtime, we will keep a reference count for that channel and when it is zero, dispose will be called.
 
-? - Use visitor design pattern to build code.
-Create AST which is a tree.
-Then traverse it using Visitor.
-Visit root which will send visitor to others too.
-
-? - We should not need some tool like Bazel which makes development too complicated.
-Everything should be handled in the most minimalist way using the compiler.
-Study bazel and how it works + Make + CMake + go dep
