@@ -87,10 +87,10 @@ dotLang consists of these components:
 ## Symbols
 
 01. `#`   Comment
-02. `.`   Access struct fields (bindings and types)
+02. `.`   Access struct fields
 03. `()`  Function declaration and call, cast
 04. `{}`  Code block, struct definition and struct literal
-05. `[]`  Types and literals (map, sequence), Generic modules, concurrency
+05. `[]`  Types and literals (map, sequence), Generic modules
 06. `|`   Union data type 
 07. `->`  Function declaration
 08. `..`  Range generator for sequence
