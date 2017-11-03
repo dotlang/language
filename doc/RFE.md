@@ -431,7 +431,7 @@ but we can have a value binding of type lambda.
 `processData := (x:int) -> x+1`
 This can be written inside a function.
 
-? - Use `::` for defer too.
+N - Use `::` for defer too.
 `closeFile(f) ::`
 Adding `::` at the end of a line will cause it to be executed before exiting function (like defer)
 It cannot produce any output, if it has they will be ignored.
@@ -457,6 +457,8 @@ Now we do not claim to be covering all those cases, but most of them can be done
 Call of dispose is one of those implicit things in the language. So shall we force user to do that?
 If any binding has a function in the form of `dispose := (x: Type) -> ...` it must be called before function exit.
 But it will make it difficult to write functions with multiple exit points.
+
+N - How/when should we call dispose for a binding/channel?
 This is similar to how Rust manages resources.
 http://blog.skylight.io/rust-means-never-having-to-close-a-socket/
 How/when is a resource like file or socket freed/closed?
@@ -467,4 +469,12 @@ What if `process2` creates some threads to write to that file?
 Note that we won't have a file. We will have a write-only channel.
 Solution 1: You cannot "pass" a channel to another function. You must close it. So each function will have it's own channel pointing to the same thing. When all of them are closed (which happens when the function is done), resource is deleted/disposed.
 Solution 2: You can pass and compiler cannot decide about dispose. At runtime, we will keep a reference count for that channel and when it is zero, dispose will be called.
-
+Maybe this should not be part of language syntax. Maybe compiler/runtime should handle it transparently.
+What happens if I send a socket to a channel and read it later?
+Will it be a new socket? Same socket? Cloned socket?
+When/how will dispose be called for that socket?
+It might be difficult for compiler to keep track of this case because it is not static in the code. Reading from channel can be in different functions under different conditions. So a compile time tracking of dispose call would be difficult.
+It would be good if we can follow swift model: "In Swift, compiler analyzes the code during the static compilation pass and inserts release/retain code during the compile time." (https://news.ycombinator.com/item?id=12033026)
+ARC: Automatic Reference Counting
+Disadvantage of ARC is problem with cycle in dependency. But I think in immutable world, you cannot have it (At least without laziness).
+Main advantage of ARC: It is simple and efficient (no pause).
