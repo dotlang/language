@@ -479,7 +479,40 @@ ARC: Automatic Reference Counting
 Disadvantage of ARC is problem with cycle in dependency. But I think in immutable world, you cannot have it (At least without laziness).
 Main advantage of ARC: It is simple and efficient (no pause).
 
-? - Q: What can we remove from the language without loosing much of it's power?
+N - Q: What can we remove from the language without loosing much of it's power?
 `//`
 `x := y // z` ~ `x := [z, y][y=nothing]`
 `f(x)` `x.{f}`
+
+N - Another way to make differences more explicit.
+For types use a keyword so they are clear in place of definition and also in place of usage they are clear by context.
+Now we have function, local bindings and function args.
+other `some_name` (value bindings, module name, package name)
+function `someName`
+type `SomeName`
+
+Y - How do we know if a literal is map or sequence when type should be inferred?
+`x := ["A", 1, "B", 2]`!!!!
+`x := ["A"=>1, "B"=>2]`
+`x := ["A":1, "B":2]`
+
+? - In seq and map literals user should put comma after last item like Go.
+Why?
+
+? - We still need a mechanism for general union type.
+Example: Writing a test for HistoryViewerFor. The data set will be a map of input types and expected output.
+e.g.
+```
+input := [Kind1, Expected1, Kind2, Expected2, Kind3, Expected3]
+#call process for each key in above map and check if output type is Expectedi
+x := process(Kind1)
+_, done := Expected1(x)
+#if done is false, then result's type is not as we expect
+```
+I need to have a type curator to be used in a sequence or map or ... to indicate that an element can be any of different types. This should be easily done and not require writing a separate module.
+What if we accept implicit embed?
+`{int}` means a struct that has an int field AND any other struct that has an int field.
+But this is the implicity we are trying to avoid.
+The only exception is defining a generic module. So it T is `{int}` you can only replace T with something which has an int.
+So how can we explicitly state that there is a type which represents a union of all types which embed type T?
+`X := { F | F embeds T }`
