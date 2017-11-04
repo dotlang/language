@@ -74,7 +74,7 @@ dotLang consists of these components:
 02. **Primitive types**: `int`, `float`, `char`, `sequence`, `map`, `func`.
 03. **Bindings**: `my_var:int := 19` (type can be automatically inferred, everything is immutable).
 04. **Sequence**: `scores:[int] := [1, 2, 3, 4]`.
-05. **Map**: `scores:[string, int] := ["A",1, "B",2, "C",3, "D", 4]`.
+05. **Map**: `scores:[string, int] := ["A":1, "B":2, "C":3, "D": 4]`.
 06. **Named type**: `MyInt := int` (Defines a new type with same binary representation as `int`).
 07. **Struct type**: `Point := {x: int, y:int, data: float}` (Like `struct` in C)
 08. **Struct literal**: `location := Point{x:=10, y:=20, data:=1.19}`
@@ -192,7 +192,7 @@ Note that `func` is explain in the "Function" section and channel types are expl
 
 ## Sequence
 
-Sequence is similar to array in other languages. It represents a fixed-size block of memory space with elements of the same type, T and is shows with `[T]` notation. You can initialize a sequence with a sequence literal (Example 1) or range operator (Example 2).
+Sequence is similar to array in other languages. It represents a fixed-size block of memory space with elements of the same type, T and is shows with `[T]` notation. You can initialize a sequence with a sequence literal (Example 1) or range operator (Example 2). 
 
 You refer to elements inside sequence using `x[i]` notation where `i` is index number. Referring to an index outside sequence will cause a runtime error.
 
@@ -204,14 +204,13 @@ You refer to elements inside sequence using `x[i]` notation where `i` is index n
 4. `x: [int] := [1, 2]&[3, 4]&[5, 6] #merging multiple sequences`
 5. `n := x[10]`
 
-
 ## Map
 
 You can use `[KeyType, ValueType]` to define a map type. When reading from a map, you will also receive a flag indicating whether the key exists in the map.
 
 **Examples**
 
-1. `pop: [string, int] := ["A",1,"B",2,"C",3]`
+1. `pop: [string, int] := ["A":1,"B":2,"C":3]`
 2. `data, is_found := pop["A"]`
 
 ## Union
