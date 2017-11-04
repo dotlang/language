@@ -498,6 +498,9 @@ Y - How do we know if a literal is map or sequence when type should be inferred?
 
 ? - In seq and map literals user should put comma after last item like Go.
 Why?
+Can't we just eliminate use of comma?
+Purpose is make it less error prone to add a single element to the list/map.
+
 
 ? - We still need a mechanism for general union type.
 Example: Writing a test for HistoryViewerFor. The data set will be a map of input types and expected output.
@@ -516,3 +519,20 @@ But this is the implicity we are trying to avoid.
 The only exception is defining a generic module. So it T is `{int}` you can only replace T with something which has an int.
 So how can we explicitly state that there is a type which represents a union of all types which embed type T?
 `X := { F | F embeds T }`
+This should be a new notation.
+`!@#$%^`
+`^Shape`
+Application: define a sequence which can hold any of those types.
+`x : [Circle|Square|Triangle]`
+Or for our current historyViewer.
+In file system we write `draw*` to specify prefix.
+`*draw*` means any file that contains `draw` in it's name.
+But there, we can have `*draw` or `draw*` too. while here it does not make sense.
+This will be our way of handling polymorphism.
+`x: {int}` - x is a struct which has an integer field.
+`a: {Shape} := ...` can we assign a Circle to a? 
+It should be explicit that type of `a` is a sum type.
+This will be similar to interface in golang, but the interface can be any struct. AND in a function call, the actual type will be used.
+`a: ^{Shape}`
+`a: {Shape..}|int`
+
