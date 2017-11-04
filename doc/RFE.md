@@ -496,13 +496,13 @@ Y - How do we know if a literal is map or sequence when type should be inferred?
 `x := ["A"=>1, "B"=>2]`
 `x := ["A":1, "B":2]`
 
-? - In seq and map literals user should put comma after last item like Go.
+Y - In seq and map literals user should put comma after last item like Go.
 Why?
 Can't we just eliminate use of comma?
 Purpose is make it less error prone to add a single element to the list/map.
 
 
-? - We still need a mechanism for general union type.
+Y - We still need a mechanism for general union type.
 Example: Writing a test for HistoryViewerFor. The data set will be a map of input types and expected output.
 e.g.
 ```
@@ -536,3 +536,5 @@ This will be similar to interface in golang, but the interface can be any struct
 `a: ^{Shape}`
 `a: {Shape..}|int`
 
+N - If a type has fields of Shape inside it, can it be part of `{Shape..}` type?
+Let's answer this question later when we want to implement polymorphism and subtyping.
