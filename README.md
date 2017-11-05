@@ -14,12 +14,11 @@ August 7, 2017
 4. [Type system](https://github.com/dotlang/language/blob/master/README.md#type-system)
 5. [Functions](https://github.com/dotlang/language/blob/master/README.md#functions)
 6. [Modules](https://github.com/dotlang/language#modules)
-7. [Generics](https://github.com/dotlang/language/blob/master/README.md#generics)
-8. [Concurrency](https://github.com/dotlang/language/blob/master/README.md#concurrency)
-9. [Other features](https://github.com/dotlang/language/blob/master/README.md#other-features)
-10. [Examples](https://github.com/dotlang/language/blob/master/README.md#examples)
-11. [Other components](https://github.com/dotlang/language/blob/master/README.md#other-components)
-12. [History](https://github.com/dotlang/language/blob/master/README.md#history)
+7. [Concurrency](https://github.com/dotlang/language/blob/master/README.md#concurrency)
+8. [Other features](https://github.com/dotlang/language/blob/master/README.md#other-features)
+9. [Examples](https://github.com/dotlang/language/blob/master/README.md#examples)
+10. [Other components](https://github.com/dotlang/language/blob/master/README.md#other-components)
+11. [History](https://github.com/dotlang/language/blob/master/README.md#history)
 
 # Introduction
 
@@ -79,9 +78,9 @@ dotLang consists of these components:
 07. **Struct type**: `Point := {x: int, y:int, data: float}` (Like `struct` in C)
 08. **Struct literal**: `location := Point{x:=10, y:=20, data:=1.19}`
 09. **Composition**: `Circle := {Shape, radius: float}` (`Circle` embeds fields of `Shape`)
-10. **Generics**: `_ := @{"/core/Stack[int]"}` (Generics are defined as template modules)
+10. **Generics**: `_ := @{"/core/Stack[T]"}(int)` (Generics are defined as template modules)
 11. **Union type**: `MaybeInt := int | nothing` (Can store either of possible types)
-12. **Function**: `calculate: func(int,int)->float := (x, y) -> float { :: x/y  }`
+12. **Function**: `calculate: (int,int)->float := (x, y) -> float { :: x/y  }`
 13. **Concurrency**: `result :== processData(x,y,z)` (Evaluate an expression in parallel)
 
 ## Symbols
@@ -90,26 +89,27 @@ dotLang consists of these components:
 02. `.`   Access struct fields
 03. `()`  Function declaration and call, cast
 04. `{}`  Code block, struct definition and struct literal
-05. `[]`  Types and literals (map, sequence), Generic modules
+05. `[]`  Types and literals  for map and sequence, Generic modules
 06. `|`   Union data type 
 07. `->`  Function declaration
-08. `..`  Range generator for sequence, polymorphic sum type
-08. `...` Abstract function
-09. `//`  Nothing-check operator
-10. `:`   Type declaration (struct, function inputs and bindings)
-11. `:=`  Binding declaration, named types
-12. `::`  Return operator
-13. `_`   Place holder (lambda creator and assignments)
-14. `@{}` Import
-15. `.{}` Chain operator
-16. `!`   Write-only channel
-17. `?`   Read-only channel
-18. `${}` Channel select operations
-19. `:==` Parallel execution
+08. `=>`  Rename module definition
+09. `..`  Range generator for sequence, polymorphic sum type
+10. `...` Abstract function
+11. `//`  Nothing-check operator
+12. `:`   Type declaration (struct, function inputs and bindings)
+13. `:=`  Binding declaration, named types
+14. `::`  Return operator
+15. `_`   Place holder (lambda creator and assignments)
+16. `@{}` Import
+17. `.{}` Chain operator
+18. `!`   Write-only channel
+19. `?`   Read-only channel
+20. `${}` Channel select operations
+21. `:==` Parallel execution
 
 ## Reserved identifiers
 
-**Data types**: `int`, `float`, `char`, `string`, `bool`, `nothing`, `func`
+**Data types**: `int`, `float`, `char`, `string`, `bool`, `nothing` (+ sequence, map, struct, union and function)
 
 **Reserved identifiers**: `true`, `false`
 
@@ -257,7 +257,7 @@ There is a notation `{T...}` to indicate sum type of all struct types that embed
 2. `Circle := { Shape, radius: float} #Shape is contained within a Circle`
 3. `my_circle := Circle{id:=100, radius:=1.45} #creating a Circle binding`
 4. `x: [{Shape..}] := [my_circle, my_triangle, ...]`
-5. `process := func(c: Circle) -> process(c.Shape)`
+5. `process := (c: Circle) -> process(c.Shape)`
 
 ## Named types
 
@@ -299,7 +299,7 @@ The `Type(nothing)` notation gives you the default value for the given type (emp
 # Functions
 
 Functions are a type of binding which can accept a set of inputs and give an output. Lambda or a function pointer is defined similarly to a normal function in a module. They use the same syntax, except that, they are defined inside a function.
-When defining a function, just like a normal binding, you can omit type which will be inferred from rvalue (Function literal). For example `func(int,int)->int` is a function type, but `(x:int, y:int) -> int {:: x+y}` is function literal.
+When defining a function, just like a normal binding, you can omit type which will be inferred from rvalue (Function literal). For example `(int,int)->int` is a function type (You can optionally include names for inputs for documentation purposes), but `(x:int, y:int) -> int {:: x+y}` is function literal.
 
 If function does not return anything, it's return type will be marked as `nothing`. Otherwise, if function has a body, the output type must be specified after `->`.
 
@@ -314,11 +314,11 @@ You can alias a function by defining another binding pointing to it (Example 12)
 
 **Syntax**: 
 
-`functionName: func(type1, type2, type3, ...) -> (OutputType) := (name1: type1, name2: type2...) -> OutputType { code block }`
+`functionName: (type1, type2, type3, ...) -> (OutputType) := (name1: type1, name2: type2...) -> OutputType { code block }`
 
 **Examples**
 
-01. `myFunc:(int, int) -> int := func(x:int, y:int) -> int { :: 6+y+x }`
+01. `myFunc:(int, int) -> int := (x:int, y:int) -> int { :: 6+y+x }`
 02. `log := (s: string) -> { print(s) } #this function returns nothing`
 03. `process := (pt: Point)-> pt.x #no need to use braces when body is a single expression`
 04. `process2 := (pt: Point) -> {pt.x, pt.y} #this function returns a struct`
@@ -336,22 +336,22 @@ process := (x:int) ->
   :: 200
 }
 ``` 
-11. `T1 := func(int)->(int|string)`
+11. `T1 := (int)->(int|string)`
 12. `process := (x:int)->x+1`, `process2 := process`
 
 ## Function pointer
 
 Bindings of this type can hold a reference to a function or a lambda. You can send them to other functions or they can be used as output type of a function.
 
-**Syntax**: `Fp := func(type1, type2, ...)->OutputType`
+**Syntax**: `Fp := (type1, type2, ...)->OutputType`
 
 **Examples**
 
-1. `Adder := func(int,int)->int #defining a named type based on a function type`
+1. `Adder := (int,int)->int #defining a named type based on a function type`
 2. `myAdder := (x:int, y:int) -> x+y #initialize a binding with a function literal`
 3. `adderPointer: Adder := myAdder #Store refernce to a function in a function pointer`
-4. `sort := (x: [int], comparer: func(int,int) -> bool) -> [int] #this function accepts a function pointers`
-5. `map := (input: [T], mapper: func(T) -> S) -> [S]`
+4. `sort := (x: [int], comparer: (int,int) -> bool) -> [int] #this function accepts a function pointers`
+5. `map := (input: [T], mapper: (T) -> S) -> [S]`
 
 ## Lambda
 
@@ -359,7 +359,7 @@ Lambda or a function literal is used to specify value for a binding of function 
 
 You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normal call and replace the lambda inputs with `_` (Example 8). You can use `:Type` after `_` when creating lambda, to remove ambiguity (Example 9).
 
-If lambda is assigned to a variable, you can invoke itself from inside (Example 8). This is used to implement iteration loops.
+If lambda is assigned to a variable, you can invoke itself from inside (Example 8). This can be used to implement iteration loops.
 
 **Syntax**: `(name1: type1, name2: type2, ...) -> output_type { body }`
 
@@ -367,12 +367,12 @@ If lambda is assigned to a variable, you can invoke itself from inside (Example 
 
 1. `f1 := (x: int, y:int) -> int { x+y }`
 2. `rr := (x: int, y:int) -> x + y #you can ignore return type and braces`  
-3. `rr := () -> { :: x + y } #here x and y are captures from parent function`
-4. `test := (x:int) -> PlusFunc { (y:int) -> y + x } #this function returns a lambda`
+3. `rr := () -> int { :: x + y } #here x and y are captures from parent function`
+4. `test := (x:int) -> PlusFunc { :: (y:int) -> y + x } #this function returns a lambda`
 5. `(x:int)->int { x+1 } (10) #you can invoke a lambda at the point of declaration`
 6. `process := (x:int, y:float, z: string) -> { ... }`
 7. `lambda1 := process(10, _, _) #defining a lambda based on existing function`
-8. `ff := (x:int) -> { ff(x+1) }`
+8. `ff := (x:int) -> int { ff(x+1) }`
 9. 
 ```
 process := (x:int)->...
@@ -407,8 +407,8 @@ Note that bindings and functions which start with underscore, won't be available
 **Syntax**
 
 `_ := @{"/path/to/module1", "path/to/module2", ...}`
-`_ := @{"/path/to/module" ...} { name1 := name2, MyType := ModuleType, ... }`
-`Item1, func2, Item3,... := @{"/path/to/module"} { name2, MyType := ModuleType, ... }`
+`_ := @{"/path/to/module" ...} { name2 => name1, ModuleType => MyType, ... }`
+`Item1, func2, Item3,... := @{"/path/to/module"} { ModuleType => MyType, ... }`
 
 **Examples**
 
@@ -419,20 +419,20 @@ Note that bindings and functions which start with underscore, won't be available
 5. `base_cassandra := "github/apache/cassandra/mybranch"`
 6. `_ := @{base_cassandra&"/path/module"} #you can create string literals for import path`
 7. `ModuleType1, myFunction2 := @{"/path/to/module"} #only import these two types/bindings`
-8. `_ := @{"/path/to/module"} { MyType1 := ModuleType1 } #import everything but rename ModuleType1 to MyType1`
+8. `_ := @{"/path/to/module"} { ModuleType1 => MyType1 } #import everything but rename ModuleType1 to MyType1`
 9. `_ := @{"module1"} #import with relative path`
 
-# Generics
+## Generics
 
-Generics are implemented at module level. Just append generics types in lower case (e.g. `stack[t].dot`) to the module file name and you can use type `T` (all capital) in your code. Any module importing it, must provide concrete types for them or else there will be compiler error. So if a module imports `stack[int]`, compiler will re-write the module and replace any occurence of `T` with `int`.
+Generics are implemented at module level. Just append generics types in lower case (e.g. `stack[t].dot`) to the module file name and you can use type `T` (all capital) in your code. Any module importing it, must provide concrete types for them or else there will be compiler error. So if a module imports it with `int`, compiler will re-write the module and replace any occurence of `T` with `int`.
 
-If you provide any existing type definition for the generic type or abstract functions based on it, the importer should provide a compliant type (Example 4).
+If there are any existing definitions for the generic type or abstract functions based on it, the importer should provide a compliant type (Example 4).
 
 You can specialize a generic module for known types by writing appropriately named module file (e.g. `module_name[string].dot`).
 
 **Example**
 
-1. `_ := @{"/core/Stack[int]"}`
+1. `_ := @{"/core/Stack[T]"}(MyType)`
 2. `x: Stack := createStack()`
 3.
 ```
@@ -448,6 +448,7 @@ T := {data: string}
 #and a function with below syntax
 process := (a:T)->int { ... }
 ```
+5. `_ := @{"storage[T,S]"}([int], string) { DataType => StackDataType }`
 
 ## Phantom types
 
@@ -468,7 +469,7 @@ You can implement phantom types using a named type or a generic type.
 
 dotLang provides channels as a light-weight communication mechanism between two pieces of code and `:==` notation for parallel execution of an expression.
 
-Channels are a one-way (read-only or write-only) data transportation mechanism which are open the moment they are created and closed when they are GC'd (disposed). They can be buffered or have a transformation function (`func(T)->T`) which will be applied before write or after read.
+Channels are a one-way (read-only or write-only) data transportation mechanism which are open the moment they are created and closed when they are GC'd (disposed). They can be buffered or have a transformation function (`(T)->T`) which will be applied before write or after read.
 
 Any party can close/dispose their channel. Send or receive on a channel where there is no receiver or sender will return immediately with a flag indicating this. Doing channel operations inside `$` operator will make them blocking.
 
@@ -572,7 +573,7 @@ innerEval := (exp: Expression) -> float
 
 ## Quick sort
 ```
-quickSort:func([int], int, int)->[int] := (list:[int], low: int, high: int) ->
+quickSort:([int], int, int)->[int] := (list:[int], low: int, high: int) ->
 {
   :: [nothing, list][high >= low]
   
@@ -718,4 +719,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.96**: Jun 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: Jun 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` place holder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is typed statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
-- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting, removed `^` operator and replaced with generics, removed `@` (replaced with chain operator and casting), removed function forwarding, removed compound literal, changed notation for channel read, write and select (Due to changes in generics and sequence and removal of compound literal) and added `$` for select, add notation to filter imported identifiers in import, removed autoBind section and added a brief explanation for `TargetType()` notation in cast section, rename chain operator to `@`, replaced return keyword with `::`, replaced `import` with `@` notation and support for rename and filter for imported items, replaced `@` with `.[]` for chain operator, remove condition for return and replaced with rule of returning non-`nothing` values, change chain notation from `.[]` to `.{}` and import notation from `@[]` to `@{}`, Added notation for polymorphic generic types
+- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting, removed `^` operator and replaced with generics, removed `@` (replaced with chain operator and casting), removed function forwarding, removed compound literal, changed notation for channel read, write and select (Due to changes in generics and sequence and removal of compound literal) and added `$` for select, add notation to filter imported identifiers in import, removed autoBind section and added a brief explanation for `TargetType()` notation in cast section, rename chain operator to `@`, replaced return keyword with `::`, replaced `import` with `@` notation and support for rename and filter for imported items, replaced `@` with `.[]` for chain operator, remove condition for return and replaced with rule of returning non-`nothing` values, change chain notation from `.[]` to `.{}` and import notation from `@[]` to `@{}`, Added notation for polymorphic generic types, changed the notation for import generic module and rename identifiers, removed `func` keyword
