@@ -1,7 +1,14 @@
+This is the EBNF-like formal definition for dotLang syntax.
+`{X}` means `X` can be repeated once or more.
+`[X]` means `X` is optional.
+
+First we have the general definition for a module:
 ```
-# {X} means X can be repeated one or more times
-# [X] means X is optional
 <module> ::= <empty> | <type_def> <module> | <binding> <module>
+```
+
+Here is syntax for a type definition (e.g. `MyCustoer := {name: string, age:int}`)
+```
 <type_def> ::= <type_name> ":=" <type_declaration>
 <arg_def> ::= <binding_name> ":" <type_declaration>
 
@@ -26,7 +33,13 @@
 <struct_type> ::= <unnamed_struct> | <named_strct> | "{" "}" 
 
 (* FN TYPE *)
-<fn_type> := "(" { <type_declaration> | <binding_name> <type_declaration> } ")" "-" ">" ["("] <type_declaration> [")"]
+<fn_result_type ::= ["("] <type_declaration> [")"]
+<fn_type> ::= "(" { <type_declaration> | <binding_name> <type_declaration> } ")" "-" ">" ["("] <type_declaration> [")"]
 
-<type_declaration> :=  <primitive_type> | <sequence_type> | <map_type> | <union_type> | <struct_type> | <fn_type>
+<type_declaration> ::=  <primitive_type> | <sequence_type> | <map_type> | <union_type> | <struct_type> | <fn_type>
+```
+Binding can be either value binding, function binding or an import (can be only defined at module level).
+```
+<binding> ::= <binding_name> ":" "=" <binding_decl>
+<binding_decl> ::= <import_binding> | <function_binding> | <value_binding>
 ```
