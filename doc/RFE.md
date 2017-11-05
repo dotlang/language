@@ -624,3 +624,8 @@ So SAT and SUN are two value bindings which are implicitly defined.
 adder := (x:int)->x+1
 mm := adder(10)
 ```
+
+? - Can we have this in module level?
+```
+processData, storeData := { (x:int)->x+1, (y:int)->y+2 }
+```
