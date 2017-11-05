@@ -44,4 +44,18 @@ Binding can be either value binding, function binding or an import (can be only 
 ```
 <binding> ::= <binding_name> ":" "=" <binding_decl>
 <binding_decl> ::= <import_binding> | <function_binding> | <value_binding>
+<binding_name> ::= { "_" "," } | { <value_binding_name> "," } | { <fn_binding_name> "," }
+
+(* IMPORT *)
+<import_binding> ::= "@" "{" <import_path> "}" [ "(" <type_list> ")" ] [ "{" <import_map_list> "}" ]
+<import_map_list> ::= { <import_map> "," }
+<import_map> ::= IDENTIFIER "=" ">" IDENTIFIER
+<type_list> ::= { <type_name> | <primitive_type> }
+<import_path> ::= <string_literal>
+
+(* VALUE *)
+<value_binding> ::= <literal> | <expression> | 
+
+(* FUNCTION *)
+<function_binding> ::=
 ```
