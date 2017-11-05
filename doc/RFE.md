@@ -538,3 +538,60 @@ This will be similar to interface in golang, but the interface can be any struct
 
 N - If a type has fields of Shape inside it, can it be part of `{Shape..}` type?
 Let's answer this question later when we want to implement polymorphism and subtyping.
+
+N - How can we write a function that given `[T]` and `func(T)->S` returns `[S]`?
+```
+T := int
+S := int
+transform := (x: [T], f: (T)->S ) -> [S] ...
+```
+
+N - Can we make generic modules more general?
+Mechanisms like `stack[T]` and `stack[int]`.
+This gives us a mechanism to pre-process a module.
+So the broader topic is pre-processing.
+So it won't be called "generic". It will be called "import with pre-processing".
+So: It can also be used to replace something with a number or ...
+So a module is like a function with specific input and it's output is a piece of code.
+So we call that function with those arguments (whih can be an identifier or a literal or ...).
+```
+#stack[S,T,U,V]
+...
+#main
+_ := @{"stack[int, 5, "A", [1, 2, 3]]"}
+```
+The arguments can be number, string or type names.
+But it makes things more complicated (passing string and ...).
+So lets assume arguments can only be type names.
+
+Y - Can we treat `@` like a function which accepts types?
+I want to make inport of generics more concrete and strong.
+`@{"stack[int]"}` is good but enclosing a type name inside string is not very nice.
+`@{"stack[T]"} { T := int }`
+Maybe we should use `=>` notation. It is more explicit.
+Now generics are just renames.
+`_ := @{"stack[T]"} { T => int, GenericType => StackGenericType }`
+Above, we import a generic module. Rename T to int and GenericType to Stack...
+So we no longer forced to include `[T]` in the name of the module.
+But it needs to be explicit somehow.
+AND There is a big difference between `T => int` and `GenericType => StackGenericType`
+in the first case, we specialize a generic type. left side is module type, right side is local type.
+second case is rename. left side is modle type, right side is a new type name.
+`_ := @{"stack[T]"} { T => int, GenericType => StackGenericType }`
+They both do the same thing: Transfer when doing the import. So in the text of the module, T will be transformed to `int` and `GenericType` will be transformed to `StackGenericType`.
+Left side of `=>` is a type define in the module.
+Right side can be either an existing or a new type.
+`_ := @{"stack[T]"} { T => MyCustomer, GenericType => StackGenericType }`
+`_ := @{"stack[T]"} { T => MyCustomer, GenericType => StackGenericType, Data => [int], Source => {int,int} }`
+OR
+`_ := @{"stack[T]"}(int) { DataType => StackDataType }`
+`_ := @{"storage[T,S]"}(int, string) { DataType => StackDataType }`
+`_ := @{"storage[T,S]"}([int], string) { DataType => StackDataType }`
+
+Y - Maybe we dont need `func` keyword.
+`x : func(int)->int := (x:int)-> x+1`
+so `(int)->int` is the type and `(x:int)->5` is the literal.
+
+N - What if function arg is a lambda? should it be named like `processData`?
+`sortData := (x: [int], compareData: (int,int)->bool ) ...`
+so we have types, lambda bindings and simple bindings.
