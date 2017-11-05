@@ -1,5 +1,7 @@
 This is the EBNF-like formal definition for dotLang syntax.
+
 `{X}` means `X` can be repeated once or more.
+
 `[X]` means `X` is optional.
 
 First we have the general definition for a module:
