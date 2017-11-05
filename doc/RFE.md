@@ -595,3 +595,32 @@ so `(int)->int` is the type and `(x:int)->5` is the literal.
 N - What if function arg is a lambda? should it be named like `processData`?
 `sortData := (x: [int], compareData: (int,int)->bool ) ...`
 so we have types, lambda bindings and simple bindings.
+
+Y - Type `x: {Shape...}` means types that have a Shape inside. if shape is: `Shape := {id: int}`
+Then any struct with Shape is included but structs with `id:int` are not.
+`x: {int...}` will include structs that include Shape or any field of int.
+But how can we refer to that int field? We have to have a nemd which is used to both filter type and access that field.
+`x: {id:int...}` union of all struct types that have an id field of type int
+`x: {Shape...}` union of all struct types that embed Shape.
+
+? - Comma between decl is everywhere:
+struct definition: `{x:int, y:float}`
+function args: `process := (x:int, y:float) ...`
+sequence: `[1,2,3]`
+map: `["A":1, "B":2]`
+unnamed struct: `{int, float}`
+
+? - Again: Using prefix for union labels.
+What are they? `dow := SAT | SUN | ...`.
+They are values. Named values.
+`int_or_float := int | float`
+`xyz := SAT | SUN`
+You can define a union type based on the set of possible values. This can be done with `int|float` OR 
+`SAT | SUN`.
+So SAT and SUN are two value bindings which are implicitly defined.
+
+? - Can we have this in a module?
+```
+adder := (x:int)->x+1
+mm := adder(10)
+```
