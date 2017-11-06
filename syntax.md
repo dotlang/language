@@ -54,8 +54,12 @@ Binding can be either value binding, function binding or an import (can be only 
 <import_path> ::= <string_literal>
 
 (* VALUE *)
-<value_binding> ::= <literal> | <expression> | 
+<value_binding> ::= <expression>
 
 (* FUNCTION *)
-<function_binding> ::=
+<function_binding> ::= "(" <fn_arg_list> ")" "-" ">" ( <expression> | <fn_output_type> <block> )
+<fn_output_type> ::= <type_declaration>
+<block> ::= "{" <fn_binding_list> "}" | "{" "}"
+<fn_binding_list> ::= <fn_binding> | <fn_binding> <fn_binding_list>
+<fn_binding> ::=
 ```
