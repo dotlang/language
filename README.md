@@ -258,7 +258,7 @@ There is a notation `{T...}` to indicate sum type of all struct types that embed
 3. `my_circle := Circle{id:=100, radius:=1.45} #creating a Circle binding`
 4. `x: [{Shape..}] := [my_circle, my_triangle, ...]`
 5. `process := (c: Circle) -> process(c.Shape)`
-6. `x: {id:int...}`
+6. `x: {id:int...} #type of x is union of all types that have id:int`
 7. `x: {id:int, name:string...}`
 
 ## Named types
@@ -405,6 +405,8 @@ This operator is used to put arguments before a lambda and simulate a scoped fun
 Modules are source code files. You can import them into current module and use their public types and bindings. You can import modules from local file-system, GitHub or any other external source which the compiler supports. You can also filter/rename imported identifiers to prevent name conflict.
 
 Note that bindings and functions which start with underscore, won't be available outside their own module.
+
+Bindings defined at module level must be compile time calculatable.
 
 **Syntax**
 
