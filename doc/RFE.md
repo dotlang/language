@@ -603,14 +603,20 @@ But how can we refer to that int field? We have to have a nemd which is used to 
 `x: {id:int...}` union of all struct types that have an id field of type int
 `x: {Shape...}` union of all struct types that embed Shape.
 
-? - Comma between decl is everywhere:
-struct definition: `{x:int, y:float}`
-function args: `process := (x:int, y:float) ...`
-sequence: `[1,2,3]`
-map: `["A":1, "B":2]`
-unnamed struct: `{int, float}`
+Y - Can we have this in a module?
+```
+adder := (x:int)->x+1
+mm := adder(10)
+```
+No. Bindings at module level must be compile time calculatable.
 
-? - Again: Using prefix for union labels.
+N - Can we have this in module level?
+```
+processData, storeData := { (x:int)->x+1, (y:int)->y+2 }
+```
+No. This cannot be calculated at compile time.
+
+N - Again: Using prefix for union labels.
 What are they? `dow := SAT | SUN | ...`.
 They are values. Named values.
 `int_or_float := int | float`
@@ -619,15 +625,10 @@ You can define a union type based on the set of possible values. This can be don
 `SAT | SUN`.
 So SAT and SUN are two value bindings which are implicitly defined.
 
-? - Can we have this in a module?
-```
-adder := (x:int)->x+1
-mm := adder(10)
-```
-No. Bindings at module level must be compile time calculatable.
+? - Comma between decl is everywhere:
+struct definition: `{x:int, y:float}`
+function args: `process := (x:int, y:float) ...`
+sequence: `[1,2,3]`
+map: `["A":1, "B":2]`
+unnamed struct: `{int, float}`
 
-? - Can we have this in module level?
-```
-processData, storeData := { (x:int)->x+1, (y:int)->y+2 }
-```
-Yes.
