@@ -418,7 +418,7 @@ Bindings defined at module level must be compile time calculatable.
 
 1. `@{"/core/st/socket"} #import everything, addressed module with absolute path`
 2. `_ := @{"../core/st/socket"} #import with relative path`
-3. `_ := @{"/core/std/queue, stack, heap}" #import multiple modules from the same path`
+3. `_ := @{"/core/std/queue, stack, heap"} #import multiple modules from the same path`
 4. `_ := @{"git/github.com/net/server/branch1/dir1/dir2/module"} #you need to specify branch/tag/commit name here`
 5. `base_cassandra := "github/apache/cassandra/mybranch"`
 6. `_ := @{base_cassandra&"/path/module"} #you can create string literals for import path`
