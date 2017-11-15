@@ -1,44 +1,30 @@
 This is the EBNF-like formal definition for dotLang syntax.
 
-`{X}` means `X` can be repeated once or more.
-
-`[X]` means `X` is optional.
+`{X}` means `X` can be repeated zero or more.
+`[X]` means `X` is optional (can be seen zero or one times).
 
 First we have the general definition for a module:
 ```
-<module> ::= <empty> | <type_def> <module> | <binding> <module>
+<module> ::= { ( <named_type> | <binding> ) }
 ```
 
 Here is syntax for a type definition (e.g. `MyCustoer := {name: string, age:int}`)
 ```
-<type_def> ::= <type_name> ":=" <type_declaration>
-<arg_def> ::= <binding_name> ":" <type_declaration>
-
-(* NAMES *)
-<binding_name> ::= <value_binding_name> | <fn_binding_name>
-<value_binding_name> ::= [_]{[a-z][_]}
-<fn_binding_name> ::= [_][a-z]{[a-z][A-Z]
-<type_name> ::= [_][A-Z][a-z]*
-
-(* TYPES *)
-<primitive_type> ::= int | float | char | nothing | string | bool
-<sequence_type> ::= "[" <type_declaration> "]"
+<named_type> ::= <TYPE_NAME> ":=" <type_decl>
+<TYPE_NAME> ::= [underscore] capital_letter { letter }
+<type_decl> ::=  <TYPE_NAME> | <primitive_type> | <sequence_type> | <map_type> | <union_type> | <struct_type> | <fn_type>
+<primitive_type> ::= int | float | char | string | nothing | bool
+<sequence_type> ::= "[" <type_decl> "]"
 <map_type> ::= "[" <type_declaration> "," <type_declaration> "]"
-
-(* UNION *)
-<union_primitive> ::= <type_name> | <primitive_type>
-<union_type> ::= <union_primitive> { "|" <union_primitive> }
-
-(* STRUCT *)
-<named_struct> ::= "{" { <arg_def> "," } "}" 
-<unnamed_struct> ::= "{" { <type_declaration> "," } "}"
-<struct_type> ::= <unnamed_struct> | <named_strct> | "{" "}" 
-
-(* FN TYPE *)
-<fn_result_type ::= ["("] <type_declaration> [")"]
-<fn_type> ::= "(" { <type_declaration> | <binding_name> <type_declaration> } ")" "-" ">" ["("] <type_declaration> [")"]
-
-<type_declaration> ::=  <primitive_type> | <sequence_type> | <map_type> | <union_type> | <struct_type> | <fn_type>
+<union_type> ::= <type_decl> { "|" <type_decl> }
+<struct_type> ::= "{" [ ( <unnamed_struct> | <named_strct> ) ] "}" 
+<unnamed_struct> ::= <type_decl> { "," <type_decl> } 
+<named_struct> ::= "{" <arg_def> { <arg_def> "," } "}" 
+<arg_def> ::= <BINDING_NAME> ":" <type_decl>
+<BINDING_NAME> ::= <VALUE_BINDING_NAME> | <FN_BINDING_NAME>
+<VALUE_BINDING_NAME> ::= [underscore] lower_letter { lower_letter | underscore }
+<FN_BINDING_NAME> ::= [underscore] lower_letter { letter }
+<fn_type> ::= "(" [ <type_decl> { "," <type_decl> } ] ")" "-" ">" ["("] <type_decl> [")"]
 ```
 Binding can be either value binding, function binding or an import (can be only defined at module level).
 ```
