@@ -632,3 +632,10 @@ sequence: `[1,2,3]`
 map: `["A":1, "B":2]`
 unnamed struct: `{int, float}`
 
+? - We have naming rule but they dont always discriminate function and value.
+`dasdas` can be name of a function or value.
+`DataPdsadsa` is name of a type.
+We have 3 choices: named type, function binding and value binding.
+If it starts with capital, it is a type.
+but otherwise, there is no definite way to determine whether it is a function binding name or a value binding name.
+I think it's fine because after all, functions are bindings too.
