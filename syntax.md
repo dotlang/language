@@ -5,7 +5,7 @@ This is the EBNF-like formal definition for dotLang syntax.
 
 First we have the general definition for a module:
 ```
-<module> ::= { ( <named_type> | <binding> ) }
+<module> ::= { ( <named_type> | <binding_decl> ) }
 ```
 
 Here is syntax for a type definition (e.g. `MyCustoer := {name: string, age:int}`)
@@ -19,33 +19,32 @@ Here is syntax for a type definition (e.g. `MyCustoer := {name: string, age:int}
 <union_type> ::= <type_decl> { "|" <type_decl> }
 <struct_type> ::= "{" [ ( <unnamed_struct> | <named_strct> ) ] "}" 
 <unnamed_struct> ::= <type_decl> { "," <type_decl> } 
-<named_struct> ::= "{" <arg_def> { <arg_def> "," } "}" 
+<named_struct> ::= "{" <arg_def> { "," <arg_def> } [ "..." ] "}" 
 <arg_def> ::= <BINDING_NAME> ":" <type_decl>
 <BINDING_NAME> ::= <VALUE_BINDING_NAME> | <FN_BINDING_NAME>
 <VALUE_BINDING_NAME> ::= [underscore] lower_letter { lower_letter | underscore }
 <FN_BINDING_NAME> ::= [underscore] lower_letter { letter }
 <fn_type> ::= "(" [ <type_decl> { "," <type_decl> } ] ")" "-" ">" ["("] <type_decl> [")"]
 ```
-Binding can be either value binding, function binding or an import (can be only defined at module level).
+Bindings at module-level can be either literal binding, function binding or an import:
 ```
-<binding> ::= <binding_name> ":" "=" <binding_decl>
-<binding_decl> ::= <import_binding> | <function_binding> | <value_binding>
-<binding_name> ::= { "_" "," } | { <value_binding_name> "," } | { <fn_binding_name> "," }
+<binding_decl> ::= <binding_lhs> { "," <binding_lhs> } ":" "=" <import_binding> | <literal_binding> | <function_binding>
+<binding_lhs> ::= "_" | <BINDING_NAME> [ ":" <type_decl> ]
+<import_binding> ::= "@" "{" <import_paths> "}" [ "(" <type_decl> { "," <type_decl> } ")" ] [ "{" <import_renames> "}" ]
+<import_paths> ::= <STRING> { "," <STRING> }
+<STRING> ::= "\"" { character } "\""
+<import_renames> ::= <import_rename> { "," <import_rename> }
+<import_rename> ::= ( <TYPE_NAME> "=" ">" <TYPE_NAME> ) | ( <BINDING_NAME> "=" ">" <BINDING_NAME> )
+<literal_binding> ::= <STRING> | <literal_expr>
+<literal_expr> ::= <BINDING_NAME> | <NUMBER> | "(" <literal_expr> ")" | <NUMBER> ("+"|"-"|"*"|"/") <literal_expr> 
 
-(* IMPORT *)
-<import_binding> ::= "@" "{" <import_path> "}" [ "(" <type_list> ")" ] [ "{" <import_map_list> "}" ]
-<import_map_list> ::= { <import_map> "," }
-<import_map> ::= IDENTIFIER "=" ">" IDENTIFIER
-<type_list> ::= { <type_name> | <primitive_type> }
-<import_path> ::= <string_literal>
-
-(* VALUE *)
-<value_binding> ::= <expression>
-
-(* FUNCTION *)
-<function_binding> ::= "(" <fn_arg_list> ")" "-" ">" ( <expression> | <fn_output_type> <block> )
-<fn_output_type> ::= <type_declaration>
-<block> ::= "{" <fn_binding_list> "}" | "{" "}"
-<fn_binding_list> ::= <fn_binding> | <fn_binding> <fn_binding_list>
-<fn_binding> ::=
+(* function_binding *)
+<function_binding> ::= "(" [ <arg_def> { "," <arg_def> } ] ")" "-" ">" ( <expression> | ["("] <type_decl> [")"] <code_block> )
+<code_block> ::= "{" { <fn_binding> | <fn_return> "}" } | "{" "..." "}"
+<fn_binding> ::= <binding_lhs> { "," <binding_lhs> } ":" "=" <expression> | <function_binding>
+<fn_return> ::= "::" <expression>
+<expression> ::= <BINDING_NAME> | <fn_call> | <exp_literal> | <exp_op> | <exp_math> | <exp_read>
+<exp_literal> ::= <numeric_literal> | <string_literal> | <struct_literal> | <seq_literal> | <map_literal>
+<exp_op> ::= <chain_op> | <cast_op> | <range_op> | <channel_op> | <select_op> | <nothingcheck_op] | <lambdacreator_op>
+<exp_read> ::= <seq_read> | <map_read> | <struct_access>
 ```
