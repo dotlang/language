@@ -40,11 +40,11 @@ Bindings at module-level can be either literal binding, function binding or an i
 
 (* function_binding *)
 <function_binding> ::= "(" [ <arg_def> { "," <arg_def> } ] ")" "-" ">" ( <expression> | ["("] <type_decl> [")"] <code_block> )
-<code_block> ::= "{" { <fn_binding> | <fn_return> "}" } | "{" "..." "}"
-<fn_binding> ::= <binding_lhs> { "," <binding_lhs> } ":" "=" <expression> | <function_binding>
+<code_block> ::= "{" { <fn_return> | <fn_binding>  "}" } | "{" "..." "}"
 <fn_return> ::= "::" <expression>
+<fn_binding> ::= <binding_lhs> { "," <binding_lhs> } ":" "=" <expression> | <function_binding>
 <expression> ::= <BINDING_NAME> | <fn_call> | <exp_literal> | <exp_op> | <exp_math> | <exp_read>
-<exp_literal> ::= <numeric_literal> | <string_literal> | <struct_literal> | <seq_literal> | <map_literal>
+<exp_literal> ::= <numeric_literal> | <string_literal> | <struct_literal> | <seq_literal> | <map_literal> | <struct_modify>
 <exp_op> ::= <chain_op> | <cast_op> | <range_op> | <channel_op> | <select_op> | <nothingcheck_op] | <lambdacreator_op>
 <exp_read> ::= <seq_read> | <map_read> | <struct_access>
 ```
