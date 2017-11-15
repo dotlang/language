@@ -89,12 +89,12 @@ dotLang consists of these components:
 02. `.`   Access struct fields
 03. `()`  Function declaration and call, cast
 04. `{}`  Code block, struct definition and struct literal
-05. `[]`  Types and literals  for map and sequence, Generic modules
+05. `[]`  Types and literals for map and sequence, Generic modules
 06. `|`   Union data type 
 07. `->`  Function declaration
 08. `=>`  Rename module definition
-09. `..`  Range generator for sequence, polymorphic sum type
-10. `...` Abstract function
+09. `..`  Range generator for sequence
+10. `...` Abstract function, polymorphic sum type
 11. `//`  Nothing-check operator
 12. `:`   Type declaration (struct, function inputs and bindings)
 13. `:=`  Binding declaration, named types
@@ -256,7 +256,7 @@ There is a notation `{T...}` to indicate sum type of all struct types that embed
 1. `Shape := { id:int }`
 2. `Circle := { Shape, radius: float} #Shape is contained within a Circle`
 3. `my_circle := Circle{id:=100, radius:=1.45} #creating a Circle binding`
-4. `x: [{Shape..}] := [my_circle, my_triangle, ...]`
+4. `x: [{Shape...}] := [my_circle, my_triangle, ...]`
 5. `process := (c: Circle) -> process(c.Shape)`
 6. `x: {id:int...} #type of x is union of all types that have id:int`
 7. `x: {id:int, name:string...}`
@@ -410,9 +410,9 @@ Bindings defined at module level must be compile time calculatable.
 
 **Syntax**
 
-`_ := @{"/path/to/module1", "path/to/module2", ...}`
-`_ := @{"/path/to/module" ...} { name2 => name1, ModuleType => MyType, ... }`
-`Item1, func2, Item3,... := @{"/path/to/module"} { ModuleType => MyType, ... }`
+1. `_ := @{"/path/to/module1", "path/to/module2", ...}`
+2. `_ := @{"/path/to/module" ...} { name2 => name1, ModuleType => MyType, ... }`
+3. `Item1, func2, Item3,... := @{...}`
 
 **Examples**
 
@@ -464,8 +464,8 @@ You can implement phantom types using a named type or a generic type.
 **Examples**
 
 1. `door[t].dot module file`: `Door := string`
-2. `_ := @{"/Door[Open]"} { OpenDoot := Door }`
-3. `_ := @{"/Door[Closed]"} { ClosedDoor := Doot }`
+2. `_ := @{"/Door"}(true) { OpenDoot := Door }`
+3. `_ := @{"/Door"}(false) { ClosedDoor := Door }`
 4. `closeDoor := (x: OpenDoor) -> ClosedDoor`
 5. `openDoor := (x: ClosedDoor) -> OpenDoor`
 
@@ -497,7 +497,7 @@ You can use `:==` syntax to evaluate an expression in parallel and when its fini
 std_reader, std_writer := createStd() #create pair of channels to interact with standard input and output
 data := std_reader? #read something from the channel which read from standard input
 std_write!"Hello" #send data to stndard output
-reader, writer := createChannel[int](100) #specify buffer size
+reader, writer := createIntChannel(100) #specify buffer size
 ```
 2. `data :== processInfo(1,2,a) #evaluate the expression in parallel and store the output in data`
 3. `getData := ()->data #any call to getData will block current thread until the call to processInfo is finished`
