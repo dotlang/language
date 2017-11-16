@@ -1,7 +1,7 @@
 This is the EBNF-like formal definition for dotLang syntax.
 
-`{X}` means `X` can be repeated zero or more.
-`[X]` means `X` is optional (can be seen zero or one times).
+`{X}` means `X` can be repeated zero or more.  
+`[X]` means `X` is optional (can be seen zero or one times).  
 
 First we have the general definition for a module:
 ```
@@ -51,5 +51,13 @@ Bindings at module-level can be either literal binding, function binding or an i
 <fn_call> ::= <FN_BINDING_NAME> "(" [ <fn_call_args> ] ")"
 <fn_call_args> ::= <expression> { "," <expression> }
 
-<numeric_literal> ::= 
+<numeric_literal> ::= ["+"|"-"] <DIGIT> { <DIGIT> | "," } [ "." <DIGIT> { <DIGIT> | "," } ]
 ```
+
+? - Replace EBNF with a combination of EBNF and regex format.
+`X+` means one or more
+`X*` means zero or more
+`X?` means zero or one
+`[a-z]` denotes char group
+`(A|B)` denotes options.
+but EBNF is more readable.
