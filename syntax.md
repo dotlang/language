@@ -47,4 +47,7 @@ Bindings at module-level can be either literal binding, function binding or an i
 <exp_literal> ::= <numeric_literal> | <string_literal> | <struct_literal> | <seq_literal> | <map_literal> | <struct_modify>
 <exp_op> ::= <chain_op> | <cast_op> | <range_op> | <channel_op> | <select_op> | <nothingcheck_op] | <lambdacreator_op>
 <exp_read> ::= <seq_read> | <map_read> | <struct_access>
+
+<fn_call> ::= <FN_BINDING_NAME> "(" [ <fn_call_args> ] ")"
+<fn_call_args> ::= <expression> { "," <expression> }
 ```
