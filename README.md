@@ -90,6 +90,7 @@ dotLang consists of these components:
 03. `()`  Function declaration and call, cast
 04. `{}`  Code block, struct definition and struct literal
 05. `[]`  Types and literals for map and sequence, Generic modules
+06. `&`   Join sequences 
 06. `|`   Union data type 
 07. `->`  Function declaration
 08. `=>`  Rename module definition
