@@ -639,3 +639,13 @@ We have 3 choices: named type, function binding and value binding.
 If it starts with capital, it is a type.
 but otherwise, there is no definite way to determine whether it is a function binding name or a value binding name.
 I think it's fine because after all, functions are bindings too.
+
+? - Replace EBNF with a combination of EBNF and regex format.
+`X+` means one or more
+`X*` means zero or more
+`X?` means zero or one
+`[a-z]` denotes char group
+`(A|B)` denotes options.
+but EBNF is more readable.
+
+? - Can we have this? `x := [1,2, 10..20]`?
