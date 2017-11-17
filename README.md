@@ -32,7 +32,7 @@ I call the paradigm of this language "Data-oriented". This is a combination of O
 Two main objectives are pursued in the design and implementation of this programming language:
 
 1. **Simplicity**: The code written in dotLang should be consistent, easy to write, read and understand. There has been a lot of effort to make sure there are as few exceptions and rules as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them. Very few things are done implicitly and transparently by the compiler or runtime system. Also, I tried to reduce the need for nested blocks and parentheses as much as possible. Another aspect of simplicity is minimalism in the language. It has very few keywords and rules to remember.
-2. **Performance**: The source will be compiled to native code which will result in higher performance compared to interpreted languages. The compiler tries to do as much as possible (optimizations, dereferencing, in-place mutation, sending by copy or reference, type checking, phantom types, inlining, disposing, ...) so during runtime, there is not much to be done except mostly for memory management. Where performance is a concern, the corresponding functions in core library will be implemented in a lower level language.
+2. **Performance**: The source will be compiled to native code which will result in higher performance compared to interpreted languages. The compiler tries to do as much as possible (optimizations, dereferencing, in-place mutation, sending by copy or reference, type checking, phantom types, inlining, disposing, reference counting GC, ...) so runtime performance will be as high as possible. Where performance is a concern, the corresponding functions in core library will be implemented in a lower level language.
 
 Achieving both of the above goals at the same time is impossible so there will definitely be trade-offs and exceptions.
 The underlying rules of design of this language are 
@@ -402,7 +402,7 @@ This operator is used to put arguments before a lambda and simulate a scoped fun
 
 # Modules
 
-Modules are source code files. You can import them into current module and use their public types and bindings. You can import modules from local file-system, GitHub or any other external source which the compiler supports. You can also filter/rename imported identifiers to prevent name conflict.
+Modules are source code files. You can import them into current module and use their public types and bindings. You can import modules from local file-system, GitHub or any other external source which the compiler supports (If import path starts with `.` or `..` it is relative path, if it start with `/` it is based on global DOTPATH, else it's using external protocols like `git`). You can also filter/rename imported identifiers to prevent name conflict, using `=>` notation and capturing output of import operator.
 
 Note that bindings and functions which start with underscore, won't be available outside their own module.
 
@@ -424,7 +424,7 @@ Bindings defined at module level must be compile time calculatable.
 6. `_ := @{base_cassandra&"/path/module"} #you can create string literals for import path`
 7. `ModuleType1, myFunction2 := @{"/path/to/module"} #only import these two types/bindings`
 8. `_ := @{"/path/to/module"} { ModuleType1 => MyType1 } #import everything but rename ModuleType1 to MyType1`
-9. `_ := @{"module1"} #import with relative path`
+9. `_ := @{"./module1"} #import with relative path`
 
 ## Generics
 
