@@ -43,21 +43,27 @@ Bindings at module-level can be either literal binding, function binding or an i
 <fn_return> ::= "::" <expression>
 <fn_binding> ::= <binding_lhs> { "," <binding_lhs> } ":" "=" <expression> | <function_binding>
 <expression> ::= <BINDING_NAME> | <fn_call> | <exp_literal> | <exp_op> | <exp_math> | <exp_read>
-<exp_literal> ::= <numeric_literal> | <string_literal> | <struct_literal> | <seq_literal> | <map_literal>
-<exp_op> ::= <chain_op> | <cast_op> | <range_op> | <channel_op> | <select_op> | <nothingcheck_op] | <lambdacreator_op> | <struct_modify>
+<exp_literal> ::= <numeric_literal> | <string_literal> | <char_literal> | 
+                  <bool_literal> | <struct_literal> | <seq_literal> | <map_literal> | "nothing"
+<exp_op> ::=  <range_op> | <nothingcheck_op> | <cast_op> | <struct_modify> | 
+              <lambdacreator_op> | <chain_op> | <channel_op> | <select_op>
 <exp_read> ::= <seq_read> | <map_read> | <struct_access>
 <exp_math> ::= ( <expression> "+" <expression> 
 
-<fn_call> ::= <FN_BINDING_NAME> "(" [ <fn_call_args> ] ")"
-<fn_call_args> ::= <expression> { "," <expression> }
-
+<fn_call> ::= <FN_BINDING_NAME> "(" [ <expression> { "," <expression> } ] ")"
 <numeric_literal> ::= ["+"|"-"] <DIGIT> { <DIGIT> | "," } [ "." <DIGIT> { <DIGIT> | "," } ]
+<string_literal> ::= "\"" [ { <CHAR> } ] "\"" | "`" { <CHAR> } "`"
+<char_literal> ::= "'" <CHAR> "'"
+<bool_literal> ::= "true" | "false"
+<struct_literal> ::= [ <TYPE_NAME> ] "{" <fn_binding> { "," <fn_binding> } "}"
+<seq_literal> ::= "[" [ <expression> { "," <expression> } ] "]"
+<map_literal> ::= "[" [ <map_literal_element> { "," <map_literal_element> } ] "]"
+<map_literal_element> ::= <expression> ":" <expression>
+
+<range_op> ::= ["+"|"-"] <DIGIT> { <DIGIT> | "," } ".." ["+"|"-"] <DIGIT> { <DIGIT> | "," }
+<nothingcheck_op> ::= <expression> "/" "/" <expression>
+<cast_op> ::= ( <TYPE_NAME> | <primitive_type> ) "(" [ <expression> { "," <expression> } ] ")"
+<struct_modify> ::= [ <VALUE_BINDING_NAME> ] "{" <fn_binding> { "," <fn_binding> } "}"
+<lambdacreator_op> ::= <FN_BINDING_NAME> "(" [ ( <expression> | "_" ) { "," ( <expression> | "_" ) } ] ")"
 ```
 
-? - Replace EBNF with a combination of EBNF and regex format.
-`X+` means one or more
-`X*` means zero or more
-`X?` means zero or one
-`[a-z]` denotes char group
-`(A|B)` denotes options.
-but EBNF is more readable.
