@@ -649,3 +649,5 @@ I think it's fine because after all, functions are bindings too.
 but EBNF is more readable.
 
 ? - Can we have this? `x := [1,2, 10..20]`?
+
+? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
