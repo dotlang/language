@@ -5,12 +5,27 @@ This is the EBNF-like formal definition for dotLang syntax.
 
 Tokens:
 ```
-<DIGIT> ::= 
+<DIGIT> ::= [0-9]
 <TYPE_NAME> ::= [underscore] capital_letter { letter }
 <BINDING_NAME> ::= <VALUE_BINDING_NAME> | <FN_BINDING_NAME>
 <VALUE_BINDING_NAME> ::= [underscore] lower_letter { lower_letter | underscore }
 <FN_BINDING_NAME> ::= [underscore] lower_letter { letter }
 <STRING> ::= "\"" { character } "\""
+```
+Basic literals:
+```
+<module_literal> ::= ( "(" <module_literal> ")" | <exp_literal> | 
+                     <exp_literal> ("+"|"-"|"*"|"*") <exp_literal> )
+<exp_literal> ::= <numeric_literal> | <string_literal> | <char_literal> | 
+                  <bool_literal> | <struct_literal> | <seq_literal> | <map_literal> | "nothing"
+<numeric_literal> ::= ["+"|"-"] <DIGIT> { <DIGIT> | "," } [ "." <DIGIT> { <DIGIT> | "," } ]
+<string_literal> ::= "\"" [ { <CHAR> } ] "\"" | "`" { <CHAR> } "`"
+<char_literal> ::= "'" <CHAR> "'"
+<bool_literal> ::= "true" | "false"
+<struct_literal> ::= [ <TYPE_NAME> ] "{" <fn_binding> { "," <fn_binding> } "}"
+<seq_literal> ::= "[" [ <expression> { "," <expression> } ] "]"
+<map_literal> ::= "[" [ <map_literal_element> { "," <map_literal_element> } ] "]"
+<map_literal_element> ::= <expression> ":" <expression>
 ```
 
 First we have the general definition for a module:
@@ -37,8 +52,6 @@ Bindings at module-level can be either literal binding, function binding or an i
 ```
 <binding_decl> ::= <binding_lhs> { "," <binding_lhs> } ":" "=" <import_binding> | <module_literal> | <function_binding>
 <binding_lhs> ::= "_" | <BINDING_NAME> [ ":" <type_decl> ]
-<module_literal> ::= ( "(" <module_literal> ")" | <exp_literal> | 
-                     <exp_literal> ("+"|"-"|"*"|"*") <exp_literal> )
 <import_binding> ::= "@" "{" <import_paths> "}" [ "(" <type_decl> { "," <type_decl> } ")" ] [ "{" <import_renames> "}" ]
 <import_paths> ::= <STRING> { "," <STRING> }
 
@@ -52,22 +65,12 @@ Bindings at module-level can be either literal binding, function binding or an i
 <fn_return> ::= "::" <expression>
 <fn_binding> ::= <binding_lhs> { "," <binding_lhs> } ":" "=" <expression> | <function_binding>
 <expression> ::= <BINDING_NAME> | <fn_call> | <exp_literal> | <exp_op> | <exp_math> | <exp_read>
-<exp_literal> ::= <numeric_literal> | <string_literal> | <char_literal> | 
-                  <bool_literal> | <struct_literal> | <seq_literal> | <map_literal> | "nothing"
 <exp_op> ::=  <range_op> | <nothingcheck_op> | <cast_op> | <struct_modify> | 
               <lambdacreator_op> | <chain_op> | <channel_op> | <select_op>
 <exp_read> ::= <seq_map_read> | <struct_access>
 <exp_math> ::= ( <expression> "+" <expression> 
 
-<fn_call> ::= <FN_BINDING_NAME> "(" [ <expression> { "," <expression> } ] ")"
-<numeric_literal> ::= ["+"|"-"] <DIGIT> { <DIGIT> | "," } [ "." <DIGIT> { <DIGIT> | "," } ]
-<string_literal> ::= "\"" [ { <CHAR> } ] "\"" | "`" { <CHAR> } "`"
-<char_literal> ::= "'" <CHAR> "'"
-<bool_literal> ::= "true" | "false"
-<struct_literal> ::= [ <TYPE_NAME> ] "{" <fn_binding> { "," <fn_binding> } "}"
-<seq_literal> ::= "[" [ <expression> { "," <expression> } ] "]"
-<map_literal> ::= "[" [ <map_literal_element> { "," <map_literal_element> } ] "]"
-<map_literal_element> ::= <expression> ":" <expression>
+<fn_call> ::= <expression> "(" [ <expression> { "," <expression> } ] ")"
 
 <range_op> ::= ["+"|"-"] <DIGIT> { <DIGIT> | "," } ".." ["+"|"-"] <DIGIT> { <DIGIT> | "," }
 <nothingcheck_op> ::= <expression> "/" "/" <expression>
