@@ -28,13 +28,10 @@ Basic literals:
 <map_literal_element> ::= <expression> ":" <expression>
 ```
 
-First we have the general definition for a module:
+Module level declarations:
+
 ```
 <module> ::= { ( <named_type> | <binding_decl> ) }
-```
-
-Here is syntax for a type definition (e.g. `MyCustoer := {name: string, age:int}`)
-```
 <named_type> ::= <TYPE_NAME> ":=" <type_decl>
 
 <type_decl> ::=  <TYPE_NAME> | <primitive_type> | <sequence_type> | <map_type> | <union_type> | <struct_type> | <fn_type>
@@ -66,7 +63,7 @@ Bindings at module-level can be either literal binding, function binding or an i
 <fn_binding> ::= <binding_lhs> { "," <binding_lhs> } ":" "=" <expression> | <function_binding>
 <expression> ::= <BINDING_NAME> | <fn_call> | <exp_literal> | <exp_op> | <exp_math> | <exp_read>
 <exp_op> ::=  <range_op> | <nothingcheck_op> | <cast_op> | <struct_modify> | 
-              <lambdacreator_op> | <chain_op> | <channel_op> | <select_op>
+              <seq_merge_op> | <lambdacreator_op> | <chain_op> | <channel_op> | <select_op>
 <exp_read> ::= <seq_map_read> | <struct_access>
 <exp_math> ::= ( <expression> "+" <expression> 
 
@@ -76,6 +73,7 @@ Bindings at module-level can be either literal binding, function binding or an i
 <nothingcheck_op> ::= <expression> "/" "/" <expression>
 <cast_op> ::= ( <TYPE_NAME> | <primitive_type> ) "(" [ <expression> { "," <expression> } ] ")"
 <struct_modify> ::= [ <VALUE_BINDING_NAME> ] "{" <fn_binding> { "," <fn_binding> } "}"
+<seq_merge_op> ::= <expression> "&" <expression>
 <lambdacreator_op> ::= <FN_BINDING_NAME> "(" [ ( <expression> | "_" ) { "," ( <expression> | "_" ) } ] ")"
 <chain_op> ::= ( <expression> | "(" <expression> { "," <expression> } ")" ) "." "{" <chain_lambdas> "}"
 <chain_lambdas> ::= <chain_lambda> { "," <chain_lambda> }
