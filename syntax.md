@@ -15,7 +15,7 @@ Tokens:
 Basic literals:
 ```
 <module_literal> ::= ( "(" <module_literal> ")" | <exp_literal> | 
-                     <exp_literal> ("+"|"-"|"*"|"*") <exp_literal> )
+                     <exp_literal> ("+"|"-"|"*"|"*"|"&") <exp_literal> )
 <exp_literal> ::= <numeric_literal> | <string_literal> | <char_literal> | 
                   <bool_literal> | <struct_literal> | <seq_literal> | <map_literal> | "nothing"
 <numeric_literal> ::= ["+"|"-"] <DIGIT> { <DIGIT> | "," } [ "." <DIGIT> { <DIGIT> | "," } ]
@@ -47,34 +47,29 @@ Named type declaration:
 <fn_type> ::= "(" [ <type_decl> { "," <type_decl> } ] ")" "-" ">" ["("] <type_decl> [")"]
 <channel_type> ::= <type_decl> ("!"|"?")
 ```
-Bindings at module-level can be either literal binding, function binding or an import:
+Bindings at module-level can be either literals, functions or an import. We call these static bindings (vs dynamic bindings which include expressions and runtime calculations which you can define inside a function):
 ```
-<binding_decl> ::= <binding_lhs> { "," <binding_lhs> } ":" "=" <import_binding> | <module_literal> | <function_decl>
+<static_binding> ::= <binding_lhs> { "," <binding_lhs> } ":" "=" ( <import_binding> | <module_literal> | <function_decl> )
 <binding_lhs> ::= "_" | <BINDING_NAME> [ ":" <type_decl> ]
 <import_binding> ::= "@" "{" <import_paths> "}" [ "(" <type_decl> { "," <type_decl> } ")" ] [ "{" <import_renames> "}" ]
 <import_paths> ::= <STRING> { "," <STRING> }
-
 <import_renames> ::= <import_rename> { "," <import_rename> }
 <import_rename> ::= ( <TYPE_NAME> "=" ">" <TYPE_NAME> ) | ( <BINDING_NAME> "=" ">" <BINDING_NAME> )
 
-(* function_binding *)
-<function_decl> ::= "(" [ <arg_def> { "," <arg_def> } ] ")" "-" ">" ( <expression> | 
-                       ["("] <type_decl> [")"] <code_block> )
+<function_decl> ::= "(" [ <arg_def> { "," <arg_def> } ] ")" "-" ">" 
+                    ( <expression> | ["("] <type_decl> [")"] <code_block> )
 <code_block> ::= "{" { <fn_return> | <fn_binding>  "}" } | "{" "..." "}"
 <fn_return> ::= "::" <expression>
-<fn_binding> ::= <binding_lhs> { "," <binding_lhs> } ":" "=" <expression> | <function_decl>
+<fn_binding> ::= <binding_lhs> { "," <binding_lhs> } ":" "=" <expression>
 ```
 Expressions:
-
 ```
-<expression> ::= <BINDING_NAME> | <fn_call> | <exp_literal> | <exp_op> | <exp_math> | 
+<expression> ::= <BINDING_NAME> | <function_decl> | <fn_call> | <exp_literal> | <exp_op> | <exp_math> | 
                  <seq_map_read> | <struct_access> | <bool_exp>
 <exp_op> ::=  <range_op> | <nothingcheck_op> | <cast_op> | <struct_modify> | 
               <seq_merge_op> | <lambdacreator_op> | <chain_op> | <channel_op> | <select_op>
 <exp_math> ::= <expression> ("+"|"-"|"*"|"/"|"%"|"%%") <expression> 
-
 <fn_call> ::= <expression> "(" [ <expression> { "," <expression> } ] ")"
-
 <range_op> ::= ["+"|"-"] <DIGIT> { <DIGIT> | "," } ".." ["+"|"-"] <DIGIT> { <DIGIT> | "," }
 <nothingcheck_op> ::= <expression> "/" "/" <expression>
 <cast_op> ::= ( <TYPE_NAME> | <primitive_type> ) "(" [ <expression> { "," <expression> } ] ")"
