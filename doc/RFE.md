@@ -653,3 +653,10 @@ but EBNF is more readable.
 ? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
 
 ? - Add support for LLVM-IR based code in function to make bootstrapping easier.
+
+? - Is it possible to somehow merge this language with docker as a built-in feature.
+So each app will be run inside a container?
+Like JVM.
+
+? - For generic modules with general type, we can re-use `...`:
+`T := ...`
