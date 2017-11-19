@@ -667,3 +667,15 @@ Like JVM.
 3. LLVM integration
 4. Write a function in LLVM IR
 5. Call another function
+6. Struct and union
+- Operators: `@{}`, `|`, casting, `[]`, `::`, 
+What we don't need?
+- Generics
+- Lambdas
+- GC?
+- Import renames and filters
+- Named types
+- Concurrency
+- Struct composition
+- Chain operator
+- Operators: `//`, `..`, `...`, `=>`
