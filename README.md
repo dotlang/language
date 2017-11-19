@@ -91,22 +91,22 @@ dotLang consists of these components:
 04. `{}`  Code block, struct definition and struct literal
 05. `[]`  Types and literals for map and sequence, Generic modules
 06. `&`   Join sequences 
-06. `|`   Union data type 
-07. `->`  Function declaration
-08. `=>`  Rename module definition
-09. `..`  Range generator for sequence
-10. `...` Abstract function, polymorphic sum type
-11. `//`  Nothing-check operator
-12. `:`   Type declaration (struct, function inputs and bindings)
-13. `:=`  Binding declaration, named types
-14. `::`  Return operator
-15. `_`   Place holder (lambda creator and assignments)
-16. `@{}` Import
-17. `.{}` Chain operator
-18. `!`   Write-only channel
-19. `?`   Read-only channel
-20. `${}` Channel select operations
-21. `:==` Parallel execution
+07. `|`   Union data type 
+08. `->`  Function declaration
+09. `=>`  Rename module definition
+10. `..`  Range generator for sequence
+11. `...` Abstract function, polymorphic sum type
+12. `//`  Nothing-check operator
+13. `:`   Type declaration (struct, function inputs and bindings)
+14. `:=`  Binding declaration, named types
+15. `::`  Return operator
+16. `_`   Place holder (lambda creator and assignments)
+17. `@{}` Import
+18. `.{}` Chain operator
+19. `!`   Write-only channel
+20. `?`   Read-only channel
+21. `${}` Channel select operations
+22. `:==` Parallel execution
 
 ## Reserved identifiers
 
