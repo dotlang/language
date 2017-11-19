@@ -660,3 +660,10 @@ Like JVM.
 
 ? - For generic modules with general type, we can re-use `...`:
 `T := ...`
+
+? - Suppose we want to write dotLang compiler. What do we need at minimum?
+1. Ability to call core functions
+2. Read/Write file
+3. LLVM integration
+4. Write a function in LLVM IR
+5. Call another function
