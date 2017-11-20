@@ -625,14 +625,14 @@ You can define a union type based on the set of possible values. This can be don
 `SAT | SUN`.
 So SAT and SUN are two value bindings which are implicitly defined.
 
-? - Comma between decl is everywhere:
+N - Comma between decl is everywhere:
 struct definition: `{x:int, y:float}`
 function args: `process := (x:int, y:float) ...`
 sequence: `[1,2,3]`
 map: `["A":1, "B":2]`
 unnamed struct: `{int, float}`
 
-? - We have naming rule but they dont always discriminate function and value.
+N - We have naming rule but they dont always discriminate function and value.
 `dasdas` can be name of a function or value.
 `DataPdsadsa` is name of a type.
 We have 3 choices: named type, function binding and value binding.
@@ -640,7 +640,7 @@ If it starts with capital, it is a type.
 but otherwise, there is no definite way to determine whether it is a function binding name or a value binding name.
 I think it's fine because after all, functions are bindings too.
 
-? - Replace EBNF with a combination of EBNF and regex format.
+N - Replace EBNF with a combination of EBNF and regex format.
 `X+` means one or more
 `X*` means zero or more
 `X?` means zero or one
@@ -648,7 +648,7 @@ I think it's fine because after all, functions are bindings too.
 `(A|B)` denotes options.
 but EBNF is more readable.
 
-? - Can we have this? `x := [1,2, 10..20]`?
+N - Can we have this? `x := [1,2, 10..20]`? Yes.
 
 ? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
 
@@ -679,3 +679,15 @@ What we don't need?
 - Struct composition
 - Chain operator
 - Operators: `//`, `..`, `...`, `=>`
+
+? - Make sure `..` can accept vars too.
+
+? - Union: state that it can have a number of choices. Each choice can be a type or a tag.
+Types should not interfer with each other.
+`MyUnion := int | MyInt` is not good because both types are int based.
+For tags, they are just normal bindings.
+```
+MyCustomer := does_not_exist | string`
+does_not_exist := 100
+```
+If you do not define that value binding somewhere else, compiler will assign some unique value to it.
