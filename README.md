@@ -217,7 +217,7 @@ You can use `[KeyType, ValueType]` to define a map type. When reading from a map
 
 ## Union
 
-Bindings of a union type, have ability to hold multiple different types and is shown as `T1|T2|T3|...`. You can also include identifiers as a valid value for a union type. These identifiers are types that have only one valid value which is same as their name. This can be used to define enumberations (Example 1).
+Bindings of a union type, have ability to hold multiple different types and are shown as `T1|T2|T3|...`. If any of used types are not defined, they will be automatically defined by compiler as a named type for `nothing`. This can be used to define enumerations (Example 1). 
 
 When you convert a union variable to one of it's types (Example 3), you also get a boolean flag indicating whether conversion was successful.
 
