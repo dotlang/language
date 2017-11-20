@@ -39,7 +39,7 @@ Named type declaration:
 <primitive_type> ::= int | float | char | string | nothing | bool
 <sequence_type> ::= "[" <type_decl> "]"
 <map_type> ::= "[" <type_declaration> "," <type_declaration> "]"
-<union_type> ::= <type_decl> { "|" <type_decl> }
+<union_type> ::= ( <TYPE_NAME> | <primitive_type> ) { "|" ( <TYPE_NAME> | <primitive_type> ) }
 <struct_type> ::= "{" [ ( <unnamed_struct> | <named_strct> ) ] "}" 
 <unnamed_struct> ::= <type_decl> { "," <type_decl> } 
 <named_struct> ::= "{" <arg_def> { "," <arg_def> } [ "..." ] "}" 
