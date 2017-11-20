@@ -650,6 +650,25 @@ but EBNF is more readable.
 
 N - Can we have this? `x := [1,2, 10..20]`? Yes.
 
+Y - Union: state that it can have a number of choices. Each choice can be a type or a tag.
+Types should not interfer with each other.
+`MyUnion := int | MyInt` is not good because both types are int based.
+For tags, they are just normal bindings.
+```
+MyCustomer := does_not_exist | string`
+does_not_exist := 100
+```
+If you do not define that value binding somewhere else, compiler will assign some unique value to it.
+And make sure syntax matches with it.
+But what about conversion or comparison?
+`missed := 1`, `not_applicable := 2`, `DataState := int | missed | not_applicable`
+So `missed` is 1. What if `DataState` is storing an int of value 1. What happens if I write `ds1 = missed`?
+These cannot be values. They should be types. They should be their own types. So they do not interfere with normal types.
+And because they are types, you cannot set values for them. But you can write helper functions to convert a union to int value. Union options are all types. So you cannot use `=` for union.
+`Missed := int`, `NotApplicable := int`, `DataState := int | Missed | NotApplicable`
+so union bindings will have a flag indicating their type (int or missed or na) and a storage for their value.
+But for `Missed` type in above example, we just need it's type. No value.
+
 ? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
 
 ? - Add support for LLVM-IR based code in function to make bootstrapping easier.
@@ -681,13 +700,20 @@ What we don't need?
 - Operators: `//`, `..`, `...`, `=>`
 
 ? - Make sure `..` can accept vars too.
+If it is literal, compiler will generate code. Else runtime.
 
-? - Union: state that it can have a number of choices. Each choice can be a type or a tag.
-Types should not interfer with each other.
-`MyUnion := int | MyInt` is not good because both types are int based.
-For tags, they are just normal bindings.
-```
-MyCustomer := does_not_exist | string`
-does_not_exist := 100
-```
-If you do not define that value binding somewhere else, compiler will assign some unique value to it.
+? - What should be name of a binding which is union of value and function?
+`U1 := int | (int)->int`
+`handlerData: U1 := getData()`
+
+? - Even if at some point we need a dedicated build system, we can use dotLang to describe the build process and steps.
+
+? - The compiler will use `.build` directory for cached compilations, output, intermediate code, temp files, ...
+Instead of something like `mvn clean` you can just do `rm -rf .build`
+Maybe we need to have some resource files beside the output. We can order compiler to also save output final executable in a specific folder which is set up with all required files.
+We can have `pre-compile.sh` script and `post-compile.sh` script which will be executed before and after compilation.
+If we have dependency to v1 and v2 of a library which is on github, when we clone it, they will be on the same dir.
+`_ := @{"github/lib1/v1"}`
+`_ := @{"github/lib1/v2"}`
+We can clone the same repo into different dirs and for each dir checkout corresponding branch.
+We can clone with `-b v1 --shallow 1 --single-branch` into a specific directory.
