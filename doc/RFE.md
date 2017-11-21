@@ -717,3 +717,15 @@ If we have dependency to v1 and v2 of a library which is on github, when we clon
 `_ := @{"github/lib1/v2"}`
 We can clone the same repo into different dirs and for each dir checkout corresponding branch.
 We can clone with `-b v1 --shallow 1 --single-branch` into a specific directory.
+
+? - Use cases for dotLang: Hadoop, Spark, Cassandra, Hive, HDFS, Arrow, Oozie, YARN, HBase, Redis, ...
+Distributed systems
+Big data systems
+Backend as service
+Search (ES, ...)
+web service, API server
+Log management
+Monitoring (grafana)
+Most of Apache projects
+Couch DB
+Kafka
