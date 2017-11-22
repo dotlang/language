@@ -40,7 +40,7 @@ The underlying rules of design of this language are
 [KISS rule](https://en.wikipedia.org/wiki/KISS_principle) and
 [DRY rule](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-As a 10,000 foot view of the language, the code is written in files (called modules) organized in directories (called packages).  We have bindings (immutable data definitions which include first-class functions and values) and types (Blueprints to create bindings). Type system includes primitive data types (`int`, `float`, `char`, `function`, `sequence` and `map`), struct and union. Generics, concurrency and lambda expression are also provided and everything is immutable.
+As a 10,000 foot view of the language, the code is written in files (called modules) organized in directories (called packages).  We have bindings (immutable data which include first-class functions and values) and types (Blueprints to create bindings). Type system includes primitive data types (`int`, `float`, `char`, `function`, `sequence` and `map`), struct and union. Generics, concurrency and lambda expression are also provided and everything is immutable.
 
 ## Comparison
 
@@ -56,21 +56,15 @@ dotLang consists of these components:
 
 1. The language manual (this document).
 2. `dot`: A command line tool to compile, debug and package source code.
-3. Runtime system: Responsible for memory allocation and management, interaction with the Operating System and other external libraries and handling concurrency.
-4. `core`: Core library: This package is used to implement some basic, low-level features which can not be simply implemented using pure dotLang.
-5. `std`: Standard library: A layer above runtime and core which contains some general-purpose and common functions and data structures.
-
-## Code organization
-
-- **Module**: Source code is written inside files which are called "Modules". Modules contain definitions of data structures and bindings. Each module can reference other modules to call their functions or use their data structures.
-- **Package**: Any directory inside source code structure is called a package.
+3. `core`: Core library: This package is used to implement some basic, low-level features which can not be simply implemented using pure dotLang.
+4. `std`: Standard library: A layer above core which contains some general-purpose and common functions and data structures.
 
 # Language in a nutshell
 
 ## Main features
 
 01. **Import a module**: `_ := @{"/core/std/queue"}` (you can also import from external sources like Github).
-02. **Primitive types**: `int`, `float`, `char`, `sequence`, `map`, `func`.
+02. **Primitive types**: `int`, `float`, `char`, Sequence (`[int]`), Map (`[string, int]`), Function.
 03. **Bindings**: `my_var:int := 19` (type can be automatically inferred, everything is immutable).
 04. **Sequence**: `scores:[int] := [1, 2, 3, 4]`.
 05. **Map**: `scores:[string, int] := ["A":1, "B":2, "C":3, "D": 4]`.
