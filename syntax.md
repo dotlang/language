@@ -58,9 +58,9 @@ Bindings at module-level can be either literals, functions or an import. We call
 
 <function_decl> ::= "(" [ <arg_def> { "," <arg_def> } ] ")" "-" ">" 
                     ( <expression> | ["("] <type_decl> [")"] <code_block> )
-<code_block> ::= "{" { <fn_return> | <fn_binding>  "}" } | "{" "..." "}"
+<code_block> ::= "{" { <fn_return> | <dynamic_binding>  "}" } | "{" "..." "}"
 <fn_return> ::= "::" <expression>
-<fn_binding> ::= <binding_lhs> { "," <binding_lhs> } ":" "=" <expression>
+<dynamic_binding> ::= <binding_lhs> { "," <binding_lhs> } ":" "=" ["="] <expression>
 ```
 Expressions:
 ```
@@ -73,20 +73,20 @@ Expressions:
 <range_op> ::= ["+"|"-"] <DIGIT> { <DIGIT> | "," } ".." ["+"|"-"] <DIGIT> { <DIGIT> | "," }
 <nothingcheck_op> ::= <expression> "/" "/" <expression>
 <cast_op> ::= ( <TYPE_NAME> | <primitive_type> ) "(" [ <expression> { "," <expression> } ] ")"
-<struct_modify> ::= [ <VALUE_BINDING_NAME> ] "{" <fn_binding> { "," <fn_binding> } "}"
+<struct_modify> ::= [ <expression> ] "{" <fn_binding> { "," <fn_binding> } "}"
 <seq_merge_op> ::= <expression> "&" <expression>
-<lambdacreator_op> ::= <FN_BINDING_NAME> "(" [ ( <expression> | "_" ) { "," ( <expression> | "_" ) } ] ")"
+<lambdacreator_op> ::= <expression> "(" [ ( <expression> | "_" ) { "," ( <expression> | "_" ) } ] ")"
 <chain_op> ::= ( <expression> | "(" <expression> { "," <expression> } ")" ) "." "{" <chain_lambdas> "}"
 <chain_lambdas> ::= <chain_lambda> { "," <chain_lambda> }
-<chain_lambda> ::= <FN_BINDING_NAME> | <lambdacreator_op>
+<chain_lambda> ::= <expression> | <lambdacreator_op>
 
-<channel_op> ::= <VALUE_BINDING_NAME> "?" | <VALUE_BINDING_NAME> "!" <expression>
+<channel_op> ::= <expression> "?" | <expression> "!" <expression>
 <select_op> ::= "$" "{" <select_op_item> { "," <select_op_item> } "}"
-<select_op_item> ::= <channel_op> | "[" <VALUE_BINDING_NAME> { "," <VALUE_BINDING_NAME> "]" 
+<select_op_item> ::= <channel_op> | "[" <expression> { "," <expression> "]" 
                      ("?" | "!" "[" <expression> { "," <expression> } "]" )
 
-<seq_map_read> ::= <VALUE_BINDING_NAME> "[" <expression> "]"
-<struct_access> ::= <VALUE_BINDING_NAME> "." <BINDING_NAME>
+<seq_map_read> ::= <expression> "[" <expression> "]"
+<struct_access> ::= <expression> "." <BINDING_NAME>
 
 <bool_exp> ::= <expression> (">"|"<"|"="|"!="|">="|"<=") <expression> | 
                <bool_exp> ("and"|"or"|"xor") <bool_exp> | "not" <bool_exp>
