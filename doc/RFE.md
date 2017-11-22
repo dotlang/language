@@ -729,3 +729,10 @@ Monitoring (grafana)
 Most of Apache projects
 Couch DB
 Kafka
+
+? - We can say if right side of `:==` is a call on a function literal, it will be implemented as a thread. otherwise it will be a lightweight thread.
+when we start a thread, we need a thread_id to later access, pause and communicate with the thread. 
+I think all of stop, pause, cancel, ... can be handled by channels.
+Golang does not let developer decide whether it will be a thread or a goroutine.
+We can say, if you call dispose on output of `:==` the corresponding thread will be terminated.
+The scheduler will start with one thread and increase/decrease number of threads based on the load, cpu usage and number of lightweight threads.
