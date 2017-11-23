@@ -669,6 +669,19 @@ And because they are types, you cannot set values for them. But you can write he
 so union bindings will have a flag indicating their type (int or missed or na) and a storage for their value.
 But for `Missed` type in above example, we just need it's type. No value.
 
+N - Reading the code might be difficult with the model that we have for return and conditions and loops.
+About loops: we can simplify them with core/std functions (map, filter, ...)
+For condition: `[1,2][x>0]`
+`[x>0].{[1,2][_]}`
+or functions: `result = ifElse(x>0, 1, 2)`
+For return: `:: data` means return if data is no nothing.
+```
+if ( x>0 ) return
+process()
+```
+can be written as:
+`_ := ifElse(x>0, process(), nothing)`
+
 ? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
 
 ? - Add support for LLVM-IR based code in function to make bootstrapping easier.
@@ -736,3 +749,8 @@ I think all of stop, pause, cancel, ... can be handled by channels.
 Golang does not let developer decide whether it will be a thread or a goroutine.
 We can say, if you call dispose on output of `:==` the corresponding thread will be terminated.
 The scheduler will start with one thread and increase/decrease number of threads based on the load, cpu usage and number of lightweight threads.
+
+? - Green threads needs a runtime (scheduler, threads, assignment, queues, ...).
+Is it possible to achieve this without a runtime?
+We are not forced to follow go or CSP approach.
+
