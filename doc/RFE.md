@@ -754,3 +754,4 @@ The scheduler will start with one thread and increase/decrease number of threads
 Is it possible to achieve this without a runtime?
 We are not forced to follow go or CSP approach.
 
+? - Checking regex match can be done in parallel.
