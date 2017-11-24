@@ -29,7 +29,7 @@ Basic literals:
 ```
 Module:
 ```
-<module> ::= { ( <named_type> | <binding_decl> ) }
+<module> ::= { ( <named_type> | <static_binding> ) }
 ```
 Named type declaration:
 ```
