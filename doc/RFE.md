@@ -755,3 +755,33 @@ Is it possible to achieve this without a runtime?
 We are not forced to follow go or CSP approach.
 
 ? - Checking regex match can be done in parallel.
+
+N - We can think of Tree as a normal extension to seq (array).
+`x: [[int]] := {9, {3}, {12} }`
+X is:
+```
+          9
+        /   \
+       3     12
+```
+`x[0]` is the root. we can have multiple roots: `x[1]` can be the second root, OR it can be interpreted as the second element of the array.
+`set(x,0,0,4)` means change 3 to 4 (and return a new reference).
+`x[0]` is 9
+`x[0,0]` is 3
+`x[0,1]` is 12 (second child of the first root.
+So we may even not need to define any new notation.
+any array can be used as a tree.
+Operations with tree:
+- add node: fn call
+- edit node: fn call
+- find node: iterate
+- delete node: fn call
+So what is `x[0]`? Is it value `3` or a sub-tree?
+`x[0]` is 3
+`x[0,]` is the tree
+`x[0,0,]` is the tree with root = 3
+so if a function needs a tree, we can send `x` or `x[0,]` or `x[0,0,]`.
+So we can say, each element inside an array other than having it's own data like a normal array cell, can have a number of children. Isn't this just like multi-D array?
+`[[int]]` is 2-D int array. `x[0][0]`
+But it is definitely confusing.
+Let's do it in std or core.
