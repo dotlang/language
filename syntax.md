@@ -49,9 +49,11 @@ Named type declaration:
 ```
 Bindings at module-level can be either literals, functions or an import. We call these static bindings (vs dynamic bindings which include expressions and runtime calculations which you can define inside a function):
 ```
-<static_binding> ::= <binding_lhs> { "," <binding_lhs> } ":" "=" ( <import_binding> | <module_literal> | <function_decl> )
+<static_binding> ::= <binding_lhs> { "," <binding_lhs> } ":" "=" ( <import_binding> |   
+                     <module_literal> | <function_decl> )
 <binding_lhs> ::= "_" | <BINDING_NAME> [ ":" <type_decl> ]
-<import_binding> ::= "@" "{" <import_paths> "}" [ "(" <type_decl> { "," <type_decl> } ")" ] [ "{" <import_renames> "}" ]
+<import_binding> ::= "@" "{" <import_paths> "}" [ "(" <type_decl> { "," <type_decl> } ")" ] 
+                     [ "{" <import_renames> "}" ]
 <import_paths> ::= <STRING> { "," <STRING> }
 <import_renames> ::= <import_rename> { "," <import_rename> }
 <import_rename> ::= ( <TYPE_NAME> "=" ">" <TYPE_NAME> ) | ( <BINDING_NAME> "=" ">" <BINDING_NAME> )
@@ -64,8 +66,8 @@ Bindings at module-level can be either literals, functions or an import. We call
 ```
 Expressions:
 ```
-<expression> ::= <BINDING_NAME> | <function_decl> | <fn_call> | <exp_literal> | <exp_op> | <exp_math> | 
-                 <seq_map_read> | <struct_access> | <bool_exp>
+<expression> ::= "(" <expression> ")" | <BINDING_NAME> | <function_decl> | <fn_call> | <exp_literal> | 
+                 <exp_op> | <exp_math> | <seq_map_read> | <struct_access> | <bool_exp>
 <exp_op> ::=  <range_op> | <nothingcheck_op> | <cast_op> | <struct_modify> | 
               <seq_merge_op> | <lambdacreator_op> | <chain_op> | <channel_op> | <select_op>
 <exp_math> ::= <expression> ("+"|"-"|"*"|"/"|"%"|"%%") <expression> 
