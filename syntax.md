@@ -67,7 +67,7 @@ Expression         = BINDING_NAME | FunctionDecl | FnCall | ExpressionLiteral | 
                      OperatorExpression | MathExpression | SequenceMapReadOp | BoolExpression
 OperatorExpression = RangeOp | NothingCheckOp | CastOp | StructModify| 
                      SequenceMergeOp | LambdaCreatorOp | ChainOp | ChannelOp | SelectOp
-MathExpression     = MathFactor ("+"|"-"|"*"|"/"|"%"|"%%") MathExpression | MathFactor
+MathExpression     = MathFactor | MathExpression ("+"|"-"|"*"|"/"|"%"|"%%") MathFactor
 MathFactor         = "(" Expression ")" | NUMBER
 FnCall             = Expression "(" Expression* ")"
 SequenceMapReadOp  = Expression "[" Expression "]"
