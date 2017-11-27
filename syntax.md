@@ -68,11 +68,16 @@ Bindings at module-level can be either literals, functions or an import. We call
 ```
 Expressions:
 ```
-<expression> ::= "(" <expression> ")" | <BINDING_NAME> | <function_decl> | <fn_call> | <exp_literal> | 
+<expression> ::= <BINDING_NAME> | <function_decl> | <fn_call> | <exp_literal> | 
                  <exp_op> | <exp_math> | <seq_map_read> | <struct_access> | <bool_exp>
 <exp_op> ::=  <range_op> | <nothingcheck_op> | <cast_op> | <struct_modify> | 
               <seq_merge_op> | <lambdacreator_op> | <chain_op> | <channel_op> | <select_op>
-<exp_math> ::= <expression> ("+"|"-"|"*"|"/"|"%"|"%%") <expression> | <numeric_literal>
+              
+              
+<exp_math> ::= <exp_math_factor> ("+"|"-"|"*"|"/"|"%"|"%%") <exp_math> | <exp_math_factor>
+<exp_math_factor> ::= "(" <expression> ")" | <numeric_literal>
+
+
 <fn_call> ::= <expression> "(" [ <expression> { "," <expression> } ] ")"
 <range_op> ::= <int_litearl> ".." <int_litearl>
 <nothingcheck_op> ::= <expression> "/" "/" <expression>
