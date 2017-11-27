@@ -5,21 +5,21 @@ This is the EBNF-like formal definition for dotLang syntax.
 
 Tokens:
 ```
-<DIGIT>              ::= [0-9]
-<TYPE_NAME>          ::= [underscore] capital_letter { letter }
-<BINDING_NAME>       ::= <VALUE_BINDING_NAME> | <FN_BINDING_NAME>
-<VALUE_BINDING_NAME> ::= [underscore] lower_letter { lower_letter | underscore }
-<FN_BINDING_NAME>    ::= [underscore] lower_letter { letter }
-<STRING>             ::= { character }  
+DIGIT              ::= [0-9]
+TYPE_NAME          ::= [underscore] capital_letter { letter }
+BINDING_NAME       ::= <VALUE_BINDING_NAME> | <FN_BINDING_NAME>
+VALUE_BINDING_NAME ::= [underscore] lower_letter { lower_letter | underscore }
+FN_BINDING_NAME    ::= [underscore] lower_letter { letter }
+STRING             ::= { character } 
+INT_NUMBER         ::= ["+"|"-"] <DIGIT> { <DIGIT> | "," }
+NUMBER             ::= INT_NUMBER [ "." <DIGIT> { <DIGIT> | "," } ]
 ```
 Basic literals:
 ```
-<module_literal>  ::= "(" <module_literal> ")" | <exp_literal> | 
-                      <module_literal> ("+"|"-"|"*"|"/"|"&") <module_literal> ) | <numeric_literal> |
-                      <string_literal>
+<module_literal>  ::= "(" <module_literal> ")" | <exp_literal> | NUMBER
+                      <module_literal> ("+"|"-"|"*"|"/"|"&") <module_literal> ) | <string_literal>
 <exp_literal>     ::= <char_literal> | <bool_literal> | <struct_literal> | 
                       <seq_literal> | <map_literal> | "nothing"
-<numeric_literal> ::= <int_litearl> [ "." <DIGIT> { <DIGIT> | "," } ]
 <int_literal>     ::= ["+"|"-"] <DIGIT> { <DIGIT> | "," }
 <string_literal>  ::= """ [ <STRING> ] """ | "`" <STRING> "`"
 <char_literal>    ::= "'" <CHAR> "'"
@@ -31,7 +31,7 @@ Basic literals:
 ```
 Module:
 ```
-<module> ::= { ( <named_type> | <static_binding> ) }
+Module ::= { ( <named_type> | StaticBinding ) }
 ```
 Named type declaration:
 ```
@@ -51,8 +51,8 @@ Named type declaration:
 ```
 Bindings at module-level can be either literals, functions or an import. We call these static bindings (vs dynamic bindings which include expressions and runtime calculations which you can define inside a function):
 ```
-<static_binding>  ::= <binding_lhs> { "," <binding_lhs> } ":" "=" ( <import_binding> |   
-                      <module_literal> | <function_decl> )
+StaticBinding  ::= <binding_lhs> { "," <binding_lhs> } ":" "=" ( <import_binding> |   
+                      <module_literal> | FunctionDecl )
 <binding_lhs>     ::= "_" | <BINDING_NAME> [ ":" <type_decl> ]
 <import_binding>  ::= "@" "{" <import_paths> "}" [ "(" <type_decl> { "," <type_decl> } ")" ] 
                       [ "{" <import_renames> "}" ]
@@ -60,20 +60,20 @@ Bindings at module-level can be either literals, functions or an import. We call
 <import_renames>  ::= <import_rename> { "," <import_rename> }
 <import_rename>   ::= ( <TYPE_NAME> "=" ">" <TYPE_NAME> ) | ( <BINDING_NAME> "=" ">" <BINDING_NAME> )
 
-<function_decl>   ::= "(" [ <arg_def> { "," <arg_def> } ] ")" "-" ">" 
-                      ( <expression> | ["("] <type_decl> [")"] <code_block> )
+FunctionDecl   ::= "(" [ <arg_def> { "," <arg_def> } ] ")" "-" ">" 
+                      ( Expression | ["("] <type_decl> [")"] <code_block> )
 <code_block>      ::= "{" { <fn_return> | <dynamic_binding>  "}" } | "{" "..." "}"
 <fn_return>       ::= "::" <expression>
 <dynamic_binding> ::= <binding_lhs> { "," <binding_lhs> } ":" "=" ["="] <expression>
 ```
 Expressions:
 ```
-<expression>       ::= <BINDING_NAME> | <function_decl> | <fn_call> | <exp_literal> | 
-                       <exp_op> | <exp_math> | <seq_map_read> | <struct_access> | <bool_exp>
+Expression      ::= <BINDING_NAME> | <function_decl> | <fn_call> | <exp_literal> | 
+                       <exp_op> | MathExpression | <seq_map_read> | <struct_access> | <bool_exp>
 <exp_op>           ::=  <range_op> | <nothingcheck_op> | <cast_op> | <struct_modify> | 
                         <seq_merge_op> | <lambdacreator_op> | <chain_op> | <channel_op> | <select_op>
-<exp_math>         ::= <exp_math_factor> ("+"|"-"|"*"|"/"|"%"|"%%") <exp_math> | <exp_math_factor>
-<exp_math_factor>  ::= "(" <expression> ")" | <numeric_literal>
+MathExpression         ::= MathFactor ("+"|"-"|"*"|"/"|"%"|"%%") MathExpression | MathFactor
+MathFactor  ::= "(" Expression ")" | NUMBER
 <fn_call>          ::= <expression> "(" [ <expression> { "," <expression> } ] ")"
 <range_op>         ::= <int_litearl> ".." <int_litearl>
 <cast_op>          ::= ( <TYPE_NAME> | <primitive_type> ) "(" [ <expression> { "," <expression> } ] ")"
