@@ -14,11 +14,13 @@ Tokens:
 ```
 Basic literals:
 ```
-<module_literal> ::= ( "(" <module_literal> ")" | <exp_literal> | 
-                     <exp_literal> ("+"|"-"|"*"|"*"|"&") <exp_literal> )
-<exp_literal> ::= <numeric_literal> | <string_literal> | <char_literal> | 
-                  <bool_literal> | <struct_literal> | <seq_literal> | <map_literal> | "nothing"
-<numeric_literal> ::= ["+"|"-"] <DIGIT> { <DIGIT> | "," } [ "." <DIGIT> { <DIGIT> | "," } ]
+<module_literal> ::= "(" <module_literal> ")" | <exp_literal> | 
+                     <module_literal> ("+"|"-"|"*"|"/"|"&") <module_literal> ) | <numeric_literal> |
+                     <string_literal>
+<exp_literal> ::= <char_literal> | <bool_literal> | <struct_literal> | 
+                  <seq_literal> | <map_literal> | "nothing"
+<numeric_literal> ::= <int_litearl> [ "." <DIGIT> { <DIGIT> | "," } ]
+<int_literal> ::= ["+"|"-"] <DIGIT> { <DIGIT> | "," }
 <string_literal> ::= """ [ <STRING> ] """ | "`" <STRING> "`"
 <char_literal> ::= "'" <CHAR> "'"
 <bool_literal> ::= "true" | "false"
@@ -70,9 +72,9 @@ Expressions:
                  <exp_op> | <exp_math> | <seq_map_read> | <struct_access> | <bool_exp>
 <exp_op> ::=  <range_op> | <nothingcheck_op> | <cast_op> | <struct_modify> | 
               <seq_merge_op> | <lambdacreator_op> | <chain_op> | <channel_op> | <select_op>
-<exp_math> ::= <expression> ("+"|"-"|"*"|"/"|"%"|"%%") <expression> 
+<exp_math> ::= <expression> ("+"|"-"|"*"|"/"|"%"|"%%") <expression> | <numeric_literal>
 <fn_call> ::= <expression> "(" [ <expression> { "," <expression> } ] ")"
-<range_op> ::= ["+"|"-"] <DIGIT> { <DIGIT> | "," } ".." ["+"|"-"] <DIGIT> { <DIGIT> | "," }
+<range_op> ::= <int_litearl> ".." <int_litearl>
 <nothingcheck_op> ::= <expression> "/" "/" <expression>
 <cast_op> ::= ( <TYPE_NAME> | <primitive_type> ) "(" [ <expression> { "," <expression> } ] ")"
 <struct_modify> ::= [ <expression> ] "{" <fn_binding> { "," <fn_binding> } "}"
