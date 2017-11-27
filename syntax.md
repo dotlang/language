@@ -31,11 +31,11 @@ Basic literals:
 ```
 Module:
 ```
-Module = { ( <named_type> | StaticBinding ) }
+Module = { ( NamedType | StaticBinding ) }
 ```
 Named type declaration:
 ```
-<named_type>     = <TYPE_NAME> ":=" <type_decl>
+NamedType        = <TYPE_NAME> ":=" <type_decl>
 <type_decl>      =  <TYPE_NAME> | <primitive_type> | <sequence_type> | <map_type> | <union_type> | 
                       <struct_type> | <fn_type> | <channel_type>
 <primitive_type> = int | float | char | string | nothing | bool
