@@ -785,3 +785,7 @@ So we can say, each element inside an array other than having it's own data like
 `[[int]]` is 2-D int array. `x[0][0]`
 But it is definitely confusing.
 Let's do it in std or core.
+
+? - Using channel for all types of comm makes it easier to mock something.
+For example if a function works with a socket, we can instead pass a sequence-backed channel for test purposes.
+We can follow this approch for every side effect (e.g. get time, get random number, ...).
