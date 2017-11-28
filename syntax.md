@@ -20,7 +20,7 @@ Basic literals:
 ```
 ModuleLiteral      = "(" ModuleLiteral ")" | ExpressionLiteral | NUMBER
                      ModuleLiteral ("+"|"-"|"*"|"/"|"&") ModuleLiteral ) | StringLiteral
-ExpressionLiteral  = CharLiteral | BoolLiteral | StructLiteral | 
+ExpressionLiteral  = CharLiteral | BoolLiteral | StructLiteral | NUMBER
                      SequenceLiteral | MapLiteral | "nothing"
 StringLiteral      = """ [ STRING ] """ | "`" STRING "`"
 CharLiteral        = "'" character "'"
@@ -55,7 +55,7 @@ BindingLhs         = "_" | BINDING_NAME [ ":" TypeDecl ]
 ImportBinding      = "@" "{" STRING+ "}" 
                      [ "(" TypeDecl* ")" ] [ "{" ImportRename+ "}" ]
 ImportRename       = ( TYPE_NAME "=>" TYPE_NAME ) | ( BINDING_NAME "=>" BINDING_NAME )
-FunctionDecl       = "(" ArgDef* ") ->" 
+FunctionDecl       = "(" ArgDef* ")" "->" 
                      ( Expression | ["("] TypeDecl [")"] CodeBlock )
 CodeBlock          = "{" { FnReturn | DynamicBinding } "}" | "{...}"
 FnReturn           = "::" Expression
@@ -63,31 +63,30 @@ DynamicBinding     = BindingLhs+ ":=" ["="] Expression
 ```
 Expressions:
 ```
-Expression         = BINDING_NAME | FunctionDecl | FnCall | ExpressionLiteral | StructAccess |
-                     OperatorExpression | MathExpression | SequenceMapReadOp | BoolExpression
-OperatorExpression = RangeOp | NothingCheckOp | CastOp | StructModify| 
-                     SequenceMergeOp | LambdaCreatorOp | ChainOp | ChannelOp | SelectOp
-MathExpression     = MathFactor | MathExpression ("+"|"-"|"*"|"/"|"%"|"%%") MathFactor
-MathFactor         = "(" Expression ")" | NUMBER
-FnCall             = Expression "(" Expression* ")"
-SequenceMapReadOp  = Expression "[" Expression "]"
-StructAccess       = Expression "." BINDING_NAME
-BoolExpression     = BoolFactor (">"|"<"|"="|"!="|">="|"<=") BoolFactor | 
-                     BoolFactor ("and"|"or"|"xor") BoolFactor | "not" BoolFactor
-BoolFactor         = BoolLitearl | "(" Expression ")" | Expression
+Expression         = ExpressionFactor [ (">"|"<"|"="|"!="|">="|"<="|"and"|"or"|"xor") Expression ]
+ExpressionFactor   = ExpressionTerm [ ("+"|"-") ExpressionFactor ]
+ExpressionTerm     = ExpressionOp [ ("*"|"/"|"%"|"%%") ExpressionTerm ]
+ExpressionOp       = ("not"|"-") PrimaryExpression | 
+                     FunctionDecl |
+(* Struct access *)  PrimaryExpression "." BINDING_NAME |                               
+(* Seq/map *)        PrimaryExpression "[" PrimaryExpression "]" |
+PrimaryExpression  = BINDING_NAME |
+                     "(" Expression ")" | 
+                     ExpressionLiteral
+(* Fn call *)        BINDING_NAME "(" Expression* ")"
 ```
-Advanced operators:
+Advanced operators (to be added later):
 ```
-RangeOp            = Expression ".." Expression
-CastOp             = ( TYPE_NAME | PrimitiveTypeDecl ) "(" Expression* ] ")"
-SequenceMergeOp    = Expression "&" Expression
-NothingCheckOp     = Expression "//" Expression
-StructModify       = [ Expression ] "{" DynamicBinding* "}"
-LambdaCreatorOp    = Expression "(" ( Expression | "_" )* ")"
-ChainOp            = ( Expression | "(" Expression+ ")" ) "." "{" ChainLambda+ "}"
-ChainLambda        = Expression | LambdaCreatorOp
-ChannelOp          = Expression "?" | Expression "!" Expression
-SelectOp           = "$" "{" SelectOpItem+ "}"
-SelectOpItem       = ChannelOp | "[" Expression+ "]" 
-                     ("?" | "!" "[" Expression+ "]" )
+(* Range op *)       PrimaryExpression ".." PrimaryExpression |
+(* Nothing check*)   Expression "//" Expression |
+(* Cast *)           ( TYPE_NAME | PrimitiveTypeDecl ) "(" Expression* ")" |
+(* Struct modify *)  [ Expression ] "{" DynamicBinding* "}" |
+(* Merge seq *)      PrimaryExpression "&" PrimaryExpression |
+(* Lambda creator *) Lambda |
+(* Chain *)          ( PrimaryExpression | "(" PrimaryExpression+ ")" ) "." "{" (Lambda|PrimaryExpression)+ "}" |
+(* Select *)         "$" "{" SelectTerm+ "}" |
+(* Channels *)       Expression "?" | Expression "!" Expression
+Lambda             = PrimaryExpression "(" ( PrimaryExpression | "_" )* ")"
+SelectTerm         = PrimaryExpression "?" | PrimaryExpression "!" PrimaryExpression | 
+                     "[" PrimaryExpression+ "]" ("?" | "!" "[" PrimaryExpression+ "]" )
 ```
