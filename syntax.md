@@ -59,21 +59,19 @@ FunctionDecl       = "(" ArgDef* ")" "->"
                      ( Expression | ["("] TypeDecl [")"] CodeBlock )
 CodeBlock          = "{" { FnReturn | DynamicBinding } "}" | "{...}"
 FnReturn           = "::" Expression
-DynamicBinding     = BindingLhs+ ":=" ["="] Expression
+DynamicBinding     = BindingLhs+ ":=" ["="] ( Expression | FunctionDecl )
 ```
 Expressions:
 ```
-Expression         = ExpressionFactor [ (">"|"<"|"="|"!="|">="|"<="|"and"|"or"|"xor") Expression ]
-ExpressionFactor   = ExpressionTerm [ ("+"|"-") ExpressionFactor ]
-ExpressionTerm     = ExpressionOp [ ("*"|"/"|"%"|"%%") ExpressionTerm ]
-ExpressionOp       = ("not"|"-") PrimaryExpression | 
-                     FunctionDecl |
-(* Struct access *)  PrimaryExpression "." BINDING_NAME |                               
-(* Seq/map *)        PrimaryExpression "[" PrimaryExpression "]" |
-PrimaryExpression  = BINDING_NAME |
-                     "(" Expression ")" | 
-                     ExpressionLiteral
-(* Fn call *)        BINDING_NAME "(" Expression* ")"
+Expression         = CmpExpression    { ("and"|"or"|"xor") CmpExpression }
+CmpExpression      = ShiftExpression  { (">"|"<"|"="|"!="|">="|"<=") ShiftExpression }
+ShiftExpression    = AddExpression    { (">>"|"<<") AddExpression }
+AddExpression      = MulExpression    { ("+"|"-") MulExpression }
+MulExpression      = UnaryExpression  { ("*"|"/"|"%"|"%%") UnaryExpression }
+UnaryExpression    = ["not"|"-"]      PrimaryExpression
+PrimaryExpression  = BasicExpression  { "(" Expression* ")" | "." BINDING_NAME | "[" Expression "]" }
+                                      (* function call      / struct access    / seq/map access    *)
+BasicExpression    = BINDING_NAME | "(" Expression ")" | ExpressionLiteral
 ```
 Advanced operators (to be added later):
 ```
@@ -90,3 +88,13 @@ Lambda             = PrimaryExpression "(" ( PrimaryExpression | "_" )* ")"
 SelectTerm         = PrimaryExpression "?" | PrimaryExpression "!" PrimaryExpression | 
                      "[" PrimaryExpression+ "]" ("?" | "!" "[" PrimaryExpression+ "]" )
 ```
+- Shall we prohibit calling a function literal at the point of declaration?
+```
+result := (x:int)->x+1(100) #store 101 into result
+```
+or
+```
+fn := (x:int)->x+1
+result := fn(100) #store 101 into result
+```
+- Shall we add shift right and left?
