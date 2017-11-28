@@ -18,48 +18,48 @@ NUMBER             = INT_NUMBER [ "." DIGIT { DIGIT | "," } ]
 ```
 Basic literals:
 ```
-ModuleLiteral     = "(" ModuleLiteral ")" | ExpressionLiteral | NUMBER
-                    ModuleLiteral ("+"|"-"|"*"|"/"|"&") ModuleLiteral ) | StringLiteral
-ExpressionLiteral = CharLiteral | BoolLiteral | StructLiteral | 
-                    SequenceLiteral | MapLiteral | "nothing"
-StringLiteral     = """ [ STRING ] """ | "`" STRING "`"
-CharLiteral       = "'" character "'"
-BoolLiteral       = "true" | "false"
-StructLiteral     = [ TYPE_NAME ] "{" DynamicBinding* "}"
-SequenceLiteral   = "[" Expression* "]"
-MapLiteral        = "[" MapLiteralElement* "]"
-MapLiteralElement = Expression ":" Expression
+ModuleLiteral      = "(" ModuleLiteral ")" | ExpressionLiteral | NUMBER
+                     ModuleLiteral ("+"|"-"|"*"|"/"|"&") ModuleLiteral ) | StringLiteral
+ExpressionLiteral  = CharLiteral | BoolLiteral | StructLiteral | 
+                     SequenceLiteral | MapLiteral | "nothing"
+StringLiteral      = """ [ STRING ] """ | "`" STRING "`"
+CharLiteral        = "'" character "'"
+BoolLiteral        = "true" | "false"
+StructLiteral      = [ TYPE_NAME ] "{" DynamicBinding* "}"
+SequenceLiteral    = "[" Expression* "]"
+MapLiteral         = "[" MapLiteralElement* "]"
+MapLiteralElement  = Expression ":" Expression
 ```
 Module:
 ```
-Module            = { ( NamedType | StaticBinding ) }
+Module             = { ( NamedType | StaticBinding ) }
 ```
 Named type declaration:
 ```
-NamedType         = TYPE_NAME ":=" TypeDecl
-TypeDecl          = TYPE_NAME | PrimitiveTypeDecl | SequenceTypeDecl | MapTypeDecl | 
-                    UnionTypeDecl | StructTypeDecl | FnTypeDecl | ChannelTypeDecl
-PrimitiveTypeDecl = "int" | "float" | "char" | "string" | "nothing" | "bool"
-SequenceTypeDecl  = "[" TypeDecl "]"
-MapTypeDecl       = "[" TypeDecl "," TypeDecl "]"
-UnionTypeDecl     = ( TYPE_NAME | PrimitiveTypeDecl ) { "|" ( TYPE_NAME | PrimitiveTypeDecl ) }
-StructTypeDecl    = "{" ( TypeDecl* | ArgDef* [ "..." ] ) "}" 
-ArgDef            = BINDING_NAME ":" TypeDecl
-FnTypeDecl        = "(" TypeDecl* ") -> " ["("] TypeDecl [")"]
-ChannelTypeDecl   = ( TYPE_NAME | PrimitiveTypeDecl ) ("!"|"?")
+NamedType          = TYPE_NAME ":=" TypeDecl
+TypeDecl           = TYPE_NAME | PrimitiveTypeDecl | SequenceTypeDecl | MapTypeDecl | 
+                     UnionTypeDecl | StructTypeDecl | FnTypeDecl | ChannelTypeDecl
+PrimitiveTypeDecl  = "int" | "float" | "char" | "string" | "nothing" | "bool"
+SequenceTypeDecl   = "[" TypeDecl "]"
+MapTypeDecl        = "[" TypeDecl "," TypeDecl "]"
+UnionTypeDecl      = ( TYPE_NAME | PrimitiveTypeDecl ) { "|" ( TYPE_NAME | PrimitiveTypeDecl ) }
+StructTypeDecl     = "{" ( TypeDecl* | ArgDef* [ "..." ] ) "}" 
+ArgDef             = BINDING_NAME ":" TypeDecl
+FnTypeDecl         = "(" TypeDecl* ") -> " ["("] TypeDecl [")"]
+ChannelTypeDecl    = ( TYPE_NAME | PrimitiveTypeDecl ) ("!"|"?")
 ```
 Bindings at module-level can be either literals, functions or an import. We call these static bindings (vs dynamic bindings which include expressions and runtime calculations which you can define inside a function):
 ```
-StaticBinding  = BindingLhs+ ":=" ( ImportBinding | ModuleLiteral | FunctionDecl )
-BindingLhs     = "_" | BINDING_NAME [ ":" TypeDecl ]
-ImportBinding  = "@" "{" STRING+ "}" 
-                 [ "(" TypeDecl* ")" ] [ "{" ImportRename+ "}" ]
-ImportRename   = ( TYPE_NAME "=>" TYPE_NAME ) | ( BINDING_NAME "=>" BINDING_NAME )
-FunctionDecl   = "(" ArgDef* ") ->" 
-                 ( Expression | ["("] TypeDecl [")"] CodeBlock )
-CodeBlock      = "{" { FnReturn | DynamicBinding } "}" | "{...}"
-FnReturn       = "::" Expression
-DynamicBinding = BindingLhs+ ":=" ["="] Expression
+StaticBinding      = BindingLhs+ ":=" ( ImportBinding | ModuleLiteral | FunctionDecl )
+BindingLhs         = "_" | BINDING_NAME [ ":" TypeDecl ]
+ImportBinding      = "@" "{" STRING+ "}" 
+                     [ "(" TypeDecl* ")" ] [ "{" ImportRename+ "}" ]
+ImportRename       = ( TYPE_NAME "=>" TYPE_NAME ) | ( BINDING_NAME "=>" BINDING_NAME )
+FunctionDecl       = "(" ArgDef* ") ->" 
+                     ( Expression | ["("] TypeDecl [")"] CodeBlock )
+CodeBlock          = "{" { FnReturn | DynamicBinding } "}" | "{...}"
+FnReturn           = "::" Expression
+DynamicBinding     = BindingLhs+ ":=" ["="] Expression
 ```
 Expressions:
 ```
@@ -78,16 +78,16 @@ BoolFactor         = BoolLitearl | "(" Expression ")" | Expression
 ```
 Advanced operators:
 ```
-RangeOp          = Expression ".." Expression
-CastOp           = ( TYPE_NAME | PrimitiveTypeDecl ) "(" Expression* ] ")"
-SequenceMergeOp  = Expression "&" Expression
-NothingCheckOp   = Expression "//" Expression
-StructModify     = [ Expression ] "{" DynamicBinding* "}"
-LambdaCreatorOp  = Expression "(" ( Expression | "_" )* ")"
-ChainOp          = ( Expression | "(" Expression+ ")" ) "." "{" ChainLambda+ "}"
-ChainLambda      = Expression | LambdaCreatorOp
-ChannelOp        = Expression "?" | Expression "!" Expression
-SelectOp         = "$" "{" SelectOpItem+ "}"
-SelectOpItem     = ChannelOp | "[" Expression+ "]" 
-                   ("?" | "!" "[" Expression+ "]" )
+RangeOp            = Expression ".." Expression
+CastOp             = ( TYPE_NAME | PrimitiveTypeDecl ) "(" Expression* ] ")"
+SequenceMergeOp    = Expression "&" Expression
+NothingCheckOp     = Expression "//" Expression
+StructModify       = [ Expression ] "{" DynamicBinding* "}"
+LambdaCreatorOp    = Expression "(" ( Expression | "_" )* ")"
+ChainOp            = ( Expression | "(" Expression+ ")" ) "." "{" ChainLambda+ "}"
+ChainLambda        = Expression | LambdaCreatorOp
+ChannelOp          = Expression "?" | Expression "!" Expression
+SelectOp           = "$" "{" SelectOpItem+ "}"
+SelectOpItem       = ChannelOp | "[" Expression+ "]" 
+                     ("?" | "!" "[" Expression+ "]" )
 ```
