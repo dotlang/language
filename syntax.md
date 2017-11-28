@@ -63,9 +63,10 @@ DynamicBinding     = BindingLhs+ ":=" ["="] ( Expression | FunctionDecl )
 ```
 Expressions:
 ```
-Expression         = CmpExpression    { ("and"|"or"|"xor") CmpExpression }
-CmpExpression      = ShiftExpression  { (">"|"<"|"="|"!="|">="|"<=") ShiftExpression }
-ShiftExpression    = AddExpression    { (">>"|"<<") AddExpression }
+Expression         = EqExpression     { ("and"|"or"|"xor") EqExpression }
+EqExpression       = CmpExpression    { ("="|"!=") CmpExpression }
+CmpExpression      = ShiftExpression  { (">"|"<"|">="|"<=") ShiftExpression }
+ShiftExpression    = AddExpression    { (">>"|"<<") AddExpression }
 AddExpression      = MulExpression    { ("+"|"-") MulExpression }
 MulExpression      = UnaryExpression  { ("*"|"/"|"%"|"%%") UnaryExpression }
 UnaryExpression    = ["not"|"-"]      PrimaryExpression
