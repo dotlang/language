@@ -67,9 +67,9 @@ ShiftExpression    = AddExpression    { (">>"|"<<"|"^") AddExpression }
 AddExpression      = MulExpression    { ("+"|"-") MulExpression }
 MulExpression      = UnaryExpression  { ("*"|"/"|"%"|"%%") UnaryExpression }
 UnaryExpression    = ["not"|"-"]      PrimaryExpression
-PrimaryExpression  = BasicExpression  {  ExpressionTerm }
+PrimaryExpression  = BasicExpression  {  TermExpression }
 BasicExpression    = BINDING_NAME | "(" Expression ")" | ExpressionLiteral
-ExpressionTerm     = "(" Expression* ")" | "." BINDING_NAME | "[" Expression "]"
+TermExpression     = "(" Expression* ")" | "." BINDING_NAME | "[" Expression "]"
                      (* function call    / struct access    / seq/map access    *)
 ```
 Advanced operators (to be added later):
