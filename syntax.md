@@ -69,8 +69,8 @@ MulExpression      = UnaryExpression  { ("*"|"/"|"%"|"%%") UnaryExpression }
 UnaryExpression    = ["not"|"-"]      PrimaryExpression
 PrimaryExpression  = BasicExpression  {  TermExpression }
 BasicExpression    = BINDING_NAME | "(" Expression ")" | ExpressionLiteral
-TermExpression     = "(" Expression ")" | "." BINDING_NAME | "[" Expression "]"
-                     (* function call   / struct access    / seq/map access    *)
+TermExpression     = "(" Expression* ")" | "." BINDING_NAME | "[" Expression "]"
+                     (* function call    / struct access    / seq/map access    *)
 ```
 Advanced operators (to be added later):
 ```
