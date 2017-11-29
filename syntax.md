@@ -63,7 +63,7 @@ Expressions:
 Expression         = EqExpression     { ("and"|"or"|"xor") EqExpression }
 EqExpression       = CmpExpression    { ("="|"!=") CmpExpression }
 CmpExpression      = ShiftExpression  { (">"|"<"|">="|"<=") ShiftExpression }
-ShiftExpression    = AddExpression    { (">>"|"<<") AddExpression }
+ShiftExpression    = AddExpression    { (">>"|"<<"|"^") AddExpression }
 AddExpression      = MulExpression    { ("+"|"-") MulExpression }
 MulExpression      = UnaryExpression  { ("*"|"/"|"%"|"%%") UnaryExpression }
 UnaryExpression    = ["not"|"-"]      PrimaryExpression
@@ -97,3 +97,4 @@ fn := (x:int)->x+1
 result := fn(100) #store 101 into result
 ```
 - Shall we add shift right and left?
+- What about power?
