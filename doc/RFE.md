@@ -789,3 +789,24 @@ Let's do it in std or core.
 ? - Using channel for all types of comm makes it easier to mock something.
 For example if a function works with a socket, we can instead pass a sequence-backed channel for test purposes.
 We can follow this approch for every side effect (e.g. get time, get random number, ...).
+
+- Shall we prohibit calling a function literal at the point of declaration?
+```
+result := (x:int)->x+1(100) #store 101 into result
+```
+or
+```
+fn := (x:int)->x+1
+result := fn(100) #store 101 into result
+```
+- Shall we add shift right and left?
+- What about power?
+
+? - Shall we make untyped structs more explicit?
+`point1 := {100, 200} #untyped struct`
+`point1 := {100, 200} #untyped struct`
+Because they can be used for function output. And will be confusing with code block.
+`process := (x:int) -> ~{x, 100, 200}`
+`process := (x:int) -> !{x, 100, 200}`
+
+
