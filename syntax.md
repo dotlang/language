@@ -87,23 +87,3 @@ Lambda             = PrimaryExpression "(" ( PrimaryExpression | "_" )* ")"
 SelectTerm         = PrimaryExpression "?" | PrimaryExpression "!" PrimaryExpression | 
                      "[" PrimaryExpression+ "]" ("?" | "!" "[" PrimaryExpression+ "]" )
 ```
-- Shall we prohibit calling a function literal at the point of declaration?
-```
-result := (x:int)->x+1(100) #store 101 into result
-```
-or
-```
-fn := (x:int)->x+1
-result := fn(100) #store 101 into result
-```
-- Shall we add shift right and left?
-- What about power?
-
-? - Shall we make untyped structs more explicit?
-`point1 := {100, 200} #untyped struct`
-`point1 := {100, 200} #untyped struct`
-Because they can be used for function output. And will be confusing with code block.
-`process := (x:int) -> ~{x, 100, 200}`
-`process := (x:int) -> !{x, 100, 200}`
-
-
