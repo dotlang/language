@@ -810,3 +810,10 @@ Because they can be used for function output. And will be confusing with code bl
 `process := (x:int) -> !{x, 100, 200}`
 
 
+? - The absolute minimum that I need to write a compiler in dot:
+- LLVM bindings
+- File I/O
+- Struct, Seq and map
+- Union data type
+- `...` notation for generic union
+- multi module compilation
