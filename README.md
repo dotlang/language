@@ -61,6 +61,9 @@ dotLang consists of these components:
 
 # Language in a nutshell
 
+You can see the grammar of the language in EBNF-like notation [here](https://github.com/dotlang/language/blob/master/syntax.md).
+
+
 ## Main features
 
 01. **Import a module**: `_ := @{"/core/std/queue"}` (you can also import from external sources like Github).
