@@ -31,32 +31,18 @@ NumberLiteral      = NUMBER
 ```
 Module:
 ```
-Module             = { ( NamedType | ImportBinding | Binding ) }
-```
-Named type declaration:
-```
-NamedType          = TYPE_NAME ":=" TypeDecl
-TypeDecl           = TYPE_NAME | PrimitiveTypeDecl | SequenceTypeDecl | MapTypeDecl | 
-                     UnionTypeDecl | StructTypeDecl | FnTypeDecl | ChannelTypeDecl
-PrimitiveTypeDecl  = "int" | "float" | "char" | "string" | "nothing" | "bool"
-SequenceTypeDecl   = "[" TypeDecl "]"
-MapTypeDecl        = "[" TypeDecl "," TypeDecl "]"
-UnionTypeDecl      = ( TYPE_NAME | PrimitiveTypeDecl ) { "|" ( TYPE_NAME | PrimitiveTypeDecl ) }
-StructTypeDecl     = "{" ( TypeDecl* | TypedName* [ "..." ] ) "}" 
-TypedName          = BINDING_NAME ":" TypeDecl
-FnTypeDecl         = "(" TypeDecl* ") -> " ["("] TypeDecl [")"]
-ChannelTypeDecl    = ( TYPE_NAME | PrimitiveTypeDecl ) ("!"|"?")
+Module             = { ( Binding | NamedType | ImportBinding ) }
 ```
 Bindings at module-level can be either literals, functions or an import. We call these static bindings (vs dynamic bindings which include expressions and runtime calculations which you can define inside a function):
 ```
-ImportBinding      = BindingLhs+ ":=" "@" "{" STRING+ "}" 
-                     [ "(" TypeDecl* ")" ] [ "{" ImportRename+ "}" ]
+Binding            = BindingLhs+ ":=" ["="] ( Expression | FunctionDecl )
 BindingLhs         = "_" | BINDING_NAME [ ":" TypeDecl ]
 ImportRename       = ( TYPE_NAME "=>" TYPE_NAME ) | ( BINDING_NAME "=>" BINDING_NAME )
-Binding            = BindingLhs+ ":=" ["="] ( Expression | FunctionDecl )
 FunctionDecl       = "(" TypedName* ")" "->" ( Expression | ["("] TypeDecl [")"] CodeBlock )
 CodeBlock          = "{" { ReturnStatement | Binding } "}" | "{" "..." "}"
 ReturnStatement    = "::" Expression
+ImportBinding      = BindingLhs+ ":=" "@" "{" STRING+ "}" 
+                     [ "(" TypeDecl* ")" ] [ "{" ImportRename+ "}" ]
 ```
 Expressions:
 ```
@@ -72,6 +58,21 @@ BasicExpression    = BINDING_NAME | "(" Expression ")" | ExpressionLiteral
 TermExpression     = "(" Expression* ")" | "." BINDING_NAME | "[" Expression "]"
                      (* function call    / struct access    / seq/map access    *)
 ```
+Named type declaration:
+```
+NamedType          = TYPE_NAME ":=" TypeDecl
+TypeDecl           = TYPE_NAME | PrimitiveTypeDecl | SequenceTypeDecl | MapTypeDecl | 
+                     UnionTypeDecl | StructTypeDecl | FnTypeDecl | ChannelTypeDecl
+PrimitiveTypeDecl  = "int" | "float" | "char" | "string" | "nothing" | "bool"
+SequenceTypeDecl   = "[" TypeDecl "]"
+MapTypeDecl        = "[" TypeDecl "," TypeDecl "]"
+UnionTypeDecl      = ( TYPE_NAME | PrimitiveTypeDecl ) { "|" ( TYPE_NAME | PrimitiveTypeDecl ) }
+StructTypeDecl     = "{" ( TypeDecl* | TypedName* [ "..." ] ) "}" 
+TypedName          = BINDING_NAME ":" TypeDecl
+FnTypeDecl         = "(" TypeDecl* ") -> " ["("] TypeDecl [")"]
+ChannelTypeDecl    = ( TYPE_NAME | PrimitiveTypeDecl ) ("!"|"?")
+```
+
 Advanced operators (to be added later):
 ```
 (* Range op *)       PrimaryExpression ".." PrimaryExpression |
