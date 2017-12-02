@@ -817,3 +817,29 @@ Because they can be used for function output. And will be confusing with code bl
 - Union data type
 - `...` notation for generic union
 - multi module compilation
+
+? - Just like the way we need to mark struct literals with a prefix, it will be helpful to prefix function literals too.
+Pro: Makes syntax simpler and also reading, parsing the code
+`x := process(x,y, (h:int)->h+1)`
+Because, when we see `(h` it can also be an expression. we don't know. So parsing becomes ambiguous.
+Maybe we can use the same notation, because struct starts with `{` and function decl with `(`.
+What about `[`? Shall we use the same to mark sequence/map literals?
+`x := [1` here, we don't know if it is a map or sequence literal.
+`x := [1:2]` this is a map literal
+`x := [1]` this is a sequence literal.
+`struct_literal := !{1,2,3}`
+`seq_literal := ![1,2,3]`
+`map_literal := !["A":1, "B":2]`
+`func_literal := !(x:int)->x+1`
+But we really dont need a prefix for seq/map literals. 
+For struct, we need it because `{` is also used for code block.
+For function, we need it because `(` is also used for expressions.
+But if we have `(`, for function decl, it is either `()` or definitely has `:` in it. So it is doable to check it.
+What about `{`? 
+```
+x := 
+{
+  1,2,3
+}
+```
+We also really don't need a prefix for struct. Because if it is a code-block, it will definitely be prefixed with `(...)->`.
