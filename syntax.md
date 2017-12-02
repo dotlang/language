@@ -53,10 +53,9 @@ ShiftExpression    = AddExpression    { (">>"|"<<"|"^") AddExpression }
 AddExpression      = MulExpression    { ("+"|"-") MulExpression }
 MulExpression      = UnaryExpression  { ("*"|"/"|"%"|"%%") UnaryExpression }
 UnaryExpression    = ["not"|"-"]      PrimaryExpression
-PrimaryExpression  = BasicExpression  {  TermExpression }
-BasicExpression    = BINDING_NAME | "(" Expression ")" | ExpressionLiteral
-TermExpression     = "(" Expression* ")" | "." BINDING_NAME | "[" Expression "]"
-                     (* function call    / struct access    / seq/map access    *)
+PrimaryExpression  = ( BINDING_NAME | "(" Expression ")" | ExpressionLiteral )
+                     {  "(" Expression* ")" | "." Expression | "[" Expression "]" }
+                     (*  function call      / struct access    / seq/map access    *)
 ```
 Named type declaration:
 ```
