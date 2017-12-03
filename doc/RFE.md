@@ -843,3 +843,63 @@ x :=
 }
 ```
 We also really don't need a prefix for struct. Because if it is a code-block, it will definitely be prefixed with `(...)->`.
+
+? - Conver comparison part to a table.
+
+? - A notation to define singly linked list.
+It is not about simplicity, but we want to provide an easy mechanism to handle data structures with regards to immutability.
+This can be used for stack, queue, tree and graph, as long as one way processing is enough.
+This cannot be a FIFO queu because FO means change the whole data structure.
+```
+d:{int} = [1,2,3] #1 -> 2 -> 3
+x := 0;d
+```
+what will `d` mean? 1 or the whole list?
+How would it be done now?
+```
+type Node := {data:int, next: Node} | nothing
+g: Node := Node{data:=10, next := nothing}
+h: Node := Node{data:=20, next := g}
+t: Node := Node{data:=30, next := h}
+d := t.data
+d := t.next.data
+```
+rewrite:
+```
+type Node := (int)
+g:Node := (10)
+h: Node := (20,g)
+t: Node := (30,h)
+d := t.(0)
+d := t.[1..]
+```
+How can we define a tree?
+```
+type Tree := ({int, (Tree)})
+```
+We can treat linked list like seq becaus conceptually they are the same:
+```
+x: (int) := ~[1,2,3]
+x[0] is the first element
+x[1..] is a linked list.
+So is x[1..5] but this notation will need a copy of whole list
+Same notation can be used for seq.
+y := [5, 3]&x is for merging lists. You can merge any two lists but best peformance is when the first item is smallest.
+x[5..] is also a linked list. It can be a sequence if x is a sequence.
+x[0] is the first element of a linked-list or a sequence.
+So how can we differentiate this with a seq?
+[int] is a sequence of int
+(int) is a linked list of int
+So tree can be defined as:
+Node := ({int, (Node)})
+tree: Node := [{5, [{6,
+```
+How can we convert a list to seq or seq to list?
+`x: [int] := [1,2,3,4]`
+`y:(int) := ~[x]`
+`z: [int] := [y]`
+`x[start..]` slice of seq or linked list. O(1) for both
+`x[start..end]` slice. O(n) for list, O(1) for seq (assuming seq includes length too)
+`x[..end]` slice. O(n) for list, O(1) for seq (Assuming seq includes length)
+`x[index]` read element from seq/list. O(1) for seq, O(n) for list
+`x&y` merge two seq/lists. for seq O(m+n), for list O(m)
