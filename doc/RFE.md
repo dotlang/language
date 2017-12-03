@@ -903,3 +903,5 @@ How can we convert a list to seq or seq to list?
 `x[..end]` slice. O(n) for list, O(1) for seq (Assuming seq includes length)
 `x[index]` read element from seq/list. O(1) for seq, O(n) for list
 `x&y` merge two seq/lists. for seq O(m+n), for list O(m)
+
+? - Write AST + expression parser to convert to RPN using shunting-yard algorithm.
