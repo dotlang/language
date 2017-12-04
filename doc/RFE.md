@@ -891,8 +891,9 @@ So how can we differentiate this with a seq?
 [int] is a sequence of int
 (int) is a linked list of int
 So tree can be defined as:
-Node := ({int, (Node)})
-tree: Node := [{5, [{6,
+Node := ({data: int, children: (Node)})
+tree: Node := [{5, [{6, ...]]
+tree.children[0].children[2].data
 ```
 How can we convert a list to seq or seq to list?
 `x: [int] := [1,2,3,4]`
@@ -902,6 +903,17 @@ How can we convert a list to seq or seq to list?
 `x[start..end]` slice. O(n) for list, O(1) for seq (assuming seq includes length too)
 `x[..end]` slice. O(n) for list, O(1) for seq (Assuming seq includes length)
 `x[index]` read element from seq/list. O(1) for seq, O(n) for list
-`x&y` merge two seq/lists. for seq O(m+n), for list O(m)
+`x&y` merge two seq/lists. for seq O(m+n), for list O(m) where m is size of `x`.
+Algorithm to insert something at specific index in linked list:
+```
+insert := (lst: (int), idx: int, data: int)->(int)
+{
+  :: lst[..idx]&[data]&lst[idx+1..]
+}
+```
+Idea: Use `~[int]` to specify list of int type. How does this combine with seq, map, channel types?
+Idea: Use negative numbers to refer to elements before end.
+`lst[-3..-1]` `-1` index points to the last element.
+`lst[-3..]` returns last three elements of the sequence or list.
 
 ? - Write AST + expression parser to convert to RPN using shunting-yard algorithm.
