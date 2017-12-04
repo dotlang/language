@@ -915,5 +915,23 @@ Idea: Use `~[int]` to specify list of int type. How does this combine with seq, 
 Idea: Use negative numbers to refer to elements before end.
 `lst[-3..-1]` `-1` index points to the last element.
 `lst[-3..]` returns last three elements of the sequence or list.
+`~[int]!` a write-only channel which can write list of int.
+`[~[int]]` a sequence of a list of ints.
+`~~[int]` a list of a list of ints.
+`[~int, string]` a map of list of int to string.
+`{int}` an unnamed struct
+`[int]` sequence of int
+`(int)` list of int
+`(int)!` a write-only channel which can write list of int.
+`[(int)]` a sequence of a list of ints.
+`((int))` a list of a list of ints.
+`[(int), string]` a map of list of int to string.
+How should we discriminate between seq literal and list literal?
+`x := [1,2,3]` this is a sequence
+`x := [1;2;3]` this is a list
+`x := [[1,2], [3,4], [5,6]]` a list of list
+`x := [[1;2], [3;4], [5;6]]` a sequence of list
+`x := [[1,2]; [3,4]; [5,6]]` a list of sequence
+
 
 ? - Write AST + expression parser to convert to RPN using shunting-yard algorithm.
