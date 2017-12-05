@@ -932,6 +932,9 @@ How should we discriminate between seq literal and list literal?
 `x := [[1,2], [3,4], [5,6]]` a list of list
 `x := [[1;2], [3;4], [5;6]]` a sequence of list
 `x := [[1,2]; [3,4]; [5,6]]` a list of sequence
-
+What if it has only one element?
+`x := [1]`?
+We can say, by default it is sequence. unless it has `;` at the end:
+`x := [1;]`
 
 ? - Write AST + expression parser to convert to RPN using shunting-yard algorithm.
