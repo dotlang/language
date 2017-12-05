@@ -938,3 +938,8 @@ We can say, by default it is sequence. unless it has `;` at the end:
 `x := [1;]`
 
 ? - Write AST + expression parser to convert to RPN using shunting-yard algorithm.
+
+? - Another helper to help decide whether it's function body or struct.
+struct/expression is defined on the same line if it's return expression.
+function body must be started from the next line.
+So if after `->` we see newline, then it's a code block. Else it's expression.
