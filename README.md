@@ -44,18 +44,19 @@ As a 10,000 foot view of the language, the code is written in files (called modu
 
 ## Comparison
 
-**Compared to C**: C language + garbage collector + first-class functions + template programming + sum types + module system + simple and powerful standard library + lambda expressions + multiple dispatch + full immutability - undefined behavior - pointers - macros - header files.
-
-**Compared to Scala**: Scala + multiple dispatch + full immutability + simpler primitives - *dependency on JVM* - traits - custom operators - implicit parameters.
-
-**Compared to Go**: Go + *generics* + full immutability + multiple dispatch + union types + simpler primitives - pointers - interfaces - global variables - `interface{}`.
+Language | Generics | Sum types | Full Immutability | Multiple dispatch | Garbage Collector | Module System | Lambda
+--- | --- | --- | --- | --- | --- | --- | ---
+C  |  No  | Partial  | No  | No  |  No |  No | No
+Scala | Yes | Yes | No | No | Yes | Yes | Yes
+Go | No | No | No | No | Yes | Yes | Yes
+dotLang | Yes | Yes | Yes | Yes | Yes | Yes | Yes
 
 ## Components
 
 dotLang consists of these components:
 
 1. The language manual (this document).
-2. `dot`: A command line tool to compile, debug and package source code.
+2. `dot`: A command line tool to compile, debug and package code.
 3. `core`: Core library: This package is used to implement some basic, low-level features which can not be simply implemented using pure dotLang.
 4. `std`: Standard library: A layer above core which contains some general-purpose and common functions and data structures.
 
@@ -63,21 +64,20 @@ dotLang consists of these components:
 
 You can see the grammar of the language in EBNF-like notation [here](https://github.com/dotlang/language/blob/master/syntax.md).
 
-
 ## Main features
 
 01. **Import a module**: `_ := @{"/core/std/queue"}` (you can also import from external sources like Github).
-02. **Primitive types**: `int`, `float`, `char`, Sequence (`[int]`), Map (`[string, int]`), Function.
+02. **Primitive types**: `int`, `float`, `char`, `bool`, Sequence (`[int]`), Map (`[char, int]`), Function.
 03. **Bindings**: `my_var:int := 19` (type can be automatically inferred, everything is immutable).
-04. **Sequence**: `scores:[int] := [1, 2, 3, 4]`.
+04. **Sequence**: `scores:[int] := [1, 2, 3, 4]` (`string` is essentially a sequence of `char`s).
 05. **Map**: `scores:[string, int] := ["A":1, "B":2, "C":3, "D": 4]`.
 06. **Named type**: `MyInt := int` (Defines a new type with same binary representation as `int`).
 07. **Struct type**: `Point := {x: int, y:int, data: float}` (Like `struct` in C)
 08. **Struct literal**: `location := Point{x:=10, y:=20, data:=1.19}`
-09. **Composition**: `Circle := {Shape, radius: float}` (`Circle` embeds fields of `Shape`)
+09. **Composition**: `Circle := {Shape, radius: float}` (`Circle` embeds fields from `Shape`)
 10. **Generics**: `_ := @{"/core/Stack[T]"}(int)` (Generics are defined as template modules)
 11. **Union type**: `MaybeInt := int | nothing` (Can store either of possible types)
-12. **Function**: `calculate: (int,int)->float := (x, y) -> float { :: x/y  }`
+12. **Function**: `calculate: (int,int)->float := (x, y) -> float { :: x/y  }` (braces must be on their own line)
 13. **Concurrency**: `result :== processData(x,y,z)` (Evaluate an expression in parallel)
 
 ## Symbols
@@ -87,7 +87,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 03. `()`  Function declaration and call, cast
 04. `{}`  Code block, struct definition and struct literal
 05. `[]`  Types and literals for map and sequence, Generic modules
-06. `&`   Join sequences 
+06. `&`   Concatenate two sequences 
 07. `|`   Union data type 
 08. `->`  Function declaration
 09. `=>`  Rename module definition
@@ -105,10 +105,9 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 21. `${}` Channel select operations
 22. `:==` Parallel execution
 
-## Reserved identifiers
+## Reserved keywords
 
-**Data types**: `int`, `float`, `char`, `string`, `bool`, `nothing` (+ sequence, map, struct, union and function)
-
+**Data types**: `int`, `float`, `char`, `string`, `bool`, `nothing`
 **Reserved identifiers**: `true`, `false`
 
 ## Coding style
