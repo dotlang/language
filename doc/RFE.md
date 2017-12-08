@@ -682,13 +682,73 @@ process()
 can be written as:
 `_ := ifElse(x>0, process(), nothing)`
 
+N - Checking regex match can be done in parallel.
+
+N - We can think of Tree as a normal extension to seq (array).
+`x: [[int]] := {9, {3}, {12} }`
+X is:
+```
+          9
+        /   \
+       3     12
+```
+`x[0]` is the root. we can have multiple roots: `x[1]` can be the second root, OR it can be interpreted as the second element of the array.
+`set(x,0,0,4)` means change 3 to 4 (and return a new reference).
+`x[0]` is 9
+`x[0,0]` is 3
+`x[0,1]` is 12 (second child of the first root.
+So we may even not need to define any new notation.
+any array can be used as a tree.
+Operations with tree:
+- add node: fn call
+- edit node: fn call
+- find node: iterate
+- delete node: fn call
+So what is `x[0]`? Is it value `3` or a sub-tree?
+`x[0]` is 3
+`x[0,]` is the tree
+`x[0,0,]` is the tree with root = 3
+so if a function needs a tree, we can send `x` or `x[0,]` or `x[0,0,]`.
+So we can say, each element inside an array other than having it's own data like a normal array cell, can have a number of children. Isn't this just like multi-D array?
+`[[int]]` is 2-D int array. `x[0][0]`
+But it is definitely confusing.
+Let's do it in std or core.
+
+N - Is it possible to somehow merge this language with docker as a built-in feature.
+So each app will be run inside a container?
+Like JVM.
+
+N - Just like the way we need to mark struct literals with a prefix, it will be helpful to prefix function literals too.
+Pro: Makes syntax simpler and also reading, parsing the code
+`x := process(x,y, (h:int)->h+1)`
+Because, when we see `(h` it can also be an expression. we don't know. So parsing becomes ambiguous.
+Maybe we can use the same notation, because struct starts with `{` and function decl with `(`.
+What about `[`? Shall we use the same to mark sequence/map literals?
+`x := [1` here, we don't know if it is a map or sequence literal.
+`x := [1:2]` this is a map literal
+`x := [1]` this is a sequence literal.
+`struct_literal := !{1,2,3}`
+`seq_literal := ![1,2,3]`
+`map_literal := !["A":1, "B":2]`
+`func_literal := !(x:int)->x+1`
+But we really dont need a prefix for seq/map literals. 
+For struct, we need it because `{` is also used for code block.
+For function, we need it because `(` is also used for expressions.
+But if we have `(`, for function decl, it is either `()` or definitely has `:` in it. So it is doable to check it.
+What about `{`? 
+```
+x := 
+{
+  1,2,3
+}
+```
+We also really don't need a prefix for struct. Because if it is a code-block, it will definitely be prefixed with `(...)->`.
+
+Y - Conver comparison part to a table.
+
 ? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
 
 ? - Add support for LLVM-IR based code in function to make bootstrapping easier.
-
-? - Is it possible to somehow merge this language with docker as a built-in feature.
-So each app will be run inside a container?
-Like JVM.
 
 ? - For generic modules with general type, we can re-use `...`:
 `T := ...`
@@ -754,38 +814,6 @@ The scheduler will start with one thread and increase/decrease number of threads
 Is it possible to achieve this without a runtime?
 We are not forced to follow go or CSP approach.
 
-? - Checking regex match can be done in parallel.
-
-N - We can think of Tree as a normal extension to seq (array).
-`x: [[int]] := {9, {3}, {12} }`
-X is:
-```
-          9
-        /   \
-       3     12
-```
-`x[0]` is the root. we can have multiple roots: `x[1]` can be the second root, OR it can be interpreted as the second element of the array.
-`set(x,0,0,4)` means change 3 to 4 (and return a new reference).
-`x[0]` is 9
-`x[0,0]` is 3
-`x[0,1]` is 12 (second child of the first root.
-So we may even not need to define any new notation.
-any array can be used as a tree.
-Operations with tree:
-- add node: fn call
-- edit node: fn call
-- find node: iterate
-- delete node: fn call
-So what is `x[0]`? Is it value `3` or a sub-tree?
-`x[0]` is 3
-`x[0,]` is the tree
-`x[0,0,]` is the tree with root = 3
-so if a function needs a tree, we can send `x` or `x[0,]` or `x[0,0,]`.
-So we can say, each element inside an array other than having it's own data like a normal array cell, can have a number of children. Isn't this just like multi-D array?
-`[[int]]` is 2-D int array. `x[0][0]`
-But it is definitely confusing.
-Let's do it in std or core.
-
 ? - Using channel for all types of comm makes it easier to mock something.
 For example if a function works with a socket, we can instead pass a sequence-backed channel for test purposes.
 We can follow this approch for every side effect (e.g. get time, get random number, ...).
@@ -814,37 +842,11 @@ Because they can be used for function output. And will be confusing with code bl
 - LLVM bindings
 - File I/O
 - Struct, Seq and map
-- Union data type
 - `...` notation for generic union
 - multi module compilation
-
-? - Just like the way we need to mark struct literals with a prefix, it will be helpful to prefix function literals too.
-Pro: Makes syntax simpler and also reading, parsing the code
-`x := process(x,y, (h:int)->h+1)`
-Because, when we see `(h` it can also be an expression. we don't know. So parsing becomes ambiguous.
-Maybe we can use the same notation, because struct starts with `{` and function decl with `(`.
-What about `[`? Shall we use the same to mark sequence/map literals?
-`x := [1` here, we don't know if it is a map or sequence literal.
-`x := [1:2]` this is a map literal
-`x := [1]` this is a sequence literal.
-`struct_literal := !{1,2,3}`
-`seq_literal := ![1,2,3]`
-`map_literal := !["A":1, "B":2]`
-`func_literal := !(x:int)->x+1`
-But we really dont need a prefix for seq/map literals. 
-For struct, we need it because `{` is also used for code block.
-For function, we need it because `(` is also used for expressions.
-But if we have `(`, for function decl, it is either `()` or definitely has `:` in it. So it is doable to check it.
-What about `{`? 
-```
-x := 
-{
-  1,2,3
-}
-```
-We also really don't need a prefix for struct. Because if it is a code-block, it will definitely be prefixed with `(...)->`.
-
-? - Conver comparison part to a table.
+Parts that we don't need:
+- Import from other sources, filtering and rename
+- Chain operator, union type
 
 ? - A notation to define singly linked list.
 It is not about simplicity, but we want to provide an easy mechanism to handle data structures with regards to immutability.
@@ -923,23 +925,35 @@ Idea: Use negative numbers to refer to elements before end.
 `[int]` sequence of int
 `(int)` list of int
 `(int)!` a write-only channel which can write list of int.
+`(int!)` a list of write-only channels which can write int.
 `[(int)]` a sequence of a list of ints.
 `((int))` a list of a list of ints.
 `[(int), string]` a map of list of int to string.
 How should we discriminate between seq literal and list literal?
 `x := [1,2,3]` this is a sequence
 `x := [1;2;3]` this is a list
-`x := [[1,2], [3,4], [5,6]]` a list of list
+`x := [[1,2], [3,4], [5,6]]` a seq of seq
 `x := [[1;2], [3;4], [5;6]]` a sequence of list
 `x := [[1,2]; [3,4]; [5,6]]` a list of sequence
 What if it has only one element?
 `x := [1]`?
 We can say, by default it is sequence. unless it has `;` at the end:
 `x := [1;]`
+What about a function which accepts a list of int?
+`x: ((int))->int := (tt: (int) ) -> tt[0]`
+`x: (int)->(int)|float` what's the output of x's type? is it a list of int? or int? (and parens are there just to prevent confusoin.
+`x: (int)->(int)|float`
+What is this? `x: (int|float)` a list of int or float.
+Maybe we should enforce a rule that a union type must use either primitive or named types.
+Because combining `|` with `()` makes reading it difficult and confusing: `t := (x:int)->(int)|float`
+Is `float` part of function output? or is it part of possible types for t?
 
-? - Write AST + expression parser to convert to RPN using shunting-yard algorithm.
 
 ? - Another helper to help decide whether it's function body or struct.
 struct/expression is defined on the same line if it's return expression.
 function body must be started from the next line.
-So if after `->` we see newline, then it's a code block. Else it's expression.
+So if after `->` we see type and newline, then it's a code block. Else it's expression.
+
+? - Tip for including predefined functions in compilation:
+`LLVMCreateMemoryBufferWithMemoryRange` create a memory buffer pointing to compiled bitcode for predefineds
+`LLVMParseBitcode` read memory buffer and create a new module.
