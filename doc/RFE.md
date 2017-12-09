@@ -939,6 +939,27 @@ What if it has only one element?
 `x := [1]`?
 We can say, by default it is sequence. unless it has `;` at the end:
 `x := [1;]`
+What about this notation?
+What about using `[T;]` notation for a list?
+`[int]` is a sequence of int
+`[int;]` is a list of int
+`t := (x:int) -> [` at this point, we know `[` is for a type.
+`x := (y:[int;]` we know y is of type `[int;]`
+`<int>` list of int
+`<int>!` a write-only channel which can write list of int.
+`<int!>` a list of write-only channels which can write int.
+`[<int>]` a sequence of a list of ints.
+`<<int>>` a list of a list of ints.
+`[<int>, string]` a map of list of int to string.
+`<int!>?` a read channel which gives you a list of write-only channels.
+suggestion: 
+- use `<int>` to indicate a single linked list and `[1;2;3]` for it's literals.
+- extend `&` to merge list and seq.
+- for single element, `[1]` is a seq and `[1;]` is a list.
+- Add slice notations for list and seq: `s[start..end]` with optional start and end.
+- explan O() complexity of index access and slices for seq and list
+
+? - Confusion between union and list:
 What about a function which accepts a list of int?
 `x: ((int))->int := (tt: (int) ) -> tt[0]`
 `x: (int)->(int)|float` what's the output of x's type? is it a list of int? or int? (and parens are there just to prevent confusoin.
@@ -957,3 +978,72 @@ So if after `->` we see type and newline, then it's a code block. Else it's expr
 ? - Tip for including predefined functions in compilation:
 `LLVMCreateMemoryBufferWithMemoryRange` create a memory buffer pointing to compiled bitcode for predefineds
 `LLVMParseBitcode` read memory buffer and create a new module.
+
+? - Can we replace generics with `...` notation?
+for primitives we can use seq/map/list
+problem 1: function expectations.
+problem 2: `...` notation works with named fields. we cannot just embed some int inside `{}` and send it to method.
+problem 3: we cannot enforce relation between data
+test criteria: stack, search, sort, binary tree, set, reverse map, filter hashmap.
+```
+T := {...} #this means every struct
+Stack := [T]
+push := (s: Stack, t: T) -> Stack
+pop := (s: Stack)->T
+search := (s: [T], x: T)->bool
+sort := (s: [T], cmp: (T,T)->bool)->[T]
+reverse := (m: [T,S])->[S,T]
+filter := (m: [T,S], filter: (T)->bool)->[T,S]
+TreeNode := {data: T, children: [TreeNode] }
+Tree := {root: TreeNode}
+```
+p1: function expectations:
+```
+T := {...}
+process := (x: T)->bool { ... }
+#here find method will need to call process in it's input.
+find := (g:T)->...
+```
+We can say that if we have `process: (x:int|float)->bool` function and `process: (x:int)->bool` function, calling `process` with `int|float` function, which is actually `int` should call the second one, not the first one. Actually, in this case, one of these two must be abstract, or else there will be a conflict. So if `int|float` function is abstract, then `int` will be called.
+p2: can we use `...` with unnamed fields?
+`T := {int...}`
+`process := (x:T)->x.0`
+But then, if we call process with `{a:int, b:int, c:int}` what should happen? We can throw compiler error. Because we expect one int field but we have three. If you want to be exact then: `T := {a:int...}` then it would be fine.
+So when using `{int...}` this means the target type must have only one `int` field, else compiler will complain.
+problem 3: constraints. Maybe we should do it in code.
+`T := {int...}`
+`process := (x:T, y:T)->T` 
+The above does not imply that x and y must be of the same type. As long as they have an `int` it should be fine.
+suggestion: remove phantom types and generics and extend `...` notation to include anonymous fields, state the processing rule for abstract functions if there are multiple candidates (e.g. abstract for `int|float` and normal function for `int`).
+
+? - Maybe we should add prefixes to make reading code and writing compiler easier.
+`x := (y:(int)` at this point, we don't know if y is a func that accpets ints or it is a list of int.
+`t := (x:int) -> {` at this point, we don't know if function returns a struct literal or `{` is beginning of a type definition.
+`t := (x:int) -> [` at this point, we don't know if function returns seq of something, or a seq literal.
+`t := (x:int) -> {x}`
+`t := (x:int) -> {int,int}...`
+struct literal ~ code block
+list ~ function input
+seq type ~ seq literal
+1. struct literal ~ code block
+one solution: Literals should be prefixed with `.` or `_`. For function and struct and sequence and list.
+This would solve most of problems except between function and list (To solve this, we should change list notation).
+If we change notation for list, we won't need prefix for function literal.
+```
+f := _{10,20,30} #this makes sense because _ is a placeholder instead of which we can use any type
+f := Point{10,20,30}
+IntS := [int]
+h := _[1,2,3] #can we use a type here? maybe. to explicitly state it's type
+h := IntS[1,2,3]
+t := _[1;2;3] #also here, same as seq
+IntL := <int>
+t := IntL[1;2;3]
+```
+So each literal (struct, sequence and list), should be prefixed by it's type or `_` to denote it should be inferred from context.
+So if we have a function which expects `{int...}` and I have an int x, I can simply write: `_{x}` to convert it to an untyped struct literal.
+suggestion: 
+Extend `_` notation to be place holder for literal type for compound literals
+use `_` prefix for list, seq and struct literals. It can be replaced with a real type to indicate their type.
+
+? - For abstract functions, it should be possible to set `{}` on the same line
+`process := (x: T)->bool { ... }`
