@@ -953,11 +953,15 @@ What about using `[T;]` notation for a list?
 `[<int>, string]` a map of list of int to string.
 `<int!>?` a read channel which gives you a list of write-only channels.
 suggestion: 
-- use `<int>` to indicate a single linked list and `[1;2;3]` for it's literals.
+- use `<int>` to indicate a single linked list and `<1,2,3>` for it's literals.
 - extend `&` to merge list and seq.
-- for single element, `[1]` is a seq and `[1;]` is a list.
 - Add slice notations for list and seq: `s[start..end]` with optional start and end.
 - explan O() complexity of index access and slices for seq and list
+
+```
+x: <int> := <1,2,3>
+x<0>? no this will be confused with math comparison
+```
 
 ? - Confusion between union and list:
 What about a function which accepts a list of int?
