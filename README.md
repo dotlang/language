@@ -358,7 +358,7 @@ Lambda or a function literal is used to specify value for a binding of function 
 
 You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normal call and replace the lambda inputs with `_` (Example 8). You can use `:Type` after `_` when creating lambda, to remove ambiguity (Example 9).
 
-If lambda is assigned to a variable, you can invoke itself from inside (Example 8). This can be used to implement iteration loops. Note that you cannot call a lambda at the point of declration. So `r := (x:int)->x+1(100)` is invalid.
+If lambda is assigned to a variable, you can invoke itself from inside (Example 8). This can be used to implement iteration loops. Note that you cannot call a lambda at the point of declration. So `r := (x:int)->x+1(100)` is invalid. Note that you cannot invoke a lambda at the point of declaration. You must declare it first and then invoke it.
 
 **Syntax**: `(name1: type1, name2: type2, ...) -> output_type { body }`
 
