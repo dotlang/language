@@ -116,7 +116,7 @@ These rules are highly advised but not mandatory.
 
 1. Indentation must be done using spaces, not tabs. Using 4 spaces is advised but not mandatory.
 2. You must put each statement on a separate line. 
-3. Naming: `SomeDataType`, `someLambdaBindings`, `some_simple_binding`, `func_arg_name`, `my_package_dir`, `my_modue_file`.
+3. Naming: `SomeDataType`, `someLambdaBindings`, `someFunction`, `any_simple_binding`, `my_package_dir`, `my_modue_file`.
 4. Braces must appear on their own line (except for abstract functions). For lambdas that are a single expression you should omit braces.
 5. You can use `0x` prefix for hexadecimal numbers and `0b` for binary.
 6. You can use `,` as digit separator in number literals.
