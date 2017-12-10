@@ -746,6 +746,100 @@ We also really don't need a prefix for struct. Because if it is a code-block, it
 
 Y - Conver comparison part to a table.
 
+N - We can say if right side of `:==` is a call on a function literal, it will be implemented as a thread. otherwise it will be a lightweight thread.
+when we start a thread, we need a thread_id to later access, pause and communicate with the thread. 
+I think all of stop, pause, cancel, ... can be handled by channels.
+Golang does not let developer decide whether it will be a thread or a goroutine.
+We can say, if you call dispose on output of `:==` the corresponding thread will be terminated.
+The scheduler will start with one thread and increase/decrease number of threads based on the load, cpu usage and number of lightweight threads.
+
+N - Shall we make untyped structs more explicit?
+`point1 := {100, 200} #untyped struct`
+`point1 := {100, 200} #untyped struct`
+Because they can be used for function output. And will be confusing with code block.
+`process := (x:int) -> ~{x, 100, 200}`
+`process := (x:int) -> !{x, 100, 200}`
+
+N - Confusion between union and list:
+What about a function which accepts a list of int?
+`x: ((int))->int := (tt: (int) ) -> tt[0]`
+`x: (int)->(int)|float` what's the output of x's type? is it a list of int? or int? (and parens are there just to prevent confusoin.
+`x: (int)->(int)|float`
+What is this? `x: (int|float)` a list of int or float.
+Maybe we should enforce a rule that a union type must use either primitive or named types.
+Because combining `|` with `()` makes reading it difficult and confusing: `t := (x:int)->(int)|float`
+Is `float` part of function output? or is it part of possible types for t?
+
+N - Make sure `..` can accept vars too.
+If it is literal, compiler will generate code. Else runtime.
+
+N - What should be name of a binding which is union of value and function?
+`U1 := int | (int)->int`
+`handlerData: U1 := getData()`
+U1 cannot be invoked. So it should be named like value binding.
+
+N - If we have a union of two function types with same signature, can we cann the union?
+No. Because parts of the union must be different.
+`TT := (int)->int|(int)->int`???
+It's not a valid type for union.
+Also, arg name does not affect type of a function.
+
+Y - Maybe we should add prefixes to make reading code and writing compiler easier.
+`x := (y:(int)` at this point, we don't know if y is a func that accpets ints or it is a list of int.
+`t := (x:int) -> {` at this point, we don't know if function returns a struct literal or `{` is beginning of a type definition.
+`t := (x:int) -> [` at this point, we don't know if function returns seq of something, or a seq literal.
+`t := (x:int) -> {x}`
+`t := (x:int) -> {int,int}...`
+struct literal ~ code block
+list ~ function input
+seq type ~ seq literal
+1. struct literal ~ code block
+one solution: Literals should be prefixed with `.` or `_`. For function and struct and sequence and list.
+This would solve most of problems except between function and list (To solve this, we should change list notation).
+If we change notation for list, we won't need prefix for function literal.
+```
+f := _{10,20,30} #this makes sense because _ is a placeholder instead of which we can use any type
+f := Point{10,20,30}
+IntS := [int]
+h := _[1,2,3] #can we use a type here? maybe. to explicitly state it's type
+h := IntS[1,2,3]
+h := [int][1,2,3]
+t := _<1,2,3> #also here, same as seq
+IntL := <int>
+t := IntL<1,2,3>
+t := <int><1,2,3>
+```
+So each literal (struct, sequence and list), should be prefixed by it's type or `_` to denote it should be inferred from context.
+So if we have a function which expects `{int...}` and I have an int x, I can simply write: `_{x}` to convert it to an untyped struct literal.
+suggestion: 
+Extend `_` notation to be place holder for literal type for compound literals
+use `_` prefix for list, seq and struct literals. It can be replaced with a real type to indicate their type.
+But still it is not context-free to decide whether something is a litearl!
+advantage of this: if we want to send a typed compound literal to a function, we can do it inline.
+`process(CustData[1,2,3])`
+rather than: `x: CustData := [1,2,3]` and then `process(x)`
+If you see identifier then `(` its a function call.
+identifier, then `[` seq literal
+identifier, then `<` list literal.
+What about these?
+`{int,int}{1,2}` Does it make sense?
+We have this notation for structs. `p := Point{10,20}` because we sometimes need to specify type of a struct literal.
+The reason we are using this notation is to be consistent with structs. but what if we remove that one too?
+Then maybe we can use `_` everywhere.
+`p:Point := _{10,20}` infer the type of the struct literal
+`p := _{10,20}` infer type. which means its untyped struct
+`p: [int] := _[1,2,3]`
+`p: <int> := _<1,2,3>`
+Then what happens when we want to update a struct? (e.g. point with x and y)
+`new_point: Point := oldPoint{y:=100}`
+`new_point: Point := _{old_point, y := 100}` this acts like embedding but in values. So we embed values of old_point, and later we update `y` to some other value. we can embed multiple elements here as long as they do not interfer.
+So the rule will be `name: type := _{ binding1, binding2, x := 100, y:=200, z := binding1.z+1}`
+suggestion: 
+- Every non-primitive data litearl (seq, list, map, struct) must be prefixed with `_`.
+- If you need to, explicitly specify type of a struct binding.
+- To update a struct use :`new := _{old, field := value}` notation.
+
+
 ? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
 
 ? - Add support for LLVM-IR based code in function to make bootstrapping easier.
@@ -772,13 +866,6 @@ What we don't need?
 - Chain operator
 - Operators: `//`, `..`, `...`, `=>`
 
-? - Make sure `..` can accept vars too.
-If it is literal, compiler will generate code. Else runtime.
-
-? - What should be name of a binding which is union of value and function?
-`U1 := int | (int)->int`
-`handlerData: U1 := getData()`
-
 ? - Even if at some point we need a dedicated build system, we can use dotLang to describe the build process and steps.
 
 ? - The compiler will use `.build` directory for cached compilations, output, intermediate code, temp files, ...
@@ -803,13 +890,6 @@ Most of Apache projects
 Couch DB
 Kafka
 
-? - We can say if right side of `:==` is a call on a function literal, it will be implemented as a thread. otherwise it will be a lightweight thread.
-when we start a thread, we need a thread_id to later access, pause and communicate with the thread. 
-I think all of stop, pause, cancel, ... can be handled by channels.
-Golang does not let developer decide whether it will be a thread or a goroutine.
-We can say, if you call dispose on output of `:==` the corresponding thread will be terminated.
-The scheduler will start with one thread and increase/decrease number of threads based on the load, cpu usage and number of lightweight threads.
-
 ? - Green threads needs a runtime (scheduler, threads, assignment, queues, ...).
 Is it possible to achieve this without a runtime?
 We are not forced to follow go or CSP approach.
@@ -818,7 +898,7 @@ We are not forced to follow go or CSP approach.
 For example if a function works with a socket, we can instead pass a sequence-backed channel for test purposes.
 We can follow this approch for every side effect (e.g. get time, get random number, ...).
 
-- Shall we prohibit calling a function literal at the point of declaration?
+? - Shall we prohibit calling a function literal at the point of declaration?
 ```
 result := (x:int)->x+1(100) #store 101 into result
 ```
@@ -830,13 +910,6 @@ result := fn(100) #store 101 into result
 - Shall we add shift right and left?
 - What about power?
 
-? - Shall we make untyped structs more explicit?
-`point1 := {100, 200} #untyped struct`
-`point1 := {100, 200} #untyped struct`
-Because they can be used for function output. And will be confusing with code block.
-`process := (x:int) -> ~{x, 100, 200}`
-`process := (x:int) -> !{x, 100, 200}`
-
 
 ? - The absolute minimum that I need to write a compiler in dot:
 - LLVM bindings
@@ -847,6 +920,15 @@ Because they can be used for function output. And will be confusing with code bl
 Parts that we don't need:
 - Import from other sources, filtering and rename
 - Chain operator, union type
+
+? - Another helper to help decide whether it's function body or struct.
+struct/expression is defined on the same line if it's return expression.
+function body must be started from the next line.
+So if after `->` we see type and newline, then it's a code block. Else it's expression.
+
+? - Tip for including predefined functions in compilation:
+`LLVMCreateMemoryBufferWithMemoryRange` create a memory buffer pointing to compiled bitcode for predefineds
+`LLVMParseBitcode` read memory buffer and create a new module.
 
 ? - A notation to define singly linked list.
 It is not about simplicity, but we want to provide an easy mechanism to handle data structures with regards to immutability.
@@ -953,35 +1035,15 @@ What about using `[T;]` notation for a list?
 `[<int>, string]` a map of list of int to string.
 `<int!>?` a read channel which gives you a list of write-only channels.
 suggestion: 
-- use `<int>` to indicate a single linked list and `<1,2,3>` for it's literals.
+- use `<int>` to indicate a single linked list and `<1,2,3>` for it's literals. `[]` for access.
 - extend `&` to merge list and seq.
 - Add slice notations for list and seq: `s[start..end]` with optional start and end.
 - explan O() complexity of index access and slices for seq and list
-
 ```
 x: <int> := <1,2,3>
 x<0>? no this will be confused with math comparison
 ```
-
-? - Confusion between union and list:
-What about a function which accepts a list of int?
-`x: ((int))->int := (tt: (int) ) -> tt[0]`
-`x: (int)->(int)|float` what's the output of x's type? is it a list of int? or int? (and parens are there just to prevent confusoin.
-`x: (int)->(int)|float`
-What is this? `x: (int|float)` a list of int or float.
-Maybe we should enforce a rule that a union type must use either primitive or named types.
-Because combining `|` with `()` makes reading it difficult and confusing: `t := (x:int)->(int)|float`
-Is `float` part of function output? or is it part of possible types for t?
-
-
-? - Another helper to help decide whether it's function body or struct.
-struct/expression is defined on the same line if it's return expression.
-function body must be started from the next line.
-So if after `->` we see type and newline, then it's a code block. Else it's expression.
-
-? - Tip for including predefined functions in compilation:
-`LLVMCreateMemoryBufferWithMemoryRange` create a memory buffer pointing to compiled bitcode for predefineds
-`LLVMParseBitcode` read memory buffer and create a new module.
+Don't forget , list literals should be prefixed with `_` too.
 
 ? - Can we replace generics with `...` notation?
 for primitives we can use seq/map/list
@@ -1004,7 +1066,7 @@ Tree := {root: TreeNode}
 p1: function expectations:
 ```
 T := {...}
-process := (x: T)->bool { ... }
+process := (x: T)->bool { ... } #this is an abstract function
 #here find method will need to call process in it's input.
 find := (g:T)->...
 ```
@@ -1019,35 +1081,66 @@ problem 3: constraints. Maybe we should do it in code.
 `process := (x:T, y:T)->T` 
 The above does not imply that x and y must be of the same type. As long as they have an `int` it should be fine.
 suggestion: remove phantom types and generics and extend `...` notation to include anonymous fields, state the processing rule for abstract functions if there are multiple candidates (e.g. abstract for `int|float` and normal function for `int`).
+We can use notation: `T := ...` to have a union of all possible types (like `void*` or `interface{}`). 
+So the only remaining problem: We cannot enforce type relationships. Type safety.
+For example, someone can push int to a stack of string.
+How can we say that types should match?
+`push := (x: T, s: Stack)` No. It cannot be done here. should be handled in the code.
+advantage: We no longer need that notation for importing modules. The module file naming becomes easier.
+disadvantage: We cannot have type safe generic code.
+advantage: This can also handle primitives, untyped structs and state function expectations.
+Does this make sense? Write some real-world code to see if it makes sense to write code.
+The sample should incorporate all features (different types, function expectations, typed and untyped structs) and different use cases (stack, mergeSort, tree, filterMap, ...)
 
-? - Maybe we should add prefixes to make reading code and writing compiler easier.
-`x := (y:(int)` at this point, we don't know if y is a func that accpets ints or it is a list of int.
-`t := (x:int) -> {` at this point, we don't know if function returns a struct literal or `{` is beginning of a type definition.
-`t := (x:int) -> [` at this point, we don't know if function returns seq of something, or a seq literal.
-`t := (x:int) -> {x}`
-`t := (x:int) -> {int,int}...`
-struct literal ~ code block
-list ~ function input
-seq type ~ seq literal
-1. struct literal ~ code block
-one solution: Literals should be prefixed with `.` or `_`. For function and struct and sequence and list.
-This would solve most of problems except between function and list (To solve this, we should change list notation).
-If we change notation for list, we won't need prefix for function literal.
-```
-f := _{10,20,30} #this makes sense because _ is a placeholder instead of which we can use any type
-f := Point{10,20,30}
-IntS := [int]
-h := _[1,2,3] #can we use a type here? maybe. to explicitly state it's type
-h := IntS[1,2,3]
-t := _[1;2;3] #also here, same as seq
-IntL := <int>
-t := IntL[1;2;3]
-```
-So each literal (struct, sequence and list), should be prefixed by it's type or `_` to denote it should be inferred from context.
-So if we have a function which expects `{int...}` and I have an int x, I can simply write: `_{x}` to convert it to an untyped struct literal.
-suggestion: 
-Extend `_` notation to be place holder for literal type for compound literals
-use `_` prefix for list, seq and struct literals. It can be replaced with a real type to indicate their type.
+
+
 
 ? - For abstract functions, it should be possible to set `{}` on the same line
 `process := (x: T)->bool { ... }`
+
+? - How shall we implement dynamic dispatch in case of unions?
+int(x) if x is bool, call int|1 because id of bool is 1
+sometimes, we do not know id of x. x has a static id but it can also have dynamic id
+
+so assume we have int(g:float) and int(p:bool)
+when we call int(float_or_bool) shall we replace it with int|1 o int|2?
+(assume id of float is 1 and id if bool is 2)
+
+solution 1: replace int(float_or_bool) with int|99 where 99 is id of float|bool type.
+If that function already exists, then fine. If it does not exist but we have int(bool) and int(float) write a small llvm ir code
+like this:
+```
+int|99 := (x: bool|float)
+{
+	if ( realType(x) == int ) return int|1
+	else return int|2	
+}
+```
+And we can make it inline, so it will have minimum overhead.
+The details of implementation will depend on memory layout for non-primitive variables.
+One proposal: every reference (non-primitive) will have a prefix which contains these data:1
+1. dynamic type
+2. size in bytes
+3. reference count
+```
+int|99 := (x: bool|float)
+{
+  load %0, *x
+  cmp %0, INT_CODE
+  je int_call
+  call int|FLOAT
+  ret
+int+call:
+  call int|BOOL
+  ret
+}
+```
+so in more complicated cases this would be something like this:
+```
+int|99|22|88 := (x:int|float, y:string|char|bool) -> int
+{
+  if type(x) = int and type(y) = char: int|22|99(x,y)
+  else if type(x) = float and type(y) = bool: int|11|33(x,y)
+  else ... 
+}
+```
