@@ -839,6 +839,20 @@ suggestion:
 - If you need to, explicitly specify type of a struct binding.
 - To update a struct use :`new := _{old, field := value}` notation.
 
+Y - For abstract functions, it should be possible to set `{}` on the same line
+`process := (x: T)->bool { ... }`
+
+
+
+
+
+
+========================
+
+
+
+
+
 
 ? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
 
@@ -1091,12 +1105,146 @@ disadvantage: We cannot have type safe generic code.
 advantage: This can also handle primitives, untyped structs and state function expectations.
 Does this make sense? Write some real-world code to see if it makes sense to write code.
 The sample should incorporate all features (different types, function expectations, typed and untyped structs) and different use cases (stack, mergeSort, tree, filterMap, ...)
+pro: With modules, we will need a lot of renames.
+```
+SetElement := {...}
+Set := [SetElement]
+compare: (SetElement,SetElement)->int := ...  #this notation is better for abs func. we don't need arg names for abs func
+create := (s: [SetElement])-> Set ...
+add := (s: Set, d: SetElement) -> s 
+{
+  duplicate := compare(d, s[0])
+}
+...
+g: Set := []
+h := add(s, 12)
+```
+con: Without generic modules, its not obvious what functions are expected.
+The other way around: Can we replace `...` notation with generics?
+`T := {int, ...}` union of all types that have only one int field.
+can be replaced with absfunc.
+`getData: (T)->int`
+All types that embed Shape:
+`T := {Shape,...}`
+`getShape: (T)->Shape`
+And this notation is more flexible (although may need more code and boilerplate).
+all types that have `name:string`:
+`T := {name:string,...}`
+replace with absfunc:
+`getName: (T)->string`
+So you can explain the interface both in terms of operations and data using absfunc.
+And due to the definitions that we have, you can only use absfunc if it involves a generic type. Or else, any call to it will result in runtime error. 
+counter proposal: use generic modules, remove `...`, use absfunc notation.
+problem: How can we have a sequence of different shapes?
+If I use `T := {int...}` How can I access that int field inside a binding of type T?
+There is currently no way to do that because I don't know the actual type. Except if I use a function to do that.
+```
+T := {int...}
+getData:(T)->int := ...
+```
+So whenever using `...` notation, there should be an absfunc to provide access to that fixed part.
+So, `...` notation is just for documentation and compiler enforcement. We cannot use that fields unless a function is provided for us. The only advantage of `...` is to have a sequence/list/map of multiple types.
+Can we replace `...` with: `all types that provide this absfunc?`
+```
+#abstract type (union of every type)
+T := ...
+#this is a filter for T, so not every type can be inside T but only those types that have this function defined.
+getData:(T)->int := ...
+```
+Example: Implementing a Set of shapes (circle, square, triangle, ...)
+```
+#set[t].dot
+T := ...
+getShape: (T)->Shape := ...
+equals: (T,T)->bool := ...
+Set := [T]
+add := (s: Set, item: T) -> Set 
+{
+	...
+}
+# main.dot
+_ := @{"set[t]"}(Circle)
+_ := @{"set[t]"}(Square)
+_ := @{"set[t]"}(Triangle)
+#now we have T which can be anything, we must have defined getShape and equals for last three types
+#so, can we say when we import multiple instances of the same module, abstract elements are not regenerated? No.
+#importing set for Circle, will re-write T everywhere with Circle.
+```
+We have three tools: Generic modules, abstract types and functions and polymorphic union notation.
+The best case is we can replace/reduce them with/to a single tool which is good enough to provide major functionalities of all three.
+major functionalities: generics, constraints, polymorphic types.
+tools: generic modules, absfunc, abstype, `{...}`.
+Can we achieve polymorphic types without generics?
+```
+T := ...
+getShape: (T)->Shape := ...
+Shapes := [T]
+```
+Replacing `{Shape...}` with abs func, makes compiler checks difficult.
+Shall we remove abs func? 
+suggestion: Abs funcs can be only used inside generic modules and must involve the generic type, so compiler can check them when the module is imported.
+Now, can we replace generics with abs-type and abs-func?
+We can have polymorphic data types. we cannot have type-safe at compile time.
+```
+#set.dot
+T := ... #T can be anything (primitive, struct, ...) 
+T := {...} #T can be any struct
+T := [...] #T can be any seq
+T := [..., ...] #T can be any map.
+T := [int, ...] #T can be any map with int as key
+#below two functions reduce the set of possible types in union of T.
+getShape: (T)->Shape := ...
+equals: (T,T)->bool := ...
+Set := [T]
+add := (s: Set, item: T) -> Set 
+{
+    ...
+}
+# main.dot
+_ := @{"set[t]"}(Circle)
+_ := @{"set[t]"}(Square)
+_ := @{"set[t]"}(Triangle)
+```
+The concept of abs-func and abs-type are both confusing and difficult to reason about. Nothing prevents the programmer to define some of them in another separate module. Then how will they be applied? What will be scope of their effect in filtering possible types for an abs-type?
+The `{int...}` method is better because it has a single point of declaration.
+What we eliminate abs-func?
+Generics will have no way to indicate their expected functions. No problem. We accept that.
+So we have: Generic modules, and `{int...}` notation to define a polymorphic sum type.
+Shall we have `...` for seq and map too?
+Maybe we can use `_` instead.
+`T := {_}` any struct
+`T := {x:int, _}` any struct with `x:int`
+`T := [_]` any sequence
+`T := [_,_]` any map
+`T := [int, _]` any map where key is int and value can be any type.
+`T := _` union of all types.
+`T := {_} | [_]` union of all structs and all sequences
+Then, how can we enforce types in generic modules?
+```
+#stack[t].dot 
+T := _ #you can have stack of any type
+Stack := [T]
+push := (s: Stack, t: T) -> ...
+#main.dot
+_ := @{"stack[t]"}(int)
+```
+The fact that we "re-write" types in generic modules has a conflict with the polymorphic union notation.
+If we replace, then what's use of having `T := _`?
+Another solution: Get rid of generics, provide tools to check type safety at runtime. Only have generic types.
+proposal: Remove generic modules and abs-funcs. Introduce polymorphic-union-type and core functions to check type safety.
+```
+#stack.dot 
+T := _ #you can have stack of any type
+Stack := [T] #you can store anything inside a stack
+push := (s: Stack, t: T) -> ...
+#main.dot
+_ := @{"stack"}
+```
+or:
+`paint := (item: {Shape, _})->... #this can accept any struct that embeds a shape.`
+Does this make sense? Write some real-world code to see if it makes sense to write code.
+The sample should incorporate all features (different types, function expectations, typed and untyped structs) and different use cases (stack, mergeSort, tree, filterMap, ...)
 
-
-
-
-? - For abstract functions, it should be possible to set `{}` on the same line
-`process := (x: T)->bool { ... }`
 
 ? - How shall we implement dynamic dispatch in case of unions?
 int(x) if x is bool, call int|1 because id of bool is 1
