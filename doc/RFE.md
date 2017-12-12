@@ -1266,11 +1266,105 @@ So if a module has `T := {Shape, ...}` the functions can make calls for function
 If we call `process(tvar.Shape)` then `process(Shape)` will be called.
 If we call `process(tvar)` then `process(Circle)` will be called (if tvar is a Circle).
 Now, every type that embeds Shape, must have `process` defined. If they don't? Compiler error (?)
-
-
+Let's have this rule: If you call `process(tvar)` and type of `tvar` is `{Shape, ...}` then you must have at least `process(Shape)` defined. and every type that embeds `Shape` must have this function defined.
+We can use concept of abs-func not as an interface definition, but just as a normal and simple place-holder. like `...` in perl. So it means, I know I have to have this function, but in runtime, I am almost sure it won't be called. If it got called throw a runtime error.
+So, if we have `process(Shape)` only, and someone calls `process(tvar)` where type of tvar is `{Shape,...}` but it contains a Circle, what should happen? Runtime will call `process(Circle)` because tsvar's type is Circle.
+If we have `process(int|float)` and someone calls `process(int_var)` then what should happen?
+WE can say, `process(int|float)` will be compiled to two functions. `process(int)` and `process(float)`. As a result, we cannot have `process(int)` custom defined.
+Similarly, if we have `process({Shape,...})` we cannot define process for Circle.
+But if we have `process(Shape)` we can have `process(Circle)`.
+What about non-structs?
+How can we define a sequence of multiple possible types?
+Extending this notation to seq/map and list?
+How can I define a map of int to anything? `T := [int, ...]`
+And how can I extract something from this map? 
+`x:... := tvar[1]` ? 
+If we return back to template modules, we will loose the benefit of a polymorphic data structure where we can have a seq of all Shapes.
+What about structs?
+`T := [{Shape,...}]`
+A real world example: Compiler with an AST. We can have different types of AST. Base type is AST, but we have AddNode which embeds AST and some additional data. `ShiftRightNode := {AST, value: int}` ...
+Now, we want to have a list of ASTs in the code. and call `generate` on each one of them. This should be redirected to different versions of generate function based on AST type.
+```
+AST := {...}
+AddAST := {AST, left: string, right: string}
+SubAST := {AST, left: string, right: string}
+compile := (x: AddAST) ...
+compile := (x: SubAST) ...
+items: [{AST, ...}] := parseModule(...)
+forEach(items, (x: {AST, ...})->compile(x))
+#another way to implement, which is not as clean as above
+Compiler := (x: {AST, ...})->string
+compiler: [ASTType, Compiler] = buildCompilers()
+items: [{AST, ...}] := parseModule(...)
+forEach(items, (x: {AST, ...})->compile(compilers[x.type]))
+```
+Let's limit this notation to structs only. If you need something more, write a typed function for that purpose (e.g filtering a map).
+How can we write a map/filter function?
+`T := ...`
+`filter := (x: [T], f: (T)->bool)->[T]`
+`map := (x: [T], f:(T)->T)->[T]`
+We either should accept the notation of `interface{}` or `void*` or `anything`. OR We have to have a template module system.
+The `anything` notation is stronger, because we can do more things with it, but it's also more complicated.
+Template modules, is simpler but less powerful/expressive.
+What if we allow polymorphic union notation only when importing a template module?
+So inside tempalted module, everything looks normal.
+When using it, we just use types and functions. But when importing, we pass a type builder (`{Shape, ...}`).
+Why not have both? A template module which you can import with any type and a notation to define a dynamic union of a set of types based on criteria.
+The template module, defines the generic type and some abs-func for it, which determine expected interface from outside world. When you import it, the abs-funcs should be replaced with existing functions with the same name and signature.
+Generics is when we want to have a single implementation for different types.
+But if we need multiple impl for multiple types, we use sum types.
+Can't we replace abs-func with inputs of the function? That makes writing code a bit more difficult, but we don't need to define abs-func then. But for data, it's good.
+`process := (x:[int, {Shape,...}])->int`
+input to process is a map of int, to anything that embeds a Shape.
+These two concepts are really inter-related. Generic modules can define the fields that their type should include.
+`{Shape, ...}` also indicates that.
+The point is, generic module will be imported with a single type.
+Now how can we have a stack for all shapes?
+```
+#stack[t].dot
+T := ...
+push := ...
+pop := ...
+#main.dot
+_ := @{"stack[t]"}({Shape, ...})
+```
+q: Can/shall we extend `...` notation to non-struct types?
+q: How can we implement the compiler example now?
+```
+AST := {...}
+AddAST := {AST, left: string, right: string}
+SubAST := {AST, left: string, right: string}
+compile := (x: AddAST) ...
+compile := (x: SubAST) ...
+items: [{AST, ...}] := parseModule(...)
+forEach(items, (x: {AST, ...})->compile(x))
+```
+So: `...` when we want a single type represent multiple types.
+generics: when we want single imp work with different types.
+If a generic Set module expects a `equals` function pointer, and we have multiple functions with same name but different types, when importing `${"set[t]"}(int)` it will translate to expecting: `equals: (int,int)->bool`. So only passing `equals` as an argument when working with the data is enough.
+We can combine `...` and generics, for example when we want to have a Stack of Shapes.
+q: Can we extend `...` to other types? e.g. seq/map/list/primitive?
+`...` means union. For primitives, we can write `T := ...` in a generic module, which means `T` can be specified anything.
+But outside generics, just write `int|char|string|bool|float`.
+For map/seq?
+`{Shape, ...}` means union of all types that embed Shape.
+`[Shape, ...]` means what? sequence of all types that embed Shape?
+No. Because `...` is tied to "embed" concept, it works only with struct.
+But it can be combined into map/seq.
+Do we need such a thing for map/seq which does not use embeds concept?
+I don't think so. 
+`{X,Y,Z,...}` means union of all struct types that embeds all three of X, Y and Z.
 
 ? - q: can we have `process(int|float)` and `process(int)`? 
 This can be useful for specialization.
+In this case, calling `process` with `int` will call the second item.
+What should happen if we call `process` with `int|float` binding which holds an int?
+The real question is: Will we dispatch a function call based on the static type of a binding (e.g. `int|float`) or based on it's dynamic type (e.g. `int`).
+Note that the dynamic type can never be `A|B`. 
+What about this?
+`process := (x: {...})->...`
+`process := (x: Shape)->...`
+
 
 
 
