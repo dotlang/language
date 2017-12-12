@@ -1354,6 +1354,9 @@ But it can be combined into map/seq.
 Do we need such a thing for map/seq which does not use embeds concept?
 I don't think so. 
 `{X,Y,Z,...}` means union of all struct types that embeds all three of X, Y and Z.
+Is this a valid type? `{...}`. No. It shouldn't be. Because it does not have any useful information.
+If we have `T := {Shape}` inside generic module, we can import it with `Circle` or `Triangle` or `{Shape, ...}`.
+If we have a variable of type `{Shape, ...}` Can we access `x.Shape`?
 
 ? - q: can we have `process(int|float)` and `process(int)`? 
 This can be useful for specialization.
