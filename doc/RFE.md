@@ -1243,7 +1243,36 @@ _ := @{"stack"}
 or:
 `paint := (item: {Shape, _})->... #this can accept any struct that embeds a shape.`
 Does this make sense? Write some real-world code to see if it makes sense to write code.
-The sample should incorporate all features (different types, function expectations, typed and untyped structs) and different use cases (stack, mergeSort, tree, filterMap, ...)
+The sample should incorporate all features (different types, function expectations, typed and untyped structs) and different use cases (stack, mergeSort, tree, filterMap, ...).
+Relying on a set of functions as some kind of criteria is fragile because it can be exetended very easily and will not be obvious to the reader. We should rely on data, because type definition and declaration is a centralised piece of code.
+So the idea of abs-func is not good. But abs-type is doable. 
+problem1: How can I have generic container? or map function? or generic search/sort/filter?
+problem2: How can I specify my expectation for a type? e.g. when I have a type like `{Shape, _}`?
+problem3: Will this affect performance?
+What do we do in Java's generics? We specify `T` generic arg, and in this case, we cannot asume anything about it.
+But if we say `T extends Shape` it means T has data and operations of Shape.
+Similarly, if we say `T := {Shape, ...}` it means type T will embed a Shape. But this only is about data. It doesn't translate to functions. Because the rule of dynamic dispatch is a call to `process(Circle)` will not be forwarded to `procesS(Shape)` if it's not explicitly forwarded.
+So if I have `T := {Shape, ...}` in my code and I have `paint(Shape)` function. I cannot call `paint` on type T's bindings, because it may not be forwarded.
+So if we have:
+`Shape := {...}`
+`Circle := {Shape, ...}`
+`process := (s: Shape)->int ...`
+calling `process(c)` where c is a Circle, if we don't have `process(Circle)` will call process(Shape).
+This is basically multiple inheritance and can be difficult to dispatch unambiguously. but can be decided at compile time.
+But having polymorphic types we can write:
+`process := (s: {Shape,...})->int...`
+Inside above function, we can have access to `s.Shape`.
+So if a module has `T := {Shape, ...}` the functions can make calls for functions defined for Shape. By calling `process(tvar.Shape)`. Now, if circle has it's own process, what should happen?
+If we call `process(tvar.Shape)` then `process(Shape)` will be called.
+If we call `process(tvar)` then `process(Circle)` will be called (if tvar is a Circle).
+Now, every type that embeds Shape, must have `process` defined. If they don't? Compiler error (?)
+
+
+
+? - q: can we have `process(int|float)` and `process(int)`? 
+This can be useful for specialization.
+
+
 
 
 ? - How shall we implement dynamic dispatch in case of unions?
