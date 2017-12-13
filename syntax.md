@@ -87,3 +87,15 @@ Lambda             = PrimaryExpression "(" ( PrimaryExpression | "_" )* ")"
 SelectTerm         = PrimaryExpression "?" | PrimaryExpression "!" PrimaryExpression | 
                      "[" PrimaryExpression+ "]" ("?" | "!" "[" PrimaryExpression+ "]" )
 ```
+
+### Implementation Notes
+
+1. All functions that have inputs of sum-types, will be repeated for each matching type by the compiler. When calling that function, the one which matches dynamic type of the union binding will be matched.
+So `process(int|float)->string` will be compiled into two functions:
+`process(int)->string` and `process(float)->string`
+And when it is called like `process(int_var)` or `process(float_var)` the corresponding function will be invoked which can be determined at compile time.
+If it is called with `process(int_or_float_var)` compiler will inject a piece of code to determine whether the binding is int or float, then will call corresponding function.
+
+2. Each function will be mangled with type of it's inputs. So `process(int)` will become `process|1821` where `1821` is typecode of `int`. Each type will have it's own type-code which depends on it's name and point of declaration.
+
+3. Handling access to common parts: If we have `process := (x: {int,...})->int`, the expression `x.0` inside process can refere to different offsets. But compiler will generate the function for all matching types. So it can use appropriate offset when compiling `x.0` for every different type.
