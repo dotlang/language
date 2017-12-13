@@ -1152,6 +1152,21 @@ result := fn(100) #store 101 into result
 ```
 Y - Shall we add shift right and left?
 
+Y - q: can we have `process(int|float)` and `process(int)`? no.
+This can be useful for specialization.
+In this case, calling `process` with `int` will call the second item.
+What should happen if we call `process` with `int|float` binding which holds an int?
+The real question is: Will we dispatch a function call based on the static type of a binding (e.g. `int|float`) or based on it's dynamic type (e.g. `int`).
+Note that the dynamic type can never be `A|B`. 
+What about this?
+`process := (x: {...})->...`
+`process := (x: Shape)->...`
+If we have `process(int|float)` in fact we have two functions: `process(int)` and `process(float)`. So manually adding `process(int)` will cause trouble and ambiguity in calling the function.
+
+
+
+
+
 
 ========================
 
@@ -1372,21 +1387,12 @@ At 18:
 If we have a variable of type `()->int|()->float` can we call it and store result in `int|float`?
 If we have `(int)->int|(float)->float` can we call it with `int|float` and store result in `int|float`?
 These make sense.
-
-? - q: can we have `process(int|float)` and `process(int)`? 
-This can be useful for specialization.
-In this case, calling `process` with `int` will call the second item.
-What should happen if we call `process` with `int|float` binding which holds an int?
-The real question is: Will we dispatch a function call based on the static type of a binding (e.g. `int|float`) or based on it's dynamic type (e.g. `int`).
-Note that the dynamic type can never be `A|B`. 
-What about this?
-`process := (x: {...})->...`
-`process := (x: Shape)->...`
-If we have `process(int|float)` in fact we have two functions: `process(int)` and `process(float)`. So manually adding `process(int)` will cause trouble and ambiguity in calling the function.
+This is similar to the way chain behaves.
+if you have `(int)->int|(float)->float` stored in x you can write: `int_float.{x}`???
+But we cannot put a union inside chain operator. Can we? Shall we extend that?
 
 ? - Can we have `{int, ...}` as sum type of all types that have only one int field?
 And access it via `.0`?
-
 
 ? - How shall we implement dynamic dispatch in case of unions?
 int(x) if x is bool, call int|1 because id of bool is 1
@@ -1439,4 +1445,16 @@ compile looks up and finds we only have `save(int|float)`. So?
 One way is to break down all functions that have sum type inputs. So `int(int|float)` will be broken down to two functions. 
 `int(int)` and `int(float)`. Then we call the one based on static type or dynamic type if it is a sum type.
 Another way is to cast float var to `int|float` and call `save(int|float)`.
-
+```
+//case 1
+process := (int)->int ...
+process := (float)->int ...
+process(int_or_float) #call with dynamic type
+//case 2
+process := (int|float)->int... #break this into two functions, call with static type for non-unions, dynamic type for unions
+	process := (int)->int ...
+	process := (float)->int ...
+process(4)
+```
+So when there is a call like `process(x)` if x is union, get it's dynamic type. Else get it's static type, result is T.
+Then call `process|T`.
