@@ -842,224 +842,7 @@ suggestion:
 Y - For abstract functions, it should be possible to set `{}` on the same line
 `process := (x: T)->bool { ... }`
 
-
-
-
-
-
-========================
-
-
-
-
-
-
-? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
-
-? - Add support for LLVM-IR based code in function to make bootstrapping easier.
-
-? - For generic modules with general type, we can re-use `...`:
-`T := ...`
-
-? - Suppose we want to write dotLang compiler. What do we need at minimum?
-1. Ability to call core functions
-2. Read/Write file
-3. LLVM integration
-4. Write a function in LLVM IR
-5. Call another function
-6. Struct and union
-- Operators: `@{}`, `|`, casting, `[]`, `::`, 
-What we don't need?
-- Generics
-- Lambdas
-- GC?
-- Import renames and filters
-- Named types
-- Concurrency
-- Struct composition
-- Chain operator
-- Operators: `//`, `..`, `...`, `=>`
-
-? - Even if at some point we need a dedicated build system, we can use dotLang to describe the build process and steps.
-
-? - The compiler will use `.build` directory for cached compilations, output, intermediate code, temp files, ...
-Instead of something like `mvn clean` you can just do `rm -rf .build`
-Maybe we need to have some resource files beside the output. We can order compiler to also save output final executable in a specific folder which is set up with all required files.
-We can have `pre-compile.sh` script and `post-compile.sh` script which will be executed before and after compilation.
-If we have dependency to v1 and v2 of a library which is on github, when we clone it, they will be on the same dir.
-`_ := @{"github/lib1/v1"}`
-`_ := @{"github/lib1/v2"}`
-We can clone the same repo into different dirs and for each dir checkout corresponding branch.
-We can clone with `-b v1 --shallow 1 --single-branch` into a specific directory.
-
-? - Use cases for dotLang: Hadoop, Spark, Cassandra, Hive, HDFS, Arrow, Oozie, YARN, HBase, Redis, ...
-Distributed systems
-Big data systems
-Backend as service
-Search (ES, ...)
-web service, API server
-Log management
-Monitoring (grafana)
-Most of Apache projects
-Couch DB
-Kafka
-
-? - Green threads needs a runtime (scheduler, threads, assignment, queues, ...).
-Is it possible to achieve this without a runtime?
-We are not forced to follow go or CSP approach.
-
-? - Using channel for all types of comm makes it easier to mock something.
-For example if a function works with a socket, we can instead pass a sequence-backed channel for test purposes.
-We can follow this approch for every side effect (e.g. get time, get random number, ...).
-
-? - Shall we prohibit calling a function literal at the point of declaration?
-```
-result := (x:int)->x+1(100) #store 101 into result
-```
-or
-```
-fn := (x:int)->x+1
-result := fn(100) #store 101 into result
-```
-- Shall we add shift right and left?
-- What about power?
-
-
-? - The absolute minimum that I need to write a compiler in dot:
-- LLVM bindings
-- File I/O
-- Struct, Seq and map
-- `...` notation for generic union
-- multi module compilation
-Parts that we don't need:
-- Import from other sources, filtering and rename
-- Chain operator, union type
-
-? - Another helper to help decide whether it's function body or struct.
-struct/expression is defined on the same line if it's return expression.
-function body must be started from the next line.
-So if after `->` we see type and newline, then it's a code block. Else it's expression.
-
-? - Tip for including predefined functions in compilation:
-`LLVMCreateMemoryBufferWithMemoryRange` create a memory buffer pointing to compiled bitcode for predefineds
-`LLVMParseBitcode` read memory buffer and create a new module.
-
-? - A notation to define singly linked list.
-It is not about simplicity, but we want to provide an easy mechanism to handle data structures with regards to immutability.
-This can be used for stack, queue, tree and graph, as long as one way processing is enough.
-This cannot be a FIFO queu because FO means change the whole data structure.
-```
-d:{int} = [1,2,3] #1 -> 2 -> 3
-x := 0;d
-```
-what will `d` mean? 1 or the whole list?
-How would it be done now?
-```
-type Node := {data:int, next: Node} | nothing
-g: Node := Node{data:=10, next := nothing}
-h: Node := Node{data:=20, next := g}
-t: Node := Node{data:=30, next := h}
-d := t.data
-d := t.next.data
-```
-rewrite:
-```
-type Node := (int)
-g:Node := (10)
-h: Node := (20,g)
-t: Node := (30,h)
-d := t.(0)
-d := t.[1..]
-```
-How can we define a tree?
-```
-type Tree := ({int, (Tree)})
-```
-We can treat linked list like seq becaus conceptually they are the same:
-```
-x: (int) := ~[1,2,3]
-x[0] is the first element
-x[1..] is a linked list.
-So is x[1..5] but this notation will need a copy of whole list
-Same notation can be used for seq.
-y := [5, 3]&x is for merging lists. You can merge any two lists but best peformance is when the first item is smallest.
-x[5..] is also a linked list. It can be a sequence if x is a sequence.
-x[0] is the first element of a linked-list or a sequence.
-So how can we differentiate this with a seq?
-[int] is a sequence of int
-(int) is a linked list of int
-So tree can be defined as:
-Node := ({data: int, children: (Node)})
-tree: Node := [{5, [{6, ...]]
-tree.children[0].children[2].data
-```
-How can we convert a list to seq or seq to list?
-`x: [int] := [1,2,3,4]`
-`y:(int) := ~[x]`
-`z: [int] := [y]`
-`x[start..]` slice of seq or linked list. O(1) for both
-`x[start..end]` slice. O(n) for list, O(1) for seq (assuming seq includes length too)
-`x[..end]` slice. O(n) for list, O(1) for seq (Assuming seq includes length)
-`x[index]` read element from seq/list. O(1) for seq, O(n) for list
-`x&y` merge two seq/lists. for seq O(m+n), for list O(m) where m is size of `x`.
-Algorithm to insert something at specific index in linked list:
-```
-insert := (lst: (int), idx: int, data: int)->(int)
-{
-  :: lst[..idx]&[data]&lst[idx+1..]
-}
-```
-Idea: Use `~[int]` to specify list of int type. How does this combine with seq, map, channel types?
-Idea: Use negative numbers to refer to elements before end.
-`lst[-3..-1]` `-1` index points to the last element.
-`lst[-3..]` returns last three elements of the sequence or list.
-`~[int]!` a write-only channel which can write list of int.
-`[~[int]]` a sequence of a list of ints.
-`~~[int]` a list of a list of ints.
-`[~int, string]` a map of list of int to string.
-`{int}` an unnamed struct
-`[int]` sequence of int
-`(int)` list of int
-`(int)!` a write-only channel which can write list of int.
-`(int!)` a list of write-only channels which can write int.
-`[(int)]` a sequence of a list of ints.
-`((int))` a list of a list of ints.
-`[(int), string]` a map of list of int to string.
-How should we discriminate between seq literal and list literal?
-`x := [1,2,3]` this is a sequence
-`x := [1;2;3]` this is a list
-`x := [[1,2], [3,4], [5,6]]` a seq of seq
-`x := [[1;2], [3;4], [5;6]]` a sequence of list
-`x := [[1,2]; [3,4]; [5,6]]` a list of sequence
-What if it has only one element?
-`x := [1]`?
-We can say, by default it is sequence. unless it has `;` at the end:
-`x := [1;]`
-What about this notation?
-What about using `[T;]` notation for a list?
-`[int]` is a sequence of int
-`[int;]` is a list of int
-`t := (x:int) -> [` at this point, we know `[` is for a type.
-`x := (y:[int;]` we know y is of type `[int;]`
-`<int>` list of int
-`<int>!` a write-only channel which can write list of int.
-`<int!>` a list of write-only channels which can write int.
-`[<int>]` a sequence of a list of ints.
-`<<int>>` a list of a list of ints.
-`[<int>, string]` a map of list of int to string.
-`<int!>?` a read channel which gives you a list of write-only channels.
-suggestion: 
-- use `<int>` to indicate a single linked list and `<1,2,3>` for it's literals. `[]` for access.
-- extend `&` to merge list and seq.
-- Add slice notations for list and seq: `s[start..end]` with optional start and end.
-- explan O() complexity of index access and slices for seq and list
-```
-x: <int> := <1,2,3>
-x<0>? no this will be confused with math comparison
-```
-Don't forget , list literals should be prefixed with `_` too.
-
-? - Can we replace generics with `...` notation?
+N - Can we replace generics with `...` notation?
 for primitives we can use seq/map/list
 problem 1: function expectations.
 problem 2: `...` notation works with named fields. we cannot just embed some int inside `{}` and send it to method.
@@ -1356,7 +1139,239 @@ I don't think so.
 `{X,Y,Z,...}` means union of all struct types that embeds all three of X, Y and Z.
 Is this a valid type? `{...}`. No. It shouldn't be. Because it does not have any useful information.
 If we have `T := {Shape}` inside generic module, we can import it with `Circle` or `Triangle` or `{Shape, ...}`.
-If we have a variable of type `{Shape, ...}` Can we access `x.Shape`?
+The only meaningful criteria to define a dynamic type is based on embedding. So it should be applied for structs.
+
+Y - Shall we prohibit calling a function literal at the point of declaration?
+```
+result := (x:int)->x+1(100) #store 101 into result
+```
+or
+```
+fn := (x:int)->x+1
+result := fn(100) #store 101 into result
+```
+Y - Shall we add shift right and left?
+
+
+========================
+
+
+
+
+
+
+? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
+
+? - Add support for LLVM-IR based code in function to make bootstrapping easier.
+
+? - For generic modules with general type, we can re-use `...`:
+`T := ...`
+
+? - Suppose we want to write dotLang compiler. What do we need at minimum?
+1. Ability to call core functions
+2. Read/Write file
+3. LLVM integration
+4. Write a function in LLVM IR
+5. Call another function
+6. Struct and union
+- Operators: `@{}`, `|`, casting, `[]`, `::`, 
+What we don't need?
+- Generics
+- Lambdas
+- GC?
+- Import renames and filters
+- Named types
+- Concurrency
+- Struct composition
+- Chain operator
+- Operators: `//`, `..`, `...`, `=>`
+
+? - Even if at some point we need a dedicated build system, we can use dotLang to describe the build process and steps.
+
+? - The compiler will use `.build` directory for cached compilations, output, intermediate code, temp files, ...
+Instead of something like `mvn clean` you can just do `rm -rf .build`
+Maybe we need to have some resource files beside the output. We can order compiler to also save output final executable in a specific folder which is set up with all required files.
+We can have `pre-compile.sh` script and `post-compile.sh` script which will be executed before and after compilation.
+If we have dependency to v1 and v2 of a library which is on github, when we clone it, they will be on the same dir.
+`_ := @{"github/lib1/v1"}`
+`_ := @{"github/lib1/v2"}`
+We can clone the same repo into different dirs and for each dir checkout corresponding branch.
+We can clone with `-b v1 --shallow 1 --single-branch` into a specific directory.
+
+? - Use cases for dotLang: Hadoop, Spark, Cassandra, Hive, HDFS, Arrow, Oozie, YARN, HBase, Redis, ...
+Distributed systems
+Big data systems
+Backend as service
+Search (ES, ...)
+web service, API server
+Log management
+Monitoring (grafana)
+Most of Apache projects
+Couch DB
+Kafka
+
+? - Green threads needs a runtime (scheduler, threads, assignment, queues, ...).
+Is it possible to achieve this without a runtime?
+We are not forced to follow go or CSP approach.
+
+? - Using channel for all types of comm makes it easier to mock something.
+For example if a function works with a socket, we can instead pass a sequence-backed channel for test purposes.
+We can follow this approch for every side effect (e.g. get time, get random number, ...).
+
+? - Shoul we have an operator for power?
+
+? - The absolute minimum that I need to write a compiler in dot:
+- LLVM bindings
+- File I/O
+- Struct, Seq and map
+- `...` notation for generic union
+- multi module compilation
+Parts that we don't need:
+- Import from other sources, filtering and rename
+- Chain operator, union type
+
+? - Another helper to help decide whether it's function body or struct.
+struct/expression is defined on the same line if it's return expression.
+function body must be started from the next line.
+So if after `->` we see type and newline, then it's a code block. Else it's expression.
+
+? - Tip for including predefined functions in compilation:
+`LLVMCreateMemoryBufferWithMemoryRange` create a memory buffer pointing to compiled bitcode for predefineds
+`LLVMParseBitcode` read memory buffer and create a new module.
+
+? - A notation to define singly linked list.
+It is not about simplicity, but we want to provide an easy mechanism to handle data structures with regards to immutability.
+This can be used for stack, queue, tree and graph, as long as one way processing is enough.
+This cannot be a FIFO queu because FO means change the whole data structure.
+```
+d:{int} = [1,2,3] #1 -> 2 -> 3
+x := 0;d
+```
+what will `d` mean? 1 or the whole list?
+How would it be done now?
+```
+type Node := {data:int, next: Node} | nothing
+g: Node := Node{data:=10, next := nothing}
+h: Node := Node{data:=20, next := g}
+t: Node := Node{data:=30, next := h}
+d := t.data
+d := t.next.data
+```
+rewrite:
+```
+type Node := (int)
+g:Node := (10)
+h: Node := (20,g)
+t: Node := (30,h)
+d := t.(0)
+d := t.[1..]
+```
+How can we define a tree?
+```
+type Tree := ({int, (Tree)})
+```
+We can treat linked list like seq becaus conceptually they are the same:
+```
+x: (int) := ~[1,2,3]
+x[0] is the first element
+x[1..] is a linked list.
+So is x[1..5] but this notation will need a copy of whole list
+Same notation can be used for seq.
+y := [5, 3]&x is for merging lists. You can merge any two lists but best peformance is when the first item is smallest.
+x[5..] is also a linked list. It can be a sequence if x is a sequence.
+x[0] is the first element of a linked-list or a sequence.
+So how can we differentiate this with a seq?
+[int] is a sequence of int
+(int) is a linked list of int
+So tree can be defined as:
+Node := ({data: int, children: (Node)})
+tree: Node := [{5, [{6, ...]]
+tree.children[0].children[2].data
+```
+How can we convert a list to seq or seq to list?
+`x: [int] := [1,2,3,4]`
+`y:(int) := ~[x]`
+`z: [int] := [y]`
+`x[start..]` slice of seq or linked list. O(1) for both
+`x[start..end]` slice. O(n) for list, O(1) for seq (assuming seq includes length too)
+`x[..end]` slice. O(n) for list, O(1) for seq (Assuming seq includes length)
+`x[index]` read element from seq/list. O(1) for seq, O(n) for list
+`x&y` merge two seq/lists. for seq O(m+n), for list O(m) where m is size of `x`.
+Algorithm to insert something at specific index in linked list:
+```
+insert := (lst: (int), idx: int, data: int)->(int)
+{
+  :: lst[..idx]&[data]&lst[idx+1..]
+}
+```
+Idea: Use `~[int]` to specify list of int type. How does this combine with seq, map, channel types?
+Idea: Use negative numbers to refer to elements before end.
+`lst[-3..-1]` `-1` index points to the last element.
+`lst[-3..]` returns last three elements of the sequence or list.
+`~[int]!` a write-only channel which can write list of int.
+`[~[int]]` a sequence of a list of ints.
+`~~[int]` a list of a list of ints.
+`[~int, string]` a map of list of int to string.
+`{int}` an unnamed struct
+`[int]` sequence of int
+`(int)` list of int
+`(int)!` a write-only channel which can write list of int.
+`(int!)` a list of write-only channels which can write int.
+`[(int)]` a sequence of a list of ints.
+`((int))` a list of a list of ints.
+`[(int), string]` a map of list of int to string.
+How should we discriminate between seq literal and list literal?
+`x := [1,2,3]` this is a sequence
+`x := [1;2;3]` this is a list
+`x := [[1,2], [3,4], [5,6]]` a seq of seq
+`x := [[1;2], [3;4], [5;6]]` a sequence of list
+`x := [[1,2]; [3,4]; [5,6]]` a list of sequence
+What if it has only one element?
+`x := [1]`?
+We can say, by default it is sequence. unless it has `;` at the end:
+`x := [1;]`
+What about this notation?
+What about using `[T;]` notation for a list?
+`[int]` is a sequence of int
+`[int;]` is a list of int
+`t := (x:int) -> [` at this point, we know `[` is for a type.
+`x := (y:[int;]` we know y is of type `[int;]`
+`<int>` list of int
+`<int>!` a write-only channel which can write list of int.
+`<int!>` a list of write-only channels which can write int.
+`[<int>]` a sequence of a list of ints.
+`<<int>>` a list of a list of ints.
+`[<int>, string]` a map of list of int to string.
+`<int!>?` a read channel which gives you a list of write-only channels.
+suggestion: 
+- use `<int>` to indicate a single linked list and `<1,2,3>` for it's literals. `[]` for access.
+- extend `&` to merge list and seq.
+- Add slice notations for list and seq: `s[start..end]` with optional start and end.
+- explan O() complexity of index access and slices for seq and list
+```
+x: <int> := <1,2,3>
+x<0>? no this will be confused with math comparison
+```
+Don't forget , list literals should be prefixed with `_` too.
+
+? - Memory layout for a struct which embeds other structs.
+`Circle := {Shape, r: float}
+```
+At 0: 	type_id := 34
+	embed_type1 := 83
+	embed_offset := 12
+At 12: (Shape data)
+	type_id := 83
+	name: ...
+	id: ...
+At 18:
+	r: float
+```
+
+? - If we have a variable of type `{Shape, ...}` Can we access `x.Shape`?
+If we have a variable of type `()->int|()->float` can we call it and store result in `int|float`?
+If we have `(int)->int|(float)->float` can we call it with `int|float` and store result in `int|float`?
+These make sense.
 
 ? - q: can we have `process(int|float)` and `process(int)`? 
 This can be useful for specialization.
@@ -1367,9 +1382,10 @@ Note that the dynamic type can never be `A|B`.
 What about this?
 `process := (x: {...})->...`
 `process := (x: Shape)->...`
+If we have `process(int|float)` in fact we have two functions: `process(int)` and `process(float)`. So manually adding `process(int)` will cause trouble and ambiguity in calling the function.
 
-
-
+? - Can we have `{int, ...}` as sum type of all types that have only one int field?
+And access it via `.0`?
 
 
 ? - How shall we implement dynamic dispatch in case of unions?
