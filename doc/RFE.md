@@ -1434,3 +1434,9 @@ int|99|22|88 := (x:int|float, y:string|char|bool) -> int
   else ... 
 }
 ```
+What if we have `save(int|float)` and call `save` with a float var?
+compile looks up and finds we only have `save(int|float)`. So?
+One way is to break down all functions that have sum type inputs. So `int(int|float)` will be broken down to two functions. 
+`int(int)` and `int(float)`. Then we call the one based on static type or dynamic type if it is a sum type.
+Another way is to cast float var to `int|float` and call `save(int|float)`.
+
