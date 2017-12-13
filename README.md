@@ -246,17 +246,17 @@ You can use `.0,.1,.2,...` notation to access fields inside an untyped struct (E
 
 You can use struct composition to represent "is-a" or "has-a" relationship. In this case, all fields of the contained struct will be merged into container struct. The language provides pure "contain and delegate" mechanism as a limited form of polymorphism. If type `T` embeds type `S` you can refer to `S` fields directly using `T.field` notation or access the whole `S` struct using `t_var.S` notation.
 
-There is a notation `{T...}` to indicate sum type of all struct types that embed type `T` (Example 4). This can be used to simulate subtyping and polymorphism. But note that in a function call to variable which is of type `Circle` will not automatically be redirected to that function for `Shape` unless it is explicitly forwarded (Example 5). You can also use name and type instead of `T` to determine union of different types that have specific fields with specific name and types (Examples 6 and 7).
+You can use `{T, ...}` notation to indicate sum type of all struct types that embed type `T` (Example 4). This can be used to simulate subtyping and polymorphism. But note that in a function call to variable which is of type `Circle` will not automatically be redirected to that function for `Shape` unless it is explicitly forwarded (Example 5). You can also use name and type instead of `T` to determine union of different types that have specific fields with specific name and types (Examples 6 and 7).
 
 **Examples**
 
 1. `Shape := { id:int }`
 2. `Circle := { Shape, radius: float} #Shape is contained within a Circle`
 3. `my_circle := Circle{id:=100, radius:=1.45} #creating a Circle binding`
-4. `x: [{Shape...}] := [my_circle, my_triangle, ...]`
+4. `x: [{Shape, ...}] := [my_circle, my_triangle, ...]`
 5. `process := (c: Circle) -> process(c.Shape)`
-6. `x: {id:int...} #type of x is union of all types that have id:int`
-7. `x: {id:int, name:string...}`
+6. `x: {id:int, ...} #type of x is union of all types that have id:int`
+7. `x: {id:int, name:string, ...}`
 
 ## Named types
 
@@ -310,7 +310,6 @@ If function output is a single identifier, you can omit parentheses in output ty
 
 You can alias a function by defining another binding pointing to it (Example 12). You can define a function without body (Example 11). Calling these functions will result in runtime error. They are mostly used to define expected interfaces in generic modules.
 
-
 **Syntax**: 
 
 `functionName: (type1, type2, type3, ...) -> (OutputType) := (name1: type1, name2: type2...) -> OutputType { code block }`
@@ -337,6 +336,12 @@ process := (x:int) ->
 ``` 
 11. `T1 := (int)->(int|string)`
 12. `process := (x:int)->x+1`, `process2 := process`
+
+## Function call dispatch
+
+Function calls are dispatched using dynamic type. For non-union types, this is same as their static type. But for a union this will be determined at runtime. This is similar to the way chain operator behaves.
+
+Note that if you have a `(int|float)->string` function defined, you cannot define another function with the same name and signature but for `int` or `float` input. Because they will overlap.
 
 ## Function pointer
 
@@ -382,7 +387,7 @@ g := process(_:int)
 
 ## Chain operator
 
-This operator is used to put arguments before a lambda and simulate a scoped function resolution. `X.{F(_)}` will be translated to `F(X)`. If `F` is a lambda with only one input then you can eliminate `(_)` part. You can have multiple candidates (as a sequence literal) in place of `F` and the one which can accept type of `X` will be invoked (Example 5). In this case you can also use a sequence in place of list of candidates. You can also have multiple inputs put inside parenthesis (Example 1).
+This operator is used to put arguments before a lambda and simulate a scoped function resolution. `(X).{F(_)}` will be translated to `F(X)` (Example 1). If `F` is a lambda with only one input then you can eliminate `(_)` part. You can have multiple candidates (as a list literal) in place of `F` and the one which can accept the dynamic type of `X` will be invoked (Example 5). In this case you can also use a sequence in place of list of candidates.
 
 **Syntax**: 
 
@@ -428,8 +433,6 @@ Bindings defined at module level must be compile time calculatable.
 Generics are implemented at module level. Just append generics types in lower case (e.g. `stack[t].dot`) to the module file name and you can use type `T` (all capital) in your code. Any module importing it, must provide concrete types for them or else there will be compiler error. So if a module imports it with `int`, compiler will re-write the module and replace any occurence of `T` with `int`.
 
 If there are any existing definitions for the generic type or abstract functions based on it, the importer should provide a compliant type (Example 4).
-
-You can specialize a generic module for known types by writing appropriately named module file (e.g. `module_name[string].dot`).
 
 **Example**
 
