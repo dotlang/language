@@ -1253,25 +1253,57 @@ It will generate these two functions:
 `process := (x: Type1) -> ` where `x.0` will be offset 10.
 `process := (x: Type2) -> ` where `x.0` will be offset 0.
 
+Y - Memory layout for a struct which embeds other structs.
+We need to have `x.Shape` refer to a real Shape object.
+`Circle := {Shape, r: float}
+```
+At 0: 	type_id := 34
+	embed_type1 := 83
+	embed_offset := 12
+At 12: (Shape data)
+	type_id := 83
+	name: ...
+	id: ...
+At 18:
+	r: float
+```
+If Circle embeds Shape, 
 
 
+N - The absolute minimum that I need to write a compiler in dot:
+- LLVM bindings
+- File I/O
+- Struct, Seq and map
+- `...` notation for generic union
+- multi module compilation
+Parts that we don't need:
+- Import from other sources, filtering and rename
+- Chain operator, union type
+
+N - Another helper to help decide whether it's function body or struct.
+struct/expression is defined on the same line if it's return expression.
+function body must be started from the next line.
+So if after `->` we see type and newline, then it's a code block. Else it's expression.
+
+N - Use cases for dotLang: Hadoop, Spark, Cassandra, Hive, HDFS, Arrow, Oozie, YARN, HBase, Redis, ...
+Distributed systems
+Big data systems
+Backend as service
+Search (ES, ...)
+web service, API server
+Log management
+Monitoring (grafana)
+Most of Apache projects
+Couch DB
+Kafka
 
 
-========================
+N - Add support for LLVM-IR based code in function to make bootstrapping easier.
 
-
-
-
-
-
-? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
-
-? - Add support for LLVM-IR based code in function to make bootstrapping easier.
-
-? - For generic modules with general type, we can re-use `...`:
+Y - For generic modules with general type, we can re-use `...`:
 `T := ...`
 
-? - Suppose we want to write dotLang compiler. What do we need at minimum?
+N - Suppose we want to write dotLang compiler. What do we need at minimum?
 1. Ability to call core functions
 2. Read/Write file
 3. LLVM integration
@@ -1290,9 +1322,9 @@ What we don't need?
 - Chain operator
 - Operators: `//`, `..`, `...`, `=>`
 
-? - Even if at some point we need a dedicated build system, we can use dotLang to describe the build process and steps.
+N - Even if at some point we need a dedicated build system, we can use dotLang to describe the build process and steps.
 
-? - The compiler will use `.build` directory for cached compilations, output, intermediate code, temp files, ...
+N - The compiler will use `.build` directory for cached compilations, output, intermediate code, temp files, ...
 Instead of something like `mvn clean` you can just do `rm -rf .build`
 Maybe we need to have some resource files beside the output. We can order compiler to also save output final executable in a specific folder which is set up with all required files.
 We can have `pre-compile.sh` script and `post-compile.sh` script which will be executed before and after compilation.
@@ -1302,42 +1334,32 @@ If we have dependency to v1 and v2 of a library which is on github, when we clon
 We can clone the same repo into different dirs and for each dir checkout corresponding branch.
 We can clone with `-b v1 --shallow 1 --single-branch` into a specific directory.
 
-? - Use cases for dotLang: Hadoop, Spark, Cassandra, Hive, HDFS, Arrow, Oozie, YARN, HBase, Redis, ...
-Distributed systems
-Big data systems
-Backend as service
-Search (ES, ...)
-web service, API server
-Log management
-Monitoring (grafana)
-Most of Apache projects
-Couch DB
-Kafka
 
-? - Green threads needs a runtime (scheduler, threads, assignment, queues, ...).
+N - Green threads needs a runtime (scheduler, threads, assignment, queues, ...).
 Is it possible to achieve this without a runtime?
 We are not forced to follow go or CSP approach.
+
+
+
+
+
+
+
+========================
+
+
+
+
+
+
+? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
+
 
 ? - Using channel for all types of comm makes it easier to mock something.
 For example if a function works with a socket, we can instead pass a sequence-backed channel for test purposes.
 We can follow this approch for every side effect (e.g. get time, get random number, ...).
 
-? - Shoul we have an operator for power?
-
-? - The absolute minimum that I need to write a compiler in dot:
-- LLVM bindings
-- File I/O
-- Struct, Seq and map
-- `...` notation for generic union
-- multi module compilation
-Parts that we don't need:
-- Import from other sources, filtering and rename
-- Chain operator, union type
-
-? - Another helper to help decide whether it's function body or struct.
-struct/expression is defined on the same line if it's return expression.
-function body must be started from the next line.
-So if after `->` we see type and newline, then it's a code block. Else it's expression.
+? - Should we have an operator for power?
 
 ? - Tip for including predefined functions in compilation:
 `LLVMCreateMemoryBufferWithMemoryRange` create a memory buffer pointing to compiled bitcode for predefineds
@@ -1458,17 +1480,3 @@ x<0>? no this will be confused with math comparison
 ```
 Don't forget , list literals should be prefixed with `_` too.
 
-? - Memory layout for a struct which embeds other structs.
-We need to have `x.Shape` refer to a real Shape object.
-`Circle := {Shape, r: float}
-```
-At 0: 	type_id := 34
-	embed_type1 := 83
-	embed_offset := 12
-At 12: (Shape data)
-	type_id := 83
-	name: ...
-	id: ...
-At 18:
-	r: float
-```
