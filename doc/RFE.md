@@ -1163,6 +1163,95 @@ What about this?
 `process := (x: Shape)->...`
 If we have `process(int|float)` in fact we have two functions: `process(int)` and `process(float)`. So manually adding `process(int)` will cause trouble and ambiguity in calling the function.
 
+N - How shall we implement dynamic dispatch in case of unions?
+int(x) if x is bool, call int|1 because id of bool is 1
+sometimes, we do not know id of x. x has a static id but it can also have dynamic id
+
+N - Can we have `{Shape, int, ...}`? No. It should either be unnamed or named for all items.
+
+Y - Can we have `{int, ...}` as sum type of all types that have only one int field?
+And access it via `.0`?
+
+N - so assume we have int(g:float) and int(p:bool)
+when we call int(float_or_bool) shall we replace it with int|1 o int|2?
+(assume id of float is 1 and id if bool is 2)
+
+solution 1: replace int(float_or_bool) with int|99 where 99 is id of float|bool type.
+If that function already exists, then fine. If it does not exist but we have int(bool) and int(float) write a small llvm ir code
+like this:
+```
+int|99 := (x: bool|float)
+{
+	if ( realType(x) == int ) return int|1
+	else return int|2	
+}
+```
+And we can make it inline, so it will have minimum overhead.
+The details of implementation will depend on memory layout for non-primitive variables.
+One proposal: every reference (non-primitive) will have a prefix which contains these data:1
+1. dynamic type
+2. size in bytes
+3. reference count
+```
+int|99 := (x: bool|float)
+{
+  load %0, *x
+  cmp %0, INT_CODE
+  je int_call
+  call int|FLOAT
+  ret
+int+call:
+  call int|BOOL
+  ret
+}
+```
+so in more complicated cases this would be something like this:
+```
+int|99|22|88 := (x:int|float, y:string|char|bool) -> int
+{
+  if type(x) = int and type(y) = char: int|22|99(x,y)
+  else if type(x) = float and type(y) = bool: int|11|33(x,y)
+  else ... 
+}
+```
+What if we have `save(int|float)` and call `save` with a float var?
+compile looks up and finds we only have `save(int|float)`. So?
+One way is to break down all functions that have sum type inputs. So `int(int|float)` will be broken down to two functions. 
+`int(int)` and `int(float)`. Then we call the one based on static type or dynamic type if it is a sum type.
+Another way is to cast float var to `int|float` and call `save(int|float)`.
+```
+//case 1
+process := (int)->int ...
+process := (float)->int ...
+process(int_or_float) #call with dynamic type
+//case 2
+process := (int|float)->int... #break this into two functions, call with static type for non-unions, dynamic type for unions
+	process := (int)->int ...
+	process := (float)->int ...
+process(4)
+```
+So when there is a call like `process(x)` if x is union, get it's dynamic type. Else get it's static type, result is T.
+Then call `process|T`.
+
+Y - If chain operator has multuple candidates and none of them match then what?
+`int_or_float_or_string.{(int)->int, (float)->int}`?
+Compiler error. At least one of the candidates must match. 
+
+Y - 
+If we have a variable of type `{Shape, ...}` Can we access `x.Shape`? Yes.
+If we have a variable of type `()->int|()->float` can we call it and store result in `int|float`? Yes. But this makes things a bit confusing. Because then we don't know how we should name a union which all cases are function.
+If we have `(int)->int|(float)->float` can we call it with `int|float` and store result in `int|float`? No. But you can write a helper function to do that.
+This is similar to the way chain behaves.
+if you have `(int)->int|(float)->float` stored in x you can write: `int_float.{x}`???
+But we cannot put a union inside chain operator. Can we? Shall we extend that? No.
+
+Y - If we have `T := {int, ...}` then in the code we have `tvar.0` how should we access that?
+Maybe we have `Type1 := {x:string, y:int}` and `Type2 := {tt:int, pp:string, z:float}`.
+Then `.0` cannot be translated into a single fixed offset. But the compiler will re-write code for each type.
+So if we have: `process := (x: {int,...})->int`
+It will generate these two functions:
+`process := (x: Type1) -> ` where `x.0` will be offset 10.
+`process := (x: Type2) -> ` where `x.0` will be offset 0.
 
 
 
@@ -1370,6 +1459,7 @@ x<0>? no this will be confused with math comparison
 Don't forget , list literals should be prefixed with `_` too.
 
 ? - Memory layout for a struct which embeds other structs.
+We need to have `x.Shape` refer to a real Shape object.
 `Circle := {Shape, r: float}
 ```
 At 0: 	type_id := 34
@@ -1382,79 +1472,3 @@ At 12: (Shape data)
 At 18:
 	r: float
 ```
-
-? - If we have a variable of type `{Shape, ...}` Can we access `x.Shape`?
-If we have a variable of type `()->int|()->float` can we call it and store result in `int|float`?
-If we have `(int)->int|(float)->float` can we call it with `int|float` and store result in `int|float`?
-These make sense.
-This is similar to the way chain behaves.
-if you have `(int)->int|(float)->float` stored in x you can write: `int_float.{x}`???
-But we cannot put a union inside chain operator. Can we? Shall we extend that?
-
-? - Can we have `{int, ...}` as sum type of all types that have only one int field?
-And access it via `.0`?
-
-? - How shall we implement dynamic dispatch in case of unions?
-int(x) if x is bool, call int|1 because id of bool is 1
-sometimes, we do not know id of x. x has a static id but it can also have dynamic id
-
-so assume we have int(g:float) and int(p:bool)
-when we call int(float_or_bool) shall we replace it with int|1 o int|2?
-(assume id of float is 1 and id if bool is 2)
-
-solution 1: replace int(float_or_bool) with int|99 where 99 is id of float|bool type.
-If that function already exists, then fine. If it does not exist but we have int(bool) and int(float) write a small llvm ir code
-like this:
-```
-int|99 := (x: bool|float)
-{
-	if ( realType(x) == int ) return int|1
-	else return int|2	
-}
-```
-And we can make it inline, so it will have minimum overhead.
-The details of implementation will depend on memory layout for non-primitive variables.
-One proposal: every reference (non-primitive) will have a prefix which contains these data:1
-1. dynamic type
-2. size in bytes
-3. reference count
-```
-int|99 := (x: bool|float)
-{
-  load %0, *x
-  cmp %0, INT_CODE
-  je int_call
-  call int|FLOAT
-  ret
-int+call:
-  call int|BOOL
-  ret
-}
-```
-so in more complicated cases this would be something like this:
-```
-int|99|22|88 := (x:int|float, y:string|char|bool) -> int
-{
-  if type(x) = int and type(y) = char: int|22|99(x,y)
-  else if type(x) = float and type(y) = bool: int|11|33(x,y)
-  else ... 
-}
-```
-What if we have `save(int|float)` and call `save` with a float var?
-compile looks up and finds we only have `save(int|float)`. So?
-One way is to break down all functions that have sum type inputs. So `int(int|float)` will be broken down to two functions. 
-`int(int)` and `int(float)`. Then we call the one based on static type or dynamic type if it is a sum type.
-Another way is to cast float var to `int|float` and call `save(int|float)`.
-```
-//case 1
-process := (int)->int ...
-process := (float)->int ...
-process(int_or_float) #call with dynamic type
-//case 2
-process := (int|float)->int... #break this into two functions, call with static type for non-unions, dynamic type for unions
-	process := (int)->int ...
-	process := (float)->int ...
-process(4)
-```
-So when there is a call like `process(x)` if x is union, get it's dynamic type. Else get it's static type, result is T.
-Then call `process|T`.
