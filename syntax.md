@@ -99,3 +99,5 @@ If it is called with `process(int_or_float_var)` compiler will inject a piece of
 2. Each function will be mangled with type of it's inputs. So `process(int)` will become `process|1821` where `1821` is typecode of `int`. Each type will have it's own type-code which depends on it's name and point of declaration.
 
 3. Handling access to common parts: If we have `process := (x: {int,...})->int`, the expression `x.0` inside process can refere to different offsets. But compiler will generate the function for all matching types. So it can use appropriate offset when compiling `x.0` for every different type.
+
+4. If struct Circle, embeds Shape, there will be a complete Shape object laid inside Circle. When fields of Shape, are referred directly, compiler will calculate appropriate offset. `Shape := {id:int}`, `Circle := {Shape, r: float}`. Referring to `my_circle.Shape` will return the whole object. `my_circle.Shape.id` will refer to id inside Shape. `my_circle.id` will be mapped to `my_circle.Shape.id`.
