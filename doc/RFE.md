@@ -1334,10 +1334,39 @@ If we have dependency to v1 and v2 of a library which is on github, when we clon
 We can clone the same repo into different dirs and for each dir checkout corresponding branch.
 We can clone with `-b v1 --shallow 1 --single-branch` into a specific directory.
 
-
 N - Green threads needs a runtime (scheduler, threads, assignment, queues, ...).
 Is it possible to achieve this without a runtime?
 We are not forced to follow go or CSP approach.
+
+N - Using channel for all types of comm makes it easier to mock something.
+For example if a function works with a socket, we can instead pass a sequence-backed channel for test purposes.
+We can follow this approch for every side effect (e.g. get time, get random number, ...).
+
+N - Tip for including predefined functions in compilation:
+`LLVMCreateMemoryBufferWithMemoryRange` create a memory buffer pointing to compiled bitcode for predefineds
+`LLVMParseBitcode` read memory buffer and create a new module.
+
+N - Again: Can we replace generics with `...` notation?
+Example: Writnig a stack/set, writing map/filter function, writing AST compiler
+```
+#stack.dot
+T := any
+Stack := {data: [T], sp: int}
+push := (s: Stack, x: any) -> ...
+pop := (s: Stack)->any ...
+#set.dot
+T := any
+Set := {data: [T], size: int}
+add := (s: Set, equals: func(any, any)->bool) ...
+remove := (s: Set, el: any, equals: func(any,any)->bool) ...
+```
+We can, only if we allow `any` notation and become a dynamic type language.
+Template modules allows the language to remain static typed.
+
+Y - Replace `...` for type with `nothing`. So any type which is `nothing` can be replaced with any other type.
+Maybe we should replace `...` with `nothing` for abs-func too.
+Because right now `...` is used in polymorphic sum types and means "anything can sit here".
+
 
 
 
@@ -1352,18 +1381,12 @@ We are not forced to follow go or CSP approach.
 
 
 
+
+
 ? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
 
 
-? - Using channel for all types of comm makes it easier to mock something.
-For example if a function works with a socket, we can instead pass a sequence-backed channel for test purposes.
-We can follow this approch for every side effect (e.g. get time, get random number, ...).
-
 ? - Should we have an operator for power?
-
-? - Tip for including predefined functions in compilation:
-`LLVMCreateMemoryBufferWithMemoryRange` create a memory buffer pointing to compiled bitcode for predefineds
-`LLVMParseBitcode` read memory buffer and create a new module.
 
 ? - A notation to define singly linked list.
 It is not about simplicity, but we want to provide an easy mechanism to handle data structures with regards to immutability.
@@ -1418,16 +1441,16 @@ How can we convert a list to seq or seq to list?
 `x: [int] := [1,2,3,4]`
 `y:(int) := ~[x]`
 `z: [int] := [y]`
-`x[start..]` slice of seq or linked list. O(1) for both
+`x[start..]` slice of seq or linked list. O(1) for both assuming start is small.
 `x[start..end]` slice. O(n) for list, O(1) for seq (assuming seq includes length too)
 `x[..end]` slice. O(n) for list, O(1) for seq (Assuming seq includes length)
 `x[index]` read element from seq/list. O(1) for seq, O(n) for list
 `x&y` merge two seq/lists. for seq O(m+n), for list O(m) where m is size of `x`.
 Algorithm to insert something at specific index in linked list:
 ```
-insert := (lst: (int), idx: int, data: int)->(int)
+insert := (lst: <int>, idx: int, data: int) -> <int>
 {
-  :: lst[..idx]&[data]&lst[idx+1..]
+  :: lst[..idx]&_<data>&lst[idx+1..]
 }
 ```
 Idea: Use `~[int]` to specify list of int type. How does this combine with seq, map, channel types?
@@ -1471,12 +1494,15 @@ What about using `[T;]` notation for a list?
 `<int!>?` a read channel which gives you a list of write-only channels.
 suggestion: 
 - use `<int>` to indicate a single linked list and `<1,2,3>` for it's literals. `[]` for access.
-- extend `&` to merge list and seq.
+- extend `&` to merge lists too.
 - Add slice notations for list and seq: `s[start..end]` with optional start and end.
-- explan O() complexity of index access and slices for seq and list
+- explain `O()` complexity of index access and slices for seq and list
 ```
-x: <int> := <1,2,3>
-x<0>? no this will be confused with math comparison
+x: <int> := _<1,2,3>
+x[0]
+x[1..]`
 ```
 Don't forget , list literals should be prefixed with `_` too.
+struct, seq, map and list literals should be prefixed with `_`.
+
 
