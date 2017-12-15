@@ -1504,6 +1504,8 @@ x[1..]`
 ```
 Don't forget , list literals should be prefixed with `_` too.
 struct, seq, map and list literals should be prefixed with `_`.
+Maybe it's better to use `[]` for lists too and minimise using `<X>` notation.
+We can force `,` or `;` at the end of the last item to make a distinction for 1 elements.
 
 
 ? - Can we think of generics as a map? where key is type and value is a module?
@@ -1521,3 +1523,9 @@ which imports types and bindings into current module.
 Can we remove auto-bind too?
 
 ? - Add to spec: If all types of union are function pointer with same input, you can treat it like a function.
+
+? - Can we use `(x)` instead of `[x]` to access elements of seq or list or map?
+Ocaml uses `x.(1)`
+
+? - Can we use the same notation for struct literals with some different separator?
+`x: Point := ["A" 1 2.9]`?
