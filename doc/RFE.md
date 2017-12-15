@@ -1506,3 +1506,18 @@ Don't forget , list literals should be prefixed with `_` too.
 struct, seq, map and list literals should be prefixed with `_`.
 
 
+? - Can we think of generics as a map? where key is type and value is a module?
+so `stack[int]` will give me implementation of a stack (define in stack module), specialized for int type.
+q1: What if the generic module has multiple types? e.g. map function or a hashmap module?
+q2: What would be the type of this map? what's the key? what's the value?
+We can say that all types can be represented as integers. So key is int.
+Also we can extend a map to have multiple keys. so `[int]` is a seq, `[int, string]` is a map where key is int and value is string. `[int, float, string]` is a map where key is int and float and value is string. or maybe we can simply use an untyped struct. so `[{int, float}, string]` is a map where key is int and float.
+`stack: [int, ?]`
+right now we have:
+`_ := @{"stack[t]"}(int)`
+which imports types and bindings into current module.
+
+? - Remove abs-func and use function ptr as function arguments.
+Can we remove auto-bind too?
+
+? - Add to spec: If all types of union are function pointer with same input, you can treat it like a function.
