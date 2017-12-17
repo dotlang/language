@@ -1544,7 +1544,39 @@ StackElement := nothing
 Stack := [StackElement]
 push := (s: Stack, e: StackElement) -> ...
 pop := (s: Stack) -> StackElement
+test := (x:int) -> x+1
 #main.dot
+StackElement := int
+Stack := [StackElement]
+push := (s: Stack, e: StackElement) -> ...
+pop := (s: Stack) -> StackElement
+test := (x:int) -> x+1
+
+StackElement := float
+Stack := [StackElement]
+push := (s: Stack, e: StackElement) -> ...
+pop := (s: Stack) -> StackElement
+test := (x:int) -> x+1
+
 _ := @{"stack"}(int)
 _ := @{"stack"}(float)
 ```
+Do we need to rename functions? I don't think so. Because there can't be conflict in functions as their signature will be different, unless we have functions which are independent of the type argument. which is not banned.
+Solution:
+1. If a function is repeated with same signature and body, compiler will handle it.
+2. If a function is repeated but with different signature, it should be fine.
+3. If a type is repeated with same definition, it's fine.
+4. If a type is repeated with different definition (`StackElement := int` and `StackElement := float`), then there is no way of distinguishing them. That's when we need to rename them.
+```
+_ := @{"stack"}(int){StackElement => StackElementInt }
+_ := @{"stack"}(float) {StackElement => StackElementFlt }
+#or
+#compiler imports these but there will be no way to access StackElement directly as it has conflicts
+_ := @{"stack"}(int)
+_ := @{"stack"}(float)
+#you can alias them. So @ notation can be used to reference a type inside a module.
+StackElementInt := @{"stack"}(int).StackElement
+StackElementFlt := @{"stack"}(float).StackElement
+```
+But it's confusing to have access to elements inside a module via `@`. Why not have access to functions?
+
