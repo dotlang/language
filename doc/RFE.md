@@ -1529,3 +1529,22 @@ Ocaml uses `x.(1)`
 
 ? - Can we use the same notation for struct literals with some different separator?
 `x: Point := ["A" 1 2.9]`?
+
+? - Can we remove naming rule for generic modules? and make generic module import something general?
+So how can we specify which type is for which argument?
+`_ := @{"a[s,t,u]")(int, int, float)`
+`_ := @{"a"}(T := int, S := int, U := float) { Type1 => Type2 }`
+It is a bit messy!
+
+? - Think more about use cases for `=>`. In what cases do we need to use it?
+Is it for types? value bindings? fn bindings?
+```
+#stack.dot
+StackElement := nothing
+Stack := [StackElement]
+push := (s: Stack, e: StackElement) -> ...
+pop := (s: Stack) -> StackElement
+#main.dot
+_ := @{"stack"}(int)
+_ := @{"stack"}(float)
+```
