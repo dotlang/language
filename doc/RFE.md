@@ -1657,6 +1657,10 @@ _ := @("a/"&module_name)
 #if it's one item, you can write it inline, for more you must write it in a block
 _ := @("stack"){^T := int}
 ```
+The general rule in replacements is: you can replace something with something consistent.
+If it's a function, alternative must have the same signature.
+If it's a struct, alternative must include same fields.
+If it's a union, alternative must have same or less choices. `int|float` can replace `int|float|string`.
 
 
 ? - State that type replacement must be with a compliant type in generics.
