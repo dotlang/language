@@ -1579,4 +1579,5 @@ StackElementInt := @{"stack"}(int).StackElement
 StackElementFlt := @{"stack"}(float).StackElement
 ```
 But it's confusing to have access to elements inside a module via `@`. Why not have access to functions?
+a value binding has a precise type information. but a function is not explicit. it may refer to different locations. The exact place can be specified if we know the types of inputs.
 
