@@ -1367,7 +1367,22 @@ Y - Replace `...` for type with `nothing`. So any type which is `nothing` can be
 Maybe we should replace `...` with `nothing` for abs-func too.
 Because right now `...` is used in polymorphic sum types and means "anything can sit here".
 
+N - Can we use `(x)` instead of `[x]` to access elements of seq or list or map?
+Ocaml uses `x.(1)`
 
+N - Can we use the same notation for struct literals with some different separator?
+`x: Point := ["A" 1 2.9]`?
+
+N - Can we think of generics as a map? where key is type and value is a module?
+so `stack[int]` will give me implementation of a stack (define in stack module), specialized for int type.
+q1: What if the generic module has multiple types? e.g. map function or a hashmap module?
+q2: What would be the type of this map? what's the key? what's the value?
+We can say that all types can be represented as integers. So key is int.
+Also we can extend a map to have multiple keys. so `[int]` is a seq, `[int, string]` is a map where key is int and value is string. `[int, float, string]` is a map where key is int and float and value is string. or maybe we can simply use an untyped struct. so `[{int, float}, string]` is a map where key is int and float.
+`stack: [int, ?]`
+right now we have:
+`_ := @{"stack[t]"}(int)`
+which imports types and bindings into current module.
 
 
 
@@ -1384,7 +1399,6 @@ Because right now `...` is used in polymorphic sum types and means "anything can
 
 
 ? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
-
 
 ? - Should we have an operator for power?
 In perl and python they use `**`.
@@ -1509,31 +1523,13 @@ Maybe it's better to use `[]` for lists too and minimise using `<X>` notation.
 We can force `,` or `;` at the end of the last item to make a distinction for 1 elements.
 
 
-
-N - Can we think of generics as a map? where key is type and value is a module?
-so `stack[int]` will give me implementation of a stack (define in stack module), specialized for int type.
-q1: What if the generic module has multiple types? e.g. map function or a hashmap module?
-q2: What would be the type of this map? what's the key? what's the value?
-We can say that all types can be represented as integers. So key is int.
-Also we can extend a map to have multiple keys. so `[int]` is a seq, `[int, string]` is a map where key is int and value is string. `[int, float, string]` is a map where key is int and float and value is string. or maybe we can simply use an untyped struct. so `[{int, float}, string]` is a map where key is int and float.
-`stack: [int, ?]`
-right now we have:
-`_ := @{"stack[t]"}(int)`
-which imports types and bindings into current module.
-
 ? - Remove abs-func and use function ptr as function arguments.
 Can we remove auto-bind too?
 
 ? - Add to spec: If all types of union are funtction pointer with same input, you can treat it like a function.
 And the binding should be following function naming convention.
 
-? - Can we use `(x)` instead of `[x]` to access elements of seq or list or map?
-Ocaml uses `x.(1)`
-
-? - Can we use the same notation for struct literals with some different separator?
-`x: Point := ["A" 1 2.9]`?
-
-? - Can we remove naming rule for generic modules? and make generic module import something general?
+? - Can we remove naming rule for generic module files? and make generic module import something general?
 So how can we specify which type is for which argument?
 `_ := @{"a[s,t,u]")(int, int, float)`
 `_ := @{"a"}(T := int, S := int, U := float) { Type1 => Type2 }`
@@ -1626,8 +1622,67 @@ What if we keep everything inside import operator boundaries?
 ```
 _ := @{"a", T := int, S := [int], U := {float, string}, Cmp := (x:int) -> x>0), Type1 => Type2, Type3 => Type4 }
 ```
+The `{}` notation makes it a bit ambiguous with a struct. Can't we think of it like a pseudo-struct?
+What if we treat it like a function which must only contain static bindings like module levels?
+Because import must be calculated at compile time.
+But it will become very verbose. We want it to have a small footprint.
+```
+_ := @{"a"}
+(
+    T := int, S := [int], U := {float, string}, Cmp := (x:int) -> x>0), 
+    Type1 => Type2, Type3 => Type4 
+)
+_ := @{"stack"}(T := int)
+```
+Some definitions should be applied inside the module and some should be applied from outside.
+We prefix names that refer to something inside the module with `^`.
+So instead of `=>` notation we have `^` notation.
+Why use `()` for import operator? `[] () {}`? It is better to think of `@` as a compile-time evaluated function.
+```
+_ := @("a/"&module_name)
+{
+    ^T := int
+    ^S := [int]
+    ^U := {float, string}
+    ^Cmp := (x:int) -> bool
+    {
+    	:: x>0
+    }
+    ^Pred := myPredicate #replace internal function with local function
+    MyType1 := ^Type1  #prevent name clash, we may have two Type1 identifiers. So rename one of them
+    MyType2 := ^Type2
+    ^X := ^P #X definition inside module should be pointing to P inside the module
+    ^G := CustomerData #e.g. for generic types (stack of customer)
+}
+#if it's one item, you can write it inline, for more you must write it in a block
+_ := @("stack"){^T := int}
+```
 
 
 ? - State that type replacement must be with a compliant type in generics.
 So if original type is `T := nothing` you can replace T with any type.
 But if it's `T := {int}` then you must replace it with a struct that has only one int field.
+
+? - Remove embedding?
+Can't we just write `Circle := {s: Shape, ...}`. In forwarding we need to write `c.s`.
+And in sum type we write:`{s: Shape...}`.
+But it means that the field must be named `s` which is difficult to maintain.
+What if we write: `{_:Shape,...}`? Then how can we access the embedded Shape?
+What if we have two constraints? `{_: Shape, _: Color,  ...}`?
+Or similar to the way we write `{int, ...}`, we write `{Shape, ...}`.
+Then we can refer to it using `.0`.
+`x: {Shape, ...}`
+`x.0.shape_name`
+So we can add a field name criteria too.
+And there will be no special behavior for embedded structs. Just include that.
+Can we write this?
+`process := (x: {Shape, ...}, y:int) -> process(x.0, y)` 
+to forward process function for all types that embed a shape!!!
+So you don't really need to write that for every single type.
+So this is the proposal:
+1. Remove the concept of embedding. 
+2. In poly. union explain that `{Shape, ...}` means all types that have one field of type Shape which can be accessed using `x.0` notation.
+3. Explain in forward function notation, you can use pol. sum type to do a "group forwarding".
+pro: More minimal language as we no longer have a special notation: `Circle := { Shape, id: name}`
+Every field inside a struct must have it's own name.
+Just like conditionals and loops, for subtyping you have to do it yourself. Which makes it a bit more verbose but more flexible too.
