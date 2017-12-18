@@ -1387,6 +1387,7 @@ Because right now `...` is used in polymorphic sum types and means "anything can
 
 
 ? - Should we have an operator for power?
+In perl and python they use `**`.
 
 ? - A notation to define singly linked list.
 It is not about simplicity, but we want to provide an easy mechanism to handle data structures with regards to immutability.
@@ -1508,7 +1509,8 @@ Maybe it's better to use `[]` for lists too and minimise using `<X>` notation.
 We can force `,` or `;` at the end of the last item to make a distinction for 1 elements.
 
 
-? - Can we think of generics as a map? where key is type and value is a module?
+
+N - Can we think of generics as a map? where key is type and value is a module?
 so `stack[int]` will give me implementation of a stack (define in stack module), specialized for int type.
 q1: What if the generic module has multiple types? e.g. map function or a hashmap module?
 q2: What would be the type of this map? what's the key? what's the value?
@@ -1522,7 +1524,8 @@ which imports types and bindings into current module.
 ? - Remove abs-func and use function ptr as function arguments.
 Can we remove auto-bind too?
 
-? - Add to spec: If all types of union are function pointer with same input, you can treat it like a function.
+? - Add to spec: If all types of union are funtction pointer with same input, you can treat it like a function.
+And the binding should be following function naming convention.
 
 ? - Can we use `(x)` instead of `[x]` to access elements of seq or list or map?
 Ocaml uses `x.(1)`
@@ -1535,6 +1538,8 @@ So how can we specify which type is for which argument?
 `_ := @{"a[s,t,u]")(int, int, float)`
 `_ := @{"a"}(T := int, S := int, U := float) { Type1 => Type2 }`
 It is a bit messy!
+`_ := @{"a"}(T => int, S => int, U => float, Type1 => Type2 )`
+It's better to surround these inside `()` because `[]{}` can be used in the right side of `=>` if we want to map to array or struct types.
 
 ? - Think more about use cases for `=>`. In what cases do we need to use it?
 Is it for types? value bindings? fn bindings?
@@ -1580,4 +1585,49 @@ StackElementFlt := @{"stack"}(float).StackElement
 ```
 But it's confusing to have access to elements inside a module via `@`. Why not have access to functions?
 a value binding has a precise type information. but a function is not explicit. it may refer to different locations. The exact place can be specified if we know the types of inputs.
+Another way: Name can also be a parameter. So a generic module can expect a type and a name (or sets of).
+```
+#stack.dot
+StackElement := nothing
+Stack := [StackElement]
+push := (s: Stack, e: StackElement) -> ...
+pop := (s: Stack) -> StackElement
+test := (x:int) -> x+1
+#main.dot
+_ := @{"stack"}(StackElement => int, Stack => IntStack)
+_ := @{"stack"}(StackElement => float, Stack => FloatStack)
+```
+So you can import any module, and during the import, you can provide some transformations. They will be in the form of `A => B` where A is a symbol (type name or binding name) and B will be a new symbol. Any instance of `A` will be replaced by `B`.
+This can be used both for generic types and also for renaming symbols to prevent name clash.
+But there are two types of `=>`: Type settings and identifiers.
+If we have `StackElement := nothing` then `StackElement => int` it will generate: `StackElement := int`.
+If we have `Stack := [StackElement]` then `Stack => IntStack` will generate: `IntStack := [StackElement]`.
+So rename can be applied to the left side of `:=` (for non-generic types) or right side (for the generic type).
+We cannot treat them the same with same notation.
+When we import a module, we will need to renamed some symbols and change rvalue for some others.
+For example change rvalue for `StackElement` and rename `Stack` type.
+```
+#stack.dot
+StackElement := nothing
+Stack := [StackElement]
+push := (s: Stack, e: StackElement) -> ...
+pop := (s: Stack) -> StackElement
+test := (x:int) -> x+1
+#main.dot
+_ := @{"stack"}(StackElement := int, Stack => IntStack)
+_ := @{"stack"}(StackElement := float, Stack => FloatStack)
+```
+`_ := @{"a"}(T := int, S := int, U := float) { Type1 => Type2 }`
+And let's not limit the `:=` assignment to types. It can be used for any binding.
+Another way: The module can specify things that can be renamed on the right side. But it will need a new notation.
+So it is possible to use a function in place of import type settings.
+We can say `^` means re-write or re-define a binding.
+What if we keep everything inside import operator boundaries?
+```
+_ := @{"a", T := int, S := [int], U := {float, string}, Cmp := (x:int) -> x>0), Type1 => Type2, Type3 => Type4 }
+```
 
+
+? - State that type replacement must be with a compliant type in generics.
+So if original type is `T := nothing` you can replace T with any type.
+But if it's `T := {int}` then you must replace it with a struct that has only one int field.
