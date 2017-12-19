@@ -1710,5 +1710,31 @@ Using `_` as prefix is not really elegant. Can we make it better?
 `x := _[1:2, 3:4]`
 `x := _{a:=1, b:=2}`
 `h := _[1, 2]&_[3, 4]&_[5, 6]`
+`r := process(_[1,2,3])`
+Can we make `_` part of surrounder notation?
+In Go, you must prefix array literal with it's type: `primes = [6]int{2, 3, 5, 7, 11, 13}`
+Why not follow the same for array and map?
+`x := [int]{1,2,3}`
+`x := Arr1{1,2,3}`
+`y := [int, string]{1:"A", 2:"B", 3:"C"}`
+`y := Map1{1:"A", 2:"B", 3:"C"}`
+`z := {int,int}{1,2}`
+`z := {x:int,y:int}{1,2}`
+`z := {x:int,y:int}{x:=1,y:=2}`
+`z := [{int,int}]{ {1,2}, {3,4} }`
+`h := [int] {1, 2}&arr2&arr2`
+`h := [int] {1, 2, arr1, arr2}` merge arrays
+If we have `[int]` where an `int` is expected, it means merge into parent struct.
+`h := [[int]] { {1,2}, {3,4}, arr1, arr4}` this makes arr1 and arr4 third and fourth elements in `h`.
+`h := [int] { arr1, arr2 }` this will merge arr1 and arr2 into h.
+
+? - Can we replace `&` operator with a function?
+What should we do for import with a variable path?
+`_ := @{prefix&"stack"}`
+We can use the notation introduced above to remove ambiguity.
+`_ := @({prefix, "stack"})`
 
 
+? - If we have `process := (x: {Shape, ...})->int`
+can we call it with an untyped struct which contains a Shape?
+Can we say, even untyped structs have an internal hidden type which can be used when calling functions?
