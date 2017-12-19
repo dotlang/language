@@ -814,7 +814,7 @@ So if we have a function which expects `{int...}` and I have an int x, I can sim
 suggestion: 
 Extend `_` notation to be place holder for literal type for compound literals
 use `_` prefix for list, seq and struct literals. It can be replaced with a real type to indicate their type.
-But still it is not context-free to decide whether something is a litearl!
+But still it is not context-free to decide whether something is a literal!
 advantage of this: if we want to send a typed compound literal to a function, we can do it inline.
 `process(CustData[1,2,3])`
 rather than: `x: CustData := [1,2,3]` and then `process(x)`
@@ -1384,26 +1384,7 @@ right now we have:
 `_ := @{"stack[t]"}(int)`
 which imports types and bindings into current module.
 
-
-
-
-
-
-========================
-
-
-
-
-
-
-
-
-? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
-
-? - Should we have an operator for power?
-In perl and python they use `**`.
-
-? - A notation to define singly linked list.
+N - A notation to define singly linked list.
 It is not about simplicity, but we want to provide an easy mechanism to handle data structures with regards to immutability.
 This can be used for stack, queue, tree and graph, as long as one way processing is enough.
 This cannot be a FIFO queu because FO means change the whole data structure.
@@ -1521,13 +1502,45 @@ Don't forget , list literals should be prefixed with `_` too.
 struct, seq, map and list literals should be prefixed with `_`.
 Maybe it's better to use `[]` for lists too and minimise using `<X>` notation.
 We can force `,` or `;` at the end of the last item to make a distinction for 1 elements.
+Let's not add them to the language. All of these can be easily implemented with a struct and some helper functions.
+And not having them as built-in types, is not a big deal 99% of the time.
+
+Y - Add to spec: If all types of union are funtction pointer with same input, you can treat it like a function.
+And the binding should be following function naming convention.
+
+Y - The general rule in replacements is: you can replace something with something consistent.
+If it's a function, alternative must have the same signature.
+If it's a struct, alternative must include same fields.
+If it's a union, alternative must have same or less choices. `int|float` can replace `int|float|string`.
+
+
+Y - State that type replacement must be with a compliant type in generics.
+So if original type is `T := nothing` you can replace T with any type.
+But if it's `T := {int}` then you must replace it with a struct that has only one int field.
+
+Y - Should we have an operator for power?
+In perl and python they use `**`.
+
+
+
+
+
+
+
+========================
+
+
+
+
+
+
+
+
+? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
 
 
 ? - Remove abs-func and use function ptr as function arguments.
 Can we remove auto-bind too?
-
-? - Add to spec: If all types of union are funtction pointer with same input, you can treat it like a function.
-And the binding should be following function naming convention.
 
 ? - Can we remove naming rule for generic module files? and make generic module import something general?
 So how can we specify which type is for which argument?
@@ -1657,15 +1670,6 @@ _ := @("a/"&module_name)
 #if it's one item, you can write it inline, for more you must write it in a block
 _ := @("stack"){^T := int}
 ```
-The general rule in replacements is: you can replace something with something consistent.
-If it's a function, alternative must have the same signature.
-If it's a struct, alternative must include same fields.
-If it's a union, alternative must have same or less choices. `int|float` can replace `int|float|string`.
-
-
-? - State that type replacement must be with a compliant type in generics.
-So if original type is `T := nothing` you can replace T with any type.
-But if it's `T := {int}` then you must replace it with a struct that has only one int field.
 
 ? - Remove embedding?
 Can't we just write `Circle := {s: Shape, ...}`. In forwarding we need to write `c.s`.
@@ -1690,3 +1694,21 @@ So this is the proposal:
 pro: More minimal language as we no longer have a special notation: `Circle := { Shape, id: name}`
 Every field inside a struct must have it's own name.
 Just like conditionals and loops, for subtyping you have to do it yourself. Which makes it a bit more verbose but more flexible too.
+
+? - How does an untyped struct which has a Shape look like?
+`MyType := {int, float}`
+`MyType2 := {Shape}`
+`x: MyType := _{10,2.3}`
+`y: MyType2 := _{ _{id:=10} }`
+Using `_` as prefix is not really elegant. Can we make it better?
+- Every non-primitive data literal (seq, map, struct) must be prefixed with `_` or a type name.
+- To update a struct use :`new := _{old, field := value}` or `new := Type{old, field := value}`.
+`x := IntArr[1,2,3]`
+`x := MyMap[1:2, 3:4]`
+`x := Client{a:=1, b:=2}`
+`x := _[1,2,3]`
+`x := _[1:2, 3:4]`
+`x := _{a:=1, b:=2}`
+`h := _[1, 2]&_[3, 4]&_[5, 6]`
+
+
