@@ -1521,6 +1521,12 @@ But if it's `T := {int}` then you must replace it with a struct that has only on
 Y - Should we have an operator for power?
 In perl and python they use `**`.
 
+N - Can we replace `&` operator with a function?
+What should we do for import with a variable path?
+`_ := @{prefix&"stack"}`
+We can use the notation introduced above to remove ambiguity.
+`_ := @(string{prefix, "stack"})`
+`_ := @(prefix & "stack")`
 
 
 
@@ -1720,19 +1726,76 @@ Why not follow the same for array and map?
 `y := Map1{1:"A", 2:"B", 3:"C"}`
 `z := {int,int}{1,2}`
 `z := {x:int,y:int}{1,2}`
-`z := {x:int,y:int}{x:=1,y:=2}`
+`z := {x:int,y:int}{x:1,y:2}`
+`z := Point{x:1,y:2}`
 `z := [{int,int}]{ {1,2}, {3,4} }`
 `h := [int] {1, 2}&arr2&arr2`
 `h := [int] {1, 2, arr1, arr2}` merge arrays
 If we have `[int]` where an `int` is expected, it means merge into parent struct.
 `h := [[int]] { {1,2}, {3,4}, arr1, arr4}` this makes arr1 and arr4 third and fourth elements in `h`.
+`h := [[int]] { {1,2}, {3,4}, { arr1, arr4} }` this concats arr1 and arr4 and makes the result the third element in h
 `h := [int] { arr1, arr2 }` this will merge arr1 and arr2 into h.
+Again: Why do we need a prefix for literals?
 
-? - Can we replace `&` operator with a function?
-What should we do for import with a variable path?
-`_ := @{prefix&"stack"}`
-We can use the notation introduced above to remove ambiguity.
-`_ := @({prefix, "stack"})`
+
+
+? - q: What is `{1}`? Is it a sequence or an untyped struct? That's why we need a prefix. `[int]{1}` is a seq of int. `{int}{1}` is an unnamed struct.
+q: `process := (x:int) -> {` at this point, we don't know if `{` is start of a struct type or a literal?
+Why not make it this: `[]` for types and `{}` for literals?
+`[int]`, `[int, int]`, `[x:int, y:int, z:float]`
+`{1,2}`, `{1:2, 3:4}`, `{x:1, y:2, z:1.1}`
+So if we see `process := (x:int) -> {` we will know that `{` is for a literal, not a type decl.
+What happens to polymorphic union? `{Shape, ...}`? Maybe replaced with `[Shape, ...]`.
+But in this case we don't know if `[int, int]` is a map or untyped struct.
+What if we use `[int:int]` for map type?
+Then what about `{1}`? or `{1,2}`? is it sequence or struct?
+`{_:1, _:2}` is a struct literal.
+`{1,2}` is a sequence literal.
+`{x:1, y:2}` is a struct literal.
+`x := {1,2,3}`
+`x := {1:2, 3:4}`
+`x := {a:1, b:2}`
+`x := {1,2,3}`
+`x := {1:2, 3:4}`
+`x := {a:1, b:2}`
+`h := { {1, 2}, {3, 4}, {5, 6} }` how can we merge then?
+Or we can use `[...]` for literals and `{...}` for types.
+`{int}`, `{int:int}`, `{x:int, y:float}` types
+`[1,2,3]`, `[1:1, 2:3]`, `[x:1, y:2]` literals.
+No. This does not seem very beautiful.
+`h := { {1, 2}, {3, 4}, {5, 6} }` How can I say whether this should be parsed as a 2-D int array or 1-D int array?
+Maybe we can re-introduce `&`? Now that we are eliminating type prefix.
+`h := { {1, 2}, {3, 4}, {5, 6} }` 2d int array.
+`h := { {1, 2} & {3, 4} & {5, 6} }` 1d int array.
+It might even be better because we are explicitly stating a merge, rather than specifying a type for the literal.
+`[string:int]` and `[age:int]`! The second one seems fine but the first one looks weird.
+`{"A":1}`, `{age:12}`
+`[string, int]` -> It will be confused with a struct with two fields.
+`[int*]`, `[string:int*]` because it can have repeated items.
+How can we denot empty seq/map/struct?
+`{}` what is this? empty seq or empty map or empty struct? It should be stated on the left side or in the context.
+`x := process({})`. If we have two process functions which accept seq and map, then which one should be called?
+`{,}` is empty sequence.
+`{:}` is empty map.
+`{_}` is empty struct.
+We have this problem in the current manual too! `[]` can be an empty sequence or empty map.
+What about types? What is `[]`? It is definitely not seq or map. It is a struct type which does not hold anything.
+Shall we use `[string]int` for map type? No. It's better it type is fully contained and surrounded.
+`x,y := {_:10, _:20}`
+`[string:int]` and `[age:int]`! The second one seems fine but the first one looks weird.
+`{"A":1, "B":2}`, `{age:10}`.
+**`[]` implies repeatition**. That's why using it for struct seems weird.
+Proposal:
+- Use `[]` notation for seq `[int]`, map `[string:int]`
+- Use `[]` for seq and map literals: `[1,2,3]`, `["A":1, "B":2]`
+- Use `{}` for struct `{string, int}`, `{name:string, age:int}`
+- Use `{}` notation for struct literals: `{1,2}`, `{age:1, rr: 1.1}`
+- Keep `&` to merge two sequences.
+- Use `{}` for polymorphic sum types notation: `T := {Shape, ...}`
+- Literals don't need a prefix.
+- Struct update: `new_pt:Point := {old_pt, x:100}`
+- If you want to enforce type, mention it on the binding.
+- `{}` is empty struct, `[:]` empty map, `[]` empty sequence. Exact type of map or seq should be inferred from context.
 
 
 ? - If we have `process := (x: {Shape, ...})->int`
