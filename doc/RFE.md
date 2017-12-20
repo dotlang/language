@@ -1782,6 +1782,62 @@ N - If we have `process := (x: {Shape, ...})->int`
 can we call it with an untyped struct which contains a Shape?
 Can we say, even untyped structs have an internal hidden type which can be used when calling functions?
 
+Y - Can we remove auto-bind too?
+
+Y - Remove abs-func and use function ptr as function arguments.
+In OOP when I say: `where T: MyClass` it ensures both data and operations on type T.
+Because `MyClass` has both data and methods.
+But here, I can say `T := MyStruct` and T will have a specific fields.
+```
+#test.dot
+T := {data:int}
+process := (x:T) -> x.data+1
+save := (x:T) -> process(x)+1
+#main.dot
+myProcess := (x: MyData)->x.data+2
+_ := @("test") 
+{ 
+    ^T := MyData
+    ^process := myProcess
+}
+```
+So even if a module has some functions on generic type T, the importer can replace them with appropriate functions, if the implementation is different.
+```
+#test.dot
+T := nothing
+equals := (x:T, y:T) -> false
+store := (x:T) -> ...
+#main.dot
+equals := (x: MyData, y: MyData)-> x.h = y.h
+_ := @("test") 
+{ 
+    ^T := MyData
+    ^equals := equals
+}
+```
+
+N - Can we simulate `...` with generics?
+When I write `T := {x:int}` it means any import of this module can replace T with something that has `x:int`.
+So basically it is `{x:int, ...}`, but not as powerful.
+```
+#forwarder.dot
+T := {Shape}
+process := (x:T)->process(x.0)
+```
+q - How can I define an array which can contain different shapes?
+e.g. a stack of shapes
+```
+#stack.dot
+T := {Shape}
+Stack := [T]
+push := ...
+pop := ...
+#main.dot
+_ := @("stack")
+g: Stack := [my_circle, my_square, ...]
+```
+
+
 
 
 
@@ -1794,13 +1850,11 @@ Can we say, even untyped structs have an internal hidden type which can be used 
 
 
 
+
 ? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
 
-? - Remove abs-func and use function ptr as function arguments.
-Can we remove auto-bind too?
-
 ? - Do we really need prefix for literals?
-`t := (x:int) -> {` at this point, we don't know if function returns a struct literal or `{` is beginning of a type definition.
+`t := (x:int) -> {` at this point, we don't know if function returns a struct literal or `{` is beginning of a struct type definition.
 `t := (x:int) -> [` at this point, we don't know if function returns seq of something, or a seq literal.
-`t := (x:int) -> {x}`
-`t := (x:int) -> {int,int}...`
+`t := (x:int) -> {x}`if x is a type, this is struct type, if x is value, it is a struct literal
+
