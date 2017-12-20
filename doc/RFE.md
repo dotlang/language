@@ -1528,27 +1528,7 @@ We can use the notation introduced above to remove ambiguity.
 `_ := @(string{prefix, "stack"})`
 `_ := @(prefix & "stack")`
 
-
-
-
-
-
-========================
-
-
-
-
-
-
-
-
-? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
-
-
-? - Remove abs-func and use function ptr as function arguments.
-Can we remove auto-bind too?
-
-? - Can we remove naming rule for generic module files? and make generic module import something general?
+Y - Can we remove naming rule for generic module files? and make generic module import something general?
 So how can we specify which type is for which argument?
 `_ := @{"a[s,t,u]")(int, int, float)`
 `_ := @{"a"}(T := int, S := int, U := float) { Type1 => Type2 }`
@@ -1556,7 +1536,7 @@ It is a bit messy!
 `_ := @{"a"}(T => int, S => int, U => float, Type1 => Type2 )`
 It's better to surround these inside `()` because `[]{}` can be used in the right side of `=>` if we want to map to array or struct types.
 
-? - Think more about use cases for `=>`. In what cases do we need to use it?
+Y - Think more about use cases for `=>`. In what cases do we need to use it?
 Is it for types? value bindings? fn bindings?
 ```
 #stack.dot
@@ -1677,7 +1657,7 @@ _ := @("a/"&module_name)
 _ := @("stack"){^T := int}
 ```
 
-? - Remove embedding?
+Y - Remove embedding?
 Can't we just write `Circle := {s: Shape, ...}`. In forwarding we need to write `c.s`.
 And in sum type we write:`{s: Shape...}`.
 But it means that the field must be named `s` which is difficult to maintain.
@@ -1701,45 +1681,7 @@ pro: More minimal language as we no longer have a special notation: `Circle := {
 Every field inside a struct must have it's own name.
 Just like conditionals and loops, for subtyping you have to do it yourself. Which makes it a bit more verbose but more flexible too.
 
-? - How does an untyped struct which has a Shape look like?
-`MyType := {int, float}`
-`MyType2 := {Shape}`
-`x: MyType := _{10,2.3}`
-`y: MyType2 := _{ _{id:=10} }`
-Using `_` as prefix is not really elegant. Can we make it better?
-- Every non-primitive data literal (seq, map, struct) must be prefixed with `_` or a type name.
-- To update a struct use :`new := _{old, field := value}` or `new := Type{old, field := value}`.
-`x := IntArr[1,2,3]`
-`x := MyMap[1:2, 3:4]`
-`x := Client{a:=1, b:=2}`
-`x := _[1,2,3]`
-`x := _[1:2, 3:4]`
-`x := _{a:=1, b:=2}`
-`h := _[1, 2]&_[3, 4]&_[5, 6]`
-`r := process(_[1,2,3])`
-Can we make `_` part of surrounder notation?
-In Go, you must prefix array literal with it's type: `primes = [6]int{2, 3, 5, 7, 11, 13}`
-Why not follow the same for array and map?
-`x := [int]{1,2,3}`
-`x := Arr1{1,2,3}`
-`y := [int, string]{1:"A", 2:"B", 3:"C"}`
-`y := Map1{1:"A", 2:"B", 3:"C"}`
-`z := {int,int}{1,2}`
-`z := {x:int,y:int}{1,2}`
-`z := {x:int,y:int}{x:1,y:2}`
-`z := Point{x:1,y:2}`
-`z := [{int,int}]{ {1,2}, {3,4} }`
-`h := [int] {1, 2}&arr2&arr2`
-`h := [int] {1, 2, arr1, arr2}` merge arrays
-If we have `[int]` where an `int` is expected, it means merge into parent struct.
-`h := [[int]] { {1,2}, {3,4}, arr1, arr4}` this makes arr1 and arr4 third and fourth elements in `h`.
-`h := [[int]] { {1,2}, {3,4}, { arr1, arr4} }` this concats arr1 and arr4 and makes the result the third element in h
-`h := [int] { arr1, arr2 }` this will merge arr1 and arr2 into h.
-Again: Why do we need a prefix for literals?
-
-
-
-? - q: What is `{1}`? Is it a sequence or an untyped struct? That's why we need a prefix. `[int]{1}` is a seq of int. `{int}{1}` is an unnamed struct.
+Y - q: What is `{1}`? Is it a sequence or an untyped struct? That's why we need a prefix. `[int]{1}` is a seq of int. `{int}{1}` is an unnamed struct.
 q: `process := (x:int) -> {` at this point, we don't know if `{` is start of a struct type or a literal?
 Why not make it this: `[]` for types and `{}` for literals?
 `[int]`, `[int, int]`, `[x:int, y:int, z:float]`
@@ -1785,6 +1727,7 @@ Shall we use `[string]int` for map type? No. It's better it type is fully contai
 `[string:int]` and `[age:int]`! The second one seems fine but the first one looks weird.
 `{"A":1, "B":2}`, `{age:10}`.
 **`[]` implies repeatition**. That's why using it for struct seems weird.
+But why not use `[]` for seq/map and `{}` for struct type and also for all literals?
 Proposal:
 - Use `[]` notation for seq `[int]`, map `[string:int]`
 - Use `[]` for seq and map literals: `[1,2,3]`, `["A":1, "B":2]`
@@ -1796,8 +1739,68 @@ Proposal:
 - Struct update: `new_pt:Point := {old_pt, x:100}`
 - If you want to enforce type, mention it on the binding.
 - `{}` is empty struct, `[:]` empty map, `[]` empty sequence. Exact type of map or seq should be inferred from context.
+New things:
+- Literals don't need a prefix.
 
+N - How does an untyped struct which has a Shape look like?
+`MyType := {int, float}`
+`MyType2 := {Shape}`
+`x: MyType := _{10,2.3}`
+`y: MyType2 := _{ _{id:=10} }`
+Using `_` as prefix is not really elegant. Can we make it better?
+- Every non-primitive data literal (seq, map, struct) must be prefixed with `_` or a type name.
+- To update a struct use :`new := _{old, field := value}` or `new := Type{old, field := value}`.
+`x := IntArr[1,2,3]`
+`x := MyMap[1:2, 3:4]`
+`x := Client{a:=1, b:=2}`
+`x := _[1,2,3]`
+`x := _[1:2, 3:4]`
+`x := _{a:=1, b:=2}`
+`h := _[1, 2]&_[3, 4]&_[5, 6]`
+`r := process(_[1,2,3])`
+Can we make `_` part of surrounder notation?
+In Go, you must prefix array literal with it's type: `primes = [6]int{2, 3, 5, 7, 11, 13}`
+Why not follow the same for array and map?
+`x := [int]{1,2,3}`
+`x := Arr1{1,2,3}`
+`y := [int, string]{1:"A", 2:"B", 3:"C"}`
+`y := Map1{1:"A", 2:"B", 3:"C"}`
+`z := {int,int}{1,2}`
+`z := {x:int,y:int}{1,2}`
+`z := {x:int,y:int}{x:1,y:2}`
+`z := Point{x:1,y:2}`
+`z := [{int,int}]{ {1,2}, {3,4} }`
+`h := [int] {1, 2}&arr2&arr2`
+`h := [int] {1, 2, arr1, arr2}` merge arrays
+If we have `[int]` where an `int` is expected, it means merge into parent struct.
+`h := [[int]] { {1,2}, {3,4}, arr1, arr4}` this makes arr1 and arr4 third and fourth elements in `h`.
+`h := [[int]] { {1,2}, {3,4}, { arr1, arr4} }` this concats arr1 and arr4 and makes the result the third element in h
+`h := [int] { arr1, arr2 }` this will merge arr1 and arr2 into h.
+Again: Why do we need a prefix for literals?
 
-? - If we have `process := (x: {Shape, ...})->int`
+N - If we have `process := (x: {Shape, ...})->int`
 can we call it with an untyped struct which contains a Shape?
 Can we say, even untyped structs have an internal hidden type which can be used when calling functions?
+
+
+
+
+========================
+
+
+
+
+
+
+
+
+? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
+
+? - Remove abs-func and use function ptr as function arguments.
+Can we remove auto-bind too?
+
+? - Do we really need prefix for literals?
+`t := (x:int) -> {` at this point, we don't know if function returns a struct literal or `{` is beginning of a type definition.
+`t := (x:int) -> [` at this point, we don't know if function returns seq of something, or a seq literal.
+`t := (x:int) -> {x}`
+`t := (x:int) -> {int,int}...`
