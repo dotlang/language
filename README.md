@@ -73,7 +73,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 05. **Map**: `scores:[string, int] := _["A":1, "B":2, "C":3, "D": 4]`.
 06. **Named type**: `MyInt := int` (Defines a new type with same binary representation as `int`).
 07. **Struct type**: `Point := {x: int, y:int, data: float}` (Like `struct` in C).
-08. **Struct literal**: `location: Point := _{x:=10, y:=20, data:=1.19}`.
+08. **Struct literal**: `location: Point := _{x:10, y:20, data:1.19}`.
 09. **Generics**: `_ := @("/core/Stack[T]") { ^T := int}` (Generics are defined as template modules).
 10. **Union type**: `MaybeInt := int | nothing` (Can store either of possible types).
 11. **Polymorphic Union**: `AllShapes := {Shape, ...}` (A union of all struct types that have a field of type `Shape`.
@@ -236,12 +236,12 @@ You can use `.0,.1,.2,...` notation to access fields inside an untyped struct (E
 **Examples**
 
 1. `Point := {x:int, y:int}`
-2. `point2: Point := _{x:=100, y:=200}`
+2. `point2: Point := _{x:100, y:200}`
 3. `point3: Point := _{100, 200}`
 4. `point1 := _{100, 200} #untyped struct`
-5. `point4 := _{point3, y:=101} #update a struct`
+5. `point4 := _{point3, y:101} #update a struct`
 6. `x,y := point1 #destruction to access struct data`
-7. `another_point: Point := _{x:=11, y:=my_point.y + 200}`
+7. `another_point: Point := _{x:11, y:my_point.y + 200}`
 8. `x := point1.1 #another way to access struct data`
 
 ### Polymorphic Union Types
