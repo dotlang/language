@@ -1853,5 +1853,19 @@ If I can write a `parseType` function in the code, then it would be easier.
 `x := (...) ->` call parseType if you see `(` after binding.
 `x := (...) -> ....` call parseType after `->`. If it fails, it's an expression.
 
-? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
+N - nothing operator
+`x := a // b`
+`x := [b,a][a=nothing]`
+`//` and chain operator are "helper" operators. They don't make something imopssible, possible.
+They just make possible things easier to do.
+`(6).{addTo(1, _)}.{save}.{update}.{print}`
+`(6).{addTo(1, _)}.{save}.{update(x,_)}.{print(y,_)}`
+`(y, (x, (6).{addTo(1, _)}.{save}).{update}).{print}`
+Why not use seq notation? Because arg type can be different and using `[]` will be confusing.
+Why not use a struct literal? Because one of the arguments can really be a struct literal and again cause confusion.
 
+N - can I write: `x,y,z := array1[0,1,2]`?
+It looks good but has few benfits.
+`x,y,z := map1[3,2,1]` - what if one of keys is missing?
+
+? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
