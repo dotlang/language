@@ -1837,24 +1837,15 @@ _ := @("stack")
 g: Stack := [my_circle, my_square, ...]
 ```
 
-
-
-
-
-========================
-
-
-
-
-
-
-
-
-
 ? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
 
 ? - Do we really need prefix for literals?
 `t := (x:int) -> {` at this point, we don't know if function returns a struct literal or `{` is beginning of a struct type definition.
 `t := (x:int) -> [` at this point, we don't know if function returns seq of something, or a seq literal.
 `t := (x:int) -> {x}`if x is a type, this is struct type, if x is value, it is a struct literal
-
+And if we do, should it be their type? or a specific character?
+`x := () -> [1,2,3,4]`
+`x := () -> ["A":1, "B":2, "C":3]`
+`x := () -> {name:"A", age:12}`
+`x := () -> () -> 100` `x()` will give us a function which when called will give us `100`.
+`x := () -> () -> int ...`
