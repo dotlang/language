@@ -215,7 +215,7 @@ An empty map can be denoted using `[:]` notation.
 
 ## Union
 
-Bindings of a union type, have ability to hold multiple different types and are shown as `T1|T2|T3|...`. If any of used types are not defined, they will be automatically defined by compiler as a named type for `nothing`. This can be used to define enumerations (Example 1). Note that you cannot use a complex type as a part of a union. You can only used named or primitive types. If all options of a union type are functions with same input type, you can treat it like a function pointer (and should be named accordingly).
+Bindings of a union type, have ability to hold multiple different types and are shown as `T1|T2|T3|...`. If any of used types are not defined, they will be automatically defined by compiler as a named type for `nothing`. This can be used to define enumerations (Example 1). Note that you cannot use a complex type as a part of a union. You can only used named or primitive types.
 
 When you convert a union variable to one of it's types (Example 3), you also get a boolean flag indicating whether conversion was successful.
 
