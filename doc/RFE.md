@@ -1868,4 +1868,10 @@ N - can I write: `x,y,z := array1[0,1,2]`?
 It looks good but has few benfits.
 `x,y,z := map1[3,2,1]` - what if one of keys is missing?
 
-? - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
+N - Add more links to README. e.g. in `::` explanation we use `//`, link to corresponding section.
+
+Y - Deciding whether union cases are functions with same input can be confusing sometimes.
+`x : (int)->float|(MyInt)->float`
+Are all options with the same input? `int` and `MyInt` may be defined similarly but they are not the same.
+So let's enable safe access to a union only for data members.
+`T := {int}|{int, float}` then `x.0` will refer to the int field.
