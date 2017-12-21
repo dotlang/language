@@ -287,7 +287,7 @@ There is no implicit and automatic casting. The only exception is using boolean 
 
 Casting is mostly used to cast between a union and its internal type (Example 2), between named and equal unnamed type (Example 4 and 5) or for numerical values (Example 1). 
 
-Note that the target type should be either a primitive or a named type. You can also cast multiple items at once (Example 6).
+Note that the target type should be either a primitive or a named type.
 
 The `Type(nothing)` notation gives you the default value for the given type (empty/zero value). 
 
@@ -300,7 +300,6 @@ The `Type(nothing)` notation gives you the default value for the given type (emp
 3. `MyInt := int`, `x:MyInt := MyInt(int_var)`
 4. `y:int := x`
 5. `x := MyFuncType(t)`
-6. `a, b, c := MyInt(x,y,z)`
 
 # Functions
 
@@ -347,6 +346,8 @@ process := (x:int) ->
 ## Function call dispatch
 
 Function calls are dispatched using dynamic type. For non-union types, this is same as their static type. But for a union this will be determined at runtime. This is similar to the way chain operator behaves.
+
+So for example if `x` of type `int|float|string` contains a float value, calling `process(x)` will invoke `process` which expects a float. This can be either defined as `(float)->T` function or a more general function of type `(float|int|string)->T`.
 
 Note that if you have a `(int|float)->string` function defined, you cannot define another function with the same name and signature but for `int` or `float` input. Because they will overlap.
 
@@ -574,7 +575,7 @@ eval := (input: string) -> float
 innerEval := (exp: Expression) -> float 
 {
   :: [nothing, int(exp).0][int(exp).1]
-  y,_ := NormalExpression{exp}
+  y,_ := NormalExpression(exp)
   
   :: [nothing, innerEval(y.left) + innerEval(y.right)][y.op = '+']
   :: [nothing, innerEval(y.left) - innerEval(y.right)][y.op = '-']
@@ -605,7 +606,7 @@ A function which accepts a list of numbers and returns sum of even numbers.
 ```
 filteredSum := (data: [int]) -> int
 {
-  calc := (index: int, sum: int)->
+  calc := (index: int, sum: int) -> int
   {
     :: [nothing, sum][index>=length(data)]
     :: calc(index+1, sum+data[index])
@@ -619,7 +620,7 @@ filteredSum := (data: [int]) -> int
 A function which accepts a number and returns it's digits in a sequence of characters.
 Generally for this purpose, using a linked-list is better because it will provide better performance.
 ```
-extractor := (n: number, result: [char]) ->
+extractor := (n: number, result: string) -> string
 {
   :: [nothing, append(result, char(48+n))][n<10]
   digit := n % 10
@@ -633,7 +634,7 @@ This can be done by finding maximum element in each of the arrays but we want to
 ```
 maxSum := (a: [int], b: [int]) -> int
 {
-	calc := (idx1: int, idx2: int, current_max: int) -> 
+	calc := (idx1: int, idx2: int, current_max: int) -> int
 	{
 		:: [nothing, current_max][idx2 >= length(b)]
 		sum := a[idx1] + b[idx2]
@@ -648,7 +649,7 @@ maxSum := (a: [int], b: [int]) -> int
 
 ## Fibonacci
 ```
-fib := (n: int, cache: [int|nothing])->int
+fib := (n: int, cache: [int|nothing]) -> int
 {
 	:: [nothing, int(cache[n]).0][cache[n] != nothing]
 	seq_final1 := set(seq, n-1, fib(n-1, cache))
@@ -662,7 +663,7 @@ fib := (n: int, cache: [int|nothing])->int
 
 ## Core packages
 
-A set of core packages will be included in the language which provides basic and low-level functionality (This part may be written in C):
+A set of core packages will be included in the language which provides basic and low-level functionality (This part may be written in C or LLVM IR):
 
 - Security policy (how to call a code you don't trust)
 - Calling C/C++ methods
@@ -718,7 +719,7 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
   
 # History
 
-- **Version 0.1**: Sep 4, 2016 - Initial document created after more than 10 months of research, comparison and thinking.
+- **Version 0.1**: Sep 4, 2016 - Initial document created after more than 10 months of research, comparison and evaluation.
 - **Version 0.2**: Sep 22, 2016 - Leaning towards Functional Programming.
 - **Version 0.3**: Oct 13, 2016 - Added clarifications for inheritance, polymorphism, and templates
 - **Version 0.4**: Oct 27, 2016 - Removed some less needed features (monad), defined rules for multiple-dispatch.
