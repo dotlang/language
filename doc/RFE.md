@@ -1875,3 +1875,71 @@ Y - Deciding whether union cases are functions with same input can be confusing 
 Are all options with the same input? `int` and `MyInt` may be defined similarly but they are not the same.
 So let's enable safe access to a union only for data members.
 `T := {int}|{int, float}` then `x.0` will refer to the int field.
+
+? - Is the decision about fallback from named type to underlying type good?
+`MyInt := int`
+`process := (x:int)->x+1`
+`g: MyInt := 12`
+`process(g)` this will call `process:(int)->int` because we don't have a `process:(MyInt)`.
+What abuot this?
+```
+MyHash := [MyInt:MyInt]
+process := (g: [int:MyInt])->nothing
+process := (g: [MyInt:int])->nothing #having both these is ok because we claim they are different types
+g: MyHash := ...
+process(g)
+```
+can we call `([int:MyInt])`?
+What if we also have `process: ([MyInt:int])->nothing`?
+This can also happen with structs.
+In such cases where there are multiple candidates, compiler will issue a warning.
+This spreads like a tree. root of the tree is the original type e.g. `MyHash`. If we expend any of it's sub-types it will be a new child.
+```
+         ---------[MyInt:int]-------[int:int]
+         |
+MyType----
+         |
+	 ---------[int:MyInt]-------[int:int]
+```
+`MyType := [MyInt:MyInt]`
+So if we don't have a process defined for `MyType`, we should look for `[MyInt:MyInt]`.
+If not, we process everything there one step.
+So for example if it was initially: 
+`MyType := [MyInt2:MyInt]`
+`MyInt2 := MyInt`
+`MyInt := int`
+Then the order would be:
+`process: (MyType) ->`
+if not found: `process: ([MyInt2:MyInt])->`
+if not found: `process: ([MyInt:int])->`
+if not found: `process: ([int:int])->`
+if not found: error.
+we can say normal types have a type-code which is a number which does not end with `0`.
+named types' type-code is type-code of their underlying type shifted left one bit.
+so if int is `1`, `MyInt := int`'s code is `10` but this will assign same type-code to different types.
+Each type must have a different type-code. So it cannot be inferred from a type-code, the underlying's type-code.
+Another way to handle function call resolution: `MyType`, if not found `[int:int]` the final underlying type.
+So for example if it was initially: 
+`MyType := [MyInt2:MyInt]`
+`MyInt2 := MyInt`
+`MyInt := int`
+Then the order would be:
+`process: (MyType) ->` or `process: (MyType|XYZ)->`
+if not found: `process: ([int:int])->`
+if not found: error.
+Does this work well with union types? it should.
+method 2 advantage: it is easier to understand and less confusing.
+`MyCustomer := {MyInt, MyInt2, MyType}`
+final underlying type of this is: `{int, int, [int:int]}`.
+But still is causes problem: ?
+- What about when I move type X from module M1 to M2 but don't want everyone to update their code.
+```
+#M1
+MXX := @("M2") { MXX := ^X }
+X := MXX
+#other places
+_ := @("M1")
+x: X := ...
+```
+This works.
+But what if there are methods on the old `X` type which I want to update? I can define them in M1. I do not rely on type fallback in function call resolution.
