@@ -1943,3 +1943,35 @@ x: X := ...
 ```
 This works.
 But what if there are methods on the old `X` type which I want to update? I can define them in M1. I do not rely on type fallback in function call resolution.
+But if the user module, calls functions which operate on `X`, then what?
+```
+#M1
+TempX := @("M2") { TempX := ^X }
+X := TempX
+process := (x: X)->x.data+1
+#other places
+_ := @("M1")
+r: X := ...
+process(r)
+```
+The real process function is defined for type `X` defined in `M2`. Not `X` defined inside `M1`.
+But in the user module we are calling `process:(X)->`where X is defined in M1.
+Another way: We try names as long as there is only one option. From the point that we have multiple options, we will jump to the end.
+so:
+`MyType := [MyInt2:MyInt]`
+`MyType2 := MyType`
+`x: MyType2 := ...`
+`process(x)` will first try for `process:(MyType2)` if not found
+`process:(MyType)->` 
+if not found: `process:([MyInt2:MyInt])`
+if not found: `process:([int:int])`
+Also if we have `MyType := [int:MyInt]` it still can continue normally without a jump.
+So we can define these terms:
+simple type: A type which is one identifier (primitives and named types and sequence)
+complex type: A type which involves multiple simple or complex types (hash, struct, union)
+named type which is defined using `:=` notation.
+underlying type of a named type is what comes after `:=`.
+final underlying type of a type: continue in underlying type until there is no named type involved.
+
+? - How does named types work with import?
+If I write `X := @(...)` is X a named type?
