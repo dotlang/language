@@ -155,12 +155,11 @@ If the value is a struct, you can destruct it into it's elements (Example 5). In
 
 # Type system
 
-Types are blueprints which are used to create values for bindings.
+Types are blueprints which are used to create values for bindings (A binding is a name or identifier which refers to a memory location holding an immutable value).
 
-Two types T1 and T2 are identical/assignable in any of below cases:
+Two types T1 and T2 are identical/assignable in either of below cases:
 1. Both are named types defined in the same place in the code.
 2. Both are unnamed types with similar definition (e.g. `int|string` vs `int|string` or `[int]` vs `[int]`).
-2. T1 is named and T2 is identical to T1's underlying type, or vice versa.
 
 Note that `func` is explain in the "Function" section and channel types are explained in "Concurrency" section.
 
@@ -345,17 +344,19 @@ process := (x:int) ->
 
 ## Function call dispatch
 
-Function calls are dispatched using dynamic type. For non-union types, this is same as their static type. But for a union this will be determined at runtime. This is similar to the way chain operator behaves.
+Function calls are dispatched using dynamic type (for union typed bindings) or static type (for other bindings). Dynamic type of a union binding this will be determined at runtime. This is similar to the way chain operator behaves.
 
 So for example if `x` of type `int|float|string` contains a float value, calling `process(x)` will invoke `process` which expects a float. This can be either defined as `(float)->T` function or a more general function of type `(float|int|string)->T`.
 
 Note that if you have a `(int|float)->string` function defined, you cannot define another function with the same name and signature but for `int` or `float` input. Because they will overlap.
 
-## Function pointer
+If `MyInt := int` is defined in the code, you cannot call a function which needs an `int` with a `MyInt` binding, unless it is forwarded explicitly in the code (e.g. `process := (x:MyInt) -> process(int(x))`).
 
-Bindings of this type can hold a reference to a function or a lambda. You can send them to other functions or they can be used as output type of a function.
+## Function type
 
-**Syntax**: `Fp := (type1, type2, ...)->OutputType`
+Bindings of this type can hold a reference to a function or a lambda. You can send those bindings to other functions or they can be store output of a function.
+
+**Syntax**: `Fp := (type1, type2, ...) -> OutputType`
 
 **Examples**
 
@@ -365,7 +366,7 @@ Bindings of this type can hold a reference to a function or a lambda. You can se
 4. `sort := (x: [int], comparer: (int,int) -> bool) -> [int] #this function accepts a function pointers`
 5. `map := (input: [T], mapper: (T) -> S) -> [S]`
 
-## Lambda
+## Lambda (Function literal)
 
 Lambda or a function literal is used to specify value for a binding of function type. It is very similar to the way you define body of a function binding. Lambdas are closures and can capture bindings in the parent function (Example 3 and 4).
 
