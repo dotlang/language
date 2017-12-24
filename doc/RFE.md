@@ -1979,7 +1979,7 @@ If `MyType := int` and you have `process: (int)->` it is not used.
 If you want to use it, forward.
 `process := (x:MyType) -> process(int(x))`
 
-? - How does named types work with import?
+Y - How does named types work with import?
 If I write `X := @(...)` is X a named type?
 It should be. Or else we will have a separate meaning for import types.
 But if I import stack and capture Stack type, any function defined for it won't be available for me.
@@ -1988,6 +1988,37 @@ StackType, push, pop, create := @("stack") { ^T := int }
 f: StackType := create(100) #this function's output is StackType which is defined inside the module stack. But I am storing it's output in another StackType!
 g := push(f, 100) #I cannot call push because push expects a StackType defined in that module but I am passing f which is StackType defined in the current local.
 ```
+Solution 1: When importing, you cannot filter. You have to import everything because a module is a coherent set of functions and types. You can however rename thigs.
+Because if you write `A := @...` then A will be a new type and it will conflict with type and function call dispatch.
+So, we should have:
+`@("stack") { ^T := int }`
+Can't we make it an expression? It is just like a function which returns `nothing`.
+Also, aliasing the type during import, creates a new type! which causes problem.
+`@("mymodue") { MyType := ^ModuleType }`
+solution 1: Accept that. but then how can I pass a `ModuleType` to functions inside the module?
+What if we only allow rename?
+`@("mymodue") { ^ModuleType2 := ^ModuleType }`
+If we had the concept of type alias we could handle this easily.
+We have the same thing in functions.
+Function A can forward to B: 
+`A := (x:int) -> B(x)`
+Or we can alias it:
+`A:(int)->int := B` this is a normal binding of type function, we simply assign a binding to another binding.
+But for type we only have definition/spec: `A := B`.
+`@("stack") { ^StackType1 := ^StackType }`
+`@("stack") { ^StackType2 := ^StackType }`
+Either we have to have type alias or type rename notation in import.
+type rename is simpler and has less side effect.
+type alias has more impact on the language.
+```
+@("stack") 
+{ 
+	T := int
+	U := [float]
+	StackType => IntStack
+}
+```
+
 
 ? - What can go wrong if we dont fallback for named types?
 I don't think so.
