@@ -1876,7 +1876,7 @@ Are all options with the same input? `int` and `MyInt` may be defined similarly 
 So let's enable safe access to a union only for data members.
 `T := {int}|{int, float}` then `x.0` will refer to the int field.
 
-? - Is the decision about fallback from named type to underlying type good?
+Y - Is the decision about fallback from named type to underlying type good?
 `MyInt := int`
 `process := (x:int)->x+1`
 `g: MyInt := 12`
@@ -1972,6 +1972,22 @@ complex type: A type which involves multiple simple or complex types (hash, stru
 named type which is defined using `:=` notation.
 underlying type of a named type is what comes after `:=`.
 final underlying type of a type: continue in underlying type until there is no named type involved.
+How can we make it simple and minimal? Even if it means developer needs to write some more lines?
+Answer: No redirection, just lik go.
+If you have a MyType and call `process` on it, there MUST be a `process:(MyType)->` function defined.
+If `MyType := int` and you have `process: (int)->` it is not used.
+If you want to use it, forward.
+`process := (x:MyType) -> process(int(x))`
 
 ? - How does named types work with import?
 If I write `X := @(...)` is X a named type?
+It should be. Or else we will have a separate meaning for import types.
+But if I import stack and capture Stack type, any function defined for it won't be available for me.
+```
+StackType, push, pop, create := @("stack") { ^T := int }
+f: StackType := create(100) #this function's output is StackType which is defined inside the module stack. But I am storing it's output in another StackType!
+g := push(f, 100) #I cannot call push because push expects a StackType defined in that module but I am passing f which is StackType defined in the current local.
+```
+
+? - What can go wrong if we dont fallback for named types?
+I don't think so.
