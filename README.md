@@ -66,7 +66,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 
 ## Main features
 
-01. **Import a module**: `_ := @("/core/std/queue")` (you can also import from external sources like Github).
+01. **Import a module**: `@("/core/std/queue")` (you can also import from external sources like Github).
 02. **Primitive types**: `int`, `float`, `char`, `bool`, Sequence (`[int]`), Map (`[char:int]`), Function.
 03. **Bindings**: `my_var:int := 19` (type can be automatically inferred, everything is immutable).
 04. **Sequence**: `scores:[int] := [1, 2, 3, 4]` (`string` is essentially a sequence of `char`s).
@@ -74,7 +74,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 06. **Named type**: `MyInt := int` (Defines a new type with same binary representation as `int`).
 07. **Struct type**: `Point := {x: int, y:int, data: float}` (Like `struct` in C).
 08. **Struct literal**: `location: Point := {x:10, y:20, data:1.19}`.
-09. **Generics**: `_ := @("/core/Stack") { ^T := int}` (You can replace types in a module during import).
+09. **Generics**: `@("/core/Stack") { T := int}` (You can replace types in a module during import).
 10. **Union type**: `MaybeInt := int | nothing` (Can store either of possible types).
 11. **Polymorphic Union**: `AllShapes := {Shape, ...}` (A union of all struct types that have a field of type `Shape`.
 12. **Function**: `calculate: (int,int)->float := (x, y) -> float { :: x/y  }` (braces must be on their own line).
@@ -90,7 +90,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 06. `&`   Concatenate two sequences 
 07. `|`   Union data type 
 08. `->`  Function declaration
-09. `=->` Symbol rename in import
+09. `=>`  Symbol rename in import
 10. `..`  Range generator for sequence
 11. `...` Polymorphic union types
 12. `//`  Nothing-check operator
