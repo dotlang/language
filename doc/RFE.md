@@ -2037,6 +2037,49 @@ we can use `:=:`?
 we already have `and, or, xor, not`
 This will affect import, struct, type and binding decl, 
 `a,b,c = process(1,2)`
+result:
+- remove `!`
+- replace `!=` with `<>`
+- equality using `=?` 
+- use `=` for bindings `x:int = 12`
+- use `:=` for named types: `T := int`
+- replace `:==` with `==` for parallel execution
+what about type alias?
+option 1: no type alias. we only have `:=` for named types and in import, you have to use `=>` for rename
+option 2: `:=` to define named type, `=` to define type alias. so 
+```
+T = int
+process = (x:int)->x+1
+process = (x:T)->x+2 #ERROR! we already have process(int)
+```
+then we can get rid of `=>` and use `=` to alias from within a module
+```
+IntStack = @("stack"){T := int}.StackType
+```
+But separating import and rename is a bit confusing. What if I rename and do not import?
+Treating import result as a huge struct which has functions and types is a dead-end path I have discussed before. It makes everything much more messy.
+What if we can type alias inside import block?
+```
+@("stack")
+{
+	T := int
+	MyIntStack = StackType #this is confusing! 	
+}
+```
+if we use type alias with `=` can we enable `:=` for bindings too? the what would it mean?
+If I import module X and rename type A to B, and someone imports my module, will it B be available to them? no because they are not exported.
+but maybe I can replace `=>` with `:=` to indicate alias.
+For the same reason we want to replace `:=` with `=` for bindings, for the same reason we should replace it for types.
+So let's just eliminate `:=` everywhere. It was result of trying to be similar to Go but there is really no reason for that.
+`T = int`
+`x = 5`
+what about alias?
+`x = 5` is like an alias
+`x = ()->5` is like a definition.
+`T = int` is a new named type definition which is different from `int` but has same binary repr.
+`T <- int` to define a new alias.
+We need type alias and `=>` is not enough. So let's replace `=>` with something more flexible.
+
 
 ? - follow up
 with this maybe i can use `:=` for type alias.then I can remove need for `=>` for rename. as I can alias a type using this notation.
