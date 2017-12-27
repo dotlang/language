@@ -2020,5 +2020,27 @@ type alias has more impact on the language.
 ```
 
 
-? - What can go wrong if we dont fallback for named types?
-I don't think so.
+N - What can go wrong if we dont fallback for named types?
+
+N - 
+`T := int|float!`
+`T := (int|float)!`
+
+? - We are using `:=` much more than `=`.
+So why not use `=` instead of `:=`
+we can use `:=:`?
+`:=` -> `=`
+`:==` -> `==`
+`=` -> `=?` Other options: `eq`, `?=`, `:=:`,
+`!=` -> `<>`
+`>`, `>=`, `<`, `<=`
+we already have `and, or, xor, not`
+This will affect import, struct, type and binding decl, 
+`a,b,c = process(1,2)`
+
+? - follow up
+with this maybe i can use `:=` for type alias.then I can remove need for `=>` for rename. as I can alias a type using this notation.
+or `=` for value binding and `:=` for types.
+
+? - If a generic type is `nothing`, you can replace if with anything.
+if it is `int|nothing`, you can replace with `int`, `nothing` or `int|nothing`.
