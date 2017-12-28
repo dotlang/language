@@ -2123,7 +2123,12 @@ So we need another notation to indicate what T should be.
 what if we add a notation so we can have a map of string to type id/... ?
 can we eliminate type alias? If we can, generics will be simplified and we can simply use `=` notation in generics import.
 `@("stack"){T=int}`.
-
+Let's limit import generics to types. You cannot replace functions like `Cmp` with a function literal. 
+Or let's treat import as a mini module. So we put some definitions before import to affect what import does and at the end we can return symbols we need:
+```
+IntStack : @("stack"){T = int}
+```
+`IntStack, _ = @("stack", T=int, StackType, _)`this answers all questions but is messy and not simple.
 
 ? - follow up
 with this maybe i can use `:=` for type alias.then I can remove need for `=>` for rename. as I can alias a type using this notation.
