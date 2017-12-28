@@ -2079,6 +2079,50 @@ what about alias?
 `T = int` is a new named type definition which is different from `int` but has same binary repr.
 `T <- int` to define a new alias.
 We need type alias and `=>` is not enough. So let's replace `=>` with something more flexible.
+But how can we alias something inside imported module? in Go you just put a name behind import and everything is under that new name But we cannot have module contents "under" some name. Because it will interfere with function call dispatch.
+adding a new notation like `%` to refer to symbols inside module is not good too, because we may have imported them with generic type replacements.
+```
+IntStack = @("stack"){T := int}!StackType
+#or
+TT := @("stack") {T:= int}
+IntStack = TT=>StackType
+```
+none of these are simple and minimal.
+`T = int` defines a new named type
+`T: int` defines a new type alias- this is better.
+What about import?
+`IntStack : @("stack"){T:=int}.StackType` what comes after `:`, can be it mixed with `=` to add a new named type?
+it should be possible.
+so if we have `:` to define type alias, we should think of a notation to refer to a symbol (type or binding) inside a module.
+we wanted `@` to be an expression. It can give us an expression if we extend the notation to refer to symbols inside module.
+`_ = @("stack"){T=int}::*` this gives you all symbols inside the module and they are defined in this module (but they are not exported). it is confusing whether these are exported or no. maybe we should remo `_ =` from the beginning.
+`@("stack"){T=int}`
+`IntStack = @("stack"){T=int}::StackType` this refers to `StackType` inside that module.
+`IntStack : @("stack"){T=int}::StackType` this refers to `StackType` inside that module.
+we should be able to refer to a binding or a type inside a module.
+can we encapsulate all information needed to import a module into something (e.g. a struct) and re-use it?
+`data := {"stack", ["T":int]}`
+`@(data)` to import
+`IntStack = @(data)::StackType`
+when importing we want to replace specific symbols (T, Cmp, ...) with something else (int, or a function literal, ...).
+but treating them as string will not be strong typed.
+If we use `T = int` notation, maybe the user asks, can i use `T:int`? Why not? Why?
+We should be using something else, not `=` or `:` to indicate "replace". 
+Maybe we can use a hash. key can be a string (symbol), but value? it can be anything and it can be a type name!
+Also, we don't want to REPLACE the symbol. we want to relplace it's right side.
+So if we have `T = int` we want to replace it `int` with something.
+Why not make it this: in the module definition, user marks place-holders.
+`T = !Q` then user can replace `!Q` with something else. But what about conditions?
+What if I want to say, `T` should be a struct that has `Shape` field?
+we should not require module write to write any specific code to indicate it's a generic module.
+So they write:
+`T = int` or `T: nothing`
+when importing module, we cannot change `=` to `:` or vice versa.
+So we need another notation to indicate what T should be.
+`@("stack"){T => int}`
+what if we add a notation so we can have a map of string to type id/... ?
+can we eliminate type alias? If we can, generics will be simplified and we can simply use `=` notation in generics import.
+`@("stack"){T=int}`.
 
 
 ? - follow up
