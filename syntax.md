@@ -35,19 +35,19 @@ Module             = { ( Binding | NamedType | ImportBinding ) }
 ```
 Bindings at module-level can be either literals, functions or an import. We call these static bindings (vs dynamic bindings which include expressions and runtime calculations which you can define inside a function):
 ```
-Binding            = BindingLhs+ ":=" ["="] ( Expression | FunctionDecl )
+Binding            = BindingLhs+ "=" ["="] ( Expression | FunctionDecl )
 BindingLhs         = "_" | BINDING_NAME [ ":" TypeDecl ]
 ImportRename       = ( TYPE_NAME "=>" TYPE_NAME ) | ( BINDING_NAME "=>" BINDING_NAME )
 FunctionDecl       = "(" TypedName* ")" "->" ( Expression | ["("] TypeDecl [")"] CodeBlock )
 CodeBlock          = "{" { ReturnStatement | Binding } "}" | "{" "..." "}"
 ReturnStatement    = "::" Expression
-ImportBinding      = BindingLhs+ ":=" "@" "{" STRING+ "}" 
-                     [ "(" TypeDecl* ")" ] [ "{" ImportRename+ "}" ]
+ImportBinding      = "@" "[" STRING+ "]" 
+                     [ "{" ( NamedType | TypeAlias )+ "}" ]
 ```
 Expressions:
 ```
 Expression         = EqExpression     { ("and"|"or"|"xor") EqExpression }
-EqExpression       = CmpExpression    { ("="|"!=") CmpExpression }
+EqExpression       = CmpExpression    { ("=?"|"<>") CmpExpression }
 CmpExpression      = ShiftExpression  { (">"|"<"|">="|"<=") ShiftExpression }
 ShiftExpression    = AddExpression    { (">>"|"<<"|"^") AddExpression }
 AddExpression      = MulExpression    { ("+"|"-") MulExpression }
@@ -59,7 +59,7 @@ PrimaryExpression  = ( BINDING_NAME | "(" Expression ")" | ExpressionLiteral )
 ```
 Named type declaration:
 ```
-NamedType          = TYPE_NAME ":=" TypeDecl
+NamedType          = TYPE_NAME "=" TypeDecl
 TypeDecl           = TYPE_NAME | PrimitiveTypeDecl | SequenceTypeDecl | MapTypeDecl | 
                      UnionTypeDecl | StructTypeDecl | FnTypeDecl | ChannelTypeDecl
 PrimitiveTypeDecl  = "int" | "float" | "char" | "string" | "nothing" | "bool"
@@ -74,6 +74,7 @@ ChannelTypeDecl    = ( TYPE_NAME | PrimitiveTypeDecl ) ("!"|"?")
 
 Advanced operators (to be added later):
 ```
+TypeAlias = ???
 (* Range op *)       PrimaryExpression ".." PrimaryExpression |
 (* Nothing check*)   Expression "//" Expression |
 (* Cast *)           ( TYPE_NAME | PrimitiveTypeDecl ) "(" Expression* ")" |
@@ -98,6 +99,6 @@ If it is called with `process(int_or_float_var)` compiler will inject a piece of
 
 2. Each function will be mangled with type of it's inputs. So `process(int)` will become `process|1821` where `1821` is typecode of `int`. Each type will have it's own type-code which depends on it's name and point of declaration.
 
-3. Handling access to common parts: If we have `process := (x: {int,...})->int`, the expression `x.0` inside process can refere to different offsets. But compiler will generate the function for all matching types. So it can use appropriate offset when compiling `x.0` for every different type.
+3. Handling access to common parts: If we have `process = (x: {int,...})->int`, the expression `x.0` inside process can refere to different offsets. But compiler will generate the function for all matching types. So it can use appropriate offset when compiling `x.0` for every different type.
 
-4. If struct Circle, embeds Shape, there will be a complete Shape object laid inside Circle. When fields of Shape, are referred directly, compiler will calculate appropriate offset. `Shape := {id:int}`, `Circle := {Shape, r: float}`. Referring to `my_circle.Shape` will return the whole object. `my_circle.Shape.id` will refer to id inside Shape. `my_circle.id` will be mapped to `my_circle.Shape.id`.
+4. If struct Circle, embeds Shape, there will be a complete Shape object laid inside Circle. When fields of Shape, are referred directly, compiler will calculate appropriate offset. `Shape = {id:int}`, `Circle = {Shape, r: float}`. Referring to `my_circle.Shape` will return the whole object. `my_circle.Shape.id` will refer to id inside Shape. `my_circle.id` will be mapped to `my_circle.Shape.id`.
