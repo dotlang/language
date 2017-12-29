@@ -68,17 +68,17 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 
 01. **Import a module**: `@("/core/std/queue")` (you can also import from external sources like Github).
 02. **Primitive types**: `int`, `float`, `char`, `bool`, Sequence (`[int]`), Map (`[char:int]`), Function.
-03. **Bindings**: `my_var:int := 19` (type can be automatically inferred, everything is immutable).
-04. **Sequence**: `scores:[int] := [1, 2, 3, 4]` (`string` is essentially a sequence of `char`s).
-05. **Map**: `scores:[string:int] := ["A":1, "B":2, "C":3, "D": 4]`.
-06. **Named type**: `MyInt := int` (Defines a new type with same binary representation as `int`).
-07. **Struct type**: `Point := {x: int, y:int, data: float}` (Like `struct` in C).
-08. **Struct literal**: `location: Point := {x:10, y:20, data:1.19}`.
-09. **Generics**: `@("/core/Stack") { T := int}` (You can replace types in a module during import).
-10. **Union type**: `MaybeInt := int | nothing` (Can store either of possible types).
-11. **Polymorphic Union**: `AllShapes := {Shape, ...}` (A union of all struct types that have a field of type `Shape`.
-12. **Function**: `calculate: (int,int)->float := (x, y) -> float { :: x/y  }` (braces must be on their own line).
-13. **Concurrency**: `result :== processData(x,y,z)` (Evaluate an expression in parallel).
+03. **Bindings**: `my_var:int = 19` (type can be automatically inferred, everything is immutable).
+04. **Sequence**: `scores:[int] = [1, 2, 3, 4]` (`string` is essentially a sequence of `char`s).
+05. **Map**: `scores:[string:int] = ["A":1, "B":2, "C":3, "D": 4]`.
+06. **Named type**: `MyInt = int` (Defines a new type with same binary representation as `int`).
+07. **Struct type**: `Point = {x: int, y:int, data: float}` (Like `struct` in C).
+08. **Struct literal**: `location: Point = {x:10, y:20, data:1.19}`.
+09. **Generics**: `@("/core/Stack") { T = int }` (You can replace types in a module during import).
+10. **Union type**: `MaybeInt = int | nothing` (Can store either of possible types).
+11. **Polymorphic Union**: `AllShapes = {Shape, ...}` (A union of all struct types that have a field of type `Shape`.
+12. **Function**: `calculate: (int,int)->float = (x, y) -> float { :: x/y  }` (braces must be on their own line).
+13. **Concurrency**: `result == processData(x,y,z)` (Evaluate an expression in parallel).
 
 ## Symbols
 
@@ -94,8 +94,8 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 10. `..`  Range generator for sequence
 11. `...` Polymorphic union types
 12. `//`  Nothing-check operator
-13. `:`   Type declaration (struct, function inputs and bindings)
-14. `:=`  Binding declaration, named types
+13. `:`   Type declaration (struct, function inputs and bindings), type alias
+14. `=`   Binding declaration, named types
 15. `::`  Return operator
 16. `_`   Place-holder (lambda creator and assignments)
 17. `@()` Import
@@ -103,7 +103,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 19. `!`   Write-only channel
 20. `?`   Read-only channel
 21. `${}` Channel select operations
-22. `:==` Parallel execution
+22. `==`  Parallel execution
 
 ## Reserved keywords
 
@@ -123,7 +123,7 @@ These rules are highly advised but not mandatory.
 
 ## Operators
 
-Operators are mostly similar to C language (Conditional operators: `and, or, not, xor, =, <>, >=, <=`, Arithmetic: `+, -, *, /, %, %%`, `>>`, `<<`, `**` power) and some of them which are different are explained in corresponding sections (Casting, Chain operator, range, underscore, ...).
+Operators are mostly similar to C language (Conditional operators: `and, or, not, xor, =?, <>, >=, <=`, Arithmetic: `+, -, *, /, %, %%`, `>>`, `<<`, `**` power) and some of them which are different are explained in corresponding sections (Casting, Chain operator, range, underscore, ...).
 
 Note that `=` will do a comparison based on contents of bindings.
 `A // B` will evaluate to A if it is not `nothing`, else it will be evaluated to B (e.g. `y := x // y // z // 0`).
@@ -141,17 +141,17 @@ If the value is a struct, you can destruct it into it's elements (Example 5). In
 
 **Syntax**: 
 
-1. `identifier := value/expression`
-2. `identifier : type := value/expression`
+1. `identifier = value/expression`
+2. `identifier : type = value/expression`
 
 **Examples**
 
-1. `x: int := 12`
-2. `g := 19.8 #type is inferred`
-3. `a,b := process() #call the function and store the result in two bindings: a and b`
-4. `x := y`
-5. `a,b := {1, 100}`
-6. `a,_ := {1, 100}`
+1. `x: int = 12`
+2. `g = 19.8 #type is inferred`
+3. `a,b = process() #call the function and store the result in two bindings: a and b`
+4. `x = y`
+5. `a,b = {1, 100}`
+6. `a,_ = {1, 100}`
 
 # Type system
 
@@ -181,11 +181,11 @@ Note that `func` is explain in the "Function" section and channel types are expl
 
 **Examples**
 
-1. `x := 12`
-2. `x := 1.918`
-3. `x := 'c'`
-4. `g: bool := true`
-5. `str: string := "Hello world!"`
+1. `x = 12`
+2. `x = 1.918`
+3. `x = 'c'`
+4. `g: bool = true`
+5. `str: string = "Hello world!"`
 
 ## Sequence
 
@@ -195,11 +195,11 @@ You refer to elements inside sequence using `x[i]` notation where `i` is index n
 
 **Examples**
 
-1. `x: [int] := [1, 2, 3, 4]`
-2. `x := [1..10] #initialize a sequence using range operator`
-3. `x: [[int]] := [ [1, 2], [3, 4], [5, 6] ] #a 2-D sequence of integer numbers`
-4. `x: [int] := [1, 2]&[3, 4]&[5, 6] #merging multiple sequences`
-5. `n := x[10]`
+1. `x: [int] = [1, 2, 3, 4]`
+2. `x = [1..10] #initialize a sequence using range operator`
+3. `x: [[int]] = [ [1, 2], [3, 4], [5, 6] ] #a 2-D sequence of integer numbers`
+4. `x: [int] = [1, 2]&[3, 4]&[5, 6] #merging multiple sequences`
+5. `n = x[10]`
 
 ## Map
 
@@ -209,8 +209,8 @@ An empty map can be denoted using `[:]` notation.
 
 **Examples**
 
-1. `pop: [string:int] := ["A":1,"B":2,"C":3]`
-2. `data, is_found := pop["A"]`
+1. `pop: [string:int] = ["A":1,"B":2,"C":3]`
+2. `data, is_found = pop["A"]`
 
 ## Union
 
@@ -220,9 +220,9 @@ When you convert a union variable to one of it's types (Example 3), you also get
 
 **Examples**
 
-1. `Day_of_week := SAT | SUN | MON | TUE | WED | THU | FRI`
-2. `int_or_float: int | float := 11`
-3. `int_value, is_valid := int(my_union)`
+1. `DayOfWeek = SAT | SUN | MON | TUE | WED | THU | FRI`
+2. `int_or_float: int | float = 11`
+3. `int_value, is_valid = int(my_union)`
 
 ## Struct
 
@@ -234,14 +234,14 @@ You can use `.0,.1,.2,...` notation to access fields inside an untyped struct (E
 
 **Examples**
 
-1. `Point := {x:int, y:int}`
-2. `point2: Point := {x:100, y:200}`
-3. `point3: Point := {100, 200}`
-4. `point1 := {100, 200} #untyped struct`
-5. `point4 := {point3, y:101} #update a struct`
-6. `x,y := point1 #destruction to access struct data`
-7. `another_point: Point := {x:11, y:my_point.y + 200}`
-8. `x := point1.1 #another way to access struct data`
+1. `Point = {x:int, y:int}`
+2. `point2: Point = {x:100, y:200}`
+3. `point3: Point = {100, 200}`
+4. `point1 = {100, 200} #untyped struct`
+5. `point4 = {point3, y:101} #update a struct`
+6. `x,y = point1 #destruction to access struct data`
+7. `another_point: Point = {x:11, y:my_point.y + 200}`
+8. `x = point1.1 #another way to access struct data`
 
 ### Polymorphic Union Types
 
@@ -255,14 +255,14 @@ When using `{T,...}` notation, you can access the common part without casting th
 
 **Examples**
 
-1. `Shape := { id:int }`
-2. `Circle := { Shape, radius: float} #Shape is contained within a Circle`
-3. `my_circle := Circle{id:=100, radius:=1.45} #creating a Circle binding`
-4. `x: [{Shape, ...}] := [my_circle, my_triangle, ...]`
-5. `process := (c: Circle) -> process(c.Shape) #simple forwarding`
+1. `Shape = { id:int }`
+2. `Circle = { Shape, radius: float} #Shape is contained within a Circle`
+3. `my_circle = Circle{id:=100, radius:=1.45} #creating a Circle binding`
+4. `x: [{Shape, ...}] = [my_circle, my_triangle, ...]`
+5. `process = (c: Circle) -> process(c.Shape) #simple forwarding`
 6. `x: {id:int, ...} #type of x is union of all types that have id:int`
 7. `x: {id:int, name:string, ...}`, `x.id`, `x.name`
-8. `process := (s: {Shape,...}) -> process(s.0) #general forwarding`
+8. `process = (s: {Shape,...}) -> process(s.0) #general forwarding`
 
 ## Named types
 
@@ -274,11 +274,23 @@ If a function is called which has no candidate for the named type, the candidate
 
 **Examples**
 
-1. `MyInt := int`
-2. `IntArray := [int]`
-3. `Point := {x: int, y: int}`
-4. `bool := true | false`
-5. `x: MyInt := 10`, `y: MyInt := MyInt(10)`
+1. `MyInt = int`
+2. `IntArray = [int]`
+3. `Point = {x: int, y: int}`
+4. `bool = true | false`
+5. `x: MyInt = 10`, `y: MyInt = MyInt(10)`
+
+## Type alias
+
+You can use `T: X` notation to define `T` as another speelling for type `X`. In this case, `T` and `X` will be the same thing, so you cannot define two functions with same name for `T` and `X`.
+
+You can use a type alias to prevent name conflict when importing modules.
+
+**Examples**
+
+1. `MyInt: int`
+2. `process = (x:int)->10`
+3. `process = (x:MyInt)->10` Error! `process:(int)->int` is already defined.
 
 ## Casting
 
@@ -294,11 +306,11 @@ The `Type(nothing)` notation gives you the default value for the given type (emp
 
 **Examples**
 
-1. `x:int := int(1.91)`
-2. `int_value, has_int := int(int_or_float)`
-3. `MyInt := int`, `x:MyInt := MyInt(int_var)`
-4. `y:int := x`
-5. `x := MyFuncType(t)`
+1. `x:int = int(1.91)`
+2. `int_value, has_int = int(int_or_float)`
+3. `MyInt = int`, `x:MyInt = MyInt(int_var)`
+4. `y:int = x`
+5. `x = MyFuncType(t)`
 
 # Functions
 
@@ -321,26 +333,26 @@ You can alias a function by defining another binding pointing to it (Example 12)
 
 **Examples**
 
-01. `myFunc:(int, int) -> int := (x:int, y:int) -> int { :: 6+y+x }`
-02. `log := (s: string) -> { print(s) } #this function returns nothing`
-03. `process := (pt: Point)-> pt.x #no need to use braces when body is a single expression`
-04. `process2 := (pt: Point) -> {pt.x, pt.y} #this function returns a struct`
-05. `my_func := (x:int) -> x+9 #no need to specify output type as it can be implied`
-06. `myFunc9 := (x:int) -> {int} {12} #this function returns a struct literal`
-07. `process := (x: int|Point])->int #this function can accept either int or Point type as input or int|Point type`
-08. `fileOpen := (path: string) -> File {...}`
-09. `_,b := process2(myPoint) #ignore function output`
+01. `myFunc:(int, int) -> int = (x:int, y:int) -> int { :: 6+y+x }`
+02. `log = (s: string) -> { print(s) } #this function returns nothing`
+03. `process = (pt: Point)-> pt.x #no need to use braces when body is a single expression`
+04. `process2 = (pt: Point) -> {pt.x, pt.y} #this function returns a struct`
+05. `my_func = (x:int) -> x+9 #no need to specify output type as it can be implied`
+06. `myFunc9 = (x:int) -> {int} {12} #this function returns a struct literal`
+07. `process = (x: int|Point])->int #this function can accept either int or Point type as input or int|Point type`
+08. `fileOpen = (path: string) -> File {...}`
+09. `_,b = process2(myPoint) #ignore function output`
 10. 
 ```
-process := (x:int) -> 
+process = (x:int) -> 
 { 
   #if x<10 return 100, otherwise return 200
   :: [nothing, 100][x<10]
   :: 200
 }
 ``` 
-11. `T1 := (int)->(int|string)`
-12. `process := (x:int)->x+1`, `process2 := process`
+11. `T1 = (int)->(int|string)`
+12. `process = (x:int)->x+1`, `process2 = process`
 
 ## Function call dispatch
 
@@ -350,21 +362,21 @@ So for example if `x` of type `int|float|string` contains a float value, calling
 
 Note that if you have a `(int|float)->string` function defined, you cannot define another function with the same name and signature but for `int` or `float` input. Because they will overlap.
 
-If `MyInt := int` is defined in the code, you cannot call a function which needs an `int` with a `MyInt` binding, unless it is forwarded explicitly in the code (e.g. `process := (x:MyInt) -> process(int(x))`).
+If `MyInt = int` is defined in the code, you cannot call a function which needs an `int` with a `MyInt` binding, unless it is forwarded explicitly in the code (e.g. `process = (x:MyInt) -> process(int(x))`).
 
 ## Function type
 
 Bindings of this type can hold a reference to a function or a lambda. You can send those bindings to other functions or they can be store output of a function.
 
-**Syntax**: `Fp := (type1, type2, ...) -> OutputType`
+**Syntax**: `Fp = (type1, type2, ...) -> OutputType`
 
 **Examples**
 
-1. `Adder := (int,int)->int #defining a named type based on a function type`
-2. `myAdder := (x:int, y:int) -> x+y #initialize a binding with a function literal`
-3. `adderPointer: Adder := myAdder #Store refernce to a function in a function pointer`
-4. `sort := (x: [int], comparer: (int,int) -> bool) -> [int] #this function accepts a function pointers`
-5. `map := (input: [T], mapper: (T) -> S) -> [S]`
+1. `Adder = (int,int)->int #defining a named type based on a function type`
+2. `myAdder = (x:int, y:int) -> x+y #initialize a binding with a function literal`
+3. `adderPointer: Adder = myAdder #Store refernce to a function in a function pointer`
+4. `sort = (x: [int], comparer: (int,int) -> bool) -> [int] #this function accepts a function pointers`
+5. `map = (input: [T], mapper: (T) -> S) -> [S]`
 
 ## Lambda (Function literal)
 
@@ -378,20 +390,20 @@ If lambda is assigned to a variable, you can invoke itself from inside (Example 
 
 **Examples**
 
-1. `f1 := (x: int, y:int) -> int { x+y }`
-2. `rr := (x: int, y:int) -> x + y #you can ignore return type and braces`  
-3. `rr := () -> int { :: x + y } #here x and y are captures from parent function`
-4. `test := (x:int) -> PlusFunc { :: (y:int) -> y + x } #this function returns a lambda`
+1. `f1 = (x: int, y:int) -> int { x+y }`
+2. `rr = (x: int, y:int) -> x + y #you can ignore return type and braces`  
+3. `rr = () -> int { :: x + y } #here x and y are captures from parent function`
+4. `test = (x:int) -> PlusFunc { :: (y:int) -> y + x } #this function returns a lambda`
 5. `(x:int)->int { x+1 } (10) #you can invoke a lambda at the point of declaration`
-6. `process := (x:int, y:float, z: string) -> { ... }`
-7. `lambda1 := process(10, _, _) #defining a lambda based on existing function`
-8. `ff := (x:int) -> int { ff(x+1) }`
+6. `process = (x:int, y:float, z: string) -> { ... }`
+7. `lambda1 = process(10, _, _) #defining a lambda based on existing function`
+8. `ff = (x:int) -> int { ff(x+1) }`
 9. 
 ```
-process := (x:int)->...
-process := (y:string)->...
+process = (x:int)->...
+process = (y:string)->...
 ...
-g := process(_:int)
+g = process(_:int)
 ```
 
 ## Chain operator
@@ -405,16 +417,16 @@ This operator is used to put arguments before a lambda and simulate a scoped fun
 
 **Examples**
 
-1. `add := (x:int, y:int) -> x+y`, `(10, 20).{add(_,_)}`, `(10,20).{add}` => `add(10,20)`, 
+1. `add = (x:int, y:int) -> x+y`, `(10, 20).{add(_,_)}`, `(10,20).{add}` => `add(10,20)`, 
 2. `({1,2}).{processStruct(_)}` => `processStruct({1,2})`
 3. `(6).{addTo(1, _)}` => `addTo(1, 6)`
-4. `result := (input, check1(5, _)).{pipe(_,_)}.{pipe(_, check3(1,2,_))}.{pipe(_,check5(8,_,1))}`
-5. `result := error_or_int.{(x:error)->10, (y:int)->20}`
+4. `result = (input, check1(5, _)).{pipe(_,_)}.{pipe(_, check3(1,2,_))}.{pipe(_,check5(8,_,1))}`
+5. `result = error_or_int.{(x:error)->10, (y:int)->20}`
 6. `int_or_float_or_string.{(int)->int {...}, (float)->int {...} #WRONG, string is not matched`
 
 # Modules
 
-Modules are source code files. You can import them into current module and use their public types and bindings. You can import modules from local file-system, GitHub or any other external source which the compiler supports (If import path starts with `.` or `..` it is relative path, if it start with `/` it is based on global DOTPATH, else it's using external protocols like `git`). You can also rename identifiers to prevent name conflict using `=>` notation.
+Modules are source code files. You can import them into current module and use their public types and bindings. You can import modules from local file-system, GitHub or any other external source which the compiler supports (If import path starts with `.` or `..` it is relative path, if it start with `/` it is based on global DOTPATH, else it's using external protocols like `git`). You can also rename identifiers to prevent name conflict using type alias.
 
 Note that bindings and functions which start with underscore, won't be available outside their own module.
 
@@ -423,7 +435,7 @@ Bindings defined at module level must be compile time calculatable.
 **Syntax**
 
 1. `@("/path/to/module1", "path/to/module2", ...)`
-2. `@("/path/to/module" ...) { name2 := name1, Type1 => Type2, ... }`
+2. `@("/path/to/module" ...) { name2 = name1, Type1 => Type2, ... }`
 
 **Examples**
 
@@ -431,7 +443,7 @@ Bindings defined at module level must be compile time calculatable.
 2. `@("../core/st/socket") #import with relative path`
 3. `@("/core/std/queue, stack, heap") #import multiple modules from the same path`
 4. `@("git/github.com/net/server/branch1/dir1/dir2/module") #you need to specify branch/tag/commit name here`
-5. `base_cassandra := "github/apache/cassandra/mybranch"`
+5. `base_cassandra = "github/apache/cassandra/mybranch"`
 6. `@(base_cassandra&"/path/module") #you can create string literals for import path`
 7. `@("/path/to/module") #only import these two types/bindings`
 8. `@("/path/to/module") {  Type1 => Type2 } #import everything but rename Type1 to Type2 to prevent a conflict`
@@ -447,29 +459,29 @@ If there are any existing definitions for the generic type or functions based on
 
 **Example**
 
-1. `@("/core/stack"){ T := MyType} #replace type T inside stack module with MyType`
-2. `x: Stack := createStack()`
+1. `@("/core/stack"){ T = MyType} #replace type T inside stack module with MyType`
+2. `x: Stack = createStack()`
 3.
 ```
 #set.dot
-T := nothing #T can be anything provided from outside
-equals:(T,T)->bool := (x:T, y:T)->false
+T = nothing #T can be anything provided from outside
+equals:(T,T)->bool = (x:T, y:T)->false
 ```
 4.
 ```
 #set[t].dot
 #this means T must contain a data field of type string.
-T := {data: string}
+T = {data: string}
 #and a function with below signature, the imported module can replace this with another implementation
-process:(T)->int := (x:T)->100
+process:(T)->int = (x:T)->100
 ```
 5. 
 ```
 @("storage")
 {
-    T := [int],
-    U := {float, string},
-    Cmp := (x:int) -> bool
+    T = [int],
+    U = {float, string},
+    Cmp = (x:int) -> bool
     {
         :: x>0
     },
@@ -479,7 +491,7 @@ process:(T)->int := (x:T)->100
 
 # Concurrency
 
-dotLang provides channels as a light-weight communication mechanism between two pieces of code and `:==` notation for parallel execution of an expression.
+dotLang provides channels as a light-weight communication mechanism between two pieces of code and `==` notation for parallel execution of an expression.
 
 Channels are a one-way (read-only or write-only) data transportation mechanism which are open the moment they are created and closed when they are GC'd (disposed). They can be buffered or have a transformation function (`(T)->T`) which will be applied before write or after read.
 
@@ -487,29 +499,29 @@ Any party can close/dispose their channel. Send or receive on a channel where th
 
 Exclusive resources (sockets, file, standard I/O...) are implemented using channels to hide inherent mutability of their underlying resources.
 
-You can use `:==` syntax to evaluate an expression in parallel and when its finished and store result in bindings. If expression creates a struct you can destruct it using `a,b,c :=` syntax or use `_` to ignore expression result. Any reference to result after parallel execution will pause current thread until execution is finished. You can refer to output of a parallel execution inside body of a lambda, and code won't be stopped unless the lambda is invoked (Example 2 and 3).
+You can use `==` syntax to evaluate an expression in parallel and when its finished and store result in bindings. If expression creates a struct you can destruct it using `a,b,c =` syntax or use `_` to ignore expression result. Any reference to result after parallel execution will pause current thread until execution is finished. You can refer to output of a parallel execution inside body of a lambda, and code won't be stopped unless the lambda is invoked (Example 2 and 3).
 
 **Syntax**
 
-1. Parallel execute `result :== expression` 
-2. Create `reader: T?, writer: T! := createChannel(buffer_size, r_lambda, w_lambda)`
-3. Read data `data := reader?`
+1. Parallel execute `result == expression` 
+2. Create `reader: T?, writer: T! = createChannel(buffer_size, r_lambda, w_lambda)`
+3. Read data `data = reader?`
 4. Write data `writer!data`
-5. Select: `data, channel := ${rch1?, rch2?, wch1!data1, wch2!data2}`
-6. Select: `data, channel := ${rch1?, [rch2,rch3]?, wch1!data1, [wch2,wch3]![data2, data3]}`
+5. Select: `data, channel = ${rch1?, rch2?, wch1!data1, wch2!data2}`
+6. Select: `data, channel = ${rch1?, [rch2,rch3]?, wch1!data1, [wch2,wch3]![data2, data3]}`
 
 **Examples**
 
 1. 
 ```
-std_reader, std_writer := createStd() #create pair of channels to interact with standard input and output
-data := std_reader? #read something from the channel which read from standard input
+std_reader, std_writer = createStd() #create pair of channels to interact with standard input and output
+data = std_reader? #read something from the channel which read from standard input
 std_write!"Hello" #send data to stndard output
-reader, writer := createIntChannel(100) #specify buffer size
+reader, writer = createIntChannel(100) #specify buffer size
 ```
-2. `data :== processInfo(1,2,a) #evaluate the expression in parallel and store the output in data`
-3. `getData := () -> data #any call to getData will block current thread until the call to processInfo is finished`
-4. `T := (int|float)!`
+2. `data == processInfo(1,2,a) #evaluate the expression in parallel and store the output in data`
+3. `getData = () -> data #any call to getData will block current thread until the call to processInfo is finished`
+4. `T = (int|float)!`
 
 # Other Features
 
@@ -519,10 +531,10 @@ You can use sequence and maps for conditionals (Examples 2 and 3) and chain oper
 
 **Examples**
 
-1. `v: int|float|string := processData()`
-   `data := v.{(x:int)->10, (x:float)->20, (x:string)->30}`
-2. `x:int := [100, 200][a>0]`
-3. `x:int := [nothing, 100][a>0] // processData(a)`
+1. `v: int|float|string = processData()`
+   `data = v.{(x:int)->10, (x:float)->20, (x:string)->30}`
+2. `x:int = [100, 200][a>0]`
+3. `x:int = [nothing, 100][a>0] // processData(a)`
 
 ## dispose
 
@@ -536,18 +548,18 @@ If a really unrecoverable error happens, you should exit the application by call
 
 In special cases like a plugin system, where you must control exceptions, you can use built-in function `invoke` which will return an error result if the function which it calls exits.
 
-**Syntax**: `process := () -> int|exception { ... :: exception{...} }`
+**Syntax**: `process = () -> int|exception { ... :: exception{...} }`
 
 **Examples**
 
-1. `result: int|exception := invoke(my_function)`
+1. `result: int|exception = invoke(my_function)`
 
 # Examples
 
 ## Empty application
 
 ```
-main := () -> 0
+main = () -> 0
 ```
 
 This is a function, called `main` which returns `0` (very similar to C/C++ except `main` function has no input).
@@ -555,7 +567,7 @@ This is a function, called `main` which returns `0` (very similar to C/C++ excep
 ## Hello world
 
 ```
-main := () -> print("Hello world!")
+main = () -> print("Hello world!")
 ```
 
 ## Expression parser
@@ -563,19 +575,19 @@ main := () -> print("Hello world!")
 We want to write a function which accepts a string like `"2+4-3"` and returns the result (`3`).
 
 ```
-NormalExpression := {op: char, left: Expression, right: Expression}
-Expression := int|NormalExpression
+NormalExpression = {op: char, left: Expression, right: Expression}
+Expression = int|NormalExpression
 
-eval := (input: string) -> float 
+eval = (input: string) -> float 
 {
-  exp := parse(input)
+  exp = parse(input)
   :: innerEval(exp)
 }
 
-innerEval := (exp: Expression) -> float 
+innerEval = (exp: Expression) -> float 
 {
   :: [nothing, int(exp).0][int(exp).1]
-  y,_ := NormalExpression(exp)
+  y,_ = NormalExpression(exp)
   
   :: [nothing, innerEval(y.left) + innerEval(y.right)][y.op = '+']
   :: [nothing, innerEval(y.left) - innerEval(y.right)][y.op = '-']
@@ -586,16 +598,16 @@ innerEval := (exp: Expression) -> float
 
 ## Quick sort
 ```
-quickSort:([int], int, int)->[int] := (list:[int], low: int, high: int) ->
+quickSort:([int], int, int)->[int] = (list:[int], low: int, high: int) ->
 {
   :: [nothing, list][high >= low]
   
-  mid_index := (high+low)/2
-  pivot := list[mid_index]
+  mid_index = (high+low)/2
+  pivot = list[mid_index]
   
   #filter is a built-in function
-  small_list := filter( list, (x:int)-> x<pivot )
-  big_list   := filter( list, (x:int)-> x>pivot )
+  small_list = filter( list, (x:int)-> x<pivot )
+  big_list   = filter( list, (x:int)-> x>pivot )
   
   :: quickSort(small_list) & [pivot] & quickSort(big_list)
 }
@@ -604,9 +616,9 @@ quickSort:([int], int, int)->[int] := (list:[int], low: int, high: int) ->
 ## Filtered sum
 A function which accepts a list of numbers and returns sum of even numbers.
 ```
-filteredSum := (data: [int]) -> int
+filteredSum = (data: [int]) -> int
 {
-  calc := (index: int, sum: int) -> int
+  calc = (index: int, sum: int) -> int
   {
     :: [nothing, sum][index>=length(data)]
     :: calc(index+1, sum+data[index])
@@ -620,10 +632,10 @@ filteredSum := (data: [int]) -> int
 A function which accepts a number and returns it's digits in a sequence of characters.
 Generally for this purpose, using a linked-list is better because it will provide better performance.
 ```
-extractor := (n: number, result: string) -> string
+extractor = (n: number, result: string) -> string
 {
   :: [nothing, append(result, char(48+n))][n<10]
-  digit := n % 10
+  digit = n % 10
   :: extractor(n/10, append(result, char(48+digit))
 }
 ```
@@ -632,14 +644,14 @@ extractor := (n: number, result: string) -> string
 A function which accepts two sequences of numbers and returns the maximum of sum of any any two numbers chosen from each of them.
 This can be done by finding maximum element in each of the arrays but we want to do it with a nested loop.
 ```
-maxSum := (a: [int], b: [int]) -> int
+maxSum = (a: [int], b: [int]) -> int
 {
-	calc := (idx1: int, idx2: int, current_max: int) -> int
+	calc = (idx1: int, idx2: int, current_max: int) -> int
 	{
 		:: [nothing, current_max][idx2 >= length(b)]
-		sum := a[idx1] + b[idx2]
-		next1 := (idx1+1) % length(a)
-		next2 := idx2 + (idx1+1)/length(a)
+		sum = a[idx1] + b[idx2]
+		next1 = (idx1+1) % length(a)
+		next2 = idx2 + (idx1+1)/length(a)
 		:: calc(next1, next2, max(current_max, sum))
 	}
 	
@@ -649,11 +661,11 @@ maxSum := (a: [int], b: [int]) -> int
 
 ## Fibonacci
 ```
-fib := (n: int, cache: [int|nothing]) -> int
+fib = (n: int, cache: [int|nothing]) -> int
 {
 	:: [nothing, int(cache[n]).0][cache[n] <> nothing]
-	seq_final1 := set(seq, n-1, fib(n-1, cache))
-	seq_final2 := set(seq_final1, n-2, fib(n-2, seq_final1))
+	seq_final1 = set(seq, n-1, fib(n-1, cache))
+	seq_final2 = set(seq_final1, n-2, fib(n-2, seq_final1))
 
 	:: seq_final2[n-1]+seq_final2[n-2]
 }
@@ -732,4 +744,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.96**: Jun 2, 2017 - Removed operator overloading, clarifications about casting, renamed local anything to `!`, removed `^` and introduced shortcut for type specialization, removed `.@` notation, added `&` for combine statements and changed `^` for lambda-maker, changed notation for tuple and type specialization, `%` for casting, removed `!` and added support for generics, clarification about method dispatch, type system, embedding and generics, changed inheritance model to single-inheritance to make function dispatch more well-defined, added notation for implicit and reference, Added phantom types, removed `double` and `uint`, removed `ref` keyword, added `!` to support protocol parameters.
 - **Version 0.97**: Jun 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` place holder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is typed statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
-- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting, removed `^` operator and replaced with generics, removed `@` (replaced with chain operator and casting), removed function forwarding, removed compound literal, changed notation for channel read, write and select (Due to changes in generics and sequence and removal of compound literal) and added `$` for select, add notation to filter imported identifiers in import, removed autoBind section and added a brief explanation for `TargetType()` notation in cast section, rename chain operator to `@`, replaced return keyword with `::`, replaced `import` with `@` notation and support for rename and filter for imported items, replaced `@` with `.[]` for chain operator, remove condition for return and replaced with rule of returning non-`nothing` values, change chain notation from `.[]` to `.{}` and import notation from `@[]` to `@()`, Added notation for polymorphic generic types, changed the notation for import generic module and rename identifiers, removed `func` keyword, extended general union type syntax to unnamed types with field type and names (e.g. `{id:int, name:string,...}`), Added shift-left and right `>>,<<` and power `**` operators, all litearls for seq and map and struct must be prefixed with `_`, in struct literals you can include other structs to implement struct update, changed notation for abstract functions, Allow access to common parts of a union type with polymorphic union types, use `nothing` instead of `...` for generic types and abstract functions, removed phantom types, change `=>` notation to `^T :=` notation to rename symbols, removed composition for structs and extended/clarified usage of polymorphic sum types for embedding and function forwarding, change map type from `[K,V]` to `[K:V]`, removed auto-bind `Type()`, remove abstract functions, remove `_` prefix for literals, remove `^` and add `=>` to rename types so as to fix issue with introducion of new named types when filtering an import operation, replace operators `:=` to `=` and `:==` to `==` and `=` (comparison) to `=?
+- **Version 1.00**: ???? ?? ????? - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting, removed `^` operator and replaced with generics, removed `@` (replaced with chain operator and casting), removed function forwarding, removed compound literal, changed notation for channel read, write and select (Due to changes in generics and sequence and removal of compound literal) and added `$` for select, add notation to filter imported identifiers in import, removed autoBind section and added a brief explanation for `TargetType()` notation in cast section, rename chain operator to `@`, replaced return keyword with `::`, replaced `import` with `@` notation and support for rename and filter for imported items, replaced `@` with `.[]` for chain operator, remove condition for return and replaced with rule of returning non-`nothing` values, change chain notation from `.[]` to `.{}` and import notation from `@[]` to `@()`, Added notation for polymorphic generic types, changed the notation for import generic module and rename identifiers, removed `func` keyword, extended general union type syntax to unnamed types with field type and names (e.g. `{id:int, name:string,...}`), Added shift-left and right `>>,<<` and power `**` operators, all litearls for seq and map and struct must be prefixed with `_`, in struct literals you can include other structs to implement struct update, changed notation for abstract functions, Allow access to common parts of a union type with polymorphic union types, use `nothing` instead of `...` for generic types and abstract functions, removed phantom types, change `=>` notation to `^T :=` notation to rename symbols, removed composition for structs and extended/clarified usage of polymorphic sum types for embedding and function forwarding, change map type from `[K,V]` to `[K:V]`, removed auto-bind `Type()`, remove abstract functions, remove `_` prefix for literals, remove `^` and add `=>` to rename types so as to fix issue with introducion of new named types when filtering an import operation, replace operators `:=` to `=` and `:==` to `==` and `=` (comparison) to `=?`, adding type alias notation `T:X`, change import operator to `@[]` and modify generics import
