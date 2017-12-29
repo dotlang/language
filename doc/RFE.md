@@ -2129,6 +2129,54 @@ Or let's treat import as a mini module. So we put some definitions before import
 IntStack : @("stack"){T = int}
 ```
 `IntStack, _ = @("stack", T=int, StackType, _)`this answers all questions but is messy and not simple.
+Idea: Let's limit functionality of generics and make the whole problem simpler, scope smaller, and solutions simpler.
+e.g. type must always be nothing. but how does this simplify things? no notation needs to be changed if we remove this rule.
+proposal: mini-module surrounded by `{}` which anything without `_` is exported.
+So we can include and rename and export renamed identifiers.
+So:
+```
+{
+	T = int
+	StackType = [T]
+	T = float
+	IntStack = StackType
+}
+```
+is a mini-module which exports `T=float` and `IntStack` to the outside module.
+but how can I imply overwriting an existing def? Why `T=float` overwrites `T=int`?
+Proposal: I can "pin" a type/binding before import. So the import cannot overwrite them.
+```
+{
+	#definitions here will be visible to outsitde but are not exported.
+	T = float
+	@["stack"]
+	IntStack = StackType
+}
+```
+So in other words, if inside a module/mini-module there are multiple defs for a type/binding, the first one is in effect.
+```
+T = string
+{
+	T = int
+	@["stack"]
+	IntStack = StackType
+}
+{
+	T = float   #isn't this overriden by the previous one T=int?
+	@["stack"]
+	FloatStack = StackType
+}
+```
+the rule of mini-module and overriding are not simple.
+```
+d = ["stack"]
+@d
+{
+	#definitions inside this block have higher priority than ones inside the module
+	T = int #this will repace current definition for T
+	IntStack: StackType #this will be added/updated and exported
+}
+```
 
 ? - follow up
 with this maybe i can use `:=` for type alias.then I can remove need for `=>` for rename. as I can alias a type using this notation.
@@ -2136,3 +2184,16 @@ or `=` for value binding and `:=` for types.
 
 ? - If a generic type is `nothing`, you can replace if with anything.
 if it is `int|nothing`, you can replace with `int`, `nothing` or `int|nothing`.
+
+? - we should also simplify chain operator
+chain with only one func.
+support `#int` notation or similar to be able to use a map to dispatch funtion call.
+`typeId(x)` will return internal type of a variable. it is compile-time for non-unions and runtime for unions.
+return is an integer. `^int` returns type id of int.
+`x := [^int:10, ^float:20][typeId(v)]`
+note than union choices must be either primitive or named. 
+why not use type name instead?
+`x := [int:10, float:20][type(v)]`
+or 
+
+? - instead of a scomplex op with 3 funcionalities add 3 simple oeprators.
