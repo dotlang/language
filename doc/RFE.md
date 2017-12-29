@@ -2026,7 +2026,7 @@ N -
 `T := int|float!`
 `T := (int|float)!`
 
-? - We are using `:=` much more than `=`.
+Y - We are using `:=` much more than `=`.
 So why not use `=` instead of `:=`
 we can use `:=:`?
 `:=` -> `=`
@@ -2044,6 +2044,8 @@ result:
 - use `=` for bindings `x:int = 12`
 - use `:=` for named types: `T := int`
 - replace `:==` with `==` for parallel execution
+
+Y - Add type alias
 what about type alias?
 option 1: no type alias. we only have `:=` for named types and in import, you have to use `=>` for rename
 option 2: `:=` to define named type, `=` to define type alias. so 
@@ -2052,6 +2054,8 @@ T = int
 process = (x:int)->x+1
 process = (x:T)->x+2 #ERROR! we already have process(int)
 ```
+
+Y - Better import and generics
 then we can get rid of `=>` and use `=` to alias from within a module
 ```
 IntStack = @("stack"){T := int}.StackType
@@ -2173,12 +2177,16 @@ d = ["stack"]
 @d
 {
 	#definitions inside this block have higher priority than ones inside the module
-	T = int #this will repace current definition for T
+	T = int, #this will repace current definition for T
 	IntStack: StackType #this will be added/updated and exported
 }
+or:
+@["stack"]
+what if we want to compress the defs?
+@["stack"] { T = int, IntStack: StckType }
 ```
 
-? - follow up
+N - follow up
 with this maybe i can use `:=` for type alias.then I can remove need for `=>` for rename. as I can alias a type using this notation.
 or `=` for value binding and `:=` for types.
 
@@ -2196,5 +2204,25 @@ why not use type name instead?
 `x := [int:10, float:20][type(v)]`
 or ?
 maybe its better to have chain with multiple candidates.
+option1: chain operator with multiple functions
+option2: simple chain operator, function to get type of a union, notation to get type id of a type, ...
+q: can we do the same thing when defining a normal function binding?
+```
+process = (x:int)->12, (y:float)->19
+process(int_var)
+process(float_var)
+proces(int_or_float)
+```
+vs
+```
+process = (x:int)->12
+process = (y:float)->19
+process(int_var)
+process(float_var)
+proces(int_or_float)
+```
+```
+int_or_float.{process}
+```
 
 ? - instead of a scomplex op with 3 funcionalities add 3 simple oeprators.
