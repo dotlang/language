@@ -2190,10 +2190,10 @@ N - follow up
 with this maybe i can use `:=` for type alias.then I can remove need for `=>` for rename. as I can alias a type using this notation.
 or `=` for value binding and `:=` for types.
 
-? - If a generic type is `nothing`, you can replace if with anything.
+N - If a generic type is `nothing`, you can replace if with anything.
 if it is `int|nothing`, you can replace with `int`, `nothing` or `int|nothing`.
 
-? - we should also simplify chain operator
+N - we should also simplify chain operator
 chain with only one func.
 support `#int` notation or similar to be able to use a map to dispatch funtion call.
 `typeId(x)` will return internal type of a variable. it is compile-time for non-unions and runtime for unions.
@@ -2225,4 +2225,10 @@ proces(int_or_float)
 int_or_float.{process}
 ```
 
-? - instead of a scomplex op with 3 funcionalities add 3 simple oeprators.
+N - instead of a scomplex op with 3 funcionalities add 3 simple oeprators.
+
+? - Chain operator `.{}` braces can be confused with lambda/function literal.
+So can `[]` be confused with seq/map literal.
+`x.{add(8,_)}`
+`x.[add(8,_)}`
+
