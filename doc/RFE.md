@@ -2194,6 +2194,7 @@ return is an integer. `^int` returns type id of int.
 note than union choices must be either primitive or named. 
 why not use type name instead?
 `x := [int:10, float:20][type(v)]`
-or 
+or ?
+maybe its better to have chain with multiple candidates.
 
 ? - instead of a scomplex op with 3 funcionalities add 3 simple oeprators.
