@@ -2227,8 +2227,36 @@ int_or_float.{process}
 
 N - instead of a scomplex op with 3 funcionalities add 3 simple oeprators.
 
-? - Chain operator `.{}` braces can be confused with lambda/function literal.
+N - Chain operator `.{}` braces can be confused with lambda/function literal.
 So can `[]` be confused with seq/map literal.
 `x.{add(8,_)}`
 `x.[add(8,_)}`
+The purpose of chain operator is to make complex function calls more readable.
+`f(x,y,z)`
+`(x,y,z).{f}`
+`(x,y,z).{f}.{g}`
+`(x,y,z).{f}`
+`x.y.z.{f}`
+`(x,y).z.{f}.t.u.{g}` => `g(f(x,y,z), t, u)`
+`x.{f}`
+`x.(y).(z).{f}`
+So you can end a chain with `.{}` to make call.
+or `.()` to add an argument.
+we have two things: 1. call function, 2. add argument
+lets make it simple and minimal.
+take this Haskell example: `sort -n . uniq -n . sort . awk '{ print $5}' . grep tcp . netstat -n`
+another way: a prefix which indicates in this expression, fn arg comes before fn.
+`!{x(f)}`
+`x.{f}`
+`(x,y,z).{f}`
+`(x,y,z).{f}.{g}` if f's output is a struct can it be destructed into g args?
+why not make use of struct?
+`x.{f}` x can be a struct
+`{1,2,3}.{f}` -> `f(1,2,3)`
+`{{1}, {2}, {3}}.{f}` -> `f({1}, {2}, {3})`
+now if f's output is a struct with two elements, and g needs two inputs:
+`{1,2,3}.{f}.{g}`
+`my_struct.{f}.{g}`
+`{my_struct.{f},4,5}.{g}` should f output be used as a struct or should it be decomposed?
+this is what makes things confusing.
 
