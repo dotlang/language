@@ -2260,3 +2260,30 @@ now if f's output is a struct with two elements, and g needs two inputs:
 `{my_struct.{f},4,5}.{g}` should f output be used as a struct or should it be decomposed?
 this is what makes things confusing.
 
+
+N - how can we refer to a fn inside a module?
+```
+@["stack"]
+{
+	myStackFn = internalFn
+}
+```
+
+? - use `=` for type alias.
+`:=` for named type.
+`MyInt = int` is alias, just like for bindings.
+`MyInt := int` named type
+
+? - what does it mean to have `{}` block when we import multiple modules?
+contents are expanded in a single unit and defs inside `{}` are applied to the whole.
+
+? - can we name/alias a private type as public?
+what if we have a public type which includes private types?
+`MyType = [_MyCustomer:int]`?
+Of course, private type/alias does not have any limitation.
+But what about public?
+a public function which has a private input -> invaid
+a public binding which has a private type -> this is like a class with private fields.
+`Customer = {age:int, data: _PrivateDate}`
+this should be allowed but they cannot access `data` directly.
+you can define public identifiers however you like but external code cannot access their types that have private type directly.
