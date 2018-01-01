@@ -2287,3 +2287,5 @@ a public binding which has a private type -> this is like a class with private f
 `Customer = {age:int, data: _PrivateDate}`
 this should be allowed but they cannot access `data` directly.
 you can define public identifiers however you like but external code cannot access their types that have private type directly.
+
+? - Use `:=` in bindings for lazy calculate some expression in a parallel lightweight thread.
