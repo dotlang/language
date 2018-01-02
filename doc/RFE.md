@@ -2276,6 +2276,62 @@ Y - use `=` for type alias.
 
 Y - Use `:=` in bindings for lazy calculate some expression in a parallel lightweight thread.
 
+Y - If I write this:
+```
+@["x"]
+{
+	MyType = int #there is only one type with this name, so this is fine
+	process2 = process #there may be multiple process bindings 
+}
+#contents of x.dot
+MyType = nothing
+process = 10
+process = (x:int)->x+1
+process = (x:float)->x*2
+```
+then which `process` is renamed during import?
+solution1: user must specify type. we cannot have multiple binding with the same name and type.
+```
+@["x"]
+{
+	MyType = int #there is only one type with this name, so this is fine
+	process2:int = process #there may be multiple process bindings 
+}
+```
+The problem is, we can have multiple bindings with the same name and different types.
+This can happen inside a single module too:
+```
+process = 10
+process = (x:int)->x+1
+process = (x:float)->x*2
+handler = process #which one?
+a = 10
+a = 1.1
+x = a #which one?
+func:(int)->int = ...
+func:(int)->float = ...
+g = func(10) #which one? but this is invalid. you cannot have functions which only differ in their output type.
+```
+When there is ambiguity, you must specify type. This is only needed when you have something like: `a=b`
+So the correct way would be:
+```
+@["x"]
+{
+	MyType = int #there is only one type with this name, so this is fine
+	process2:(int)->int = process #there may be multiple process bindings 
+}
+a = 10
+a = 1.1
+x:float = a
+process = 10
+process = (x:int)->x+1
+process = (x:float)->x*2
+handler:int = process 
+OR
+handler:(int)->int = process 
+```
+Type of a binding must be either explicitly stated or could be inferred from right side value.
+
 ? - what does it mean to have `{}` block when we import multiple modules?
 contents are expanded in a single unit and defs inside `{}` are applied to the whole.
 
@@ -2292,3 +2348,49 @@ you can define public identifiers however you like but external code cannot acce
 
 ? - What if we have `T=nothing` inside a module and we replace it with: `T := int` during import?
 Or vice versa.
+
+? - How can I hide a binding?
+suppose I have `process:(Customer)->int` defined in two places: module a and b.
+If I import both of them, I cannot call `process` because it will be ambiguous.
+You can overwrite it:
+```
+@["a"]
+{
+  process = nothing
+}
+@["b"]
+process(x) #this will call process in a or b?
+```
+You can change the value of a binding but you cannot change it's type.
+You can change underlying type for a type name/alias but it should be consistent.
+So you cannot "hide" something. The solution is to rename the function you want to call:
+```
+@["b"]
+{
+    bProcess = process
+}
+```
+then call `bProcess` function and it will call `process` defined inside `b`. 
+But what if there are multiple functions from multiple modules (a, b and c) all named `process` and you need process functions defined in a and b but not c?
+Even if you can hide `process` in module C, any function inside `C` which calls `process` will try local process first.
+You can do this:
+```
+@["a"] { process2 = process }
+@["b"] { process2 = process }
+@["c"]
+#then call process2 function
+process2(x)
+```
+proposal: assigning a binding to `_` will hide it in import.
+```
+@["a"]
+{
+	_ = process
+}
+```
+No! this will be confusing. And will add a completely new meaning to `_`.
+We already have rename/alias feature. So rename other candidates with the same name.
+
+? - `:=` for parallel calculate is a bit confusing.
+Maybe becase of my background with it.
+
