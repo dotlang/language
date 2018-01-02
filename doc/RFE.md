@@ -2394,3 +2394,33 @@ We already have rename/alias feature. So rename other candidates with the same n
 ? - `:=` for parallel calculate is a bit confusing.
 Maybe becase of my background with it.
 
+? - "Resolution mechanism"
+Can we have a local lambda named `process`, a local function `process` and an imported function `process` and a function argument called `process`?
+If so, what happens if I call `process()`? which one is called?
+what happens if I write `x = process`? which function will be used?
+```
+@["a"] #this has a binding called process
+process := (x:int)->x+1
+func = (process: float) -> int
+{
+    process = 12
+    g = process #which process?
+}
+```
+When there is a reference to a binding, how is it resolved? What is scope order which is searched?
+1. You cannot define a binding with same name as function argument.
+2. Can we define a binding with same name as current function's parent function? 
+3. When there is a reference to a binding, first local scope is searched (local bindings and funtion args), then parent function and goes until module level. The next scope will be imported modules.
+4. If at imported modules level there are multiple options, there will be a compiler error.
+5. If there are multiple candidates at each scope, and type is explicitly stated, it will be used to choose one candidate.
+This should be part of function call dispatch: "Identifier resolution policy"
+Scope 1: Current function (local bindings and inputs)
+Scope 2: Current function's parent function and up to module-level functions
+Scope 3: Module level 
+Scope 4: Imported modules
+First scope 1 is searched based on name of the binding and it's type (if specified). Then scope 2 and ... .
+At each scope: If there are multiple candidates: Compiler error, if no candidates: Go to next scope.
+If no candidates are found: Compiler error.
+The identifier which is referenced can be a function name or a value binding or a type or function call.
+For type, scope 1 is current module, scope 2 imported modules. Just name will be used to resolve the reference.
+Types of resolution: Type name, binding (value, function name, function call)
