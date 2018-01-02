@@ -2269,10 +2269,12 @@ N - how can we refer to a fn inside a module?
 }
 ```
 
-? - use `=` for type alias.
+Y - use `=` for type alias.
 `:=` for named type.
 `MyInt = int` is alias, just like for bindings.
 `MyInt := int` named type
+
+Y - Use `:=` in bindings for lazy calculate some expression in a parallel lightweight thread.
 
 ? - what does it mean to have `{}` block when we import multiple modules?
 contents are expanded in a single unit and defs inside `{}` are applied to the whole.
@@ -2288,4 +2290,4 @@ a public binding which has a private type -> this is like a class with private f
 this should be allowed but they cannot access `data` directly.
 you can define public identifiers however you like but external code cannot access their types that have private type directly.
 
-? - Use `:=` in bindings for lazy calculate some expression in a parallel lightweight thread.
+
