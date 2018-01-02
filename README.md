@@ -71,14 +71,15 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 03. **Bindings**: `my_var:int = 19` (type can be automatically inferred, everything is immutable).
 04. **Sequence**: `scores:[int] = [1, 2, 3, 4]` (`string` is essentially a sequence of `char`s).
 05. **Map**: `scores:[string:int] = ["A":1, "B":2, "C":3, "D": 4]`.
-06. **Named type**: `MyInt = int` (Defines a new type with same binary representation as `int`).
+06. **Named type**: `MyInt := int` (Defines a new type with same binary representation as `int`).
+07. **Type alias**: `IntType = int` (A different name for the same type).
 07. **Struct type**: `Point = {x: int, y:int, data: float}` (Like `struct` in C).
 08. **Struct literal**: `location: Point = {x:10, y:20, data:1.19}`.
 09. **Generics**: `@["/core/Stack"] { T = int }` (You can replace types in a module during import).
 10. **Union type**: `MaybeInt = int | nothing` (Can store either of possible types).
 11. **Polymorphic Union**: `AllShapes = {Shape, ...}` (A union of all struct types that have a field of type `Shape`.
 12. **Function**: `calculate: (int,int)->float = (x, y) -> float { :: x/y  }` (braces must be on their own line).
-13. **Concurrency**: `result == processData(x,y,z)` (Evaluate an expression in parallel).
+13. **Concurrency**: `result := processData(x,y,z)` (Evaluate an expression in parallel).
 
 ## Symbols
 
@@ -93,8 +94,9 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 09. `..`  Range generator for sequence
 10. `...` Polymorphic union types
 11. `//`  Nothing-check operator
-12. `:`   Type declaration (struct, function inputs and bindings), type alias
-13. `=`   Binding declaration, named types
+12. `:`   Type declaration (struct, function inputs and bindings)
+13. `=`   Binding declaration, type alias
+14. `:=`  Named type, lazy/parallel evaluation
 14. `::`  Return operator
 15. `_`   Place-holder (lambda creator and assignments)
 16. `@[]` Import
@@ -102,7 +104,6 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 18. `!`   Write-only channel
 19. `?`   Read-only channel
 20. `${}` Channel select operations
-21. `==`  Parallel execution
 
 ## Reserved keywords
 
@@ -265,7 +266,7 @@ When using `{T,...}` notation, you can access the common part without casting th
 
 ## Named types
 
-You can name a type so you will be able to refer to that type later in the code. Type names must start with a capital letter to be distinguished from bindings. You define a named type similar to a binding: `NewType = UnderlyingType`.The new type has same binary representation as the underlying type but it will be treated as a different type.
+You can name a type so you will be able to refer to that type later in the code. Type names must start with a capital letter to be distinguished from bindings. You define a named type similar to a binding: `NewType := UnderlyingType`.The new type has same binary representation as the underlying type but it will be treated as a different type.
 
 You can use casting operator to convert between a named type and its underlying type (Example 5).
 
@@ -273,21 +274,21 @@ If a function is called which has no candidate for the named type, the candidate
 
 **Examples**
 
-1. `MyInt = int`
-2. `IntArray = [int]`
-3. `Point = {x: int, y: int}`
-4. `bool = true | false`
+1. `MyInt := int`
+2. `IntArray := [int]`
+3. `Point := {x: int, y: int}`
+4. `bool := true | false`
 5. `x: MyInt = 10`, `y: MyInt = MyInt(10)`
 
 ## Type alias
 
-You can use `T: X` notation to define `T` as another speelling for type `X`. In this case, `T` and `X` will be the same thing, so you cannot define two functions with same name for `T` and `X`.
+You can use `T = X` notation to define `T` as another speelling for type `X`. In this case, `T` and `X` will be the same thing, so you cannot define two functions with same name for `T` and `X`.
 
 You can use a type alias to prevent name conflict when importing modules.
 
 **Examples**
 
-1. `MyInt: int`
+1. `MyInt = int`
 2. `process = (x:int)->10`
 3. `process = (x:MyInt)->10` Error! `process:(int)->int` is already defined.
 
@@ -452,12 +453,12 @@ Note that you can only replace a type with a consistent type. So if the type ins
 
 **Example**
 
-1. `@["/core/stack"] { T = MyType} #replace type T inside stack module with MyType`
+1. `@["/core/stack"] { T := MyType} #replace type T inside stack module with MyType`
 2. `x: Stack = createStack()`
 3.
 ```
 #set.dot
-T = nothing #T can be anything provided from outside
+T := nothing #T can be anything provided from outside
 equals:(T,T)->bool = (x:T, y:T)->false
 ```
 4.
@@ -484,7 +485,7 @@ process:(T)->int = (x:T)->100
 
 # Concurrency
 
-dotLang provides channels as a light-weight communication mechanism between two pieces of code and `==` notation for parallel execution of an expression.
+dotLang provides channels as a light-weight communication mechanism between two pieces of code and `:=` notation for parallel execution of an expression.
 
 Channels are a one-way (read-only or write-only) data transportation mechanism which are open the moment they are created and closed when they are GC'd (disposed). They can be buffered or have a transformation function (`(T)->T`) which will be applied before write or after read.
 
@@ -492,11 +493,11 @@ Any party can close/dispose their channel. Send or receive on a channel where th
 
 Exclusive resources (sockets, file, standard I/O...) are implemented using channels to hide inherent mutability of their underlying resources.
 
-You can use `==` syntax to evaluate an expression in parallel and when its finished and store result in bindings. If expression creates a struct you can destruct it using `a,b,c =` syntax or use `_` to ignore expression result. Any reference to result after parallel execution will pause current thread until execution is finished. You can refer to output of a parallel execution inside body of a lambda, and code won't be stopped unless the lambda is invoked (Example 2 and 3).
+You can use `:=` syntax to evaluate an expression in parallel and when its finished and store result in bindings. If expression creates a struct you can destruct it using `a,b,c =` syntax or use `_` to ignore expression result. Any reference to result after parallel execution will pause current thread until execution is finished. You can refer to output of a parallel execution inside body of a lambda, and code won't be stopped unless the lambda is invoked (Example 2 and 3).
 
 **Syntax**
 
-1. Parallel execute `result == expression` 
+1. Parallel execute `result := expression` 
 2. Create `reader: T?, writer: T! = createChannel(buffer_size, r_lambda, w_lambda)`
 3. Read data `data = reader?`
 4. Write data `writer!data`
@@ -512,7 +513,7 @@ data = std_reader? #read something from the channel which read from standard inp
 std_write!"Hello" #send data to stndard output
 reader, writer = createIntChannel(100) #specify buffer size
 ```
-2. `data == processInfo(1,2,a) #evaluate the expression in parallel and store the output in data`
+2. `data := processInfo(1,2,a) #evaluate the expression in parallel and store the output in data`
 3. `getData = () -> data #any call to getData will block current thread until the call to processInfo is finished`
 4. `T = (int|float)!`
 
@@ -738,4 +739,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.97**: Jun 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` place holder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is typed statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
 - **Version 0.99**: Dec 30, 2017 - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting, removed `^` operator and replaced with generics, removed `@` (replaced with chain operator and casting), removed function forwarding, removed compound literal, changed notation for channel read, write and select (Due to changes in generics and sequence and removal of compound literal) and added `$` for select, add notation to filter imported identifiers in import, removed autoBind section and added a brief explanation for `TargetType()` notation in cast section, rename chain operator to `@`, replaced return keyword with `::`, replaced `import` with `@` notation and support for rename and filter for imported items, replaced `@` with `.[]` for chain operator, remove condition for return and replaced with rule of returning non-`nothing` values, change chain notation from `.[]` to `.{}` and import notation from `@[]` to `@()`, Added notation for polymorphic generic types, changed the notation for import generic module and rename identifiers, removed `func` keyword, extended general union type syntax to unnamed types with field type and names (e.g. `{id:int, name:string,...}`), Added shift-left and right `>>,<<` and power `**` operators, all litearls for seq and map and struct must be prefixed with `_`, in struct literals you can include other structs to implement struct update, changed notation for abstract functions, Allow access to common parts of a union type with polymorphic union types, use `nothing` instead of `...` for generic types and abstract functions, removed phantom types, change `=>` notation to `^T :=` notation to rename symbols, removed composition for structs and extended/clarified usage of polymorphic sum types for embedding and function forwarding, change map type from `[K,V]` to `[K:V]`, removed auto-bind `Type()`, remove abstract functions, remove `_` prefix for literals, remove `^` and add `=>` to rename types so as to fix issue with introducion of new named types when filtering an import operation, replace operators `:=` to `=` and `:==` to `==` and `=` (comparison) to `=?`, adding type alias notation `T:X`, change import operator to `@[]` and replace `=>` with type alias notation.
-- **Version 1.00**: ??? ??, ???? - 
+- **Version 1.00**: ??? ??, ???? - Use `=` for type alias and `:=` for lazy (parallel) calculation and named type
