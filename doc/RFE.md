@@ -2290,4 +2290,5 @@ a public binding which has a private type -> this is like a class with private f
 this should be allowed but they cannot access `data` directly.
 you can define public identifiers however you like but external code cannot access their types that have private type directly.
 
-
+? - What if we have `T=nothing` inside a module and we replace it with: `T := int` during import?
+Or vice versa.
