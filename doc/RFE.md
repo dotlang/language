@@ -2366,6 +2366,7 @@ If we have `process:(int)->int` can we import a module that has the same functio
 Go does not permit that. If you import 'Adder' you cannot define a function with same signature.
 But why? What are modules supposed to be? Are they just containers for some code or they are organization mechanism?
 I think we should allow local file to be it's own scope.
+This is similar to Perl.
 
 N - How can I hide a binding?
 suppose I have `process:(Customer)->int` defined in two places: module a and b.
@@ -2409,8 +2410,13 @@ proposal: assigning a binding to `_` will hide it in import.
 No! this will be confusing. And will add a completely new meaning to `_`.
 We already have rename/alias feature. So rename other candidates with the same name.
 
-? - what does it mean to have `{}` block when we import multiple modules?
+N - what does it mean to have `{}` block when we import multiple modules?
 contents are expanded in a single unit and defs inside `{}` are applied to the whole.
+
+N - `:=` for parallel calculate is a bit confusing.
+Maybe becase of my background with it.
+
+N - So basically you can hide a function or binding or a type by re-declaring 
 
 ? - can we name/alias a private type as public?
 what if we have a public type which includes private types?
@@ -2425,7 +2431,4 @@ you can define public identifiers however you like but external code cannot acce
 
 ? - What if we have `T=nothing` inside a module and we replace it with: `T := int` during import?
 Or vice versa.
-
-? - `:=` for parallel calculate is a bit confusing.
-Maybe becase of my background with it.
-
+We have `T := nothing` and replace it with `T=int`? It may cause problems in compilation because with this change, T is int.
