@@ -2332,24 +2332,42 @@ handler:(int)->int = process
 ```
 Type of a binding must be either explicitly stated or could be inferred from right side value.
 
-? - what does it mean to have `{}` block when we import multiple modules?
-contents are expanded in a single unit and defs inside `{}` are applied to the whole.
+Y - "Resolution mechanism"
+Can we have a local lambda named `process`, a local function `process` and an imported function `process` and a function argument called `process`?
+If so, what happens if I call `process()`? which one is called?
+what happens if I write `x = process`? which function will be used?
+```
+@["a"] #this has a binding called process
+process := (x:int)->x+1
+func = (process: float) -> int
+{
+    process = 12
+    g = process #which process?
+}
+```
+When there is a reference to a binding, how is it resolved? What is scope order which is searched?
+1. You cannot define a binding with same name as function argument.
+2. Can we define a binding with same name as current function's parent function? 
+3. When there is a reference to a binding, first local scope is searched (local bindings and funtion args), then parent function and goes until module level. The next scope will be imported modules.
+4. If at imported modules level there are multiple options, there will be a compiler error.
+5. If there are multiple candidates at each scope, and type is explicitly stated, it will be used to choose one candidate.
+This should be part of function call dispatch: "Identifier resolution policy"
+Scope 1: Current function (local bindings and inputs)
+Scope 2: Current function's parent function and up to module-level functions
+Scope 3: Module level 
+Scope 4: Imported modules
+First scope 1 is searched based on name of the binding and it's type (if specified). Then scope 2 and ... .
+At each scope: If there are multiple candidates: Compiler error, if no candidates: Go to next scope.
+If no candidates are found: Compiler error.
+The identifier which is referenced can be a function name or a value binding or a type or function call.
+For type, scope 1 is current module, scope 2 imported modules. Just name will be used to resolve the reference.
+Types of resolution: Type name, binding (value, function name, function call)
+If we have `process:(int)->int` can we import a module that has the same function? 
+Go does not permit that. If you import 'Adder' you cannot define a function with same signature.
+But why? What are modules supposed to be? Are they just containers for some code or they are organization mechanism?
+I think we should allow local file to be it's own scope.
 
-? - can we name/alias a private type as public?
-what if we have a public type which includes private types?
-`MyType = [_MyCustomer:int]`?
-Of course, private type/alias does not have any limitation.
-But what about public?
-a public function which has a private input -> invaid
-a public binding which has a private type -> this is like a class with private fields.
-`Customer = {age:int, data: _PrivateDate}`
-this should be allowed but they cannot access `data` directly.
-you can define public identifiers however you like but external code cannot access their types that have private type directly.
-
-? - What if we have `T=nothing` inside a module and we replace it with: `T := int` during import?
-Or vice versa.
-
-? - How can I hide a binding?
+N - How can I hide a binding?
 suppose I have `process:(Customer)->int` defined in two places: module a and b.
 If I import both of them, I cannot call `process` because it will be ambiguous.
 You can overwrite it:
@@ -2391,36 +2409,23 @@ proposal: assigning a binding to `_` will hide it in import.
 No! this will be confusing. And will add a completely new meaning to `_`.
 We already have rename/alias feature. So rename other candidates with the same name.
 
+? - what does it mean to have `{}` block when we import multiple modules?
+contents are expanded in a single unit and defs inside `{}` are applied to the whole.
+
+? - can we name/alias a private type as public?
+what if we have a public type which includes private types?
+`MyType = [_MyCustomer:int]`?
+Of course, private type/alias does not have any limitation.
+But what about public?
+a public function which has a private input -> invaid
+a public binding which has a private type -> this is like a class with private fields.
+`Customer = {age:int, data: _PrivateDate}`
+this should be allowed but they cannot access `data` directly.
+you can define public identifiers however you like but external code cannot access their types that have private type directly.
+
+? - What if we have `T=nothing` inside a module and we replace it with: `T := int` during import?
+Or vice versa.
+
 ? - `:=` for parallel calculate is a bit confusing.
 Maybe becase of my background with it.
 
-? - "Resolution mechanism"
-Can we have a local lambda named `process`, a local function `process` and an imported function `process` and a function argument called `process`?
-If so, what happens if I call `process()`? which one is called?
-what happens if I write `x = process`? which function will be used?
-```
-@["a"] #this has a binding called process
-process := (x:int)->x+1
-func = (process: float) -> int
-{
-    process = 12
-    g = process #which process?
-}
-```
-When there is a reference to a binding, how is it resolved? What is scope order which is searched?
-1. You cannot define a binding with same name as function argument.
-2. Can we define a binding with same name as current function's parent function? 
-3. When there is a reference to a binding, first local scope is searched (local bindings and funtion args), then parent function and goes until module level. The next scope will be imported modules.
-4. If at imported modules level there are multiple options, there will be a compiler error.
-5. If there are multiple candidates at each scope, and type is explicitly stated, it will be used to choose one candidate.
-This should be part of function call dispatch: "Identifier resolution policy"
-Scope 1: Current function (local bindings and inputs)
-Scope 2: Current function's parent function and up to module-level functions
-Scope 3: Module level 
-Scope 4: Imported modules
-First scope 1 is searched based on name of the binding and it's type (if specified). Then scope 2 and ... .
-At each scope: If there are multiple candidates: Compiler error, if no candidates: Go to next scope.
-If no candidates are found: Compiler error.
-The identifier which is referenced can be a function name or a value binding or a type or function call.
-For type, scope 1 is current module, scope 2 imported modules. Just name will be used to resolve the reference.
-Types of resolution: Type name, binding (value, function name, function call)
