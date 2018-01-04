@@ -2432,3 +2432,8 @@ you can define public identifiers however you like but external code cannot acce
 ? - What if we have `T=nothing` inside a module and we replace it with: `T := int` during import?
 Or vice versa.
 We have `T := nothing` and replace it with `T=int`? It may cause problems in compilation because with this change, T is int.
+
+? - If we use a function name as a lambda ptr, it's type must be explicit.
+Either via left hand side or with `_:int` notation.
+so: `func = process` is wrong if we have multiple functions named process.
+it should be `func:(int)->int = process` or `func = process(_:int)`.
