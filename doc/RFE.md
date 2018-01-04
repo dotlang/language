@@ -2418,7 +2418,12 @@ Maybe becase of my background with it.
 
 N - So basically you can hide a function or binding or a type by re-declaring 
 
-? - can we name/alias a private type as public?
+Y - If we use a function name as a lambda ptr, it's type must be explicit.
+Either via left hand side or with `_:int` notation.
+so: `func = process` is wrong if we have multiple functions named process.
+it should be `func:(int)->int = process` or `func = process(_:int)`.
+
+Y - can we name/alias a private type as public?
 what if we have a public type which includes private types?
 `MyType = [_MyCustomer:int]`?
 Of course, private type/alias does not have any limitation.
@@ -2428,12 +2433,10 @@ a public binding which has a private type -> this is like a class with private f
 `Customer = {age:int, data: _PrivateDate}`
 this should be allowed but they cannot access `data` directly.
 you can define public identifiers however you like but external code cannot access their types that have private type directly.
+Proposal:
+Type alias should have the same or more restricted scope as it's alias. If underlying is public, it can be either public or private. If underlying is private, it must be private.
 
-? - What if we have `T=nothing` inside a module and we replace it with: `T := int` during import?
+N - What if we have `T=nothing` inside a module and we replace it with: `T := int` during import?
 Or vice versa.
 We have `T := nothing` and replace it with `T=int`? It may cause problems in compilation because with this change, T is int.
 
-? - If we use a function name as a lambda ptr, it's type must be explicit.
-Either via left hand side or with `_:int` notation.
-so: `func = process` is wrong if we have multiple functions named process.
-it should be `func:(int)->int = process` or `func = process(_:int)`.
