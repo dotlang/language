@@ -2590,3 +2590,4 @@ So why not use a struct?
 CustomerId = {customer_id: int}
 OrderId = {order_id: int}
 ```
+Maybe we should keep named types. The logic would be simpler in that case.
