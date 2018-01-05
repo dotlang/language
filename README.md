@@ -131,7 +131,7 @@ Conditional operators return `true` or `false` which are `1` and `0` when used a
 
 # Bindings
 
-A binding assigns an identifier to a literal value, an expression or another binding. The literal value can be of any valid type (integer number, function literal, struct literal, ...). Bindings must start with a lowercase letter.
+A binding assigns an identifier that refers to an immutable memory location. A binding's value can be a literal value, an expression or another binding. The literal value can be of any valid type (integer number, function literal, struct literal, ...). Bindings must start with a lowercase letter.
 
 You can define bindings at module-level or inside a function. Module-level bindings can only have literals as their value, but function bindings can have expressions too. Type of a binding should either be explicitly stated via `:` or compiler should be able to infer it's type without ambiguity from right side value (Example 7 and 8).
 
@@ -141,8 +141,8 @@ If the value is a struct, you can destruct it into it's elements (Example 5). In
 
 **Syntax**: 
 
-1. `identifier = value/expression`
-2. `identifier : type = value/expression`
+1. `identifier = expression`
+2. `identifier : type = expression`
 
 **Examples**
 
@@ -171,11 +171,7 @@ To resolve a binding name, first bindings with appropriate type in current funct
 
 # Type system
 
-Types are blueprints which are used to create values for bindings (A binding is a name or identifier which refers to a memory location holding an immutable value).
-
-Two types T1 and T2 are identical/assignable in either of below cases:
-1. Both are named types defined in the same place in the code.
-2. Both are unnamed types with similar definition (e.g. `int|string` vs `int|string` or `[int]` vs `[int]`).
+Types are blueprints which are used to create values for bindings.
 
 Note that `func` is explain in the "Function" section and channel types are explained in "Concurrency" section.
 
@@ -311,6 +307,8 @@ You can use a type alias to prevent name conflict when importing modules. Access
 ## Type name resolution
 
 To resolve a type name, first module-level types and then imported modules will be searched for a type name or alias with the same name. At any scope, if there are multiple candidates there will be a compiler error.
+
+Two named types are never equal. Otherwise, two types T1 and T2 are identical/assignable/exchangeable if they have the same structure (e.g. `int|string` vs `int|string` or `[int]` vs `[int]`).
 
 ## Casting
 
