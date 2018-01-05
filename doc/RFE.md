@@ -2535,11 +2535,20 @@ So `[int]` and `[int]` (again written in the source code), are not the same thin
 MyType1 and YourType1 and `[int]` are different. Of course you can cast them.
 So can we have `process([int])` and `process:(MyType1)`? Yes.
 Rules of type equality:
-1. Using `=` cretes equal types. So `A=B` means A is same thing as B.
-2. Using `{}` or `[]` or `|` when defining types, creates a new type. So:
+R1. Using `=` cretes equal types. So `A=B` means A is same thing as B.
+R2. Using `{}` or `[]` or `|` creates a new type. So:
 `A = [int]`
 `x:[int] = [1,2,3]`
 type of X is different from A.
 `x:A = [1,2,3]` type of x is same as A.
+So if a function expects input type A you cannot send `[int]` to it. In this way, it's similar to named type.
+But if we have `B=A` any binding of type B can be sent to functions that expect input of type A.
 Does this definition solve the problem of refactoring for which they added type alias?
-Is it simple enough?
+Is it simple enough? I think so.
+If I have `MyType = int` and later I want to change it to `MyType = OtherModuleType`, then?
+`MyType = ModuleType1`
+`YourType = ModuleType1` in a different source code file.
+Then MyType and YourType are the same.
+So `A=[int]`, `A` is not equal to `[int]`.
+Even `[int]` is not equal to `[int]`.
+But if we have: `process([int])->int` we should be able to send it `[int]`.
