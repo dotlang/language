@@ -2440,6 +2440,8 @@ N - What if we have `T=nothing` inside a module and we replace it with: `T := in
 Or vice versa.
 We have `T := nothing` and replace it with `T=int`? It may cause problems in compilation because with this change, T is int.
 
+Y - Why not use `==` for equality check?
+
 ? - A public type/binding (union or struct or map or seq) can contain private types but you cannot access them directly.
 Can I have `T := [_private]`? Yes. And pass it's bindings to functions that expect `T`.
 But you cannot write `x[0]` because it's type is private.
@@ -2449,3 +2451,46 @@ So the rule is: You can define, receive and send any binding which has a public 
 The purpose of private type is that you should be able to change their name or internals without having to change outside.
 So using `T` should be Ok as later the author of the container module can change it to: `T = [_privateV2]`.
 You can use any public type (named or alias) and the
+
+? - As a move to simplify the language: remove named types `T := int`.
+Only have type alias: `T = int`.
+What advantages do named types bring to the table?
+C has only type alias. Also it seems that Rust also has type alias.
+ADvantage of named type: Type safety.
+So if I have `MyType = int`, and `process:(MyType)` I am sure it will receive a `MyType` and not `int`.
+Or: 
+```
+Customer = {name:string, age:int}
+process = (x:Customer)->...
+```
+I am sure that `process`'s input will be a Customer and not an unnamed struct with those fields.
+Another thing that can be lost: Phantom types
+```
+MyInt = int
+YourInt = int
+process = (x:MyInt)->...
+process = (y:YourInt)->...
+```
+Above code is invalid with type alias.
+solution?
+```
+MyInt = {data:int}
+YourInt = {data:int}
+process = (x:MyInt)->...
+process = (y:YourInt)->...
+```
+Are MyInt and YourInt different? If it was C, they would be the same.
+Maybe we can say, type alias definition adds a hierarchy.
+So if we have:
+```
+MyInt = int
+YourInt = int
+```
+Then `int` is int. MyInt will be replaced by int and YourInt will be replaced by int.
+But if a function expects MyInt, it can only receive MyInt or int.
+If a function expects YourInt, it can only receive YourInt or int.
+If a function expects int, it can receive any of above: int, myint, yourint.
+So, we can say type alias provides a two-way path from each alias path to the most basic type. but the path ends at that place. You cannot move to other paths.
+So it will be type alias with a twist.
+q: So, can we define a new type?
+q: What happens to union?
