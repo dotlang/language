@@ -2591,3 +2591,10 @@ CustomerId = {customer_id: int}
 OrderId = {order_id: int}
 ```
 Maybe we should keep named types. The logic would be simpler in that case.
+Type identity: Two types are the same if:
+Plain type: If they have same structure
+Type alias: If they have same underlying
+Named type: If they have exactly same name.
+Rule: A named type is always different from any other type. Other types are equal if they have the same structure.
+
+
