@@ -2552,3 +2552,41 @@ Then MyType and YourType are the same.
 So `A=[int]`, `A` is not equal to `[int]`.
 Even `[int]` is not equal to `[int]`.
 But if we have: `process([int])->int` we should be able to send it `[int]`.
+Are these types equal?
+```
+MyType2 = {x:int}
+YourType2 = {x:int}
+```
+Two types are identical if they have the same structure (`[int]` vs `[int]`) or they alias to identical types.
+```
+A = [int]
+B = A
+C = [int]
+D = {x:int}
+E = {x:int}
+D1 = D
+E1 = E
+F = int
+G = {x:int}
+H = {x:F}
+```
+A and `[int]` and B and C are identical.
+D and E and D1 and E1 are identical.
+G and H are identical.
+You can compare bindings of identical types and they are exchangable. So if a function expects one of them, you can send binings of the other type. If function's output is one of them, you can store it in a binding of the other type.
+But why should D and E be equal? Because if they are not, it will bring up path based equality which makes things complicated.
+In F# it is advised to use "single case union types" to create a truely new type.
+So you cannot use customerId instead of orderId:
+```
+CustomerId = int
+OrderId = int
+```
+https://fsharpforfunandprofit.com/posts/designing-with-types-single-case-dus/
+we can use single case union: `type EmailAddress = EmailAddress of string`
+or record type: `type EmailAddress = { EmailAddress: string }`
+Single case union would be confusing in our case. 
+So why not use a struct?
+```
+CustomerId = {customer_id: int}
+OrderId = {order_id: int}
+```
