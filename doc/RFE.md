@@ -2502,3 +2502,44 @@ Is MyType equal to `[int:float]`? What about `[MyInt, float]`?
 `MyType = MyInt`
 `MyType2 = MyInt`
 Are MyType and MyType2 equal?
+`Handler = (x:int)->bool`
+Maybe the path strategy in resolving types makes things complicated.
+Other than that, if `MyInt = int` and some function needs `MyInt`, I can simply send an `int` to it without needing to import the module that defines `MyInt`.
+`Maybeint = int | nothing`. Is this a new type?
+The reasoning that `MyInt = int` may cause user sending int mistakenly does not make sense.
+What if we have a `process` function which should have different return for `MyInt` than `int`?
+Functions should work based on the data, not their labels (types).
+In C: `typedef struct {x:int;} A` and `typedef struct {x:int;} B` define two different types.
+So:
+```
+MyInt = int
+YourInt = int
+```
+They are all the same because underlying type is a primitive type.
+But for composed types (sequence, map, struct and union), they won't be equal. In C arrays are equal too but for struct, they are not.
+```
+MyType1 = [int]
+YourType1 = [int]
+MyType2 = {x:int}
+YourType2 = {x:int}
+MyType3 = [int:int]
+YourType3 = [int:int]
+MyType4 = int
+YourType4 = int
+```
+How do we determine if two types are equal?
+In above case, MyType4 and YourType4 and int are equal.
+Using `=` cretes equal types.
+Using `{}` or `[]` or `|` when defining types, creates a new type.
+So `[int]` and `[int]` (again written in the source code), are not the same thing.
+MyType1 and YourType1 and `[int]` are different. Of course you can cast them.
+So can we have `process([int])` and `process:(MyType1)`? Yes.
+Rules of type equality:
+1. Using `=` cretes equal types. So `A=B` means A is same thing as B.
+2. Using `{}` or `[]` or `|` when defining types, creates a new type. So:
+`A = [int]`
+`x:[int] = [1,2,3]`
+type of X is different from A.
+`x:A = [1,2,3]` type of x is same as A.
+Does this definition solve the problem of refactoring for which they added type alias?
+Is it simple enough?
