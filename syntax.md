@@ -47,7 +47,7 @@ ImportBinding      = "@" "[" STRING+ "]"
 Expressions:
 ```
 Expression         = EqExpression     { ("and"|"or"|"xor") EqExpression }
-EqExpression       = CmpExpression    { ("=?"|"<>") CmpExpression }
+EqExpression       = CmpExpression    { ("=="|"<>") CmpExpression }
 CmpExpression      = ShiftExpression  { (">"|"<"|">="|"<=") ShiftExpression }
 ShiftExpression    = AddExpression    { (">>"|"<<"|"^") AddExpression }
 AddExpression      = MulExpression    { ("+"|"-") MulExpression }
