@@ -2494,3 +2494,11 @@ So, we can say type alias provides a two-way path from each alias path to the mo
 So it will be type alias with a twist.
 q: So, can we define a new type?
 q: What happens to union?
+`MyType = [MyInt, MyFloat]`
+`MyInt = int`
+`MyFloat = float`
+Is MyType equal to `[int:float]`? What about `[MyInt, float]`?
+`MyInt = int`
+`MyType = MyInt`
+`MyType2 = MyInt`
+Are MyType and MyType2 equal?
