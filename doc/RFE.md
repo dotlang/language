@@ -2442,17 +2442,8 @@ We have `T := nothing` and replace it with `T=int`? It may cause problems in com
 
 Y - Why not use `==` for equality check?
 
-? - A public type/binding (union or struct or map or seq) can contain private types but you cannot access them directly.
-Can I have `T := [_private]`? Yes. And pass it's bindings to functions that expect `T`.
-But you cannot write `x[0]` because it's type is private.
-So the rule is: You can define, receive and send any binding which has a public type. It can however contain private types.
 
-? - Can I write: `T = [_private]`? 
-The purpose of private type is that you should be able to change their name or internals without having to change outside.
-So using `T` should be Ok as later the author of the container module can change it to: `T = [_privateV2]`.
-You can use any public type (named or alias) and the
-
-? - As a move to simplify the language: remove named types `T := int`.
+N - As a move to simplify the language: remove named types `T := int`.
 Only have type alias: `T = int`.
 What advantages do named types bring to the table?
 C has only type alias. Also it seems that Rust also has type alias.
@@ -2596,5 +2587,16 @@ Plain type: If they have same structure
 Type alias: If they have same underlying
 Named type: If they have exactly same name.
 Rule: A named type is always different from any other type. Other types are equal if they have the same structure.
+
+Y - A public type/binding (union or struct or map or seq) can contain private types but you cannot access them directly.
+Can I have `T := [_private]`? Yes. And pass it's bindings to functions that expect `T`.
+But you cannot write `x[0]` because it's type is private.
+So the rule is: You can define, receive and send any binding which has a public type. It can however contain private types.
+What if we have a public function whose inputs are private type? It does not make sense.
+
+N - Can I write: `T = [_private]`? 
+The purpose of private type is that you should be able to change their name or internals without having to change outside.
+So using `T` should be Ok as later the author of the container module can change it to: `T = [_privateV2]`.
+You can use any public type (named or alias) ...
 
 
