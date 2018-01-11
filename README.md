@@ -268,8 +268,8 @@ When using `{T,...}` notation, you can access the common part without casting th
 **Examples**
 
 1. `Shape = { id:int }`
-2. `Circle = { Shape, radius: float} #Shape is contained within a Circle`
-3. `my_circle = Circle{id:100, radius:1.45} #creating a Circle binding`
+2. `Circle = { s:Shape, radius: float} #Shape is contained within a Circle`
+3. `my_circle:Circle = {id:100, radius:1.45} #creating a Circle binding`
 4. `x: [{Shape, ...}] = [my_circle, my_triangle, ...]`
 5. `process = (c: Circle) -> process(c.Shape) #simple forwarding`
 6. `x: {id:int, ...} #type of x is union of all types that have id:int`
