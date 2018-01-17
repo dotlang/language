@@ -2599,4 +2599,49 @@ The purpose of private type is that you should be able to change their name or i
 So using `T` should be Ok as later the author of the container module can change it to: `T = [_privateV2]`.
 You can use any public type (named or alias) ...
 
+? - Setting type for a binding is not really needed. For function args, it's needed.
+But for bindings, it can be mostly act as a documentation.
+Exception for union type: `t:int|string=12`.
+But what will be use of this? Anyway, we know rvalue is int.
+And if it's a function call, the function output determines type of `t`. 
+`t:int|string=12`
+vs
+`t = 12`
+first one does not add any new thing. If we want to call a function with `t` the function must accept `int`.
+it can be `int|string` or `int` + `string` (two versions).
+When do we use `:`?
+1. binding type
+2. function arg type
+3. struct field type
+But why not keep it just as informative?
+It can be used to set type explicitly to help reading the code.
+the bigger question: Should we keep optional useless notations to help reading the code?
+This change will make writing code and parsing/compiling more difficult.
+And it does not help read the code all the time, because it's not mandatory.
+Proposal: Whatever comes before `=` cannot have a type. Only an identifier.
+For function input and struct, identifier comes before `:`
 
+? - function decl similar to binding decl
+`adder = (x:int):int x+1`
+`adder = (x:int) x+1`?
+```
+adder = (x:int):int
+{
+   :: x+10
+}
+```
+`map = (x:[int], mapper: (int):int):[int]`
+`(int):float` means when given an int input, it's type will be float. so `f(8)` has float type.
+`sort = (x:[int], comparer: (int,int):bool):[int]`
+`process = (x:[int], factory: (int,int):(int):float):[int]`
+What does `(int):(int):float` mean? Means it's binding is a function which when called with an int, will give a function which when called with an int, will give you a float result.
+`(IN):OUT`
+Can there be any ambiguity?
+`t:((int):float):string` t accepts a function which given int gives float, and when you call t with this, it will give you a string.
+`MyType = (int):float`
+`[T]` sequence
+`[K:V]` map
+`(I):O` function
+What about function that does not return anything? `(int):nothing`
+`():nothing`
+Proposal: Remove `->` from notation and replace with `:`.
