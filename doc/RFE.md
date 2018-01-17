@@ -2620,10 +2620,12 @@ This change will make writing code and parsing/compiling more difficult.
 And it does not help read the code all the time, because it's not mandatory.
 Proposal: Whatever comes before `=` cannot have a type. Only an identifier.
 For function input and struct, identifier comes before `:`
+What about a complex binding? e.g. a map where key/value are union?
+`x = [1:"A", "G":"B", 1.2:9]`?
 
 ? - function decl similar to binding decl
 `adder = (x:int):int x+1`
-`adder = (x:int) x+1`?
+`adder = (x:int):int x+1`?
 ```
 adder = (x:int):int
 {
@@ -2645,3 +2647,18 @@ Can there be any ambiguity?
 What about function that does not return anything? `(int):nothing`
 `():nothing`
 Proposal: Remove `->` from notation and replace with `:`.
+What happens to the shortcut notation: `adder = (x:int) -> x+1`?
+Maybe we should make return type mandatory.
+`adder = (x:int):int x+1`
+or use auto like D or C++: `adder = (x:int):auto x+1` No.
+But what if return type is complex? 
+Can this be confused with map?
+`[(int):int:string]`? key is `(int):int` and value is string.
+`[int:(int):string]`. It does not cause ambiguity but might be confusing. 
+Maybe we should use a different notation for map. Bot type and literals.
+`[int,float]`? `x = [1,"A",2,"B",3,"C"]`? This can be confused with a sequence.
+Maybe we can use `->` 
+`[int->float]`, `x = [1->1.2, 2->2.2, 3->3.3]`?
+`[(int):int->string]`? key is `(int):int` and value is string.
+`[int->(int):string]`
+Proposal: Remove `->` from notation and replace with `:` and use `->` for map type and literals.
