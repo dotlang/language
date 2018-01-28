@@ -2622,6 +2622,9 @@ Proposal: Whatever comes before `=` cannot have a type. Only an identifier.
 For function input and struct, identifier comes before `:`
 What about a complex binding? e.g. a map where key/value are union?
 `x = [1:"A", "G":"B", 1.2:9]`?
+But in these exceptional cases, let developer do it via comments.
+Anyway compiler cannot rely on this for parsing because its not mandatory.
+Its desired if something is either forbidden or mandatory. optional will be confusing.
 
 ? - function decl similar to binding decl
 `adder = (x:int):int x+1`
@@ -2662,3 +2665,58 @@ Maybe we can use `->`
 `[(int):int->string]`? key is `(int):int` and value is string.
 `[int->(int):string]`
 Proposal: Remove `->` from notation and replace with `:` and use `->` for map type and literals.
+q: what about `(int)->int|float`? in order to prevent confusion we need to use ()
+`(int):(int)|float`
+`(int):(int):(float)` gets an int returns a function which given int returns a float
+`((int):(int)):(float)` given a function which for int returns int, returns a float
+what abt this?
+`(int):int?` a function given int returns int channel
+`(int):(int)?` a channel that gives you int to int functions.
+`(int):(float):(string)?` 
+this will become more and more confusing when combined with channel and union.
+what about this: `(int, int)` and the last one is output type.
+`adder = (x:int, int) x+1`
+and if we assign a name to it, setting it's value means return
+```
+adder = (x:int, y:int)
+{
+	y = x+1
+}
+```
+`adder : (int, int)`
+`processs: (int, (int, int))` gets int, returns a int->int function.
+`sort: ([int], (int, bool))` gets int array and a int->bool function.
+`func: ()` no input, no output
+`func: (int)` is this input or output?
+it should be:
+`func: (nothing)`
+`func: (int, nothing)`
+then what happens to lambda maker?
+`process(_)` it is not intuitive!!!
+it is better for notations to have a boundary. eg. `[int]` has a boundary. a token that determines start and end.
+`(int):int`
+`(int->int)`
+```
+adder = (x:int -> y:int)
+{
+	y = x+1
+}
+```
+`adder : (int -> int)`
+`processs: (int -> (int, int))` gets int, returns a int->int function.
+`sort: ([int], (int, bool) -> [int])` gets int array and a int->bool function.
+still confusing.
+`process: (int->int->int)` which one is which?
+`process (int) -> (int)` both input and output inside parens
+`process: (int):(int)`
+the logic with `:` is the it follows a name and comes before type: `NAME:TYPE`
+but in a function its not like that. so let's keep `->` notation.
+`(IN)->(OUT)`
+`(int)->(float->string)?` 
+if there is ambiguity, enclose in parens.
+`((int)->(float->string))?` 
+it would be good if we could eliminate this rule. 
+if means ambiguity and we are introducing another optional thing to the language.
+
+
+
