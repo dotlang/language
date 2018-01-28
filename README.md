@@ -498,13 +498,13 @@ process:(T)->int = (x:T)->100
 ```
 @["storage"]
 {
-    T = [int],
-    U = {float, string},
-    Cmp = (x:int) -> bool
+    T := [int],
+    U := {float, string},
+    Cmp := (x:int) -> bool
     {
         :: x>0
     },
-    IntStack: Stack #use type alias to prevent name clash
+    IntStack = Stack #use type alias to prevent name clash
 }
 ```
 
