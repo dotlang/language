@@ -2703,8 +2703,8 @@ adder = (x:int -> y:int)
 }
 ```
 `adder : (int -> int)`
-`processs: (int -> (int, int))` gets int, returns a int->int function.
-`sort: ([int], (int, bool) -> [int])` gets int array and a int->bool function.
+`processs: (int -> (int->int))` gets int, returns a int->int function.
+`sort: ([int], (int->bool) -> [int])` gets int array and a int->bool function.
 still confusing.
 `process: (int->int->int)` which one is which?
 `process (int) -> (int)` both input and output inside parens
@@ -2717,6 +2717,39 @@ if there is ambiguity, enclose in parens.
 `((int)->(float->string))?` 
 it would be good if we could eliminate this rule. 
 if means ambiguity and we are introducing another optional thing to the language.
+`(IN -> OUT)`
+```
+adder:(int->int) = (x:int -> y:int)
+{
+	y = x+1
+}
+```
+what about shortcut mode?
+`adder = (x:int -> int) x+1`
+
+
+? - If we use `adder = (x:int -> y:int)` notation can we remove `::`?
+`::` is a bit confusing. return X if it is not nothing. it does two things.
+what about this? `y=data//` meaning if data is not nothing assign to y and return.
+if it is nothing continue. but what if we use this for other assignments?
+we can say assigning nothing to y does not cause a return.
+or: changing in value of y will cause return.
+so in header we set default return value, any change on it will cause immediate return
+```
+process = (x:int -> y:int=nothing)
+{
+	y = x+1
+}
+```
+
+
+
+?- It would be good if we could generalise what we have in chain op: function selection.
+we can write `f(x)` so f will be determined using compiler.
+Or we can write: `[f,g,h](x)` so based on dynamic type of x, one of three candidates will be selected.
+then for chain: `x.(f)` or `(x,y).(f)`
+and `x.([f,g,h])` or `(x,y).([f,g,h])`
+
 
 
 
