@@ -2599,6 +2599,32 @@ The purpose of private type is that you should be able to change their name or i
 So using `T` should be Ok as later the author of the container module can change it to: `T = [_privateV2]`.
 You can use any public type (named or alias) ...
 
+N - If we use `adder = (x:int -> y:int)` notation can we remove `::`?
+`::` is a bit confusing. return X if it is not nothing. it does two things.
+what about this? `y=data//` meaning if data is not nothing assign to y and return.
+if it is nothing continue. but what if we use this for other assignments?
+we can say assigning nothing to y does not cause a return.
+or: changing in value of y will cause return.
+so in header we set default return value, any change on it will cause immediate return
+```
+process = (x:int -> y:int=nothing)
+{
+	y = x+1
+}
+```
+ `adder = (x:int -> y:int)` does not make sense. because `y` is not there.
+ It is not a binding. it is a pseudo name. so why let user set its name?
+ and it does not imply that we must have a name before it.
+  `adder = (x:int -> int)`
+
+
+
+==================================================================================
+
+
+
+
+
 ? - Setting type for a binding is not really needed. For function args, it's needed.
 But for bindings, it can be mostly act as a documentation.
 Exception for union type: `t:int|string=12`.
@@ -2726,23 +2752,17 @@ adder:(int->int) = (x:int -> y:int)
 ```
 what about shortcut mode?
 `adder = (x:int -> int) x+1`
-
-
-? - If we use `adder = (x:int -> y:int)` notation can we remove `::`?
-`::` is a bit confusing. return X if it is not nothing. it does two things.
-what about this? `y=data//` meaning if data is not nothing assign to y and return.
-if it is nothing continue. but what if we use this for other assignments?
-we can say assigning nothing to y does not cause a return.
-or: changing in value of y will cause return.
-so in header we set default return value, any change on it will cause immediate return
+Anyway `(int->(int->int))` is more readable than `(int)->(int)->int`
+and also it indicates/enforces mentioning return type.
+return cannot have a binding because it is not a binding. we cannot read it.
 ```
-process = (x:int -> y:int=nothing)
+adder:(int->int) = (x:int -> int)
 {
-	y = x+1
+	:: x+1
 }
 ```
 
-
+? - What if we want to do early return with nothing?
 
 ?- It would be good if we could generalise what we have in chain op: function selection.
 we can write `f(x)` so f will be determined using compiler.
