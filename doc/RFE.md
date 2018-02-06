@@ -2774,6 +2774,46 @@ If we ban type for bindings, this wont make sense.
 
 
 ? - What if we want to do early return with nothing?
+Basically we want to have `[body, early_retval][guard_cond]`. 
+or maybe we can reference to a future binding.
+```
+:: [nothing, res][is_everything_ok]
+res = [1,res2][dat_found]
+res2 = 19
+```
+So basically we can (should?) have only one return in a function.
+Maybe we can replace `::` notation with the similar `=` plus a special variable (maybe a binding with same name as owner function, or `_` if its anonymous function). But there is no function name. we only have binding name.
+```
+process = (x:int,y:int->int)
+{
+  __ = 12
+}
+```
+Or maybe we can let developer choose the name:
+```
+process = (x:int,y:int->out:int)
+{
+   out = [p1, p2][data_found]
+   p1 = 199
+   p2 = 210
+}
+will be translated to:
+   p1 = 199
+   if ( !data_found) return p1
+   p2 = 210
+   return p2
+
+```
+this is readable, does not add any new notation. can be used to express any type of return, even return nothing.
+and is simple. all the complexity will go in the compiler.
+Can we do this everywhere? it should be possible to have orth and gen.
+```
+data = process(x,y,z)
+x = ... of course you cannot refer to data or y or z
+y = ... you cannot refer to data or z
+z = ... you cannot refer to data
+```
+
 
 ?- It would be good if we could generalise what we have in chain op: function selection.
 we can write `f(x)` so f will be determined using compiler.
