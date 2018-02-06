@@ -2761,6 +2761,17 @@ adder:(int->int) = (x:int -> int)
 	:: x+1
 }
 ```
+what about this? `T = (int -> float) | string`
+previously: `T = (int)->float | string` was ambiguous.
+Can we write:
+```
+adder:(int->int) = (x)
+{
+	:: x+1
+}
+```?
+If we ban type for bindings, this wont make sense.
+
 
 ? - What if we want to do early return with nothing?
 
@@ -2771,5 +2782,12 @@ then for chain: `x.(f)` or `(x,y).(f)`
 and `x.([f,g,h])` or `(x,y).([f,g,h])`
 
 
+? - Remove chain operator. 
+It doesn't bring any advantage and makes things more confusing.
+It's only advantage is function resolution, which should be replaced with other mechanisms.
+We can use casting and check one by one. 
+Can we mix them?
+`int(i_s).1+string(i_s).1`
+no. all we need is array, cast and `//` operator.
 
 
