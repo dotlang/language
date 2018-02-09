@@ -2831,3 +2831,4 @@ Can we mix them?
 no. all we need is array, cast and `//` operator.
 
 
+? - Replace select in concurrency with `:=` and `//`?
