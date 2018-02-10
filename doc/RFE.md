@@ -2617,15 +2617,7 @@ process = (x:int -> y:int=nothing)
  and it does not imply that we must have a name before it.
   `adder = (x:int -> int)`
 
-
-
-==================================================================================
-
-
-
-
-
-? - Setting type for a binding is not really needed. For function args, it's needed.
+Y - Setting type for a binding is not really needed. For function args, it's needed.
 But for bindings, it can be mostly act as a documentation.
 Exception for union type: `t:int|string=12`.
 But what will be use of this? Anyway, we know rvalue is int.
@@ -2651,8 +2643,17 @@ What about a complex binding? e.g. a map where key/value are union?
 But in these exceptional cases, let developer do it via comments.
 Anyway compiler cannot rely on this for parsing because its not mandatory.
 Its desired if something is either forbidden or mandatory. optional will be confusing.
-
-? - function decl similar to binding decl
+It can be said that sometimes it will cause confusion:
+```
+handler = process #we have two process functions
+```
+But we can use `_:int` notation to remove ambiguity.
+For named types, we can use casting.
+```
+MyInt := int
+x = MyInt(12)
+```
+Y - function decl similar to binding decl
 `adder = (x:int):int x+1`
 `adder = (x:int):int x+1`?
 ```
@@ -2773,6 +2774,16 @@ adder:(int->int) = (x)
 If we ban type for bindings, this wont make sense.
 
 
+
+
+
+
+==================================================================================
+
+
+
+
+
 ? - What if we want to do early return with nothing?
 Basically we want to have `[body, early_retval][guard_cond]`. 
 or maybe we can reference to a future binding.
@@ -2832,3 +2843,20 @@ no. all we need is array, cast and `//` operator.
 
 
 ? - Replace select in concurrency with `:=` and `//`?
+
+? - In module, we are defining multiple bindings with same name which is not allowed inside a function!
+```
+process = (x:int) -> x+1
+process = (x:float) -> 12
+```
+These bindings have the same name but different types.
+what about this?
+```
+x = 12
+x = 19.21
+```
+and what if we call `process(x)` which x will be used if we also have two process functions?
+
+? - What if we have a function but want to defined it as a specific named type?
+`MyP = (int->int)`
+`process = (x:int->int) x+1`
