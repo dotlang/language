@@ -78,7 +78,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 09. **Generics**: `@["/core/Stack"] { T = int }` (You can replace types in a module during import).
 10. **Union type**: `MaybeInt = int | nothing` (Can store either of possible types).
 11. **Polymorphic Union**: `AllShapes = {Shape, ...}` (A union of all struct types that have a field of type `Shape`.
-12. **Function**: `calculate = (x, y) -> float { :: x/y  }` (braces must be on their own line).
+12. **Function**: `calculate = (x:int, y:int -> float) { :: x/y  }` (braces must be on their own line).
 13. **Concurrency**: `result := processData(x,y,z)` (Evaluate an expression in parallel).
 
 ## Symbols
@@ -153,8 +153,8 @@ If the value is a struct, you can destruct it into it's elements (Example 5). In
 6. `a,_ = {1, 100}`
 7.
 ```
-process = (x:int)->x+1
-process = (x:float)->x*2
+process = (x:int -> int) x+1
+process = (x:float -> int) x*2
 handler = process #which process?
 handler = process(_:int)
 ```
@@ -327,7 +327,7 @@ The `Type(nothing)` notation gives you the default value for the given type (emp
 # Functions
 
 Functions are a type of binding which can accept a set of inputs and give an output. Lambda or a function pointer is defined similarly to a normal function in a module. They use the same syntax, except that, they are defined inside a function.
-When defining a function, just like a normal binding, you can omit type which will be inferred from rvalue (Function literal). For example `(int,int)->int` is a function type (You can optionally include names for inputs for documentation purposes), but `(x:int, y:int) -> int {:: x+y}` is function literal.
+When defining a function, just like a normal binding, you can omit type which will be inferred from rvalue (Function literal). For example `(int,int -> int)` is a function type (You can optionally include names for inputs for documentation purposes), but `(x:int, y:int -> int) {:: x+y}` is function literal.
 
 If function does not return anything, it's return type will be marked as `nothing`. Otherwise, if function has a body, the output type must be specified after `->`.
 
@@ -335,26 +335,24 @@ A function call with union data (e.g. `int|string`) means there must be function
 
 `:: expression` will evaluate and return it's expression if it is not `nothing`. Otherwise, the execution will continue. The only way to return `nothing` is normal function termination without a return (Example 10). Basically this operator means return `expression // evaluate_rest_of_function()`.
 
-If function output is a single identifier, you can omit parentheses in output type, otherwise they are mandatory (Example 11).
-
 You can alias a function by defining another binding pointing to it (Example 12). Note that you cannot have functions that have same name and input and only differ in their output type.
 
 Note that a public function must have public input/output types (although their internal can be private type, eg. a public struct with private typed fields).
 
 **Syntax**: 
 
-`functionName: (type1, type2, type3, ...) -> (OutputType) = (name1: type1, name2: type2...) -> OutputType { code block }`
+`functionName = (name1: type1, name2: type2... -> OutputType) { code block }`
 
 **Examples**
 
-01. `myFunc = (x:int, y:int) -> int { :: 6+y+x }`
-02. `log = (s: string) -> { print(s) } #this function returns nothing`
-03. `process = (pt: Point)-> pt.x #no need to use braces when body is a single expression`
-04. `process2 = (pt: Point) -> {pt.x, pt.y} #this function returns a struct`
-05. `my_func = (x:int) -> x+9 #no need to specify output type as it can be implied`
-06. `myFunc9 = (x:int) -> {int} {12} #this function returns a struct literal`
-07. `process = (x: int|Point])->int #this function can accept either int or Point type as input or int|Point type`
-08. `fileOpen = (path: string) -> File {...}`
+01. `myFunc = (x:int, y:int -> int) { :: 6+y+x }`
+02. `log = (s: string -> nothing) { print(s) } #this function returns nothing`
+03. `process = (pt: Point -> int) pt.x #no need to use braces when body is a single expression`
+04. `process2 = (pt: Point -> {int,int}) {pt.x, pt.y} #this function returns a struct`
+05. `my_func = (x:int -> int) x+9 #no need to specify output type as it can be implied`
+06. `myFunc9 = (x:int -> {int}) {12} #this function returns a struct literal`
+07. `process = (x: int|Point] -> int) #this function can accept either int or Point type as input or int|Point type`
+08. `fileOpen = (path: string -> File) {...}`
 09. `_,b = process2(myPoint) #ignore function output`
 10. 
 ```
@@ -365,18 +363,18 @@ process = (x:int) ->
   :: 200
 }
 ``` 
-11. `T1 = (int)->(int|string) { ... }`
-12. `process = (x:int)->x+1`, `process2 = process`
+11. `T1 = (int -> int|string) { ... }`
+12. `process = (x:int -> int) x+1`, `process2 = process`
 
 ## Function call resolution
 
 Function calls are dispatched using dynamic type (for union typed bindings) or static type (for other bindings). Dynamic type of a union binding this will be determined at runtime. This is similar to the way chain operator behaves.
 
-So for example if `x` of type `int|float|string` contains a float value, calling `process(x)` will invoke `process` which expects a float. This can be either defined as `(float)->T` function or a more general function of type `(float|int|string)->T`.
+So for example if `x` of type `int|float|string` contains a float value, calling `process(x)` will invoke `process` which expects a float. This can be either defined as `(float->T)` function or a more general function of type `(float|int|string -> T)`.
 
-Note that if you have a `(int|float)->string` function defined, you cannot define another function with the same name and signature but for `int` or `float` input.
+Note that if you have a `(int|float -> string)` function defined, you cannot define another function with the same name and signature but for `int` or `float` input.
 
-If `MyInt := int` is defined in the code, you cannot call a function which needs an `int` with a `MyInt` binding, unless it is forwarded explicitly in the code (e.g. `process = (x:MyInt) -> process(int(x))`).
+If `MyInt := int` is defined in the code, you cannot call a function which needs an `int` with a `MyInt` binding, unless it is forwarded explicitly in the code (e.g. `process = (x:MyInt -> int) process(int(x))`).
 
 To resolve a function call, first bindings with appropriate type in current function will be searched. If not found, search will continue to parent functions, then module-level and then imported modules. At any scope, if there are multiple candidates (matching with name and argument types) there will be a compiler error.
 
@@ -386,15 +384,15 @@ Bindings of this type can hold a reference to a function or a lambda. You can se
 
 You can use a function name as a value for a lambda but either the name should be unique or the exact type must be specified (Either using explicit type on the left side or by using `_:T` notation as in example 6).
 
-**Syntax**: `Fp = (type1, type2, ...) -> OutputType`
+**Syntax**: `Fp = (type1, type2, ... -> OutputType)`
 
 **Examples**
 
-1. `Adder = (int,int)->int #defining a named type based on a function type`
+1. `Adder = (int,int->int) #defining a named type based on a function type`
 2. `myAdder = (x:int, y:int) -> x+y #initialize a binding with a function literal`
 3. `adderPointer = myAdder #Store refernce to a function in a function pointer`
 4. `sort = (x: [int], comparer: (int,int) -> bool) -> [int] #this function accepts a function pointers`
-5. `map = (input: [T], mapper: (T) -> S) -> [S]`
+5. `map = (input: [T], mapper: (T -> S) -> [S])`
 6. `func = process(_:int, _:float) #state which process function you want to point to using func binding`
 
 ## Lambda (Function literal)
@@ -409,18 +407,18 @@ If lambda is assigned to a variable, you can invoke itself from inside (Example 
 
 **Examples**
 
-1. `f1 = (x: int, y:int) -> int { x+y }`
-2. `rr = (x: int, y:int) -> x + y #you can ignore return type and braces`  
-3. `rr = () -> int { :: x + y } #here x and y are captures from parent function`
-4. `test = (x:int) -> PlusFunc { :: (y:int) -> y + x } #this function returns a lambda`
-5. `(x:int)->int { x+1 } (10) #you can invoke a lambda at the point of declaration`
-6. `process = (x:int, y:float, z: string) -> { ... }`
+1. `f1 = (x: int, y:int -> int) { x+y }`
+2. `rr = (x: int, y:int -> int) -> x + y #you can ignore return type and braces`  
+3. `rr = (nothing -> int) { :: x + y } #here x and y are captures from parent function`
+4. `test = (x:int -> PlusFunc) { :: (y:int) -> y + x } #this function returns a lambda`
+5. `(x:int -> int) { x+1 } (10) #you can invoke a lambda at the point of declaration`
+6. `process = (x:int, y:float, z: string -> float) { ... }`
 7. `lambda1 = process(10, _, _) #defining a lambda based on existing function`
-8. `ff = (x:int) -> int { ff(x+1) }`
+8. `ff = (x:int -> int) { ff(x+1) }`
 9. 
 ```
-process = (x:int)->...
-process = (y:string)->...
+process = (x:int->...
+process = (y:string->...
 ...
 g = process(_:int)
 ```
@@ -494,7 +492,7 @@ process = (x:T)->100
 {
     T := [int],
     U := {float, string},
-    Cmp := (x:int) -> bool
+    Cmp := (x:int -> bool)
     {
         :: x>0
     },
@@ -545,7 +543,7 @@ You can use sequence and maps for conditionals (Examples 2 and 3) and chain oper
 **Examples**
 
 1. `v = processData() #returns int|float|string `
-   `data = v.{(x:int)->10, (x:float)->20, (x:string)->30}`
+   `data = v.{(x:int->int) 10, (x:float->int) 20, (x:string -> int)30}`
 2. `x = [100, 200][a>0]`
 3. `x = [nothing, 100][a>0] // processData(a)`
 
@@ -561,7 +559,7 @@ If a really unrecoverable error happens, you should exit the application by call
 
 In special cases like a plugin system, where you must control exceptions, you can use built-in function `invoke` which will return an error result if the function which it calls exits.
 
-**Syntax**: `process = () -> int|exception { ... :: exception{...} }`
+**Syntax**: `process = (nothing -> int|exception) { ... :: exception{...} }`
 
 **Examples**
 
@@ -580,7 +578,7 @@ This is a function, called `main` which returns `0` (very similar to C/C++ excep
 ## Hello world
 
 ```
-main = () -> print("Hello world!")
+main = (nothing->nothing) print("Hello world!")
 ```
 
 ## Expression parser
@@ -591,13 +589,13 @@ We want to write a function which accepts a string like `"2+4-3"` and returns th
 NormalExpression = {op: char, left: Expression, right: Expression}
 Expression = int|NormalExpression
 
-eval = (input: string) -> float 
+eval = (input: string -> float) 
 {
   exp = parse(input)
   :: innerEval(exp)
 }
 
-innerEval = (exp: Expression) -> float 
+innerEval = (exp: Expression -> float) 
 {
   :: [nothing, int(exp).0][int(exp).1]
   y,_ = NormalExpression(exp)
@@ -629,9 +627,9 @@ quickSort:([int], int, int)->[int] = (list:[int], low: int, high: int) ->
 ## Filtered sum
 A function which accepts a list of numbers and returns sum of even numbers.
 ```
-filteredSum = (data: [int]) -> int
+filteredSum = (data: [int] -> int)
 {
-  calc = (index: int, sum: int) -> int
+  calc = (index: int, sum: int -> int)
   {
     :: [nothing, sum][index>=length(data)]
     :: calc(index+1, sum+data[index])
@@ -645,7 +643,7 @@ filteredSum = (data: [int]) -> int
 A function which accepts a number and returns it's digits in a sequence of characters.
 Generally for this purpose, using a linked-list is better because it will provide better performance.
 ```
-extractor = (n: number, result: string) -> string
+extractor = (n: number, result: string -> string)
 {
   :: [nothing, append(result, char(48+n))][n<10]
   digit = n % 10
@@ -657,9 +655,9 @@ extractor = (n: number, result: string) -> string
 A function which accepts two sequences of numbers and returns the maximum of sum of any any two numbers chosen from each of them.
 This can be done by finding maximum element in each of the arrays but we want to do it with a nested loop.
 ```
-maxSum = (a: [int], b: [int]) -> int
+maxSum = (a: [int], b: [int] -> int)
 {
-	calc = (idx1: int, idx2: int, current_max: int) -> int
+	calc = (idx1: int, idx2: int, current_max: int -> int)
 	{
 		:: [nothing, current_max][idx2 >= length(b)]
 		sum = a[idx1] + b[idx2]
@@ -674,7 +672,7 @@ maxSum = (a: [int], b: [int]) -> int
 
 ## Fibonacci
 ```
-fib = (n: int, cache: [int|nothing]) -> int
+fib = (n: int, cache: [int|nothing] -> int)
 {
 	:: [nothing, int(cache[n]).0][cache[n] <> nothing]
 	seq_final1 = set(seq, n-1, fib(n-1, cache))
@@ -758,4 +756,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.97**: Jun 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` place holder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is typed statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
 - **Version 0.99**: Dec 30, 2017 - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting, removed `^` operator and replaced with generics, removed `@` (replaced with chain operator and casting), removed function forwarding, removed compound literal, changed notation for channel read, write and select (Due to changes in generics and sequence and removal of compound literal) and added `$` for select, add notation to filter imported identifiers in import, removed autoBind section and added a brief explanation for `TargetType()` notation in cast section, rename chain operator to `@`, replaced return keyword with `::`, replaced `import` with `@` notation and support for rename and filter for imported items, replaced `@` with `.[]` for chain operator, remove condition for return and replaced with rule of returning non-`nothing` values, change chain notation from `.[]` to `.{}` and import notation from `@[]` to `@()`, Added notation for polymorphic generic types, changed the notation for import generic module and rename identifiers, removed `func` keyword, extended general union type syntax to unnamed types with field type and names (e.g. `{id:int, name:string,...}`), Added shift-left and right `>>,<<` and power `**` operators, all litearls for seq and map and struct must be prefixed with `_`, in struct literals you can include other structs to implement struct update, changed notation for abstract functions, Allow access to common parts of a union type with polymorphic union types, use `nothing` instead of `...` for generic types and abstract functions, removed phantom types, change `=>` notation to `^T :=` notation to rename symbols, removed composition for structs and extended/clarified usage of polymorphic sum types for embedding and function forwarding, change map type from `[K,V]` to `[K:V]`, removed auto-bind `Type()`, remove abstract functions, remove `_` prefix for literals, remove `^` and add `=>` to rename types so as to fix issue with introducion of new named types when filtering an import operation, replace operators `:=` to `=` and `:==` to `==` and `=` (comparison) to `=?`, adding type alias notation `T:X`, change import operator to `@[]` and replace `=>` with type alias notation, use `:=` to calculate in parallel and `==` to equality check
-- **Version 1.00**: ??? ??, ???? - Use `=` for type alias and `:=` for lazy (parallel) calculation and named type, More clarification about binding type inference, explain name resolution mechanism for types and bindings and function call, added explanation about using function name as a function pointer, explanation about public functions with private typed input/output, removed type specifier after binding name (it will be inferred from RHS)
+- **Version 1.00**: ??? ??, ???? - Use `=` for type alias and `:=` for lazy (parallel) calculation and named type, More clarification about binding type inference, explain name resolution mechanism for types and bindings and function call, added explanation about using function name as a function pointer, explanation about public functions with private typed input/output, removed type specifier after binding name (it will be inferred from RHS), changed function type to `(input:type->output_type)
