@@ -2770,7 +2770,8 @@ adder:(int->int) = (x)
 {
 	:: x+1
 }
-```?
+```
+?
 If we ban type for bindings, this wont make sense.
 
 N - It would be good if we could generalise what we have in chain op: function selection.
@@ -2838,8 +2839,75 @@ y = ... you cannot refer to data or z
 z = ... you cannot refer to data
 ```
 So if LHS is not return binding, compiler will just change place of the line. Else it will handle early return.
+Refering to future references is a bit unintuitive.
+What if we say a closure can refer to bindings in future, when called?
+`y = [()->10, ()->z][is_fine]`
+`z=99`
+advantage over normal refer: the structure of the array?
+what if we try to solve it other way around? instead of stopping processing the rest of the code, jump over it?
+Any reference to a binding before decl is a continuation. continue processing until you get value of that binding.
+But if I write: `out = [10,x][cnd]` then how is compiler supposed to initialize this array?
+I should write an array of lambdas: `out = [(->int) 10, (->int) z][cond]`
+Then compiler can put any code inside body of the second lambda. It will put rest of the function body there.
+```
+process = (x:int, y:int -> out: int)
+{
+   out = [(->int) 10, (->int) z+p-1][x>0]
+   t= 12
+   z=t+1
+   p=t-z+process(t)
+}
+#this will be translated to:
+out = [(->int) 10, (->aaa:int)
+{
+   t= 12
+   z=t+1
+   p=t-z+process(t)
+   aaa = z+p-1
+}][x>0]
+```
+Now, what if I use it in a normal situation?
+```
+process = (x:int, y:int -> out: int)
+{
+   data = [(->int) 10, (->int) z+p-1][x>0]
+   t= 12
+   z=t+1
+   p=t-z+process(t)
+   out = data
+}
+```
+Each line has a binding on the left and an expression on the right. The expression can refer to other bindings.
+This will translate to a graph of dependency which is directed: DAG.
+If it is hard to explain and implement, its hard to understand.
+What if we say, first line of evvery function must be output assignment which definitely will most of the time have a future reference.
+But then the code may be not very readable. And it's not how you write the code.
+But think of it like this: You have to think top bottom: First think about output and it's elements, then write those elements.
+`out = part1 + part2 + part3`
+What if we eliminate early return from the language, but compiler handles it behind the scene? But doing these things behind the scene, may result in unwanted consequences.
+Compiler cannot manipulate code. Maybe developer has some lines of code which expects to run but compiler does not because output is ready.
+```
+out = [a,b][cond]
+a= ...
+b=...
+```
+If cond does not hold, we only need to calculate a so we can ignore b. But what if during b calculation some side effects are expected to happen which are needed?
+Why not make it easy and let developer surround the costly part of the code in a lambda and invoke it on demand?
+```
+out = [a,b][cond]()
+a = 10
+b = (->int) { lots ot code }
+```
 
 
+? - How can i write a simple lambda that does not have any input and returns an int?
+`()10`? 
+`(nothing->int) 10`
+`(->int) 10` 
+
+
+? - is `(nothing->int)` same as `(->int)`?
+Are they the same type?
 
 ? - Replace select in concurrency with `:=` and `//`?
 
