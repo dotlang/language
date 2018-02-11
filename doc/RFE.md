@@ -2773,6 +2773,19 @@ adder:(int->int) = (x)
 ```?
 If we ban type for bindings, this wont make sense.
 
+N - It would be good if we could generalise what we have in chain op: function selection.
+we can write `f(x)` so f will be determined using compiler.
+Or we can write: `[f,g,h](x)` so based on dynamic type of x, one of three candidates will be selected.
+then for chain: `x.(f)` or `(x,y).(f)`
+and `x.([f,g,h])` or `(x,y).([f,g,h])`
+
+Y - Remove chain operator. 
+It doesn't bring any advantage and makes things more confusing.
+It's only advantage is function resolution, which should be replaced with other mechanisms.
+We can use casting and check one by one. 
+Can we mix them?
+`int(i_s).1+string(i_s).1`
+no. all we need is array, cast and `//` operator.
 
 
 
@@ -2824,22 +2837,8 @@ x = ... of course you cannot refer to data or y or z
 y = ... you cannot refer to data or z
 z = ... you cannot refer to data
 ```
+So if LHS is not return binding, compiler will just change place of the line. Else it will handle early return.
 
-
-?- It would be good if we could generalise what we have in chain op: function selection.
-we can write `f(x)` so f will be determined using compiler.
-Or we can write: `[f,g,h](x)` so based on dynamic type of x, one of three candidates will be selected.
-then for chain: `x.(f)` or `(x,y).(f)`
-and `x.([f,g,h])` or `(x,y).([f,g,h])`
-
-
-? - Remove chain operator. 
-It doesn't bring any advantage and makes things more confusing.
-It's only advantage is function resolution, which should be replaced with other mechanisms.
-We can use casting and check one by one. 
-Can we mix them?
-`int(i_s).1+string(i_s).1`
-no. all we need is array, cast and `//` operator.
 
 
 ? - Replace select in concurrency with `:=` and `//`?
@@ -2856,6 +2855,11 @@ x = 12
 x = 19.21
 ```
 and what if we call `process(x)` which x will be used if we also have two process functions?
+Proposal: Include type in function name
+```
+process(int->int) = (x -> y) { y = x+1 }
+process(float->int) = (x->y) { y = x/2 }
+```
 
 ? - What if we have a function but want to defined it as a specific named type?
 `MyP = (int->int)`
