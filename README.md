@@ -100,10 +100,9 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 14. `::`  Return operator
 15. `_`   Place-holder (lambda creator and assignments)
 16. `@[]` Import
-17. `.{}` Chain operator
-18. `!`   Write-only channel
-19. `?`   Read-only channel
-20. `${}` Channel select operations
+17. `!`   Write-only channel
+18. `?`   Read-only channel
+19. `${}` Channel select operations
 
 ## Reserved keywords
 
@@ -123,7 +122,7 @@ These rules are highly advised but not mandatory.
 
 ## Operators
 
-Operators are mostly similar to C language (Conditional operators: `and, or, not, xor, ==, <>, >=, <=`, Arithmetic: `+, -, *, /, %, %%`, `>>`, `<<`, `**` power) and some of them which are different are explained in corresponding sections (Casting, Chain operator, range, underscore, ...).
+Operators are mostly similar to C language (Conditional operators: `and, or, not, xor, ==, <>, >=, <=`, Arithmetic: `+, -, *, /, %, %%`, `>>`, `<<`, `**` power) and some of them which are different are explained in corresponding sections (Casting, underscore, ...).
 
 Note that `=` will do a comparison based on contents of bindings.
 `A // B` will evaluate to A if it is not `nothing`, else it will be evaluated to B (e.g. `y = x // y // z // 0`).
@@ -368,7 +367,7 @@ process = (x:int) ->
 
 ## Function call resolution
 
-Function calls are dispatched using dynamic type (for union typed bindings) or static type (for other bindings). Dynamic type of a union binding this will be determined at runtime. This is similar to the way chain operator behaves.
+Function calls are dispatched using dynamic type (for union typed bindings) or static type (for other bindings). Dynamic type of a union binding this will be determined at runtime. 
 
 So for example if `x` of type `int|float|string` contains a float value, calling `process(x)` will invoke `process` which expects a float. This can be either defined as `(float->T)` function or a more general function of type `(float|int|string -> T)`.
 
@@ -422,24 +421,6 @@ process = (y:string->...
 ...
 g = process(_:int)
 ```
-
-## Chain operator
-
-This operator is used to put arguments before a lambda and simulate a scoped function resolution. `(X).{F(_)}` will be translated to `F(X)` (Example 1). If `F` is a lambda with only one input then you can eliminate `(_)` part. You can have multiple candidates in place of `F` and the one which can accept the dynamic type of `X` will be invoked (Example 5). Note that there must be exactly one lambda matching the argument (Example 6 is wrong).
-
-**Syntax**: 
-
-1. `input.{lambda1, lambda2}`
-2. `(input1, input2, ...).{lambda1, lambda2, ...}`
-
-**Examples**
-
-1. `add = (x:int, y:int) -> x+y`, `(10, 20).{add(_,_)}`, `(10,20).{add}` => `add(10,20)`, 
-2. `({1,2}).{processStruct(_)}` => `processStruct({1,2})`
-3. `(6).{addTo(1, _)}` => `addTo(1, 6)`
-4. `result = (input, check1(5, _)).{pipe(_,_)}.{pipe(_, check3(1,2,_))}.{pipe(_,check5(8,_,1))}`
-5. `result = error_or_int.{(x:error)->10, (y:int)->20}`
-6. `int_or_float_or_string.{(int)->int {...}, (float)->int {...} #WRONG, string is not matched`
 
 # Modules
 
@@ -538,12 +519,12 @@ reader, writer = createIntChannel(100) #specify buffer size
 
 ## Conditionals and pattern matching
 
-You can use sequence and maps for conditionals (Examples 2 and 3) and chain operator for matching (Example 1).
+You can use sequence and maps for conditionals (Examples 2 and 3) and cast operator for matching (Example 1).
 
 **Examples**
 
 1. `v = processData() #returns int|float|string `
-   `data = v.{(x:int->int) 10, (x:float->int) 20, (x:string -> int)30}`
+   `data = [nothing, 10][int(v).1] // [nothing, 20][float(v).1] // 30`
 2. `x = [100, 200][a>0]`
 3. `x = [nothing, 100][a>0] // processData(a)`
 
@@ -553,7 +534,7 @@ You can call built-in dispose function to explicitly free resources allocated fo
 
 ## Exception handling
 
-There is no explicit support for exceptions. You can return a specific `exception` type instead. You can use chaining operator to streamline calling multiple functions without checking for exception output each time.
+There is no explicit support for exceptions. You can return a specific `exception` type instead.
 
 If a really unrecoverable error happens, you should exit the application by calling `exit` function in core. 
 
@@ -756,4 +737,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.97**: Jun 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` place holder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is typed statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
 - **Version 0.99**: Dec 30, 2017 - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting, removed `^` operator and replaced with generics, removed `@` (replaced with chain operator and casting), removed function forwarding, removed compound literal, changed notation for channel read, write and select (Due to changes in generics and sequence and removal of compound literal) and added `$` for select, add notation to filter imported identifiers in import, removed autoBind section and added a brief explanation for `TargetType()` notation in cast section, rename chain operator to `@`, replaced return keyword with `::`, replaced `import` with `@` notation and support for rename and filter for imported items, replaced `@` with `.[]` for chain operator, remove condition for return and replaced with rule of returning non-`nothing` values, change chain notation from `.[]` to `.{}` and import notation from `@[]` to `@()`, Added notation for polymorphic generic types, changed the notation for import generic module and rename identifiers, removed `func` keyword, extended general union type syntax to unnamed types with field type and names (e.g. `{id:int, name:string,...}`), Added shift-left and right `>>,<<` and power `**` operators, all litearls for seq and map and struct must be prefixed with `_`, in struct literals you can include other structs to implement struct update, changed notation for abstract functions, Allow access to common parts of a union type with polymorphic union types, use `nothing` instead of `...` for generic types and abstract functions, removed phantom types, change `=>` notation to `^T :=` notation to rename symbols, removed composition for structs and extended/clarified usage of polymorphic sum types for embedding and function forwarding, change map type from `[K,V]` to `[K:V]`, removed auto-bind `Type()`, remove abstract functions, remove `_` prefix for literals, remove `^` and add `=>` to rename types so as to fix issue with introducion of new named types when filtering an import operation, replace operators `:=` to `=` and `:==` to `==` and `=` (comparison) to `=?`, adding type alias notation `T:X`, change import operator to `@[]` and replace `=>` with type alias notation, use `:=` to calculate in parallel and `==` to equality check
-- **Version 1.00**: ??? ??, ???? - Use `=` for type alias and `:=` for lazy (parallel) calculation and named type, More clarification about binding type inference, explain name resolution mechanism for types and bindings and function call, added explanation about using function name as a function pointer, explanation about public functions with private typed input/output, removed type specifier after binding name (it will be inferred from RHS), changed function type to `(input:type->output_type)
+- **Version 1.00**: ??? ??, ???? - Use `=` for type alias and `:=` for lazy (parallel) calculation and named type, More clarification about binding type inference, explain name resolution mechanism for types and bindings and function call, added explanation about using function name as a function pointer, explanation about public functions with private typed input/output, removed type specifier after binding name (it will be inferred from RHS), changed function type to `(input:type->output_type)`, removed chanin operator
