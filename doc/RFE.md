@@ -2953,3 +2953,32 @@ process(int,string) = (x,s -> y:int) { y = x+1 }
 process(float,int) = (x,k->y:int) { y = x/2 }
 ```
 This is because the notatio to define a module-level function is the same as the notation to define function-level lambda.
+
+? - Make generics simpler. It does not need to support all different options like replacing functions. 
+We just want type replacement.
+
+? - For function output, just write output name and possibly expression which refers to future bindings. Then a block of code without return. 
+In this case, we dont really need a name or even type. As it cacn be inferred from right hand side.
+```
+process = (x:int,y:int) -> x+y+t
+{
+	t = 4*y - x
+}
+```
+But we need type. For cases when we need a lambda.
+```
+process = (x:int,y:int->int) x+y+t
+{
+	t = 4*y - x
+}
+```
+This is not very intuitive and easy to read.
+And will prevent us from having multiple early returns.
+`process = (x:int, y:int -> int) x+y`
+```
+process = (x:int, y:int -> int) out
+{
+	out = x+y
+}
+```
+
