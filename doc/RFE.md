@@ -2788,7 +2788,27 @@ Can we mix them?
 `int(i_s).1+string(i_s).1`
 no. all we need is array, cast and `//` operator.
 
+Y - How can i write a simple lambda that does not have any input and returns an int?
+`()10`? 
+`(nothing->int) 10`
+`(->int) 10` 
 
+N - is `(nothing->int)` same as `(->int)`?
+Are they the same type? no. not the same.
+
+Y - What if we have a function but want to defined it as a specific named type?
+`MyP = (int->int)`
+`process = (x:int->int) x+1`
+For non-function:
+`data = MyInt(12)`
+`process = MyP(x:int->int) x+1`
+If we want to change the notation, we have to change the notation everywhere.
+What about this?
+`tempProcess = (x:int->int) x+1`
+`process = MyP(tempProcess)`
+We still use a known casting notation. We have two simple expressions each of which does a straight forward job.
+This is simple and intuitive. 
+Let's say: Casting operator can only act on a binding or literal value. Not expressions.
 
 
 
@@ -2898,16 +2918,12 @@ out = [a,b][cond]()
 a = 10
 b = (->int) { lots ot code }
 ```
+Proposal: No special return, assigning to output var means return but you can refer to future bindings to make code more readable:
+```
+out = [(->int) 10, process]()
+process = (->int) lots of code
+```
 
-
-? - How can i write a simple lambda that does not have any input and returns an int?
-`()10`? 
-`(nothing->int) 10`
-`(->int) 10` 
-
-
-? - is `(nothing->int)` same as `(->int)`?
-Are they the same type?
 
 ? - Replace select in concurrency with `:=` and `//`?
 
@@ -2929,7 +2945,11 @@ Proposal: Include type in function name
 process(int->int) = (x -> y) { y = x+1 }
 process(float->int) = (x->y) { y = x/2 }
 ```
-
-? - What if we have a function but want to defined it as a specific named type?
-`MyP = (int->int)`
-`process = (x:int->int) x+1`
+It makes code messy.
+Let's consider this special case: You can have multiple bindings of the same name but different type if they are function.
+But isn't this an exception? Why can't we have non function bindings with the same name, if they have different types?
+```
+process(int,string) = (x,s -> y:int) { y = x+1 }
+process(float,int) = (x,k->y:int) { y = x/2 }
+```
+This is because the notatio to define a module-level function is the same as the notation to define function-level lambda.
