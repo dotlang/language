@@ -2815,9 +2815,6 @@ Let's say: Casting operator can only act on a binding or literal value. Not expr
 ==================================================================================
 
 
-
-
-
 ? - What if we want to do early return with nothing?
 Basically we want to have `[body, early_retval][guard_cond]`. 
 or maybe we can reference to a future binding.
@@ -2953,9 +2950,25 @@ process(int,string) = (x,s -> y:int) { y = x+1 }
 process(float,int) = (x,k->y:int) { y = x/2 }
 ```
 This is because the notatio to define a module-level function is the same as the notation to define function-level lambda.
+Proposal: We use different names for those functions, but introduce a compile-time dynamic sequence where you can add functions (or any other thing) to a sequence at compile time. Then you can treat that sequence as a function (if it contains functions).
+Example:
+```
+drw_circle = ...
+draw_square = ...
+draw_triangle = ...
+draw = [draw_circle, ...]
+draw = [draw_square, ...]
+draw = [draw_triangle, ...]
+...
+draw(my_circle)
+draw(my_square)
+#another example:
+[(int->int) 10, (error->int) 20](error_or_int)
+```
 
 ? - Make generics simpler. It does not need to support all different options like replacing functions. 
 We just want type replacement.
+Generics implementation is like this because we want it to be orth and general. If we disable non functions, it will not be orth.
 
 ? - For function output, just write output name and possibly expression which refers to future bindings. Then a block of code without return. 
 In this case, we dont really need a name or even type. As it cacn be inferred from right hand side.
