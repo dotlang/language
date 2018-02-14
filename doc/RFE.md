@@ -2995,3 +2995,24 @@ process = (x:int, y:int -> int) out
 }
 ```
 
+? - Can we use this as a lambda? `x -> x+1`? If type can be inferred?
+`h = (x:int->int) x+1`
+The definition should be auto-surround. Like cast: `int(x)` which is a self-explicit notation.
+`(x:int->int) x+1()` what does `()` apply to? This makes the definition ambiguous.
+`(x:int -> x+1)`?
+`(x:int -> x+1)()` definition + invoke
+`(x:int,y:float -> x*y)`
+`(x:int, y:float -> z:float ) { ... z = 12 }`
+or:
+`(x:int, y:int -> { .... % = 19 })`
+Should we force developer to denote output type? Or should we ban it?
+It may be like binding, where we ban type specification.
+Or we can say, let's force output type when developer is not using shortcut notation:
+`(x:int, y:float -> z:float ) { ... z = 12 }`
+This makes more sense, I think.
+
+? - If type is specified in context, can we write:
+`(x,y->x+y)`? or `(x,y->z){ z = x+y}`?
+For example when expression is an argument sent to another function.
+
+
