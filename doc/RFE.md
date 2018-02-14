@@ -2810,6 +2810,7 @@ We still use a known casting notation. We have two simple expressions each of wh
 This is simple and intuitive. 
 Let's say: Casting operator can only act on a binding or literal value. Not expressions.
 
+N - Replace select in concurrency with `:=` and `//`?
 
 
 ==================================================================================
@@ -2922,7 +2923,7 @@ process = (->int) lots of code
 ```
 
 
-? - Replace select in concurrency with `:=` and `//`?
+
 
 
 ? - In module, we are defining multiple bindings with same name which is not allowed inside a function!
@@ -2966,14 +2967,51 @@ draw(my_square)
 [(int->int) 10, (error->int) 20](error_or_int)
 ```
 
+? - How can we handle conflict without generics?
+Use intermediate module. If `draw` and `T` are defined both in Lib1 and Lib2, add intermediate X like this:
+```
+#x
+@["Lib1"]
+myDraw = draw
+MyT = T
+
+#main module
+@["X"]
+@["Lib2"]
+#now draw refers to function in Lib2 and myDraw referes to the one in Lib1
+```
+
 ? - Make generics simpler. It does not need to support all different options like replacing functions. 
 We just want type replacement.
 Generics implementation is like this because we want it to be orth and general. If we disable non functions, it will not be orth.
+I think the previous notation was simpler and still provided enough advanages: `@["Stack(int)"]`
+When a module is named `Stack(T).dot` it acts like a function. T is the input and whatever you pass will be replacced inside the module.
+Difference with normal functions:
+- There is no type involved here, T does not have a type
+- As this is a text replace, you cannot pass an expression.
+`@["Stack(int)"]` -> import Stack module and replace it's T argument with `int`.
+And this does not have to be type, as long as it is a simple identifier (number, token, type name, ...) it is fine. Compiler will only replace.
+But, if you pass a local type to the module, how is it supposed to know the definition of that type?
+It does not need to (and cannot) know the details inside the type. The identifier of that type however, is not defined inside that module!
+```
+#stack(T).dot module
+Stack = [T]
+...
+```
+If we import above module with `Product` type, how is the code supposed to cmpile? It does now know, product type.
+I think this is fine. These arguments are an exception and we assume that they are defined outside. 
+So when compiler is compiling the code for these modules, when replacing T with `Product` it inserts other metadata to indicate the layout/size/details of that type.
+This will be handled by the compiler. You only imprt a module with an identifier.
+But can this be generalized? If I have a type inside a module, what will be it's scope?
+Can I access types outside my module in the importer module? No. Because you don't know them.
+when you import `Stack(Product)` the code of that module will be compiled with a reference to local Product type. 
+it will be as if the code is inserted into current module but symbols are not public to the outside world.
+Only those who are explicitly defined public in a module will be exported to the outside world. Not identifiers which are available as a result of import.
 
 ? - For function output, just write output name and possibly expression which refers to future bindings. Then a block of code without return. 
 In this case, we dont really need a name or even type. As it cacn be inferred from right hand side.
 ```
-process = (x:int,y:int) -> x+y+t
+process = (x:int,y:int -> t:int)
 {
 	t = 4*y - x
 }
@@ -2989,11 +3027,21 @@ This is not very intuitive and easy to read.
 And will prevent us from having multiple early returns.
 `process = (x:int, y:int -> int) x+y`
 ```
-process = (x:int, y:int -> int) out
+process = (x:int, y:int -> out:int) 
 {
 	out = x+y
 }
 ```
+```
+sort(my_sequence, (x,y -> x-y))
+process(my_sequence, (x,y -> (t -> t+x+y)))
+process(my_sequence, (x:int,y:int -> (t:int -> t+x+y)))
+sort(my_sequence, (x:int,y:int -> result:bool)
+{
+	result = x==y
+})
+```
+
 
 ? - Can we use this as a lambda? `x -> x+1`? If type can be inferred?
 `h = (x:int->int) x+1`
@@ -3010,6 +3058,9 @@ It may be like binding, where we ban type specification.
 Or we can say, let's force output type when developer is not using shortcut notation:
 `(x:int, y:float -> z:float ) { ... z = 12 }`
 This makes more sense, I think.
+Proposal;
+- If type can be inferred, it is optional.
+- If result of function is an expression, just put it after `->`. Else write binding name and type and write statements in the code block.
 
 ? - If type is specified in context, can we write:
 `(x,y->x+y)`? or `(x,y->z){ z = x+y}`?
