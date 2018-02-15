@@ -2812,11 +2812,7 @@ Let's say: Casting operator can only act on a binding or literal value. Not expr
 
 N - Replace select in concurrency with `:=` and `//`?
 
-
-==================================================================================
-
-
-? - What if we want to do early return with nothing?
+Y - What if we want to do early return with nothing?
 Basically we want to have `[body, early_retval][guard_cond]`. 
 or maybe we can reference to a future binding.
 ```
@@ -2922,7 +2918,35 @@ out = [(->int) 10, process]()
 process = (->int) lots of code
 ```
 
+Y - Can we use this as a lambda? `x -> x+1`? If type can be inferred?
+`h = (x:int->int) x+1`
+The definition should be auto-surround. Like cast: `int(x)` which is a self-explicit notation.
+`(x:int->int) x+1()` what does `()` apply to? This makes the definition ambiguous.
+`(x:int -> x+1)`?
+`(x:int -> x+1)()` definition + invoke
+`(x:int,y:float -> x*y)`
+`(x:int, y:float -> z:float ) { ... z = 12 }`
+or:
+`(x:int, y:int -> { .... % = 19 })`
+Should we force developer to denote output type? Or should we ban it?
+It may be like binding, where we ban type specification.
+Or we can say, let's force output type when developer is not using shortcut notation:
+`(x:int, y:float -> z:float ) { ... z = 12 }`
+This makes more sense, I think.
+Proposal;
+- If type can be inferred, it is optional.
+- If result of function is an expression, just put it after `->`. Else write binding name and type and write statements in the code block.
 
+
+
+==================================================================================
+
+
+
+
+? - If type is specified in context, can we write:
+`(x,y->x+y)`? or `(x,y->z){ z = x+y}`?
+For example when expression is an argument sent to another function.
 
 
 
@@ -3059,27 +3083,6 @@ sort(my_sequence, (x:int,y:int -> result:bool)
 ```
 
 
-? - Can we use this as a lambda? `x -> x+1`? If type can be inferred?
-`h = (x:int->int) x+1`
-The definition should be auto-surround. Like cast: `int(x)` which is a self-explicit notation.
-`(x:int->int) x+1()` what does `()` apply to? This makes the definition ambiguous.
-`(x:int -> x+1)`?
-`(x:int -> x+1)()` definition + invoke
-`(x:int,y:float -> x*y)`
-`(x:int, y:float -> z:float ) { ... z = 12 }`
-or:
-`(x:int, y:int -> { .... % = 19 })`
-Should we force developer to denote output type? Or should we ban it?
-It may be like binding, where we ban type specification.
-Or we can say, let's force output type when developer is not using shortcut notation:
-`(x:int, y:float -> z:float ) { ... z = 12 }`
-This makes more sense, I think.
-Proposal;
-- If type can be inferred, it is optional.
-- If result of function is an expression, just put it after `->`. Else write binding name and type and write statements in the code block.
 
-? - If type is specified in context, can we write:
-`(x,y->x+y)`? or `(x,y->z){ z = x+y}`?
-For example when expression is an argument sent to another function.
 
 
