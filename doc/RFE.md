@@ -3041,11 +3041,6 @@ But if we use sequence, we won't need those notations.
 ==================================================================================
 
 
-
-
-
-
-
 ? - How can we handle conflict without generics?
 Use intermediate module. If `draw` and `T` are defined both in Lib1 and Lib2, add intermediate X like this:
 ```
@@ -3086,3 +3081,34 @@ Can I access types outside my module in the importer module? No. Because you don
 when you import `Stack(Product)` the code of that module will be compiled with a reference to local Product type. 
 it will be as if the code is inserted into current module but symbols are not public to the outside world.
 Only those who are explicitly defined public in a module will be exported to the outside world. Not identifiers which are available as a result of import.
+Another approach: Let IDE or the developer write code/data types specialized.
+Then use dynamic compile-time sequence to integrate them.
+```
+baseSort = ...
+intSort = ...
+floatSort = ...
+stringSort = ...
+sort = [intSort, floatSort, stringSort, ...]
+...
+#at the compile time, we know type of int_array and we know elements of sort sequence, so we know which function will be called.
+#so we know type of sorted. unless a union is involed (e.g. int_array is a union).
+sorted = sort(int_array)
+```
+another example:
+```
+BaseStack = [nothing]
+basePush = (b: BaseStack, y:nothing -> out:BaseStack) ...
+basePop = (b:BaseStack -> out: nothing) ...
+IntStack = [int]
+intPush = ...
+intPop = ...
+FloatStack = ...
+StringStack = ...
+push = [intPush, floatPush, stringPush, ...]
+pop = pintPop, floatPop, stringPop, ...]
+```
+Advantage:
+- Easy and simple. 
+- Almost no new notation. Everything is already in the language
+- Specialization is already provided.
+- Most of the use case for generics (map, reduce, filter, sort, search, ...) the code is rather simple and small.
