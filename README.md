@@ -92,7 +92,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 07. `|`   Union data type 
 08. `->`  Function declaration
 09. `..`  Range generator for sequence
-10. `...` Polymorphic union types
+10. `...` Polymorphic union types and compile-time dynamic sequence
 11. `//`  Nothing-check operator
 12. `:`   Type declaration (struct field and function inputs)
 13. `=`   Binding declaration, type alias
