@@ -3107,6 +3107,13 @@ StringStack = ...
 push = [intPush, floatPush, stringPush, ...]
 pop = pintPop, floatPop, stringPop, ...]
 ```
+Another example:
+```
+output = map(int_seq, (x:int->x/2))
+#above needs us to have:
+mapIntFloat = (x:[int], f:(int->float)->[float]) ...
+map = [mapIntFloat, ...]
+```
 Advantage:
 - Easy and simple. 
 - Almost no new notation. Everything is already in the language
