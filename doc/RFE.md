@@ -2966,6 +2966,22 @@ draw(my_square)
 #another example:
 [(int->int) 10, (error->int) 20](error_or_int)
 ```
+Another approach is using map. So we don't need to treat a sequence like a function (which is weird).
+```
+drw_circle = ...
+draw_square = ...
+draw_triangle = ...
+draw = [%Circle: draw_circle, ...]
+draw = [%Square: draw_square, ...]
+draw = [%Triangle: draw_triangle, ...]
+...
+draw[type((my_circle)](my_circle)
+draw[type(my_squalre)](my_square)
+#another example:
+[%int: (int->int) 10, %Error: (error->int) 20](error_or_int)
+```
+So we will need a new notation for getting type identifier (integer) for any given type.
+Also we will need a built-in function or a notation to get type id of internal type of a union.
 
 ? - How can we handle conflict without generics?
 Use intermediate module. If `draw` and `T` are defined both in Lib1 and Lib2, add intermediate X like this:
