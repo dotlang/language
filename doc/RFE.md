@@ -2937,20 +2937,45 @@ Proposal;
 - If type can be inferred, it is optional.
 - If result of function is an expression, just put it after `->`. Else write binding name and type and write statements in the code block.
 
-
-
-==================================================================================
-
-
-
-
-? - If type is specified in context, can we write:
+Y - If type is specified in context, can we write:
 `(x,y->x+y)`? or `(x,y->z){ z = x+y}`?
 For example when expression is an argument sent to another function.
 
+N - For function output, just write output name and possibly expression which refers to future bindings. Then a block of code without return. 
+In this case, we dont really need a name or even type. As it cacn be inferred from right hand side.
+```
+process = (x:int,y:int -> t:int)
+{
+	t = 4*y - x
+}
+```
+But we need type. For cases when we need a lambda.
+```
+process = (x:int,y:int->int) x+y+t
+{
+	t = 4*y - x
+}
+```
+This is not very intuitive and easy to read.
+And will prevent us from having multiple early returns.
+`process = (x:int, y:int -> int) x+y`
+```
+process = (x:int, y:int -> out:int) 
+{
+	out = x+y
+}
+```
+```
+sort(my_sequence, (x,y -> x-y))
+process(my_sequence, (x,y -> (t -> t+x+y)))
+process(my_sequence, (x:int,y:int -> (t:int -> t+x+y)))
+sort(my_sequence, (x:int,y:int -> result:bool)
+{
+	result = x==y
+})
+```
 
-
-? - In module, we are defining multiple bindings with same name which is not allowed inside a function!
+Y - In module, we are defining multiple bindings with same name which is not allowed inside a function!
 ```
 process = (x:int) -> x+1
 process = (x:float) -> 12
@@ -3006,6 +3031,20 @@ draw[type(my_squalre)](my_square)
 ```
 So we will need a new notation for getting type identifier (integer) for any given type.
 Also we will need a built-in function or a notation to get type id of internal type of a union.
+But if we use sequence, we won't need those notations.
+
+
+
+
+
+
+==================================================================================
+
+
+
+
+
+
 
 ? - How can we handle conflict without generics?
 Use intermediate module. If `draw` and `T` are defined both in Lib1 and Lib2, add intermediate X like this:
@@ -3047,42 +3086,3 @@ Can I access types outside my module in the importer module? No. Because you don
 when you import `Stack(Product)` the code of that module will be compiled with a reference to local Product type. 
 it will be as if the code is inserted into current module but symbols are not public to the outside world.
 Only those who are explicitly defined public in a module will be exported to the outside world. Not identifiers which are available as a result of import.
-
-? - For function output, just write output name and possibly expression which refers to future bindings. Then a block of code without return. 
-In this case, we dont really need a name or even type. As it cacn be inferred from right hand side.
-```
-process = (x:int,y:int -> t:int)
-{
-	t = 4*y - x
-}
-```
-But we need type. For cases when we need a lambda.
-```
-process = (x:int,y:int->int) x+y+t
-{
-	t = 4*y - x
-}
-```
-This is not very intuitive and easy to read.
-And will prevent us from having multiple early returns.
-`process = (x:int, y:int -> int) x+y`
-```
-process = (x:int, y:int -> out:int) 
-{
-	out = x+y
-}
-```
-```
-sort(my_sequence, (x,y -> x-y))
-process(my_sequence, (x,y -> (t -> t+x+y)))
-process(my_sequence, (x:int,y:int -> (t:int -> t+x+y)))
-sort(my_sequence, (x:int,y:int -> result:bool)
-{
-	result = x==y
-})
-```
-
-
-
-
-
