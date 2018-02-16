@@ -3033,15 +3033,7 @@ So we will need a new notation for getting type identifier (integer) for any giv
 Also we will need a built-in function or a notation to get type id of internal type of a union.
 But if we use sequence, we won't need those notations.
 
-
-
-
-
-
-==================================================================================
-
-
-? - How can we handle conflict without generics?
+Y - How can we handle conflict without generics?
 Use intermediate module. If `draw` and `T` are defined both in Lib1 and Lib2, add intermediate X like this:
 ```
 #x
@@ -3054,6 +3046,14 @@ MyT = T
 @["Lib2"]
 #now draw refers to function in Lib2 and myDraw referes to the one in Lib1
 ```
+
+
+
+
+
+==================================================================================
+
+
 
 ? - Make generics simpler. It does not need to support all different options like replacing functions. 
 We just want type replacement.
@@ -3121,3 +3121,6 @@ Advantage:
 - Most of the use case for generics (map, reduce, filter, sort, search, ...) the code is rather simple and small.
 
 ? - Declare that `[...]` ntation is only valid at module level.
+
+? - We can use concept of dynamic compile-time sequence in core.
+define function `sort` which works on any data type. Just assume it's defined like: `sort = [...]` and functions are geneated by compiler.
