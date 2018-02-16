@@ -446,6 +446,8 @@ Modules are source code files. You can import them into current module and use t
 
 Bindings defined at module level must be compile time calculatable. You can also change or add public bindings and types when importing a module (Syntax 2, Example 7).
 
+In order to solve a name conflict during module import, you should add an intermediate module, import the problematic module, rename and export the needed symbols and then import the intermediate module.
+
 **Syntax**
 
 1. `@["/path/to/module1", "path/to/module2", ...]`
