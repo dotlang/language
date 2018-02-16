@@ -3119,3 +3119,5 @@ Advantage:
 - Almost no new notation. Everything is already in the language
 - Specialization is already provided.
 - Most of the use case for generics (map, reduce, filter, sort, search, ...) the code is rather simple and small.
+
+? - Declare that `[...]` ntation is only valid at module level.
