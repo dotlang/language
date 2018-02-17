@@ -69,16 +69,16 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 01. **Import a module**: `@["/core/std/queue"]` (you can also import from external sources like Github).
 02. **Primitive types**: `int`, `float`, `char`, `bool`, Sequence (`[int]`), Map (`[char:int]`), Function.
 03. **Bindings**: `my_var = 19` (type will be automatically inferred, everything is immutable).
-04. **Sequence**: `scores = [1, 2, 3, 4]` (`string` is essentially a sequence of `char`s).
+04. **Sequence**: `scores = [1, 2, 3, 4]` (For example `string` is essentially a sequence of `char`s).
 05. **Map**: `scores = ["A":1, "B":2, "C":3, "D": 4]`.
 06. **Named type**: `MyInt := int` (Defines a new type with same binary representation as `int`).
 07. **Type alias**: `IntType = int` (A different name for the same type).
 07. **Struct type**: `Point = {x: int, y:int, data: float}` (Like `struct` in C).
-08. **Struct literal**: `location = {x:10, y:20, data:1.19}`.
+08. **Struct literal**: `location = Point{x:10, y:20, data:1.19}`.
 09. **Union type**: `MaybeInt = int | nothing` (Can store either of possible types).
-10. **Polymorphic Union**: `AllShapes = {Shape, ...}` (A union of all struct types that have a field of type `Shape`.
-11. **Function**: `calculate = (x:int, y:int -> z:float) { z = x/y  }` (braces must be on their own line).
-12. **Concurrency**: `result := processData(x,y,z)` (Evaluate an expression in parallel).
+10. **Function**: `calculate = (x:int, y:int -> z:float) { z = x/y  }` (braces must be on their own line).
+11. **Lambda**: `sort( *{ source: my_sequence, compareFunction: (x,y -> x-y)} )` (If types can be inferred, you can omit them, `*` destructs a struct)
+11. **Concurrency**: `result := processData(x,y,z)` (Evaluate an expression in parallel).
 
 ## Symbols
 
@@ -148,13 +148,14 @@ If the value is a struct, you can destruct it into it's elements by using `*` op
 3. `a,b = process() #call the function and store the result in two bindings: a and b`
 4. `x = y`
 5. `a,b = *{1, 100}`
-6. `a,_ = {1, 100}`
+6. `a,_ = *{1, 100}`
 7.
 ```
-process = (x:int -> int) x+1
-process = (x:float -> int) x*2
+process1 = (x:int -> x+1 )
+process2 = (x:float -> x*2)
+process = [process1, process2]
 handler = process #which process?
-handler = process(_:int)
+handler = process(_:int) #handler points to process1
 ```
 
 ## Binding name resolution
@@ -199,10 +200,10 @@ You refer to elements inside sequence using `x[i]` notation where `i` is index n
 
 **Examples**
 
-1. `x: [int] = [1, 2, 3, 4]`
+1. `x = [1, 2, 3, 4]`
 2. `x = [1..10] #initialize a sequence using range operator`
-3. `x: [[int]] = [ [1, 2], [3, 4], [5, 6] ] #a 2-D sequence of integer numbers`
-4. `x: [int] = [1, 2]&[3, 4]&[5, 6] #merging multiple sequences`
+3. `x = [ [1, 2], [3, 4], [5, 6] ] #a 2-D sequence of integer numbers`
+4. `x = [1, 2]&[3, 4]&[5, 6] #merging multiple sequences`
 5. `n = x[10]`
 6. `n = [*{100,200}]`
 
@@ -243,7 +244,7 @@ You can use `.0,.1,.2,...` notation to access fields inside an untyped struct (E
 2. `point2 = Point{x:100, y:200}`
 3. `point1 = {100, 200} #untyped struct`
 4. `point4 = Point{point3, y:101} #update a struct`
-5. `x,y = point1 #destruction to access struct data`
+5. `x,y = *point1 #destruction to access struct data`
 6. `another_point = Point{x:11, y:my_point.y + 200}`
 7. `x = point1.1 #another way to access untyped struct data`
 
@@ -261,7 +262,7 @@ If a function is called which has no candidate for the named type, the candidate
 2. `IntArray := [int]`
 3. `Point := {x: int, y: int}`
 4. `bool := true | false`
-5. `x = 10`, `y: MyInt = MyInt(10)`
+5. `x = 10`, `y = MyInt(10)`
 
 ## Type alias
 
@@ -272,8 +273,8 @@ You can use a type alias to prevent name conflict when importing modules. Access
 **Examples**
 
 1. `MyInt = int`
-2. `process = (x:int)->10`
-3. `process = (x:MyInt)->10` Error! `process:(int)->int` is already defined.
+2. `process = (x:int -> 10)`
+3. `process = (x:MyInt -> 10)` Error! `process:(int)->int` is already defined.
 
 ## Type name resolution
 
@@ -299,12 +300,12 @@ Note that casting can only act on a simple binding or a literal. For an expressi
 
 1. `x = int(1.91)`
 2. `int_value, has_int = int(int_or_float)`
-3. `MyInt = int`, `x:MyInt = MyInt(int_var)`
+3. `MyInt = int`, `x = MyInt(int_var)`
 4. `y = x`
 5. `x = MyFuncType(t)`
 6.
-`MyP = (int->int)`
-`tempProcess = (x:int->x+1)`
+`MyP = (int -> int)`
+`tempProcess = (x:int -> x+1)`
 `process = MyP(tempProcess)`
 
 # Functions
@@ -513,7 +514,7 @@ std_write!"Hello" #send data to stndard output
 reader, writer = createIntChannel(100) #specify buffer size
 ```
 2. `data := processInfo(1,2,a) #evaluate the expression in parallel and store the output in data`
-3. `getData = () -> data #any call to getData will block current thread until the call to processInfo is finished`
+3. `getData = (-> data) #any call to getData will block current thread until the call to processInfo is finished`
 4. `T = (int|float)!`
 
 # Other Features
@@ -545,7 +546,7 @@ In special cases like a plugin system, where you must control exceptions, you ca
 
 **Examples**
 
-1. `result: int|exception = invoke(my_function)`
+1. `result = invoke(my_function)`
 
 # Examples
 
