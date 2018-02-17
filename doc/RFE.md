@@ -3170,7 +3170,7 @@ Stack = IntStack | FloatStack | ...
 size = (s: Stack -> len(s))
 ```
 
-? - Can we remove the notation for casting? Why do we need to cast? 
+Y - Can we remove the notation for casting? Why do we need to cast? 
 We can provide needed casts in core as normal functions and for the rest cast is not really needed.
 usages:
 1. primitives (float to int) provided using coore
@@ -3181,5 +3181,24 @@ usages:
 Adder := (int,int->int)
 process = (x:int, y:int -> x+y) #is process's type Adder? No because Adder is a new type
 ```
+solution1
+`p2 = Adder(process)`
 
 ? - Can we also treat a sequence of channels as a channel? This may simplify select.
+If we assume we only need either read or write:
+```
+read_data = [rch1, rch2]()
+data_written, channel = [wch1, wch2](data1, data2)
+data_written, channel = [wch1, wch2](data1, data2)
+data, ch = [rch1, rch2, wch1, wch2](data1, data2)
+```
+Maybe we can even remove `!?` notation to read/write data.
+`data, channel = [rch1]()` blocking read - wait until channel has data to read.
+`data, channel = [rch1, nothing]()` non-blocking read, if rch1 does not have data, nothing channel will return immediately
+You can always make a select non-blocking by adding a nothing (or any default) channel.
+What about their type?
+`int!` and `int?`. 
+`[int]!` is a channel which gives you int array
+`[int!]` is an array of channels that give you an int.
+I think it's fine.
+We will get rid of `${}` notation.
