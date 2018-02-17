@@ -3169,3 +3169,17 @@ BaseStack = [nothing]
 Stack = IntStack | FloatStack | ...
 size = (s: Stack -> len(s))
 ```
+
+? - Can we remove the notation for casting? Why do we need to cast? 
+We can provide needed casts in core as normal functions and for the rest cast is not really needed.
+usages:
+1. primitives (float to int) provided using coore
+2. union to elements: Use sequence of functions
+3. struct: We already have it: `x = Point{...}`
+4. functions:
+```
+Adder := (int,int->int)
+process = (x:int, y:int -> x+y) #is process's type Adder? No because Adder is a new type
+```
+
+? - Can we also treat a sequence of channels as a channel? This may simplify select.
