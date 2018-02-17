@@ -3157,3 +3157,15 @@ or: `drawEx(*point, 190)` is same as `drawEx(100,200,190)`
 Y - `process = (x:int -> nothing)` is it a shortcut? can I write a code block after this? No. it is a shortcut syntax!
 you have to write: `process = (x:int -> _:nothing)` ...
 Extende usage of `_` for when name of input/output is not relevant in a function.
+
+Y - I think maybe a compile time dynamic union can be useful.
+Normally we write different functions for different related data types and combine them using ctd-sequence.
+`draw = [drawCircle, drawSquare, ...]`
+But what if the implementation is the same? it either does not depend on the exact type or it is just some common thing.
+For example size of a stack. we don't want to have `intStackSize, floatStackSize, stringStackSize, ...`
+we want to have something like this:
+```
+BaseStack = [nothing]
+Stack = IntStack | FloatStack | ...
+size = (s: Stack -> len(s))
+```
