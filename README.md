@@ -40,7 +40,7 @@ The underlying rules of design of this language are
 [KISS rule](https://en.wikipedia.org/wiki/KISS_principle) and
 [DRY rule](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-As a 10,000 foot view of the language, the code is written in files (called modules) organized in directories (called packages).  We have bindings (immutable data which include first-class functions and values) and types (Blueprints to create bindings). Type system includes primitive data types (`int`, `float`, `char`, `function`, `sequence` and `map`), struct and union. Generics, concurrency and lambda expression are also provided and everything is immutable.
+As a 10,000 foot view of the language, the code is written in files (called modules) organized in directories (called packages).  We have bindings (immutable data which include first-class functions and values) and types (Blueprints to create bindings). Type system includes primitive data types (`int`, `float`, `char`, `function`, `sequence` and `map`), struct and union. Generics (limited), concurrency and lambda expression are also provided and everything is immutable.
 
 ## Comparison
 
@@ -75,11 +75,10 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 07. **Type alias**: `IntType = int` (A different name for the same type).
 07. **Struct type**: `Point = {x: int, y:int, data: float}` (Like `struct` in C).
 08. **Struct literal**: `location = {x:10, y:20, data:1.19}`.
-09. **Generics**: `@["/core/Stack"] { T = int }` (You can replace types in a module during import).
-10. **Union type**: `MaybeInt = int | nothing` (Can store either of possible types).
-11. **Polymorphic Union**: `AllShapes = {Shape, ...}` (A union of all struct types that have a field of type `Shape`.
-12. **Function**: `calculate = (x:int, y:int -> z:float) { z = x/y  }` (braces must be on their own line).
-13. **Concurrency**: `result := processData(x,y,z)` (Evaluate an expression in parallel).
+09. **Union type**: `MaybeInt = int | nothing` (Can store either of possible types).
+10. **Polymorphic Union**: `AllShapes = {Shape, ...}` (A union of all struct types that have a field of type `Shape`.
+11. **Function**: `calculate = (x:int, y:int -> z:float) { z = x/y  }` (braces must be on their own line).
+12. **Concurrency**: `result := processData(x,y,z)` (Evaluate an expression in parallel).
 
 ## Symbols
 
@@ -89,19 +88,20 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 04. `{}`  Code block, struct definition and struct literal
 05. `[]`  Types and literals for map and sequence, Generic modules
 06. `&`   Concatenate two sequences 
-07. `|`   Union data type 
-08. `->`  Function declaration
-09. `..`  Range generator for sequence
-10. `...` Polymorphic union types and compile-time dynamic sequence
-11. `//`  Nothing-check operator
-12. `:`   Type declaration (struct field and function inputs)
-13. `=`   Binding declaration, type alias
-14. `:=`  Named type, lazy/parallel evaluation
-15. `_`   Place-holder (lambda creator and assignments)
-16. `@[]` Import
-17. `!`   Write-only channel
-18. `?`   Read-only channel
-19. `${}` Channel select operations
+07. `*`   Destruct a struct
+08. `|`   Union data type 
+09. `->`  Function declaration
+10. `..`  Range generator for sequence
+11. `...` Compile-time dynamic sequence
+12. `//`  Nothing-check operator
+13. `:`   Type declaration (struct field and function inputs)
+14. `=`   Binding declaration, type alias
+15. `:=`  Named type, lazy/parallel evaluation
+16. `_`   Place-holder (lambda creator, assignments and function declaration)
+17. `@[]` Import
+18. `!`   Write-only channel
+19. `?`   Read-only channel
+20. `${}` Channel select operations
 
 ## Reserved keywords
 
@@ -135,7 +135,7 @@ You can define bindings at module-level or inside a function. Module-level bindi
 
 Note that all bindings are immutable. So you cannot manipulate or re-assign them.
 
-If the value is a struct, you can destruct it into it's elements (Example 5). In this process, you can also use underscore to indicate you are not interested in one or more of those elements (Example 6).
+If the value is a struct, you can destruct it into it's elements by using `*` operator which simply replaces it's operand with it's internal data (Example 5). In this process, you can also use underscore to indicate you are not interested in one or more of those elements (Example 6). You can use `*` in any place where a series of comma separated values are needed.
 
 **Syntax**: 
 
@@ -147,7 +147,7 @@ If the value is a struct, you can destruct it into it's elements (Example 5). In
 2. `g = 19.8 #type is inferred`
 3. `a,b = process() #call the function and store the result in two bindings: a and b`
 4. `x = y`
-5. `a,b = {1, 100}`
+5. `a,b = *{1, 100}`
 6. `a,_ = {1, 100}`
 7.
 ```
@@ -204,6 +204,7 @@ You refer to elements inside sequence using `x[i]` notation where `i` is index n
 3. `x: [[int]] = [ [1, 2], [3, 4], [5, 6] ] #a 2-D sequence of integer numbers`
 4. `x: [int] = [1, 2]&[3, 4]&[5, 6] #merging multiple sequences`
 5. `n = x[10]`
+6. `n = [*{100,200}]`
 
 ## Map
 
@@ -245,27 +246,6 @@ You can use `.0,.1,.2,...` notation to access fields inside an untyped struct (E
 5. `x,y = point1 #destruction to access struct data`
 6. `another_point = Point{x:11, y:my_point.y + 200}`
 7. `x = point1.1 #another way to access untyped struct data`
-
-### Polymorphic Union Types
-
-You can use struct composition to simulate "is-a" or "has-a" relationship. The language provides pure manual "contain and delegate" mechanism as a limited form of polymorphism.
-
-You can use `{T, ...}` notation to indicate union type of all struct types (named or unnamed) that embed type `T` (Example 4). Or you can have `{field:T, ...}` to limit it to types that have a field of type `T` and name `field` (Examples 6 and 7). 
-
-But note that in a function call to variable which is of type `Circle` will not automatically be redirected to that function for `Shape` unless it is explicitly forwarded (Example 5 and 8).
-
-When using `{T,...}` notation, you can access the common part without casting the binding (Examples 7 and 8).
-
-**Examples**
-
-1. `Shape = { id:int }`
-2. `Circle = { s:Shape, radius: float} #Shape is contained within a Circle`
-3. `my_circle = {id:100, radius:1.45} #creating a Circle binding`
-4. `x = [my_circle, my_triangle, ...]`
-5. `process = (c: Circle) -> process(c.Shape) #simple forwarding`
-6. `x: {id:int, ...} #type of x is union of all types that have id:int`
-7. `x: {id:int, name:string, ...}`, `x.id`, `x.name`
-8. `process = (s: {Shape,...}) -> process(s.0) #general forwarding`
 
 ## Named types
 
@@ -332,7 +312,7 @@ Note that casting can only act on a simple binding or a literal. For an expressi
 Functions are a type of binding which can accept a set of inputs and give an output. Lambda or a function pointer is defined similarly to a normal function in a module. They use the same syntax, except that, they are defined inside a function.
 When defining a function, just like a normal binding. For example `(int,int -> int)` is a function type, but `(x:int, y:int -> z:int) {z = x+y}` is function literal.
 
-There are two ways to define a function: Expressive method (e.g. `process = (x:int -> x+1)` and complete method where result of the function is expressed in a code block.
+There are two ways to define a function: Expressive method (e.g. `process = (x:int -> x+1)` and complete method where result of the function is expressed in a code block. Note that `process = (x:int -> nothing)` is a complete function definition because it is providing an expression for it's output. If there is no output, you should use a name for the `nothing` output or `_` if it desn't matter: `process = (x:int -> _:nothing) {...}`
 
 A function call with union data (e.g. `int|string`) means there must be functions defined for all possible types in the union (e.g. for `int` and `string`). 
 
@@ -345,6 +325,8 @@ Note that a public function must have public input/output types (although their 
 If type of function input and output can be implied from the context (e.g. when defining a lambda as a function argument), you can ignore type for input and output (Example 13).
 
 Note that, just like other bindings, you cannot have functions with the same name. If you want to provide an operatin for a set of related data types, you shuould use compile-time dynamic sequence to store these operations and map them to their corresponding data type. Note that this notation is only valid at a module level.
+
+You can use `*` operator to prepate input when calling a function. This can be useful if you need to write names for parameters (Example 17).
 
 **Syntax**: 
 
@@ -381,6 +363,13 @@ process = (x:int -> out:int)
 14. `Adder = (int,int->int) #defining a named type based on a function type`
 15. `sort = (x: [int], comparer: (int,int -> bool) -> [int]) #this function accepts a function pointers`
 16. `map = (input: [T], mapper: (T -> S) -> [S])`
+17. 
+```
+drawPoint = (x:int, y:int -> ...)
+point = Point{x:100, y:200}
+drawPoint(*point)
+drawPoint(*{x_offset:100, y_offset: 200})
+```
 
 ## Function call resolution
 
@@ -449,8 +438,7 @@ In order to solve a name conflict during module import, you should add an interm
 
 **Syntax**
 
-1. `@["/path/to/module1", "path/to/module2", ...]`
-2. `@["/path/to/module" ...] { name2 = name1, Type1 : Type2, ... }`
+`@["/path/to/module1", "path/to/module2", ...]`
 
 **Examples**
 
@@ -460,44 +448,38 @@ In order to solve a name conflict during module import, you should add an interm
 4. `@["git/github.com/net/server/branch1/dir1/dir2/module"] #you need to specify branch/tag/commit name here`
 5. `base_cassandra = "github/apache/cassandra/mybranch"`
 6. `@[base_cassandra&"/path/module"] #you can create string literals for import path`
-7. `@["/path/to/module"] {  MyType = InnerType } #import everything but use MyType as an alias to InnerType to prevent a conflict`
 
 ## Generics
 
-When importing a module, you can add a block which defines some definitions which if matched with definitions inside the module , will override them. Or else, will be added to them.
+Generics support is limited to code generation via IDE and the compile-time dynamic sequence. You can use these tools to have unified functions and types for generic cases, but for any new instance of a generics, you need to write the code to handle that type (manually or via IDE support).
 
-Note that you can only replace a type with a consistent type. So if the type inside the module is `{int}` you can replace it with a struct which has only one `int` field, or `int|string|float` can be replaced by `int` or `int|float` (Example 4). About functions, you can replace them with another functions with consistent signature (Example 5 overrides `Cmp` function with a function that has consistent signature).
 
 **Example**
 
-1. `@["/core/stack"] { T := MyType} #replace type T inside stack module with MyType`
-2. `x = createStack()`
-3.
+1. Generic sort:
 ```
-#set.dot
-T := nothing #T can be anything provided from outside
-equals:(T,T)->bool = (x:T, y:T)->false
+baseSort = ...
+intSort = ...
+floatSort = ...
+stringSort = ...
+sort = [intSort, floatSort, stringSort, ...]
+...
+#at the compile time, we know type of int_array and we know elements of sort sequence, so we know which function will be called.
+#so we know type of sorted. unless a union is involed (e.g. int_array is a union).
+sorted = sort(int_array)
 ```
-4.
+2. Stack data type:
 ```
-#set[t].dot
-#this means T must contain a data field of type string.
-T = {data: string}
-#and a function with below signature, the imported module can replace this with another implementation
-process = (x:T)->100
-```
-5. 
-```
-@["storage"]
-{
-    T := [int],
-    U := {float, string},
-    Cmp := (x:int -> out:bool)
-    {
-        out = x>0
-    },
-    IntStack = Stack #use type alias to prevent name clash
-}
+BaseStack = [nothing]
+basePush = (b: BaseStack, y:nothing -> out:BaseStack) ...
+basePop = (b:BaseStack -> out: nothing) ...
+IntStack = [int]
+intPush = ...
+intPop = ...
+FloatStack = ...
+StringStack = ...
+push = [intPush, floatPush, stringPush, ...]
+pop = [pintPop, floatPop, stringPop, ...]
 ```
 
 # Concurrency
@@ -515,7 +497,7 @@ You can use `:=` syntax to evaluate an expression in parallel and when its finis
 **Syntax**
 
 1. Parallel execute `result := expression` 
-2. Create `reader: T?, writer: T! = createChannel(buffer_size, r_lambda, w_lambda)`
+2. Create `reader, writer = createChannel(buffer_size, r_lambda, w_lambda) #T! is a write-only channel, T? is a read-only channel`
 3. Read data `data = reader?`
 4. Write data `writer!data`
 5. Select: `data, channel = ${rch1?, rch2?, wch1!data1, wch2!data2}`
@@ -756,4 +738,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.97**: Jun 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` place holder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is typed statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
 - **Version 0.99**: Dec 30, 2017 - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting, removed `^` operator and replaced with generics, removed `@` (replaced with chain operator and casting), removed function forwarding, removed compound literal, changed notation for channel read, write and select (Due to changes in generics and sequence and removal of compound literal) and added `$` for select, add notation to filter imported identifiers in import, removed autoBind section and added a brief explanation for `TargetType()` notation in cast section, rename chain operator to `@`, replaced return keyword with `::`, replaced `import` with `@` notation and support for rename and filter for imported items, replaced `@` with `.[]` for chain operator, remove condition for return and replaced with rule of returning non-`nothing` values, change chain notation from `.[]` to `.{}` and import notation from `@[]` to `@()`, Added notation for polymorphic generic types, changed the notation for import generic module and rename identifiers, removed `func` keyword, extended general union type syntax to unnamed types with field type and names (e.g. `{id:int, name:string,...}`), Added shift-left and right `>>,<<` and power `**` operators, all litearls for seq and map and struct must be prefixed with `_`, in struct literals you can include other structs to implement struct update, changed notation for abstract functions, Allow access to common parts of a union type with polymorphic union types, use `nothing` instead of `...` for generic types and abstract functions, removed phantom types, change `=>` notation to `^T :=` notation to rename symbols, removed composition for structs and extended/clarified usage of polymorphic sum types for embedding and function forwarding, change map type from `[K,V]` to `[K:V]`, removed auto-bind `Type()`, remove abstract functions, remove `_` prefix for literals, remove `^` and add `=>` to rename types so as to fix issue with introducion of new named types when filtering an import operation, replace operators `:=` to `=` and `:==` to `==` and `=` (comparison) to `=?`, adding type alias notation `T:X`, change import operator to `@[]` and replace `=>` with type alias notation, use `:=` to calculate in parallel and `==` to equality check
-- **Version 1.00**: ??? ??, ???? - Use `=` for type alias and `:=` for lazy (parallel) calculation and named type, More clarification about binding type inference, explain name resolution mechanism for types and bindings and function call, added explanation about using function name as a function pointer, explanation about public functions with private typed input/output, removed type specifier after binding name (it will be inferred from RHS), changed function type to `(input:type->output_type)`, removed chanin operator, some clarifications about casting operator and expressions, remove `::` and use bindings for output with future reference, allow calling lambda at the point of definition, allow omitting types if they can be inferred in defining functions, indicate that functions cannot have same name and introduce compile-time dynamic sequence to store multiple functions and treat the sequence as a function, restore using type name before struct literal
+- **Version 1.00**: ??? ??, ???? - Use `=` for type alias and `:=` for lazy (parallel) calculation and named type, More clarification about binding type inference, explain name resolution mechanism for types and bindings and function call, added explanation about using function name as a function pointer, explanation about public functions with private typed input/output, removed type specifier after binding name (it will be inferred from RHS), changed function type to `(input:type->output_type)`, removed chanin operator, some clarifications about casting operator and expressions, remove `::` and use bindings for output with future reference, allow calling lambda at the point of definition, allow omitting types if they can be inferred in defining functions, indicate that functions cannot have same name and introduce compile-time dynamic sequence to store multiple functions and treat the sequence as a function, restore using type name before struct literal, remove `...` as a notation for polymorphic union types, re-write generics as code-generation + compile-time dynamic sequence for functions, add `*` destruct operator for struct explode which can also be used to call a function with named arguments or initialize a sequence, 
