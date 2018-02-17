@@ -3055,13 +3055,7 @@ I think we need to restore type name when defining a struct literal.
 N - We can use concept of dynamic compile-time sequence in core.
 define function `sort` which works on any data type. Just assume it's defined like: `sort = [...]` and functions are geneated by compiler.
 
-
-
-==================================================================================
-
-
-
-? - Make generics simpler. It does not need to support all different options like replacing functions. 
+Y - Make generics simpler. It does not need to support all different options like replacing functions. 
 We just want type replacement.
 Generics implementation is like this because we want it to be orth and general. If we disable non functions, it will not be orth.
 I think the previous notation was simpler and still provided enough advanages: `@["Stack(int)"]`
@@ -3125,9 +3119,11 @@ Advantage:
 - Almost no new notation. Everything is already in the language
 - Specialization is already provided.
 - Most of the use case for generics (map, reduce, filter, sort, search, ...) the code is rather simple and small.
+We really don't need dynamic compile time union types!
 
+Y - Remove polymorphic union types with `...`
 
-? - We can follow same notation for types:
+N - We can follow same notation for types:
 `Shape = Circle | ...`
 `Shape = Square | ...`
 compile tim e dynamic union.
@@ -3136,14 +3132,14 @@ con: We won't have access to a common part -> you can define a sequence of funct
 pro: the definition becomes decentralized.
 con: You can use `{Shape, ...}` everywhere (e.g. type of function arg), but you cannot use `Circle|...` fr function input type.
 
-? - The current destruction syntax can be confusing.
+Y - The current destruction syntax can be confusing.
 `x,y = point`
 It's better to make it explicit:
 `x,y = *point`
 is same as: `x,y = point.x, point.y`
 So `*point` is translated to `point.x, point.y` which can be used anywhre we need: assignment, sequence, ...
 
-? - Review calling functions with argument name
+Y - Review calling functions with argument name
 If we want to have it, it must be mandatory! which can make writing code difficult.
 Another way: destruct a struct in-place
 ```
@@ -3158,6 +3154,6 @@ You can combine this notation with more items:
 `x,y,z = *point, 120`
 or: `drawEx(*point, 190)` is same as `drawEx(100,200,190)`
 
-? - `process = (x:int -> nothing)` is it a shortcut? can I write a code block after this? No. it is a shortcut syntax!
+Y - `process = (x:int -> nothing)` is it a shortcut? can I write a code block after this? No. it is a shortcut syntax!
 you have to write: `process = (x:int -> _:nothing)` ...
 Extende usage of `_` for when name of input/output is not relevant in a function.
