@@ -3047,7 +3047,13 @@ MyT = T
 #now draw refers to function in Lib2 and myDraw referes to the one in Lib1
 ```
 
+Y - Declare that `[...]` ntation is only valid at module level.
 
+Y - Review notation to init struct or update/modify struct into a new binding
+I think we need to restore type name when defining a struct literal.
+
+N - We can use concept of dynamic compile-time sequence in core.
+define function `sort` which works on any data type. Just assume it's defined like: `sort = [...]` and functions are geneated by compiler.
 
 
 
@@ -3120,7 +3126,38 @@ Advantage:
 - Specialization is already provided.
 - Most of the use case for generics (map, reduce, filter, sort, search, ...) the code is rather simple and small.
 
-? - Declare that `[...]` ntation is only valid at module level.
 
-? - We can use concept of dynamic compile-time sequence in core.
-define function `sort` which works on any data type. Just assume it's defined like: `sort = [...]` and functions are geneated by compiler.
+? - We can follow same notation for types:
+`Shape = Circle | ...`
+`Shape = Square | ...`
+compile tim e dynamic union.
+pro: This will be more flexible. We don't need a common element to define this union.
+con: We won't have access to a common part -> you can define a sequence of functions to do that for each type and call that sequence.
+pro: the definition becomes decentralized.
+con: You can use `{Shape, ...}` everywhere (e.g. type of function arg), but you cannot use `Circle|...` fr function input type.
+
+? - The current destruction syntax can be confusing.
+`x,y = point`
+It's better to make it explicit:
+`x,y = *point`
+is same as: `x,y = point.x, point.y`
+So `*point` is translated to `point.x, point.y` which can be used anywhre we need: assignment, sequence, ...
+
+? - Review calling functions with argument name
+If we want to have it, it must be mandatory! which can make writing code difficult.
+Another way: destruct a struct in-place
+```
+drawPoint = (x:int, y:int -> ...)
+#now you want to call draw with 100,200
+drawPoint(100, 200)
+#or
+point = Point{x:100, y:200}
+drawPoint(*point)
+```
+You can combine this notation with more items:
+`x,y,z = *point, 120`
+or: `drawEx(*point, 190)` is same as `drawEx(100,200,190)`
+
+? - `process = (x:int -> nothing)` is it a shortcut? can I write a code block after this? No. it is a shortcut syntax!
+you have to write: `process = (x:int -> _:nothing)` ...
+Extende usage of `_` for when name of input/output is not relevant in a function.
