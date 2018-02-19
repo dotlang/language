@@ -3184,6 +3184,19 @@ process = (x:int, y:int -> x+y) #is process's type Adder? No because Adder is a 
 solution1
 `p2 = Adder(process)`
 
+Y - Use `&` notation instead of `...`
+Also `|` for union
+
+N - Can we have linked list?
+It can also be used for iterators
+We can use it for a lightweight process on a list. e.g. iterate through a list of int, and for nothing return 0, without need to allocate a very big array.
+Use case:
+- Consider a very large buffer, calculate sum of ints and use 0 for nothing.
+If we already have a sequence, we just need a function ptr to do the processing.
+If we don't have a sequence, we can use a channel.
+- Use case: Implement observable. We have to keep track of a list of observers. This can be stored in a ll.
+I don't think its necessary. We can do it via functions.
+
 ? - Can we also treat a sequence of channels as a channel? This may simplify select.
 If we assume we only need either read or write:
 ```
@@ -3203,9 +3216,12 @@ What about their type?
 I think it's fine.
 We will get rid of `${}` notation.
 
-? - Use `&` notation instead of `...`
-Also `|` for union
-
-
-? - Can we have linked list?
-It can also be used for iterators
+? - What is the real type of a sequence of functions?
+Is it a seq or a fn?
+It is a seq but if you invoke it, compiler will generate appropriate code.
+CanI use `_` to create a lambda out of it?
+`f = draw(_:Circle)` ?
+`f = draw(_)`? This is a sequence of functions with only one input.
+`f = draw`? This is a simple assignment. Later you can call f just like draw.
+How can I fix type of functions in draw? you cannot. They are free to be any type.
+What about output? Also free? If draw functions some of them return int and some return string, output of `draw(...)` will be `int|string`?
