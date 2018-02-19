@@ -3202,3 +3202,10 @@ What about their type?
 `[int!]` is an array of channels that give you an int.
 I think it's fine.
 We will get rid of `${}` notation.
+
+? - Use `&` notation instead of `...`
+Also `|` for union
+
+
+? - Can we have linked list?
+It can also be used for iterators
