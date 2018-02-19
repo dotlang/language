@@ -92,16 +92,15 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 08. `|`   Union data type 
 09. `->`  Function declaration
 10. `..`  Range generator for sequence
-11. `...` Compile-time dynamic sequence/union
-12. `//`  Nothing-check operator
-13. `:`   Type declaration (struct field and function inputs)
-14. `=`   Binding declaration, type alias
-15. `:=`  Named type, lazy/parallel evaluation
-16. `_`   Place-holder (lambda creator, assignments and function declaration)
-17. `@[]` Import
-18. `!`   Write-only channel
-19. `?`   Read-only channel
-20. `${}` Channel select operations
+11. `//`  Nothing-check operator
+12. `:`   Type declaration (struct field and function inputs)
+13. `=`   Binding declaration, type alias
+14. `:=`  Named type, lazy/parallel evaluation
+15. `_`   Place-holder (lambda creator, assignments and function declaration)
+16. `@[]` Import
+17. `!`   Write-only channel
+18. `?`   Read-only channel
+19. `${}` Channel select operations
 
 ## Reserved keywords
 
@@ -417,15 +416,15 @@ g = process(_:int)
 
 ## Polymorphic function call
 
-You cannot have multiple functions with the same name. So how can you provide an operation (e.g. `draw`) for a set of types (e.g. `Circle, Square, Triangle, ...`)? The solution is by using compile-time dynamic sequence. If a sequence only contains functions, you can treat it as a function and compiler/runtime will decide which function inside the sequence to call. You can use `...` notation to add functions to a single sequence at compile-time and use it to call different functions based on the input type.
+You cannot have multiple functions with the same name. So how can you provide an operation (e.g. `draw`) for a set of types (e.g. `Circle, Square, Triangle, ...`)? The solution is by using compile-time dynamic sequence. If a sequence only contains functions, you can treat it as a function and compiler/runtime will decide which function inside the sequence to call. You can use `&` notation to add functions to a sequence at compile-time and use it to call different functions based on the input type.
 
 ```
 #Suppose that we have Circle, Squanre and Triangle shapes with their corresponding draw* functions
-draw = [drawCircle, ...]
+draw = draw & [drawCircle]
 ...
-draw = [drawSquare, ...]
+draw = drw & [drawSquare]
 ...
-draw = [drawTriangle, ...]
+draw = draw & [drawTriangle]
 ...
 my_shape = process()
 draw(my_shape) #here one of three above functions will be called, depending on the actual type of my_shape
@@ -469,7 +468,7 @@ baseSort = ...
 intSort = ...
 floatSort = ...
 stringSort = ...
-sort = [intSort, floatSort, stringSort, ...]
+sort = sort & [intSort, floatSort, stringSort]
 ...
 #at the compile time, we know type of int_array and we know elements of sort sequence, so we know which function will be called.
 #so we know type of sorted. unless a union is involed (e.g. int_array is a union).
@@ -485,15 +484,15 @@ intPush = ...
 intPop = ...
 FloatStack = ...
 StringStack = ...
-push = [intPush, floatPush, stringPush, ...]
-pop = [pintPop, floatPop, stringPop, ...]
+push = push & [intPush, floatPush, stringPush]
+pop = pop & [pintPop, floatPop, stringPop]
 ```
 2.
 ```
 BaseStack = [nothing]
-Stack = IntStack | FloatStack | ...
+Stack = Stack | IntStack | FloatStack
 ...
-Stack = StringStack | ...
+Stack = Stack | StringStack
 ...
 getStackSize = (s: Stack -> len(s))
 ```
@@ -757,4 +756,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.97**: Jun 26, 2017 - Clarifications about primitive types and array/hash literals, ban embedding non-tuples,  changed notation for casting to be more readable, removed `anything` type, removed lambda-maker and `$_` place holder, clarifications about casting to function type, method dispatch and assignment to function pointer, removed opIndex and chaining operator, changed notation for array and map definition and generic declaration, remove `$` notation, added throw and catch functions, simplified loop, introduced protocols, merged `::` into `@`, added `..` syntax for generating array literals, introduced `val` and it's effect in function and variable declaration,  everything is a reference, support type alias, added `binary` type, unified assignment semantic, made `=` data-copy operator, removed `break` and `continue`, removed exceptions and assert and replaced `defer` with RIAA, added `_` for lambda creation, removed literal and val/var from template arguments, simplify protocol usage and removed `where` keyword, introduced protocols for types, changed protocol enforcement syntax and extend it to types with addition of axioms, made `loop` a function in core, made union a primitive type based on generics, introduced label types and multiple return values, introduced block-if to act like switch and type match operator, removed concept of reference/pointer and handle references behind the scene, removed the notation of dynamic type (everything is typed statically), introduced type filters, removed `val` and `binary` (function args are immutable), added chaining operator and `opChain`.
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
 - **Version 0.99**: Dec 30, 2017 - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting, removed `^` operator and replaced with generics, removed `@` (replaced with chain operator and casting), removed function forwarding, removed compound literal, changed notation for channel read, write and select (Due to changes in generics and sequence and removal of compound literal) and added `$` for select, add notation to filter imported identifiers in import, removed autoBind section and added a brief explanation for `TargetType()` notation in cast section, rename chain operator to `@`, replaced return keyword with `::`, replaced `import` with `@` notation and support for rename and filter for imported items, replaced `@` with `.[]` for chain operator, remove condition for return and replaced with rule of returning non-`nothing` values, change chain notation from `.[]` to `.{}` and import notation from `@[]` to `@()`, Added notation for polymorphic generic types, changed the notation for import generic module and rename identifiers, removed `func` keyword, extended general union type syntax to unnamed types with field type and names (e.g. `{id:int, name:string,...}`), Added shift-left and right `>>,<<` and power `**` operators, all litearls for seq and map and struct must be prefixed with `_`, in struct literals you can include other structs to implement struct update, changed notation for abstract functions, Allow access to common parts of a union type with polymorphic union types, use `nothing` instead of `...` for generic types and abstract functions, removed phantom types, change `=>` notation to `^T :=` notation to rename symbols, removed composition for structs and extended/clarified usage of polymorphic sum types for embedding and function forwarding, change map type from `[K,V]` to `[K:V]`, removed auto-bind `Type()`, remove abstract functions, remove `_` prefix for literals, remove `^` and add `=>` to rename types so as to fix issue with introducion of new named types when filtering an import operation, replace operators `:=` to `=` and `:==` to `==` and `=` (comparison) to `=?`, adding type alias notation `T:X`, change import operator to `@[]` and replace `=>` with type alias notation, use `:=` to calculate in parallel and `==` to equality check
-- **Version 1.00**: ??? ??, ???? - Use `=` for type alias and `:=` for lazy (parallel) calculation and named type, More clarification about binding type inference, explain name resolution mechanism for types and bindings and function call, added explanation about using function name as a function pointer, explanation about public functions with private typed input/output, removed type specifier after binding name (it will be inferred from RHS), changed function type to `(input:type->output_type)`, removed chanin operator, some clarifications about casting operator and expressions, remove `::` and use bindings for output with future reference, allow calling lambda at the point of definition, allow omitting types if they can be inferred in defining functions, indicate that functions cannot have same name and introduce compile-time dynamic sequence to store multiple functions and treat the sequence as a function, restore using type name before struct literal, change `...` as a more general notation for polymorphic union types, re-write generics as code-generation + compile-time dynamic sequence for functions, add `*` destruct operator for struct explode which can also be used to call a function with named arguments or initialize a sequence, remove notation for casting a union to it's elements (replaced with use of sequence of functions)
+- **Version 1.00**: ??? ??, ???? - Use `=` for type alias and `:=` for lazy (parallel) calculation and named type, More clarification about binding type inference, explain name resolution mechanism for types and bindings and function call, added explanation about using function name as a function pointer, explanation about public functions with private typed input/output, removed type specifier after binding name (it will be inferred from RHS), changed function type to `(input:type->output_type)`, removed chanin operator, some clarifications about casting operator and expressions, remove `::` and use bindings for output with future reference, allow calling lambda at the point of definition, allow omitting types if they can be inferred in defining functions, indicate that functions cannot have same name and introduce compile-time dynamic sequence to store multiple functions and treat the sequence as a function, restore using type name before struct literal, change `...` as a more general notation for polymorphic union types, re-write generics as code-generation + compile-time dynamic sequence for functions, add `*` destruct operator for struct explode which can also be used to call a function with named arguments or initialize a sequence, remove notation for casting a union to it's elements (replaced with use of sequence of functions), replace `...` notation with already defined `&` and `|`
