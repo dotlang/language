@@ -3230,3 +3230,11 @@ You can describe type of a sequence of function by using appropriate unions.
 So isnide draw, we have one function per shape and all of them return int.
 
 ? - How can I create a channel of Customer?
+`sender = createChannel(sizeof(Customer))`
+option 1: cast
+`CChannel = Customer!`
+`cc = CChannel(createChannel(sizeof(Customer)))`
+option 2: There is no specific channel type. only two generic types.
+`reader = createReaderChannel(sizeof(int))`
+then, how can we check/verify that when reading from `reader` we only read int?
+How can I specify I need a  channel that can write int only? Maybe we can use a lambda. but then select will be impossible as we no longer have the original channel.
