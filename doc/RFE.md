@@ -3250,3 +3250,7 @@ q: the baseSort will definitely use comparison on nothing, is it accepted? Wht d
 We can say: All operations on nothing type are valid and will result a nil (comparisons will always fail, addition will give you nothing, ...)
 All basic operators (math, compare, ...) are valid and do nothing.
 funtion calls on nothing must be defined before.
+
+? - Maybe we can use above for channel creation:
+`createCustmerChannel = ...baseChannelCreate(Customer)...`
+`baseChannelCreate = (->nothing) ...`
