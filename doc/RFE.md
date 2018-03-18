@@ -3238,3 +3238,15 @@ option 2: There is no specific channel type. only two generic types.
 `reader = createReaderChannel(sizeof(int))`
 then, how can we check/verify that when reading from `reader` we only read int?
 How can I specify I need a  channel that can write int only? Maybe we can use a lambda. but then select will be impossible as we no longer have the original channel.
+
+? - Can we formalise the protocol to for code generation for generics?
+```
+baseSort = (x:[nothing])->[nothing] ...
+intSort = ...bsaeSort( int)...  #read baseSort and replace nothing with int
+```
+Above can be used for code that has only one type variable.
+Anything else: Write it by hand
+q: the baseSort will definitely use comparison on nothing, is it accepted? Wht does it mean?
+We can say: All operations on nothing type are valid and will result a nil (comparisons will always fail, addition will give you nothing, ...)
+All basic operators (math, compare, ...) are valid and do nothing.
+funtion calls on nothing must be defined before.
