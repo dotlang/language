@@ -3292,3 +3292,18 @@ and if myStack is stack of int, compiler will generate this function:
 `push = (x:IntStack, y: int -> z:IntStack) ...`
 q: What happens to function pointer? We always try to make things explicit but a function call like `push(myStack)` will implicitly generate another function.
 Why not make it explicit via `!` notation and keep `&`?
+No. auto type detection is not good because it is not flexible and is opaque.
+We need `&` notation and `!` is useful because it can act as a shortcut.
+```
+baseSort = ...
+sort = sort & [ baseSort!int, baseSort!float, baseSort!string ]
+#####################
+BaseStack = [nothing]
+basePush = (b: BaseStack, y:nothing -> out:BaseStack) ...
+basePop = (b:BaseStack -> out: nothing) ...
+push = push & [ basePush!int, basePush!flot, basePush!string ]
+pop = pop & [ basePop!int, basePop!float, basePop!string ]
+##################
+BaseStack = [nothing]
+IntStack = BaseStack!int
+```
