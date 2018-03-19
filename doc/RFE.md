@@ -3254,3 +3254,41 @@ funtion calls on nothing must be defined before.
 ? - Maybe we can use above for channel creation:
 `createCustmerChannel = ...baseChannelCreate(Customer)...`
 `baseChannelCreate = (->nothing) ...`
+Can we have a shortcut for that? So instead of declaring `createCustmerChannel` function, we simply call base with some notation.
+Can we do the same for types?
+We sill have this notation: `sort = sort & [intSort, floatSort, stringSort]`
+and: `pop = pop & [pintPop, floatPop, stringPop]`
+But to use a specialized type or function, we use a shortcut.
+`intSort = ...baseSort(int)...`
+`intStack = ...Stack(int)...`
+Maybe: `baseSort((int))` and `Stack((int))`
+or: `baseSort[[int]]` and `Stack[[int]]`
+`[` is better than `(` and `{` because it is a single keypress.
+And I think it is different enough to prevent any confusion.
+q: What about transitive definitions for types? (Alias or named)
+```
+baseSort = ...
+sort = sort & [ baseSort[[int]], baseSort[[float]], baseSort[[string]] ]
+#####################
+BaseStack = [nothing]
+basePush = (b: BaseStack, y:nothing -> out:BaseStack) ...
+basePop = (b:BaseStack -> out: nothing) ...
+push = push & [ basePush[[int]], basePush[[flot]], basePush[[string]]]
+pop = pop & [ basePop[[int]], basePop[[float]], basePop[[string]] ]
+```
+Or maybe we can use D language notation: `basePop!int`
+Maybe we can eliminate `&` notation by using `!` with variable types:
+Suppose that we have a sequence of something and want to sort it: currently we have to call: `sort(seq)` and correct function will be chosen.
+what if I write: `baseSort!seq(seq)`? or even simpler: `baseSort(seq)`
+this means: call `baseSort(nothing)` function but change nothing types to type of seq binding.
+So, how do we define a stack of int? `Stack!int`
+So we say: 
+proposal:
+- Remove `&` notation to define dynamic compile time function and union types
+- Any type which uses nothing (directly or indirectly) can be customized using `!` notation: `Stack!int` for a stack of int
+- When calling a function which has `nothing` based input type with a type which is not nothing, it will be customized at compile time. e.g. `push(myStack)` 
+if we have `push = (x: Stack, y: nothing -> z:Stack) ...`
+and if myStack is stack of int, compiler will generate this function:
+`push = (x:IntStack, y: int -> z:IntStack) ...`
+q: What happens to function pointer? We always try to make things explicit but a function call like `push(myStack)` will implicitly generate another function.
+Why not make it explicit via `!` notation and keep `&`?
