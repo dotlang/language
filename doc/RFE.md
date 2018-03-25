@@ -3307,3 +3307,11 @@ pop = pop & [ basePop!int, basePop!float, basePop!string ]
 BaseStack = [nothing]
 IntStack = BaseStack!int
 ```
+
+? - Examples of generics usage:
+1: clone
+2: ser/deser
+3 sort an array
+4: factory
+5: join sequences
+6: 
