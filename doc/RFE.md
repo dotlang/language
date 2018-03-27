@@ -3315,3 +3315,5 @@ IntStack = BaseStack!int
 4: factory
 5: join sequences
 6: Run a method periodiclly or at scheduled time
+
+? - What does this mean? `[int:string:float]`?
