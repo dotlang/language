@@ -3343,3 +3343,12 @@ What about data types? Can we use the same notation of `&` with map?
 `StackType = StackType & [int: IntStack]`
 `IntStack = StackType[int]`
 This is different, because value of a map is now a type and not a binding!
+But again for functions, we can use a sequence of functions and calling the sequence will automatically call appropriate functin in the sequence.
+So using maps with `&` is not useful for functions and is not intuitive for types.
+We treat a sequence of functions as a function and a sequence of channels as a channel.
+What can we do for types?
+What about the code? Having a push for int, the push code for string is more or less the same.
+solution 1: Write general code and use `!int` suffix to customise it. problem: supports only one type.
+What about types?
+Having Stack type, I want to have a Stack of customers. How can I do this without writing the code again?
+I can again make use of `!type` notation.
