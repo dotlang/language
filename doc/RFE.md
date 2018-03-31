@@ -3372,6 +3372,20 @@ so if we have `push<T>(s: Stack<T>)...` then `push` is not a function. It is a f
 So e.g. you cannot have a function pointer to push, it must be like: `push<int>`.
 similarly, if we have `Stack<T>` then it cannot be used as type, but `Stack<int>` can be used. or if the usage has a type argument, it can be used.
 `Stack<T> = ...a type definition that uses T, just like a code that uses a type...`
+Won't this be unnecessary complication?
+Can't we simplify it without adding any new notation?
+Think of it as a `sed` alternative: rewrite part of the code using given values. So it will be like a C macro.
+```
+#define Stack(T) [T]
+IntStack = Stack(int)
+```
+or
+```
+Stack(T) = [T]
+IntStack = Stack(int)
+push(T) = (x:T, y: Stack(T)->z:Stack(T))...
+push(int)(10,ss)
+```
 
 N - Another solution: `anything` type.
 In types: Represents any type so I can define a general stack. But this won't be efficient. and not type safe.
