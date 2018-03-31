@@ -3360,3 +3360,7 @@ invoke = replace type argument with type parameter.
 `push<T> = ...`
 `push<int>(10)`
 But this will also enable writing messy code: `push<list<map<int, string>>>`
+
+? - Another solution: `anything` type.
+In types: Represents any type so I can define a general stack. But this won't be efficient. and not type safe.
+In functions: Any input is accepted.
