@@ -3229,6 +3229,9 @@ You can describe type of a sequence of function by using appropriate unions.
 `draw` has this type: `(Shape -> int)` where Shape is union of shapes.
 So isnide draw, we have one function per shape and all of them return int.
 
+N - What does this mean? `[int:string:float]`?
+This is invalid! It should be: `[int:[string:float]]` or `[[int:string]:float]`
+
 ? - How can I create a channel of Customer?
 `sender = createChannel(sizeof(Customer))`
 option 1: cast
@@ -3311,14 +3314,12 @@ IntStack = BaseStack!int
 ? - Examples of generics usage:
 1: clone
 2: ser/deser
-3 sort an array
+3: sort an array
 4: factory
 5: join sequences
 6: Run a method periodiclly or at scheduled time
 7: a function to read one row from a database table with a specific PK
 
-? - What does this mean? `[int:string:float]`?
-This is invalid! It should be: `[int:[string:float]]` or `[[int:string]:float]`
 
 ? - If we can use the concept of map to generate code, it can be easily extended to create multi-generic-type code.
 ```
@@ -3352,3 +3353,10 @@ solution 1: Write general code and use `!int` suffix to customise it. problem: s
 What about types?
 Having Stack type, I want to have a Stack of customers. How can I do this without writing the code again?
 I can again make use of `!type` notation.
+What if we can define parameterized types and functions? and use another notation to "invoke" that meta-code?
+invoke = replace type argument with type parameter.
+`Stack<T> = [T]`
+`IntStack = Stack<int>`
+`push<T> = ...`
+`push<int>(10)`
+But this will also enable writing messy code: `push<list<map<int, string>>>`
