@@ -3359,8 +3359,21 @@ invoke = replace type argument with type parameter.
 `IntStack = Stack<int>`
 `push<T> = ...`
 `push<int>(10)`
-But this will also enable writing messy code: `push<list<map<int, string>>>`
+But this will also enable writing messy code: `push<list<map<int, string>>>` But this is same as nested function calls:
+`print(save(extract(fetch(customer, 10))))`
+If the nested function call is allowed, there is no reason we should ban nested type definition.
+And if we want to behave types like values, we should be able to define constraints for them.
+`int` is a constraint for a value, or `Customer` is a constraint for a function argument.
+So we should be able to define a function or a type that has other type arguments, with constraints.
+constraint for binding, defines allowed values that we can put inside it.
+does it also define allowed operations? indirectly. because there are functions defined for that type.
+So, for a type or a function, we can use `<A,B,C,...>` to define type arguments used in their definition.
+so if we have `push<T>(s: Stack<T>)...` then `push` is not a function. It is a function generator which can generate thousands of functions.
+So e.g. you cannot have a function pointer to push, it must be like: `push<int>`.
+similarly, if we have `Stack<T>` then it cannot be used as type, but `Stack<int>` can be used. or if the usage has a type argument, it can be used.
+`Stack<T> = ...a type definition that uses T, just like a code that uses a type...`
 
-? - Another solution: `anything` type.
+N - Another solution: `anything` type.
 In types: Represents any type so I can define a general stack. But this won't be efficient. and not type safe.
 In functions: Any input is accepted.
+No. We want to have static typing.
