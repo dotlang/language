@@ -3391,3 +3391,9 @@ N - Another solution: `anything` type.
 In types: Represents any type so I can define a general stack. But this won't be efficient. and not type safe.
 In functions: Any input is accepted.
 No. We want to have static typing.
+
+? - Gradual typing
+http://willcrichton.net/notes/gradual-programming/
+Let developer decide exact type of something later.
+So we can have features of dynamic typing, but developer can specify type at anytime.
+Maybe this can also help with generics.
