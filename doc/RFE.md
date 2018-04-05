@@ -3232,6 +3232,11 @@ So isnide draw, we have one function per shape and all of them return int.
 N - What does this mean? `[int:string:float]`?
 This is invalid! It should be: `[int:[string:float]]` or `[[int:string]:float]`
 
+N - Another solution: `anything` type.
+In types: Represents any type so I can define a general stack. But this won't be efficient. and not type safe.
+In functions: Any input is accepted.
+No. We want to have static typing.
+
 ? - How can I create a channel of Customer?
 `sender = createChannel(sizeof(Customer))`
 option 1: cast
@@ -3387,13 +3392,87 @@ push(T) = (x:T, y: Stack(T)->z:Stack(T))...
 push(int)(10,ss)
 ```
 
-N - Another solution: `anything` type.
-In types: Represents any type so I can define a general stack. But this won't be efficient. and not type safe.
-In functions: Any input is accepted.
-No. We want to have static typing.
-
 ? - Gradual typing
 http://willcrichton.net/notes/gradual-programming/
 Let developer decide exact type of something later.
 So we can have features of dynamic typing, but developer can specify type at anytime.
 Maybe this can also help with generics.
+
+? - Another solution: Ability to define programmed union type.
+For example when declaring a stack, it can contain any type. So it will be a sequence of T where T is union of all types in the code.
+When I have a code that requires a type with specific members, I should define union of all types that include that member.
+We have compile-time dynamic union:
+`Stack = Stack | IntStack | FloatStack`
+`Stack = Stack | StringStack`
+Two options: struct member filter, named type filter
+- Union of all structs that have a specific member
+- Union of all types that are based on a specific type.
+- Union of all types that we have.
+Maybe we can unify above definitions as: Union of all types that support these function set (S).
+If S is empty -> All types
+else S can be a function to get a member or other features that we need.
+So, we need ability to define a dynamic compile-time union of all types that have a set of functions.
+Why not simplify it to this: a dynamic compile-time union of all types + a set of function pointers in the code where we need them.
+Suppose that we want to convert list of T to list of S having a function that converts T to S.
+`process = (a:[T], convert: (T->S) -> b:[S] )`
+But S and T should be generic. We should support every type.
+e.g. convert a list of customers to a list of birth dates.
+We can define this as a core function "map" but it would be an exception.
+If we support generics, we can move it to std.
+Now we can have: `process = (a:[any], convert: (any->any) -> b:[any])` but it will be confusing, typeless and user won't know what `convert` is supposed to do.
+I don't think `any` type of union of all types would be intuitive and useful enough.
+
+? - Another solution for generics: Macro/codegen
+`process<S,T> = (a:[T], convert:(T->S) -> b:[S]) ...`
+then we invoke it with: `process<int, string> (data, cnv)`
+same can be done for types:
+`Customer<T> = {name:T, id: int}`
+then in the code `Customer<int>` is it's own type.
+Then we still can have things like: `process<Customer<int>, Customer<string>>` but it is inevitable.
+Two questions:
+1. Specialization: This can be done by re-declaring with concrete types.
+`process<int,string> = ...` but what makes the difference between T and int?
+2. constraints: Not supported. Maybe later we add some checks to be done in the code.
+If we do this, we may no longer need all those compile-time dynamic sequence and union.
+Maybe we can borrow the notation for sequence to have compile-time sequence of types or functions.
+`process[#T][#S] = (a:[T], convert:(T->S) -> b:[S]) ...`
+`Customer[#T] = {name: T, id: int}`
+`process[int][string](int_array, cnv)` calls function with types replaced.
+`Customer[int]` refers to type `{name:int, id:int}`
+Or maybe we can eliminate prefix notation:
+`process[T][S] = (a:[T], convert:(T->S) -> b:[S]) ...`
+`Customer[T] = {name: T, id: int}`
+note that `process` is not a function. `process[int][float]` is.
+proposal: 
+1. Add `[]` notation to type and binding definition which invokes code generator. no constraint. no specialisation.
+2. Remove support for dynamic compile-time sequence and union
+```
+#Suppose that we have Circle, Squanre and Triangle shapes with their corresponding draw* functions
+draw = draw & [drawCircle]
+...
+draw = draw & [drawSquare]
+...
+draw = draw & [drawTriangle]
+...
+my_shape = process()
+draw(my_shape) #here one of three above functions will be called, depending on the actual type of my_shape
+```
+How can we handle above?
+`Shape = {id:int}`
+`draw[T] = ...`
+`draw[Circle] = code to draw circle`
+`draw[Square] = code to draw square`
+I think using sequence notation here makes things more confusing, Sequence is supposed to be immutable.
+suppose we have above, and we have a sequence of shapes. how can we draw them?
+`draw[typeof(item)](item)`
+We can use `^item` to denote internal type in item.
+
+
+N - We can follow the same with types (to replace compile-time union):
+```
+Shape[T] = {id:int}`
+Shape[Circle] = {id:int, r: float}
+Shape[Square] = {id:int, side:int}
+x: [Shape] #this means a sequence of union of all Shapes
+```
+No. It's not intuitive.
