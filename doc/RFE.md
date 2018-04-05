@@ -3476,3 +3476,10 @@ Shape[Square] = {id:int, side:int}
 x: [Shape] #this means a sequence of union of all Shapes
 ```
 No. It's not intuitive.
+
+? - If I have to choose between generics and polymorphism, I prefer the latter because it is more intuitive and powerful.
+What is the simplest and most minimal way I can support this?
+Let's do this: No generics and for polymorphism we use union types and also sequence of functions.
+I think that's the method that makes most sense.
+Can we use convention here? e.g. `len_int` implements `len` with int input.
+We can but it will be un-intuitive. What is the naming rule? What if we have more than one arg?
