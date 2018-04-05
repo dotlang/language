@@ -486,7 +486,7 @@ StringStack = ...
 push = push & [intPush, floatPush, stringPush]
 pop = pop & [pintPop, floatPop, stringPop]
 ```
-2.
+3.
 ```
 BaseStack = [nothing]
 Stack = Stack | IntStack | FloatStack
