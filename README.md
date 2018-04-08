@@ -454,7 +454,7 @@ In order to solve a name conflict during module import, you should add an interm
 
 ## Generics
 
-Generics support is limited to code generation via IDE and the compile-time dynamic sequence. You can use these tools to have unified functions and types for generic cases, but for any new instance of a generics, you need to write the code to handle that type (manually or via IDE support).
+Generics support is limited to code generation via IDE and the ۹ dynamic sequence. You can use these tools to have unified functions and types for generic cases, but for any new instance of a generics, you need to write the code to handle that type (manually or via IDE support).
 
 You can also use a compile-time dynamic union type to create a union type of different related generic types and use that type to write some general functions which have same implementation for all generic types (Example 3).
 
