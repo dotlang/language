@@ -431,33 +431,11 @@ draw(my_shape) #here one of three above functions will be called, depending on t
 You can also use this method to match a union binding:
 `result = [(x:int -> 10), (_:error -> 20)](int_or_error)`
 
-# Modules
-
-Modules are source code files. You can import them into current module and use their public types and bindings. You can import modules from local file-system, GitHub or any other external source which the compiler supports (If import path starts with `.` or `..` it is relative path, if it start with `/` it is based on global DOTPATH, else it's using external protocols like `git`). After importing a module, you will have access to their public types and bindings (Those that don't start with `_`).
-
-Bindings defined at module level must be compile time calculatable. You can also change or add public bindings and types when importing a module (Syntax 2, Example 7).
-
-In order to solve a name conflict during module import, you should add an intermediate module, import the problematic module, rename and export the needed symbols and then import the intermediate module.
-
-**Syntax**
-
-`@["/path/to/module1", "path/to/module2", ...]`
-
-**Examples**
-
-1. `@["/core/st/socket"] #import everything, addressed module with absolute path`
-2. `@["../core/st/socket"] #import with relative path`
-3. `@["/core/std/queue, stack, heap"] #import multiple modules from the same path`
-4. `@["git/github.com/net/server/branch1/dir1/dir2/module"] #you need to specify branch/tag/commit name here`
-5. `base_cassandra = "github/apache/cassandra/mybranch"`
-6. `@[base_cassandra&"/path/module"] #you can create string literals for import path`
-
 ## Generics
 
 Generics support is limited to code generation via IDE and the ۹ dynamic sequence. You can use these tools to have unified functions and types for generic cases, but for any new instance of a generics, you need to write the code to handle that type (manually or via IDE support).
 
 You can also use a compile-time dynamic union type to create a union type of different related generic types and use that type to write some general functions which have same implementation for all generic types (Example 3).
-
 
 **Example**
 
@@ -495,6 +473,27 @@ Stack = Stack | StringStack
 ...
 getStackSize = (s: Stack -> len(s))
 ```
+
+# Modules
+
+Modules are source code files. You can import them into current module and use their public types and bindings. You can import modules from local file-system, GitHub or any other external source which the compiler supports (If import path starts with `.` or `..` it is relative path, if it start with `/` it is based on global DOTPATH, else it's using external protocols like `git`). After importing a module, you will have access to their public types and bindings (Those that don't start with `_`).
+
+Bindings defined at module level must be compile time calculatable. You can also change or add public bindings and types when importing a module (Syntax 2, Example 7).
+
+In order to solve a name conflict during module import, you should add an intermediate module, import the problematic module, rename and export the needed symbols and then import the intermediate module.
+
+**Syntax**
+
+`@["/path/to/module1", "path/to/module2", ...]`
+
+**Examples**
+
+1. `@["/core/st/socket"] #import everything, addressed module with absolute path`
+2. `@["../core/st/socket"] #import with relative path`
+3. `@["/core/std/queue, stack, heap"] #import multiple modules from the same path`
+4. `@["git/github.com/net/server/branch1/dir1/dir2/module"] #you need to specify branch/tag/commit name here`
+5. `base_cassandra = "github/apache/cassandra/mybranch"`
+6. `@[base_cassandra&"/path/module"] #you can create string literals for import path`
 
 # Concurrency
 
