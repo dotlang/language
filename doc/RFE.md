@@ -3359,6 +3359,51 @@ Stack = [int]
 Nope. IF data structure is simple, write it again.
 If it's complicated, maybe it shouldn't be a generic one.
 
+N - Another solution for generics: Macro/codegen
+`process<S,T> = (a:[T], convert:(T->S) -> b:[S]) ...`
+then we invoke it with: `process<int, string> (data, cnv)`
+same can be done for types:
+`Customer<T> = {name:T, id: int}`
+then in the code `Customer<int>` is it's own type.
+Then we still can have things like: `process<Customer<int>, Customer<string>>` but it is inevitable.
+Two questions:
+1. Specialization: This can be done by re-declaring with concrete types.
+`process<int,string> = ...` but what makes the difference between T and int?
+2. constraints: Not supported. Maybe later we add some checks to be done in the code.
+If we do this, we may no longer need all those compile-time dynamic sequence and union.
+Maybe we can borrow the notation for sequence to have compile-time sequence of types or functions.
+`process[#T][#S] = (a:[T], convert:(T->S) -> b:[S]) ...`
+`Customer[#T] = {name: T, id: int}`
+`process[int][string](int_array, cnv)` calls function with types replaced.
+`Customer[int]` refers to type `{name:int, id:int}`
+Or maybe we can eliminate prefix notation:
+`process[T][S] = (a:[T], convert:(T->S) -> b:[S]) ...`
+`Customer[T] = {name: T, id: int}`
+note that `process` is not a function. `process[int][float]` is.
+proposal: 
+1. Add `[]` notation to type and binding definition which invokes code generator. no constraint. no specialisation.
+2. Remove support for dynamic compile-time sequence and union
+```
+#Suppose that we have Circle, Squanre and Triangle shapes with their corresponding draw* functions
+draw = draw & [drawCircle]
+...
+draw = draw & [drawSquare]
+...
+draw = draw & [drawTriangle]
+...
+my_shape = process()
+draw(my_shape) #here one of three above functions will be called, depending on the actual type of my_shape
+```
+How can we handle above?
+`Shape = {id:int}`
+`draw[T] = ...`
+`draw[Circle] = code to draw circle`
+`draw[Square] = code to draw square`
+I think using sequence notation here makes things more confusing, Sequence is supposed to be immutable.
+suppose we have above, and we have a sequence of shapes. how can we draw them?
+`draw[typeof(item)](item)`
+We can use `^item` to denote internal type in item.
+
 
 ? - How can I create a channel of Customer?
 `sender = createChannel(sizeof(Customer))`
@@ -3369,6 +3414,7 @@ option 2: There is no specific channel type. only two generic types.
 `reader = createReaderChannel(sizeof(int))`
 then, how can we check/verify that when reading from `reader` we only read int?
 How can I specify I need a  channel that can write int only? Maybe we can use a lambda. but then select will be impossible as we no longer have the original channel.
+
 
 ? - Can we formalise the protocol to for code generation for generics?
 ```
@@ -3448,47 +3494,36 @@ IntStack = BaseStack!int
 6: Run a method periodiclly or at scheduled time
 7: a function to read one row from a database table with a specific PK
 
-? - Another solution for generics: Macro/codegen
-`process<S,T> = (a:[T], convert:(T->S) -> b:[S]) ...`
-then we invoke it with: `process<int, string> (data, cnv)`
-same can be done for types:
-`Customer<T> = {name:T, id: int}`
-then in the code `Customer<int>` is it's own type.
-Then we still can have things like: `process<Customer<int>, Customer<string>>` but it is inevitable.
-Two questions:
-1. Specialization: This can be done by re-declaring with concrete types.
-`process<int,string> = ...` but what makes the difference between T and int?
-2. constraints: Not supported. Maybe later we add some checks to be done in the code.
-If we do this, we may no longer need all those compile-time dynamic sequence and union.
-Maybe we can borrow the notation for sequence to have compile-time sequence of types or functions.
-`process[#T][#S] = (a:[T], convert:(T->S) -> b:[S]) ...`
-`Customer[#T] = {name: T, id: int}`
-`process[int][string](int_array, cnv)` calls function with types replaced.
-`Customer[int]` refers to type `{name:int, id:int}`
-Or maybe we can eliminate prefix notation:
-`process[T][S] = (a:[T], convert:(T->S) -> b:[S]) ...`
-`Customer[T] = {name: T, id: int}`
-note that `process` is not a function. `process[int][float]` is.
-proposal: 
-1. Add `[]` notation to type and binding definition which invokes code generator. no constraint. no specialisation.
-2. Remove support for dynamic compile-time sequence and union
-```
-#Suppose that we have Circle, Squanre and Triangle shapes with their corresponding draw* functions
-draw = draw & [drawCircle]
-...
-draw = draw & [drawSquare]
-...
-draw = draw & [drawTriangle]
-...
-my_shape = process()
-draw(my_shape) #here one of three above functions will be called, depending on the actual type of my_shape
-```
-How can we handle above?
-`Shape = {id:int}`
-`draw[T] = ...`
-`draw[Circle] = code to draw circle`
-`draw[Square] = code to draw square`
-I think using sequence notation here makes things more confusing, Sequence is supposed to be immutable.
-suppose we have above, and we have a sequence of shapes. how can we draw them?
-`draw[typeof(item)](item)`
-We can use `^item` to denote internal type in item.
+
+
+? - There are many methods for processing on sets that can take advantage of generics:
+map, filter, sort, copy, intersect, fill, min, max, reverse, find, merge, duplicate, collect
+option 1: have these as functions in core
+`map(arr1, lambda)` or `map(hash1, lambda)`
+`filter(arr1, lambda)`
+`copy(arr1)`
+`find(arr1, data)`
+`find(arr1, lambda)`
+`findFirst`, `findLast`
+`min(arr1, lambdaCompare)`
+`reverse(array1)`
+option 2: provide the most basic element common in all of these and move others to std
+option 3: have generics and let developer write them or put all the code in std
+map: run lambda on all elements, type = `(T -> S)`
+filter: like lambda but `(T -> bool)`
+filter is like a map where you return S or nothing (or some predefined output).
+`map(array1, lambda, ignore_value)` or ignore_lambda
+`filter = map(array1, lambda, nothing)`
+copy is map with identity lambda
+sort: needs it's own function
+fill: map on a dummy array: `map(array10, (int->int) 0, nothing)`
+min/max: map with state? no.
+when we process a collection of ints, output can be a collection of ints (map) or a single int (reduce).
+min/max: reduce
+what if we have these four methods: map, reduce, find, filter
+
+? - For generics: we can define a map of types.
+`Stack = [int: [int]]`
+`Stack = Stack & [string: [string]]`
+`f: Stack[int]`
+what if we have two types?
