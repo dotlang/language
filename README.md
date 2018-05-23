@@ -396,14 +396,14 @@ If lambda is assigned to a variable, you can invoke itself from inside (Example 
 
 **Examples**
 
-1. `f1 = (x: int, y:int -> int) { x+y }`
-2. `rr = (x: int, y:int -> int) -> x + y #you can ignore return type and braces`  
+1. `f1 = (x: int, y:int -> x+y)`
+2. `rr = (x: int, y:int -> x + y) #you can ignore return type and braces`  
 3. `rr = (nothing -> out:int) { out = x + y } #here x and y are captures from parent function`
-4. `test = (x:int -> out:PlusFunc) { out = (y:int) -> y + x } #this function returns a lambda`
-5. `(x:int -> int) { x+1 } (10) #you can invoke a lambda at the point of declaration`
-6. `process = (x:int, y:float, z: string -> float) { ... }`
+4. `test = (x:int -> out:PlusFunc) { out = (y:int -> y + x) } #this function returns a lambda`
+5. `(x:int -> x+1) (10) #you can invoke a lambda at the point of declaration`
+6. `process = (x:int, y:float, z: (string -> float)) { ... }`
 7. `lambda1 = process(10, _, _) #defining a lambda based on existing function`
-8. `ff = (x:int -> int) { ff(x+1) }`
+8. `ff = (x:int -> ff(x+1))`
 9. 
 ```
 process = (x:int->...
