@@ -3527,3 +3527,5 @@ what if we have these four methods: map, reduce, find, filter
 `Stack = Stack & [string: [string]]`
 `f: Stack[int]`
 what if we have two types?
+
+? - To store sequence, store head and tail pointer. so append and prepend will be cheap.
