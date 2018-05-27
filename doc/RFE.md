@@ -3404,19 +3404,13 @@ suppose we have above, and we have a sequence of shapes. how can we draw them?
 `draw[typeof(item)](item)`
 We can use `^item` to denote internal type in item.
 
+N - To store sequence, store head and tail pointer. so append and prepend will be cheap.
+start and length has the same effect.
 
-? - How can I create a channel of Customer?
-`sender = createChannel(sizeof(Customer))`
-option 1: cast
-`CChannel = Customer!`
-`cc = CChannel(createChannel(sizeof(Customer)))`
-option 2: There is no specific channel type. only two generic types.
-`reader = createReaderChannel(sizeof(int))`
-then, how can we check/verify that when reading from `reader` we only read int?
-How can I specify I need a  channel that can write int only? Maybe we can use a lambda. but then select will be impossible as we no longer have the original channel.
+N - If we use sequence of functions as a function, how to use functions with different outputs? 
+This is not even supported in OOP languages.
 
-
-? - Can we formalise the protocol to for code generation for generics?
+N - Can we formalise the protocol to for code generation for generics?
 ```
 baseSort = (x:[nothing])->[nothing] ...
 intSort = ...bsaeSort( int)...  #read baseSort and replace nothing with int
@@ -3428,8 +3422,21 @@ We can say: All operations on nothing type are valid and will result a nil (comp
 All basic operators (math, compare, ...) are valid and do nothing.
 funtion calls on nothing must be defined before.
 
+? - How can I create a channel of Customer?
+`sender = createChannel(sizeof(Customer))`
+option 1: cast
+`CChannel = Customer!`
+`cc = CChannel(createChannel(sizeof(Customer)))`
+option 2: There is no specific channel type. only two generic types.
+`reader = createReaderChannel(sizeof(int))`
+then, how can we check/verify that when reading from `reader` we only read int?
+How can I specify I need a  channel that can write int only? Maybe we can use a lambda. but then select will be impossible as we no longer have the original channel.
+option: define your own function: `createCustomerChannel = (->createChannel(sizeof(Customer))`
+Can't we have functions that create new types? 
+there are two aspects for generics: types (IntStack) and functions (pushIntStack, sortIntArray, ...)
+
 ? - Maybe we can use above for channel creation:
-`createCustmerChannel = ...baseChannelCreate(Customer)...`
+`createCustomerChannel = ...baseChannelCreate(Customer)...`
 `baseChannelCreate = (->nothing) ...`
 Can we have a shortcut for that? So instead of declaring `createCustmerChannel` function, we simply call base with some notation.
 Can we do the same for types?
@@ -3526,6 +3533,13 @@ what if we have these four methods: map, reduce, find, filter
 `Stack = [int: [int]]`
 `Stack = Stack & [string: [string]]`
 `f: Stack[int]`
-what if we have two types?
-
-? - To store sequence, store head and tail pointer. so append and prepend will be cheap.
+what if we have two types? we can have a key of type struct.
+This solution is most consistent one. Although we will need to define something new: hashtables whose values are types.
+Maybe they are not hashtable after all.
+Also in this case, we cannot define some general type (e.g. Stack type) and have to define separate types for each concrete type needed.
+we need something which is simple (no `Map of List of Pair of int and string`), consistent and minimal.
+solution 1: macro, so that you can generate your code.
+`MyInt = int`
+solution 2: sequence and hashtable
+solution 3: code generation
+solution 4: built-in functions
