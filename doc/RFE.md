@@ -3544,3 +3544,6 @@ solution 2: sequence and hashtable
 solution 3: code generation
 solution 4: built-in functions
 Dynamic, highly parameterized software is harder to understand than more static software.
+
+? - What if we can have a general purpose function (gf) and a transformer function (tf). gf works on some general type and tf converts some type to the general type.
+e.g. matrix multiplication function works on int and if you have any other matrix (e.g. of type Point), you also provide a converter from Point to int.
