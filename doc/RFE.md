@@ -3500,7 +3500,7 @@ IntStack = BaseStack!int
 5: join sequences
 6: Run a method periodiclly or at scheduled time
 7: a function to read one row from a database table with a specific PK
-
+8: matrix algebra
 
 
 ? - There are many methods for processing on sets that can take advantage of generics:
@@ -3543,3 +3543,4 @@ solution 1: macro, so that you can generate your code.
 solution 2: sequence and hashtable
 solution 3: code generation
 solution 4: built-in functions
+Dynamic, highly parameterized software is harder to understand than more static software.
