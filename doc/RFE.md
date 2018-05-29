@@ -3422,6 +3422,71 @@ We can say: All operations on nothing type are valid and will result a nil (comp
 All basic operators (math, compare, ...) are valid and do nothing.
 funtion calls on nothing must be defined before.
 
+N - What if we can have a general purpose function (gf) and a transformer function (tf). gf works on some general type and tf converts some type to the general type.
+e.g. matrix multiplication function works on int and if you have any other matrix (e.g. of type Point), you also provide a converter from Point to int.
+no. It won't give us type safety which is an underlying rule of the language.
+
+N - There are many methods for processing on sets that can take advantage of generics:
+map, filter, sort, copy, intersect, fill, min, max, reverse, find, merge, duplicate, collect
+option 1: have these as functions in core
+`map(arr1, lambda)` or `map(hash1, lambda)`
+`filter(arr1, lambda)`
+`copy(arr1)`
+`find(arr1, data)`
+`find(arr1, lambda)`
+`findFirst`, `findLast`
+`min(arr1, lambdaCompare)`
+`reverse(array1)`
+option 2: provide the most basic element common in all of these and move others to std
+option 3: have generics and let developer write them or put all the code in std
+map: run lambda on all elements, type = `(T -> S)`
+filter: like lambda but `(T -> bool)`
+filter is like a map where you return S or nothing (or some predefined output).
+`map(array1, lambda, ignore_value)` or ignore_lambda
+`filter = map(array1, lambda, nothing)`
+copy is map with identity lambda
+sort: needs it's own function
+fill: map on a dummy array: `map(array10, (int->int) 0, nothing)`
+min/max: map with state? no.
+when we process a collection of ints, output can be a collection of ints (map) or a single int (reduce).
+min/max: reduce
+what if we have these four methods: map, reduce, find, filter
+Example: We have a map of city to a list of customers: `[string:[Customer]]`
+we want average of customer revenue per city in a map. How can we do that?
+`x = getCustomerMap()`
+`y = map(x, (city, customers -> {city, average(customers, (x -> x.revenue))})`
+I can continue looking for a perfect solution for generics, OR I can just move forward with current situation.
+First option means an unkown period spending on finding something perfet. Second option is more pragmatic: just deal with what we already have.
+
+N - For generics: we can define a map of types.
+`Stack = [int: [int]]`
+`Stack = Stack & [string: [string]]`
+`f: Stack[int]`
+what if we have two types? we can have a key of type struct.
+This solution is most consistent one. Although we will need to define something new: hashtables whose values are types.
+Maybe they are not hashtable after all.
+Also in this case, we cannot define some general type (e.g. Stack type) and have to define separate types for each concrete type needed.
+we need something which is simple (no `Map of List of Pair of int and string`), consistent and minimal.
+solution 1: macro, so that you can generate your code.
+`MyInt = int`
+solution 2: sequence and hashtable
+solution 3: code generation
+solution 4: built-in functions
+Dynamic, highly parameterized software is harder to understand than more static software.
+
+N - Examples of generics usage:
+1: clone
+2: ser/deser
+3: sort an array
+4: factory
+5: join sequences
+6: Run a method periodiclly or at scheduled time
+7: a function to read one row from a database table with a specific PK
+8: matrix algebra
+
+
+
+
 ? - How can I create a channel of Customer?
 `sender = createChannel(sizeof(Customer))`
 option 1: cast
@@ -3492,58 +3557,6 @@ BaseStack = [nothing]
 IntStack = BaseStack!int
 ```
 
-? - Examples of generics usage:
-1: clone
-2: ser/deser
-3: sort an array
-4: factory
-5: join sequences
-6: Run a method periodiclly or at scheduled time
-7: a function to read one row from a database table with a specific PK
-8: matrix algebra
-
-
-? - There are many methods for processing on sets that can take advantage of generics:
-map, filter, sort, copy, intersect, fill, min, max, reverse, find, merge, duplicate, collect
-option 1: have these as functions in core
-`map(arr1, lambda)` or `map(hash1, lambda)`
-`filter(arr1, lambda)`
-`copy(arr1)`
-`find(arr1, data)`
-`find(arr1, lambda)`
-`findFirst`, `findLast`
-`min(arr1, lambdaCompare)`
-`reverse(array1)`
-option 2: provide the most basic element common in all of these and move others to std
-option 3: have generics and let developer write them or put all the code in std
-map: run lambda on all elements, type = `(T -> S)`
-filter: like lambda but `(T -> bool)`
-filter is like a map where you return S or nothing (or some predefined output).
-`map(array1, lambda, ignore_value)` or ignore_lambda
-`filter = map(array1, lambda, nothing)`
-copy is map with identity lambda
-sort: needs it's own function
-fill: map on a dummy array: `map(array10, (int->int) 0, nothing)`
-min/max: map with state? no.
-when we process a collection of ints, output can be a collection of ints (map) or a single int (reduce).
-min/max: reduce
-what if we have these four methods: map, reduce, find, filter
-
-? - For generics: we can define a map of types.
-`Stack = [int: [int]]`
-`Stack = Stack & [string: [string]]`
-`f: Stack[int]`
-what if we have two types? we can have a key of type struct.
-This solution is most consistent one. Although we will need to define something new: hashtables whose values are types.
-Maybe they are not hashtable after all.
-Also in this case, we cannot define some general type (e.g. Stack type) and have to define separate types for each concrete type needed.
-we need something which is simple (no `Map of List of Pair of int and string`), consistent and minimal.
-solution 1: macro, so that you can generate your code.
-`MyInt = int`
-solution 2: sequence and hashtable
-solution 3: code generation
-solution 4: built-in functions
-Dynamic, highly parameterized software is harder to understand than more static software.
-
-? - What if we can have a general purpose function (gf) and a transformer function (tf). gf works on some general type and tf converts some type to the general type.
-e.g. matrix multiplication function works on int and if you have any other matrix (e.g. of type Point), you also provide a converter from Point to int.
+? - If we want to remove generics, what about polymorphism? e.g. draw shapes.
+Can we also drop "treat sequence of functions as a function"? and "enable dynamic compile-time sequence and union types"?
+Or make them simpler, more minimal, more consistent?
