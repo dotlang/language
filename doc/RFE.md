@@ -3484,23 +3484,7 @@ N - Examples of generics usage:
 7: a function to read one row from a database table with a specific PK
 8: matrix algebra
 
-
-
-
-? - How can I create a channel of Customer?
-`sender = createChannel(sizeof(Customer))`
-option 1: cast
-`CChannel = Customer!`
-`cc = CChannel(createChannel(sizeof(Customer)))`
-option 2: There is no specific channel type. only two generic types.
-`reader = createReaderChannel(sizeof(int))`
-then, how can we check/verify that when reading from `reader` we only read int?
-How can I specify I need a  channel that can write int only? Maybe we can use a lambda. but then select will be impossible as we no longer have the original channel.
-option: define your own function: `createCustomerChannel = (->createChannel(sizeof(Customer))`
-Can't we have functions that create new types? 
-there are two aspects for generics: types (IntStack) and functions (pushIntStack, sortIntArray, ...)
-
-? - Maybe we can use above for channel creation:
+N - Maybe we can use above for channel creation:
 `createCustomerChannel = ...baseChannelCreate(Customer)...`
 `baseChannelCreate = (->nothing) ...`
 Can we have a shortcut for that? So instead of declaring `createCustmerChannel` function, we simply call base with some notation.
@@ -3560,3 +3544,38 @@ IntStack = BaseStack!int
 ? - If we want to remove generics, what about polymorphism? e.g. draw shapes.
 Can we also drop "treat sequence of functions as a function"? and "enable dynamic compile-time sequence and union types"?
 Or make them simpler, more minimal, more consistent?
+`Shape = Circle | Square | Triangle`
+`drawShape = drawCircle | drawSquare | drawTriangle`
+`x = getShapes()`
+`map(x, (t -> draw(t))`
+We can replace sequence of functions with union of functions. Then we will only have "compile time dynamic union type".
+
+
+? - Can we remove paren from function definition? 
+no. it will make thing confusing.
+`map = x:[int], process: int->int -> [int] ...`
+But if we don't want to include types?
+`process(x, g -> g+1)`
+`process(x, a,b,c -> a+b+c)`
+
+? - Remove example 9 in Lambda section.
+This says two functions with the same name which is not allowed.
+
+? - How can we create a lambda with a union of functions?
+`drawShape = drawCircle | drawSquare | drawTriangle`
+What is type of drawShape? Is it `(x: Shape -> nothing)`?
+
+
+? - How can I create a channel of Customer?
+`sender = createChannel(sizeof(Customer))`
+option 1: cast
+`CChannel = Customer!`
+`cc = CChannel(createChannel(sizeof(Customer)))`
+option 2: There is no specific channel type. only two generic types.
+`reader = createReaderChannel(sizeof(int))`
+then, how can we check/verify that when reading from `reader` we only read int?
+How can I specify I need a  channel that can write int only? Maybe we can use a lambda. but then select will be impossible as we no longer have the original channel.
+option: define your own function: `createCustomerChannel = (->createChannel(sizeof(Customer))`
+Can't we have functions that create new types? 
+there are two aspects for generics: types (IntStack) and functions (pushIntStack, sortIntArray, ...)
+
