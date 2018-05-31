@@ -3541,6 +3541,18 @@ BaseStack = [nothing]
 IntStack = BaseStack!int
 ```
 
+N - Can we remove paren from function definition? 
+no. it will make thing confusing.
+`map = x:[int], process: int->int -> [int] ...`
+But if we don't want to include types?
+`process(x, g -> g+1)`
+`process(x, a,b,c -> a+b+c)`
+I think it is better to be similar to how we call it.
+
+N - How can we create a lambda with a union of functions?
+`drawShape = drawCircle | drawSquare | drawTriangle`
+What is type of drawShape? Is it `(x: Shape -> nothing)`?
+
 ? - If we want to remove generics, what about polymorphism? e.g. draw shapes.
 Can we also drop "treat sequence of functions as a function"? and "enable dynamic compile-time sequence and union types"?
 Or make them simpler, more minimal, more consistent?
@@ -3549,22 +3561,26 @@ Or make them simpler, more minimal, more consistent?
 `x = getShapes()`
 `map(x, (t -> draw(t))`
 We can replace sequence of functions with union of functions. Then we will only have "compile time dynamic union type".
-
-
-? - Can we remove paren from function definition? 
-no. it will make thing confusing.
-`map = x:[int], process: int->int -> [int] ...`
-But if we don't want to include types?
-`process(x, g -> g+1)`
-`process(x, a,b,c -> a+b+c)`
+No! Union is defined for types not values!
+We need to use sequence.
+`draw = [Circle:drawCircle, Shape:drawSquare, Triangle: drawTriangle]`
+`drawShape = (x: Shape -> draw[@x])`
+We can replace the non-intuitive logic of treating sequence like a function, with above code.
+Use a map (key is type, value is function) with a function.
+We also need to have dynamic compile-time map but no longer need to treat sequance like a function.
+We also need to have tools to get internal type of a union value and also map type to int.
+Let's generalize the compile-time dynamic: You can amend the definition of any binding at compile time which is defined at module-level.
+Amend: not possible for scalar or function, but doable for sequence or map. You can use `&` for this.
+Proposal:
+- Enable `&` to amend any module-level collection at compile time and `|` for union types.
+- Add core function to get int type of any union
+- Add notation to refer to int type of any type
+- Remove "treat sequence of functions as function" rule. 
+Can we use above for generics? no. generic is about wiring one code and calling it for any number of types. here we write 
+multiple codes and call it for multiple types.
 
 ? - Remove example 9 in Lambda section.
 This says two functions with the same name which is not allowed.
-
-? - How can we create a lambda with a union of functions?
-`drawShape = drawCircle | drawSquare | drawTriangle`
-What is type of drawShape? Is it `(x: Shape -> nothing)`?
-
 
 ? - How can I create a channel of Customer?
 `sender = createChannel(sizeof(Customer))`
@@ -3578,4 +3594,6 @@ How can I specify I need a  channel that can write int only? Maybe we can use a 
 option: define your own function: `createCustomerChannel = (->createChannel(sizeof(Customer))`
 Can't we have functions that create new types? 
 there are two aspects for generics: types (IntStack) and functions (pushIntStack, sortIntArray, ...)
-
+Golang: `c := make(chan int)`
+`c = [Customer](nothing)` Good.
+Add to casting section and channel section.
