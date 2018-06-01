@@ -390,7 +390,7 @@ To resolve a function call, first bindings with appropriate type in current func
 
 Lambda or a function literal is used to specify value for a binding of function type. It is very similar to the way you define body of a function binding. Lambdas are closures and can capture bindings in the parent function which come before their definition (Example 3 and 4).
 
-You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normal call and replace the lambda inputs with `_` (Example 8). You can use `:Type` after `_` when creating lambda, to remove ambiguity (Example 9).
+You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normal call and replace the lambda inputs with `_` (Example 8).
 
 If lambda is assigned to a variable, you can invoke itself from inside (Example 8). This can be used to implement iteration loops.
 
@@ -404,14 +404,7 @@ If lambda is assigned to a variable, you can invoke itself from inside (Example 
 6. `process = (x:int, y:float, z: (string -> float)) { ... }`
 7. `lambda1 = process(10, _, _) #defining a lambda based on existing function`
 8. `ff = (x:int -> ff(x+1))`
-9. 
-```
-process = (x:int->...
-process = (y:string->...
-...
-g = process(_:int)
-```
-10. `r = (x:int -> x+1)(100)`
+9. `r = (x:int -> x+1)(100)`
 
 ## Polymorphic function call
 
