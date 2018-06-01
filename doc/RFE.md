@@ -3553,6 +3553,9 @@ N - How can we create a lambda with a union of functions?
 `drawShape = drawCircle | drawSquare | drawTriangle`
 What is type of drawShape? Is it `(x: Shape -> nothing)`?
 
+N - Remove example 9 in Lambda section.
+This says two functions with the same name which is not allowed.
+
 ? - If we want to remove generics, what about polymorphism? e.g. draw shapes.
 Can we also drop "treat sequence of functions as a function"? and "enable dynamic compile-time sequence and union types"?
 Or make them simpler, more minimal, more consistent?
@@ -3579,8 +3582,6 @@ Proposal:
 Can we use above for generics? no. generic is about wiring one code and calling it for any number of types. here we write 
 multiple codes and call it for multiple types.
 
-? - Remove example 9 in Lambda section.
-This says two functions with the same name which is not allowed.
 
 ? - How can I create a channel of Customer?
 `sender = createChannel(sizeof(Customer))`
