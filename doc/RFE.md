@@ -3596,5 +3596,6 @@ option: define your own function: `createCustomerChannel = (->createChannel(size
 Can't we have functions that create new types? 
 there are two aspects for generics: types (IntStack) and functions (pushIntStack, sortIntArray, ...)
 Golang: `c := make(chan int)`
-`c = [Customer](nothing)` Good.
+`c = (Customer!)(nothing)` Good.
 Add to casting section and channel section.
+What about size, w and r transformer?
