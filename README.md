@@ -166,6 +166,8 @@ Types are blueprints which are used to create values for bindings.
 
 Note that channel types are explained in "Concurrency" section.
 
+Simple type is a type which can be described using an identifier without any characters (e.g `MyCustomer` is a simgple type but `[int]` is not).
+
 ## Basic types
 
 **Syntax**: `int`, `float`, `char`, `string`, `bool`, `nothing`
