@@ -3556,6 +3556,41 @@ What is type of drawShape? Is it `(x: Shape -> nothing)`?
 N - Remove example 9 in Lambda section.
 This says two functions with the same name which is not allowed.
 
+Y - How can I create a channel of Customer?
+`sender = createChannel(sizeof(Customer))`
+option 1: cast
+`CChannel = Customer!`
+`cc = CChannel(createChannel(sizeof(Customer)))`
+option 2: There is no specific channel type. only two generic types.
+`reader = createReaderChannel(sizeof(int))`
+then, how can we check/verify that when reading from `reader` we only read int?
+How can I specify I need a  channel that can write int only? Maybe we can use a lambda. but then select will be impossible as we no longer have the original channel.
+option: define your own function: `createCustomerChannel = (->createChannel(sizeof(Customer))`
+Can't we have functions that create new types? 
+there are two aspects for generics: types (IntStack) and functions (pushIntStack, sortIntArray, ...)
+Golang: `c := make(chan int)`
+`c = (Customer!)(nothing)` Good.
+Add to casting section and channel section.
+What about size, w and r transformer?
+w and r are not really necessary.
+Option 1: Casting a number, will create a buffered channel, and 0 will create non-buffered.
+Option 2: cast `{nothing, size}` to channel type. In this case we can also easily add r and w fucntions.
+option 1 is easiler and simpler. option 2 is more consistent.
+but again, option 1 is not conflicting with other things.
+What about reader and writer?
+The key is writer. So create writer using above method, and reader by casting the writer to reader channel.
+So:
+`writer = (int!)(10)`
+`reader = (int?)(writer)`
+
+N - How can I have a channel for stdio?
+```
+writer = (string!)(0)
+```
+solution: we can have stdin and stdout which you can cast them to your type.
+what about socket? to send messages of type X? by default sockets send string (or byte array). for anything else, you must convert.
+same for stdio.
+
 ? - If we want to remove generics, what about polymorphism? e.g. draw shapes.
 Can we also drop "treat sequence of functions as a function"? and "enable dynamic compile-time sequence and union types"?
 Or make them simpler, more minimal, more consistent?
@@ -3576,26 +3611,24 @@ Let's generalize the compile-time dynamic: You can amend the definition of any b
 Amend: not possible for scalar or function, but doable for sequence or map. You can use `&` for this.
 Proposal:
 - Enable `&` to amend any module-level collection at compile time and `|` for union types.
-- Add core function to get int type of any union
+- Add core function to get internal type of any union
 - Add notation to refer to int type of any type
 - Remove "treat sequence of functions as function" rule. 
 Can we use above for generics? no. generic is about wiring one code and calling it for any number of types. here we write 
 multiple codes and call it for multiple types.
 
+? - Can we use casting for other built-in functions too? e.g. map or reduce?
+map: cast original array to target array with map function:
+map: `int2_array = ([int])(orig_array, (x:int->x+1))`
+filter: `array2 = ([int])(array2, (x:int -> x>0)`
+we can merge these two: a map that returns two things: output and whether it should be kept:
+`int2_array = ([int])(orig_array, (x:int-> {true, x+1}))`
+`array2 = ([int])(array2, (x:int -> {x>0, x})`
+what about reduce?
+map array to int?
+`output = int(arr1, (x:int, state:string -> x+state))`
+`out = T(arr, function where input is of type arr and T and output is T)`
+what about maps?
+map/filter `out = [string:int](map1, (key:string, value:int -> {key, value+1, true/false}))`
+reduce: `out = int(map1, (key:string, value:int, state:int -> state+value)`
 
-? - How can I create a channel of Customer?
-`sender = createChannel(sizeof(Customer))`
-option 1: cast
-`CChannel = Customer!`
-`cc = CChannel(createChannel(sizeof(Customer)))`
-option 2: There is no specific channel type. only two generic types.
-`reader = createReaderChannel(sizeof(int))`
-then, how can we check/verify that when reading from `reader` we only read int?
-How can I specify I need a  channel that can write int only? Maybe we can use a lambda. but then select will be impossible as we no longer have the original channel.
-option: define your own function: `createCustomerChannel = (->createChannel(sizeof(Customer))`
-Can't we have functions that create new types? 
-there are two aspects for generics: types (IntStack) and functions (pushIntStack, sortIntArray, ...)
-Golang: `c := make(chan int)`
-`c = (Customer!)(nothing)` Good.
-Add to casting section and channel section.
-What about size, w and r transformer?
