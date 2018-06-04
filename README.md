@@ -498,7 +498,7 @@ Channels are a one-way (read-only or write-only) data transportation mechanism w
 
 Any party can close/dispose their channel. To read from a channel or write to it, you will need to put it inside a sequence and treat it like a function. The output of this call will be data and channel (the sequence can contain multiple channels) and the input is the data you want to write.
 
-Exclusive resources (sockets, file, standard I/O...) are implemented using channels to hide inherent mutability of their underlying resources.
+Exclusive resources (sockets, file, standard I/O...) are implemented using channels to hide inherent mutability of their underlying resources. To create a writer channel, you should cast a number (represents buffer size) to the channel type. To create reader channel, you cast writer channel to reader channel type (Example 1).
 
 You can use `:=` syntax to evaluate an expression in parallel and when its finished and store result in bindings. If expression creates a struct you can destruct it using `a,b,c =` syntax or use `_` to ignore expression result. Any reference to result after parallel execution will pause current thread until execution is finished. You can refer to output of a parallel execution inside body of a lambda, and code won't be stopped unless the lambda is invoked (Example 2 and 3).
 
@@ -515,10 +515,10 @@ You can use `:=` syntax to evaluate an expression in parallel and when its finis
 
 1. 
 ```
-std_reader, std_writer = createStd() #create pair of channels to interact with standard input and output
+std_writer = (int!)(10)
+std_reader = (int?)(writer)
 data = std_reader? #read something from the channel which read from standard input
 [std_write]("Hello") #send data to stndard output
-reader, writer = createIntChannel(100) #specify buffer size
 ```
 2. `data := processInfo(1,2,a) #evaluate the expression in parallel and store the output in data`
 3. `getData = (-> data) #any call to getData will block current thread until the call to processInfo is finished`
