@@ -3611,11 +3611,19 @@ Let's generalize the compile-time dynamic: You can amend the definition of any b
 Amend: not possible for scalar or function, but doable for sequence or map. You can use `&` for this.
 Proposal:
 - Enable `&` to amend any module-level collection at compile time and `|` for union types.
-- Add core function to get internal type of any union
-- Add notation to refer to int type of any type
+- Add core function to get internal type of any union: `type(x)`
+- Add notation to refer to integer type of any type: `type`
 - Remove "treat sequence of functions as function" rule. 
 Can we use above for generics? no. generic is about wiring one code and calling it for any number of types. here we write 
 multiple codes and call it for multiple types.
+```
+Shape = Circle | Square | Triangle
+draw = [type(Circle): drawCircle, type(Square): DrawSquare]
+draw = draw & [Triangle: drawT]
+...
+draw[type(myShape)](myShape)`
+```
+
 
 ? - Can we use casting for other built-in functions too? e.g. map or reduce?
 map: cast original array to target array with map function:
