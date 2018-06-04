@@ -3591,7 +3591,7 @@ solution: we can have stdin and stdout which you can cast them to your type.
 what about socket? to send messages of type X? by default sockets send string (or byte array). for anything else, you must convert.
 same for stdio.
 
-? - If we want to remove generics, what about polymorphism? e.g. draw shapes.
+Y - If we want to remove generics, what about polymorphism? e.g. draw shapes.
 Can we also drop "treat sequence of functions as a function"? and "enable dynamic compile-time sequence and union types"?
 Or make them simpler, more minimal, more consistent?
 `Shape = Circle | Square | Triangle`
@@ -3624,8 +3624,7 @@ draw = draw & [Triangle: drawT]
 draw[type(myShape)](myShape)`
 ```
 
-
-? - Can we use casting for other built-in functions too? e.g. map or reduce?
+Y - Can we use casting for other built-in functions too? e.g. map or reduce?
 map: cast original array to target array with map function:
 map: `int2_array = ([int])(orig_array, (x:int->x+1))`
 filter: `array2 = ([int])(array2, (x:int -> x>0)`
@@ -3639,4 +3638,6 @@ map array to int?
 what about maps?
 map/filter `out = [string:int](map1, (key:string, value:int -> {key, value+1, true/false}))`
 reduce: `out = int(map1, (key:string, value:int, state:int -> state+value)`
-
+Proposal:
+- Casting a collection to another collection can also have a function for mapping/filteration
+- Casting a collection to a non-collection + a function to reduce
