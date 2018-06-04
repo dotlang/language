@@ -44,13 +44,13 @@ As a 10,000 foot view of the language, the code is written in files (called modu
 
 ## Comparison
 
-Language | Sum types | Full Immutability| Garbage Collector | Module System | Lambda | Number of keywords
---- | --- | --- | --- | --- | --- | --- | ---
-C  |  Partial  | No  | No |  No | No | 32
-Scala | Yes | No | Yes | Yes | Yes | ~27
-Go | No | No | Yes | Yes | Yes | 25
-Java | No | No | Yes | Yes | Yes | 50
-dotLang | Yes | Yes | Yes | Yes | Yes | 8
+Language | Sum types | Full Immutability| Garbage Collector | Module System | Lambda | Number of keywords |
+--- | --- | --- | --- | --- | --- | --- | --- |
+C  |  Partial  | No  | No |  No | No | 32 |
+Scala | Yes | No | Yes | Yes | Yes | ~27 |
+Go | No | No | Yes | Yes | Yes | 25 |
+Java | No | No | Yes | Yes | Yes | 50 |
+dotLang | Yes | Yes | Yes | Yes | Yes | 8 |
 
 ## Components
 
