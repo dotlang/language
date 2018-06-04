@@ -40,16 +40,17 @@ The underlying rules of design of this language are
 [KISS rule](https://en.wikipedia.org/wiki/KISS_principle) and
 [DRY rule](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-As a 10,000 foot view of the language, the code is written in files (called modules) organized in directories (called packages).  We have bindings (immutable data which include first-class functions and values) and types (Blueprints to create bindings). Type system includes primitive data types (`int`, `float`, `char`, `function`, `sequence` and `map`), struct and union. Generics (limited), concurrency and lambda expression are also provided and everything is immutable.
+As a 10,000 foot view of the language, the code is written in files (called modules) organized in directories (called packages).  We have bindings (immutable data which include first-class functions and values) and types (Blueprints to create bindings). Type system includes primitive data types (`int`, `float`, `char`, `function`, `sequence` and `map`), struct and union. Concurrency and lambda expression are also provided and everything is immutable.
 
 ## Comparison
 
-Language | Generics | Sum types | Full Immutability | Multiple dispatch | Garbage Collector | Module System | Lambda
+Language | Sum types | Full Immutability| Garbage Collector | Module System | Lambda | Number of keywords
 --- | --- | --- | --- | --- | --- | --- | ---
-C  |  No  | Partial  | No  | No  |  No |  No | No
-Scala | Yes | Yes | No | No | Yes | Yes | Yes
-Go | No | No | No | No | Yes | Yes | Yes
-dotLang | Yes | Yes | Yes | Yes | Yes | Yes | Yes
+C  |  Partial  | No  | No |  No | No | 32
+Scala | Yes | No | Yes | Yes | Yes | ~27
+Go | No | No | Yes | Yes | Yes | 25
+Java | No | No | Yes | Yes | Yes | 50
+dotLang | Yes | Yes | Yes | Yes | Yes | 8
 
 ## Components
 
