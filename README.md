@@ -68,16 +68,16 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 ## Main features
 
 01. **Import a module**: `@["/core/std/queue"]` (you can also import from external sources like Github).
-02. **Primitive types**: `int`, `float`, `char`, `bool`, Sequence (`[int]`), Map (`[char:int]`), Function.
+02. **Primitive types**: `int`, `float`, `char`, `bool`, `string`, Sequence (`[int]`), Map (`[char:int]`), Function.
 03. **Bindings**: `my_var = 19` (type will be automatically inferred, everything is immutable).
 04. **Sequence**: `scores = [1, 2, 3, 4]` (For example `string` is essentially a sequence of `char`s).
 05. **Map**: `scores = ["A":1, "B":2, "C":3, "D": 4]`.
-06. **Named type**: `MyInt := int` (Defines a new type with same binary representation as `int`).
+06. **Named type**: `MyInt := int` (Defines a new separate type with same binary representation as `int`).
 07. **Type alias**: `IntType = int` (A different name for the same type).
 07. **Struct type**: `Point = {x: int, y:int, data: float}` (Like `struct` in C).
 08. **Struct literal**: `location = Point{x:10, y:20, data:1.19}`.
 09. **Union type**: `MaybeInt = int | nothing` (Can store either of possible types).
-10. **Function**: `calculate = (x:int, y:int -> z:float) { z = x/y  }` (braces must be on their own line).
+10. **Function**: `calculate = (x:int, y:int -> z:float) { z = x/y  }` (Assigning to binding for output type means return).
 11. **Lambda**: `sort( *{ source: my_sequence, compareFunction: (x,y -> x-y)} )` (If types can be inferred, you can omit them, `*` destructs a struct)
 11. **Concurrency**: `result := processData(x,y,z)` (Evaluate an expression in parallel).
 
@@ -87,8 +87,8 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 02. `.`   Access struct fields
 03. `()`  Function declaration and call, cast
 04. `{}`  Code block, struct definition and struct literal
-05. `[]`  Types and literals for map and sequence, Generic modules
-06. `&`   Concatenate two sequences 
+05. `[]`  Types and literals for map and sequence
+06. `&`   Concatenate two sequences or maps 
 07. `*`   Destruct a struct
 08. `|`   Union data type 
 09. `->`  Function declaration
@@ -111,12 +111,12 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 
 These rules are highly advised but not mandatory.
 
-1. Indentation must be done using spaces, not tabs. Using 4 spaces is advised but not mandatory.
+1. Indentation should be done using spaces, not tabs. Using 4 spaces is advised but not mandatory.
 2. You must put each statement on a separate line. 
 3. Naming: `SomeDataType`, `someLambdaBindings`, `someFunction`, `any_simple_binding`, `my_package_dir`, `my_modue_file`.
 4. Braces must appear on their own line. 
 5. You can use `0x` prefix for hexadecimal numbers and `0b` for binary.
-6. You can use `,` as digit separator in number literals.
+6. You can use `_` as digit separator in number literals.
 
 ## Operators
 
@@ -271,7 +271,7 @@ If a really unrecoverable error happens, you should exit the application by call
 
 In special cases like a plugin system, where you must control exceptions, you can use built-in function `invoke` which will return an error result if the function which it calls exits.
 
-**Syntax**: `process = (nothing -> out:int|exception) { ... out = exception{...} }`
+Example: `process = (nothing -> out:int|exception) { ... out = exception{...} }`
 
 ## Struct
 
@@ -407,7 +407,7 @@ process = (x:int -> out:int)
 13. `sorted = sort(my_sequence, (x,y -> x-y))`
 14. `Adder = (int,int->int) #defining a named type based on a function type`
 15. `sort = (x: [int], comparer: (int,int -> bool) -> [int]) #this function accepts a function pointers`
-16. `map = (input: [T], mapper: (T -> S) -> [S])`
+16. `map = (input: [int], mapper: (int -> string) -> [string])`
 17. 
 ```
 drawPoint = (x:int, y:int -> ...)
