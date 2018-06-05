@@ -516,9 +516,10 @@ This is a function, called `main` which has no input and always returns `0` (ver
 ## Hello world
 
 ```
-main = ( -> _:nothing) 
+main = ( -> out:int) 
 {
 	print("Hello world!")
+	out = 0
 }
 ```
 
