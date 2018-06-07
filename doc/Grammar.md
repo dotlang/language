@@ -1,4 +1,4 @@
-##Legend
+## Legend
 
 Format: 
 `Result: component1 ( component2 | component3 ) | component4 | [component5] component6`
@@ -11,7 +11,7 @@ Format:
 - `(A)*` : Repeating A zero or more times
 - `(A)+` : Repeating A one or more times
 
-#Main parts
+# Main parts
 
 **`SourceFile`**: `[TemplateComment] ImportDecl (ClassDefinition | InterfaceDefinition)`  
 
