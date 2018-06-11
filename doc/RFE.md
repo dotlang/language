@@ -3641,3 +3641,40 @@ reduce: `out = int(map1, (key:string, value:int, state:int -> state+value)`
 Proposal:
 - Casting a collection to another collection can also have a function for mapping/filteration
 - Casting a collection to a non-collection + a function to reduce
+
+N - Should we replace `type` with `int`?
+If you cast a type to int, it will give you it's type identifier.
+If you cast a union to int, it will give you ?
+No this will be confusing.
+
+? - How can I parse a json to a specific data structure? 
+e.g. message payload in post http request
+option 1: a built-in function to convert a json string to the given data structure
+`customer = parseJson(strJson)` 
+problem: not flexible enough, what if names don't match? what if we need to ignore something?
+what is type of 'customer'? is it a map? or a struct?
+option 2: a built-in function to read data from json string (read just one value). We can use jsonpath
+user can use this as a building block to create their own conversion function.
+input: json string, output: a string
+`name = parseJsonElement(strJson, ".name")`
+we need to parse string, number, array, hash.
+We will need the same functionality for xml, yaml and csv.
+`parseElement, parseArray, parseMap`
+what is output of parseArray? we really need gnerics here!
+What if we use type name as an input? same as the way we use type identifier in a map to have polymorphism?
+But this will not be generics. Because how are we going to implement push?
+`push = (x: int, s: IntStack)`
+`push = (type: int, x: type, s: ...`??? No. This will make everything confusing.
+But anyway, if we allow using type identifier like `type(Circle)` it should be allowed in other places too.
+We can describe json as a union of: `int | bool | string | [Value] | [Value:Value]`.
+`parseData = (x: string, path: string -> JsonValue)`
+`JsonBasicValue = int | string | bool`
+`JsonVaue = JsonBasicBalue | [JsonBasicValue] | [JsonBasicV:JBV]`
+`parseArray = (x: string, path: string -> [JsonValue])`
+`parseMap = (x: string, path: string -> [JsonValue:JsonValue])`
+we can batch above and have `parseJson` to return the whole structure at once, for performance.
+
+
+? - How to parse accounts for exceptions?
+
+? - How to have a module that writes some data and it can write to json, xml or web service?
