@@ -3647,7 +3647,7 @@ If you cast a type to int, it will give you it's type identifier.
 If you cast a union to int, it will give you ?
 No this will be confusing.
 
-? - How can I parse a json to a specific data structure? 
+N - How can I parse a json to a specific data structure? 
 e.g. message payload in post http request
 option 1: a built-in function to convert a json string to the given data structure
 `customer = parseJson(strJson)` 
@@ -3673,8 +3673,37 @@ We can describe json as a union of: `int | bool | string | [Value] | [Value:Valu
 `parseArray = (x: string, path: string -> [JsonValue])`
 `parseMap = (x: string, path: string -> [JsonValue:JsonValue])`
 we can batch above and have `parseJson` to return the whole structure at once, for performance.
+Same thing can be done for xml and yaml and other file formats.
+1. define general structure
+2. Provide functions to read elements
+3. Provide batch functions
+So if there is a special need, they can use functions in 2, otherwise they can use 3.
+All above can be done either in std or core. So no need to change anything in the language definition.
 
+N - How to have a module that writes some data and it can write to json, xml or web service?
+```
+writer = (x: int|string|bool -> nothing)
+process(data, writer)
+```
+writer is a lambda which when called will write something to a storage (nil, xml file, ws call, ...)
 
 ? - How to parse accounts for exceptions?
+Suppose that we have bank accounts for clients and each account has a number of positions. 
+We need to:
+1. Gather a list of all accounts
+2. Gather their positions for day 1
+3. Gather their positions for day 2
+4. get a list of instruments for day1 and day2
+5. Get parameters for day 1 and 2 positions
+6. Aggregate parameters for accounts
+7. Scan aggregate parameters for any issue
+```
+accounts = getAccounts()
+day1_positions = getPositions(accounts, day1)
+day2_positions = getPositions(accounts, day2)
+day1_instruments = [string](day1_positions, (x -> x.instrument))
+day2_instruments = [string](day2_positions, (x -> x.instrument))
+day1_data = [string:float] (day1_instruments, (i -> {"State", getState(i)}))
+account_parameters = [{string, date}:float](day1_data, (d -> {"State", 
+```
 
-? - How to have a module that writes some data and it can write to json, xml or web service?
