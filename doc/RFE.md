@@ -3715,13 +3715,16 @@ N - What if we want to have map based on two collections?
 If both are same size: use for loop
 If this is a nested map: just nest lambdas.
 
-? - Maybe we can unify map and reduce and filter.
+Y - Maybe we can unify map and reduce and filter.
 input is an element from source collection + current state (nothing for the first call)
 output is updated state
 State can be a collection or a single value.
 We can say, state is the default value of the target (0, false, empty sequence, empty hash).
-map: `plus_one = [int](int_seq, (x:int, state:int -> state & [x+1]))`
-filter: `only_evens = [int](int_seq, (x:int, state: int -> state & [[],[x]][x%2]))`
-reduce: `sum = int(int_seq, (x:int, state:int -> state+x))`
-map/filter for hashmap: `out = [int:int](map1, (key:int, value:int, state:[int:int] -> state & [[], [key+1: value+1][true/false]))`
+map: `plus_one = [int](int_seq, (value:int, state:int -> state & [value+1]))`
+filter: `only_evens = [int](int_seq, (value:int, state: int -> state & [[],[value]][x%2]))`
+reduce: `sum = int(int_seq, (value:int, state:int -> state+value))`
+map/filter for hashmap: `out = [int:int](map1, (key:int, value:int, state:[int:int] -> state & [[:], [key+1: value+1][true/false]))`
 reduce for hashmap: `sum_of_values = int(map1, (key:int, value:int, state:int -> state+value)`
+Why not make this a core function? e.g. `loop` or `process`?
+cast is a mis-use for this.
+But then again, if we use `loop` then we don't need to explain here. Unless briefly, like `dispose`.
