@@ -3687,7 +3687,7 @@ process(data, writer)
 ```
 writer is a lambda which when called will write something to a storage (nil, xml file, ws call, ...)
 
-? - How to parse accounts for exceptions?
+N - How to parse accounts for exceptions?
 Suppose that we have bank accounts for clients and each account has a number of positions. 
 We need to:
 1. Gather a list of all accounts
@@ -3707,3 +3707,21 @@ day1_data = [string:float] (day1_instruments, (i -> {"State", getState(i)}))
 account_parameters = [{string, date}:float](day1_data, (d -> {"State", 
 ```
 
+Y - You can cast a sequence to a map.
+You can also simulate for loop by using `[1..len(seq)]` as source of casting.
+The lambda's input is based on source of cast and output is based on cast destination type.
+
+N - What if we want to have map based on two collections?
+If both are same size: use for loop
+If this is a nested map: just nest lambdas.
+
+? - Maybe we can unify map and reduce and filter.
+input is an element from source collection + current state (nothing for the first call)
+output is updated state
+State can be a collection or a single value.
+We can say, state is the default value of the target (0, false, empty sequence, empty hash).
+map: `plus_one = [int](int_seq, (x:int, state:int -> state & [x+1]))`
+filter: `only_evens = [int](int_seq, (x:int, state: int -> state & [[],[x]][x%2]))`
+reduce: `sum = int(int_seq, (x:int, state:int -> state+x))`
+map/filter for hashmap: `out = [int:int](map1, (key:int, value:int, state:[int:int] -> state & [[], [key+1: value+1][true/false]))`
+reduce for hashmap: `sum_of_values = int(map1, (key:int, value:int, state:int -> state+value)`
