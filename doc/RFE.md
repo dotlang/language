@@ -3728,3 +3728,12 @@ reduce for hashmap: `sum_of_values = int(map1, (key:int, value:int, state:int ->
 Why not make this a core function? e.g. `loop` or `process`?
 cast is a mis-use for this.
 But then again, if we use `loop` then we don't need to explain here. Unless briefly, like `dispose`.
+
+Y - Shall we remove automatic destruction and force use `*`?
+`_,b = process2(myPoint) #ignore function output`
+vs
+`_,b = *process2(myPoint) #ignore function output`
+
+N - Can we refer to data inside destructed struct?
+`*(process(1,2)).1`?
+No. Because `*` does not give you a struct. It gives you a list of values.
