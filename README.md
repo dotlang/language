@@ -86,7 +86,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 02. `.`   Access struct fields
 03. `()`  Function declaration and call, cast
 04. `{}`  Code block, struct definition and struct literal
-05. `[]`  Types and literals for map and sequence
+05. `[]`  Types and literals for map and sequence, channel operations
 06. `&`   Concatenate two sequences or maps 
 07. `*`   Destruct a struct
 08. `|`   Union data type 
@@ -104,6 +104,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 ## Reserved keywords
 
 **Data types**: `int`, `float`, `char`, `string`, `bool`, `nothing`
+
 **Reserved identifiers**: `true`, `false`
 
 ## Coding style
@@ -133,7 +134,7 @@ You can define bindings at module-level or inside a function. Module-level bindi
 
 Note that all bindings are immutable. So you cannot manipulate or re-assign them.
 
-If the value is a struct, you can destruct it into it's elements by using `*` operator which simply replaces it's operand with it's internal data (Example 5). In this process, you can also use underscore to indicate you are not interested in one or more of those elements (Example 6). You can use `*` in any place where a series of comma separated values are needed.
+If the value is a struct, you can destruct it into it's elements by using `*` operator which simply replaces it's operand with it's internal data (Example 5). In this process, you can also use underscore to indicate you are not interested in one or more of those elements (Example 6). You can use `*` in any place where a series of comma separated values are needed, but you have to consume the result of this operator (either via binding assignment or function call).
 
 You can call built-in dispose function to explicitly free resources allocated for a binding. Any reference to a binding after call to dispose will result in compiler error.
 
@@ -210,7 +211,7 @@ When defined at module level, you can amend a sequence definition using `&` oper
 4. `x = [1, 2]&[3, 4]&[5, 6] #merging multiple sequences`
 5. `n = x[10]`
 6. `n = [*{100,200}]`
-7. `data = [1,3,4]`, `data = data & [9, 8]`
+7. `data = [1,3,4]`, `data2 = data & [9, 8]`
 
 ## Map
 
@@ -386,7 +387,7 @@ You can use `*` operator to prepare input when calling a function. This can be u
 06. `myFunc9 = (x:int -> out:{int}) { out = {12} } #this function returns a struct literal`
 07. `process = (x: int|Point -> out:int) ... #this function can accept either int or Point type as input or int|Point type`
 08. `fileOpen = (path: string -> out:File) {...}`
-09. `_,b = process2(myPoint) #ignore function output`
+09. `_,b = *process2(myPoint) #ignore function output`
 10. 
 ```
 process = (x:int -> out:int) 
