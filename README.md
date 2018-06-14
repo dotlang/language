@@ -467,7 +467,7 @@ In order to solve a name conflict during module import, you should add an interm
 
 dotLang provides channels as a light-weight communication mechanism between two pieces of code and `:=` notation for parallel execution of an expression.
 
-Channels are a one-way (read-only or write-only) data transportation mechanism which are open the moment they are created and closed when they are GC'd (disposed). They can be buffered or have a transformation function (`(T)->T`) which will be applied before write or after read.
+Channels are a one-way (read-only or write-only) data transportation mechanism which are open the moment they are created and closed when they are GC'd (disposed).
 
 Any party can close/dispose their channel. To read from a channel or write to it, you will need to put it inside a sequence and treat it like a function. The output of this call will be data and channel (the sequence can contain multiple channels) and the input is the data you want to write.
 
@@ -478,19 +478,20 @@ You can use `:=` syntax to evaluate an expression in parallel and when its finis
 **Syntax**
 
 1. Parallel execute `result := expression` 
-2. Create `reader, writer = createChannel(buffer_size, r_lambda, w_lambda) #T! is a write-only channel, T? is a read-only channel`
+2. Create `writer = int!(size)`, `reader = int?(writer) #T! is a write-only channel, T? is a read-only channel`
 3. Read data `data = [reader]()`
 4. Write data `[writer](data)`
 5. Select: `data, channel = [rch1, rch2, wch1, wch2](data1, data2)`
 6. Select: `data, channel = [rch1, rch2, rch3, wch1, wch2, wch3](data1, data2, data3)`
+7. Close: `dispose(channel)`
 
 **Examples**
 
 1. 
 ```
-std_writer = (int!)(10)
-std_reader = (int?)(writer)
-data = std_reader? #read something from the channel which read from standard input
+std_writer = int!(10)
+std_reader = int?(writer)
+data = [std_reader]() #read something from the channel which read from standard input
 [std_write]("Hello") #send data to stndard output
 ```
 2. `data := processInfo(1,2,a) #evaluate the expression in parallel and store the output in data`
