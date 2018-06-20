@@ -211,7 +211,7 @@ When defined at module level, you can amend a sequence definition using `&` oper
 4. `x = [1, 2]&[3, 4]&[5, 6] #merging multiple sequences`
 5. `n = x[10]`
 6. `n = [*{100,200}]`
-7. `data = [1,3,4]`, `data2 = data & [9, 8]`
+7. `data = [1, 3, 4]`, `data = data & [9, 8]`
 
 ## Map
 
