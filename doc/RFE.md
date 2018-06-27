@@ -3737,3 +3737,45 @@ vs
 N - Can we refer to data inside destructed struct?
 `*(process(1,2)).1`?
 No. Because `*` does not give you a struct. It gives you a list of values.
+
+N - Idea: Having channel with different read and write type. e.g. write int and read string
+application: simulate a dependency using channel, synthetic filesystem, ...
+q: how can I define a channel for IPC?
+e.g. a cryoto library, you create a channel, write string to it and receive encrypted data.
+`writer = int!(size)`
+`reader = int?(writer)`
+Isn't this two separate channels?
+`int_writer, int_reader` first pair of channels to read commands
+`string_writer, string_reader` second pair to get response
+`int_writer, string_reader = *setupSystem()`
+
+Y - How can we setup a channel based system for example to do compression?
+write string, read string
+`input_w, output_r = *setupCompression()`
+`[input_w]("AA")`
+`result = [output_r]()`
+What happens inside setupCompression?
+I create all 4 channels, but I just need to return two of them.
+`input_r, input_w, result_r, result_w`
+I return `input_w and result_r`
+when I receive a message in `input_r` I want to read it, do something and write to `result_w`
+So I setup a parallel code which does not end:
+```
+setupCompression = (nothing -> {string!, string?}) 
+{
+	input_r, input_w = setupInput()
+	result_r, result_w = setupResult()
+	process = ( -> ) 
+	{ 
+		x = [input_r]()
+		r = compress(x)
+		[resut_w](r)
+		process() 
+	}
+	_ := process
+	return {input_w, result_r}
+}
+```
+
+? - How do we handle versioning in dependencies? Do we support multiple versions side by side?
+
