@@ -620,6 +620,30 @@ fib = (n: int, cache: [int|nothing] -> out:int)
 }
 ```
 
+## Channel based compression
+
+This is a function that uses channels to get input, compresses them and writes them to the output channel. Like a normal function but it is based on channels.
+```
+setupCompression = (nothing -> {string!, string?}) 
+{
+	input_r, input_w = setupInput()
+	result_r, result_w = setupResult()
+	process = ( -> ) 
+	{ 
+		x = [input_r]()
+		r = compress(x)
+		[resut_w](r)
+		process() 
+	}
+	_ := process
+	return {input_w, result_r}
+}
+input_w, output_r = *setupCompression()
+[input_w]("AA")
+result = [output_r]()
+```
+
+
 # Other components
 
 ## Core packages
