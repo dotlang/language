@@ -3779,3 +3779,6 @@ setupCompression = (nothing -> {string!, string?})
 
 N - How do we handle versioning in dependencies? Do we support multiple versions side by side?
 
+N - Shall we use `&` notation for sequence and map too?
+we already use it for map in generics.
+already have it.
