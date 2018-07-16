@@ -3782,3 +3782,26 @@ N - How do we handle versioning in dependencies? Do we support multiple versions
 N - Shall we use `&` notation for sequence and map too?
 we already use it for map in generics.
 already have it.
+
+? - Paren when calling a function can collide with paren used to write a lambda.
+`sort(array, (x:int, y:int -> x-y))`
+We use paren for two purposes (and more).
+rust uses `||`
+`sort(array, |x:int, y:int -> x-y|)`
+`sort(array, /x:int, y:int -> x-y/)`
+`sort(array, {x:int, y:int -> x-y})`
+Why not think of lambda as a special case of struct? no.
+`[]`?
+or we can think of it as a special map.
+`sort(array, [x:int, y:int -> x-y])` no.
+ugly and confusing.
+maybe if we think of function as a map it can give us specialization and polymorphism for free.
+We already use a map for polymorphism.
+`inc = [x:int:x+1]`?
+`inc = [x:int -> x+1]`
+`inc = [x:int -> x+1, 0 -> 0]`
+maybe we can use dependent type in a way here, e.g. a factorial function which returns 0 for negative numbers.
+`factor = [x:int -> ..., y: int && isNegative(y) -> 0]`
+`draw = [x: Circle -> ..., y: Square -> ...]`
+`draw = draw & [z: Triangle -> ...]`
+but if we allow conditions, compiler code will become complicated. Let's have developer deal with these things.
