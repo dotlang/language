@@ -3783,7 +3783,7 @@ N - Shall we use `&` notation for sequence and map too?
 we already use it for map in generics.
 already have it.
 
-? - Paren when calling a function can collide with paren used to write a lambda.
+N - Paren when calling a function can collide with paren used to write a lambda.
 `sort(array, (x:int, y:int -> x-y))`
 We use paren for two purposes (and more).
 rust uses `||`
@@ -3805,3 +3805,4 @@ maybe we can use dependent type in a way here, e.g. a factorial function which r
 `draw = [x: Circle -> ..., y: Square -> ...]`
 `draw = draw & [z: Triangle -> ...]`
 but if we allow conditions, compiler code will become complicated. Let's have developer deal with these things.
+This is useful but in large scale code will become confusing: what if conditions overlap? what is order of evaluation? for a real map, order should not matter.
