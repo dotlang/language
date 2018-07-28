@@ -3806,3 +3806,13 @@ maybe we can use dependent type in a way here, e.g. a factorial function which r
 `draw = draw & [z: Triangle -> ...]`
 but if we allow conditions, compiler code will become complicated. Let's have developer deal with these things.
 This is useful but in large scale code will become confusing: what if conditions overlap? what is order of evaluation? for a real map, order should not matter.
+
+N - What about using `{}` when calling a function?
+we can nest function calls so `{}` will be nested too.
+But we cannot nest function definition (?). 
+so better to use `()` in function call which is more intuitive and can be nested: `process(save(x))`
+but for function definition:
+`process = (x:int -> x+1)`
+`sort = (x:[int], comparer: (int->bool) -> out:[int]) { ...}`
+I think it's allright.
+`sort(data_array, (x:int, y:int -> x-y))`
