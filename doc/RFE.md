@@ -3816,3 +3816,17 @@ but for function definition:
 `sort = (x:[int], comparer: (int->bool) -> out:[int]) { ...}`
 I think it's allright.
 `sort(data_array, (x:int, y:int -> x-y))`
+
+? - We can add interface/protocol as an other type of type. So when declaring a fucntion, it's input type can be int or Eq.
+Where `Eq` is a type which is not a data type but a functionality type.
+Data type: `Point = {x:int, y:int}`
+Func type: `Set[T] = { size: (->int), add: (T->Set[T]) }`
+`Comparable[T] = { compare: (T,T->int) }`
+An interface type is a strcut type which only contains function pointers.
+`sort = (x:[Comparable]->[Comparable])`
+or: A set is a collection of elements of type T which are all ordered.
+Ordered is a type that has compare function.
+`Ordered[?] = { compare: (?,? -> bool) }`
+`Set[?] = { _: Ordered[?] }`
+If we enable `?` notation, then we should allow it to be used to define stack:
+`Stack[?] = [?]`
