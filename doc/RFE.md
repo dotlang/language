@@ -3817,7 +3817,7 @@ but for function definition:
 I think it's allright.
 `sort(data_array, (x:int, y:int -> x-y))`
 
-? - We can add interface/protocol as an other type of type. So when declaring a fucntion, it's input type can be int or Eq.
+? - We can add interface/protocol as an other type of type. So when declaring a function, it's input type can be int or Eq.
 Where `Eq` is a type which is not a data type but a functionality type.
 Data type: `Point = {x:int, y:int}`
 Func type: `Set[T] = { size: (->int), add: (T->Set[T]) }`
@@ -3830,3 +3830,26 @@ Ordered is a type that has compare function.
 `Set[?] = { _: Ordered[?] }`
 If we enable `?` notation, then we should allow it to be used to define stack:
 `Stack[?] = [?]`
+What is the purpose of this?
+- Like when we write `x:int` it enforces some kind of check on the data (it must be int), we want to be able to do more enforcements.
+This is different from generics where we want to write algorithms independent of the type (e.g. sort or search).
+So we want to say: input to this function, supports these functions. If type of input is specified (e.g. Customer) then those target functions must be already defined and everything is fixed, static and constant.
+Advantages of supporting protocol:
+- Methods like clone or map can be defined in std rather than core.
+Issues: How can we have a minimal and elegant syntax to define a protocol type?
+Example: Clone - This is not a good example because you can simply use the protocol method.
+But even with clone, you cannot call clone directly because the output type is not specified.
+Purpose: Put limitation and constraint on function inputs. Limitation: defined functions.
+e.g. for hash table, hash function must be defined + equals functions.
+for sort, compare function must be defined. 
+for save, serialize function must be defined.
+for stack, queue, graph, tree, ... identity function must be defined (?) which returns the item.
+for search, compare function must be defined.
+Now, we can simply put these function pointers as the function arguments, but we don't know their I/O types.
+Another solution: Define normal types and functions and a notation to define child type/function with replacing original types.
+```
+Stack := [int]
+push = (x: Stack, y:int -> Stack) ...
+StringStack := Stack[string]
+stringPush = push[string]
+```
