@@ -3853,3 +3853,52 @@ push = (x: Stack, y:int -> Stack) ...
 StringStack := Stack[string]
 stringPush = push[string]
 ```
+Idea: We can have types that are defined like a function and functions that have a type argument which can be used in the definition of the func.
+```
+TypeId = int
+Stack = (t: TypeId -> [%t])
+find = (t: TypeId, input: [%t], target: %t -> out: %t|nothing) ...
+```
+This way, 1. we do not add any new concept except using type arguments, it is more consistent
+it is more composable.
+also it gives room for specialisation.
+```
+TypeId = int
+Stack = (t: TypeId -> [%t])
+push = (t: TypeId, s: Stack(t), data: %t -> Stack(t))
+find = (t: TypeId, input: [%t], target: %t -> out: %t|nothing) ...
+```
+It's not elegant that we use two different notations: t and `%t`. But using `t` all the time is not good, as the casing for type and binding is different.
+one solution: using a totally different casing for types. e.g. `%t` as the name.
+```
+TypeId = int
+Stack = (%t: TypeId -> [%t])
+push = (%t: TypeId, s: Stack(%t), data: %t -> Stack(%t))
+find = (%t: TypeId, input: [%t], target: %t -> out: %t|nothing) ...
+```
+q: can we define a channel that sends/receives a TypeId? what should be the naming for that channel?
+this will endanger the consistency and orth of the language, unless we treat a type exactly the same as a binding. This should not be something completely different, because then we will have a lot of questions and clarifications to handle.
+so let's just say that typeId is integer.
+```
+Stack = (t: int -> [t])
+push = (t: int, s: Stack(t), data: t -> Stack(t))
+find = (t: int, input: [t], target: t -> out: t|nothing) ...
+```
+Problem is, we can now have something which can be both a binding (value) and a type.
+We can use `(t)` to denote a type created using t identifier. or `[t]` But then array of `[t]` or map using it will be confusing.
+`(t)` same.
+also `{t}`. But let's use `<t>`
+```
+Stack = (t: int -> [<t>])
+push = (t: int, s: Stack(t), data: <t> -> Stack(t))
+find = (t: int, input: [<t>], target: <t> -> out: <t>|nothing) ...
+```
+`<t>` is ugly and reminds of C++ style generics.
+`/t/`?
+`\t\`?
+we can use both of these.
+```
+Stack = (t: int -> [/t/])
+push = (t: int, s: Stack(t), data: /t/ -> Stack(t))
+find = (t: int, input: [/t/], target: /t/ -> out: /t/|nothing) ...
+```
