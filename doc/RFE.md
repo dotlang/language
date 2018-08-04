@@ -4027,6 +4027,35 @@ let's look at it like this: `process = (x: Circle) ...`
 can I call this like `process(circle_or_square)`? I should not be able to do that. so what happens to polymorphism?
 The only way it to cast: `process(Circle(circle_or_square))`
 `draw[Type(circle_or_square)](Type(circle_or_square)(circle_or_square))`
-
+maybe we can simplify `Type` to `T`. This way of achieving polymorphism is not something that we have added to the language. It was there before.
+`draw[T(circle_or_square)](T(circle_or_square)(circle_or_square))`
+and if draw is a generic function:
+`store = (t: T, x: %t)...` then the second argument must have same type id as the first
+`draw(T(circle_or_square), T(circle_or_square)(circle_or_square))`
+Maybe we can simplify `T(x)(x)` to `T((x))`. or even simpler, we can have a function in core which will return these two in a struct that we can unpack:
+`draw(*unwrap(circle_or_square))`
+unwrap is a function in core, so does not need to have a signature. you can pass any union binding to it and it will return it's internal type + casted to internal type.
+summary:
+1. `unwrap` will be added to core to get internal type of a union and cast it.
+2. `T` is an integer which represents a typecode. You can use `T(x)` to get typecode of a type or a union.
+3. If you have a binding of type T, you can use `$T` to create a type based on it.
+4. You can have arguments of type `T` and use them as type specifier for the rest of function args.
+5. You can have a type that acts like a function.
+q: Can we use `T(T(x))`? yes. It will give `T(T)` which is `T`.
+```
+Shape = Circle | Square | Triangle
+draw = [type(Circle): drawCircle, type(Square): DrawSquare]
+draw = draw & [type(Triangle): drawTriangle]
+...
+draw[T(myShape)](T(myShape)(my_shape))
+#generics
+Stack = (t:T -> [$t])
+LinkedList = (t:T -> {data: $t, next: LinkedList(t)})
+push = (t: T, s: Stack(t), data: $t -> Stack(t))...
+find = (t: T, x: $t, array: [$t], compare: ($t, $t->bool)->$t|nothing)...
+mergePages = (t: T, initial: [$t], loadPage: (int->[$t]) -> [$t])...
+sort = (t:T, data: [$t], ...
+graphDfs = (t:T, g: Graph(t) -> [$t] )...
+```
 
 ? - How can we mock? for testing. e.g. another function or time.
