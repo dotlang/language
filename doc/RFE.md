@@ -3964,5 +3964,31 @@ can we implement generics by having a map that returns the same thing for differ
 `push = [type: (x: type, y: Stack(type)...` no. it is confusing and maps are not designed for this generic code.
 can we implement polymorphism using generic constructs? e.g. drawCircle and drawSquare ...?
 `draw = (t: Type, x: %t -> [circle: drawCircle, square: drwaSquare][t](x)` No. still we need the maps for this and also it is not extensible.
+```
+Stack = (t: Type -> [%t])
+push = (t: Type, s: Stack(t), data: %t -> Stack(t)) ...
+find = (t: Type, input: [%t], target: %t -> out: %t|nothing) ...
+```
+some nasty code in Java: `Map<Integer, List<Pair<String, Double>>>` here: `[int: [{string, float}]]`
+we can use `%x` when x is a union to create a type-id based on internal data in x.
+`draw[%x](x)` but suppose x has a circle but it's type is circle or square or triangle.
+we cannot call drwaCircle with `cirlce | triangle | square`. maybe union type is not a solution for polymorphism.
+we can use `/t/` to convert a type to its type id and `\t\` to convert from a union type to it's internal type.
+so `/\t\/` will give type inside a union type. it is confusing!
+also we can no longer type check a function e.g. `draw(type(int), int_or_string)`
+so?
+cache -> we can implement it with channels and some ad hoc code.
+polymorphism -> no special change is needed. we "can" use `%` as a shortcut for type both for types and union bindings.
+generics -> we can do them with type arguments, but it will cause confusion and ambiguity.
+if we can unify all of these and simplify them it would be great.
+but polymorphism gives us extensibility: I can add a new draw: `draw = draw & [%triangle: drawTriangle]`
+we can return to original notation of `{Shape}` to have a general union to use for generics, but it is not flexible and limited to struts only.
+Q: https://medium.com/capital-one-developers/closures-are-the-generics-for-go-cb32021fb5b5
+Assume you want to read users, teams, groups and some other data from an API which has pagination. A function that reads any of these entities from all pages and combines them into a single list (list of users, list of teams, ...) needs generics, unless you repeat some code for each type.
+```
+#this will get any paged API, aggregate all pages and return the result
+readPagedData = (t: Type, initial: [%t], onePageLoader: (int->[%t]) -> [%t])
+```
+so, I think we need generics.
 
 ? - How can we mock? for testing. e.g. another function or time.
