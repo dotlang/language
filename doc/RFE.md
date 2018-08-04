@@ -3990,5 +3990,43 @@ Assume you want to read users, teams, groups and some other data from an API whi
 readPagedData = (t: Type, initial: [%t], onePageLoader: (int->[%t]) -> [%t])
 ```
 so, I think we need generics.
+The issue now is with current way we handle polymorphism using maps:
+`draw[type(my_shape)](my_shape)` what we have inside draw map for a circle, is a `(Circle->)` funtion. but `my_shape` is `Circle | Triangle | Square`.
+so how can we write above code? we can cast `my_shape`:
+`draw[type(my_shape)](type(my_shape)(my_shape))`
+Or we can use shortcuts.
+The issue happens when we combine unions with generics.
+how can we make the notation simpler and more minimal? `^`?
+`Type = int`
+`r = ^int`
+`x = ^int_or_string` stores actual type inside `int_or_string`
+`y = (t: Type, t_array: [%t])` creates a new type using given type identifier
+we have two separate operations. Let's use different (but related) notations for them.
+operation 1: create a new type by using a given type identifier `t_array: [%t]`, `t_array = [^t]`, `t_array = [~t]`, `t_array = [$t]`,
+operation 2: get type identifier of a pre-defined type `r = %string`, `r = Type(string)` you can cast it to Type.
+operation 3: get type identifier of what is stored inside a union binding: `y = %int_or_string`, `Type(int_or_string)`
+type identifier is a universally unique integer number which represents a type.
+```
+readPagedData = (t: Type, initial: [$t], onePageLoader: (int->[$t]) -> [$t])
+```
+suppose that we have:
+`process = (t: Type, x: $t -> x+1)`
+and call it like: `process(Type(int_or_string), int_or_string)`??? It will cause a type error at runtime which is the last thing we want to have.
+q: if I have `t` can I get type identifier of `[$t]`? I should.
+`t2 = Type([$t])`
+`process(t2, ...`
+`ff = ...`
+in general: can I use `$t` in any possible way? I should be able to do that. but what if `$t` is not compile time decidable?
+I should be able to invoke a map-get with a union, because map will support all cases.
+similarly: the function I call, should support all possible cases, or else there will be a compiler error.
+`process = (t: Type, x: $t -> ...)` this function should support any t. even if it is `int_or_string`
+ToDo: at the end, write a full set of code covering all important generic use cases and also polymorphism with the new notation.
+q: in polymorphism, if I call `draw[Type(circle_or_square)](circle_or_square)`, it will not work. 
+`draw[Type(circle_or_square)](circle_or_square)` this cannot be checked at compile time. because it is supposed to be "runtime polymorphism".
+let's look at it like this: `process = (x: Circle) ...`
+can I call this like `process(circle_or_square)`? I should not be able to do that. so what happens to polymorphism?
+The only way it to cast: `process(Circle(circle_or_square))`
+`draw[Type(circle_or_square)](Type(circle_or_square)(circle_or_square))`
+
 
 ? - How can we mock? for testing. e.g. another function or time.
