@@ -3902,3 +3902,67 @@ Stack = (t: int -> [/t/])
 push = (t: int, s: Stack(t), data: /t/ -> Stack(t))
 find = (t: int, input: [/t/], target: /t/ -> out: /t/|nothing) ...
 ```
+and we can use `%X` to denote internal type of x or typeid of type X.
+Does it worth it? Can't we provide 90% of this by using some pre-defined (special) functions in core?
+e.g. delete, loop, find, sort, ...
+and for the rest 10% users should write their own functions.
+real examples of times we need generics:
+- cache: with eviction and reloading strategies
+- task scheduling: an executor which will execute a series of tasks, each can have it's own inputs? this can be reduced to no-IO lambdas
+- serde: can be done through core
+- DB access layer: same input different outputs, can be done without generics
+q: Can we implement a cache with current syntax?
+can we use channels? But if there are 10 users of the cache, we will need to push 10 instances of the same cache to the channel.
+q: Do we "need" a cache really? normally, core (runtime) caches function calls unless they have a side effect.
+suppose that we have a function that reads data from the DB. we want to cache it's output for 1 hour.
+we can keep a context, set it's data part based on the output from the function and set a expiration date for it.
+this is all handled in the app code, nothing behind the scene. 
+advantage: more flexibility
+disadvantage: no code reuse.
+```
+CacheType = int
+Cache = {data:CacheType, expiration: Timestamp, reloader: (->CacheType)}
+refresh = (x: Cache -> y:Cache) 
+{
+	new_data = [(->x.data), (->x.reloader())][is_expired(x.expiration)]()
+	y = Cache{new_data, expiration, reloader}
+}
+...
+#suppose that we want to have a cache for strings. how?
+CacheType = CacheType | string
+int_cache = Cache{0, now()+100, getIntData}
+str_cache = Cache{"A", now()+90, getStringData}
+```
+first of all, above cache is not strongly typed.
+we can have strong typed generic functions by using map and type id, but for data types this does not work.
+q: If we add generics using type argument, can we then remove all the notations that are added to provide some sort of generics? (e.g. `&` in modules, getting type id of a union binding, ...)?
+what about polymorphism? having an array that can keep all shape types?
+can we implement cache with a channel that has some special settings?
+e.g. a channel that data is not removed automatically when being read (so we can have `n` readers and one writer).
+and there is a special producer (refresher) that is called when data is forcefully removed.
+we can only do this through channel because it's nature is mutable.
+can this be useful in other use cases? file, socket, ...?
+This is how we read data from a channel: `data = [reader]()`
+we can use the input: no input means normal behavior
+`data = [reader](true/false)` remove when read. this should be false for a cache channel
+the writer, will do `data = [reader](true)` to empty the cache and re-populate it.
+we can store cache expiration timestamp in another channel, or bundle it with the data cache channel like: `{data:int, expiration: timestamp}`.
+so now, if multiple threads query the channel with `true`, what should happen? the first one gets triggered, removes data, updates the cache data, others fetch it and remove it.
+this only happens in multi-thread apps. we can coordinate this by using another channel to receive permission to empty the channel.
+another way: instead of true/false when reading, pass the instance you have read to another method.
+this is complexity.
+another solution: have a refiller method that is called when channel is empty. it will either re-push previous data or generate a new one.
+the client can do this: read from channel, if it's not expired, push it to the channel. if it is expired, refresh and push.
+so whoever reads data from this channel, will be responsible to push it again. this needs writing some code, but does not add anything to the existing language.
+what is we mix this with type id?
+`Cache = (t: Type -> {data: %t, expiration: Timestamp, refresher: (->%t)}?)`
+`x = Cache(int){data:0, expiration: 100, refresher: (->getData())}`
+`read = (t: Type, c: Cache(t) -> {Cache(t), %t} ) { x = [c]() & y = if_expired(t, x.expiration, refresher)...`
+generic: we want to handle multiple types but we have the same code for all of them
+polymorphim: we want to handle multiple types but each type has it's own code
+can we implement generics by having a map that returns the same thing for different (a lot of) keys?
+`push = [type: (x: type, y: Stack(type)...` no. it is confusing and maps are not designed for this generic code.
+can we implement polymorphism using generic constructs? e.g. drawCircle and drawSquare ...?
+`draw = (t: Type, x: %t -> [circle: drawCircle, square: drwaSquare][t](x)` No. still we need the maps for this and also it is not extensible.
+
+? - How can we mock? for testing. e.g. another function or time.
