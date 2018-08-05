@@ -4092,5 +4092,31 @@ draw = (x: Circle | Square | Triangle -> [T(Circle):drawCircle, ...][T(x)](T(x)(
 ```
 if I use `draw$t` and I call the function by a union binding, how will the compiler compile this code? it seems that we need that encoding in the map.
 That map is not something new and extraordinary. The only new thing is `&` and `|` at module level which is faitly intuitive.
+There is a way to get rid of all `|` and `&` at module level and maps with a lot of arguments: open method like Clojure.
+We can say, function definition at module level, can be repeated with multiple names:
+`draw = (c: Circle -> ...)`
+`draw = (s: Square -> ...)`
+But IIRC this will introduce some problems:
+1. using functions as lambda: what is the type info when I write `x = draw(_)`?
+2. how will function resolution work? It might be complex.
+3. performance: we will need to dispatch at runtime.
+Can we use a generic data type to define an array which holds different shapes?
+`ShapeArray = (t:T -> ????`
+`getShape = (... -> ???)`
+`x = getShape(...)`
+Another problem: If we don't want runtime function call resolution, we cannot call a generic function with a union type.
+Maybe we should eliminate the notation to get internal type of a union. If we add back open methods (draw with different argument types), we can call draw with a union; but then again, we will have runtime function call dispatch.
+Another solution: Make everything the same. Like `interface{}`, cast everything to a pointer and it's type.
+also we have code to reverse this.
+```
+ptr, type = Ptr(data), T(Circle)
+...
+readShapes = (...->[{Type, Ptr}])
+first = readShapes[0]
+type = first.0
+ptr = first.1
+obj = $type(ptr) #cast the reference to an actual data record,
+process(obj)
+```
 
 ? - How can we mock? for testing. e.g. another function or time.
