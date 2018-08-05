@@ -4118,5 +4118,23 @@ ptr = first.1
 obj = $type(ptr) #cast the reference to an actual data record,
 process(obj)
 ```
+Disadvantage: we will no longer have only compile time function call dispatch.
+But even with the current situation: `drawMap[Type(data)](Type(data)(data))` we have runtime dispatch.
+Can we replace generics with this?
+```
+Any = {ptr: Ptr, type: Type}
+#generics
+Stack = (t:T -> [$t])
+LinkedList = {data: Any, next: LinkedList}
+push = (s: Stack, data: Any -> Stack)...
+find = (t: T, x: $t, array: [$t], compare: ($t, $t->bool)->$t|nothing)...
+mergePages = (t: T, initial: [$t], loadPage: (int->[$t]) -> [$t])...
+sort = (t:T, data: [$t], ...
+graphDfs = (t:T, g: Graph(t) -> [$t] )...
+reverse = (k: T, v: T, src: [$k:$v] -> [$v:$k])
+```
+We can but it won't be static typed.
+But instead, we can invoke a generic method using Any:
+`push(my_any.type, $my_any.type(my_any.ptr)...)`
 
 ? - How can we mock? for testing. e.g. another function or time.
