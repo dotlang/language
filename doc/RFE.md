@@ -4036,9 +4036,9 @@ Maybe we can simplify `T(x)(x)` to `T((x))`. or even simpler, we can have a func
 `draw(*unwrap(circle_or_square))`
 unwrap is a function in core, so does not need to have a signature. you can pass any union binding to it and it will return it's internal type + casted to internal type.
 summary:
-1. `unwrap` will be added to core to get internal type of a union and cast it.
+1. `unwrap` will be added to core to get internal type of a union and cast it, or any other non-union type
 2. `T` is an integer which represents a typecode. You can use `T(x)` to get typecode of a type or a union.
-3. If you have a binding of type T, you can use `$T` to create a type based on it.
+3. If you have a binding of type T called x, you can use `$x` to create a type based on it.
 4. You can have arguments of type `T` and use them as type specifier for the rest of function args.
 5. You can have a type that acts like a function.
 q: Can we use `T(T(x))`? yes. It will give `T(T)` which is `T`.
@@ -4056,6 +4056,41 @@ find = (t: T, x: $t, array: [$t], compare: ($t, $t->bool)->$t|nothing)...
 mergePages = (t: T, initial: [$t], loadPage: (int->[$t]) -> [$t])...
 sort = (t:T, data: [$t], ...
 graphDfs = (t:T, g: Graph(t) -> [$t] )...
+reverse = (k: T, v: T, src: [$k:$v] -> [$v:$k])
 ```
+Can we have a function that returns a type?
+one solution that can eliminate need to `&` at module level and still give us polymorphism: concat with type name
+`draw = (t: T, x: $t -> draw$t(x) )`
+then calling `draw(T(my_circle), my_circle)` will forward to `drawCircle`.
+-> we won't need a map of type to function 
+- no need to `&`
+But what about `Shape` type which represents all shapes? We want this to be extensible.
+`Shape = (x:T -> $x)`
+I want to have an array of shapes. each element can be circle or square or ...
+we can have a number of lambdas, all of them return the same thing: A shape.
+`[(->Shape)]`
+`shape_array = [ (->my_circle.shape), (->my_square.shape)]`
+`draw = (t: T, x: $t -> draw$t(x) )`
+can we not store them and directly call draw? 
+`x=getShape()`, `draw(T(x), x)`. but what is output type of getShape?
+we can make getShape generic too. but when we call getShape, we have no idea what type it will return.
+Based on this (https://www.reddit.com/r/haskell/comments/423o0c/why_no_subtypingsubtype_polymorphism/) subtyping interfers with strong static type system.
+maybe we are not supposed to provide this feature?
+ok. Maybe we should stick to the current solution.
+```
+Shape = Circle | Square
+Shape = Shape | Triangle
+...
+draw = (t: T, x: $t -> draw$t(x) ) #then we define drawCircle, drawSquare and drawTriangle
+```
+How would I handle this without polymorphism? reading some shapes from a file and drawing them.
+```
+file = openFile(...)
+next_shape = readShape(file) : Circle | Square | Triangle
+draw(next_shape)
+draw = (x: Circle | Square | Triangle -> [T(Circle):drawCircle, ...][T(x)](T(x)(x)))`
+```
+if I use `draw$t` and I call the function by a union binding, how will the compiler compile this code? it seems that we need that encoding in the map.
+That map is not something new and extraordinary. The only new thing is `&` and `|` at module level which is faitly intuitive.
 
 ? - How can we mock? for testing. e.g. another function or time.
