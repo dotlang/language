@@ -4136,5 +4136,9 @@ reverse = (k: T, v: T, src: [$k:$v] -> [$v:$k])
 We can but it won't be static typed.
 But instead, we can invoke a generic method using Any:
 `push(my_any.type, $my_any.type(my_any.ptr)...)`
+Using `Any` is very powerful and flexible, but the problem is we will loose static type checking.
+What if I can add constraints to the function definition? which ensure types are matching?
+Can this replace both generics and polymorphism?
+For a polymorphic
 
 ? - How can we mock? for testing. e.g. another function or time.
