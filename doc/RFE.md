@@ -4164,6 +4164,21 @@ To add subOp:
 `process = (SubOp->int)`
 `parse = (string -> [Expr])`
 `process = (Expr -> int)`
+q: How can we implement a cache now?
+Summary:
+1. We will have a new data type based on int, called `T` which denotes a type-code.
+2. You can use `T(int)` to get typecode of a type. (not union?)
+3. If you have a binding of type T called x, you can use `$x` to create a type based on it (e.g. `process = (t: T, x: [$t] -> ...)`).
+4. You can re-define module-level functions with the same name but different argument type (`process = (x:Circle... and process = (x:Square...`).
+5. We will have dynamic union types but map notation will no longer be suggested.
+6. `T` arguments of a function must be evaluated at compile time.
+q: If I use multi-methods, how can I have a pointer to all functions (to be passed to other functions)?
+`x = draw(_:Circle)`
+`y = draw(_:Square)`
+`z = draw(_)` refers to all of functions named draw with one argument
+`t = draw(_,_:int)`
+`y = draw` all functions named draw
+But how can we represent multiple function pointers inside only one binding?
 
 
 ? - How can we mock? for testing. e.g. another function or time.
