@@ -4150,7 +4150,20 @@ x = findCommon(T(int), T(string), {myCompare}, arr1, arr2)
 Drawable = (t: Type -> ($t -> nothing)) #Drawable(Circle), Drawable(Square), ...
 getShape = (file: File -> Drawable(?))
 ```
-
+Maybe we should pass a function to getShape so it will call them. rather than returning objects.
+q: If I use multi-methods, how can I have a pointer to all functions (to be passed to other functions)?
+q: can I define a union type of generics? yes. `OrType = (t,u: Type -> $t | [$u])`
+Let's just stick to the dynamic union types.
+How can we define an expression in this case? where we can easily add new operations and data types?
+`Expr = int | AddOp`
+`AddOp = {Expr, Expr}`
+To add subOp:
+`Expr = Expr | SubOp`
+`SubOp = {Expr, Expr}`
+`process = (AddOp->int)`
+`process = (SubOp->int)`
+`parse = (string -> [Expr])`
+`process = (Expr -> int)`
 
 
 ? - How can we mock? for testing. e.g. another function or time.
