@@ -4139,6 +4139,18 @@ But instead, we can invoke a generic method using Any:
 Using `Any` is very powerful and flexible, but the problem is we will loose static type checking.
 What if I can add constraints to the function definition? which ensure types are matching?
 Can this replace both generics and polymorphism?
-For a polymorphic
+No. It's not really type checked and opens a can of worms.
+Why not use protocols?
+```
+Cmp = (t: Type, u: Type -> ($t, $u -> boolean))
+findCommon = (t,u: Type, cmp: Cmp(t,u), arr1: [$t], arr2: [$u] -> boolean)
+...
+x = findCommon(T(int), T(string), {myCompare}, arr1, arr2)
+...
+Drawable = (t: Type -> ($t -> nothing)) #Drawable(Circle), Drawable(Square), ...
+getShape = (file: File -> Drawable(?))
+```
+
+
 
 ? - How can we mock? for testing. e.g. another function or time.
