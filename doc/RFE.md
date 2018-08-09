@@ -4166,7 +4166,7 @@ To add subOp:
 `process = (Expr -> int)`
 q: How can we implement a cache now?
 Summary:
-1. We will have a new data type based on int, called `T` which denotes a type-code.
+1. We will have a new data type based on int, called `T` which denotes a type-code. why based on int?
 2. You can use `T(int)` to get typecode of a type. (not union?)
 3. If you have a binding of type T called x, you can use `$x` to create a type based on it (e.g. `process = (t: T, x: [$t] -> ...)`).
 4. You can re-define module-level functions with the same name but different argument type (`process = (x:Circle... and process = (x:Square...`).
@@ -4179,6 +4179,68 @@ q: If I use multi-methods, how can I have a pointer to all functions (to be pass
 `t = draw(_,_:int)`
 `y = draw` all functions named draw
 But how can we represent multiple function pointers inside only one binding?
+We cant. A function pointer should be pointing to one specific function and this should be obvious for the compiler.
+```
+#generics
+Stack = (t:T -> [$t])
+LinkedList = {data: Any, next: LinkedList}
+push = (s: Stack, data: Any -> Stack)...
+find = (t: T, x: $t, array: [$t], compare: ($t, $t->bool)->$t|nothing)...
+mergePages = (t: T, initial: [$t], loadPage: (int->[$t]) -> [$t])...
+sort = (t:T, data: [$t], ...
+graphDfs = (t:T, g: Graph(t) -> [$t] )...
+reverse = (k: T, v: T, src: [$k:$v] -> [$v:$k])
+```
+Note that generics is for code that does not care about internals of the type. This limits it's application but makes code simpler.
+```
+CacheElement = (t:Type -> {data: $t, expiration: Timestamp})
+Cache = (t: Type -> {data: [string:CacheElement(t)], reader: CacheElement?, writer: CacheElement!, reloader: (string->$t)})
+createCache = (t: Type, reloader: (string->$t) -> Cache(t)) {...}
+x = Cache(int){data:0, expiration: 100, refresher: (->getData())}
+read = (t: Type, c: Cache(t) -> {Cache(t), %t} ) { x = [c]() & y = if_expired(t, x.expiration, refresher)...
+```
+can we specialise?
+can we allow union types? so we will have dynamic dispatch at runtime but will throw runtime errors. this will introduce new errors at runtime which could have been caught at compile time without this feature: calling a method with invalid argument types. `process = (t: Type, x: $t)` then `process(T(int_or_string_has_int), str_value)`.
+q: it doesn't feel good to have multiple methods with the same name (draw for circle and square and ...).
+q: Can we have `process = (t: Type -> CacheElement(Helper(t)))`? we should.
+Having multiple draw functions for different types is equivalent to allowing calling generic function with union type (it's not). But the latter is more organised. In both cases we can have runtime mehtod call with incorrect arguments error. because `draw = (Circle, int)` and `draw = (Square, string)` then `draw(my_shape_which_is_Square, 12)` will throw error at runtime.
+instead of specialising, we can have map inside the function:
+`draw = (t: Type, item: $t -> [Circle: drawCircle, Square: drawSquare][t](item))`
+using generics has the advantage that all methods should have same signature or we will handle with them explicitly in the generic function's code.
+If we allow generics for union types, all possible combinations must have implementations.
+polymorphism = specialised generics
+can we write: `process = (s: type, t: type, data: $s(t) -> ...)`. I think we should. 
+q: Why not use `type` rather than `Type`? we can use `int, string, [float], ...` as the values. without any prefix or suffix.
+q: Can we replace polymorphism in it's current stats, with generics on unions? is it extensible?
+`draw = (t: Type, item: $t -> [Circle: drawCircle, Square: drawSquare][t](item))` it is not extensible!
+we should have a point of extensibility. either in type definition + multiple functions with the same name or using a map.
+If we use a map of functions, we will still need union type. because we may need to store them together.
+so we have two options to implement polymorphism in an extensible way to solve expression problem:
+1. `Shape = Shape | Square`, `draw = (s: Square -> ...)`, `draw(my_shape)`
+2. `Shape = Shape | Square`, `draw = draw & [Square: drawSquare]`, `draw[T(my_shape)]()`
+The second option is more explicit and has less hidden parts and gives the developer more control.
+We can specialise in generics but that specialisation will not be extensible.
+we cannot prohibit using maps (same structure as above) inside a generic function but it will not give you an open specialisation.
+Summary:
+1. We will have a new data type `type` whose values are any actual type (`int` or `string` or `Customer`).
+2. If you have a binding of type T called x, you can use `$x` to create a type based on it (e.g. `process = (t: T, x: [$t] -> ...)`).
+3. `T` arguments of a function must be evaluated at compile time.
+4. Polymorphism is still provided using dynamic compile time union and map of type to functions.
+```
+CacheElement = (t:Type -> {data: $t, expiration: Timestamp})
+Cache = (t: Type -> {data: [string:CacheElement(t)], lifetime: int, reloader: (string->$t)})
+createCache = (t: Type, reloader: (string->$t) -> Cache(t)) {...}
+read = (t: Type, key: string, c: Cache(t) -> {Cache(t), %t} ) 
+{ 
+	out = c.data[key]
+	new_exp = now() + c.lifetime
+	out2 = [(->out), (-> out{data: c.reloader(key))][isExpired(out.expiration)]
+	result = CacheElement(t){out2, expiration:new_exp}
+	new_cache_data = put(c.data, key, result)
+	new_cache = c{new_cache_data}
+	output = {new_cache, out2}
+}
+```
 
-
+? - Allow modify a struct using `new_point = current_point{x:10}`
 ? - How can we mock? for testing. e.g. another function or time.
