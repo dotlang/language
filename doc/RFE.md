@@ -4221,7 +4221,7 @@ so we have two options to implement polymorphism in an extensible way to solve e
 The second option is more explicit and has less hidden parts and gives the developer more control.
 We can specialise in generics but that specialisation will not be extensible.
 we cannot prohibit using maps (same structure as above) inside a generic function but it will not give you an open specialisation.
-Summary:
+**Summary:**
 1. We will have a new data type `type` whose values are any actual type (`int` or `string` or `Customer`).
 2. If you have a binding of type T called x, you can use `$x` to create a type based on it (e.g. `process = (t: T, x: [$t] -> ...)`).
 3. `T` arguments of a function must be evaluated at compile time.
@@ -4243,4 +4243,14 @@ read = (t: Type, key: string, c: Cache(t) -> {Cache(t), %t} )
 ```
 
 ? - Allow modify a struct using `new_point = current_point{x:10}`
+
 ? - How can we mock? for testing. e.g. another function or time.
+
+? - Why can't we have a thread-safe map which can be modified in place? Does it have conflic with language's immutability promises?
+I think it does.
+
+
+? - `t[$]` and `t[$:]` and `t[:$]` to refer to internal type of an array or a map. in generics.
+
+? - With current geneics proposal, types are bindings too.
+`Data = int` type of Data is `type`
