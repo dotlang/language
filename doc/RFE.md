@@ -4294,3 +4294,23 @@ so the problem is: we want to have a channel that we can write data to and read 
 Why not give the whole map when reading? Basically, what we need is the internal map.
 so this means: I create a map and a write-only channel for it. when I need to read, I use the map itself.
 When I want to write, I write through the channel. but won't this cause concurrency issues?
+can we do this via multi-dimensional channels? basically an array of channels where index represents the channel we want to read from?
+But reading from a channel will empty it, but we don't want to do this.
+What if we have one channel per each key? Basically one writer channel and "n" channels for "n" entries.
+```
+#key is string and value is int
+writer = {string, int, float, char}!(0)
+reader = int?(writer, "Key1")
+data = [reader]() #read from cache
+[writer]({"Key1", 11})
+```
+But peek is inherently conflicting with the promise of channels.
+If two threads peek and one of them removes the data, the other will still think data is there.
+
+? - Use `+` instead of `&` for map/seq update.
+Then we can also use `-` to remove from map.
+
+? - Now that we can support generics, why not provide a list data structure (linked list)? 
+So if the use case is suitable, the developer can use list.
+seq is a fixed size array (start, length(
+list is a variable size list (head)
