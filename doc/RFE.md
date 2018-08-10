@@ -4254,3 +4254,43 @@ I think it does.
 
 ? - With current geneics proposal, types are bindings too.
 `Data = int` type of Data is `type`
+
+? - Why not give a function access to it's previous call result?
+This can be used for caching so the function is responsible for caching.
+We give previous result + timestamp + previous inputs.
+or better yet, we can have a private function-level map. but this will be too flexible.
+It is private and you cannot pass it to outside. 
+still too powerful.
+```
+process = (x:int -> out: int)
+{
+	#some heavy computations
+	out = result + o - y
+}
+processWithCache = (x:int, cache:[int:int] -> out:int, new_cache:[int,int]) 
+{
+	result = [(->cache[x]), (->process(x))][contains(cache, x)]()
+	
+}
+```
+It will be difficult to read and debug and maintain a code which is using a hidden cache storage.
+Let's proceed with `process`, `processWithCache` model like above.
+I can use channels to make working with cache easier.
+We can provide a function in core to create r/w channels based on a map + function.
+so: when channel is being read, the function is called with access to map
+when channel is being written to, the function is called with map and data to write.
+so we have channels for file, socket, ... and map.
+This way, if someone wants to use the cache for reading, they just need to have the r-o channel.
+`data = [channel]()` but what is the key here?
+Basically an `int!, int?` pair of channels are dumb storages where you read int from `int?` and write int to `int!`.
+But cache is not dumb. you need a key when writing or reading.
+The point is, everything is immutable for concurrent processing and thread safety. 
+If this is provided by channels, what sits behind the channel can be mutable. This is how we manage network socket, file, ...
+We should somehow make the internal map hidden. 
+Let's for now assume the TTL is handled by the caller. We just return the data + timestamp.
+or write data + timestamp.
+So basically it is a channel of `{int, timestamp}`. we write (and manually generate timestamp) and read (and manually check timestamp).
+so the problem is: we want to have a channel that we can write data to and read data from. when writing we pass `{key, data, timestamp}` and when we read we want the data.
+Why not give the whole map when reading? Basically, what we need is the internal map.
+so this means: I create a map and a write-only channel for it. when I need to read, I use the map itself.
+When I want to write, I write through the channel. but won't this cause concurrency issues?
