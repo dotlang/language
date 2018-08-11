@@ -3817,6 +3817,77 @@ but for function definition:
 I think it's allright.
 `sort(data_array, (x:int, y:int -> x-y))`
 
+N - Now that we can support generics, why not provide a list data structure (linked list)? 
+So if the use case is suitable, the developer can use list.
+seq is a fixed size array (start, length(
+list is a variable size list (head)
+so you cannot add anything to a sequence. It is like `int[]` or array type in other languages.
+but can you modify it? No because it is immutable. But of course you can copy it to another sequence and make changes during copy.
+or you can get a slice of it: slice is pointer + length. same as a sequence. so extracting part of sequence is cheap.
+what about list? This is like `ArrayList` in java. So it should be easy to modify but with respect to immutability.
+why would someone use list? because it is cheap to prepend data to it.
+`x = [1;2;3]` x is a pointer to head (1) only. the tail is the one that has nil as next pointer.
+q: can we have circular lists?
+we can save a list as pointer to head + length. so if we add anything to the end, it will be cheap. also to the head.
+let's store list as (head ptr, tail ptr, length). so if we want to add something to the end:
+result will be a new list like (head ptr, tail2 ptr, length+1).
+but one important feature of linekd list is having an iterator.
+if we have an iterator, we can easily get it's next element in the list and move forward.
+to have an iterator we need two things: ptr, tail. why tail? because iterator should not move beyond limits.
+`x = [1;2;3;4]`
+`y = x + [5;]`
+`z = [6;] + y`
+we will also need a new type: iterator which is a pointer to a list element and it's tail.
+`x = [1;2;3;4]`
+`y = &x` then y is an iterator
+how do we represent these new types?
+`x = [1;2;3]` type of x is `x:[int;]`
+`y=&x` type of y is `int;`
+`z=y;` z is next element. what if y is already pointing to the last one? we will have runtime error. like refering to an element outside sequence.
+how can I check if x is the last element? 
+how can I dereference an iterator? `*x`
+rather than having an iterator why not re-use the slice concept?
+A slice of a list is similar to slice of sequence.
+```
+x=[1;2;3;4]
+x:[int;]
+y=x[0] #get one element (sequential access)
+z=x[10]
+t=x[1..] a new list starting from second element
+r = x[2..4] sublist - note that list has head, tail and lenght
+```
+can't we implement singly linked list?
+We can have all these as functions in core or std.
+`LinkedList = (t: type -> {data: $t, next: LinkedList(t)})`
+It will be more flexible if we give programmers tools to do it themselves their own way, rather than giving everyone the same implementation.
+maybe we can even eliminate map.
+It may be worth it if we can ignore this list proposal and also remove map. but we won't have map literals.
+
+N - can we implement sequence via generics and some core functions?
+we can have an `alloc` function in core which can be called to allocate (and assign) a memory region.
+we cannot do assignment and allocation separately.
+But how are we going to assign without another sequence?
+if we have a literal, it can be used by the compiler to generate code.
+`x: seq(int)`
+then `[]` will be rarely used!
+we also use sequence literal for channels.
+but what is advantage of removing sequence from the language? everyone needs sequence and the implementation is not very complex/complicated.
+they will have to do what has been eliminated from the lanugage.
+
+N - Can we remove map from built-in types?
+`map = (k: type, v: type -> ...)`
+If we can give tools and techniques to implement a map outside core language it will be worth it.
+Because then people can implement all the different types of maps.
+In order to implement a map, we need a linked list (can be done via generics) and a sequence (built-in).
+but we need map literals for polymorphism. if we remove this from language, how can we define a list of functions for call per type?
+`x: map(int, string)`
+why someone would want to have a custom map? we have these in java: EnumMap, TreeMap, LinkedHashMap.
+A map is a linked list (can be done via generics) and a sequence (built-in). 
+So why have map in the language?
+1. for polymorphism
+2. for 90% of the needs the simple map will suffice
+3. to support map literals
+
 ? - We can add interface/protocol as an other type of type. So when declaring a function, it's input type can be int or Eq.
 Where `Eq` is a type which is not a data type but a functionality type.
 Data type: `Point = {x:int, y:int}`
@@ -4310,43 +4381,71 @@ If two threads peek and one of them removes the data, the other will still think
 ? - Use `+` instead of `&` for map/seq update.
 Then we can also use `-` to remove from map.
 
-? - Now that we can support generics, why not provide a list data structure (linked list)? 
-So if the use case is suitable, the developer can use list.
-seq is a fixed size array (start, length(
-list is a variable size list (head)
-so you cannot add anything to a sequence. It is like `int[]` or array type in other languages.
-but can you modify it? No because it is immutable. But of course you can copy it to another sequence and make changes during copy.
-or you can get a slice of it: slice is pointer + length. same as a sequence. so extracting part of sequence is cheap.
-what about list? This is like `ArrayList` in java. So it should be easy to modify but with respect to immutability.
-why would someone use list? because it is cheap to prepend data to it.
-`x = [1;2;3]` x is a pointer to head (1) only. the tail is the one that has nil as next pointer.
-q: can we have circular lists?
-we can save a list as pointer to head + length. so if we add anything to the end, it will be cheap. also to the head.
-let's store list as (head ptr, tail ptr, length). so if we want to add something to the end:
-result will be a new list like (head ptr, tail2 ptr, length+1).
-but one important feature of linekd list is having an iterator.
-if we have an iterator, we can easily get it's next element in the list and move forward.
-to have an iterator we need two things: ptr, tail. why tail? because iterator should not move beyond limits.
-`x = [1;2;3;4]`
-`y = x + [5;]`
-`z = [6;] + y`
-we will also need a new type: iterator which is a pointer to a list element and it's tail.
-`x = [1;2;3;4]`
-`y = &x` then y is an iterator
-how do we represent these new types?
-`x = [1;2;3]` type of x is `x:[int;]`
-`y=&x` type of y is `int;`
-`z=y;` z is next element. what if y is already pointing to the last one? we will have runtime error. like refering to an element outside sequence.
-how can I check if x is the last element? 
-how can I dereference an iterator? `*x`
-rather than having an iterator why not re-use the slice concept?
-A slice of a list is similar to slice of sequence.
+? - Should we remove map from built-in types?
+`[int:string]` -> `map(int, string)`
+`[1:2, 3:4]` -> `createMap({1,2}, {3,4})`
+q: How are we going to handle polymorphism?
+q: We will need to add support for varargs?
 ```
-x=[1;2;3;4]
-x:[int;]
-y=x[0] #get one element (sequential access)
-z=x[10]
-t=x[1..] a new list starting from second element
-r = x[2..4] sublist - note that list has head, tail and lenght
+process = (data: int...) 
+{
+    x = getVarArg(data, 0)
+	cnt = getVarArgCount(data)
+}
 ```
-can't we implement singly linked list
+Adding support for vararg is easy.
+But what is input of the `map` function?
+We can define `1:2:3` as a shortcut to define a struct.
+so:
+```
+map = (k: type, v: type, data: {$k,$v}...)
+{
+}
+#calling map:
+x = map(int, string, 1:"A", 2:"B", 3:"C")
+y: map(int, string)
+z = y[4]
+```
+and we can say `binding[arguments]` will call `get` function.
+`binding(arg)` is same as `get(type, binding, arg)`
+if we use `1:"A"` notation to define a struct, there will be two ways to define struct literal which I don't like.
+`x = 1:"A":3.4`
+Let's for now discard this `:` notation and use `{}` notation.
+```
+map = (k: type, v: type, data: {$k,$v}...)
+{
+}
+#calling map:
+x = map(int, string, {1,"A"}, {2,"B"}, {3,"C"})
+y: map(int, string)
+z = y[4]
+```
+advantage: if developer wants, they can define a map with two keys.
+summary:
+1. Add support for varargs
+2. Introduce `binding[args]` notation
+3. drop `1:"A"` notation for map literals.
+4. they will be `Seq` and `Map`
+q: Polymorphism: we have multiple functions `drawCircle`, `drawSquare` and `drawTriangle`.
+We want to call appropriate function when we have a `Shape` binding.
+
+
+
+? - How will it look like if we use generics for seq and map?
+This is quite possible (with support from core functions for alloc) except for literals.
+`[1,2,3]` what should be called for this?
+what if I use `seq[1,2,3]` so it will call creator for seq for int?
+and `map[1:2, 3:4]` call map creator?
+and of course developer can use their own types:
+`myType[1:2:3, 1:2:4, 1:2:9]`
+So this will be a shortcut for binding initialization.
+`x = seq[1,2,3]`
+`y = map[1:2, 3:4]`
+can we follow the same for a struct? no. because it is different.
+`type[data1:data2:data3]` will call appropriate function: `type(data1, data2, data3)`
+So these are special functions (because their casing is not like normal functions).
+two special functions `seq` and `map` are defined in core.
+what about access? `x[0]` or `data["A"]`?
+we can say that `x[0]` will call `get(x,0)` but it will be hidden and non obvious.
+if we allow varargs, we can normally define seq and map functions in std.
+but if seq becomes a function, it will be generic, then we will have to write: `seq[int, 1, 2, 3]`.
