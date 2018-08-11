@@ -4314,3 +4314,39 @@ Then we can also use `-` to remove from map.
 So if the use case is suitable, the developer can use list.
 seq is a fixed size array (start, length(
 list is a variable size list (head)
+so you cannot add anything to a sequence. It is like `int[]` or array type in other languages.
+but can you modify it? No because it is immutable. But of course you can copy it to another sequence and make changes during copy.
+or you can get a slice of it: slice is pointer + length. same as a sequence. so extracting part of sequence is cheap.
+what about list? This is like `ArrayList` in java. So it should be easy to modify but with respect to immutability.
+why would someone use list? because it is cheap to prepend data to it.
+`x = [1;2;3]` x is a pointer to head (1) only. the tail is the one that has nil as next pointer.
+q: can we have circular lists?
+we can save a list as pointer to head + length. so if we add anything to the end, it will be cheap. also to the head.
+let's store list as (head ptr, tail ptr, length). so if we want to add something to the end:
+result will be a new list like (head ptr, tail2 ptr, length+1).
+but one important feature of linekd list is having an iterator.
+if we have an iterator, we can easily get it's next element in the list and move forward.
+to have an iterator we need two things: ptr, tail. why tail? because iterator should not move beyond limits.
+`x = [1;2;3;4]`
+`y = x + [5;]`
+`z = [6;] + y`
+we will also need a new type: iterator which is a pointer to a list element and it's tail.
+`x = [1;2;3;4]`
+`y = &x` then y is an iterator
+how do we represent these new types?
+`x = [1;2;3]` type of x is `x:[int;]`
+`y=&x` type of y is `int;`
+`z=y;` z is next element. what if y is already pointing to the last one? we will have runtime error. like refering to an element outside sequence.
+how can I check if x is the last element? 
+how can I dereference an iterator? `*x`
+rather than having an iterator why not re-use the slice concept?
+A slice of a list is similar to slice of sequence.
+```
+x=[1;2;3;4]
+x:[int;]
+y=x[0] #get one element (sequential access)
+z=x[10]
+t=x[1..] a new list starting from second element
+r = x[2..4] sublist - note that list has head, tail and lenght
+```
+can't we implement singly linked list
