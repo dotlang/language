@@ -4441,6 +4441,27 @@ summary:
 2. Introduce `binding[args]` notation to read from seq and map
 3. drop `1:"A"` notation for map literals.
 4. they will be `Seq` and `Map`
+`type[a,b,c,d]` will call function `type` with vararg input with given inputs. this will cover both seq and map. 
+`binding[a]` will call `get(type, binding, a)` where `type` deduced from type of binding.
+q: what about multi-d sequence?
+q: what about channel operations? read and write?
+q: What about append/prepend to seq and map? specially for polymorphism usage.
+`x: Seq[Seq[int]]`
+`x = [[1,2,3],[4,5,6]]`
+`y = x[0][0]` read from multi-d array
+The way to call a vararg function is using `[]` notation.
+`seq = (t: Type, data:T... -> Seq[T])`
+to call seq: `seq(int, 1, 2, 3, 4)`
+`map = (K: type, V: type, data: {K,V}... -> Map[K,V])`
+to call map: `map(int, string, {1, "A"}, {2, "B"})`
+so: there is no special treatment for literals for seq and map.
+what about reading?
+`Type[X]` is a generic type initialisation
+`binding[X]` is a call to function: `get`
+`get(int, binding, X)` If we follow this, we will need to add additional notations for range and slice.
+Let's just use `get` function.
+`get = (T: type, seq: Seq[T], index: int -> T) { ... }`
+`get = (K: type, V: type, map: Map[K,V], index: K -> V)`
 
 
 ? - Polymorphism without built-in map?
@@ -4499,6 +4520,30 @@ draw[$my_shape](my_shape)
 So we will need a notation to get internal type of a union.
 summary:
 1. We will need a notation or a function to get internal type of a union.
+But i really don't need a map or even a sequence to store these data. I even can do it via a linked list.
+Prepending to a linked list is cheap.
+So I won't need any of those notations. I just need to keep track of head of a singly linked list.
+And calling a function using this linked list can be easily done via a few number of generic functions.
+`CandidateList = [T: type -> {T: type, Actual: T, handler: (T->), next: nothing|CandidateList[T]]` here T would be Shape.
+We just initialize a struct (and re-initialise it). no function call, no special functions, no concurrency problems, ...
+Order of execution does not matter because it will just change order of items in the linked list.
+```
+CandidateList = [T: type -> {T: type, Actual: type, handler: (T->), next: nothing|CandidateList[T]]
+shape_handlers = CandidateList[Shape]{Shape, Circle, drawCircle, nothing}
+...
+shapen_handlers = CandidateList[Shape]{Shape, Square, drawSquare, shape_handlers}
+shapen_handlers = CandidateList[Shape]{Shape, Triangle, drawTriangle, shape_handlers}
+...
+draw = (s: Shape, element: nothing|CandidateList[Shape] -> ) {
+	xel = element // shape_handlers
+	if xsel.actual type is same as internal type of s then call xsel.handler(s)
+	else recursively call with xsel.next
+}
+```
+Can we also get rid of the notation for unions for `Shape`?
+We can store all possible types for Shape in another linked list. but what will be type of CandidateList?
+can we make `draw` generic? to be called with appropriate type? but what will be handler's type?
+
 
 ? - Can we use `[]` for generic types?
 Depends on how we are going to represent seq and map's access.
@@ -4521,3 +4566,5 @@ what about access? `x[0]` or `data["A"]`?
 we can say that `x[0]` will call `get(x,0)` but it will be hidden and non obvious.
 if we allow varargs, we can normally define seq and map functions in std.
 but if seq becomes a function, it will be generic, then we will have to write: `seq[int, 1, 2, 3]`.
+
+? - Can we use `_` in places where compiler can infer types needed in a generic type or funtin invocation.
