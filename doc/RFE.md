@@ -4571,9 +4571,11 @@ TT = Type(shape_handlers) #this is evaluated by the compiler
 draw = (T: type, obj: T, handlers: TT -> ) {
 	current = handlers
 	if current.type == T then call current.handler(obj)
-	else call draw(T, obj, handlers.next)
+	else call draw(T, obj, handlers.next) #we dont have type of handlers.next
 }
 ```
+But even if we can write draw function without an issue, how are we going to store shapes in a sequence?
+what is a union? can we replace union with generics + struct?
 
 ? - Can we use `[]` for generic types?
 Depends on how we are going to represent seq and map's access.
