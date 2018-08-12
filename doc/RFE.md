@@ -4543,7 +4543,37 @@ draw = (s: Shape, element: nothing|CandidateList[Shape] -> ) {
 Can we also get rid of the notation for unions for `Shape`?
 We can store all possible types for Shape in another linked list. but what will be type of CandidateList?
 can we make `draw` generic? to be called with appropriate type? but what will be handler's type?
+```
+CandidateList = [T: type -> {T: type, Actual: type, handler: (T->), next: nothing|CandidateList[T]]
+shape_handlers = {type: Circle, handler: drawCircle, next: nothing}
+...
+shape_handlers = {type: Square, handler: drawSquare, next: shape_handlers}
+shape_handlers = {type: Triangle, handler: drawTriangle, next: shape_handlers}
+...
+#use underscore to ask for compiler's help to infer type of shape_handlers
+draw = (T: type, obj: T -> drawInner(T, _, obj, shape_handlers))
 
+drawInner = (T: type, S: type, obj: T, handlers: S -> ) {
+	current = handlers
+	if current.type == T then call current.handler(obj)
+	else call drawInner(T, _, obj, handlers.next)
+}
+```
+Or we can have a notation to extract type of a binding:
+```
+shape_handlers = {type: Circle, handler: drawCircle, next: nothing}
+...
+shape_handlers = {type: Square, handler: drawSquare, next: shape_handlers}
+shape_handlers = {type: Triangle, handler: drawTriangle, next: shape_handlers}
+TT = Type(shape_handlers) #this is evaluated by the compiler
+...
+#use underscore to ask for compiler's help to infer type of shape_handlers
+draw = (T: type, obj: T, handlers: TT -> ) {
+	current = handlers
+	if current.type == T then call current.handler(obj)
+	else call draw(T, obj, handlers.next)
+}
+```
 
 ? - Can we use `[]` for generic types?
 Depends on how we are going to represent seq and map's access.
