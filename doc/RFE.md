@@ -3888,7 +3888,7 @@ So why have map in the language?
 2. for 90% of the needs the simple map will suffice
 3. to support map literals
 
-? - We can add interface/protocol as an other type of type. So when declaring a function, it's input type can be int or Eq.
+N - (moved summary to another item) We can add interface/protocol as an other type of type. So when declaring a function, it's input type can be int or Eq.
 Where `Eq` is a type which is not a data type but a functionality type.
 Data type: `Point = {x:int, y:int}`
 Func type: `Set[T] = { size: (->int), add: (T->Set[T]) }`
@@ -4292,11 +4292,6 @@ so we have two options to implement polymorphism in an extensible way to solve e
 The second option is more explicit and has less hidden parts and gives the developer more control.
 We can specialise in generics but that specialisation will not be extensible.
 we cannot prohibit using maps (same structure as above) inside a generic function but it will not give you an open specialisation.
-**Summary:**
-1. We will have a new data type `type` whose values are any actual type (`int` or `string` or `Customer`).
-2. If you have a binding of type T called x, you can use `$x` to create a type based on it (e.g. `process = (t: T, x: [$t] -> ...)`).
-3. `T` arguments of a function must be evaluated at compile time.
-4. Polymorphism is still provided using dynamic compile time union and map of type to functions.
 ```
 CacheElement = (t:Type -> {data: $t, expiration: Timestamp})
 Cache = (t: Type -> {data: [string:CacheElement(t)], lifetime: int, reloader: (string->$t)})
@@ -4313,20 +4308,28 @@ read = (t: Type, key: string, c: Cache(t) -> {Cache(t), %t} )
 }
 ```
 
-? - Allow modify a struct using `new_point = current_point{x:10}`
+N - How can we mock? for testing. e.g. another function or time.
 
-? - How can we mock? for testing. e.g. another function or time.
+N - Can we de-generic a function?
+`process = (T: type, data: T->)...`
+`processInt = (data: int -> process(int, data))`
 
-? - Why can't we have a thread-safe map which can be modified in place? Does it have conflic with language's immutability promises?
+
+N - Can we remove `$` from generics notation?
+`process = (T: type, x: T)`
+yes. will be applied to the main item.
+
+N - Allow modify a struct using `new_point = current_point{x:10}`
+
+N - Why can't we have a thread-safe map which can be modified in place? Does it have conflic with language's immutability promises?
 I think it does.
 
+N - `t[$]` and `t[$:]` and `t[:$]` to refer to internal type of an array or a map. in generics.
 
-? - `t[$]` and `t[$:]` and `t[:$]` to refer to internal type of an array or a map. in generics.
-
-? - With current geneics proposal, types are bindings too.
+N - With current geneics proposal, types are bindings too.
 `Data = int` type of Data is `type`
 
-? - Why not give a function access to it's previous call result?
+N - Why not give a function access to it's previous call result?
 This can be used for caching so the function is responsible for caching.
 We give previous result + timestamp + previous inputs.
 or better yet, we can have a private function-level map. but this will be too flexible.
@@ -4378,6 +4381,18 @@ data = [reader]() #read from cache
 But peek is inherently conflicting with the promise of channels.
 If two threads peek and one of them removes the data, the other will still think data is there.
 
+N - For generics, type arguments should be named just like types.
+
+
+
+? - Generics
+**Summary:**
+1. We will have a new data type `type` whose values are any actual type (`int` or `string` or `Customer`). Internally it is integer, so that we can use it to get internal type inside a union. Arguments of type `type` must be named like other types nor like bindings.
+2. If you have a binding of type T called x, you can use `T` to create a type based on it (e.g. `process = (T: type, x: [T] -> ...)`).
+3. `T` arguments of a function must be evaluated at compile time.
+4. Polymorphism is still provided using dynamic compile time union and map of type to functions.
+
+
 ? - Use `+` instead of `&` for map/seq update.
 Then we can also use `-` to remove from map.
 
@@ -4426,10 +4441,67 @@ summary:
 2. Introduce `binding[args]` notation
 3. drop `1:"A"` notation for map literals.
 4. they will be `Seq` and `Map`
+
+
+? - Polymorphism without built-in map?
 q: Polymorphism: we have multiple functions `drawCircle`, `drawSquare` and `drawTriangle`.
 We want to call appropriate function when we have a `Shape` binding.
+Now if we remove seq and map from buit-in types, we either have to allow writing dynamic code in module level or provide polymorphism somehow else.
+dynamic code:
+`x = Map[Circle: drawCircle]`
+`x = append(x, [Square: drawSquare])` this is not intuitive and also is confusing.
+what will be the order and time of execution of module level code?
+other solutions:
+1. name generation: `draw = (T: type, x: $t -> draw$t(x))`
+but this won't work. because `T` will be Shape which is `Circle | Square | Triangle`. 
+What if we have some special funcion pointer in each of circle, square and other types.
+if it is the first item and has the same name and type across all types, can we refer to it through a circle binding?
+```
+Circle = {ptr, radius: float}
+Square = {ptr, edge: int}
+Shape = Circle | Square
+x: Shape ...
+#can I access to x.ptr?
+```
+Even if I do, what is the point of ptr? What can it do?
+Note that if we store a pointer to draw function in ptr, we will still have problems because adding a new function (operation) like print will not be possible.
+Haskell has type classes where you define some kind of interface which contains list of functions that your type should support.
+Then you can call those functions for a type in generic function or anywhere. But these type classes are not extensible.
+what if we are given a function pointer that does the job?
+`process = (x: Shape, ptr: (???`
+but what will be type of that function pointer? And how is it going to be created?
+```
+process = (T: type, S: type, shape: $T, converter: ($T->$S), draw: ($S->))
+{
+	circle = converter(shape)
+	draw(circle)
+}
+```
+no. 
+what if we follow Haskell's way and define a protocol, just like a normal function.
+`protocol = (T: type, data: T->)` e.g. a protocol to draw something
+`protocol = (T: Circle, data: Circle->) ...` implementation of that protocol for Circle type
+we can follow the same to implement protocol for other types.
+then if we write:
+`process = (T: type, draw: (T->)) ...`
+All other solutions rely on functions with the same name but for different types. 
+I don't want to have multiple functions with the same name.
+If I use different functions for different types, there must be a way to determine which function should be called.
+That way can be a map or a convention.
+But even if we use a map, type of map's value will be too complicated. what if I need to pass that map to some other code?
+one solution: use a map but key is type and value is `(Shape->)` rather than different types. So map's type is simple.
+```
+draw = map[{Circle, drawCircle}, {Square, drawSquare}]
+draw = draw + {Triangle, drawTriangle} #what happens to immutability?
+my_shape = getShape()
+draw[$my_shape](my_shape)
+```
+So we will need a notation to get internal type of a union.
+summary:
+1. We will need a notation or a function to get internal type of a union.
 
-
+? - Can we use `[]` for generic types?
+Depends on how we are going to represent seq and map's access.
 
 ? - How will it look like if we use generics for seq and map?
 This is quite possible (with support from core functions for alloc) except for literals.
