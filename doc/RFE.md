@@ -4438,7 +4438,7 @@ z = y[4]
 advantage: if developer wants, they can define a map with two keys.
 summary:
 1. Add support for varargs
-2. Introduce `binding[args]` notation
+2. Introduce `binding[args]` notation to read from seq and map
 3. drop `1:"A"` notation for map literals.
 4. they will be `Seq` and `Map`
 
