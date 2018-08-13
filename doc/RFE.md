@@ -4576,6 +4576,53 @@ draw = (T: type, obj: T, handlers: TT -> ) {
 ```
 But even if we can write draw function without an issue, how are we going to store shapes in a sequence?
 what is a union? can we replace union with generics + struct?
+Actually a union is a pointer + type identifier: `any + type` But adding any is a lot of change and we will loose type checking.
+The other option is a super type which indicates union of all structs that have a specific field `x: {Shape*}`
+or, can we do it using functions? union of all types that support X function.
+```
+This is a type definition which is generic. but the ingredient of the type is an expression, so this type represents all Ts that meet this criteria
+Shape = [T: type -> isShape(T)] #Shape is Circle|Square|... : all types that have this function defined
+Comparable = [T: type -> eq(T,T->bool)]
+```
+q: If we follow this path, what will happen for multi-type protocols?
+q: What will change in polymorphic call in this case?
+A protocol specifies a set of types (or a set of type tuples) like `int, string, bool, Customer, Data` or `{int, float}, {Customer, Data}, ...`
+So it is a set of types or structs of types.
+`x:int` x is a single parameter of type int
+`y:T` y is a single parameter of type T which is unknown
+`y:T+Protocol` y is unknown specified by the caller but it is bound by Protocol set (it must be a member of that set)
+Basically this is a membership check. We can think of protocol as a function that returns true if given type is one of it's members.
+`T: type, x: T` x can be any type
+`T: type, x: MyProtocol[T]` x is any type T which is a member of MyProtocol
+type means membership to a set of valid possible allowed values. e.g. int means 1 or 2 or 3 or ...
+Similarly MyProtocol means a membership, so we no longer need `type` keyword.
+A protocol is a subset of `type` just like positive integer which is a subset of int.
+Just like we define a customer as a subset of all structs, we can define a protocol as a subset of types.
+`Hashable = [T: type -> hashCode(T)]` any type can be Hashable only if it has certain functions defined for it.
+can we use `Hashable` in a non-generic way? using this will make function generic.
+`getHash = (T: Hashable, x: T ...)` or `getHash = (x: Hashable ...)`
+`draw = (T: Drawable, x: T, ...)`
+this protocol concept is not simple and intuitive and it is difficult to make it simple.
+Why not switch to data? A protocol based on data.
+`X: {size:int}`
+How can we write `size` or `hash` functions? These are not based on struct or any special data?
+In this case we need to use functions as the discrimination factor.
+`size` will return number of elements in sequence or map. or for linked list, we want to return number of elements in the list.
+Just like using `x.name` when we define `x: Person` 
+we should be able to write `draw(x)` when define `x: Drawable`. but we cannot have functions with the same name. 
+also we can achieve above using function pointers too.
+Suppose that we want to calculate size of something: `getSize = (T: type, data: T, internalGetSize: (T->int))` we can do it via function pointer.
+the original problem: saving different types in a single binding: `Circle | Square | Triangle`
+`Shape = Circle | Square | Triangle`
+`x: Shape` means x can be either of 3 different shapes.
+then calling `draw(x)` means we have one and only one function.
+another way: define draw protocol, imeplement it for circle using drawCircle and ...
+Then calling draw on something of this type, will call appropriate function.
+I need some kind of pipe that is connected to different functions for different types (or any other kind of logic).
+I want this pipe to be extensible so I can add new logic/types/functions to it easily. 
+So it is not just one function. Because it won't be extensible.
+But I have this pipe! It is the linked list I have introduced above.
+The problem is type of elements of the pipe
 
 ? - Can we use `[]` for generic types?
 Depends on how we are going to represent seq and map's access.
