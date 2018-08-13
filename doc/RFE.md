@@ -4622,7 +4622,75 @@ I need some kind of pipe that is connected to different functions for different 
 I want this pipe to be extensible so I can add new logic/types/functions to it easily. 
 So it is not just one function. Because it won't be extensible.
 But I have this pipe! It is the linked list I have introduced above.
-The problem is type of elements of the pipe
+The problem is type of elements of the pipe.
+We can follow the same approach for Shape type: Shape is a linked list of all possible options:
+```
+Shape = {c: Circle|nothing, next: nothing}
+Shape = {s: Square|nothing, next: Shape}
+Shape = {t: Triangle|nothing, next: Shape}
+...
+x: Shape
+if x.c is nothing, try x.next, else we have a circle in x.c
+if x.s is nothing, try x.next, else we have a square
+...
+```
+We can easily extend above: to introduce a new shape just add a new one to the end of Shape struct.
+To have a sequence of shapes: `x: Seq[Shape]` or we can specialise it: 
+```
+ShapeList = {circles: Seq[Circle], next: nothing}
+ShapeList = {squares: Seq[Square], next: ShapeList}
+ShapeList = {triangles: Seq[Triangle], next: ShapeList}
+...
+x: ShapeList
+...
+```
+If order is important however, we need to use `Seq[Shape]`
+So generics + struct is all we need.
+How does it work when combined with polymorphic functions?
+```
+Shape = {c: Circle|nothing, next: nothing}
+Shape = {s: Square|nothing, next: Shape}
+Shape = {t: Triangle|nothing, next: Shape}
+...
+x: Shape
+...
+CandidateList = [T: type -> {T: type, Actual: type, handler: (T->), next: nothing|CandidateList[T]]
+shape_handlers = CandidateList[Shape]{Shape, Circle, drawCircle, nothing}
+...
+shape_handlers = CandidateList[Shape]{Shape, Square, drawSquare, shape_handlers}
+shape_handlers = CandidateList[Shape]{Shape, Triangle, drawTriangle, shape_handlers}
+...
+draw = (s: Shape, element: nothing|CandidateList[Shape] -> ) {
+	xel = element // shape_handlers
+	if xsel.actual type is same as internal type of s then call xsel.handler(s)
+	else recursively call with xsel.next
+}
+```
+Suppose that we have a Shape. How can I know it's internal type?
+I will need to write a recursive code to go through a list. 
+But this is not a real linked list. because element types are not the same.
+solution: Allow using `Type[?]` as a type identifier.
+This is only compile time, so the type must be determined by compiler at compile time.
+And it is only allowed as argument type. You cannot use this to define a new type or a module level binding.
+```
+Shape = {c: Circle|nothing, next: nothing}
+Shape = {s: Square|nothing, next: Shape}
+Shape = {t: Triangle|nothing, next: Shape}
+...
+x: Shape
+...
+CandidateList = [T: type -> {T: type, handler: (T->), next: nothing|CandidateList[?]]
+shape_handlers = CandidateList[Circle]{Circle, drawCircle, nothing}
+...
+shape_handlers = CandidateList[Square]{Square, drawSquare, shape_handlers}
+shape_handlers = CandidateList[Shape]{Triangle, drawTriangle, shape_handlers}
+...
+draw = (s: Shape, element: nothing|CandidateList[Shape] -> ) {
+	xel = element // shape_handlers
+	if xsel.actual type is same as internal type of s then call xsel.handler(s)
+	else recursively call with xsel.next. It's type is CandidateList[?]
+}
+```
 
 ? - Can we use `[]` for generic types?
 Depends on how we are going to represent seq and map's access.
