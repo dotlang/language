@@ -4673,9 +4673,10 @@ solution: Allow using `Type[?]` as a type identifier.
 This is only compile time, so the type must be determined by compiler at compile time.
 And it is only allowed as argument type. You cannot use this to define a new type or a module level binding.
 ```
-Shape = {c: Circle|nothing, next: nothing}
-Shape = {s: Square|nothing, next: Shape}
-Shape = {t: Triangle|nothing, next: Shape}
+ShapeElement[T] = {element: T|nothing, next: ShapeElement[?]|nothing}
+Shape = ShapeElement[Circle]{element: Circle|nothing, next: nothing}
+Shape = ShapeElement[Square]{s: Square|nothing, next: Shape}
+Shape = ShapeElement[Triangle]{t: Triangle|nothing, next: Shape}
 ...
 x: Shape
 ...
