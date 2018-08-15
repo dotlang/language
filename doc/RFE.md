@@ -4470,6 +4470,15 @@ summary:
 `type[a,b,c,d]` will call function `type` with vararg input with given inputs. this will cover both seq and map. 
 `binding[a]` will call `get(type, binding, a)` where `type` deduced from type of binding.
 q: what about channel operations? read and write?
+`data = [channel]()`
+`[writer](data)`
+why not use functions?
+```
+#these must be defined in core but they have a generic prototype
+data = receive(channel)
+send(writer, data)
+data, channel = select(
+```
 
 ? - Polymorphism without built-in map? This can be done via a linked list.
 q: Polymorphism: we have multiple functions `drawCircle`, `drawSquare` and `drawTriangle`.
@@ -4800,3 +4809,4 @@ but if seq becomes a function, it will be generic, then we will have to write: `
 ? - Can we use `_` in places where compiler can infer types needed in a generic type or funtin invocation.
 We can do this via `?` notation but disadvantage of `?` is that we have to say: it cannot be used in function output type.
 But `_` is easier to interpret.
+Anyway, it seems that we don't need `?` notation.
