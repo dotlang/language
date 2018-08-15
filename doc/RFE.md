@@ -3897,7 +3897,7 @@ An interface type is a strcut type which only contains function pointers.
 `sort = (x:[Comparable]->[Comparable])`
 or: A set is a collection of elements of type T which are all ordered.
 Ordered is a type that has compare function.
-`Ordered[?] = { compare: (?,? -> bool) }`
+`Ordered[?] = { compare: (?,?-> bool) }`
 `Set[?] = { _: Ordered[?] }`
 If we enable `?` notation, then we should allow it to be used to define stack:
 `Stack[?] = [?]`
@@ -4443,9 +4443,9 @@ summary:
 4. they will be `Seq` and `Map`
 `type[a,b,c,d]` will call function `type` with vararg input with given inputs. this will cover both seq and map. 
 `binding[a]` will call `get(type, binding, a)` where `type` deduced from type of binding.
-q: what about multi-d sequence?
+q: what about multi-d sequence? `Seq[Seq[int]]`
 q: what about channel operations? read and write?
-q: What about append/prepend to seq and map? specially for polymorphism usage.
+q: What about append/prepend to seq and map? specially for polymorphism usage. There is another item for this. We no longer use map and sequence for polymorphism.
 `x: Seq[Seq[int]]`
 `x = [[1,2,3],[4,5,6]]`
 `y = x[0][0]` read from multi-d array
@@ -4462,9 +4462,16 @@ what about reading?
 Let's just use `get` function.
 `get = (T: type, seq: Seq[T], index: int -> T) { ... }`
 `get = (K: type, V: type, map: Map[K,V], index: K -> V)`
+summary:
+1. Add support for varargs
+2. Introduce `binding[args]` notation to read from seq and map
+3. drop `1:"A"` notation for map literals.
+4. they will be `Seq` and `Map`
+`type[a,b,c,d]` will call function `type` with vararg input with given inputs. this will cover both seq and map. 
+`binding[a]` will call `get(type, binding, a)` where `type` deduced from type of binding.
+q: what about channel operations? read and write?
 
-
-? - Polymorphism without built-in map?
+? - Polymorphism without built-in map? This can be done via a linked list.
 q: Polymorphism: we have multiple functions `drawCircle`, `drawSquare` and `drawTriangle`.
 We want to call appropriate function when we have a `Shape` binding.
 Now if we remove seq and map from buit-in types, we either have to allow writing dynamic code in module level or provide polymorphism somehow else.
@@ -4677,8 +4684,11 @@ ShapeElement[T] = {element: T|nothing, next: ShapeElement[?]|nothing}
 Shape = ShapeElement[Circle]{element: Circle|nothing, next: nothing}
 Shape = ShapeElement[Square]{s: Square|nothing, next: Shape}
 Shape = ShapeElement[Triangle]{t: Triangle|nothing, next: Shape}
+Shape = [T: type -> T] #it acts only as a marker
+Circle = Shape[{r: float}]
+Square = Shape[{s: int}]
 ...
-x: Shape
+x: Shape[?]tcu
 ...
 CandidateList = [T: type -> {T: type, handler: (T->), next: nothing|CandidateList[?]]
 shape_handlers = CandidateList[Circle]{Circle, drawCircle, nothing}
@@ -4686,15 +4696,87 @@ shape_handlers = CandidateList[Circle]{Circle, drawCircle, nothing}
 shape_handlers = CandidateList[Square]{Square, drawSquare, shape_handlers}
 shape_handlers = CandidateList[Shape]{Triangle, drawTriangle, shape_handlers}
 ...
-draw = (s: Shape, element: nothing|CandidateList[Shape] -> ) {
+draw = (s: Shape[?], element: nothing|CandidateList[?] -> ) {
 	xel = element // shape_handlers
-	if xsel.actual type is same as internal type of s then call xsel.handler(s)
+	is_match = Shape[xel.T] == Type(s) #???
+	if is a match then call element.handler
 	else recursively call with xsel.next. It's type is CandidateList[?]
 }
+readShape = (f: FileChannel -> s: Shape)
 ```
+q: Can we use `?` in the function output?
+q: It seems that we also need a notation to check or match type of `?` with something else.
+What if i can use update on types?
+```
+ShapeDef = [T1: type, T2: type -> T1 | T2]
+Shape = ShapeDef[Circle, Square]
+Shape = ShapeDef[Shape, Triangle]
+Shape = ShapeDef[Shape, Rectangle]
+```
+But this is same as what we already have:
+```
+Shape = Circle | Square
+Shape = Shape | Triangle
+Shape = Shape | Rectangle
+```
+ok. Let's say we have this notation. What happens to other parts?
+```
+readShape = (f: FileChannel -> s: Shape)
+CandidateList = [T: type -> {T: type, handler: (T->), next: nothing|CandidateList[?]]
+shape_handlers = CandidateList[Circle]{Circle, drawCircle, nothing}
+...
+shape_handlers = CandidateList[Square]{Square, drawSquare, shape_handlers}
+shape_handlers = CandidateList[Shape]{Triangle, drawTriangle, shape_handlers}
+...
+mainDraw = (s: Shape -> draw(s, shape_handlers))
+draw = (s: Shape, element: CandidateList[?] -> ) { #here is where we need ?
+	value, is_valid = element.T(s)
+	if is_valid then call element.handler(s)
+	if element.next is nothing then return
+	else recursively call with element.next
+}
+```
+one point is: we can include any handler in shape_handlers, even if they are not shape. We can limit this by adding a new notation to constraint generic type but it will add more complexity.
+Another idea: Make functions resilient! They accept Shape, return nothing if it is not what they expect.
+```
+readShape = (f: FileChannel -> s: Shape)
+CandidateList = {target: type, handler: (Shape->), next: nothing|CandidateList]
+shape_handlers = CandidateList{target: Circle, handler: drawCircle, next: nothing}
+...
+shape_handlers = CandidateList{Square, drawSquare, shape_handlers}
+shape_handlers = CandidateList{Triangle, drawTriangle, shape_handlers}
+draw = (s: Shape, element: CandidateList -> ) { #here is where we need ?
+	if element.handler(s) is not nothing then return
+	if element.next is nothing then return
+	else recursively call with element.next
+}
+```
+Any of above can be implemented. This is because of the flexibility that we offer.
+If we follow this, we don't need to include "target" type in candidate list.
+```
+CandidateList = {handler: (Shape->), next: nothing|CandidateList]
+shape_handlers = CandidateList{drawCircle, nothing}
+...
+shape_handlers = CandidateList{drawSquare, shape_handlers}
+shape_handlers = CandidateList{drawTriangle, shape_handlers}
+draw = (s: Shape, element: CandidateList -> ) { #here is where we need ?
+	if element.handler(s) is not nothing then return
+	if element.next is nothing then return
+	else recursively call with element.next
+}
+```
+But then we will need to call/examine each handler. which may not be very cheap.
+Anyway, both ways are possible. waaaait! In this case, we no longer need `?` notation. Even in previous case we don't need it.
+`?` was needed because we were using generics to define handlers. But we don't need to.
+Each handler is a type and a handler and next. type has a fixed type `type`, handler is fixed `(Shape->)` and so is next.
+
+? - Can't we replace union with a generic struct?
+
+? - Can we have variadic generic type and funtion?
 
 ? - Can we use `[]` for generic types?
 Depends on how we are going to represent seq and map's access.
+We will probably can.
 
 ? - How will it look like if we use generics for seq and map?
 This is quite possible (with support from core functions for alloc) except for literals.
@@ -4716,3 +4798,5 @@ if we allow varargs, we can normally define seq and map functions in std.
 but if seq becomes a function, it will be generic, then we will have to write: `seq[int, 1, 2, 3]`.
 
 ? - Can we use `_` in places where compiler can infer types needed in a generic type or funtin invocation.
+We can do this via `?` notation but disadvantage of `?` is that we have to say: it cannot be used in function output type.
+But `_` is easier to interpret.
