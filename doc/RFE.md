@@ -4479,6 +4479,32 @@ data = receive(channel)
 send(writer, data)
 data, channel = select(
 ```
+In Linux API select will return a bit flag set indicating which item is ready for I/O operation.
+But what is the simple and most straight forward way to do this?
+variadic generic function with channel + lambda
+```
+ChannelOpRead = [T: type -> {channel: T?, reader: (T?->T)}
+ChannelOpWrite = [T: type -> {channel: T!, writer: (T!->)}
+ChannelOp = [T: type -> ChannelOpRead[T] | ChannelOpWrite[T]]
+select = (T: type, reader: ChannelOpRead[T], S: type, 
+```
+Maybe we should act like polymorphism.
+A linked-list
+```
+Handler = [T: type -> {channel:T, handler: (T->nothing), next: Handler}
+chn = Handler[int?]{rchn1, (c:int?->receive(c)), next: nothing}
+chn2 = Handler[string!]{wchn, (c:string!->send(c, "AA")), next: chn}
+chn3 = Handler[bool!]{wchn, (c:bool!->send(c, false)), next: chn2}
+select(chn3)
+```
+We don't really need an output from select. If we really need to, we can use another channel. But everything that needs to be done, is done within the handler.
+Applications for variadic generic: Generate polymorphism handlers (not good), create a linked list for select?
+Can't we do it like polymorphism? Each handler is responsible to lock it's own channel. If successfull, read/write. if not return.
+So select is basically a caller in loop until one of the handlers returns success: It doesn't even care about channels.
+We will need `lock` function in core.
+```
+SelectHandler = {handler: (->bool), next: SelectHandler}
+```
 
 ? - Polymorphism without built-in map? This can be done via a linked list.
 q: Polymorphism: we have multiple functions `drawCircle`, `drawSquare` and `drawTriangle`.
@@ -4778,6 +4804,9 @@ But then we will need to call/examine each handler. which may not be very cheap.
 Anyway, both ways are possible. waaaait! In this case, we no longer need `?` notation. Even in previous case we don't need it.
 `?` was needed because we were using generics to define handlers. But we don't need to.
 Each handler is a type and a handler and next. type has a fixed type `type`, handler is fixed `(Shape->)` and so is next.
+Summary:
+- To provide polymorphism, we only need struct and generics and combined union type.
+- No `?`, no map literal.
 
 ? - Can't we replace union with a generic struct?
 
