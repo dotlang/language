@@ -4467,9 +4467,62 @@ summary:
 2. Introduce `binding[args]` notation to read from seq and map
 3. drop `1:"A"` notation for map literals.
 4. they will be `Seq` and `Map`
-`type[a,b,c,d]` will call function `type` with vararg input with given inputs. this will cover both seq and map. 
+`type[a,b,c,d]` will call generic type `type` with vararg input with given inputs. this will cover both seq and map. 
 `binding[a]` will call `get(type, binding, a)` where `type` deduced from type of binding.
-q: what about channel operations? read and write?
+Implementing map is easy. It is linked list + sequence + some more basic things.
+for sequence: `data: Seq[int]` makes sense.
+how can I initialise it? we need alloc function in core.
+```
+Ptr = int
+Seq = [T: type -> Ptr]
+seq = (T: type, data: T... -> Seq[T])
+{
+	result = coreAlloc(T, data)
+}
+get = (T: type, sq: Seq[T], index:int -> T)
+{
+	result = coreRead(sq, index)
+}
+
+g = seq(int, 1, 2, 3)
+data = get(int, g, 0) #data will be 1
+```
+one advantage of generic approach is that you have to sepcify type so you won't be willing to mix different types in a sequence and rely on compiler to infer a complex union.
+But having to specify type when reading from a sequence is a bit pain.
+compare `get(int, g, 0)` with `g[0]`. 4 vs 14 characters.
+So maybe it's worth to introduce this notation? Won't it be confused with generic types?
+I don't think so. because types names start with capital letter.
+`Data[...]` is a generic type.
+`data[....]` is binding notation.
+`item[a,b,c,d]` will be translated to `get(type, item, a, b, c, d)` function.
+why not make get part of the type?
+```
+Ptr = int
+Seq = [T: type -> { ptr: Ptr, get = (this: Seq[T], index: int -> coreRead(this, index)}]
+seq = (T: type, data: T... -> Seq[T])
+{
+	result = coreAlloc(T, data)
+}
+
+g = seq(int, 1, 2, 3)
+data = g.get(0) #data will be 1
+```
+To simplify the `get(int, g, 0)` call, there are two ways:
+1. Introduce `this` argument for function pointers which are member of a struct. This is automatically set by compiler and will refer to the enclosing type.
+2. define a notation like `data.get` will be translated to `get(data...)`. 
+The first one is like OOP, and I believe will end with a lot of confusion (inheritance, ...)
+but the second one does not solve the problem.
+oop principles: encapsulation, abstraction, inheritance, polymorphism.
+But we have to make sure this is 100% consistent with everything else. 
+can we get a function pointer to it? can we call it in a lambda? can we call it with another instance instead of `this`?
+another solution: keep T inside the sequence. No. we will loose static type for sequence.
+
+
+
+
+
+
+? - If we remove map and sequence from language, what about channel operations? read and write?
 `data = [channel]()`
 `[writer](data)`
 why not use functions?
@@ -4858,9 +4911,7 @@ Summary:
 - No `?`, no map literal, no sequence.
 - We still need dynamic compile time union
 
-? - Can't we replace union with a generic struct?
 
-? - Can we have variadic generic type and funtion?
 
 ? - Can we use `[]` for generic types?
 Depends on how we are going to represent seq and map's access.
@@ -4893,3 +4944,9 @@ N - Can we use `_` in places where compiler can infer types needed in a generic 
 We can do this via `?` notation but disadvantage of `?` is that we have to say: it cannot be used in function output type.
 But `_` is easier to interpret.
 Anyway, it seems that we don't need `?` notation.
+
+N - Can't we replace union with a generic struct?
+
+N - Can we have variadic generic type and funtion?
+what will be it's applications? create a linked list of different types.
+
