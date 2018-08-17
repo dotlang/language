@@ -4505,6 +4505,55 @@ We will need `lock` function in core.
 ```
 SelectHandler = {handler: (->bool), next: SelectHandler}
 ```
+or better yet: a varargs
+```
+select = (handlers:(->bool)...->int)
+```
+No. This is too complicated for handling in the conventional data type, struct, function manner.
+Maybe we should have a new syntax (but consistent):
+```
+select
+{
+    rchan1: { x = receive(rchan1) }
+    wchan1: {send(wchan1, data) }
+    nothing: { ... }
+}
+```
+it is not consistent with everything else.
+```
+select = ({channel: T!|T?, handlers:(->bool)...->int)
+```
+two parts: channel are different (notation) and send/receive are different.
+Why not make channel generic?
+```
+x: RPipe[int]
+y: WPipe[string]
+...
+```
+Why not move these out of core? Move them to std. But their underlying principle, which is lock/mutex needs to stay in core.
+but still there are some things that can only be done in core: channel is mutable in nature.
+```
+select
+(
+    rchan1: { x = receive(rchan1) }
+    wchan1: {send(wchan1, data) }
+    nothing: { ... }
+)
+```
+ok. Let's say the lambda will check the channel for readiness. but this is not efficient compared to linux epoll. 
+Also don't forget. we want to have flexibility: having a dynamic size of channels.
+```
+#we need a linked list of channels + their data to send/receive
+```
+Why not make channels unified?
+```
+ChannelType = Read | Write
+Channel = [T: type, Direction: ChannelType -> {descriptor: int, type: Direction}]
+r: Channel[int, Read]
+w: Channel[string, Write]
+```
+But how will this help?
+
 
 ? - Polymorphism without built-in map? This can be done via a linked list.
 q: Polymorphism: we have multiple functions `drawCircle`, `drawSquare` and `drawTriangle`.
@@ -4806,7 +4855,8 @@ Anyway, both ways are possible. waaaait! In this case, we no longer need `?` not
 Each handler is a type and a handler and next. type has a fixed type `type`, handler is fixed `(Shape->)` and so is next.
 Summary:
 - To provide polymorphism, we only need struct and generics and combined union type.
-- No `?`, no map literal.
+- No `?`, no map literal, no sequence.
+- We still need dynamic compile time union
 
 ? - Can't we replace union with a generic struct?
 
@@ -4835,7 +4885,11 @@ we can say that `x[0]` will call `get(x,0)` but it will be hidden and non obviou
 if we allow varargs, we can normally define seq and map functions in std.
 but if seq becomes a function, it will be generic, then we will have to write: `seq[int, 1, 2, 3]`.
 
-? - Can we use `_` in places where compiler can infer types needed in a generic type or funtin invocation.
+
+
+
+
+N - Can we use `_` in places where compiler can infer types needed in a generic type or funtin invocation.
 We can do this via `?` notation but disadvantage of `?` is that we have to say: it cannot be used in function output type.
 But `_` is easier to interpret.
 Anyway, it seems that we don't need `?` notation.
