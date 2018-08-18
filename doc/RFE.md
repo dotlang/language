@@ -4885,6 +4885,10 @@ map = (K,V: type, data: {K,V}... -> Map[T])
 g = map(string, int, {"A", 1}, {"B", 2})
 data = g.get("B") #data will be 2
 ```
+BUT how can "get" have access to ptr? we can explain this using closure.
+if defined within the data type, it has access to parent type's fields.
+In this way we can also give meaning to private bindings inside a struct.
+Note that `get` is a normal function and you can send it to any other function.
 
 ? - define `ptr` as a built-in type.
 Basically this is a pointer (with size) pointing to an allocated region of memory.
@@ -5040,6 +5044,31 @@ index =
     wchan1: (->) { send(wchan1, data) }
     nothing: (->) { ... }
 )
+```
+can we use builder design pattern?
+something like this:
+`rchannel1.select().with(wchannel2, data).with(rchannel2).execute()`
+internal meaning of select is a set of actions.
+we create a linked list of actions. and pass them to select function in core.
+```
+action = {rchannel, next: nothing}
+action2 = {rchannel2, next: action}
+action3 = {wchannel3, data, next: action2}
+channel = select(action3)
+```
+for writer, we know data is sent.
+But how are we going to receive result of read?
+there is no pointer because everything must be immutable.
+we can use struct unpacking:
+`data1, data2 = *select(action3)`
+It would be much more readable if I could put data1 and data2 nearer to their corresponding channel.
+```
+action = createSelect(rchan1, rchan2, wchan3)
+action.setData(wchan3, "A")
+
+action2 = {rchannel2, next: action}
+action3 = {wchannel3, data, next: action2}
+channel = select(action3)
 ```
 
 ? - Polymorphism without built-in map
