@@ -5081,6 +5081,52 @@ wch3.bind(act, "A")
 act.execute()
 ```
 can we do a select via another channel?
+```
+#we have rch1, rch2 and wch3
+selectChannel = newChannelSelect(rch1, rch2)
+setUp(selectChannel, wch3, "A")
+data = receive(selectChannel)
+```
+confusing.
+or add a new notation without keyword:
+```
+receive(rch1) || receive(rch2) || send(wch3, "A")
+```
+But this is not extensible.
+```
+act = newSelect()
+act2 = bind(rch1, act)
+act3 = bind(rch2, act)
+act4 = bind(wch3, "A", act)
+act4.execute()
+```
+A linked list of channels all bound together using bind core call.
+Of course you can also manually build that linked list.
+So we don't need to define `bind` in core. Std is good.
+But `execute` and the data definition must be in core.
+
+
+? - Is this ok to define lambda function inside a struct definition?
+Doesn't it have conflict with language constructs?
+```
+Customer = 
+{ 
+	data: string,
+	age: int,
+	toString = 
+}
+
+Map = [K: type, V: type -> 
+{ 
+	ptr: Ptr, 
+	get = (index: K -> coreRead(K, ptr, index)
+}
+]
+```
+This is new but makes sense. You can provide default values for struct fields.
+Of course end user can replace them.
+These default values if lambda, have access to struct level fields.
+
 
 
 ? - Polymorphism without built-in map
