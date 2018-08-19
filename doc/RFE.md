@@ -5113,7 +5113,7 @@ Customer =
 { 
 	data: string,
 	age: int,
-	toString = 
+	toString = (->string) { str(data)+str(age) }
 }
 
 Map = [K: type, V: type -> 
@@ -5126,7 +5126,17 @@ Map = [K: type, V: type ->
 This is new but makes sense. You can provide default values for struct fields.
 Of course end user can replace them.
 These default values if lambda, have access to struct level fields.
+and they are the only code that has access to private fields (starting with underline).
+can we do the same for data fields?
+We should be able.
+For anything without a value, type must be specified. For items with value, type is inferred.
 
+
+? - How can we combine two strings? or sequences?
+They are now in std so we don't have `&` or `+`.
+we can use struct level lambda to make it easier:
+`str = name.concat(location)`
+`result = data1.concat(data2).concat(data3)`
 
 
 ? - Polymorphism without built-in map
