@@ -4916,6 +4916,8 @@ If we cannot pass it to any other function, it is same as using the original fun
 And, generic functions have no type. Unless you explicitly specify their T:
 `hashLambda = hash(string, _)` then type of this is: `(string->string)`.
 so the rule is: You cannot assign a generic function to a lambda, unless there is no `type` argument.
+Because generic functions need special treatment from compiler.
+So storing them in a lambda will limit how compiler can work.
 
 ? - Many times we need a function defined for a lot of different data types.
 e.g. hash, iterator movenext, ...
@@ -4942,7 +4944,7 @@ Because in hash or serialization or ... you just need raw bytes.
 ```
 hash = (data: Ptr -> string) ...
 ```
-If we define hash in the core, what will be it's output? Probably another Ptr.
+If we define hash in the core, what will be it's input? Probably another Ptr. the output will be int or byte sequence?
 
 ? - If we accept Ptr type and working at byte level, maybe we should add `byte` to built-in types.
 `char` is a unicode character.
@@ -5070,6 +5072,16 @@ action2 = {rchannel2, next: action}
 action3 = {wchannel3, data, next: action2}
 channel = select(action3)
 ```
+or:
+```
+act = newSelect()
+rch1.bind(act)
+rch2.bind(act)
+wch3.bind(act, "A")
+act.execute()
+```
+can we do a select via another channel?
+
 
 ? - Polymorphism without built-in map
 Summary:
