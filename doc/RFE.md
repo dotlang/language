@@ -4722,6 +4722,10 @@ N - Can we use `[]` for generic types?
 Depends on how we are going to represent seq and map's access.
 We will probably can.
 
+N - Now with all these, how can we implement a timed cache?
+Cache will be a linked list of maps. Each map can re-use the older maps.
+
+
 ? - Generics
 **Summary:**
 1. We will have a new data type `type` whose values are any actual type (`int` or `string` or `Customer`). Internally it is integer, so that we can use it to get internal type inside a union. Arguments of type `type` must be named like other types nor like bindings.
@@ -4894,11 +4898,21 @@ This can be used when doing low level things e.g. hash calculation.
 also this is underlying type for sequence.
 Core will have a `getPtr` function which works on any type. for structs we already have everything but for other things, the function (compiler + runtime) will provide data needed.
 and this should not be generic. 
+```
+Seq = [T: type -> {
+	Type: type = T, 
+	ref: ptr, 
+	length = (->coreLen(ref)),
+	concat = (target: Seq[T] -> out: Seq[T])
+	{
+		data = alloc(len(ptr)+len(target.ptr))
+	}
+}
+]
+```
 
-? - Can we cast back a ptr to it's original type? We don't have enough information to know the original type.
+N - Can we cast back a ptr to it's original type? We don't have enough information to know the original type.
 And if user provides the result type, it will be like `void*` in C and can cause problems.
-
-
 
 ? - Is generics compatible with the fact that you cannot define two functions witht the same name?
 ```
@@ -5124,6 +5138,34 @@ process = (data: int -> Seq[?]) ... #output type of process must be compile-time
 }
 ```
 This can alter polymorphism.
+```
+act = newSelect()
+act2 = bind(rch1, act)
+act3 = bind(rch2, act2)
+act4 = bind(wch3, "A", act3)
+act4.execute()
+```
+
+? - We also need a notation to check if two types match.
+For example in polymorphism, we have a Shape binding and a function which is supposed to handle type T.
+```
+draw = (s: Shape, element: CandidateList[?] -> ) { #here is where we need ?
+	if element.T is same as internal type of S, then call element.handler and return
+	if element.next is nothing then return
+	else recursively call with element.next
+}
+```
+How can we decide if `s` of type Shape, has an internal type same as element.T?
+There should only be one way to create a `type` binding: hard coding. So we should not give out any function that gives output `type`.
+option 1. `typeCheck` from core. Accepts a type binding and a union binding and returns true if match.
+option 2. put a function inside `type` called `match`: `match = element.T.match(s)`.
+option 3: Cast `s` to `type` but this will give people ability to create new bindings of type `type` during runtime. and also is confugins.
+when we cast `s` to `type` will we get union type or it's internal type?
+`target_binding, is_valid = element.T(my_shape)`. we already have this. 
+Just note that in the casting section, you can use a `type` binding. it will be evaluated at runtime but we need that runtime.
+The only goal here is to prevent ability to generate new `type`s at runtime.
+**Summary**
+- In casting section add that having a binding of type `type`, you can use it to cast a union binding and check if there is a match.
 
 ? - Is this ok to define lambda function inside a struct definition?
 Doesn't it have conflict with language constructs?
@@ -5203,12 +5245,23 @@ draw = (s: Shape, element: CandidateList[?] -> ) { #here is where we need ?
 }
 ```
 
-
-? - Now with all these, how can we implement a timed cache?
-
-
-
-
 ? - Add a new section called `patterns` explaining how to achieve different things using these provided resources.
 e.g. polymorphism, exception handling, if, for, ...
 examples of generics: stack, sequence, map, tree
+
+N - Based on the fact that we can define lambda inside a struct, can we achieve abstraction and polymorphism?
+No.
+We have polymorphism and we have private fields.
+That's enough.
+
+
+? - Summary of all pending changes:
+**Generics**
+**Polymorphism**
+**Pattern section**
+**Cast to type bindings**
+**Set value for struct members and access**
+**Sequence and map outside core**
+**Core functions for alloc and ptr type**
+**New notation for channels and select**
+**byte type and move string to std**
