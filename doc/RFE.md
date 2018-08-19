@@ -4961,7 +4961,6 @@ If we define hash in the core, what will be it's input? Probably another Ptr. th
 ? - If we accept Ptr type and working at byte level, maybe we should add `byte` to built-in types.
 `char` is a unicode character.
 
-? - If Seq is in std, then we should move string there too. and it will be String.
 
 ? - If we remove map and sequence from language, what about channel operations? read and write? and select.
 `data = [channel]()`
@@ -5198,7 +5197,8 @@ They are now in std so we don't have `&` or `+`.
 we can use struct level lambda to make it easier:
 `str = name.concat(location)`
 `result = data1.concat(data2).concat(data3)`
-
+Let's have `string` inside core and built-in types.
+So we can easily handle string literals and concat.
 
 ? - Polymorphism without built-in map
 Summary:
@@ -5254,14 +5254,52 @@ No.
 We have polymorphism and we have private fields.
 That's enough.
 
+N - If Seq is in std, then we should move string there too. and it will be String.
+
+? - If we have `Shape = Circle | Square`
+And both types have a `draw` field, can I call it on a binding of type `Shape`?
+If I can do that, the polymorphism problem is solved.
+```
+Circle = {... draw = ..., id = 12}
+Square = {... draw = ..., id = 19}
+Triangle = {... draw = ..., id = 22}
+Shape = Circle | Triangle
+Shape = Shape | Square
+draw = (s: Shape -> s.draw())
+```
+Proposal: If all types of a union have some similar fields (assuming they are structs) with same name and type, you can access those fields directly without casting.
+In this way, we can use union type as an interface.
+`Hashable = Hashable | Customer` -> All Hashables have a `getHashCode` function.
+If Customer does not have it, there will be a compiler error.
+And we can have:
+`process = (x: Hashable -> x.getHashCode())`
+Suppose that Customer is not in my code. How can I make it a Hashable?
+I can't. unless I define a new data type and add my function for get hash code.
+What about existing method?
+I can append my hash handler to `hash_handlers` linked list and It will be used in the hash code.
+But note that for these low level functions, there may be hundreds of types in the linked list. 
+And each call to getHashCode will mean traversing through whole of the linked list to find appropriate type and call the handler.
+The LL solution is more flexible but not very high performance (unless compiler does something about it).
+The Union solution is fast and easy and intuitive, but not very flexible.
+What prevents developer from including a non-compatible type in the union? The existing code.
+Suppose that we have `draw` in Circle and Square but not Triangle.
+How can I write: `Shape = Shape | Triangle`?
+There will be compiler errors because I have code that calls `my_shape.draw` and there is no `draw` field for Triangle.
+What I can do:
+`MyTriangle = {t: Triangle, draw = ...}`
+`Shape = Shape | MyTriangle`
+But how can I make this documented?
+Suppose that there is a union `ClientData`. How can I know what fields I need to include so that I can add my type to it?
+
+
 
 ? - Summary of all pending changes:
-**Generics**
+NEW **Generics**
 **Polymorphism**
 **Pattern section**
 **Cast to type bindings**
-**Set value for struct members and access**
+NEW **Set value for struct members and access**
 **Sequence and map outside core**
 **Core functions for alloc and ptr type**
 **New notation for channels and select**
-**byte type and move string to std**
+**byte type**
