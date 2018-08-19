@@ -4722,15 +4722,13 @@ N - Can we use `[]` for generic types?
 Depends on how we are going to represent seq and map's access.
 We will probably can.
 
-
-
 ? - Generics
 **Summary:**
 1. We will have a new data type `type` whose values are any actual type (`int` or `string` or `Customer`). Internally it is integer, so that we can use it to get internal type inside a union. Arguments of type `type` must be named like other types nor like bindings.
 2. If you have a binding of type T called x, you can use `T` to create a type based on it (e.g. `process = (T: type, x: [T] -> ...)`).
 3. `T` arguments of a function must be evaluated at compile time.
-4. Polymorphism is still provided using dynamic compile time union and map of type to functions.
-
+4. Polymorphism is still provided using dynamic compile time union and a linked list.
+5. You can use `Type[?]` notation to denote a generic type with type argument which is not fixed during type definition but will be specified at compile time.
 
 
 ? - Should we remove map from built-in types?
@@ -5104,7 +5102,28 @@ A linked list of channels all bound together using bind core call.
 Of course you can also manually build that linked list.
 So we don't need to define `bind` in core. Std is good.
 But `execute` and the data definition must be in core.
-
+How are we going to define this data structure?
+We need a linked list of either nothgin or ritem or witem.
+```
+SelectEntityW = [T: type -> {channel: T!, data: T, next: SelectEntityW | SelectEntityR | nothing}]
+SelectEntityR = [T: type -> {channel: T?, next: SelectEntityW | SelectEntityR | nothing}]
+```
+how are we going to get result?
+The output from act4 will include a channel and data (if any).
+We can say `SelectEntityR` to mean this type with any generic type.
+But what if we use this notation in the function output?
+What about mixing these together? `Seq[Stack[DataList]]`
+The point is, for type definition, we can use `?` without any problem.
+But for data, we must specify a concrete compile-time decidable type.
+```
+SelectEntityW = [T: type -> {channel: T!, data: T, next: SelectEntityW[?] | SelectEntityR[?] | nothing}]
+SelectEntityR = [T: type -> {channel: T?, next: SelectEntityW[?] | SelectEntityR[?] | nothing}]
+process = (data: Seq[?] -> string) ... #you must call process with a sequence of compile-time type
+process = (data: int -> Seq[?]) ... #output type of process must be compile-time decidable. it can only be used as a use of compiler type checking
+{
+}
+```
+This can alter polymorphism.
 
 ? - Is this ok to define lambda function inside a struct definition?
 Doesn't it have conflict with language constructs?
@@ -5163,8 +5182,22 @@ shape_handlers = CandidateList{Circle, drawCircle, nothing}
 ...
 shape_handlers = CandidateList{Square, drawSquare, shape_handlers}
 shape_handlers = CandidateList{Triangle, drawTriangle, shape_handlers}
-draw = (s: Shape, element: CandidateList -> ) { #here is where we need ?
+draw = (s: Shape, element: CandidateList -> ) {
 	if element.T is same as internal type of S, then call and return element.handler
+	if element.next is nothing then return
+	else recursively call with element.next
+}
+```
+If we allow for `?`notation we can simplify this:
+```
+CandidateList = [T: type -> {T: type, handler: (T->), next: nothing|CandidateList[?]}]
+shape_handlers = CandidateList[Circle]{Circle, drawCircle, nothing}
+...
+shape_handlers = CandidateList[Square]{Square, drawSquare, shape_handlers}
+shape_handlers = CandidateList[Triangle]{Triangle, drawTriangle, shape_handlers}
+...
+draw = (s: Shape, element: CandidateList[?] -> ) { #here is where we need ?
+	if element.T is same as internal type of S, then call element.handler and return
 	if element.next is nothing then return
 	else recursively call with element.next
 }
@@ -5178,3 +5211,4 @@ draw = (s: Shape, element: CandidateList -> ) { #here is where we need ?
 
 ? - Add a new section called `patterns` explaining how to achieve different things using these provided resources.
 e.g. polymorphism, exception handling, if, for, ...
+examples of generics: stack, sequence, map, tree
