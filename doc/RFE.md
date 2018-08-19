@@ -4725,6 +4725,12 @@ We will probably can.
 N - Now with all these, how can we implement a timed cache?
 Cache will be a linked list of maps. Each map can re-use the older maps.
 
+N - Based on the fact that we can define lambda inside a struct, can we achieve abstraction and polymorphism?
+No.
+We have polymorphism and we have private fields.
+That's enough.
+
+N - If Seq is in std, then we should move string there too. and it will be String.
 
 ? - Generics
 **Summary:**
@@ -5249,12 +5255,7 @@ draw = (s: Shape, element: CandidateList[?] -> ) { #here is where we need ?
 e.g. polymorphism, exception handling, if, for, ...
 examples of generics: stack, sequence, map, tree
 
-N - Based on the fact that we can define lambda inside a struct, can we achieve abstraction and polymorphism?
-No.
-We have polymorphism and we have private fields.
-That's enough.
 
-N - If Seq is in std, then we should move string there too. and it will be String.
 
 ? - If we have `Shape = Circle | Square`
 And both types have a `draw` field, can I call it on a binding of type `Shape`?
@@ -5290,7 +5291,20 @@ What I can do:
 `Shape = Shape | MyTriangle`
 But how can I make this documented?
 Suppose that there is a union `ClientData`. How can I know what fields I need to include so that I can add my type to it?
-
+```
+Shape = {draw: (->)}
+```
+This seems very suitable but leads to a lot of complexity.
+We can however write:
+```
+draw = (s: Shape -> ) 
+{
+	my_circle, is_circle = Circle(s)
+	if is_circle then call my_circle.draw()
+	
+}
+```
+But what if we add a new type to Shape?
 
 
 ? - Summary of all pending changes:
