@@ -2,9 +2,9 @@
 
 Perfection is finally attained not when there is no longer anything to add, but when there is no longer anything to take away. (Antoine de Saint-Exupéry, translated by Lewis Galantière.)
 
-Version 1.00
+Version 1.01
 
-July 5, 2018
+???? ?, 2018
 
 # Table of Contents
 
@@ -39,17 +39,17 @@ The underlying rules of design of this language are
 [KISS rule](https://en.wikipedia.org/wiki/KISS_principle) and
 [DRY rule](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-As a 10,000 foot view of the language, the code is written in files (called modules) organized in directories (called packages).  We have bindings (immutable data which include first-class functions and values) and types (Blueprints to create bindings). Type system includes primitive data types (`int`, `float`, `char`, `function`, `sequence` and `map`), struct and union. Concurrency and lambda expression are also provided and everything is immutable.
+As a 10,000 foot view of the language, the code is written in files (called modules) organized in directories (called packages).  We have bindings (immutable data which include first-class functions and values) and types (Blueprints to create bindings). Type system includes primitive data types, struct and union. Concurrency and lambda expression are also provided and everything is immutable.
 
 ## Comparison
 
-Language | Sum types | Full Immutability| Garbage Collector | Module System | Lambda | Number of keywords |
+Language | Sum types | Full Immutability| Garbage Collector | Module System | Lambda | Polymorphism | Concurrency | Number of keywords |
 --- | --- | --- | --- | --- | --- | --- |
-C  |  Partial  | No  | No |  No | No | 32 |
-Scala | Yes | No | Yes | Yes | Yes | ~27 |
-Go | No | No | Yes | Yes | Yes | 25 |
-Java | No | No | Yes | Yes | Yes | 50 |
-dotLang | Yes | Yes | Yes | Yes | Yes | 8 |
+C  |  Partial  | No  | No |  No | No | No | No | 32 |
+Scala | Yes | No | Yes | Yes | Yes | Yes | Yes | ~27 |
+Go | No | No | Yes | Yes | Yes | Yes | Yes | 25 |
+Java | No | No | Yes | Yes | Yes | Yes | Yes | 50 |
+dotLang | Yes | Yes | Yes | Yes | Yes | Partial | Yes | 11 |
 
 ## Components
 
@@ -67,17 +67,15 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 ## Main features
 
 01. **Import a module**: `@["/core/std/queue"]` (you can also import from external sources like Github).
-02. **Primitive types**: `int`, `float`, `char`, `bool`, `string`, Sequence (`[int]`), Map (`[char:int]`), Function.
+02. **Primitive types**: `int`, `float`, `char`, `byte`, `bool`, `string`, `type`, `ptr`. 
 03. **Bindings**: `my_var = 19` (type will be automatically inferred, everything is immutable).
-04. **Sequence**: `scores = [1, 2, 3, 4]` (For example `string` is essentially a sequence of `char`s).
-05. **Map**: `scores = ["A":1, "B":2, "C":3, "D": 4]`.
-06. **Named type**: `MyInt := int` (Defines a new separate type with same binary representation as `int`).
-07. **Type alias**: `IntType = int` (A different name for the same type).
-07. **Struct type**: `Point = {x: int, y:int, data: float}` (Like `struct` in C).
-08. **Struct literal**: `location = Point{x:10, y:20, data:1.19}`.
-09. **Union type**: `MaybeInt = int | nothing` (Can store either of possible types).
-10. **Function**: `calculate = (x:int, y:int -> z:float) { z = x/y  }` (Assigning to binding for output type means return).
-11. **Lambda**: `sort( *{ source: my_sequence, compareFunction: (x,y -> x-y)} )` (If types can be inferred, you can omit them, `*` destructs a struct)
+04. **Named type**: `MyInt := int` (Defines a new separate type with same binary representation as `int`).
+05. **Type alias**: `IntType = int` (A different name for the same type).
+06. **Struct type**: `Point = {x: int, y:int, data: float}` (Like `struct` in C).
+07. **Struct literal**: `location = Point{x:10, y:20, data:1.19}`.
+08. **Union type**: `MaybeInt = int | nothing` (Can store either of possible types).
+09. **Function**: `calculate = (x:int, y:int -> z:float) { z = x/y  }` (Assigning to binding for output type means return).
+10. **Lambda**: `sort( *{ source: my_sequence, compareFunction: (x,y -> x-y)} )` (If types can be inferred, you can omit them, `*` destructs a struct)
 11. **Concurrency**: `result := processData(x,y,z)` (Evaluate an expression in parallel).
 
 ## Symbols
@@ -86,24 +84,23 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 02. `.`   Access struct fields
 03. `()`  Function declaration and call, cast
 04. `{}`  Code block, struct definition and struct literal
-05. `[]`  Types and literals for map and sequence, channel operations
-06. `&`   Concatenate two sequences or maps 
-07. `*`   Destruct a struct
-08. `|`   Union data type 
-09. `->`  Function declaration
-10. `..`  Range generator for sequence
-11. `//`  Nothing-check operator
-12. `:`   Type declaration (struct field and function inputs)
-13. `=`   Binding declaration, type alias
-14. `:=`  Named type, lazy/parallel evaluation
-15. `_`   Place-holder (lambda creator, assignments and function declaration)
-16. `@[]` Import
-17. `!`   Write-only channel
-18. `?`   Read-only channel
+05. `[]`  Generic types
+06. `*`   Destruct a struct
+07. `|`   Union data type 
+08. `->`  Function declaration
+09. `//`  Nothing-check operator
+10. `:`   Type declaration (struct field and function inputs)
+11. `=`   Binding declaration, type alias
+12. `:=`  Named type, lazy/parallel evaluation
+13. `_`   Place-holder (lambda creator, generics, assignments and function declaration)
+14. `@[]` Import
+15. `!`   Write-only channel
+16. `?`   Read-only channel
+17. `...` Varargs function
 
 ## Reserved keywords
 
-**Data types**: `int`, `float`, `char`, `string`, `bool`, `nothing`
+**Data types**: `int`, `float`, `char`, `byte`, `string`, `bool`, `nothing`, `type`, `ptr`
 
 **Reserved identifiers**: `true`, `false`
 
@@ -132,7 +129,7 @@ A binding assigns an identifier that refers to an immutable memory location. A b
 
 You can define bindings at module-level or inside a function. Module-level bindings can only have literals as their value, but function bindings can have expressions too. Type of a binding should be inferred without ambiguity from right side value (Example 7).
 
-Note that all bindings are immutable. So you cannot manipulate or re-assign them.
+Note that all bindings are immutable. So you cannot manipulate or re-assign them. But module-level bindings can be updated as long as they are pure data. See Polymorphism title in Patterns section for an application of this.
 
 If the value is a struct, you can destruct it into it's elements by using `*` operator which simply replaces it's operand with it's internal data (Example 5). In this process, you can also use underscore to indicate you are not interested in one or more of those elements (Example 6). You can use `*` in any place where a series of comma separated values are needed, but you have to consume the result of this operator (either via binding assignment or function call).
 
@@ -173,7 +170,7 @@ Simple type is a type which can be described using an identifier without any cha
 
 ## Basic types
 
-**Syntax**: `int`, `float`, `char`, `string`, `bool`, `nothing`
+**Syntax**: `int`, `float`, `char`, `string`, `bool`, `nothing`, `byte`, `type`, `ptr`
 
 **Notes**:
 
@@ -181,11 +178,13 @@ Simple type is a type which can be described using an identifier without any cha
 2. `float` is double-precision 8-byte floating point number.
 3. `char` is a single character, represented as an unsigned byte.
 4. Character literals should be enclosed in single-quote.
-5. `string` is defined as a sequence of `char` data type, represented as `[char]` type. The conversion from/to string literals is handled by the compiler.
-6. String literals should be enclosed in double quotes. 
-7. String literals enclosed in backtick can be multiline and escape character `\` will not be processed in them.
-8. `bool` type is same as int and `true` is 1, `false` is 0.
-9. `nothing` is a special type which is used to denote empty/invalid/missing data. This type has only one value which is the same identifier.
+5. String literals should be enclosed in double quotes. 
+6. String literals enclosed in backtick can be multiline and escape character `\` will not be processed in them.
+7. `bool` type is same as int and `true` is 1, `false` is 0.
+8. `nothing` is a special type which is used to denote empty/invalid/missing data. This type has only one value which is the same identifier.
+9. `byte` is 8-bits.
+10. `ptr` is a reference to an allocated region in memory.
+11. `type` is used to define generic types and functions (Refer to Generics section).
 
 **Examples**
 
@@ -194,60 +193,7 @@ Simple type is a type which can be described using an identifier without any cha
 3. `x = 'c'`
 4. `g = true`
 5. `str = "Hello world!"`
-
-## Sequence
-
-Sequence is similar to array in other languages. It represents a fixed-size block of memory space with elements of the same type, T and is shows with `[T]` notation. You can initialize a sequence with a sequence literal (Example 1) or range operator (Example 2). Sequence literal must be prefixed with underscore.
-
-You refer to elements inside sequence using `x[i]` notation where `i` is index number. Referring to an index outside sequence will cause a runtime error.
-
-When defined at module level, you can amend a sequence definition using `&` operator (Example 7).
-
-**Examples**
-
-1. `x = [1, 2, 3, 4]`
-2. `x = [1..10] #initialize a sequence using range operator`
-3. `x = [ [1, 2], [3, 4], [5, 6] ] #a 2-D sequence of integer numbers`
-4. `x = [1, 2]&[3, 4]&[5, 6] #merging multiple sequences`
-5. `n = x[10]`
-6. `n = [*{100,200}]`
-7. `data = [1, 3, 4]`, `data = data & [9, 8]`
-
-## Map
-
-You can use `[KeyType:ValueType]` to define a map type. When reading from a map, you will also receive a flag indicating whether the key exists in the map. Map literals must be prefixed with underscore.
-
-An empty map can be denoted using `[:]` notation.
-
-When defined at module level, you can use `&` operator to amend data to a map. This (plus `type` function from core) can be used to implement polymorphism (Example 3).
-
-You can use sequence and maps for conditionals (Examples 4 and 5) and cast operator for matching (Example 6).
-
-You can use `loop` built-in function to process a collection. This function accepts a collection and outputs a scalar value or another collection, based on the lambda input which will be called for each element in the source collection. Another input to this function is "state" which holds the output and is default value of the type on the initial call (Example 7).
-
-**Examples**
-
-1. `pop = ["A":1,"B":2,"C":3]`
-2. `data, is_found = pop["A"]`
-3. 
-```
-Shape = Circle | Square | Triangle
-draw = [type(Circle): drawCircle, type(Square): DrawSquare]
-draw = draw & [type(Triangle): drawTriangle]
-...
-draw[type(myShape)](myShape)`
-```
-4. `v = processData() #returns int|float|string `
-   `data = [nothing, 10][int(v).1] // [nothing, 20][float(v).1] // 30`
-5. `x = [100, 200][a>0]`
-6. `x = [nothing, 100][a>0] // processData(a)`
-7. 
-map: `plus_one = loop(int_seq, (value:int, state:[int] -> state & [value+1]))`
-filter: `only_evens = loop(int_seq, (value:int, state: int -> state & [[],[value]][x%2]))`
-reduce: `sum = loop(int_seq, (value:int, state:int -> state+value))`
-map/filter for hashmap: `inc_map = loop(map1, (key:int, value:int, state:[int:int] -> state & [[:], [key+1: value+1][condition]))`
-reduce for hashmap: `sum_of_values = loop(map1, (key:int, value:int, state:int -> state+value)`
-
+6. `str2 = "Hello" + "World!"`
 
 ## Union
 
@@ -290,6 +236,10 @@ You can update a struct binding and create a new binding (Example 4). You can in
 
 You can use `.0,.1,.2,...` notation to access fields inside an untyped struct (Example 7).
 
+You can provide values for struct fields. If these values are functions, based on closure rules, they will have access to struct fields. If they don't access any of those fields, they will be type-level field (rather than instance-level field) and you can use them by using name of the type (Example 8) otherwise they are instance-level.
+
+If a struct has a private field (starting with `_`), only type or instance level functions will have access to them.
+
 **Examples**
 
 1. `Point = {x:int, y:int}`
@@ -299,6 +249,13 @@ You can use `.0,.1,.2,...` notation to access fields inside an untyped struct (E
 5. `x,y = *point1 #destruction to access struct data`
 6. `another_point = Point{x:11, y:my_point.y + 200}`
 7. `x = point1.1 #another way to access untyped struct data`
+8.
+```
+Customer = { name: string, getName = (->name), newCustomer = (->Customer{name: "Test"})}
+#in the code:
+my_customer.getName() #this gives you the name inside my_customer binding
+cust = Customer.newCustomer()  #this will call type-level function
+```
 
 ## Named types
 
@@ -332,13 +289,13 @@ You can use a type alias to prevent name conflict when importing modules. Access
 
 To resolve a type name, first module-level types and then imported modules will be searched for a type name or alias with the same name. At any scope, if there are multiple candidates there will be a compiler error.
 
-Two named types are never equal. Otherwise, two types T1 and T2 are identical/assignable/exchangeable if they have the same structure (e.g. `int|string` vs `int|string` or `[int]` vs `[int]`).
+Two named types are never equal. Otherwise, two types T1 and T2 are identical/assignable/exchangeable if they have the same structure (e.g. `int|string` vs `int|string`).
 
 ## Casting
 
 There is no implicit and automatic casting. The only exception is using boolean as a sequence index which will be translated to 0 and 1. You can use core functions to do casting to/from primitive types (e.g char to int or float to int). To cast to a compatible named type you can use `TypeName(value)` notation.
 
-The `Type(nothing)` notation gives you the default value for the given type (empty/zero value). 
+The `Type(nothing)` notation gives you the default value for the given type (empty/zero value). You can also cast using a type argument (Example 5).
 
 **Syntax**: `TargetType(data)`
 
@@ -348,6 +305,41 @@ The `Type(nothing)` notation gives you the default value for the given type (emp
 2. `MyInt = int`, `x = MyInt(int_var)`
 3. `y = x`
 4. `x = MyFuncType(t)`
+5. 
+```
+process = (T: type, my_shape: Shape -> ...)
+{
+	t_value, is_valid = T(my_shape)
+	...
+}
+```
+
+## Generics
+
+We have a `type` keyword used to represent any type in the program. You can use this keyword to define a generic type or function.
+
+Note that arguments of type `type` must be named like a type, not like a binding.
+
+If you assign a generic function to a lambda, the type argument must have a value (Because value of a type argument must be provided at compile time) (Example 4).
+
+You can use `_` as type name which means the value will is not available at the point of declaration but will be provided at compile time (Example 5).
+
+**Examples**
+
+1. `LinkedList = [T: type -> {data: T, next: LinkedList[T]}]`
+2. `process = (x: LinkedList[int]->...`
+3. `process = (T: type, ll: LinkedList[T] -> ...`
+4. 
+```
+process = (T: type, data: List[T] ...
+pointer = process(_,_) #wrong!
+pointer = process(int, _) #right
+```
+5. 
+```
+Data = [T: type -> {name: string, data: T}]
+writeName = (x: Data[_] -> print(x.name))
+```
 
 # Functions
 
@@ -409,6 +401,31 @@ drawPoint = (x:int, y:int -> ...)
 point = Point{x:100, y:200}
 drawPoint(*point)
 drawPoint(*{x_offset:100, y_offset: 200})
+```
+
+## Vararg functions
+
+You can define a function as vararg using `...` notation. These functions can be used to initialize compelx data structures like a sequence or map.
+
+Example 1 shows how to define a function to create a sequence (defined in std) and Example 2 is the same for map data type.
+
+**Examples**
+
+1. 
+```
+seq = (T: type, data: T... -> Seq[T])
+{
+	result = coreAlloc(T, data)
+}
+x = seq(int, 1, 2, 3, 4, 5)
+```
+2.
+```
+map = (K,V: type, data: {K,V}... -> Map[T])
+{
+	result = coreAlloc(T, data)
+}
+m = map(string, int, {"A", 1}, {"B", 2})
 ```
 
 ## Function call resolution
@@ -476,15 +493,15 @@ Exclusive resources (sockets, file, standard I/O...) are implemented using chann
 
 You can use `:=` syntax to evaluate an expression in parallel and when its finished and store result in bindings. If expression creates a struct you can destruct it using `a,b,c =` syntax or use `_` to ignore expression result. Any reference to result after parallel execution will pause current thread until execution is finished. You can refer to output of a parallel execution inside body of a lambda, and code won't be stopped unless the lambda is invoked (Example 2 and 3).
 
+Send, receive and select are done via core functions.
+
 **Syntax**
 
 1. Parallel execute `result := expression` 
 2. Create `writer = int!(size)`, `reader = int?(writer) #T! is a write-only channel, T? is a read-only channel`
-3. Read data `data = [reader]()`
-4. Write data `[writer](data)`
-5. Select: `data, channel = [rch1, rch2, wch1, wch2](data1, data2)`
-6. Select: `data, channel = [rch1, rch2, rch3, wch1, wch2, wch3](data1, data2, data3)`
-7. Close: `dispose(channel)`
+3. Read data `data = receive(ro_channel)`
+4. Write data `send(w_channel, data)`
+5. Close: `dispose(channel)`
 
 **Examples**
 
@@ -492,12 +509,97 @@ You can use `:=` syntax to evaluate an expression in parallel and when its finis
 ```
 std_writer = int!(10)
 std_reader = int?(writer)
-data = [std_reader]() #read something from the channel which read from standard input
-[std_write]("Hello") #send data to stndard output
+data = receive(std_reader) #read something from the channel which read from standard input
+send(std_write, "Hello") #send data to stndard output
 ```
 2. `data := processInfo(1,2,a) #evaluate the expression in parallel and store the output in data`
 3. `getData = (-> data) #any call to getData will block current thread until the call to processInfo is finished`
 4. `T = (int|float)!`
+5.
+```
+act = newSelect()
+act2 = bind(rch1, act)
+act3 = bind(rch2, act2)
+act4 = bind(wch3, "A", act3)
+act4.execute()
+```
+
+# Patterns
+
+Because a lot of non-critical tools are removed from the language and core, the user has freedom to implement them however they want (using features provided in the language). In this section we provide some of possible solutions for these types of features.
+
+## Polymorphism
+
+Basically, polymorphism is a list of candidate functions to call. Each function is for a specific type. You can implement this using a linked list.
+
+Below example shows how you can provide a `draw` function for all shapes defined in the program. In this way, you can easily add a new shape (Add a new case to `Shape` union), or add a new operation (Define a new linked list). So [Expression Problem](https://en.wikipedia.org/wiki/Expression_problem) can be solved.
+
+```
+#define Shape type using compile-time dynamic union
+Shape = Circle | Triangle
+Shape = Shape | Square
+
+#Type of a function candidate which does a specific operation for a specific type.
+CandidateList = [T: type -> {T: type, handler: (T->), next: nothing|CandidateList[_]}]
+#Define a linked list of handlers for different types.
+shape_handlers = CandidateList[Circle]{Circle, drawCircle, nothing}
+
+#amend the list of handlers
+shape_handlers = CandidateList[Square]{Square, drawSquare, shape_handlers}
+shape_handlers = CandidateList[Triangle]{Triangle, drawTriangle, shape_handlers}
+
+#The draw function can be invoked on any shape
+draw = (s: Shape, element: CandidateList[_] -> ) { #here is where we need ?
+	if element.T is same as internal type of S, then call element.handler and return
+	if element.next is nothing then return
+	else recursively call with element.next
+}
+```
+
+## Sequence
+
+Having access to `ptr` type and core functions to allocate memory plus varargs functions, you can easily define a sequence (or array).
+
+```
+Seq = [T: type -> {
+	Type: type = T, 
+	ref: ptr, 
+	length = (->coreLen(ref)),
+	concat = (target: Seq[T] -> out: Seq[T])
+	{
+		data = alloc(len(ptr)+len(target.ptr))
+		...
+	},
+	create = (data: T... -> Seq[T])
+	{
+		result = coreAlloc(T, data)
+	}
+}
+]
+#using a sequence
+x = Seq[int].create(1,2,3,4)
+len = x.length()
+new = x.concat(my_int_sequence)
+```
+
+## Map
+
+Having access to `ptr` type and core functions to allocate memory plus varargs functions, you can easily define a map (or hash table).
+
+```
+Map = [K: type, V: type -> 
+{ 
+	ref: ptr, 
+	get = (index: K -> coreRead(K, V, ptr, index),
+	create = (data: {K,V}... -> Map[T])
+	{
+		result = coreAlloc(T, data)
+	}
+}]
+
+g = Map[string, int].create({"A", 1}, {"B", 2})
+data = g.get("B") #data will be 2
+```
 
 # Examples
 
@@ -650,6 +752,7 @@ result = [output_r]()
 
 A set of core packages will be included in the language which provides basic and low-level functionality (This part may be written in C or LLVM IR):
 
+- Memory allocation functions (used for sequence and map types in std) which work with `ptr` type
 - Security policy (how to call a code you don't trust)
 - Calling C/C++ methods
 - Interacting with the OS
@@ -719,3 +822,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
 - **Version 0.99**: Dec 30, 2017 - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting, removed `^` operator and replaced with generics, removed `@` (replaced with chain operator and casting), removed function forwarding, removed compound literal, changed notation for channel read, write and select (Due to changes in generics and sequence and removal of compound literal) and added `$` for select, add notation to filter imported identifiers in import, removed autoBind section and added a brief explanation for `TargetType()` notation in cast section, rename chain operator to `@`, replaced return keyword with `::`, replaced `import` with `@` notation and support for rename and filter for imported items, replaced `@` with `.[]` for chain operator, remove condition for return and replaced with rule of returning non-`nothing` values, change chain notation from `.[]` to `.{}` and import notation from `@[]` to `@()`, Added notation for polymorphic generic types, changed the notation for import generic module and rename identifiers, removed `func` keyword, extended general union type syntax to unnamed types with field type and names (e.g. `{id:int, name:string,...}`), Added shift-left and right `>>,<<` and power `**` operators, all litearls for seq and map and struct must be prefixed with `_`, in struct literals you can include other structs to implement struct update, changed notation for abstract functions, Allow access to common parts of a union type with polymorphic union types, use `nothing` instead of `...` for generic types and abstract functions, removed phantom types, change `=>` notation to `^T :=` notation to rename symbols, removed composition for structs and extended/clarified usage of polymorphic sum types for embedding and function forwarding, change map type from `[K,V]` to `[K:V]`, removed auto-bind `Type()`, remove abstract functions, remove `_` prefix for literals, remove `^` and add `=>` to rename types so as to fix issue with introducion of new named types when filtering an import operation, replace operators `:=` to `=` and `:==` to `==` and `=` (comparison) to `=?`, adding type alias notation `T:X`, change import operator to `@[]` and replace `=>` with type alias notation, use `:=` to calculate in parallel and `==` to equality check
 - **Version 1.00**: July 5, 2018 - Use `=` for type alias and `:=` for lazy (parallel) calculation and named type, More clarification about binding type inference, explain name resolution mechanism for types and bindings and function call, added explanation about using function name as a function pointer, explanation about public functions with private typed input/output, removed type specifier after binding name (it will be inferred from RHS), changed function type to `(input:type->output_type)`, removed chanin operator, some clarifications about casting operator and expressions, remove `::` and use bindings for output with future reference, allow calling lambda at the point of definition, allow omitting types if they can be inferred in defining functions, indicate that functions cannot have same name and introduce compile-time dynamic sequence to store multiple functions and treat the sequence as a function, restore using type name before struct literal, change `...` as a more general notation for polymorphic union types, re-write generics as code-generation + compile-time dynamic sequence for functions, add `*` destruct operator for struct explode which can also be used to call a function with named arguments or initialize a sequence, remove notation for casting a union to it's elements (replaced with use of sequence of functions), replace `...` notation with already defined `&` and `|`, removed `${}` notation for select and replaced with a function call on a sequence, removed concept of treating sequence of functions as a function, added `type` core function + ability to amend module level collections using `&`, explained loop built-in function for map, reduce and filter operations
+- **Version 1.01**: Add support for `type` keyword and generics data types and generic functions, remove map and sequence from language, defined instance-level and type-level fields with values, added `byte` and `ptr` types to primitive types, add support for vararg functions, added Patterns section to show how basic tools can be used to achieve more complex features (polymorphism, sequence, map, ...)
