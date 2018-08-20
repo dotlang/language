@@ -4802,8 +4802,7 @@ I think the LL method is still better.
 What about union type? It is not flexible so it wont' solve our problem but we cannot prevent people from writing a code that simulates this.
 So, it is still allowed to write a code that runs a code for each sub-type of a union, but it's not for polymorphism.
 
-
-? - Generics
+Y - Generics
 **Summary:**
 1. We will have a new data type `type` whose values are any actual type (`int` or `string` or `Customer`). Internally it is integer, so that we can use it to get internal type inside a union. Arguments of type `type` must be named like other types nor like bindings.
 2. If you have a binding of type T called x, you can use `T` to create a type based on it (e.g. `process = (T: type, x: [T] -> ...)`).
@@ -4811,168 +4810,82 @@ So, it is still allowed to write a code that runs a code for each sub-type of a 
 4. Polymorphism is still provided using dynamic compile time union and a linked list.
 5. You can use `Type[?]` notation to denote a generic type with type argument which is not fixed during type definition but will be specified at compile time.
 
+N - Can we cast back a ptr to it's original type? We don't have enough information to know the original type.
+And if user provides the result type, it will be like `void*` in C and can cause problems.
 
-? - Should we remove map from built-in types?
-`[int:string]` -> `map(int, string)`
-`[1:2, 3:4]` -> `createMap({1,2}, {3,4})`
-q: How are we going to handle polymorphism?
-q: We will need to add support for varargs?
+N - Is generics compatible with the fact that you cannot define two functions witht the same name?
 ```
-process = (data: int...) 
-{
-    x = getVarArg(data, 0)
-	cnt = getVarArgCount(data)
-}
+process = (T: type, x: T -> x.name)
 ```
-Adding support for vararg is easy.
-But what is input of the `map` function?
-We can define `1:2:3` as a shortcut to define a struct.
-so:
-```
-map = (k: type, v: type, data: {$k,$v}...)
-{
-}
-#calling map:
-x = map(int, string, 1:"A", 2:"B", 3:"C")
-y: map(int, string)
-z = y[4]
-```
-and we can say `binding[arguments]` will call `get` function.
-`binding(arg)` is same as `get(type, binding, arg)`
-if we use `1:"A"` notation to define a struct, there will be two ways to define struct literal which I don't like.
-`x = 1:"A":3.4`
-Let's for now discard this `:` notation and use `{}` notation.
-```
-map = (k: type, v: type, data: {$k,$v}...)
-{
-}
-#calling map:
-x = map(int, string, {1,"A"}, {2,"B"}, {3,"C"})
-y: map(int, string)
-z = y[4]
-```
-advantage: if developer wants, they can define a map with two keys.
-summary:
-1. Add support for varargs
-2. Introduce `binding[args]` notation to read from seq and map
-3. drop `1:"A"` notation for map literals.
-4. they will be `Seq` and `Map`
-`type[a,b,c,d]` will call function `type` with vararg input with given inputs. this will cover both seq and map. 
-`binding[a]` will call `get(type, binding, a)` where `type` deduced from type of binding.
-q: what about multi-d sequence? `Seq[Seq[int]]`
-q: what about channel operations? read and write?
-q: What about append/prepend to seq and map? specially for polymorphism usage. There is another item for this. We no longer use map and sequence for polymorphism.
-`x: Seq[Seq[int]]`
-`x = [[1,2,3],[4,5,6]]`
-`y = x[0][0]` read from multi-d array
-The way to call a vararg function is using `[]` notation.
-`seq = (t: Type, data:T... -> Seq[T])`
-to call seq: `seq(int, 1, 2, 3, 4)`
-`map = (K: type, V: type, data: {K,V}... -> Map[K,V])`
-to call map: `map(int, string, {1, "A"}, {2, "B"})`
-so: there is no special treatment for literals for seq and map.
-what about reading?
-`Type[X]` is a generic type initialisation
-`binding[X]` is a call to function: `get`
-`get(int, binding, X)` If we follow this, we will need to add additional notations for range and slice.
-Let's just use `get` function.
-`get = (T: type, seq: Seq[T], index: int -> T) { ... }`
-`get = (K: type, V: type, map: Map[K,V], index: K -> V)`
-summary:
-1. Add support for varargs
-2. Introduce `binding[args]` notation to read from seq and map
-3. drop `1:"A"` notation for map literals.
-4. they will be `Seq` and `Map`
-`type[a,b,c,d]` will call generic type `type` with vararg input with given inputs. this will cover both seq and map. 
-`binding[a]` will call `get(type, binding, a)` where `type` deduced from type of binding.
-Implementing map is easy. It is linked list + sequence + some more basic things.
-for sequence: `data: Seq[int]` makes sense.
-how can I initialise it? we need alloc function in core.
-```
-Ptr = int
-Seq = [T: type -> Ptr]
-seq = (T: type, data: T... -> Seq[T])
-{
-	result = coreAlloc(T, data)
-}
-get = (T: type, sq: Seq[T], index:int -> T)
-{
-	result = coreRead(sq, index)
-}
+then how can I have a pointer to process?
+`g = process(_,_)` then: `g(int, 22)`?
+But I also can call `g(string, "A")`?
+what would be type of g then? `g: (T: type, x:T -> string)`
+`hash = (T: type, data:T -> string)`
+For lambda, we need to have it's type. Without type, we cannot pass it to any other function because they need it's type.
+If we cannot pass it to any other function, it is same as using the original function rather than the lambda.
+And, generic functions have no type. Unless you explicitly specify their T:
+`hashLambda = hash(string, _)` then type of this is: `(string->string)`.
+so the rule is: You cannot assign a generic function to a lambda, unless there is no `type` argument.
+Because generic functions need special treatment from compiler.
+So storing them in a lambda will limit how compiler can work.
 
-g = seq(int, 1, 2, 3)
-data = get(int, g, 0) #data will be 1
+Y - We also need a notation to check if two types match.
+For example in polymorphism, we have a Shape binding and a function which is supposed to handle type T.
 ```
-one advantage of generic approach is that you have to sepcify type so you won't be willing to mix different types in a sequence and rely on compiler to infer a complex union.
-But having to specify type when reading from a sequence is a bit pain.
-compare `get(int, g, 0)` with `g[0]`. 4 vs 14 characters.
-So maybe it's worth to introduce this notation? Won't it be confused with generic types?
-I don't think so. because types names start with capital letter.
-`Data[...]` is a generic type.
-`data[....]` is binding notation.
-`item[a,b,c,d]` will be translated to `get(type, item, a, b, c, d)` function.
-why not make get part of the type?
-```
-Ptr = int
-Seq = [T: type -> { ptr: Ptr, get = (this: Seq[T], index: int -> coreRead(this, index)}]
-seq = (T: type, data: T... -> Seq[T])
-{
-	result = coreAlloc(T, data)
+draw = (s: Shape, element: CandidateList[?] -> ) { #here is where we need ?
+	if element.T is same as internal type of S, then call element.handler and return
+	if element.next is nothing then return
+	else recursively call with element.next
 }
-
-g = seq(int, 1, 2, 3)
-data = g.get(0) #data will be 1
 ```
-To simplify the `get(int, g, 0)` call, there are two ways:
-1. Introduce `this` argument for function pointers which are member of a struct. This is automatically set by compiler and will refer to the enclosing type.
-2. define a notation like `data.get` will be translated to `get(data...)`. 
-The first one is like OOP, and I believe will end with a lot of confusion (inheritance, ...)
-but the second one does not solve the problem.
-oop principles: encapsulation, abstraction, inheritance, polymorphism.
-But we have to make sure this is 100% consistent with everything else. 
-can we get a function pointer to it? can we call it in a lambda? can we call it with another instance instead of `this`?
-another solution: keep T inside the sequence. No. we will loose static type for sequence.
-```
-x: Seq[int]
-x[0]
-```
-we can give a function to array to return it's elements.
-`x, getx: *Seq[int]`...
-`getx(5)` will get element with index 5 from x
-Too complicated.
-We can give sequence a lambda.
-```
-Ptr = int
-Seq = [T: type -> { ptr: Ptr, get = (index: int -> coreRead(T, ptr, index)}]
-seq = (T: type, data: T... -> Seq[T])
-{
-	result = coreAlloc(T, data)
-}
-
-g = seq(int, 1, 2, 3)
-data = g.get(0) #data will be 1
-```
-Same can be done for map.
-```
-Ptr = int
-Map = [K: type, V: type -> { ptr: Ptr, get = (index: K -> coreRead(K, V, ptr, index)}]
-map = (K,V: type, data: {K,V}... -> Map[T])
-{
-	result = coreAlloc(T, data)
-}
-
-g = map(string, int, {"A", 1}, {"B", 2})
-data = g.get("B") #data will be 2
-```
-BUT how can "get" have access to ptr? we can explain this using closure.
-if defined within the data type, it has access to parent type's fields.
-In this way we can also give meaning to private bindings inside a struct.
-Note that `get` is a normal function and you can send it to any other function.
+How can we decide if `s` of type Shape, has an internal type same as element.T?
+There should only be one way to create a `type` binding: hard coding. So we should not give out any function that gives output `type`.
+option 1. `typeCheck` from core. Accepts a type binding and a union binding and returns true if match.
+option 2. put a function inside `type` called `match`: `match = element.T.match(s)`.
+option 3: Cast `s` to `type` but this will give people ability to create new bindings of type `type` during runtime. and also is confugins.
+when we cast `s` to `type` will we get union type or it's internal type?
+`target_binding, is_valid = element.T(my_shape)`. we already have this. 
+Just note that in the casting section, you can use a `type` binding. it will be evaluated at runtime but we need that runtime.
+The only goal here is to prevent ability to generate new `type`s at runtime.
 **Summary**
-1. Add support for vararg functions
-2. 
+- In casting section add that having a binding of type `type`, you can use it to cast a union binding and check if there is a match.
 
-? - define `ptr` as a built-in type.
+Y - Is this ok to define lambda function inside a struct definition?
+Doesn't it have conflict with language constructs?
+```
+Customer = 
+{ 
+	data: string,
+	age: int,
+	toString = (->string) { str(data)+str(age) }
+}
+
+Map = [K: type, V: type -> 
+{ 
+	ptr: Ptr, 
+	get = (index: K -> coreRead(K, ptr, index)
+}
+]
+```
+This is new but makes sense. You can provide default values for struct fields.
+Of course end user can replace them.
+These default values if lambda, have access to struct level fields.
+and they are the only code that has access to private fields (starting with underline).
+can we do the same for data fields?
+We should be able.
+For anything without a value, type must be specified. For items with value, type is inferred.
+
+
+Y - How can we combine two strings? or sequences?
+They are now in std so we don't have `&` or `+`.
+we can use struct level lambda to make it easier:
+`str = name.concat(location)`
+`result = data1.concat(data2).concat(data3)`
+Let's have `string` inside core and built-in types.
+So we can easily handle string literals and concat.
+
+Y - define `ptr` as a built-in type.
 Basically this is a pointer (with size) pointing to an allocated region of memory.
 This can be used when doing low level things e.g. hash calculation.
 also this is underlying type for sequence.
@@ -4991,58 +4904,11 @@ Seq = [T: type -> {
 ]
 ```
 
-N - Can we cast back a ptr to it's original type? We don't have enough information to know the original type.
-And if user provides the result type, it will be like `void*` in C and can cause problems.
 
-? - Is generics compatible with the fact that you cannot define two functions witht the same name?
-```
-process = (T: type, x: T -> x.name)
-```
-then how can I have a pointer to process?
-`g = process(_,_)` then: `g(int, 22)`?
-But I also can call `g(string, "A")`?
-what would be type of g then? `g: (T: type, x:T -> string)`
-`hash = (T: type, data:T -> string)`
-For lambda, we need to have it's type. Without type, we cannot pass it to any other function because they need it's type.
-If we cannot pass it to any other function, it is same as using the original function rather than the lambda.
-And, generic functions have no type. Unless you explicitly specify their T:
-`hashLambda = hash(string, _)` then type of this is: `(string->string)`.
-so the rule is: You cannot assign a generic function to a lambda, unless there is no `type` argument.
-Because generic functions need special treatment from compiler.
-So storing them in a lambda will limit how compiler can work.
-
-? - Many times we need a function defined for a lot of different data types.
-e.g. hash, iterator movenext, ...
-mixing this with polymorphism might be too verbose.
-How can we define a function to get hash code of any type?
-or to get length of any type?
-this is a polymorphism problem.
-`HH = {T: type, handler: (Any->string|nothing), next: HH}`
-`hash_handlers = HH{Customer, customerHash, next: hash_handlers}`
-```
-hash = (T: type, data:T -> string)
-{
-	innerHash(T, data, hash_handlers)
-}
-innerHash = (T: type, data: T, hash_handlers: HH -> result:string) 
-{
-	if T == hash_handlers.T then return hash_handlers.handler
-	return innerHash(t, data, hash_handlers.next)
-}
-```
-For simplicity we can define a function in core to calculate hash for any type.
-For operations that are really general, e.g. hash code, we can say, any type can be casted to Ptr and core has functions to work with Ptr.
-Because in hash or serialization or ... you just need raw bytes.
-```
-hash = (data: Ptr -> string) ...
-```
-If we define hash in the core, what will be it's input? Probably another Ptr. the output will be int or byte sequence?
-
-? - If we accept Ptr type and working at byte level, maybe we should add `byte` to built-in types.
+Y - If we accept Ptr type and working at byte level, maybe we should add `byte` to built-in types.
 `char` is a unicode character.
 
-
-? - If we remove map and sequence from language, what about channel operations? read and write? and select.
+Y - If we remove map and sequence from language, what about channel operations? read and write? and select.
 `data = [channel]()`
 `[writer](data)`
 why not use functions?
@@ -5225,113 +5091,14 @@ act4 = bind(wch3, "A", act3)
 act4.execute()
 ```
 
-? - We also need a notation to check if two types match.
-For example in polymorphism, we have a Shape binding and a function which is supposed to handle type T.
-```
-draw = (s: Shape, element: CandidateList[?] -> ) { #here is where we need ?
-	if element.T is same as internal type of S, then call element.handler and return
-	if element.next is nothing then return
-	else recursively call with element.next
-}
-```
-How can we decide if `s` of type Shape, has an internal type same as element.T?
-There should only be one way to create a `type` binding: hard coding. So we should not give out any function that gives output `type`.
-option 1. `typeCheck` from core. Accepts a type binding and a union binding and returns true if match.
-option 2. put a function inside `type` called `match`: `match = element.T.match(s)`.
-option 3: Cast `s` to `type` but this will give people ability to create new bindings of type `type` during runtime. and also is confugins.
-when we cast `s` to `type` will we get union type or it's internal type?
-`target_binding, is_valid = element.T(my_shape)`. we already have this. 
-Just note that in the casting section, you can use a `type` binding. it will be evaluated at runtime but we need that runtime.
-The only goal here is to prevent ability to generate new `type`s at runtime.
-**Summary**
-- In casting section add that having a binding of type `type`, you can use it to cast a union binding and check if there is a match.
+Y - Say that module-level bindings can be mutated.
 
-? - Is this ok to define lambda function inside a struct definition?
-Doesn't it have conflict with language constructs?
-```
-Customer = 
-{ 
-	data: string,
-	age: int,
-	toString = (->string) { str(data)+str(age) }
-}
-
-Map = [K: type, V: type -> 
-{ 
-	ptr: Ptr, 
-	get = (index: K -> coreRead(K, ptr, index)
-}
-]
-```
-This is new but makes sense. You can provide default values for struct fields.
-Of course end user can replace them.
-These default values if lambda, have access to struct level fields.
-and they are the only code that has access to private fields (starting with underline).
-can we do the same for data fields?
-We should be able.
-For anything without a value, type must be specified. For items with value, type is inferred.
-
-
-? - How can we combine two strings? or sequences?
-They are now in std so we don't have `&` or `+`.
-we can use struct level lambda to make it easier:
-`str = name.concat(location)`
-`result = data1.concat(data2).concat(data3)`
-Let's have `string` inside core and built-in types.
-So we can easily handle string literals and concat.
-
-? - Polymorphism without built-in map
-Summary:
-- To provide polymorphism, we only need struct and generics and combined union type.
-- No `?`, no map literal, no sequence.
-- We still need dynamic compile time union
-```
-CandidateList = {handler: (Shape->), next: nothing|CandidateList]
-shape_handlers = CandidateList{drawCircle, nothing}
-...
-shape_handlers = CandidateList{drawSquare, shape_handlers}
-shape_handlers = CandidateList{drawTriangle, shape_handlers}
-draw = (s: Shape, element: CandidateList -> ) { #here is where we need ?
-	if element.handler(s) is not nothing then return
-	if element.next is nothing then return
-	else recursively call with element.next
-}
-```
-This is not fast! we have to call every single handler! For something like `size` or `hash` this can be very large.
-```
-CandidateList = {T: type, handler: (Shape->), next: nothing|CandidateList]
-shape_handlers = CandidateList{Circle, drawCircle, nothing}
-...
-shape_handlers = CandidateList{Square, drawSquare, shape_handlers}
-shape_handlers = CandidateList{Triangle, drawTriangle, shape_handlers}
-draw = (s: Shape, element: CandidateList -> ) {
-	#use casting here
-	if element.T is same as internal type of S, then call and return element.handler
-	if element.next is nothing then return
-	else recursively call with element.next
-}
-```
-If we allow for `?`notation we can simplify this:
-```
-CandidateList = [T: type -> {T: type, handler: (T->), next: nothing|CandidateList[?]}]
-shape_handlers = CandidateList[Circle]{Circle, drawCircle, nothing}
-...
-shape_handlers = CandidateList[Square]{Square, drawSquare, shape_handlers}
-shape_handlers = CandidateList[Triangle]{Triangle, drawTriangle, shape_handlers}
-...
-draw = (s: Shape, element: CandidateList[?] -> ) { #here is where we need ?
-	if element.T is same as internal type of S, then call element.handler and return
-	if element.next is nothing then return
-	else recursively call with element.next
-}
-```
-
-? - Add a new section called `patterns` explaining how to achieve different things using these provided resources.
+Y - Add a new section called `patterns` explaining how to achieve different things using these provided resources.
 e.g. polymorphism, exception handling, if, for, ...
 examples of generics: stack, sequence, map, tree
 
 
-? - Can we have type-level functions? (other than binding-level functions)
+Y - Can we have type-level functions? (other than binding-level functions)
 something like static functions. For calling these we don't need a binding.
 We can call them directly from type.
 Advantage: Provide ctor for type (create a new Map or Seq)
@@ -5385,16 +5152,262 @@ Map = [K,V: type ->
 or just leave it like that. no naming. IDE will present all the functions.
 Or if it is smart enough (or can use compiler), it can deduce them.
 
-? - Summary of all pending changes:
-NEW **Generics**
-**Polymorphism**
+Y - Should we remove map from built-in types?
+`[int:string]` -> `map(int, string)`
+`[1:2, 3:4]` -> `createMap({1,2}, {3,4})`
+q: How are we going to handle polymorphism?
+q: We will need to add support for varargs?
+```
+process = (data: int...) 
+{
+    x = getVarArg(data, 0)
+	cnt = getVarArgCount(data)
+}
+```
+Adding support for vararg is easy.
+But what is input of the `map` function?
+We can define `1:2:3` as a shortcut to define a struct.
+so:
+```
+map = (k: type, v: type, data: {$k,$v}...)
+{
+}
+#calling map:
+x = map(int, string, 1:"A", 2:"B", 3:"C")
+y: map(int, string)
+z = y[4]
+```
+and we can say `binding[arguments]` will call `get` function.
+`binding(arg)` is same as `get(type, binding, arg)`
+if we use `1:"A"` notation to define a struct, there will be two ways to define struct literal which I don't like.
+`x = 1:"A":3.4`
+Let's for now discard this `:` notation and use `{}` notation.
+```
+map = (k: type, v: type, data: {$k,$v}...)
+{
+}
+#calling map:
+x = map(int, string, {1,"A"}, {2,"B"}, {3,"C"})
+y: map(int, string)
+z = y[4]
+```
+advantage: if developer wants, they can define a map with two keys.
+summary:
+1. Add support for varargs
+2. Introduce `binding[args]` notation to read from seq and map
+3. drop `1:"A"` notation for map literals.
+4. they will be `Seq` and `Map`
+`type[a,b,c,d]` will call function `type` with vararg input with given inputs. this will cover both seq and map. 
+`binding[a]` will call `get(type, binding, a)` where `type` deduced from type of binding.
+q: what about multi-d sequence? `Seq[Seq[int]]`
+q: what about channel operations? read and write?
+q: What about append/prepend to seq and map? specially for polymorphism usage. There is another item for this. We no longer use map and sequence for polymorphism.
+`x: Seq[Seq[int]]`
+`x = [[1,2,3],[4,5,6]]`
+`y = x[0][0]` read from multi-d array
+The way to call a vararg function is using `[]` notation.
+`seq = (t: Type, data:T... -> Seq[T])`
+to call seq: `seq(int, 1, 2, 3, 4)`
+`map = (K: type, V: type, data: {K,V}... -> Map[K,V])`
+to call map: `map(int, string, {1, "A"}, {2, "B"})`
+so: there is no special treatment for literals for seq and map.
+what about reading?
+`Type[X]` is a generic type initialisation
+`binding[X]` is a call to function: `get`
+`get(int, binding, X)` If we follow this, we will need to add additional notations for range and slice.
+Let's just use `get` function.
+`get = (T: type, seq: Seq[T], index: int -> T) { ... }`
+`get = (K: type, V: type, map: Map[K,V], index: K -> V)`
+summary:
+1. Add support for varargs
+2. Introduce `binding[args]` notation to read from seq and map
+3. drop `1:"A"` notation for map literals.
+4. they will be `Seq` and `Map`
+`type[a,b,c,d]` will call generic type `type` with vararg input with given inputs. this will cover both seq and map. 
+`binding[a]` will call `get(type, binding, a)` where `type` deduced from type of binding.
+Implementing map is easy. It is linked list + sequence + some more basic things.
+for sequence: `data: Seq[int]` makes sense.
+how can I initialise it? we need alloc function in core.
+```
+Ptr = int
+Seq = [T: type -> Ptr]
+seq = (T: type, data: T... -> Seq[T])
+{
+	result = coreAlloc(T, data)
+}
+get = (T: type, sq: Seq[T], index:int -> T)
+{
+	result = coreRead(sq, index)
+}
+
+g = seq(int, 1, 2, 3)
+data = get(int, g, 0) #data will be 1
+```
+one advantage of generic approach is that you have to sepcify type so you won't be willing to mix different types in a sequence and rely on compiler to infer a complex union.
+But having to specify type when reading from a sequence is a bit pain.
+compare `get(int, g, 0)` with `g[0]`. 4 vs 14 characters.
+So maybe it's worth to introduce this notation? Won't it be confused with generic types?
+I don't think so. because types names start with capital letter.
+`Data[...]` is a generic type.
+`data[....]` is binding notation.
+`item[a,b,c,d]` will be translated to `get(type, item, a, b, c, d)` function.
+why not make get part of the type?
+```
+Ptr = int
+Seq = [T: type -> { ptr: Ptr, get = (this: Seq[T], index: int -> coreRead(this, index)}]
+seq = (T: type, data: T... -> Seq[T])
+{
+	result = coreAlloc(T, data)
+}
+
+g = seq(int, 1, 2, 3)
+data = g.get(0) #data will be 1
+```
+To simplify the `get(int, g, 0)` call, there are two ways:
+1. Introduce `this` argument for function pointers which are member of a struct. This is automatically set by compiler and will refer to the enclosing type.
+2. define a notation like `data.get` will be translated to `get(data...)`. 
+The first one is like OOP, and I believe will end with a lot of confusion (inheritance, ...)
+but the second one does not solve the problem.
+oop principles: encapsulation, abstraction, inheritance, polymorphism.
+But we have to make sure this is 100% consistent with everything else. 
+can we get a function pointer to it? can we call it in a lambda? can we call it with another instance instead of `this`?
+another solution: keep T inside the sequence. No. we will loose static type for sequence.
+```
+x: Seq[int]
+x[0]
+```
+we can give a function to array to return it's elements.
+`x, getx: *Seq[int]`...
+`getx(5)` will get element with index 5 from x
+Too complicated.
+We can give sequence a lambda.
+```
+Ptr = int
+Seq = [T: type -> { ptr: Ptr, get = (index: int -> coreRead(T, ptr, index)}]
+seq = (T: type, data: T... -> Seq[T])
+{
+	result = coreAlloc(T, data)
+}
+
+g = seq(int, 1, 2, 3)
+data = g.get(0) #data will be 1
+```
+Same can be done for map.
+```
+Ptr = int
+Map = [K: type, V: type -> { ptr: Ptr, get = (index: K -> coreRead(K, V, ptr, index)}]
+map = (K,V: type, data: {K,V}... -> Map[T])
+{
+	result = coreAlloc(T, data)
+}
+
+g = map(string, int, {"A", 1}, {"B", 2})
+data = g.get("B") #data will be 2
+```
+BUT how can "get" have access to ptr? we can explain this using closure.
+if defined within the data type, it has access to parent type's fields.
+In this way we can also give meaning to private bindings inside a struct.
+Note that `get` is a normal function and you can send it to any other function.
+**Summary**
+1. Add support for vararg functions
+2. 
+```
+Seq = [T: type -> {
+	Type: type = T, 
+	ref: ptr, 
+	length = (->coreLen(ref)),
+	concat = (target: Seq[T] -> out: Seq[T])
+	{
+		data = alloc(len(ptr)+len(target.ptr))
+	}
+}
+]
+```
+
+N - Many times we need a function defined for a lot of different data types.
+e.g. hash, iterator movenext, ...
+mixing this with polymorphism might be too verbose.
+How can we define a function to get hash code of any type?
+or to get length of any type?
+this is a polymorphism problem.
+`HH = {T: type, handler: (Any->string|nothing), next: HH}`
+`hash_handlers = HH{Customer, customerHash, next: hash_handlers}`
+```
+hash = (T: type, data:T -> string)
+{
+	innerHash(T, data, hash_handlers)
+}
+innerHash = (T: type, data: T, hash_handlers: HH -> result:string) 
+{
+	if T == hash_handlers.T then return hash_handlers.handler
+	return innerHash(t, data, hash_handlers.next)
+}
+```
+For simplicity we can define a function in core to calculate hash for any type.
+For operations that are really general, e.g. hash code, we can say, any type can be casted to Ptr and core has functions to work with Ptr.
+Because in hash or serialization or ... you just need raw bytes.
+```
+hash = (data: Ptr -> string) ...
+```
+If we define hash in the core, what will be it's input? Probably another Ptr. the output will be int or byte sequence?
+
+Y - Polymorphism without built-in map
+Summary:
+- To provide polymorphism, we only need struct and generics and combined union type.
+- No `?`, no map literal, no sequence.
+- We still need dynamic compile time union
+```
+CandidateList = {handler: (Shape->), next: nothing|CandidateList]
+shape_handlers = CandidateList{drawCircle, nothing}
+...
+shape_handlers = CandidateList{drawSquare, shape_handlers}
+shape_handlers = CandidateList{drawTriangle, shape_handlers}
+draw = (s: Shape, element: CandidateList -> ) { #here is where we need ?
+	if element.handler(s) is not nothing then return
+	if element.next is nothing then return
+	else recursively call with element.next
+}
+```
+This is not fast! we have to call every single handler! For something like `size` or `hash` this can be very large.
+```
+CandidateList = {T: type, handler: (Shape->), next: nothing|CandidateList]
+shape_handlers = CandidateList{Circle, drawCircle, nothing}
+...
+shape_handlers = CandidateList{Square, drawSquare, shape_handlers}
+shape_handlers = CandidateList{Triangle, drawTriangle, shape_handlers}
+draw = (s: Shape, element: CandidateList -> ) {
+	#use casting here
+	if element.T is same as internal type of S, then call and return element.handler
+	if element.next is nothing then return
+	else recursively call with element.next
+}
+```
+If we allow for `?`notation we can simplify this:
+```
+CandidateList = [T: type -> {T: type, handler: (T->), next: nothing|CandidateList[?]}]
+shape_handlers = CandidateList[Circle]{Circle, drawCircle, nothing}
+...
+shape_handlers = CandidateList[Square]{Square, drawSquare, shape_handlers}
+shape_handlers = CandidateList[Triangle]{Triangle, drawTriangle, shape_handlers}
+...
+draw = (s: Shape, element: CandidateList[?] -> ) { #here is where we need ?
+	if element.T is same as internal type of S, then call element.handler and return
+	if element.next is nothing then return
+	else recursively call with element.next
+}
+```
+
+Y - Summary of all pending changes:
+DONE - NEW **Generics and `?` **
+EXISTS **Cast to type bindings**
+DONE NEW **Set value for struct members and closure**
+DONE **type-level and instance-level functions**
+DONE NEW **Core functions for alloc and ptr type**
+DONE NEW **byte type**
+DONE NEW **vararg functions**
+DONE **New notation for channels and select** -> pattern
+
+**Sequence and map outside core** -> pattern
+**Polymorphism** -> Pattern section
+
 **Pattern section**
-**Cast to type bindings**
-NEW **Set value for struct members and closure**
-**Sequence and map outside core**
-NEW **Core functions for alloc and ptr type**
-NEW **vararg functions**
-NEW **generics with ?**
-**New notation for channels and select**
-NEW **byte type**
-NEW **type-level and instance-level functions**
