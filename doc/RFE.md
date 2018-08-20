@@ -4732,6 +4732,77 @@ That's enough.
 
 N - If Seq is in std, then we should move string there too. and it will be String.
 
+N - If we have `Shape = Circle | Square`
+And both types have a `draw` field, can I call it on a binding of type `Shape`?
+If I can do that, the polymorphism problem is solved.
+```
+Circle = {... draw = ..., id = 12}
+Square = {... draw = ..., id = 19}
+Triangle = {... draw = ..., id = 22}
+Shape = Circle | Triangle
+Shape = Shape | Square
+draw = (s: Shape -> s.draw())
+```
+Proposal: If all types of a union have some similar fields (assuming they are structs) with same name and type, you can access those fields directly without casting.
+In this way, we can use union type as an interface.
+`Hashable = Hashable | Customer` -> All Hashables have a `getHashCode` function.
+If Customer does not have it, there will be a compiler error.
+And we can have:
+`process = (x: Hashable -> x.getHashCode())`
+Suppose that Customer is not in my code. How can I make it a Hashable?
+I can't. unless I define a new data type and add my function for get hash code.
+What about existing method?
+I can append my hash handler to `hash_handlers` linked list and It will be used in the hash code.
+But note that for these low level functions, there may be hundreds of types in the linked list. 
+And each call to getHashCode will mean traversing through whole of the linked list to find appropriate type and call the handler.
+The LL solution is more flexible but not very high performance (unless compiler does something about it).
+The Union solution is fast and easy and intuitive, but not very flexible.
+What prevents developer from including a non-compatible type in the union? The existing code.
+Suppose that we have `draw` in Circle and Square but not Triangle.
+How can I write: `Shape = Shape | Triangle`?
+There will be compiler errors because I have code that calls `my_shape.draw` and there is no `draw` field for Triangle.
+What I can do:
+`MyTriangle = {t: Triangle, draw = ...}`
+`Shape = Shape | MyTriangle`
+But how can I make this documented?
+Suppose that there is a union `ClientData`. How can I know what fields I need to include so that I can add my type to it?
+```
+Shape = {draw: (->)}
+```
+This seems very suitable but leads to a lot of complexity.
+We can however write:
+```
+draw = (s: Shape -> ) 
+{
+	my_circle, is_circle = Circle(s)
+	if is_circle then call my_circle.draw()
+	
+}
+```
+But what if we add a new type to Shape?
+The linked list method can be used to implement polymorphism. It can even be used in C.
+Maybe this is not what union is supposed to mean.
+Maybe I should add something new. But flexible enough to solve expression problem.
+What about protocols? Now that we have function at struct level?
+```
+my_protocol = { draw: (->) } #any struct type that has a draw field with this type is a member of my_protocol
+draw = (x: my_protocol -> x.draw())
+```
+adding a new type, like square -> just make sure it has a draw function with this prototype
+Adding new function, like area -> ???
+Any attempt to make a binding between functionality (draw, area, ...) and types (Circle, Square, ...) will fail.
+These two must be completely separated. Even relying on member fields like draw is wrong.
+Because then I won't be able to extend that and add a new function e.g. area for types for which I don't have access to their source code.
+Linked list method has the advantage that it is loosely coupled.
+The problem? Performance. we can solve this by using compiler, to some extent.
+So we can say that, if a LL has a field called `id` and it is defined at module level, compiler will provide a core function to look up an element with id.
+Or, as we are not providing anything in core for polymorphism, user can use `std` and use a map to define functions.
+But it won't be at module level.
+I think the LL method is still better.
+What about union type? It is not flexible so it wont' solve our problem but we cannot prevent people from writing a code that simulates this.
+So, it is still allowed to write a code that runs a code for each sub-type of a union, but it's not for polymorphism.
+
+
 ? - Generics
 **Summary:**
 1. We will have a new data type `type` whose values are any actual type (`int` or `string` or `Customer`). Internally it is integer, so that we can use it to get internal type inside a union. Arguments of type `type` must be named like other types nor like bindings.
@@ -4884,7 +4955,7 @@ data = g.get(0) #data will be 1
 Same can be done for map.
 ```
 Ptr = int
-Map = [K: type, V: type -> { ptr: Ptr, get = (index: K -> coreRead(K, ptr, index)}]
+Map = [K: type, V: type -> { ptr: Ptr, get = (index: K -> coreRead(K, V, ptr, index)}]
 map = (K,V: type, data: {K,V}... -> Map[T])
 {
 	result = coreAlloc(T, data)
@@ -4897,6 +4968,9 @@ BUT how can "get" have access to ptr? we can explain this using closure.
 if defined within the data type, it has access to parent type's fields.
 In this way we can also give meaning to private bindings inside a struct.
 Note that `get` is a normal function and you can send it to any other function.
+**Summary**
+1. Add support for vararg functions
+2. 
 
 ? - define `ptr` as a built-in type.
 Basically this is a pointer (with size) pointing to an allocated region of memory.
@@ -5231,6 +5305,7 @@ shape_handlers = CandidateList{Circle, drawCircle, nothing}
 shape_handlers = CandidateList{Square, drawSquare, shape_handlers}
 shape_handlers = CandidateList{Triangle, drawTriangle, shape_handlers}
 draw = (s: Shape, element: CandidateList -> ) {
+	#use casting here
 	if element.T is same as internal type of S, then call and return element.handler
 	if element.next is nothing then return
 	else recursively call with element.next
@@ -5256,64 +5331,70 @@ e.g. polymorphism, exception handling, if, for, ...
 examples of generics: stack, sequence, map, tree
 
 
-
-? - If we have `Shape = Circle | Square`
-And both types have a `draw` field, can I call it on a binding of type `Shape`?
-If I can do that, the polymorphism problem is solved.
+? - Can we have type-level functions? (other than binding-level functions)
+something like static functions. For calling these we don't need a binding.
+We can call them directly from type.
+Advantage: Provide ctor for type (create a new Map or Seq)
 ```
-Circle = {... draw = ..., id = 12}
-Square = {... draw = ..., id = 19}
-Triangle = {... draw = ..., id = 22}
-Shape = Circle | Triangle
-Shape = Shape | Square
-draw = (s: Shape -> s.draw())
-```
-Proposal: If all types of a union have some similar fields (assuming they are structs) with same name and type, you can access those fields directly without casting.
-In this way, we can use union type as an interface.
-`Hashable = Hashable | Customer` -> All Hashables have a `getHashCode` function.
-If Customer does not have it, there will be a compiler error.
-And we can have:
-`process = (x: Hashable -> x.getHashCode())`
-Suppose that Customer is not in my code. How can I make it a Hashable?
-I can't. unless I define a new data type and add my function for get hash code.
-What about existing method?
-I can append my hash handler to `hash_handlers` linked list and It will be used in the hash code.
-But note that for these low level functions, there may be hundreds of types in the linked list. 
-And each call to getHashCode will mean traversing through whole of the linked list to find appropriate type and call the handler.
-The LL solution is more flexible but not very high performance (unless compiler does something about it).
-The Union solution is fast and easy and intuitive, but not very flexible.
-What prevents developer from including a non-compatible type in the union? The existing code.
-Suppose that we have `draw` in Circle and Square but not Triangle.
-How can I write: `Shape = Shape | Triangle`?
-There will be compiler errors because I have code that calls `my_shape.draw` and there is no `draw` field for Triangle.
-What I can do:
-`MyTriangle = {t: Triangle, draw = ...}`
-`Shape = Shape | MyTriangle`
-But how can I make this documented?
-Suppose that there is a union `ClientData`. How can I know what fields I need to include so that I can add my type to it?
-```
-Shape = {draw: (->)}
-```
-This seems very suitable but leads to a lot of complexity.
-We can however write:
-```
-draw = (s: Shape -> ) 
+Map = [K,V: type -> 
 {
-	my_circle, is_circle = Circle(s)
-	if is_circle then call my_circle.draw()
-	
+	ptr: Ptr,
+	get = (index: K -> coreRead(K, V, ptr, index)},
+	create = (data: {K,V}... -> result: Map[K,V])
+	{
+		result = coreAlloc(T, data)
+	}
 }
-```
-But what if we add a new type to Shape?
+]
 
+g = Map[string, int].create({"A", 1}, {"B", 2})
+data = g.get("B") #data will be 2
+```
+I think this makes sense and does not add any new concept to the language.
+But maybe functions should be named differently.
+e.g. when in an IDE user types `my_map.` IDE can create a list of all fields inside binding's type.
+But when he types `Map.` compiler should only write those that are static (or type-level).
+Maybe we can define them into another level of braces.
+```
+Map = [K,V: type -> 
+{
+	ptr: Ptr,
+	get = (index: K -> coreRead(K, V, ptr, index)},
+	{
+		create = (data: {K,V}... -> result: Map[K,V])
+		{
+			result = coreAlloc(T, data)
+		}
+	}
+}
+]
+```
+or prefix them with a dot.
+```
+Map = [K,V: type -> 
+{
+	ptr: Ptr,
+	get = (index: K -> coreRead(K, V, ptr, index)},
+	.create = (data: {K,V}... -> result: Map[K,V])
+	{
+		result = coreAlloc(T, data)
+	}
+}
+]
+```
+or just leave it like that. no naming. IDE will present all the functions.
+Or if it is smart enough (or can use compiler), it can deduce them.
 
 ? - Summary of all pending changes:
 NEW **Generics**
 **Polymorphism**
 **Pattern section**
 **Cast to type bindings**
-NEW **Set value for struct members and access**
+NEW **Set value for struct members and closure**
 **Sequence and map outside core**
-**Core functions for alloc and ptr type**
+NEW **Core functions for alloc and ptr type**
+NEW **vararg functions**
+NEW **generics with ?**
 **New notation for channels and select**
-**byte type**
+NEW **byte type**
+NEW **type-level and instance-level functions**
