@@ -218,15 +218,6 @@ getName = (s: Shape -> s.name)
 5. `Shape = Triangle | Circle`
 `Shape = Shape | Square`
 
-### Exception handling
-
-There is no explicit support for exceptions. You can return a specific `exception` type instead.
-
-If a really unrecoverable error happens, you should exit the application by calling `exit` function in core. 
-
-In special cases like a plugin system, where you must control exceptions, you can use built-in function `invoke` which will return an error result if the function which it calls exits.
-
-Example: `process = (nothing -> out:int|exception) { ... out = exception{...} }`
 
 ## Struct
 
@@ -314,11 +305,11 @@ process = (T: type, my_shape: Shape -> ...)
 }
 ```
 
-## Generics
+## Generic Types
 
-We have a `type` keyword used to represent any type in the program. You can use this keyword to define a generic type or function.
+Generic types are defined similar to a function but using `type` keyword for their type arguments (Example 1).
 
-Note that arguments of type `type` must be named like a type, not like a binding.
+Note that arguments of type `type` must be named like a type, not like a binding, and must receive value at compile time. This means that you cannot use a runtime dynamic binding value as a type.
 
 If you assign a generic function to a lambda, the type argument must have a value (Because value of a type argument must be provided at compile time) (Example 4).
 
@@ -426,6 +417,17 @@ map = (K,V: type, data: {K,V}... -> Map[T])
 	result = coreAlloc(T, data)
 }
 m = map(string, int, {"A", 1}, {"B", 2})
+```
+
+## Generic functions
+
+Similar to the way generic types are defined, you can define a generic function.
+
+**Examples**
+
+1. 
+```
+process = (T: type, x: [T], index: int -> x[index])
 ```
 
 ## Function call resolution
@@ -600,6 +602,17 @@ Map = [K: type, V: type ->
 g = Map[string, int].create({"A", 1}, {"B", 2})
 data = g.get("B") #data will be 2
 ```
+
+## Exception handling
+
+There is no explicit support for exceptions. You can return a specific `exception` type instead.
+
+If a really unrecoverable error happens, you should exit the application by calling `exit` function in core. 
+
+In special cases like a plugin system, where you must control exceptions, you can use built-in function `invoke` which will return an error result if the function which it calls exits.
+
+Example: `process = (nothing -> out:int|exception) { ... out = exception{...} }`
+
 
 # Examples
 
