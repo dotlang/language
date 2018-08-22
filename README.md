@@ -466,7 +466,7 @@ If lambda is assigned to a variable, you can invoke itself from inside (Example 
 
 Modules are source code files. You can import them into current module and use their public types and bindings. You can import modules from local file-system, GitHub or any other external source which the compiler supports (If import path starts with `.` or `..` it is relative path, if it start with `/` it is based on global DOTPATH, else it's using external protocols like `git`). After importing a module, you will have access to their public types and bindings (Those that don't start with `_`).
 
-Bindings defined at module level must be compile time calculatable. You can also change or add public bindings and types when importing a module (Syntax 2, Example 7).
+Bindings defined at module level must be compile time calculatable.
 
 In order to solve a name conflict during module import, you should add an intermediate module, import the problematic module, rename and export the needed symbols and then import the intermediate module.
 
@@ -575,7 +575,8 @@ Seq = [T: type -> {
 	create = (data: T... -> Seq[T])
 	{
 		result = coreAlloc(T, data)
-	}
+	},
+	get = (index: int -> coreGet(ref, T, index))
 }
 ]
 #using a sequence
