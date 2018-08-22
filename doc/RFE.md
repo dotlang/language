@@ -27,5 +27,28 @@ Customer =
 ```
 But it doesn't make sense to use `g` in Customer without importing the module.
 
-
 ? - How can I import a sequence of modules? Because now, sequence is not built-in.
+
+? - Why we cannot assign a generic function to a lambda?
+```
+process = (T: type, x: T -> x.name)
+```
+then how can I have a pointer to process?
+`g = process(_,_)` then: `g(int, 22)`?
+But I also can call `g(string, "A")`?
+what would be type of g then? `g: (T: type, x:T -> string)`
+But similarly, I can call `process(int, 22)` which will throw a compiler error!
+So compiler just needs to track what function does a lambda point to, so that when there is a call, it can generate the source for that function if needed.
+If we keep that data during compilation, we can allow assigning generic functions to a lambda.
+One less constraint
+
+? - What new things can we do with instance and type level functions?
+
+? - Recent changes:
+- seq
+- map
++ vararg
++ generics
++ byte
++ ptr 
+- compile time sequence
