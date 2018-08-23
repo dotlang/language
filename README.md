@@ -311,8 +311,6 @@ Generic types are defined similar to a function but using `type` keyword for the
 
 Note that arguments of type `type` must be named like a type, not like a binding, and must receive value at compile time. This means that you cannot use a runtime dynamic binding value as a type.
 
-If you assign a generic function to a lambda, the type argument must have a value (Because value of a type argument must be provided at compile time) (Example 4).
-
 You can use `_` as type name which means the value will is not available at the point of declaration but will be provided at compile time (Example 5).
 
 **Examples**
@@ -323,8 +321,8 @@ You can use `_` as type name which means the value will is not available at the 
 4. 
 ```
 process = (T: type, data: List[T] ...
-pointer = process(_,_) #wrong!
-pointer = process(int, _) #right
+pointer = process(_,_) #right, type of pointer is (T,List[T])
+pointer = process(int, _) #right, type of pointer is (int, List[int])
 ```
 5. 
 ```
@@ -444,7 +442,7 @@ To resolve a function call, first bindings with appropriate type in current func
 
 ## Lambda (Function literal)
 
-Lambda or a function literal is used to specify value for a binding of function type. It is very similar to the way you define body of a function binding. Lambdas are closures and can capture bindings in the parent function which come before their definition (Example 3 and 4).
+Lambda or a function literal is used to specify value for a binding of function type. It is very similar to the way you define body of a function binding. Lambdas are closures and can capture bindings in the parent function which come before their definition (Example 3 and 4). They cal also capture members of the parent struct, if the code is part of a lambda field inside a struct.
 
 You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normal call and replace the lambda inputs with `_` (Example 8).
 
