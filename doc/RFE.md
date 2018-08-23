@@ -1,10 +1,10 @@
-? - Add to pattern section: Stack, Tree, loop
+N - Add to pattern section: Stack, Tree, loop
 
-? - Allowing functions in a struct is just like defining a function to create instances of the struct.
+N - Allowing functions in a struct is just like defining a function to create instances of the struct.
 And initialising those lambda fields inside that function and calling it to create a new struct.
 It is a useful simplification. No new concept is added. Everything is the same: Closure, function, ...
 
-? - Can we import a module inside a struct definition?
+N - Can we import a module inside a struct definition?
 Or import it "into" a struct definition?
 The code inside the module has access to outer world's functions. So it will compile without an issue.
 But the code outside will not have access to a module which is inside a struct. Because then it needs to prefix with type name or instance name.
@@ -27,9 +27,9 @@ Customer =
 ```
 But it doesn't make sense to use `g` in Customer without importing the module.
 
-? - How can I import a sequence of modules? Because now, sequence is not built-in.
+N - How can I import a sequence of modules? Because now, sequence is not built-in.
 
-? - Why we cannot assign a generic function to a lambda?
+Y - Why we cannot assign a generic function to a lambda?
 ```
 process = (T: type, x: T -> x.name)
 ```
@@ -42,13 +42,16 @@ So compiler just needs to track what function does a lambda point to, so that wh
 If we keep that data during compilation, we can allow assigning generic functions to a lambda.
 One less constraint
 
-? - What new things can we do with instance and type level functions?
+N - What new things can we do with instance and type level functions?
 
-? - Recent changes:
-- seq
-- map
+N - Recent changes:
 + vararg
 + generics
 + byte
 + ptr 
+- seq
+- map
 - compile time sequence
+
+N - Can user play with `ptr`? e.g. by having address of the first element of sequence, calculate address of the second item (x+4)?
+we can do it via core functions.
