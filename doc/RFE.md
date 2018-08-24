@@ -85,3 +85,8 @@ writeName = (x: HasName[_] -> print(x.name))
 for methods with the same name or types with same name
 
 ? - How can I have recursive processing for variadic functions?
+
+? - Rather than channels, can we provide "tools" to build channels in the core?
+we can build a channel using a mutex (what about immutability?).
+and it is how channels are made.
+Let's provide lowest level and let the code (core or std) implement higher levels.
