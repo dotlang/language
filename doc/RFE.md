@@ -55,3 +55,33 @@ N - Recent changes:
 
 N - Can user play with `ptr`? e.g. by having address of the first element of sequence, calculate address of the second item (x+4)?
 we can do it via core functions.
+
+? - Can we move channels to core?
+Then we will have `rchan[int]` and `wchan[int]`
+They definitely cannot be in std.
+This will simplify concurrency section.
+
+? - Can we replace vararg with a linked list?
+I don't think so. we can do it the other way around: build LL using vararg function.
+
+? - Constraints with `type`?
+`type{name:string}` is a struct with string name field
+`type{}` is a struct
+`type{draw:(int->int)}` has this function
+`process = (T: type, x: type{get:(->T)})`
+It is not really needed.
+`Data = [T: type -> {name: string, data: T}]`
+`writeName = (x: Data[_] -> print(x.name))`
+Suppose that I have a type which has a name:string and data:int.
+can I call `writeName` with that type?
+```
+
+HasName = [T: type -> {name: string}]
+
+writeName = (x: HasName[_] -> print(x.name))
+```
+
+? - Should have an easier conflict resolution method?
+for methods with the same name or types with same name
+
+? - How can I have recursive processing for variadic functions?
