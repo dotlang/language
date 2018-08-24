@@ -67,7 +67,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 ## Main features
 
 01. **Import a module**: `@["/core/std/queue"]` (you can also import from external sources like Github).
-02. **Primitive types**: `int`, `float`, `char`, `byte`, `bool`, `string`, `type`, `ptr`. 
+02. **Primitive types**: `int`, `float`, `char`, `byte`, `bool`, `string`, `type`, `ptr`, `nothing`. 
 03. **Bindings**: `my_var = 19` (type will be automatically inferred, everything is immutable).
 04. **Named type**: `MyInt := int` (Defines a new separate type with same binary representation as `int`).
 05. **Type alias**: `IntType = int` (A different name for the same type).
@@ -77,6 +77,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 09. **Function**: `calculate = (x:int, y:int -> z:float) { z = x/y  }` (Assigning to binding for output type means return).
 10. **Lambda**: `sort( *{ source: my_sequence, compareFunction: (x,y -> x-y)} )` (If types can be inferred, you can omit them, `*` destructs a struct)
 11. **Concurrency**: `result := processData(x,y,z)` (Evaluate an expression in parallel).
+12. **Generics**: `LinkedList = [T: type -> {data: T, next: LinkedList[T]}]`
 
 ## Symbols
 
@@ -158,7 +159,7 @@ handler = process(_:int) #handler points to process1
 
 ## Binding name resolution
 
-To resolve a binding name, first bindings with appropriate type in current function will be searched. If not found, search will continue to parent functions, then module-level and then imported modules. At any scope, if there are multiple candidates (with same name) there will be a compiler error.
+To resolve a binding name, first bindings with given type in current function will be searched. If not found, search will continue to parent functions, then module-level and then imported modules. At any scope, if there are multiple candidates (with same name) there will be a compiler error.
 
 # Type system
 
@@ -305,7 +306,7 @@ process = (T: type, my_shape: Shape -> ...)
 }
 ```
 
-## Generic Types
+## Generics
 
 Generic types are defined similar to a function but using `type` keyword for their type arguments (Example 1).
 
@@ -329,6 +330,7 @@ pointer = process(int, _) #right, type of pointer is (int, List[int])
 Data = [T: type -> {name: string, data: T}]
 writeName = (x: Data[_] -> print(x.name))
 ```
+6. `process = (T: type, x: [T], index: int -> x[index])`
 
 # Functions
 
@@ -417,26 +419,11 @@ map = (K,V: type, data: {K,V}... -> Map[T])
 m = map(string, int, {"A", 1}, {"B", 2})
 ```
 
-## Generic functions
-
-Similar to the way generic types are defined, you can define a generic function.
-
-**Examples**
-
-1. 
-```
-process = (T: type, x: [T], index: int -> x[index])
-```
-
 ## Function call resolution
 
-Function calls are dispatched using dynamic type (for union typed bindings) or static type (for other bindings). Dynamic type of a union binding this will be determined at runtime. 
+We use a static dispatch for function calls. Also because you cannot have two functions with the same name, it is easier to find what happens with a function call.
 
-So for example if `x` of type `int|float|string` contains a float value, calling `process(x)` will invoke `process` which expects a float. This can be either defined as `(float->T)` function or a more general function of type `(float|int|string -> T)`.
-
-Note that if you have a `(int|float -> string)` function defined, you cannot define another function with the same name and signature but for `int` or `float` input.
-
-If `MyInt := int` is defined in the code, you cannot call a function which needs an `int` with a `MyInt` binding, unless it is forwarded explicitly in the code (e.g. `process = (x:MyInt -> int) process(int(x))`).
+If `MyInt := int` is defined in the code, you cannot call a function which needs an `int` with a `MyInt` binding, unless it is forwarded explicitly in the code (e.g. `process = (x:MyInt -> process(int(x)))`).
 
 To resolve a function call, first bindings with appropriate type in current function will be searched. If not found, search will continue to parent functions, then module-level and then imported modules. At any scope, if there are multiple candidates (matching with name and argument types) there will be a compiler error.
 
