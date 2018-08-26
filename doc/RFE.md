@@ -288,8 +288,17 @@ what about receive? What if I receive from a process which is already terminated
 To get result of a function (or exit code of a worker), we can use core: send me an update when this worker is finished
 `coreRegister(wid1)` will send a message to current worker, when wid1 is finished.
 receive from a terminated process will never work. It will never return.
-
-
+How this works with file, console, network? You can get a wid any way you want.
+```
+std = 1  #in and out
+send(std, "Hello")
+send(std, SubscribeMessage)
+```
+using 0 for current wid is not good. Because it is not portable. What if I want to send my own wid to another worker?
+How can I read from keyboard? with this new worker notation
+With channels, you can specifically ask to receive data frmo a channel.
+But here you receive from your own inbox.
+`name = receive(Message[string], (x: Message[string] -> x.sender == std))`
 
 ? - Why do we need `ptr` type? Can't we just use `int`?
 Or just define it as `ptr := int`
