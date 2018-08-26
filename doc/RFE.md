@@ -182,7 +182,39 @@ in other words, we only have worker communications: workers send data to each ot
 2 for stdout
 3 for stderr
 q: maybe we should make sender, a standard part of messages. this can affect select support too.
-when
+also we may want to send a message and wait until the message is received (like golang send to a non-buffered channel)
+but we can implement this via messages too.
+send and wait for a message from this cid with this type.
+select = receive from multiple cids - like a normal receive block if no message matches with this
+select = receive with multiple cids
+```
+x := process(10)
+g = receive(int, x) #receive an integer from x
+data, cid = receiveMulti(int, filter, x, y, z) #receive an integer from any of these channels
+```
+we can also have similar for send:
+`sendMulti(data, x, y, z)`
+but as send never blocks, this is same as multiple calls.
+blocking send can be implemented via send and receive (waiting for ack).
+blocking receive is already provided.
+BUT we don't receive "from" a specific cid.
+We just receive from current inbox.
+so rather than receiveMulti we can simply use receive but with a more complicated filter: receive a message of this type, where sender_cid is any of these.
+if none, it will block as it should be.
+how can we provide "or" in the filter?
+1. use a struct to provide multiple values
+2. use lambda
+```
+x := process(10)
+y := process(20)
+z := process(30)
+Message = [T: type -> {sender: cid, data: T}]
+g = receive(Message[int], {sender: {x,y,z}}) #g will contain a sender field
+originator = g.sender
+data = g.data
+```
+lambda solution is too flexible and difficult to optimize
+
 
 
 
