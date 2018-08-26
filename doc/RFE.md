@@ -274,7 +274,7 @@ But as receive needs a generic type anyway, we don't need to repeat it:
 **proposal**
 1. No channel notation, no channel send or receive
 2. `:=` will return a worker id (wid) which can be used to send and receive data
-3. Any two workers, can send message to each other: `send(my_data, wid1)`
+3. Any two workers, can send message to each other: `send(my_data, wid1)`. which returns whether message was sent or not.
 4. Any worker, can receive messages (block if nothing): `receive(int)`
 5. You can also provide a filter for receive (only of this sender, ...)
 6. Receive with multiple senders is like select
@@ -299,9 +299,106 @@ How can I read from keyboard? with this new worker notation
 With channels, you can specifically ask to receive data frmo a channel.
 But here you receive from your own inbox.
 `name = receive(Message[string], (x: Message[string] -> x.sender == std))`
+This is not compatible with channels. With channel, you have a specific communication media so if the other side sends something, you (and only you) will get it.
+But with this model, you cannot do it because socket does not know who is the listener.
+Unless, we provide our wid when creating a reference to std or socket or ... .
+```
+socket_wid = createSocket(my_wid, ...)
+send(socket_wid, "data")
+receive(... sender == socket_wid)
+```
+Another advantage of this: We can host (migrate) a worker to another machine. It's just a wid.
+the lambda for receive check is too much flexibility. can we limit it?
+`g = receive(Message[int], (m: Message[int] -> contains(senderList, m.sender))`
+user should be able to filter based on any field: sender, type, priority, ...
+even if we only allow these fields in the filter, how are we going to handle arrays (dynamic number of values for sender).
+`g = receive(Message[int], (m: Message[int] -> contains(senderList, m.sender))`
+what if we use generics + lambda? any use of lambda will prevent compiler optomisation and allow room for misuse.
+What is the absolute minimum we need here?
+in Erlang pattern matching, the pattern must be calculated at compile time.
+Anyway, how are we supposed to keep track of workers when their count is dynamic?
+one solution: pre-specified range for wid and provide upper and lower bound for them when matching.
+another solution: grouping. rather than relying on sender_id, rely on group_id and make it a fixed item.
+```
+x = process(10, "group1")
+y = process(20, "group1")
+z = process(30, "group1")
+...
+message = receive(Message, {sender_group: "group1"})
+```
+Ok. Now we only need to support a set of name/values for filter. Basically we need a sample 
+instance of message type. any message whose fields are exactly same as the sample will be matched.
+```
+Message = {data: int, sender: wid, sender_group: string, priority: int}
+...
+msg = receive(Message, {sender_group: "AAA", priority: 1})
+```
+what about missing fields in the pattern? what is type of filter?
+let's say: `nothing` is ignored in the matching process. so:
+```
+Message = {data: int, sender: wid, sender_group: string, priority: int}
+Filter = [T: type
+...
+msg = receive(Message, {sender_group: "AAA", priority: 1})
+```
+But group is not always pre-defined or fixed.
+I will still need `OR` support in the filter.
+What about this: provide a lambda which extracts a field from message, and a value to match.
+So filter is a lambda + target value. and we can any number of filters.
+```
+Filter = [S,T: type -> {lambda: (S->T), target: T}
+Message = {sender: int, group: string, data: int}
+receive(Message, Filter[Message, int]{lambda: (m: Message -> m.sender), target: s1_wid})
+```
+In this way we might be able to combine filters: AndFilter, OrFilter, ...
+And receive will accept only one filter.
+```
+Message = {sender: int, group: string, data: int}
+```
+Scala pattern matching supports boolean predicates:
+```
+notification match {
+    case Email(email, _, _) if importantPeopleInfo.contains(email) =>
+      "You got an email from special someone!"
+```
+Basically, this is like polymorphism: a number of handlers for a number of cases (types: circle, triangle, ...) and an unknown
+```
+ReceiveHandler = [T: type -> {predicate: (T->bool), handler: (T->)}]
+receive = (T: type, handlers: {predicate: (T->bool), handler: (T->)}...)
+...
+receive(Message, {predicate:(m: Message -> m.sender = 12), predicate:(m: Message -> processNormal(m))}, 
+                 {predicate:(m: Message -> m.sender = 14), predicate:(m: Message -> processImp(m))})
+```
+Seems that predicate with lambda is the most practical solution. 
+We can add a compiler warning if this predicate is not a simple expression.
+1. No channel notation, no channel send or receive
+2. `:=` will return a worker id (wid) which can be used to send and receive data
+3. `was_sent_bool = send(my_data, receiver_wid1)`. 
+4. `receive(int, handlers)`
+5. Send is not blocking, but if you need ack, you can receive and wait for "ack" response from recipient wid.
+We don't need a handler for receive. we just provide predicate.
+```
+Predicate = [T: type -> (T->bool)]
+receive = (T: type, handlers: predicate[T]...)
+...
+received_message = receive(Message, (m: Message -> m.sender == 13))
+```
+
+
+? - Can we use this matching with messages for a union?
+manually provide lambdas for each possible type.
+`invoke(circle_or_square, (c: Circle -> ...), (t: Triangle -> ...))`
+`invoke = (S,T: type, input: S|T, h1: (S->), h2:(T->))`
+but what will be the body of the function?
+receiving a `type` based on what is inside a union is dangerous.
+maybe we can check for match types: `bool m1 = matchType(circle_or_square, h1)`
+or: `tryInvoke(h1, circle_or_square, nothing)` try to invoke h1 with `circle_or_square`, if not possible return `nothing`.
+`tryInvoke = (T: type, h: (T->), input: ?, default: ? -> ?)`
+`multiInvoke = (S,T: type, h1: (T->), input: ?, default: ? -> ?)`
 
 ? - Why do we need `ptr` type? Can't we just use `int`?
 Or just define it as `ptr := int`
+or `Ptr := int`
 
 ? - Constraints with `type`?
 `type{name:string}` is a struct with string name field
@@ -327,6 +424,7 @@ Statically it is allowed because they are two different functions.
 But with above proposal, there will be confusion which one to call.
 the good thing about go is that the set of functions you can call for a specific type are flexible.
 You can easily add support for function f to type T. If f uses an interface and you provide appropriate functions for T it will work fine.
+
 
 ? - Can we have cache with message passing?
 For cache at least we need a way to "receive" without removing item from queue.
