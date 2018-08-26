@@ -63,6 +63,22 @@ N - How can I have recursive processing for variadic functions?
 just use core functions.
 `getVar(input, 3)` get a new variadic arg from 4th element afterwards
 
+N - End a function with `...}` to imply it should be called forever?
+so how can we exit?
+and 99% of the time we want to recursively call self with a new argument set. so it is not good.
+
+N - Should have an easier conflict resolution method?
+for methods with the same name or types with same name
+response: we cannot have methods with the same name.
+
+N - Rather than channels, can we provide "tools" to build channels in the core?
+we can build a channel using a mutex (what about immutability?).
+and it is how channels are made.
+Let's provide lowest level and let the code (core or std) implement higher levels.
+
+N - And the problem of cache.
+Most of solutions add some kind of opaqueness and confusion to the system.
+
 ? - Can we move channels to core?
 Then we will have `rchan[int]` and `wchan[int]`
 They definitely cannot be in std.
@@ -214,12 +230,66 @@ originator = g.sender
 data = g.data
 ```
 lambda solution is too flexible and difficult to optimize
+rather than having struct for field, we can have multiple filters.
+```
+x := process(10)
+y := process(20)
+z := process(30)
+Message = [T: type -> {sender: cid, data: T}]
+g = receive(Message[int], {sender: x}, {sender: y}, {sender: z}) #g will contain a sender field
+originator = g.sender
+data = g.data
+```
+But what is the type of `receive`?
+`receive = (T: type, filter: {???}... -> T)`
+`receive = (T: type, filter: T... -> T)`
+So, can we say `{sender: x}` can be of type `Message[int]`?
+Can we have this?
+```
+Point = {x:int, y:int}
+f = Point{x: 10}
+```
+I don't think so. Every field must have a value here.
+so, we specify all values for all fields:
+`g = receive(Message[int], {sender: x, data: ?}, {sender: y, data: ?}, {sender: z, data: ?})`
+q: filter is only for structs. right?
+q: How does this whole thing work with union types?
+`g = receive(Message[int], (m: Message[int] -> m.sender == x or m.sender == y or m.sender == z))`
+then type of receive will be:
+`receive = (T: type, lambda: (T->bool))`
+Erlang does this via pattern.
+Giving a message to a lambda which developer has written is a bit dangerous.
+Basically, even the first argument of receive (type) is a filter.
+`g = receive({type: Message[int], sender: {x,y,z}})`
+what if we repeat sender?
+`g = receive({type: Message[int], sender: x, sender: y, sender: z})`
+we want to be able to receive from a dynamic number of senders. so this should be more flexible.
+With lambda: 
+`g = receive(Message[int], (m: Message[int] -> contains(senderList, m.sender))`
+It will work fine with multiple dynamic number of senders too.
+we can also use lambda for type!
+`g = receive((m: Message[int] -> m.type == Message[int] and contains(senderList, m.sender))`
+But as receive needs a generic type anyway, we don't need to repeat it:
+`g = receive(Message[int], (m: Message[int] -> contains(senderList, m.sender))`
+**proposal**
+1. No channel notation, no channel send or receive
+2. `:=` will return a worker id (wid) which can be used to send and receive data
+3. Any two workers, can send message to each other: `send(my_data, wid1)`
+4. Any worker, can receive messages (block if nothing): `receive(int)`
+5. You can also provide a filter for receive (only of this sender, ...)
+6. Receive with multiple senders is like select
+7. Send is not blocking, but if you need ack, you can receive and wait for "ack" response from recipient wid.
+how can we say, receive anything? at least we have to know type.
+other than that: a lambda that returns true for everything
+How can we have a timeout for receive wait? use a special worker which returns what we want after a timeout.
+send to a finished worker: it will return.
+suggestion: we can add a bool return to send so we know whether message was delivered or not. e.g. is process is terminated, send will return false.
+what about receive? What if I receive from a process which is already terminated?
+To get result of a function (or exit code of a worker), we can use core: send me an update when this worker is finished
+`coreRegister(wid1)` will send a message to current worker, when wid1 is finished.
+receive from a terminated process will never work. It will never return.
 
 
-
-
-? - End a function with `...}` to imply it should be called forever?
-so how can we exit?
 
 ? - Why do we need `ptr` type? Can't we just use `int`?
 Or just define it as `ptr := int`
@@ -249,13 +319,24 @@ But with above proposal, there will be confusion which one to call.
 the good thing about go is that the set of functions you can call for a specific type are flexible.
 You can easily add support for function f to type T. If f uses an interface and you provide appropriate functions for T it will work fine.
 
-? - Should have an easier conflict resolution method?
-for methods with the same name or types with same name
+? - Can we have cache with message passing?
+For cache at least we need a way to "receive" without removing item from queue.
+But a cache can have a lot of subscribers. ok. They just need to have cache worker's wid.
+Then they can receive. But cache is not supposed to send a message to every one of it's subscribers.
+A cache can be a worker which accepts two types of messages: store and query
+For store, it will update it's internal state for cache data
+For query, it will send the result of cache query to the sender process.
+With each store, it will call itself with a new state: the new cache which contains the newly added data
+```
+CacheState = Map[string, int]
+cache = (cs: CacheState->)
+{
+    request = receive(Message[CacheStore])
+    new_cache_state = update(cs, request)
+    cache(new_cache_state)
+}
+```
+This is closure, even inside cache function, we have access to itself.
+Add to pattern section
 
-? - Rather than channels, can we provide "tools" to build channels in the core?
-we can build a channel using a mutex (what about immutability?).
-and it is how channels are made.
-Let's provide lowest level and let the code (core or std) implement higher levels.
 
-? - And the problem of cache.
-Most of solutions add some kind of opaqueness and confusion to the system.
