@@ -599,6 +599,14 @@ In special cases like a plugin system, where you must control exceptions, you ca
 
 Example: `process = (nothing -> out:int|exception) { ... out = exception{...} }`
 
+## Conditionals
+
+If and Else constructs can be implemented using the fact that booleans converted to integer will result to either 0 or 1 (for `false` and `true`).
+
+```
+ifElse = (T: type, cond: bool, trueCase: T, falseCase:T -> get(T, int(cond), falseCase, trueCase)
+get = (T: type, index: int, items: T... -> getVar(items, index))
+```
 
 # Examples
 
