@@ -91,7 +91,73 @@ or: `tryInvoke(h1, circle_or_square, nothing)` try to invoke h1 with `circle_or_
 `multiInvoke = (S,T: type, h1: (T->), input: ?, default: x -> ?)`
 No. We have cast which returns a bool. That's enough.
 
+N - If we can treat union like a struct, we can add member functions for it.
+But can simply define a struct containing the union + member functions.
 
+N - Constraints with `type`?
+`type{name:string}` is a struct with string name field
+`type{}` is a struct
+`type{draw:(int->int)}` has this function
+`process = (T: type, x: type{get:(->T)})`
+It is not really needed.
+`Data = [T: type -> {name: string, data: T}]`
+`writeName = (x: Data[_] -> print(x.name))`
+Suppose that I have a type which has a name:string and data:int.
+can I call `writeName` with that type?
+```
+HasName = [T: type -> {name: string}]
+Customer = {age:int, id: int, name:string}
+
+writeName = (x: HasName[_] -> print(x.name))
+#can I call this?
+writeName(my_customer)
+```
+I don't think so. It is against function resolution rules.
+What if we also have a writeName with Customer?
+Statically it is allowed because they are two different functions.
+But with above proposal, there will be confusion which one to call.
+the good thing about go is that the set of functions you can call for a specific type are flexible.
+You can easily add support for function f to type T. If f uses an interface and you provide appropriate functions for T it will work fine.
+constraint for type can be checked at compile time. but for other types will be at runtime.
+we can add this but I'm not sure about it's usefullness.
+e.g. constraint to union -> only it's cases can be added (for candidateHandlers in polymorphism)
+e.g. constraints to struct -> only for types with that members
+```
+Shape = Circle | Triangle | Square
+ShapeType = type|Shape|
+CandidateList = [T: ShapeType -> {X: ShapeType, handler: (T->), next: nothing|CandidateList[_]}]
+```
+and for struct:
+```
+QueryMessage = {key: string}
+UpdateMessage = {key: string, data: int}
+MessageType = type{key: string}
+processMessage = (T: MessageType, msg: T -> msg.key)
+...
+processMessage(QueryMessage, q_msg)
+```
+Too much complication and not very much benefits.
+
+N - Why do we need `ptr` type? Can't we just use `int`?
+Or just define it as `ptr := int`
+or `Ptr := int`
+But it is not only a number. We need to keep track of size of the region too.
+So let's just say it will be handled by core.
+
+Y - Add to patterns: conditionals
+How can we do this without sequence?
+using indexed access to a memory region
+add as a function in std
+```
+ifElse = (T: type, cond: bool, trueCase: T, falseCase:T -> get(T, int(cond), falseCase, trueCase)
+get = (T: type, index: int, items: T... -> getVar(items, index))
+```
+
+
+
+
+
+==========
 
 
 ? - Can we move channels to core?
@@ -401,53 +467,9 @@ received_message = receive(Message, (m: Message -> m.sender == 13))
 
 
 
-? - Why do we need `ptr` type? Can't we just use `int`?
-Or just define it as `ptr := int`
-or `Ptr := int`
 
-N - Constraints with `type`?
-`type{name:string}` is a struct with string name field
-`type{}` is a struct
-`type{draw:(int->int)}` has this function
-`process = (T: type, x: type{get:(->T)})`
-It is not really needed.
-`Data = [T: type -> {name: string, data: T}]`
-`writeName = (x: Data[_] -> print(x.name))`
-Suppose that I have a type which has a name:string and data:int.
-can I call `writeName` with that type?
-```
-HasName = [T: type -> {name: string}]
-Customer = {age:int, id: int, name:string}
 
-writeName = (x: HasName[_] -> print(x.name))
-#can I call this?
-writeName(my_customer)
-```
-I don't think so. It is against function resolution rules.
-What if we also have a writeName with Customer?
-Statically it is allowed because they are two different functions.
-But with above proposal, there will be confusion which one to call.
-the good thing about go is that the set of functions you can call for a specific type are flexible.
-You can easily add support for function f to type T. If f uses an interface and you provide appropriate functions for T it will work fine.
-constraint for type can be checked at compile time. but for other types will be at runtime.
-we can add this but I'm not sure about it's usefullness.
-e.g. constraint to union -> only it's cases can be added (for candidateHandlers in polymorphism)
-e.g. constraints to struct -> only for types with that members
-```
-Shape = Circle | Triangle | Square
-ShapeType = type|Shape|
-CandidateList = [T: ShapeType -> {X: ShapeType, handler: (T->), next: nothing|CandidateList[_]}]
-```
-and for struct:
-```
-QueryMessage = {key: string}
-UpdateMessage = {key: string, data: int}
-MessageType = type{key: string}
-processMessage = (T: MessageType, msg: T -> msg.key)
-...
-processMessage(QueryMessage, q_msg)
-```
-Too much complication and not very much benefits.
+
 
 ? - Can we have cache with message passing?
 For cache at least we need a way to "receive" without removing item from queue.
@@ -575,16 +597,22 @@ process = (s: Shape) ... #s is a binding, so it can hold any shape
 process = (T: Shape ... #T is a type, so it can be any Shape subtype
 ```
 No change in syntax. No change in notation.
+also we can say `Type = ||` means union of all possible types.
+So no need for keyword `type`.
+The difference is that values for `type` must be specified at compile time but for a binding of type `Type` their value can come at any time.
+```
+Stack = [T: || -> {data: T, next: Stack[T]}]
+find = (T: ||, array: Seq[T], item: T -> int)
+```
+so:
+**Proposal**:
+1. When a union type is used for a binding, that binding may have value for any of it's types.
+2. When a union type is used for a type specifier, it represents valid types for that type and that type can be used to specify type of other arguments.
+3. `||` is a union type of all possible types.
+4. 
 
 ? - Review examples section
 
-? - Add to patterns: conditionals
-How can we do this without sequence?
-using indexed access to a memory region
-add as a function in std
-```
-ifElse = (T: type, cond: bool, trueCase: T, falseCase:T -> get(T, int(cond), falseCase, trueCase)
-get = (T: type, index: int, items: T... -> getVar(items, index))
-```
-
-
+? - Can we make union with constant values more explicit?
+`Shape = Circle | Square`
+`DayOfWeek = SAT | SUN ...`
