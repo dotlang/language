@@ -79,6 +79,21 @@ Let's provide lowest level and let the code (core or std) implement higher level
 N - And the problem of cache.
 Most of solutions add some kind of opaqueness and confusion to the system.
 
+N - Can we use this matching with messages for a union?
+manually provide lambdas for each possible type.
+`invoke(circle_or_square, (c: Circle -> ...), (t: Triangle -> ...))`
+`invoke = (S,T: type, input: S|T, h1: (S->), h2:(T->))`
+but what will be the body of the function?
+receiving a `type` based on what is inside a union is dangerous.
+maybe we can check for match types: `bool m1 = matchType(circle_or_square, h1)`
+or: `tryInvoke(h1, circle_or_square, nothing)` try to invoke h1 with `circle_or_square`, if not possible return `nothing`.
+`tryInvoke = (T: type, h: (T->), input: ?, default: x -> ?)`
+`multiInvoke = (S,T: type, h1: (T->), input: ?, default: x -> ?)`
+No. We have cast which returns a bool. That's enough.
+
+
+
+
 ? - Can we move channels to core?
 Then we will have `rchan[int]` and `wchan[int]`
 They definitely cannot be in std.
@@ -385,22 +400,12 @@ received_message = receive(Message, (m: Message -> m.sender == 13))
 ```
 
 
-? - Can we use this matching with messages for a union?
-manually provide lambdas for each possible type.
-`invoke(circle_or_square, (c: Circle -> ...), (t: Triangle -> ...))`
-`invoke = (S,T: type, input: S|T, h1: (S->), h2:(T->))`
-but what will be the body of the function?
-receiving a `type` based on what is inside a union is dangerous.
-maybe we can check for match types: `bool m1 = matchType(circle_or_square, h1)`
-or: `tryInvoke(h1, circle_or_square, nothing)` try to invoke h1 with `circle_or_square`, if not possible return `nothing`.
-`tryInvoke = (T: type, h: (T->), input: ?, default: ? -> ?)`
-`multiInvoke = (S,T: type, h1: (T->), input: ?, default: ? -> ?)`
 
 ? - Why do we need `ptr` type? Can't we just use `int`?
 Or just define it as `ptr := int`
 or `Ptr := int`
 
-? - Constraints with `type`?
+N - Constraints with `type`?
 `type{name:string}` is a struct with string name field
 `type{}` is a struct
 `type{draw:(int->int)}` has this function
@@ -424,7 +429,25 @@ Statically it is allowed because they are two different functions.
 But with above proposal, there will be confusion which one to call.
 the good thing about go is that the set of functions you can call for a specific type are flexible.
 You can easily add support for function f to type T. If f uses an interface and you provide appropriate functions for T it will work fine.
-
+constraint for type can be checked at compile time. but for other types will be at runtime.
+we can add this but I'm not sure about it's usefullness.
+e.g. constraint to union -> only it's cases can be added (for candidateHandlers in polymorphism)
+e.g. constraints to struct -> only for types with that members
+```
+Shape = Circle | Triangle | Square
+ShapeType = type|Shape|
+CandidateList = [T: ShapeType -> {X: ShapeType, handler: (T->), next: nothing|CandidateList[_]}]
+```
+and for struct:
+```
+QueryMessage = {key: string}
+UpdateMessage = {key: string, data: int}
+MessageType = type{key: string}
+processMessage = (T: MessageType, msg: T -> msg.key)
+...
+processMessage(QueryMessage, q_msg)
+```
+Too much complication and not very much benefits.
 
 ? - Can we have cache with message passing?
 For cache at least we need a way to "receive" without removing item from queue.
@@ -440,10 +463,128 @@ cache = (cs: CacheState->)
 {
     request = receive(Message[CacheStore])
     new_cache_state = update(cs, request)
+    query = receive(Message[CacheQuery])
+    result = lookup(new_cache_state, query)
+    send(Message{my_wid, query.sender_wid, result})
     cache(new_cache_state)
 }
 ```
 This is closure, even inside cache function, we have access to itself.
 Add to pattern section
+
+? - Can we convert union to case class like in scala?
+Will it make things simpler?
+```
+#Scala
+abstract class Notification
+case class Email(sender: String)
+case class SMS(caller: String)
+case class VoiceRecording(contactName: String)
+...
+def showNotification(notification: Notification): String = {
+  notification match {
+    case Email(email, title, _) =>
+      s"You got an email from $email with title: $title"
+    case SMS(number, message) =>
+      s"You got an SMS from $number! Message: $message"
+    case VoiceRecording(name, link) =>
+      s"you received a Voice Recording from $name! Click the link to hear it: $link"
+  }
+}
+```
+maybe we can use a dot notation to make adding a new case to union more intuitive:
+```
+Shape.Circle = {r: float}
+Shape.Square = {s: int}
+...
+Shape.Triangle = {x: int, y: int}
+...
+CandidateList = [T: Shape -> {T: type, handler: (T->), next: nothing|CandidateList[_]}]
+shape_handlers = CandidateList[Square]{Square, drawSquare, shape_handlers}
+shape_handlers = CandidateList[Triangle]{Triangle, drawTriangle, shape_handlers}
+
+draw = (s: Shape, element: CandidateList[_] -> )
+{
+    
+}
+```
+But what happens to simple unions like `int | string`?
+this is named union so we have to assign a name:
+```
+Data.Int = int
+Data.String = string
+process = (x: Data ...
+```
+Another problem: we cannot enhance it with generics
+`Data = [S,T: type -> S|T]`
+We cannot use generics because the definition is not in one location. we can
+```
+Shape.Circle = [T: type -> {r: float, data: T}]
+Shape.Square = [T: type -> {s: int, data: T}]
+```
+And `Shape` can be used to limit number of types for a generic type:
+`CandidateList = [T: Shape -> {T: type, handler: (T->), next: nothing|CandidateList[_]}]`
+proposal:
+- No `|` for union notation. We use `A.B` naming where A is union name and B is subtype name.
+- A binding of type A can hold any of the subtypes.
+- You can cast a binding of type A to any of it's subtypes to check existence.
+- Subtypes can be any type (simple, struct, ...)
+advantage: extending an existing union is more intuitive (adding a new shape)
+advantage: You can use it to constraint a generic type
+q: should we have select for type matching?
+q: Can subtype be another union?
+```
+MessageType.Voice = int
+MessageType.SMS = string
+QueryType.QType = ...
+```
+q: what about maybe/optional and DayOfWeek?
+The dot notation is a bit confusing with struct. Can we use another notation? e.g. `Shape|Circle`
+or think of it as a tag: `Circle@Shape = {...}` - in that case, can we have multiple tags for a type?
+dot implies parent/child or container/contained relationship.
+`|` implies or relationship.
+we can have multiple tags: `Shape|Circle`, `Item|Circle`, ...
+`Shape+Circle`
+`Shape/Circle`
+It should be a composable notation. 
+Use regex? ShpCircle, ShpSquare, ... no too complicated
+```
+DayOfWeek.Saturday = 1 #this is a type which has only one valid value
+DayOfWeek.Sunday = 2
+...
+```
+```
+Maybe[T: type].Nothing = nothing
+Maybe[T: ty[e].Item = T
+...
+x: Maybe[int]
+```
+No. This is too complicated.
+Can't we use current `Shape` union to restrict possible types?
+`CandidateList = [T: Shape -> {T: type, handler: (T->), next: nothing|CandidateList[_]}]`
+we can but it will make reading code more difficult.
+Let's let it stay the same.
+the problem with this union is that it is not composable with generics easily.
+We can have generic at union type level and at subtypes level which makes it super confusing:
+`Processor[T: type].Handler[S: type] = (S->T)`
+
+? - We can say, union type when used as type of binding specifies range of possible values it can hold.
+When used as a generic type specifier, shows possible types that generic type can hold.
+```
+process = (s: Shape) ... #s is a binding, so it can hold any shape
+process = (T: Shape ... #T is a type, so it can be any Shape subtype
+```
+No change in syntax. No change in notation.
+
+? - Review examples section
+
+? - Add to patterns: conditionals
+How can we do this without sequence?
+using indexed access to a memory region
+add as a function in std
+```
+ifElse = (T: type, cond: bool, trueCase: T, falseCase:T -> get(T, int(cond), falseCase, trueCase)
+get = (T: type, index: int, items: T... -> getVar(items, index))
+```
 
 
