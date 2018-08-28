@@ -613,7 +613,7 @@ get = (T: type, index: int, items: T... -> getVar(items, index))
 ## Empty application
 
 ```
-main = ( -> 0 )`
+main = ( -> 0 )
 ```
 
 This is a function, called `main` which has no input and always returns `0` (very similar to C/C++ except `main` function has no input).
@@ -647,10 +647,10 @@ innerEval = (exp: Expression -> out:float)
   out = [(->out1), (x:int->x](exp)
   y,_ = NormalExpression(exp)
   
-  out1 = [out2, innerEval(y.left) + innerEval(y.right)][y.op == '+']
-  out2 = [out3, innerEval(y.left) - innerEval(y.right)][y.op == '-']
-  out3 = [out4, innerEval(y.left) * innerEval(y.right)][y.op == '*']
-  out4 = [0, innerEval(y.left) / innerEval(y.right)][y.op == '/']
+  out1 = ifElse(y.op == '+', innerEval(y.left) + innerEval(y.right), out2)
+  out2 = ifElse(y.op == '-', out3, innerEval(y.left) - innerEval(y.right))
+  out3 = ifElse(y.op == '*', out4, innerEval(y.left) * innerEval(y.right))
+  out4 = ifElse(y.op == '/', 0, innerEval(y.left) / innerEval(y.right))
 }
 ```
 
@@ -672,6 +672,7 @@ quickSort:([int], int, int)->[int] = (list:[int], low: int, high: int -> out:[in
 ```
 
 ## Sequence sum
+
 A function which accepts a list of numbers and returns sum of numbers.
 ```
 filteredSum = (data: [int] -> out:int)
@@ -687,6 +688,7 @@ filteredSum = (data: [int] -> out:int)
 ```
 
 ## Digit extractor
+
 A function which accepts a number and returns it's digits in a sequence of characters.
 Generally for this purpose, using a linked-list is better because it will provide better performance.
 ```
@@ -699,6 +701,7 @@ extractor = (n: number, result: string -> out:string)
 ```
 
 ## Max sum
+
 A function which accepts two sequences of numbers and returns the maximum of sum of any any two numbers chosen from each of them.
 This can be done by finding maximum element in each of the arrays but we want to do it with a nested loop.
 ```
