@@ -200,15 +200,7 @@ process = (x:int, y:int -> out:int)
 }
 ```
 
-
-
-
-
-
-==========
-
-
-? - Can we move channels to core?
+Y - Can we move channels to core?
 Then we will have `rchan[int]` and `wchan[int]`
 They definitely cannot be in std.
 This will simplify concurrency section.
@@ -587,10 +579,52 @@ msg = ::(m: Message -> m == {source:1, type:2})
 `:: (...)`
 so: you cannot send a message which is a lambda. but this might be useful in some cases.
 let's just have lambda. It is more general and you can put it inside a function to make call shorter.
+- Let's address some of inefficiencies of actor model: implementing handshake model
+- Limit mailbox
+Suppose that a process wants to send a message, but wait until it is picked up.
+We may want to implement a protocol, so wait after it is picked up for a reply.
+```
+was_sent = data=>wid
+msg = (m: Message -> true)
+msg = (m: Message -> m == {source:1, type:2})
+```
+Why should we have a special notation for this? Can't we rely on core functions?
+```
+was_sent = send(data, wid)
+sendWait(data, wid) #send and wait for message to be picked up
+msg = receive(Message, wid, (m: Message -> true)) #receive any message from this sender
+msg = receive(Message, nothing, (m: Message -> m == {source:1, type:2})) #receive this specific message from any sender
+```
+let's put sender in predicate. So we can have a proper select.
+```
+was_sent = data>>wid
+sendWait(data, wid) #send and wait for message to be picked up
+msg = <<receive(Message, wid, (m: Message -> true)) #receive any message from this sender
+msg = receive(Message, nothing, (m: Message -> m == {source:1, type:2})) #receive this specific message from any sender
+```
+Defining a notation for something complex like this, needs a lot of conventions which many people would find confusing.
+Send, receive, send and wait, ...
+Let's just stick to core functions.
+```
+was_sent = send(data, wid)
+sendWait(data, wid) #send and wait for message to be picked up
+msg = receive(Message, wid, (m: Message -> true)) #receive any message from this sender
+msg = receive(Message, nothing, (m: Message -> m == {source:1, type:2})) #receive this specific message from any sender
+```
+What about socket, file, ...? which of these are inherently mutable?
+file is not. 
+```
+f = open("a.txt")
+data = read(f, int)
+```
+What if multiple threads read from this file?
+```
+f := open("a.txt")
+send(f, "a.txt") #to write
+receive(...)
+```
 
-
-
-? - Can we have cache with message passing?
+Y - Can we have cache with message passing?
 For cache at least we need a way to "receive" without removing item from queue.
 But a cache can have a lot of subscribers. ok. They just need to have cache worker's wid.
 Then they can receive. But cache is not supposed to send a message to every one of it's subscribers.
@@ -613,7 +647,7 @@ cache = (cs: CacheState->)
 This is closure, even inside cache function, we have access to itself.
 Add to pattern section
 
-? - Can we convert union to case class like in scala?
+N - Can we convert union to case class like in scala?
 Will it make things simpler?
 ```
 #Scala
@@ -709,6 +743,27 @@ the problem with this union is that it is not composable with generics easily.
 We can have generic at union type level and at subtypes level which makes it super confusing:
 `Processor[T: type].Handler[S: type] = (S->T)`
 
+Y - Can we make union with constant values more explicit/consistent?
+`Shape = Circle | Square`
+`DayOfWeek = SAT | SUN ...`
+we can introduce fixed types where there is only one valid value for them, like `nothing`.
+If right side of type is a constant (compile time calculatable), it defines a fixed type.
+```
+Sat = 1
+Sun = 2
+Mon = 3
+WeekDay = Sat | Sun | ...
+x: WeekDay = Sat
+```
+
+N - Can we combine generics?
+`process = (T: ||, G: ||, data: G[T] ...`
+This is not for language. Mostly for compiler.
+
+
+
+
+
 ? - We can say, union type when used as type of binding specifies range of possible values it can hold.
 When used as a generic type specifier, shows possible types that generic type can hold.
 ```
@@ -783,24 +838,21 @@ So:
 3. Any specialisation, will also handle for more specialised functions. This applied for generic functions with more than one type.
 4. If there is conflict between specialisations, there will be compiler error.
 
-? - Can we combine generics?
-`process = (T: ||, G: ||, data: G[T] ...`
-
 ? - If we go with union for generics, we can add a new type: `anything` which is basically union of all types.
 rather than `||`
+It makes more sense than `||` or `type`.
+Any binding of type `anything` must be assigned with a literal or another binding of the same type. So values are decided at compile time.
+
+? - Having access to common parts of union types may be confusing at some times.
+and hidden.
+There should be a way to "declare" those common parts.
+So if I write `Shape = Shape | Square` writer of Square knows what should be included.
 
 ? - Review examples section
 
-? - Can we make union with constant values more explicit/consistent?
-`Shape = Circle | Square`
-`DayOfWeek = SAT | SUN ...`
-we can introduce fixed types where there is only one valid value for them, like `nothing`.
-If right side of type is a constant (compile time calculatable), it defines a fixed type.
+? - If I allow for union-based generics can I specialise for values?
 ```
-Sat = 1
-Sun = 2
-Mon = 3
-WeekDay = Sat | Sun | ...
-x: WeekDay = Sat
+process = (x: int, flag: true|false) ...
+process = (x: int, flag: true) ...
+process = (x: int, flag: false) ...
 ```
-
