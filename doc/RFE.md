@@ -153,6 +153,54 @@ ifElse = (T: type, cond: bool, trueCase: T, falseCase:T -> get(T, int(cond), fal
 get = (T: type, index: int, items: T... -> getVar(items, index))
 ```
 
+N - Assigning to a binding which is not defined yet, make reading code difficult.
+```
+process = (->out:int) 
+{
+    out = f(out2)
+    out2 = g(out3)
+    out3 = ...
+}
+```
+This was introduced to prevent declaring conditionals and early return
+```
+process = (x:int -> out:int)
+{
+    #if x is negative return early
+    ???   
+    #else
+    out = innerProcess(x)
+}
+#we can write:
+process = (x:int -> out:int)
+{
+    out = ifElse(x<0, 0, innerProcess(x))
+}
+```
+The goal: make language simpler, more minimal and consistent and easy to read.
+
+N - From go2 design: Error handling
+```
+x, err := strconv.Atoi(a)
+	if err != nil {
+		return err
+	}
+#becomes
+handle err { return err }
+x := check strconv.Atoi(a)
+```
+```
+process = (x:int, y:int -> out:int)
+{
+    #if either of x or y are negative return 0
+    #else return x+y
+    out = ifElse(x<0, 0, out2)
+    out2 = ifElse(y<0, 0, out3)
+    out3 = x+y
+}
+```
+
+
 
 
 
@@ -447,8 +495,8 @@ Basically, this is like polymorphism: a number of handlers for a number of cases
 ReceiveHandler = [T: type -> {predicate: (T->bool), handler: (T->)}]
 receive = (T: type, handlers: {predicate: (T->bool), handler: (T->)}...)
 ...
-receive(Message, {predicate:(m: Message -> m.sender = 12), predicate:(m: Message -> processNormal(m))}, 
-                 {predicate:(m: Message -> m.sender = 14), predicate:(m: Message -> processImp(m))})
+receive(Message, {predicate:(m: Message -> m.sender = 12), action:(m: Message -> processNormal(m))}, 
+                 {predicate:(m: Message -> m.sender = 14), action:(m: Message -> processImp(m))})
 ```
 Seems that predicate with lambda is the most practical solution. 
 We can add a compiler warning if this predicate is not a simple expression.
@@ -457,17 +505,88 @@ We can add a compiler warning if this predicate is not a simple expression.
 3. `was_sent_bool = send(my_data, receiver_wid1)`. 
 4. `receive(int, handlers)`
 5. Send is not blocking, but if you need ack, you can receive and wait for "ack" response from recipient wid.
+6. Send to terminated/invalid wid returns false. receive from terminated/invalid wid will never return
 We don't need a handler for receive. we just provide predicate.
 ```
 Predicate = [T: type -> (T->bool)]
-receive = (T: type, handlers: predicate[T]...)
+receive = (T: type, handler: predicate[T])
 ...
 received_message = receive(Message, (m: Message -> m.sender == 13))
 ```
-
-
-
-
+We can have a notation for send and receive:
+```
+was_sent = data>>wid
+msg = <<(m: Message -> m.sender=1)
+```
+It is better for notation to be composable. So I can do something on the result immediately.
+`x = <<(m: Message -> m.sender=12).source`
+`was_sent = data<wid>`
+`msg = {(m: Message -> m.sender=12)}`
+`msg = ((m: Message -> m.sender=12))`
+`msg = [(m: Message -> m.sender=12)]`
+`was_sent = data->wid`
+`was_sent = wid!data`
+`msg = (m: Message -> m.sender=12)?`
+```
+was_sent = (wid<<data)
+msg = <<(m: Message -> m.sender=1)
+```
+what about timeout in receive?
+before receive we can initiate another micro-thread to send a message after x milliseconds 
+```
+#initiate a new thread which will send me a message after 300 ms
+wid := timeout(my_wid, 300, {flag: false})
+msg = <<(m: Message -> true) #wait for any message
+{stop}>>wid
+```
+Let's make both notations the same:
+```
+was_sent = wid<<data
+msg = <<(m: Message -> true)
+```
+immediate/eventual send
+**Proposal**
+1. `:=` will return a worker id (wid) which can be used to send and receive data
+2. 
+```
+was_sent = wid<<data
+msg = <<(m: Message -> true)
+```
+3. Send is not blocking, but if you need ack, you can receive and wait for "ack" response from recipient wid.
+4. Send to terminated/invalid wid returns false. receive from terminated/invalid wid will never return
+```
+was_sent = wid<-data
+msg = my_wid<-(m: Message -> true)
+```
+```
+#it makes more sense to bring data first, when sending
+was_sent = data::wid
+msg = ::(m: Message -> true)
+msg = ::lambda
+```
+Do we need a notation to represent current wid? I don't think so. put it in core: `currentWid()`
+Example:
+send and wait for ack:
+`data::wid`
+`::{sender:wid, type: Ack}`
+Let's say after `::` you can put a binding (wait for exact message) or lambda (predicate)
+`msg = ::(...)`
+`createResponse(msg)::msg.sender`
+**Proposal**
+1. `:=` will return a worker id (wid) which can be used to send and receive data
+2. 
+```
+was_sent = wid::data
+msg = ::(m: Message -> true)
+msg = ::(m: Message -> m == {source:1, type:2})
+```
+3. Send is not blocking, but if you need ack, you can receive and wait for "ack" response from recipient wid.
+4. Send to terminated/invalid wid returns false. receive from terminated/invalid wid will never return
+`:: msg1, msg2, msg3, lambda` wait for any of these -> no. too confusing.
+`:: msg1` or
+`:: (...)`
+so: you cannot send a message which is a lambda. but this might be useful in some cases.
+let's just have lambda. It is more general and you can put it inside a function to make call shorter.
 
 
 
@@ -605,14 +724,46 @@ Stack = [T: || -> {data: T, next: Stack[T]}]
 find = (T: ||, array: Seq[T], item: T -> int)
 ```
 so:
-**Proposal**:
+**Proposal**: Replace generics notation with union types
 1. When a union type is used for a binding, that binding may have value for any of it's types.
 2. When a union type is used for a type specifier, it represents valid types for that type and that type can be used to specify type of other arguments.
 3. `||` is a union type of all possible types.
-4. 
+If all types of a union share `name:string` then you can refer to it inside a generic function for that type.
+Can we have a parameteric generic?
+`process = (T: ||, X: ShapeHolder[T], ...`
+So this also means I can define bindings of type `||`, which is same as `void*` or `interface{}`
+`draw = (T: Shape, x: T`
+In this case, polymorphism can become generics specialisation. If we can do that:
+`draw = (T: Shape, x: T -> int)`
+`draw = (T: Circle, x: Circle -> int) ...`
+`draw = (T: Square, x: Square -> int) ...`
+So compiler will generate draw code for Triangle but not Circle and Square. We already have them.
+
+? - If we go ahead with replacing generics notation with union, we can replace polymorphism with generic speciaisation:
+`draw = (T: Shape, x: T -> int)`
+`draw = (T: Circle, x: Circle -> int) ...`
+`draw = (T: Square, x: Square -> int) ...`
+`draw(myCircle)` will call draw for Circle
+`draw(my_triangle)` will call generic draw (code generated for Triangle)
+so, how can I address these in a lambda?
+`myLambda = draw(_: Shape, _)`
+`myLambda = draw(_:Circle, _:Circle)`
+using `_` with lambda hides the fact that argument is a type or a binding.
+If we do this, then we will not need `_` notation in generics.
+So when using `_` notation to create lambda, we should specify type for some arguments so that compiler will know which one to pick.
 
 ? - Review examples section
 
-? - Can we make union with constant values more explicit?
+? - Can we make union with constant values more explicit/consistent?
 `Shape = Circle | Square`
 `DayOfWeek = SAT | SUN ...`
+we can introduce fixed types where there is only one valid value for them, like `nothing`.
+If right side of type is a constant (compile time calculatable), it defines a fixed type.
+```
+Sat = 1
+Sun = 2
+Mon = 3
+WeekDay = Sat | Sun | ...
+x: WeekDay = Sat
+```
+
