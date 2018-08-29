@@ -196,6 +196,17 @@ Simple type is a type which can be described using an identifier without any cha
 5. `str = "Hello world!"`
 6. `str2 = "Hello" + "World!"`
 
+## Concrete types
+
+These are types that have only one value which is specified when declaring the type. This can be used for enums.
+
+**Examples**:
+
+```
+Success = 1
+Failure = 0
+```
+
 ## Union
 
 Bindings of a union type, have ability to hold multiple different types and are shown as `T1|T2|T3|...`. If any of used types are not defined, they will be automatically defined by compiler as a named type for `nothing`. This can be used to define enumerations (Example 1). Note that you cannot use a complex type as a part of a union. You can only used named or primitive types.
@@ -206,7 +217,16 @@ When working with a union type, you can use anything which is common between all
 
 **Examples**
 
-1. `DayOfWeek = SAT | SUN | MON | TUE | WED | THU | FRI`
+1. 
+```
+#concrete types
+Sat = 1
+Sun = 2
+Mon = 3
+WeekDay = Sat | Sun | ...
+x = Sat
+```
+
 2. `int_or_float: = 11`
 3. `int_value, is_valid = int(my_union)`
 4.
@@ -470,45 +490,32 @@ In order to solve a name conflict during module import, you should add an interm
 
 # Concurrency
 
-dotLang provides channels as a light-weight communication mechanism between two pieces of code and `:=` notation for parallel execution of an expression.
+We have `:=` notation for parallel execution of an expression. This will give you a worker-id or wid which is a unique identifier for that process.
 
-Channels are a one-way (read-only or write-only) data transportation mechanism which are open the moment they are created and closed when they are GC'd (disposed).
+Each process has a unbounded mailbox which contains messages. Processes can send and receive messages using core functions. Sending to an invalid wid will return immediately with a false result indicating send has failed. Receive from a terminated or invalid wid will never return.
 
-Any party can close/dispose their channel. To read from a channel or write to it, you will need to put it inside a sequence and treat it like a function. The output of this call will be data and channel (the sequence can contain multiple channels) and the input is the data you want to write.
-
-Exclusive resources (sockets, file, standard I/O...) are implemented using channels to hide inherent mutability of their underlying resources. To create a writer channel, you should cast a number (represents buffer size) to the channel type. To create reader channel, you cast writer channel to reader channel type (Example 1).
-
-You can use `:=` syntax to evaluate an expression in parallel and when its finished and store result in bindings. If expression creates a struct you can destruct it using `a,b,c =` syntax or use `_` to ignore expression result. Any reference to result after parallel execution will pause current thread until execution is finished. You can refer to output of a parallel execution inside body of a lambda, and code won't be stopped unless the lambda is invoked (Example 2 and 3).
-
-Send, receive and select are done via core functions.
+Exclusive resources (sockets, file, standard I/O...) are implemented using workers to hide inherent mutability of their underlying resources (Example 2).
 
 **Syntax**
 
-1. Parallel execute `result := expression` 
-2. Create `writer = int!(size)`, `reader = int?(writer) #T! is a write-only channel, T? is a read-only channel`
-3. Read data `data = receive(ro_channel)`
-4. Write data `send(w_channel, data)`
-5. Close: `dispose(channel)`
+1. Parallel execute `wid := expression` 
+2. Send message: `was_sent = send(wid, data)`
+2. Receive message: `msg = receive(predicate)`
 
 **Examples**
 
 1. 
 ```
-std_writer = int!(10)
-std_reader = int?(writer)
-data = receive(std_reader) #read something from the channel which read from standard input
-send(std_write, "Hello") #send data to stndard output
+was_sent = send(data, wid)
+sendWait(data, wid) #send and wait for message to be picked up
+msg = receive((m: Message -> m.sender = wid)) #receive any message from this sender
+msg = receive((m: Message -> m == {source:1, type:2})) #receive this specific message from any sender
 ```
-2. `data := processInfo(1,2,a) #evaluate the expression in parallel and store the output in data`
-3. `getData = (-> data) #any call to getData will block current thread until the call to processInfo is finished`
-4. `T = (int|float)!`
-5.
+2. 
 ```
-act = newSelect()
-act2 = bind(rch1, act)
-act3 = bind(rch2, act2)
-act4 = bind(wch3, "A", act3)
-act4.execute()
+f := open("a.txt")
+send(f, "a.txt") #to write
+receive(...)
 ```
 
 # Patterns
@@ -606,6 +613,23 @@ If and Else constructs can be implemented using the fact that booleans converted
 ```
 ifElse = (T: type, cond: bool, trueCase: T, falseCase:T -> get(T, int(cond), falseCase, trueCase)
 get = (T: type, index: int, items: T... -> getVar(items, index))
+```
+
+## Cache
+
+A cache can be implemented using a parallel process. Everytime cache is updated, it will call itself with the new state.
+
+```
+CacheState = Map[string, int]
+cache = (cs: CacheState->)
+{
+    request = receive(Message[CacheStore])
+    new_cache_state = update(cs, request)
+    query = receive(Message[CacheQuery])
+    result = lookup(new_cache_state, query)
+    send(Message{my_wid, query.sender_wid, result})
+    cache(new_cache_state)
+}
 ```
 
 # Examples
@@ -832,4 +856,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
 - **Version 0.99**: Dec 30, 2017 - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting, removed `^` operator and replaced with generics, removed `@` (replaced with chain operator and casting), removed function forwarding, removed compound literal, changed notation for channel read, write and select (Due to changes in generics and sequence and removal of compound literal) and added `$` for select, add notation to filter imported identifiers in import, removed autoBind section and added a brief explanation for `TargetType()` notation in cast section, rename chain operator to `@`, replaced return keyword with `::`, replaced `import` with `@` notation and support for rename and filter for imported items, replaced `@` with `.[]` for chain operator, remove condition for return and replaced with rule of returning non-`nothing` values, change chain notation from `.[]` to `.{}` and import notation from `@[]` to `@()`, Added notation for polymorphic generic types, changed the notation for import generic module and rename identifiers, removed `func` keyword, extended general union type syntax to unnamed types with field type and names (e.g. `{id:int, name:string,...}`), Added shift-left and right `>>,<<` and power `**` operators, all litearls for seq and map and struct must be prefixed with `_`, in struct literals you can include other structs to implement struct update, changed notation for abstract functions, Allow access to common parts of a union type with polymorphic union types, use `nothing` instead of `...` for generic types and abstract functions, removed phantom types, change `=>` notation to `^T :=` notation to rename symbols, removed composition for structs and extended/clarified usage of polymorphic sum types for embedding and function forwarding, change map type from `[K,V]` to `[K:V]`, removed auto-bind `Type()`, remove abstract functions, remove `_` prefix for literals, remove `^` and add `=>` to rename types so as to fix issue with introducion of new named types when filtering an import operation, replace operators `:=` to `=` and `:==` to `==` and `=` (comparison) to `=?`, adding type alias notation `T:X`, change import operator to `@[]` and replace `=>` with type alias notation, use `:=` to calculate in parallel and `==` to equality check
 - **Version 1.00**: July 5, 2018 - Use `=` for type alias and `:=` for lazy (parallel) calculation and named type, More clarification about binding type inference, explain name resolution mechanism for types and bindings and function call, added explanation about using function name as a function pointer, explanation about public functions with private typed input/output, removed type specifier after binding name (it will be inferred from RHS), changed function type to `(input:type->output_type)`, removed chanin operator, some clarifications about casting operator and expressions, remove `::` and use bindings for output with future reference, allow calling lambda at the point of definition, allow omitting types if they can be inferred in defining functions, indicate that functions cannot have same name and introduce compile-time dynamic sequence to store multiple functions and treat the sequence as a function, restore using type name before struct literal, change `...` as a more general notation for polymorphic union types, re-write generics as code-generation + compile-time dynamic sequence for functions, add `*` destruct operator for struct explode which can also be used to call a function with named arguments or initialize a sequence, remove notation for casting a union to it's elements (replaced with use of sequence of functions), replace `...` notation with already defined `&` and `|`, removed `${}` notation for select and replaced with a function call on a sequence, removed concept of treating sequence of functions as a function, added `type` core function + ability to amend module level collections using `&`, explained loop built-in function for map, reduce and filter operations
-- **Version 1.01**: Add support for `type` keyword and generics data types and generic functions, remove map and sequence from language, defined instance-level and type-level fields with values, added `byte` and `ptr` types to primitive types, add support for vararg functions, added Patterns section to show how basic tools can be used to achieve more complex features (polymorphism, sequence, map, ...)
+- **Version 1.01**: Add support for `type` keyword and generics data types and generic functions, remove map and sequence from language, defined instance-level and type-level fields with values, added `byte` and `ptr` types to primitive types, add support for vararg functions, added Patterns section to show how basic tools can be used to achieve more complex features (polymorphism, sequence, map, ...), use mailbox instead of channels for concurrency, clarification about using unions as enums + concrete types
