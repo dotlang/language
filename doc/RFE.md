@@ -751,6 +751,43 @@ so, how can I address these in a lambda?
 using `_` with lambda hides the fact that argument is a type or a binding.
 If we do this, then we will not need `_` notation in generics.
 So when using `_` notation to create lambda, we should specify type for some arguments so that compiler will know which one to pick.
+Let's think about it like this: It is only one function. Lambda will point to the main one, and depending on the argument values, one of available functions will be used.
+```
+myPtr = draw(_,_)
+myPtr2 = draw
+myPtr3 = draw(Circle, _) #this will point to the function for draw with circle
+```
+What if we have more than one generic arg?
+`Shape = Circle | Square`
+`Color = Blue | Red`
+`draw = (T: Shape, C: Color, shape: T, color: C -> ...`
+`draw = (T: Circle, C: Color, shape: T, color: C -> ...`
+`draw = (T: Shape, C: Blue, shape: T, color: C -> ...`
+`draw(Circle, Blue, my_circle, my_blue_color)` which one will this call?
+I think there should be a compiler error. Because third draw conflicts with the second draw.
+Any specialisation, should be as specific as possible. Because it marks an entire tree of hierarchy for providing implementation for.
+So `(Circle, Color, ...` means any call for a Circle and Red or Blue will be directed to this function.
+so when third draw says `(Shape, Blue)` it has conflict because we can call it with `Cirtcle, Red` which conflicts with the second draw.
+```
+
+Shape, Color => Circle, Color => Circle, Red
+				 Circle, Blue
+		Square, Color => Square, Red
+				 Square, Blue
+```
+If you specialise, it will cover every more specialised function. So `(Circle, Color)` will cover `Circle, Red` and `Circle, Blue`
+So:
+**Proposal**
+1. You can specialise a generic function by providing concrete types and same name. They will all be merged as one function.
+2. When creating a lambda, you cannot point it to any specific function. You can only provide concrete types when defining the lambda.
+3. Any specialisation, will also handle for more specialised functions. This applied for generic functions with more than one type.
+4. If there is conflict between specialisations, there will be compiler error.
+
+? - Can we combine generics?
+`process = (T: ||, G: ||, data: G[T] ...`
+
+? - If we go with union for generics, we can add a new type: `anything` which is basically union of all types.
+rather than `||`
 
 ? - Review examples section
 
