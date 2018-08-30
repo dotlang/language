@@ -760,6 +760,26 @@ N - Can we combine generics?
 `process = (T: ||, G: ||, data: G[T] ...`
 This is not for language. Mostly for compiler.
 
+Y - Having access to common parts of union types may be confusing at some times.
+and hidden.
+There should be a way to "declare" those common parts.
+So if I write `Shape = Shape | Square` writer of Square knows what should be included.
+So what are these common parts? Having specific fields of name + type.
+```
+Shape = Circle | Triangle { id: int, process: (?->int) }
+```
+This is applied where we have a Shape and don't know it's actual type.
+Why not make it easier to cast?
+```
+#all shapes have id:int which we want to return here
+process = (T: Shape, s: T -> int)
+process = (T: Circle, s: T -> s.id) 
+```
+This can be done via specialisation. or you can cast.
+
+
+
+
 
 
 
@@ -842,11 +862,23 @@ So:
 rather than `||`
 It makes more sense than `||` or `type`.
 Any binding of type `anything` must be assigned with a literal or another binding of the same type. So values are decided at compile time.
+`process = (T: anything, x: T -> int)...`
+`process(int, 10)`
+`process(string, "A")`
+anything is a bit too long and confusing. (maybe we should say anytype)
+`nil`, `nothing`, `none`, `void`
+`||`, `something`, `anything`, `any`
+`int`, `float`, `char`, `byte`, `string`, `bool`, `nothing`, `type`, `ptr`
+so we will remove `type`, and replace it with `||`?
 
-? - Having access to common parts of union types may be confusing at some times.
-and hidden.
-There should be a way to "declare" those common parts.
-So if I write `Shape = Shape | Square` writer of Square knows what should be included.
+? - We can implement protocol or type-class using unions.
+we define functions that a type group should support.
+
+? - we need a type for wid.
+so we can pass it to other functions.
+`ref`?
+I don't like acronyms like `pid` or `cid`. It is a keyword and should have a meaning.
+So it is `thread`, `proc`, `codeid`, `ip`
 
 ? - Review examples section
 
