@@ -213,7 +213,7 @@ Bindings of a union type, have ability to hold multiple different types and are 
 
 When you convert a union variable to one of it's types (Example 3), you also get a boolean flag indicating whether conversion was successful.
 
-When working with a union type, you can use anything which is common between all cases (Example 4). You can amend a union type using `|` notation (Example 5).
+You can amend a union type using `|` notation (Example 4).
 
 **Examples**
 
@@ -229,14 +229,7 @@ x = Sat
 
 2. `int_or_float: = 11`
 3. `int_value, is_valid = int(my_union)`
-4.
-```
-Circle = {name: string, radius: float}
-Square = {name: string, side: int}
-Shape = Circle | Square
-getName = (s: Shape -> s.name)
-```
-5. `Shape = Triangle | Circle`
+4. `Shape = Triangle | Circle`
 `Shape = Shape | Square`
 
 
