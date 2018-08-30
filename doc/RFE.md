@@ -879,6 +879,33 @@ so we can pass it to other functions.
 `ref`?
 I don't like acronyms like `pid` or `cid`. It is a keyword and should have a meaning.
 So it is `thread`, `proc`, `codeid`, `ip`
+`x := process()`
+basically this is the mailbox. not the process itself.
+but maybe later we want to add functions to get age of a process, get stats, ... so better to name it more general.
+`pid`?
+`actor`?
+`process`?
+`proc`
+`thread`
+**`task`**
+`fibre`
+
+? - How can we implement complex logics?
+```
+if ( x ) return false
+if ( y and z ) return false
+if ( t and u ) return false
+if ( y and r ) f=true
+if ( f ) return false
+return true
+```
+becomes:
+```
+out = ifElse(x, false, out2)?
+```
+Even if we add if/else keywords, it won't solve early return problem.
+we can add this notation: `cond::retval` so if condition holds, we will have early return.
+`::ret` to do normal return
 
 ? - Review examples section
 
