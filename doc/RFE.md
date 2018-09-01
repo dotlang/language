@@ -989,7 +989,83 @@ Square#draw = (Square->int)...
 process = (x: Drawable) ...int_var = draw(x)
 ```
 Actually, in Haskell you use typeclass as a constraint for generic. But we want dynamic runtime polymorphism.
+```
+Drawable = [T: type -> {draw: (T->int)}]
+Circle = ...
+Square = ...
+Circle#draw = (Circle->int)...
+Square#draw = (Square->int)...
+process = (x: Drawable) ...int_var = draw(x)
+```
+Another solution: Tagging a type. It is like union but extensible and each type can belong to multiple tags
+```
+Circle = ...
+Square = ...
+Circle@Shape
+Square@Shape
+draw = (x: Shape, ...)
+```
+Let's ask the question the other way around: Why do we need this?
+Why not rely on a low-level solution like ptr+type?
+When we keep a sequence of shapes, what is the type of what's inside the sequence? Is it a tag? => A new concept which makes language more complicated.
+We prefer a solution which does not add a new concept, uses existing concepts, has an intuitive syntax and is expressive and easy to use.
+If we can modify the ptr+type solution to be more static type it would be great. because it only uses existing features.
+What about keeping original type in ptr (e.g. byte, Circle, ...) For a sequence this is ptr.
+So, we enhance ptr to be more type checked: We provide a set of allowed types. But how? We don't have sequence.
+variadic? Linked list? So internally, ptr is a number and a type which specifies size. at runtime we only need size but during compilation we need type too.
+One advantage is people cannot mis-use ptr: A ptr to byte can be only used as byte. We cannot store an 80-bit double number in a byte ptr.
+```
+ShapeList = Seq[ptr of @Shape]
+Circle@Shape
+Square@Shape
+```
+But how can I draw shapes from a ShapeList?
+Keeping a ptr with allowed types is what a union does.
+Can we replace union with this? No. Union is simple and intuitive. ptr with type is not. it is not intuitive.
+What is the current solution? Extensible union + linked list of functions
+What is wrong with it? The problem is, no part of this needs `Shape` type except the final `draw` function. Why not drop this strange notation?
+```
+#define Shape type using compile-time dynamic union
+Shape = Circle | Triangle
+Shape = Shape | Square
 
+#Type of a function candidate which does a specific operation for a specific type.
+CandidateList = [T: type -> {T: type, handler: (T->), next: nothing|CandidateList[_]}]
+#Define a linked list of handlers for different types.
+shape_handlers = CandidateList[Circle]{Circle, drawCircle, nothing}
+
+#amend the list of handlers
+shape_handlers = CandidateList[Square]{Square, drawSquare, shape_handlers}
+shape_handlers = CandidateList[Triangle]{Triangle, drawTriangle, shape_handlers}
+
+#The draw function can be invoked on any shape
+draw = (s: Shape, element: CandidateList[_] -> ) { #here is where we need ?
+	if element.T is same as internal type of S, then call element.handler and return
+	if element.next is nothing then return
+	else recursively call with element.next
+}
+```
+We can follow what we do for functions, for types. But it will be complicated.
+Maybe we should provide some feature to make defining a linked list easier.
+A shape type is a linked list of types of x or nothing. But this is not a type. This is a linked list with values.
+Of course linked list has a type.
+```
+ShapeType = [T: type -> {value: T|nothing, next: ShapeType[_]}]
+createCircle = (->ShapeType[Circle]) ...
+createSquare = (->ShapeType[Square]) ...
+draw = (s: ShapeType
+```
+Maybe we should put linked list inside the type:
+```
+ShapeType = {t: Circle, value: Circle|nothing, next: nothing} #this is the original definition
+ShapeType = {t: Square, value: Square|nothing, next: ShapeType}
+ShapeType = {t: Triangle, value: Triangle|nothing, next: ShapeType}
+createCircle = (->ShapeType[Circle]) ...
+createSquare = (->ShapeType[Square]) ...
+draw = (s: ShapeType
+```
+Order of execution of above ShapeTypes does not matter. It can be Circle->Square->Triangle or Circle->Triangle->Square
+No. This is wrong. Type of ShapeType changes so type of `next` changes.
 
 ? - `t: Circle` is t of type Circle or it's value is Circle type?
 Maybe we should use `=` for values. To make it explicitly different.
