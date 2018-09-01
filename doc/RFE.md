@@ -777,44 +777,7 @@ process = (T: Circle, s: T -> s.id)
 ```
 This can be done via specialisation. or you can cast.
 
-
-
-
-
-
-
-
-? - We can say, union type when used as type of binding specifies range of possible values it can hold.
-When used as a generic type specifier, shows possible types that generic type can hold.
-```
-process = (s: Shape) ... #s is a binding, so it can hold any shape
-process = (T: Shape ... #T is a type, so it can be any Shape subtype
-```
-No change in syntax. No change in notation.
-also we can say `Type = ||` means union of all possible types.
-So no need for keyword `type`.
-The difference is that values for `type` must be specified at compile time but for a binding of type `Type` their value can come at any time.
-```
-Stack = [T: || -> {data: T, next: Stack[T]}]
-find = (T: ||, array: Seq[T], item: T -> int)
-```
-so:
-**Proposal**: Replace generics notation with union types
-1. When a union type is used for a binding, that binding may have value for any of it's types.
-2. When a union type is used for a type specifier, it represents valid types for that type and that type can be used to specify type of other arguments.
-3. `||` is a union type of all possible types.
-If all types of a union share `name:string` then you can refer to it inside a generic function for that type.
-Can we have a parameteric generic?
-`process = (T: ||, X: ShapeHolder[T], ...`
-So this also means I can define bindings of type `||`, which is same as `void*` or `interface{}`
-`draw = (T: Shape, x: T`
-In this case, polymorphism can become generics specialisation. If we can do that:
-`draw = (T: Shape, x: T -> int)`
-`draw = (T: Circle, x: Circle -> int) ...`
-`draw = (T: Square, x: Square -> int) ...`
-So compiler will generate draw code for Triangle but not Circle and Square. We already have them.
-
-? - If we go ahead with replacing generics notation with union, we can replace polymorphism with generic speciaisation:
+N - If we go ahead with replacing generics notation with union, we can replace polymorphism with generic speciaisation:
 `draw = (T: Shape, x: T -> int)`
 `draw = (T: Circle, x: Circle -> int) ...`
 `draw = (T: Square, x: Square -> int) ...`
@@ -858,7 +821,114 @@ So:
 3. Any specialisation, will also handle for more specialised functions. This applied for generic functions with more than one type.
 4. If there is conflict between specialisations, there will be compiler error.
 
-? - If we go with union for generics, we can add a new type: `anything` which is basically union of all types.
+N - If I allow for union-based generics can I specialise for values?
+```
+process = (x: int, flag: true|false) ...
+process = (x: int, flag: true) ...
+process = (x: int, flag: false) ...
+```
+It will be a bit confusing. If process is called with `true` which function should be called?
+Someone would say, the most specific function. But in presence of multiple candidates it is difficult to know which one it will be.
+In OOP, it is easy to know the most specific function: it is determined by the runtime type: `my_circle.draw()` will call draw in Circle not Shape.
+Think about complexity that this will lead if we allow generics specialisation: multiple implementations under the same name, confusion about resolutions, ...
+We are basically simulating inheritance in a little bit more explicit way.
+Generics was introduced to solve a different problem: writing reusable code/data types for all types.
+
+N - If we allow using generics with union, In this case, polymorphism can become generics specialisation. If we can do that:
+`draw = (T: Shape, x: T -> int)`
+`draw = (T: Circle, x: Circle -> int) ...`
+`draw = (T: Square, x: Square -> int) ...`
+So compiler will generate draw code for Triangle but not Circle and Square. We already have them.
+
+N - We can implement protocol or type-class or interface or trait using unions.
+we define functions that a type group should support.
+This can provide polymorphism. And if implemented correctly, maybe it won't have confusion and ambiguity of generics specialisation solution.
+```
+Shape = Circle | Square { draw: (T->) }
+Shape = [T: anytype -> {draw: (T->) }
+ShapeX = Shape[Circle] | Shape[Square]
+```
+No. This won't give us polymorphism becase this functionality is not same across all union types: It is different because input of the draw is different.
+We can, however, remove that variable type and assume draw will be a member function:
+```
+Circle = {... draw: (int->string) { ...} }
+Square = {... draw: (int->string) {...} }
+Shape = {draw:(->)}
+Shape = Circle | Square
+```
+And it is not an active definition: We don't say this is a union of all types that have this
+But we say, all types that want to join this union, you must have these fields (name and type).
+One way: Define it like a struct but enclosed in `||`:
+```
+Shape = |draw: (int->string)| #Shape is a union. Any type that you want to add to this union, must have these fields
+#currently there is no type in shape
+Shape = Shape | Circle #We have already defined draw field inside Circle
+Shape = Shape | Square
+...
+```
+How does this affect expression problem? If we want to add a new operation (e.g. print) and we have followed above model, it will not be possible.
+Because to add `print`, I will need to change all structs and Shape type and add this function.
+
+N - Use tagged union.
+Advantage: With untagged union we should put a rule that "no overlap between types". But with tagged this is allowed.
+How will it affect current polymorphism?
+Proposal: Drop proposal for using union for generics, use `type` + make unions tagged
+How will we have dynamic compile time generics then? 
+What is the advantage of amending a union and adding new types to it? `Shape = Shape | Circle`? The only one is to have a type to use for polymorphism.
+```
+#define Shape type using compile-time dynamic union
+Shape = Circle | Triangle | Square
+Shape = Shape | Square
+
+#Type of a function candidate which does a specific operation for a specific type.
+CandidateList = [T: type -> {T: type, handler: (T->), next: nothing|CandidateList[_]}]
+#Define a linked list of handlers for different types.
+shape_handlers = CandidateList[Circle]{Circle, drawCircle, nothing}
+
+#amend the list of handlers
+shape_handlers = CandidateList[Square]{Square, drawSquare, shape_handlers}
+shape_handlers = CandidateList[Triangle]{Triangle, drawTriangle, shape_handlers}
+
+#The draw function can be invoked on any shape
+draw = (s: Shape, element: CandidateList[_] -> ) { #This is the only place where we need a Shape. and we want to make it extensible.
+	if element.T is same as internal type of S, then call element.handler and return
+	if element.next is nothing then return
+	else recursively call with element.next
+}
+```
+To implement polymorphism, the only place where we need a `Shape` is in draw. Can we eliminate it by using generics?
+`draw = (T: type, s: T, element: CandidateList[_] -> )`
+Yes, but how can I call draw with something I'm not sure about it's type. Remember the example where we read a shape from file/network/...
+I think we cannot eliminate it.
+
+N - We can say, union type when used as type of binding specifies range of possible values it can hold.
+When used as a generic type specifier, shows possible types that generic type can hold.
+```
+process = (s: Shape) ... #s is a binding, so it can hold any shape
+process = (T: Shape ... #T is a type, so it can be any Shape subtype
+```
+No change in syntax. No change in notation.
+also we can say `Type = ||` means union of all possible types.
+So no need for keyword `type`.
+The difference is that values for `type` must be specified at compile time but for a binding of type `Type` their value can come at any time.
+```
+Stack = [T: || -> {data: T, next: Stack[T]}]
+find = (T: ||, array: Seq[T], item: T -> int)
+```
+so:
+**Proposal**: Replace generics notation with union types
+1. When a union type is used for a binding, that binding may have value for any of it's types.
+2. When a union type is used for a type specifier, it represents valid types for that type and that type can be used to specify type of other arguments.
+3. `||` is a union type of all possible types.
+If all types of a union share `name:string` then you can refer to it inside a generic function for that type.
+Can we have a parameteric generic?
+`process = (T: ||, X: ShapeHolder[T], ...`
+So this also means I can define bindings of type `||`, which is same as `void*` or `interface{}`
+`draw = (T: Shape, x: T`
+We can prohibit using `||` for a binding but it is not according to universal rule of the language: orthogonality
+**Con**: This makes things more complex. Right now we have `type` and that's it. But with unions, users can limit types, put constraints and maybe mis-use this by having access to common fields of a union, hence make it difficult to solve expression problem.
+
+N - If we go with union for generics, we can add a new type: `anything` which is basically union of all types.
 rather than `||`
 It makes more sense than `||` or `type`.
 Any binding of type `anything` must be assigned with a literal or another binding of the same type. So values are decided at compile time.
@@ -873,8 +943,56 @@ so we will remove `type`, and replace it with `||`?
 If a binding is of type `anything` it can be anything.
 If a type is, it can be any type.
 
-? - We can implement protocol or type-class using unions.
-we define functions that a type group should support.
+N - How can we easily implement thread join?
+```
+wid = newProcess()
+waitFor = (w: wid -> receive((m: Message -> m.sender = wid and m.type = DONE))
+```
+
+N - How to do complex logics or data validations?
+`ifElse` and `::`
+
+? - Another alternative: Rather than providing compile-time union, let user implement an extensible union via a linked list
+and an array of shapes via a linked list
+```
+Shape = {t: type, item: T, next: Shape}]
+shape_type = Shape[Circle]{item: 
+```
+No.
+We can have a linked list of "valid" types and prepend to this list in compile time:
+```
+AllowedTypes = {t: type, next: nothing|AllowedTypes}
+shape_types = AllowedTypes{t: Circle, next: nothing}
+shape_types = AllowedTypes{t: Square, next: shape_types}
+shape_types = AllowedTypes{t: Triangle, next: shape_types}
+```
+Then we can define a safe seq:
+```
+SafeSeq = {data: Seq[{type, ptr}], allowed_types: AllowedTypes}
+```
+Then a method that reads shapes from a file, can return SafeSeq of shape_types.
+Another way: use `+=`
+```
+Shape = Circle
+Shape += Square
+Shape += Triangle
+data: Seq[Shape]...
+```
+This is same as what we already have.
+Can we just have Haskell's typeclass?
+```
+Drawable = [T: type -> {draw: (T->int)}]
+Circle = ...
+Square = ...
+Circle#draw = (Circle->int)...
+Square#draw = (Square->int)...
+process = (x: Drawable) ...int_var = draw(x)
+```
+Actually, in Haskell you use typeclass as a constraint for generic. But we want dynamic runtime polymorphism.
+
+
+? - `t: Circle` is t of type Circle or it's value is Circle type?
+Maybe we should use `=` for values. To make it explicitly different.
 
 ? - we need a type for wid.
 so we can pass it to other functions.
@@ -911,13 +1029,8 @@ we can add this notation: `cond::retval` so if condition holds, we will have ear
 
 ? - Review examples section
 
-? - If I allow for union-based generics can I specialise for values?
-```
-process = (x: int, flag: true|false) ...
-process = (x: int, flag: true) ...
-process = (x: int, flag: false) ...
-```
 
-? - How can we easily implement thread join?
 
-? - How to do cash logics or data validations?
+
+
+
