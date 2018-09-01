@@ -870,6 +870,8 @@ anything is a bit too long and confusing. (maybe we should say anytype)
 `||`, `something`, `anything`, `any`
 `int`, `float`, `char`, `byte`, `string`, `bool`, `nothing`, `type`, `ptr`
 so we will remove `type`, and replace it with `||`?
+If a binding is of type `anything` it can be anything.
+If a type is, it can be any type.
 
 ? - We can implement protocol or type-class using unions.
 we define functions that a type group should support.
@@ -915,3 +917,7 @@ process = (x: int, flag: true|false) ...
 process = (x: int, flag: true) ...
 process = (x: int, flag: false) ...
 ```
+
+? - How can we easily implement thread join?
+
+? - How to do cash logics or data validations?
