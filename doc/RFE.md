@@ -1066,6 +1066,89 @@ draw = (s: ShapeType
 ```
 Order of execution of above ShapeTypes does not matter. It can be Circle->Square->Triangle or Circle->Triangle->Square
 No. This is wrong. Type of ShapeType changes so type of `next` changes.
+Instead of `Shape = Circle | Square | Triangle` we can break it into 3 definitions:
+```
+Shape = Union of all types below
+Shape[0] = Circle | nothing
+Shape[1] = Square | nothing
+Shape[2] = Triangle | nothing
+```
+Finding all types that are part of shape might be difficult: find `shape = shape |` in the code.
+Maybe we can eliminate this by adding a notation to extend a union:
+```
+IntOrString = int | string
+Shape = Circle | Square
+...
+Shape |= Triangle
+```
+The notation should be so obvious that it is easy to search by human or software.
+Or, define an implicit protocol. Any type that has these, is implementing the protocol:
+```
+Shape = { name: string, draw: (->) }
+Circle = {name: string, r: float, draw: (->)}
+Square = {name: string, s: int, draw: (->)}
+
+#The draw function can be invoked on any shape
+draw = (s: @Shape, element: CandidateList[_] -> ) { #here is where we need ?
+	s.draw()
+}
+```
+So, `@T` creates a union type (we don't want to invent a new concept), containing all types that implement it.
+We need access to common parts of a union types. Is it ok?
+There should be a way to "declare" those common parts. And `Shape` is that way (Note that Shape is just a normal struct, but we make it a protocol by `@` prefix).
+So, when you have an argument of type `@Shape`, you can access the items mentioned in Shape struct.
+```
+Shape = { name: string, draw: (->) }
+Circle = {name: string, r: float, draw: (->)}
+Square = {name: string, s: int, draw: (->)}
+
+#The draw function can be invoked on any shape
+draw = (s: @Shape -> ) { #here is where we need ?
+	s.draw(s.name)
+}
+```
+And still you can follow the linked list method for handlers.
+BUT: this may add unwanted types to the union. `@Shape` may include customer too.
+Unless we manually include types in it.
+```
+Shape = { name: string, draw: (->) }
+Circle = {name: string, r: float, draw: (->)}
+
+Square = {name: string, s: int, draw: (->)}
+Square=>Shape
+
+#The draw function can be invoked on any shape
+draw = (s: %Shape -> ) { #here is where we need ?
+	s.draw(s.name)
+}
+```
+But this is too much code. If we define the protocl with care, it should be fine.
+Btw now `%{}` will be a union of all structs. But we don't want to use it in generics.
+```
+Shape = { name: string, draw: (->) }
+Circle = {name: string, r: float, draw: (->)}
+Square = {name: string, s: int, draw: (->)}
+
+#The draw function can be invoked on any shape
+draw = (s: %Shape -> ) { #We are given a type which supports name and draw. And that's what we need.
+	s.draw(s.name)
+}
+```
+**Proposal**
+1. No change in struct notation. But you can use a struct as a blueprint to gather a union of multiple types that include it's fields.
+2. `%Shape` where `Shape={name:string}` will be union of all struct types that have name of string.
+3. You can define bindings of this special union type.
+4. This can be used to provide polymorphism.
+```
+Drawable = { draw: (->) }
+Circle = {name: string, r: float, draw: (->)}
+Square = {name: string, s: int, draw: (->)}
+
+#The draw function can be invoked on any shape
+draw = (s: %Shape -> ) { #We are given a type which supports name and draw. And that's what we need.
+	s.draw(s.name)
+}
+```
 
 ? - `t: Circle` is t of type Circle or it's value is Circle type?
 Maybe we should use `=` for values. To make it explicitly different.
