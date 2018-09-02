@@ -1242,7 +1242,9 @@ getShape = (name: string -> Drawable[?]) {
 	if name is Circle return Circle{1.5}
 	if name is Square return Square{2}
 }
-draw = (T: type, item: T ->) {
+#Drawable[?] is a type which can be any of types for which we have defined Drawable
+#it can be used as a type for a generic function or as type of a binding
+xdraw = (T: Drawable[?], item: T ->) {
 	Drawable[T].draw(item)
 }
 
@@ -1250,13 +1252,82 @@ my_circle = getShape("circle") #type of my_circle is Drawable[?]
 
 #below two are the same
 Drawable[type(my_circle)].draw(my_circle)
-draw(type(my_circle), my_circle)
+xdraw(type(my_circle), my_circle)
 ```
 You can call a generic function with a normal hard-coded type or also you can call it with a union.
 Because with union, number of cases is limited, so compiler can generate code and dynamic function invoke code.
 But we are not interested in a union here. Because it requires dynamic union.
 We have a protocol. But still we need union. At least for output of getShape.
 But `Drawable[?]` is not a union. It is a struct with some fields. but it's type is dynamic.
+Above code, seems too complicated: Special notation `?`, setting value for a type, generic with union, ...
+What is the problem:
+1. We need a mechanism to specify our expectation about `T` in a generic function.
+2. We want to have a better polymorphism.
+About 2, can't we just follow the protocol method? Define a polymorphic function and bind it for different types to different functions.
+```
+#basically following hashtable approach but for generic type
+#kind of specialisation
+DrawPoly = [T: type -> (T->)]
+DrawPoly[Circle] = drawCircle
+DrawPoly[Square] = drawSquare
+
+Shape = Triangle|Square
+Shape = Shape | Circle
+
+createShape = (s: string -> Shape) ...
+my_circle = createShape("Circle")
+DrawPoly[type(my_circle)]()
+```
+No. It is not intuitive to assign to `DrawPoly[Circle]`. Instead of this, let's just focus on existing solution and make sure it is comprehensive, easy, expressiev and re-usable.
+So we have one problem:
+- To explicitly specify expectations in a generic function.
+1. We need a mechanism to specify our expectation about `T` in a generic function.
+If we replace generic type with union and add something to specify common things between union types, this can be solved.
+Just make sure we still can solve expression problem.
+```
+#every type that wants to join Shape union, must have these
+Shape = { getName: (->string) } 
+process = (T: Shape, g: T -> ...) { x = g.getName() }
+```
+So joining union is not automatic, not every type that has `getName` will become member of `Shape` union. 
+We have to join them manually.
+but it will be difficult to extend existing types to support a union.
+```
+#every type that wants to join Shape union, must have these
+Shape = [T: type -> { draw: (T->string) } ]
+Shape[Circle] = { draw: drawCircle }
+Shape[Square] = { draw: drawSquare }
+
+Shape = Shape | Circle {getCircleName}
+process = (T: Shape, g: T -> ...) { x = g.getName() }
+```
+Another easier way: Add compile time check to make sure some functions are defined.
+```
+#in process we expect some functions to be defined for type T
+process = (T: type, g: T, ...) 
+defined: getName: (T->string)
+{ ... }
+process = (T: type, g: T, getName: (T->string)) 
+{ ... }
+```
+`process = (T: type, g: T, getName: (T->string))`
+`process = (T: type, g: T, getName: (T->string))`
+Rather than relying on some special notation, let's just add a function ptr to the argument list.
+Caller can decide which implementation to use for this. And it is completely visible and explicit.
+Can we use this to provide easier polymorphism? We want different `getName` implementations based on `T`.
+`process = (T: type, g: T, invokeGetName: (T ->string))`
+
+? - With generics, how can we define a lambda? Because a generic function's signature relies on name of the first argument.
+And in lambda or function type, we just ignore names.
+`process = (T: type, g: T -> string) ...`
+`view = (T: type, processHandler(type, `
+Maybe we should provide type when creating a lambda.
+q: What is type of `process` above?
+
+? - Make sure LL way for polymorphism is powerful and re-usable for other cases, types, multiple-types, ...
+
+
+
 
 ? - `t: Circle` is t of type Circle or it's value is Circle type?
 Maybe we should use `=` for values. To make it explicitly different.
