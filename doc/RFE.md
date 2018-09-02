@@ -1316,6 +1316,68 @@ Rather than relying on some special notation, let's just add a function ptr to t
 Caller can decide which implementation to use for this. And it is completely visible and explicit.
 Can we use this to provide easier polymorphism? We want different `getName` implementations based on `T`.
 `process = (T: type, g: T, invokeGetName: (T ->string))`
+We said, it does not make sense to specialise generic functions but what about generic types?
+This can also help with polymorphism.
+```
+ShapePainter = [T: type -> { draw: (T->string) } ]
+ShapePainter[Circle] = { draw: drawCircle }
+ShapePainter[Square] = { draw: drawSquare }
+...
+process = (T: type, shape: T, painter: (T->string) -> ...
+...
+process(type(my_shape), my_shape, ShapePainter[type(my_shape)].draw)
+```
+So, we will need these:
+1. Specialisation for generic types
+2. Calling generic function with union
+But maybe we can do without calling generic with union.
+```
+ShapePainter = [T: type -> { draw: (T->string) } ]
+ShapePainter[Circle] = { draw: drawCircle }
+ShapePainter[Square] = { draw: drawSquare }
+...
+process = (my_shape: Shape -> ... ) {
+	painter = ShapePainter[type(my_shape)].draw
+	str = painter(unwrap(my_shape))
+}
+...
+process(type(my_shape), my_shape, ShapePainter[type(my_shape)].draw)
+```
+Seems that with generics call with union it is more readable:
+```
+ShapePainter = [T: type -> { draw: (T->string) } ]
+ShapePainter[Circle] = { draw: drawCircle }
+ShapePainter[Square] = { draw: drawSquare }
+...
+process = (T: type, shape: T -> ) {
+	painter = ShapePainter[T].draw
+}
+...
+process(type(my_shape), my_shape)
+```
+**Proposal**:
+1. Keep compile-time dynamic union
+2. Support specialisation of generic types. The syntax forces you to specify concrete type for all parameters
+3. Support calling a generic function with a union type.
+q: Should we replace `type` with union? Will this help? 
+I see more and more complexity. How can we do this with only supporting specialisation for genneric types?
+```
+ShapePainter = [T: type -> { draw: (T->) } ]
+ShapePainter[Circle] = { draw: drawCircle }
+ShapePainter[Square] = { draw: drawSquare }
+...
+process = (shape: Shape -> ) {
+	handler = ShapePainter[type(shape)].draw
+	handler(unwrap(shape))
+}
+...
+process(type(my_shape), my_shape)
+```
+
+? - Is there a way to call a function which accepts a Circle with a Shape type if we are sure args match?
+
+? - Is there a way to get type id of a union?
+
 
 ? - With generics, how can we define a lambda? Because a generic function's signature relies on name of the first argument.
 And in lambda or function type, we just ignore names.
@@ -1323,6 +1385,7 @@ And in lambda or function type, we just ignore names.
 `view = (T: type, processHandler(type, `
 Maybe we should provide type when creating a lambda.
 q: What is type of `process` above?
+Maybe we can use `$1` and `$2`... to refer to generic arguments.
 
 ? - Make sure LL way for polymorphism is powerful and re-usable for other cases, types, multiple-types, ...
 
