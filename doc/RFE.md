@@ -1145,10 +1145,118 @@ Circle = {name: string, r: float, draw: (->)}
 Square = {name: string, s: int, draw: (->)}
 
 #The draw function can be invoked on any shape
-draw = (s: %Shape -> ) { #We are given a type which supports name and draw. And that's what we need.
+draw = (s: %Drawable -> ) { #We are given a type which supports name and draw. And that's what we need.
 	s.draw(s.name)
 }
 ```
+Making things centralised makes reading and understanding the code easier. But also makes it difficult to maintain and extend.
+What if I want to add support for a protocol to an existing type?
+e.g. I have triangle in an imported library -> I cannot change it and add `name:string`. So that's why it's better to rely on functions.
+Even for fields, i can simply add a function which returns that field from struct.
+But as we do not support specialisation, It's better not to use generic functions.
+Go: interface is just a set of functions. You can implement it for any type you want by writing those functions.
+Haskell: typeclass is a function map
+```
+Drawable = [T: type -> { draw: (T->) }]
+Circle = {name: string, r: float}
+Square = {name: string, s: int}
+drawCircle [implement Drawable on Circle] = (c: Circle -> ...) #this is an implementation for drawable protocol on type Circle
+drawSquare [implement Drawable on Square] = (s: Square -> ...)
+#Here compiler knows that Circle and Square are two types that support Drawable
+#The draw function can be invoked on any type for which we have implemented Drawable
+draw = (s: Drawable -> ) { #We are given a type which supports name and draw. And that's what we need.
+	s.draw()
+}
+```
+Another example: Compare function. I need a function working on something which supports equality check.
+We want to combine this with union. So 1. we have a new type which is union of all types that support this protocol.
+2. we have the protocol which shows us the common functions across all those types.
+I think when writing a function, we should indicate what protocol it is implementing for what type.
+Because otherwise, we should specify this connection either at module level or as function argument.
+If a type does not implement a protocol, we can simply add that support by writing appropriate functions. But this connection cannot be automatic because we cannot have functions with the same name. And without function name, there is no way for compiler to draw these connections.
+Rust: `impl Animal for Sheep ` signals to the compiler that we are implementing trait X for type Y
+Haskell: `instance Eq Praat where` Defines Praat type implements `Eq`
+There are two ways to make connection (which function is implementing each function in the protocol):
+1. naming convention `Drawable = [T: type -> { T##draw: (T->) }]`
+2. explicit in the definition: `drawCircle [implement Drawable on Circle] = (c: Circle -> ...)`
+The first one is simpler but not very flexible. So if a function `circleDraw` already exists, we have no way to add support.
+The second one is better but needs more change.
+I really don't want to change the notation to define a function. Because it will have a lot of implications.
+```
+Drawable = [T: type -> { draw: (T->) }]
+
+Circle = {name: string, r: float}
+Square = {name: string, s: int}
+
+drawCircle = (c: Circle -> ...) 
+drawSquare = (s: Square -> ...)
+
+#here we register types with protocol
+Drawable[Circle] = { draw: drawCircle }
+Drawable[Square] = { draw: drawSquare }
+
+#Now, the compiler knows that Circle and Square are two types that support Drawable
+#The draw function can be invoked on any type for which we have implemented Drawable
+draw = (T: type, item: T, s: Drawable[T] -> ) { #We are given a type which supports name and draw. And that's what we need.
+	s.draw(item)
+}
+```
+We can say, `Drawable[?]` means union of all types that are registered with Drawable.
+Similarly, if we have a multi-type protocol, `Comparable[?, int]` is all types that can be compared with int.
+```
+draw = (s: Drawable[?] -> ) { 
+	Drawable[s].draw(s)
+}
+
+draw = (T: type+Drawable, s: Drawable[T] -> ) { 
+	Drawable[s].draw(s)
+}
+```
+We know that generics can only be invoked with concrete hard coded types. But what if that type is a union?
+I think I should be able to invoke generic with a union type and compiler will implement all cases (because it is limited).
+Of course in this case, the generic function cannot have `T: type` because it means implement this function for every type.
+The type should be limited via protocols.
+```
+draw = (T: Drawable, s: T -> ) { 
+	Drawable[T].draw(s)
+}
+draw(type(my_shape), my_shape)
+```
+Why can't we simply use a function pointer?
+```
+xdraw = (T: type, item: T, draw: (T->) {
+	draw(item)
+}
+
+xdraw(Circle, my_circle, drawCircle)
+```
+Before draw, we should think about the function that will return a shape. What will be it's output?
+```
+Drawable = [T: type -> { draw: (T->) }]
+
+#here we register types with protocol
+Drawable[Circle] = { draw: drawCircle }
+Drawable[Square] = { draw: drawSquare }
+
+getShape = (name: string -> Drawable[?]) {
+	if name is Circle return Circle{1.5}
+	if name is Square return Square{2}
+}
+draw = (T: type, item: T ->) {
+	Drawable[T].draw(item)
+}
+
+my_circle = getShape("circle") #type of my_circle is Drawable[?]
+
+#below two are the same
+Drawable[type(my_circle)].draw(my_circle)
+draw(type(my_circle), my_circle)
+```
+You can call a generic function with a normal hard-coded type or also you can call it with a union.
+Because with union, number of cases is limited, so compiler can generate code and dynamic function invoke code.
+But we are not interested in a union here. Because it requires dynamic union.
+We have a protocol. But still we need union. At least for output of getShape.
+But `Drawable[?]` is not a union. It is a struct with some fields. but it's type is dynamic.
 
 ? - `t: Circle` is t of type Circle or it's value is Circle type?
 Maybe we should use `=` for values. To make it explicitly different.
