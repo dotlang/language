@@ -1367,12 +1367,70 @@ ShapePainter[Circle] = { draw: drawCircle }
 ShapePainter[Square] = { draw: drawSquare }
 ...
 process = (shape: Shape -> ) {
-	handler = ShapePainter[type(shape)].draw
-	handler(unwrap(shape))
+	hapePainter[type(shape)].draw(unwrap(shape))
 }
 ...
-process(type(my_shape), my_shape)
+process(my_shape)
 ```
+So the proposal is:
+1. Support specialisation of generic types. The syntax forces you to specify concrete type for all parameters.
+2. We need a notation to get internal type of a union. This results in calling generics with a union binding. But it should be fine.
+3. If we have `draw: (Circle->)` and a shape which contains a Circle, there should be a simple mechanism to do the call.
+```
+#you can store any type specific data inside this struct
+ShapePainter = [T: type -> { draw: (T->) } ]
+ShapePainter[Circle] = { draw: drawCircle }
+ShapePainter[Square] = { draw: drawSquare }
+Converter = [S,T: type -> { convert: (S->T) } ]
+Converter[Customer] = ... #invalid
+Converter[Customer, Int] = ... #valid
+...
+#To draw some shape
+my_shape = getShape(...)
+ShapePainter[type(my_shape)]
+draw = (shape: Shape -> ) {
+	hapePainter[type(shape)].draw(unwrap(shape))
+}
+...
+process(my_shape)
+```
+We want to have one thing, but distributed in several files. Now the problem is: How are we going to connect all of them together.
+This is the way we define dynamic union, generic type specialisation and polymorphism.
+The problem with above code: ShapePainter is a type, but we are assigning a value to it.
+The notation of linked list at module level, makes some sense: We define a module-level struct. Then we update it during compile time.
+And note that if we use above solution, we will still need dynamic union.
+```
+#define Shape type using compile-time dynamic union
+Shape = Circle | Triangle
+Shape = Shape | Square
+
+#Type of a function candidate which does a specific operation for a specific type.
+CandidateList = [T: type -> {T: type, handler: (T->), next: nothing|CandidateList[_]}]
+#Define a linked list of handlers for different types.
+shape_handlers = CandidateList[Circle]{Circle, drawCircle, nothing}
+
+#amend the list of handlers
+shape_handlers = CandidateList[Square]{Square, drawSquare, shape_handlers}
+shape_handlers = CandidateList[Triangle]{Triangle, drawTriangle, shape_handlers}
+
+#The draw function can be invoked on any shape
+draw = (s: Shape, element: CandidateList[_] -> ) { #here is where we need ?
+	if element.T is same as internal type of S, then call element.handler and return
+	if element.next is nothing then return
+	else recursively call with element.next
+}
+```
+Maybe we can simplify the above notation and let it stay as a solution.
+Maybe we don't really need polymorphism.
+If we have `Shape = Circle | Square` and we add triangle, and we cannot modify existing code -> Then add a new type
+`NewShape = Shape | Triangle` and forward other functions and ...
+In this way we can use functions to cover all cases of a union.
+We can say Haskell's type-class is same as generics.
+And each instance is a specialisation of that generic.
+read: https://koerbitz.me/posts/Solving-the-Expression-Problem-in-Haskell-and-Java.html
+
+? - Shall we allow using union instead of `type` keyword? But no further syntax.
+Only union types are allowed. That's the only constraint.
 
 ? - Is there a way to call a function which accepts a Circle with a Shape type if we are sure args match?
 
@@ -1386,6 +1444,14 @@ And in lambda or function type, we just ignore names.
 Maybe we should provide type when creating a lambda.
 q: What is type of `process` above?
 Maybe we can use `$1` and `$2`... to refer to generic arguments.
+This is same in Java and there, you must specify types.
+```
+process = (T: type, x: T -> string) ...
+
+myLambda = process(int, _)
+```
+
+
 
 ? - Make sure LL way for polymorphism is powerful and re-usable for other cases, types, multiple-types, ...
 
@@ -1435,3 +1501,4 @@ we can add this notation: `cond::retval` so if condition holds, we will have ear
 
 
 
+r
