@@ -952,6 +952,7 @@ waitFor = (w: wid -> receive((m: Message -> m.sender = wid and m.type = DONE))
 N - How to do complex logics or data validations?
 `ifElse` and `::`
 
+
 ? - Another alternative: Rather than providing compile-time union, let user implement an extensible union via a linked list
 and an array of shapes via a linked list
 ```
@@ -1389,10 +1390,10 @@ Converter[Customer, Int] = ... #valid
 my_shape = getShape(...)
 ShapePainter[type(my_shape)]
 draw = (shape: Shape -> ) {
-	hapePainter[type(shape)].draw(unwrap(shape))
+	shapePainter[type(shape)].draw(unwrap(shape))
 }
 ...
-process(my_shape)
+draw(my_shape)
 ```
 We want to have one thing, but distributed in several files. Now the problem is: How are we going to connect all of them together.
 This is the way we define dynamic union, generic type specialisation and polymorphism.
@@ -1428,14 +1429,173 @@ In this way we can use functions to cover all cases of a union.
 We can say Haskell's type-class is same as generics.
 And each instance is a specialisation of that generic.
 read: https://koerbitz.me/posts/Solving-the-Expression-Problem-in-Haskell-and-Java.html
+Another idea: Let union remain the same. Follow Haskell's approach.
+To solve expression problem: Use typeclass, where you can implement a typeclass for any type.
+And typeclass can be input of a function.
+Rather than adding unintuitive notations, divide it into 3-4 small intuitive notations.
+read: https://blog.codecentric.de/en/2017/02/ad-hoc-polymorphism-scala-mere-mortals/
+Like what we did for concurrency: adding send and receive functions, instead of strange operators.
+```
+#you can store any type specific data inside this struct
+ShapePainter = [T: type -> { draw: (T->) } ]
+ShapePainter[Circle] = { draw: drawCircle }
+ShapePainter[Square] = { draw: drawSquare }
+
+...
+getShape = (name:string -> ShapePainter[?]) {
+	...
+}
+
+draw = (shape: Shape[?] -> ) {
+	shape.draw()
+}
+...
+#To draw some shape
+my_shape = getShape(...) 
+draw(my_shape)
+```
+But `Shape[Circle]` seems un-intuitive.
+"Type systems with subtyping are dramatically more complicated than those without"
+This means if we have this:
+`coords :: [Coord]
+coords = [a, b]`
+We should be aware that a is of type CartesianCoord and also it is a Coord.
+Implement both new type and new operation.
+Do we really need to add support for expression problem?
+Adding new cases to a type/operation can cause issues like fragile base class issue in OOP.
+Is there a way to implement this without "ANY" change to the language?
+We know in the operation side, this is possible using a linked list.
+The only issue: extending union notation.
+```
+#you can store any type specific data inside this struct
+Circle = {...}
+Square = {...}
+
+ShapePainter = [T: type -> (T->) ]
+ShapePainter[Circle] = drawCircle
+ShapePainter[Square] = drawSquare
+
+Shape = ShapePainter[?]
+
+...
+getShape = (name:string -> ShapePainter[?]) {
+	...
+}
+
+draw = (shape: Shape[?] -> ) {
+	shape.draw()
+}
+...
+#To draw some shape
+my_shape = getShape(...) 
+draw(my_shape)
+```
+No. This notation of generic type specialisation does not make any sense. Let's stick to the linked list solution for now.
+```
+#define Shape type using compile-time dynamic union
+Shape = Circle | Triangle
+Shape = Shape | Square
+
+Shape = {}
+Shape = {Circle, *Shape}
+Shape = {Square, *Shape}
+#now Shape is a struct of {Circle, Square}
+
+#Type of a function candidate which does a specific operation for a specific type.
+CandidateList = [T: type -> {T: type, handler: (T->), next: nothing|CandidateList[_]}]
+#Define a linked list of handlers for different types.
+shape_handlers = CandidateList[Circle]{Circle, drawCircle, nothing}
+
+#amend the list of handlers
+shape_handlers = CandidateList[Square]{Square, drawSquare, shape_handlers}
+shape_handlers = CandidateList[Triangle]{Triangle, drawTriangle, shape_handlers}
+
+createShape = (name: string -> Shape) {...}
+
+#The draw function can be invoked on any shape
+draw = (s: Shape, element: CandidateList[_] -> ) { #here is where we need ?
+	if element.T is same as internal type of S, then call element.handler and return
+	if element.next is nothing then return
+	else recursively call with element.next
+}
+```
+What if we define a ptr with a set of valid types for it?
+```
+Shape = {s: ptr, types: {}}
+Shape = 
+```
+idea: OOP solves expression problem by visitor pattern which basically means adding an extension point inside classes, so we can easily add new operations.
+Maybe we should follow the same. put an extension point in the functions so we can easily add new types.
+Another idea: We define a master functio with type Shape and it's value is defined by specialisations on the master function.
+But this will no longer be a type.
+Doesn't this conflict with SOLID rule: A Type should be open to extension, but closed for edits.
+Another solution based on visitor:
+- createShape returns an `accept` lambda which is the internal lambda of Circle or Square or ...
+- Caller will have a lambda `accept` which it can call for different operations.
+- We don't even need to store `accept` inside the type. It can be a lambda inside createShape.
+But if we do it inside createShape, we won't be able to extend types.
+```
+Circle = {...}
+Square = {...}
+
+getShapePainter = (string: name -> (Color->)) {
+	if name is "Circle" c = read_circle, return (Color->draw_c)
+	if name is "Square" ...
+}
+
+painter = getShapePainter(name)
+painter(Black)
+```
+Suppose that we add another op: reverseShape 
+How can we compose these? reverse and then paint the shape?
+Another idea: getShape returns anything type, but the internal type has an `accept` function.
+You can call accept with the hander LinkedList and it will find it's own type and execute the handler function.
+```
+#this is the definition of handler function on a Shape 
+#which is also input of shape's accept functions
+CandidateList = [T: type -> {T: type, handler: (T->), next: nothing|CandidateList[_]}]
+
+#we don't know what will be the head of CandidateList so we use `_`
+Circle = {... 
+	accept = (CandidateList[_] -> find handler for Circle type and run it on me)
+}
+Square = {...
+	accept = (CandidateList[_] -> find handler for Square type and run it on me)
+}
+
+#Define a linked list of handlers for different types.
+shape_handlers = CandidateList[Circle]{Circle, drawCircle, next: nothing}
+
+#amend the list of handlers
+shape_handlers = CandidateList[Square]{Square, drawSquare, shape_handlers}
+shape_handlers = CandidateList[Triangle]{Triangle, drawTriangle, shape_handlers}
+
+getShape = (string: name -> (CandidateList->)) {
+	if name is "Circle" c = read_circle {
+		c = Circle{..., accept: (x: CandidateList[_] -> innerAccept(x, c)),
+					innerAccept: (x: CandidateList[_], c: Circle -> ... }
+		return Circle{...accept...}.accept
+	}
+	if name is "Square" ... return Square {...accept...}.accept
+}
+
+painter = getShape(name)
+painter(shape_handlers)
+```
+q: Do we need a notation to refer to the containing struct? Can't we hide this from outside? I think we can.
+And maybe we can write one universal `innerAccept` function.
+
+? - Mayeb we should use `?` instead of `_` to show generic with some type.
 
 ? - Shall we allow using union instead of `type` keyword? But no further syntax.
 Only union types are allowed. That's the only constraint.
+If we stop union extension, then it will be of no use. (?)
 
 ? - Is there a way to call a function which accepts a Circle with a Shape type if we are sure args match?
 
 ? - Is there a way to get type id of a union?
 
+? - We say that argument name is not part of the type but for generics, it is.
 
 ? - With generics, how can we define a lambda? Because a generic function's signature relies on name of the first argument.
 And in lambda or function type, we just ignore names.
@@ -1450,6 +1610,9 @@ process = (T: type, x: T -> string) ...
 
 myLambda = process(int, _)
 ```
+I think we cannot have generic lambdas. Because lambda is a runtime concept and generic is compile time.
+If we have a function which accepts a generic lambda, it can be called with different functions. 
+So we don't know what to call if we have `myLambda(int, 10)`.
 
 
 
@@ -1498,7 +1661,3 @@ we can add this notation: `cond::retval` so if condition holds, we will have ear
 
 
 
-
-
-
-r
