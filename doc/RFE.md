@@ -1709,8 +1709,8 @@ HandlerList = {t: type, handler: (ptr->), next: nothing|HandlerList}
 Circle = {...}
 Square = {...}
 
-drawCircle = (x: ptr -> int) {...}
-drawSquare = (x: ptr -> int) {...}
+drawCircle = (x: Circle -> int) {...}
+drawSquare = (x: Square -> int) {...}
 
 #Define a linked list of handlers for different types.
 shape_handlers = {t: Circle, handler: drawCircle, next: nothing}
@@ -1733,7 +1733,37 @@ How can we make this better?
 Idea: Define a protocol (a function with `any` input), and specialize/extend it for different types
 no.
 But if we want to use `any` why so much complexity? just return ptr and do the iteration outside: No. Because we don't know the original type.
+Clojure's protocols is like this but in handlers, there is a special type `this`.
+idea: store handlers as ptr and when needed cast them to appropriate type. Advantage: No need to type checking inside handler.
+```
+HandlerList = {t: type, handler: ptr, next: nothing|HandlerList}
 
+Circle = {...}
+Square = {...}
+
+drawCircle = (x: Circle -> int) {...}
+drawSquare = (x: Square -> int) {...}
+
+#Define a linked list of handlers for different types.
+shape_handlers = {t: Circle, handler: ptr(drawCircle), next: nothing}
+shape_handlers = {t: Square, handler: ptr(drawSquare), next: shape_handlers}
+
+getShape = (T: type, string: name -> (HandlerList->)) {
+	if name is "Circle" 
+		c = Circle{...}
+		lambda = (x: HandlerList -> if x.t == Circle then run cast(x.handler as T)(c) else return lambda(x.next))
+		return lambda
+	}
+	if name is "Square" ... 
+}
+
+myShapeProcessor = getShape("Circle")
+myShapeProcessor(shape_handlers)
+```
+The dirty part is in lambda. So maybe we can put it in a core function: given a LL and type, returns a lambda to invoke appropriate function + two lambdas to get next and get handler.
+`invoke = (T: type, list: T, 
+
+? - use `&` to get ptr for a binding or anything
 
 ? - Mayeb we should use `?` instead of `_` to show generic with some type.
 
