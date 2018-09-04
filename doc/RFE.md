@@ -1634,7 +1634,7 @@ HandlerList = [T: type-> {t: type, handler: (T->), next: nothing|HandlerList[?]}
 
 #we don't know what will be the head of CandidateList so we use `_`
 Circle = {... 
-	process = (HandlerList -> find handler for Circle type and run it on me)
+	process = (HandlerList[?] -> find handler for Circle type and run it on me)
 }
 Square = {...
 	process = (HandlerList -> find handler for Square type and run it on me)
@@ -1659,6 +1659,81 @@ myShapeProcessor(shape_handlers)
 `CandidateList[?]` cannot be resolved at compile time.
 It seems that we should give up type at some point in the chain.
 Seems above is the most sensible and consistent solution. Now we should try to make it easy.
+e.g. making sure `Handler[?]` can accept parameter x. we can use `func<data>` but it is a large change.
+Why not use core? canInvoke: `canInvoke(handler, my_circle)::handler(my_circle)`
+`canInvoke = (x: (?->?), data: ?)`
+What if we add a core function for: look over these handlers and invoke the one which is suitable with these inputs.
+What is we use a struct with `n*2` fields, for `n` handler functions?
+The more code we write, the more control we can have over the dispatch.
+```
+#no LL, no next, no type, no generics, only one big anonymous struct
+handlers = {Circle, drawCircle}
+handlers = {*handlers, Square, drawSquare}
+
+HandlerList = TypeOf(handlers)
+
+Circle = {...}
+Square = {...}
+
+getShape = (string: name -> (HandlerList->)) {
+	if name is "Circle" 
+		c = Circle{...}
+		lambda = (x: HandlerList, i:int -> if x.i == Circle then run x.(i+1)(c) else return lambda(x, i+2))
+		return (x:HandlerList -> lambda(x,0))
+	}
+	if name is "Square" ... 
+}
+
+myShapeProcessor = getShape("Circle")
+myShapeProcessor(handlers)
+```
+No. adressing a struct with `.i` makes it like an array.
+Using generic specialisation will still give us the problem of creating a dynamic Shape type.
+But maybe if we combine it with visitor, it helps.
+No. no no 
+we want to:
+- Avoid strange cryptic notations
+- Easy and convenient and intuitive code
+- Extensible to support new operations and new shapes (types)
+questions:
+- How should we be storing operations? (e.g. draw code for different types)
+- How should we write a method which given a string, returns some type?
+We have to unify.
+So the create method, will not return some type. It will return a lambda which is all the same regardless of the type: given a list of handlers (q1) it will find the correct one and execute.
+Now about question 1:
+Maybe genrics is not the solution, if we don't want to have strong static compile time type (which we cannot have because that string can be anything and we don't want to introduce compile time union).
+Solution: `any` type -> `ptr`
+```
+HandlerList = {t: type, handler: (ptr->), next: nothing|HandlerList}
+
+Circle = {...}
+Square = {...}
+
+drawCircle = (x: ptr -> int) {...}
+drawSquare = (x: ptr -> int) {...}
+
+#Define a linked list of handlers for different types.
+shape_handlers = {t: Circle, handler: drawCircle, next: nothing}
+shape_handlers = {t: Square, handler: drawSquare, next: shape_handlers}
+
+getShape = (string: name -> (HandlerList->)) {
+	if name is "Circle" 
+		c = Circle{...}
+		lambda = (x: HandlerList -> if x.t == Circle then run x.handler(c) else return lambda(x.next))
+		return lambda
+	}
+	if name is "Square" ... 
+}
+
+myShapeProcessor = getShape("Circle")
+myShapeProcessor(shape_handlers)
+```
+How can we make this better?
+- Attach a secondary type to the function so anyone wants to call checks that.
+Idea: Define a protocol (a function with `any` input), and specialize/extend it for different types
+no.
+But if we want to use `any` why so much complexity? just return ptr and do the iteration outside: No. Because we don't know the original type.
+
 
 ? - Mayeb we should use `?` instead of `_` to show generic with some type.
 
