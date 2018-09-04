@@ -952,8 +952,15 @@ waitFor = (w: wid -> receive((m: Message -> m.sender = wid and m.type = DONE))
 N - How to do complex logics or data validations?
 `ifElse` and `::`
 
+N - use `&` to get ptr for a binding or anything
 
-? - Another alternative: Rather than providing compile-time union, let user implement an extensible union via a linked list
+N - Mayeb we should use `?` instead of `_` to show generic with some type.
+
+N - Is there a way to call a function which accepts a Circle with a Shape type if we are sure args match?
+
+N - Is there a way to get type id of a union?
+
+N - (copied to next item because it got too long) Another alternative: Rather than providing compile-time union, let user implement an extensible union via a linked list
 and an array of shapes via a linked list
 ```
 Shape = {t: type, item: T, next: Shape}]
@@ -1761,19 +1768,54 @@ myShapeProcessor = getShape("Circle")
 myShapeProcessor(shape_handlers)
 ```
 The dirty part is in lambda. So maybe we can put it in a core function: given a LL and type, returns a lambda to invoke appropriate function + two lambdas to get next and get handler.
-`invoke = (T: type, list: T, 
+`invoke = (T: type, I: type, O: type, list: T, getNext: (T->T), getType: (T->type), getHandler: (T->(I->O))`
+`shape_handler` is a table (list of rows). Same as vtable in c++.
+**Proposal**:
+1. Add to pattern section above code to explain how polymorphism is done
+2. Use `&` to cast anything to ptr.
+3. Add a function to core to de-reference a ptr
+4. No `_` in generics.
+5. No compile time union. All unions are fixed without any change.
 
-? - use `&` to get ptr for a binding or anything
+? - Proposal for polymorphism
+```
+HandlerList = {t: type, handler: ptr, next: nothing|HandlerList}
 
-? - Mayeb we should use `?` instead of `_` to show generic with some type.
+Circle = {...}
+Square = {...}
+
+drawCircle = (x: Circle -> int) {...}
+drawSquare = (x: Square -> int) {...}
+
+#Define a linked list of handlers for different types.
+shape_handlers = {t: Circle, handler: ptr(drawCircle), next: nothing}
+shape_handlers = {t: Square, handler: ptr(drawSquare), next: shape_handlers}
+
+getShape = (T: type, string: name -> (HandlerList->)) {
+	if name is "Circle" 
+		c = Circle{...}
+		lambda = (x: HandlerList -> if x.t == Circle then run cast(x.handler as T)(c) else return lambda(x.next))
+		return lambda
+	}
+	if name is "Square" ... 
+}
+
+myShapeProcessor = getShape("Circle")
+myShapeProcessor(shape_handlers)
+```
+The dirty part is in lambda. So maybe we can put it in a core function: given a LL and type, returns a lambda to invoke appropriate function + two lambdas to get next and get handler.
+`invoke = (T: type, I: type, O: type, list: T, getNext: (T->T), getType: (T->type), getHandler: (T->(I->O))`
+`shape_handler` is a table (list of rows). Same as vtable in c++.
+**Proposal**:
+1. Add to pattern section above code to explain how polymorphism is done
+2. Use `&` to cast anything to ptr.
+3. Add a function to core to de-reference a ptr
+4. No `_` in generics.
+5. No compile time union. All unions are fixed without any change.
 
 ? - Shall we allow using union instead of `type` keyword? But no further syntax.
 Only union types are allowed. That's the only constraint.
 If we stop union extension, then it will be of no use. (?)
-
-? - Is there a way to call a function which accepts a Circle with a Shape type if we are sure args match?
-
-? - Is there a way to get type id of a union?
 
 ? - We say that argument name is not part of the type but for generics, it is.
 
@@ -1820,7 +1862,7 @@ but maybe later we want to add functions to get age of a process, get stats, ...
 **`task`**
 `fibre`
 
-N - How can we implement complex logics?
+? - How can we implement complex logics?
 ```
 if ( x ) return false
 if ( y and z ) return false
