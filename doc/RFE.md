@@ -1584,6 +1584,81 @@ painter(shape_handlers)
 ```
 q: Do we need a notation to refer to the containing struct? Can't we hide this from outside? I think we can.
 And maybe we can write one universal `innerAccept` function.
+```
+#this is the definition of handler function on a Shape 
+#which is also input of shape's accept functions
+CandidateList = [T: type -> {T: type, handler: (T->), next: nothing|CandidateList[_]}]
+
+#we don't know what will be the head of CandidateList so we use `_`
+Circle = {... 
+	accept = (CandidateList[_] -> find handler for Circle type and run it on me)
+}
+Square = {...
+	accept = (CandidateList[_] -> find handler for Square type and run it on me)
+}
+
+#Define a linked list of handlers for different types.
+shape_handlers = CandidateList[Circle]{Circle, drawCircle, next: nothing}
+
+#amend the list of handlers
+shape_handlers = CandidateList[Square]{Square, drawSquare, shape_handlers}
+
+#adding a new shape
+Triangle = { ...
+	accept = (CandidateList[_] -> ...)
+	...
+}
+shape_handlers = CandidateList[Triangle]{Triangle, drawTriangle, shape_handlers}
+
+#adding a new operation:
+save_handlers = CandidateList[Circle]{Circle, saveCircle, next: nothing}
+shape_handlers = CandidateList[Square]{Square, drawSquare, shape_handlers}
+shape_handlers = CandidateList[Triangle]{Triangle, drawTriangle, shape_handlers}
+
+
+getShape = (string: name -> (CandidateList[_]->)) {
+	if name is "Circle" c = read_circle {
+		c = Circle{..., accept: (x: CandidateList[_] -> innerAccept(x, c)),
+					innerAccept: (x: CandidateList[_], c: Circle -> ... }
+		return Circle{...accept...}.accept
+	}
+	if name is "Square" ... return Square {...accept...}.accept
+}
+
+painter = getShape(name)
+painter(shape_handlers)
+```
+To prevent using `_`, I can add a new dummy type which only points to shape handlers.
+```
+HandlerList = [T: type-> {t: type, handler: (T->), next: nothing|HandlerList[?]}
+
+#we don't know what will be the head of CandidateList so we use `_`
+Circle = {... 
+	process = (HandlerList -> find handler for Circle type and run it on me)
+}
+Square = {...
+	process = (HandlerList -> find handler for Square type and run it on me)
+}
+
+#Define a linked list of handlers for different types.
+shape_handlers = HandlerList[Circle]{t: Circle, handler: drawCircle, next: nothing}
+shape_handlers = HandlerList[Square]{t: Square, handler: drawSquare, next: shape_handlers}
+
+getShape = (string: name -> (HandlerList->)) {
+	if name is "Circle" 
+		c = Circle{...}
+		lambda = (x: HandlerList[?] -> if x.t == Circle then run x.handler(c) else return lambda(x.next))
+		return lambda
+	}
+	if name is "Square" ... 
+}
+
+myShapeProcessor = getShape("Circle")
+myShapeProcessor(shape_handlers)
+```
+`CandidateList[?]` cannot be resolved at compile time.
+It seems that we should give up type at some point in the chain.
+Seems above is the most sensible and consistent solution. Now we should try to make it easy.
 
 ? - Mayeb we should use `?` instead of `_` to show generic with some type.
 
@@ -1640,7 +1715,7 @@ but maybe later we want to add functions to get age of a process, get stats, ...
 **`task`**
 `fibre`
 
-? - How can we implement complex logics?
+N - How can we implement complex logics?
 ```
 if ( x ) return false
 if ( y and z ) return false
@@ -1660,4 +1735,7 @@ we can add this notation: `cond::retval` so if condition holds, we will have ear
 ? - Review examples section
 
 
+? - Use case: How to implement a code which starts a helper thread to load some required data at the beginning
+and later asks for that data?
 
+? - If it turns out we don't need dynamic union, can we put more effort on pattern matching?
