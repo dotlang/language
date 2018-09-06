@@ -1822,8 +1822,8 @@ VTable = {t: type, handler: ptr, next: nothing|VTable}
 Circle = {...}
 Square = {...}
 
-getShape = (string: name -> (VTable->)) {
-	if name is "Circle" 
+getShape = (string: name -> (VTable->(InType: type, OutType: type, args: InType -> OutType))) {
+	if name is "Circle" {
 		c = Circle{...}
 		:: (x: VTable -> (InType: type, OutType: type, args: InType -> OutType))
 		{
@@ -1853,10 +1853,10 @@ Also we need a means to cast back ptr.
 **Proposal**:
 1. Add to pattern section above code to explain how polymorphism is done
 2. Use `&` to cast anything to ptr.
-3. Add a function to core to de-reference a ptr.
+3. Add a function to core to de-reference a ptr: `ref(int, my_ptr)`
 4. No `_` in generics.
 5. No compile time union. All unions are fixed without any change.
-6. Add `type[?]` notation to represent a generic type as an input. So it must be used like `T[int]` not `T`.
+6. Add a core function `invokePtr` to invoke a ptr which has a function inside.
 For de-reference, it is different from casting. In casting, we change type of some data we have.
 But here we want to get a typed binding pointing to where this ptr points at.
 `*x`? No we have to specify type.
