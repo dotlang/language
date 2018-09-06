@@ -1777,6 +1777,10 @@ The dirty part is in lambda. So maybe we can put it in a core function: given a 
 4. No `_` in generics.
 5. No compile time union. All unions are fixed without any change.
 
+
+
+
+
 ? - Proposal for polymorphism
 ```
 HandlerList = {t: type, handler: ptr, next: nothing|HandlerList}
@@ -1812,6 +1816,56 @@ The dirty part is in lambda. So maybe we can put it in a core function: given a 
 3. Add a function to core to de-reference a ptr
 4. No `_` in generics.
 5. No compile time union. All unions are fixed without any change.
+```
+VTable = {t: type, handler: ptr, next: nothing|VTable}
+
+Circle = {...}
+Square = {...}
+
+getShape = (string: name -> (VTable->)) {
+	if name is "Circle" 
+		c = Circle{...}
+		:: (x: VTable -> (InType: type, OutType: type, args: InType -> OutType))
+		{
+			func_ptr = findEntry(x, Circle);
+			:: (InType: type, OutType: type, args: InType -> invokePtr(OutType, func_ptr, *{c, *args}))
+		}
+	}
+	if name is "Square" ... 
+}
+
+drawCircle = (x: Circle, g: Canvas, scale: float -> int) {...}
+drawSquare = (x: Square, g: Canvas, scale: float -> int) {...}
+
+#Define a linked list of handlers for different types.
+draw_handlers = VTable{t: Circle, handler: &drawCircle, next: nothing}
+draw_handlers = VTable{t: Square, handler: &drawSquare, next: draw_handlers}
+
+my_canvas = createCanvas()
+int_result = getShape("Circle")(draw_handlers)({Canvas, float}, int, {canvas, 1.19})
+```
+ptr is like `void*`. We don't store it's internal type. 
+So `T: type` means T is a full type we can use.
+`T: type[type]` means T is a generic type and needs another full type to be useful. Otherwise it will be like `Stack` generic type.
+Or we can use `type[?]` to indicate that.
+By the second we introduce constraints, we should also have it for `?`, which makes things even worse.
+Also we need a means to cast back ptr.
+**Proposal**:
+1. Add to pattern section above code to explain how polymorphism is done
+2. Use `&` to cast anything to ptr.
+3. Add a function to core to de-reference a ptr.
+4. No `_` in generics.
+5. No compile time union. All unions are fixed without any change.
+6. Add `type[?]` notation to represent a generic type as an input. So it must be used like `T[int]` not `T`.
+For de-reference, it is different from casting. In casting, we change type of some data we have.
+But here we want to get a typed binding pointing to where this ptr points at.
+`*x`? No we have to specify type.
+How can we add extra arguments?
+in OOP, this vtable is attached to the instance/object, but here it is separated.
+idea: Add a function to core to invoke a `ptr` with a struct as it's parameters and specific output type: `invokePtr`
+
+? - `type{}` for types that must be struct.
+So when we have `... (InType: type, args: InType -> invokePtr(OutType, func_ptr, *{c, *args}))` we are sure that `InType` is a struct.
 
 ? - Shall we allow using union instead of `type` keyword? But no further syntax.
 Only union types are allowed. That's the only constraint.
@@ -1886,3 +1940,5 @@ we can add this notation: `cond::retval` so if condition holds, we will have ear
 and later asks for that data?
 
 ? - If it turns out we don't need dynamic union, can we put more effort on pattern matching?
+
+? - Ability to import a module with only some functions or types
