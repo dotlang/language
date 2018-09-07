@@ -1863,6 +1863,76 @@ But here we want to get a typed binding pointing to where this ptr points at.
 How can we add extra arguments?
 in OOP, this vtable is attached to the instance/object, but here it is separated.
 idea: Add a function to core to invoke a `ptr` with a struct as it's parameters and specific output type: `invokePtr`
+Problem is we want to solve expression problem, don't add anything fancy and still support polymorphism.
+```
+Circle = {...}
+Square = {...}
+
+drawCircle = (x: Circle, g: Canvas, scale: float -> int) {...}
+drawSquare = (x: Square, g: Canvas, scale: float -> int) {...}
+
+VTableRow = {t: type, handler: ptr, next: nothing|VTableRow}
+draw_vtable = {
+	handlers: draw_handlers, 
+	#we may add many different v functions (paint, print, save, ...) but for each we will have this helper func
+	draw = 
+
+#Define a linked list of handlers for different types.
+draw_handlers = VTableRow{t: Circle, handler: &drawCircle, next: nothing}
+draw_handlers = VTableRow{t: Square, handler: &drawSquare, next: draw_handlers}
+
+getShape = (string: name -> (VTable->(InType: type, OutType: type, args: InType -> OutType))) {
+	if name is "Circle" {
+		c = Circle{...}
+		:: (x: VTable -> (InType: type, OutType: type, args: InType -> OutType))
+		{
+			func_ptr = findEntry(x, Circle);
+			:: (InType: type, OutType: type, args: InType -> invokePtr(OutType, func_ptr, *{c, *args}))
+		}
+	}
+	if name is "Square" ... 
+}
+
+
+
+my_canvas = createCanvas()
+int_result = getShape("Circle")(draw_handlers)({Canvas, float}, int, {canvas, 1.19})
+```
+What if we keep dynamic union and enable specialisation for generic functions?
+```
+Shape = Circle | Square
+Shape = Shape | Triangle
+
+draw = (Shape, Canvas, float -> int) #no body, means this is an abstract function
+
+draw = (c: Circle, s: Canvas, f: float -> int ) ...
+draw = (e: Square, s: Canvas, f: float -> int ) ...
+
+#adding new function
+print = (Shape, Canvas, float -> string) 
+paint = (c: Circle, g: Canvas, f: float -> string ) ...
+
+#adding new type
+Shape = Shape | Triangle
+
+getShape = (name: String -> Shape) {
+	if name is "Circle" return Circle{...}
+	if "Square" ...
+}
+
+my_shape = getShape("Circle")
+int_var = draw(my_shape, my_canvas, 1.2)
+```
+You can assign a lambda to `draw` as an abstract function using: `myLambda = draw(_: Shape, _, _)`
+or to sub-funcs: `myLambda = draw(_:Circle, _,_)`
+What if there are multiple generics?
+`draw = (Shape, Color, Canvas -> int)`
+and color, canvas are both generics: `Color = Red | Green | Blue`, `Canvas = Paper | Screen | ...`
+now, can I write a draw for Circle, but generic color? what will be the point?
+Shall we say: Any function that has at least one union arg, must be abstract? So if it is not abstract, it must have concrete values for all args.
+This makes sense and can decrease complexity.
+This is just like Haskell, where when you write a function on a sum type, you use pattern matching to specify behavior for each type
+
 
 ? - `type{}` for types that must be struct.
 So when we have `... (InType: type, args: InType -> invokePtr(OutType, func_ptr, *{c, *args}))` we are sure that `InType` is a struct.
