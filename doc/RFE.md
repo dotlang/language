@@ -2179,6 +2179,74 @@ You cannot write a body for abstract function.
 This concept helps us implement polymorphism.
 Can `$x` notation be mixed?
 `process = (data: $1|$2 -> $1|$2)`
+- The fact is, we don't have abstract functions at all. Just write impl functions normally, and compiler will handle everything.
+```
+getHashCode = (data: Customer -> string ) ...
+getHashCode = (data: Circle -> string) ...
+getHashCode = (data: Square -> string) ...
+
+send = (x: wid, data: any)...
+send = (x: wid, data: ?) ... 
+reverMap = (in: Map[K,V] -> Map[V,K])
+```
+Generic functions are like polymorphic functions but with inclusion of all types and same implementation.
+```
+Add[T] = (a: T, b: T -> T) 
+{
+	...
+}
+Add[int](10, 19) 
+#or
+add[?](10,19)
+```
+Can we unify these? Same notation for both?
+```
+my_shape = createShape("Circle")
+draw[?](my_shape) #means invoke the draw version for ? type, which means you calculate at runtime.
+getHashCode[T] = (data: T -> string)
+getHashCode = (data: Customer -> string ) ...
+getHashCode = (data: Circle -> string) ...
+getHashCode = (data: Square -> string) ...
+```
+So, you can either write an implementation for a generic function (normal generics, like add numbers), or make it abstract.
+If you make it abstract, you can write other functions with the same name but appropriate input types.
+When calling either of these you can use `func[int]` to direct to a specific code, or `func[?]` to ask compiler to decide what type to use.
+And no union input argument in any function.
+Huge change, but solves a lot of issues about generics, seq and map, polymorphism, ...
+How does it affect lambdas? can I define a generic lambda?
+What will be the name of this type of functions? Apparently, we are unifying generics and polymorphism.
+How can I have a function pointer to one of impl functions?
+So we have a group of functions under the same name. these functions can be the same code (generics) or different codes (polymorphism).
+`draw[T] = (obj: T -> int)`
+`myDrawCircle = draw[Circle](_)`
+`myFunc = draw(_)`. This does not make sense.
+`myFunc = draw[?](_)`
+`myFunc(my_circle)`
+`myFunc(my_square)`
+This again gives us a change to get rid of union type extension.
+**Proposal**:
+You can define a group of functions under the same name. If all group functions have the same code it is generics. If codes change it is polymorphism.
+Function dispatch is based on union's runtime type.
+Notation is `func[T] = (...)`
+If it is generics, you provide body for this function. For polymorphism, you don't add a body here and write other functions for body:
+Generics:
+```
+add[T] = (a: T, b: T -> T ) { :: a+b }
+add[int](10,20)
+```
+Polymorphism:
+```
+draw[T] = (shape: T -> int)
+draw[Circle] = (shape: Circle -> int) { ...}
+draw[?](my_shape)
+draw[Circle](my_circle)
+draw[?](my_circle)
+```
+You can use `?` notation to use compiler to decide which function to call. This can be either via static or dynamic type.
+`getShape = (name:string -> (`
+What if output of a function is a group function?
+`process[T] = (name:string -> [T](x:int->string))`
+
 
 ? - If we follow `$x` notation, can we have optional args?
 ```
