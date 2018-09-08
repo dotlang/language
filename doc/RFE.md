@@ -1932,7 +1932,264 @@ now, can I write a draw for Circle, but generic color? what will be the point?
 Shall we say: Any function that has at least one union arg, must be abstract? So if it is not abstract, it must have concrete values for all args.
 This makes sense and can decrease complexity.
 This is just like Haskell, where when you write a function on a sum type, you use pattern matching to specify behavior for each type
+```
+isZero :: Int -> Bool
+isZero 0 = True
+isZero _ = False
 
+toBeOrNotToBe :: Bool -> String
+toBeOrNotToBe True  = "Be"
+toBeOrNotToBe False = "Not to be"
+```
+Maybe we should follow the same. But only for unions.
+So for the first definition: `Shape = Circle | Circle` which forces shape to be a union (if we have only one type).
+- One may add their type to Shape but not sure what functions they need to implement. That is fine, they can use compiler or IDE to find out.
+Let's don't make things more complciated because of this.
+```
+Shape = Circle | Square
+
+draw = (Shape, Canvas, float -> int) #no body, means this is an abstract function, if it was Draw then it would be a type
+
+draw = (c: Circle, s: Canvas, f: float -> int ) ...
+draw = (e: Square, s: Canvas, f: float -> int ) ...
+
+#adding new function
+print = (Shape, Canvas, float -> string) 
+paint = (c: Circle, g: Canvas, f: float -> string ) ...
+paint = (c: Square, g: Canvas, f: float -> string ) ...
+
+#adding new type
+Shape = Shape | Triangle
+draw = (x: Triangle, s: Canvas, f: float -> int) ...
+paint = ...
+
+getShape = (name: String -> Shape) {
+	if name is "Circle" return Circle{...}
+	if "Square" ...
+}
+
+my_shape = getShape("Circle")
+int_var = draw(my_shape, my_canvas, 1.2)
+```
+This makes sense, but how can we extend `getShape`? It we add a new type like Triangle? Can we make this one generic too?
+```
+getShape = (name: String -> Shape) #abstract
+
+getShape = (name: "Circle" -> Circle)???
+```
+If an abstract fuction has generic inputs, it's fine. we can easily decide for implementation when someones calls them.
+But what if output is generic? Making decision based on input value is very simplistic. We can have other criteria for this.
+We can say, any function with a union inpu must be abstract.
+And no two abstract functions can have the same name,
+Can we make getShape extendable?
+Like a dispatcher function that calls other functions, this can be simply done via a map.
+But that map will not be extendable. We can always use the LL method, same as what we were doing for polymorphism.
+```
+Creator = {name: string, creator: (string->Shape), next: nothing|Creator}
+shape_creators = Creator{"Circle", createCircle, nothing}
+shape_creators = Creator{"Square", createSquare, shape_creators}
+```
+This makes sense. We don't need to do anything for generic types. 
+This is only about unions.
+How does this work with generics?
+```
+process = (T: type, data: T, s: Shape -> int) #abstract and generic
+process = (T: type, data: T, s: Circle -> int) ...
+process = (T: type, data: T, s: Square -> int) ...
+```
+If we use unions for generics, will this be simpler?
+```
+Shape = Circle | Square
+
+draw = (T: Shape, item: T, Canvas, float -> int) #no body, means this is an abstract function, if it was Draw then it would be a type
+
+draw = (T: Circle, item: Circle, s: Canvas, f: float -> int ) ...
+draw = (T: Square, e: Square, s: Canvas, f: float -> int ) ...
+
+#adding new function
+print = (Shape, Canvas, float -> string) 
+paint = (c: Circle, g: Canvas, f: float -> string ) ...
+paint = (c: Square, g: Canvas, f: float -> string ) ...
+
+#adding new type
+Shape = Shape | Triangle
+draw = (x: Triangle, s: Canvas, f: float -> int) ...
+paint = ...
+
+getShape = (name: String -> Shape) {
+	if name is "Circle" return Circle{...}
+	if "Square" ...
+}
+
+my_shape = getShape("Circle")
+int_var = draw(my_shape, my_canvas, 1.2)
+```
+The rule of generics is that you have to call it with concrete type. Now, how can i call a generic draw with a concrete type when I only have a Shape?
+No. Let's keep these separated.
+**Proposal**
+1. Keep dynamic compile time union
+2. Define abstract function: Any function that has no body
+3. For any abstract function, you can define implementations with the same name but non-union types.
+4. If someone calls the abstract function, it will be redirected to appropriate function with correct type.
+5. You cannot have more than one abstract function with the same name.
+6. Fix patterns section
+7. You cannot address implementations of an abstract function via lambda. You can only point to the abstract function and your call will be redirected.
+What happens if I call impl function with `Circle|Triangle`?
+In impl section, you can impl for a union, as long as there is no overlap.
+When calling, if we have a function for static type, it will be called. else the one for it's dynamic type will be called.
+What if we have multiple arguments?
+`process = (x:Shape, c: Color -> int)`
+if I call process with Circle and `Red|Blue`, and in impl I have `Circle|Square, Red`
+and `Circle|Square, Blue` what will happen?
+oh too much complexity. Let's just say no union type in impl functions.
+They must be concrete types. And if you want same code for multiple types, repeat code or call another function.
+But impl functions must all have concrete types, not union types.
+And when calling? You can call with anything. If it is a union type, dynamic type will be used to dispatch. else static type.
+If we have multiple unions, dynamic type of all of them will be used to match.
+**Proposal**
+1. Keep dynamic compile time union
+2. abstract function: A function with union args and no body. You cannot have one of these two.
+3. For any abstract function, you can define implementations with the same name but non-union types. impl function must not have union inputs.
+4. If someone calls the abstract function, it will be redirected to appropriate function with correct type.
+5. You cannot have more than one abstract function with the same name.
+6. Fix patterns section
+7. You cannot address implementations of an abstract function via lambda. You can only point to the abstract function and your call will be redirected.
+8. If you call a function with union type, it's dynamic runtime type will be used to dispatch. Otherwise, static type.
+
+? - q: How can we use this to implement hashCode function?
+```
+getHashCode = (data: ? -> string)
+```
+or toString?
+```
+toString = (data: ? -> string)
+```
+This is really really similar to generics. Maybe we can replace generics with this?
+Suppose that we have a special union called `any` which is union of everything.
+```
+getHashCode = (data: any -> string)
+getHashCode = (data: Customer -> string ) ...
+getHashCode = (data: Circle -> string) ...
+getHashCode = (data: Square -> string) ...
+
+Stack = Seq[any]
+push = (s: Stack, x: any)
+push = (s: Stack, x: int) ...
+push = (s: Stack, x: string) ...
+```
+What is the difference? getHashCode has to be different for each type.
+But push doesn't need to.
+So maybe we can just implement abstract function. But then we won't have type safety.
+We can have data of different types on a Stack.
+And what about when output type is union? How can we keep type safety?
+`receive = (T: type, predicate: (T->bool) -> T)`
+`receive = (predicate: (any->bool) -> any)`
+And when we need a predicate which accepts any, we can give any implementation for that? `int->bool` for example?
+But without proper generic we won't have sequence and map.
+```
+Map = [K: type, V: type -> 
+{ 
+	ref: ptr, 
+	get = (index: K -> coreRead(K, V, ptr, index),
+	create = (data: {K,V}... -> Map[T])
+	{
+		result = coreAlloc(T, data)
+	}
+}]
+```
+what if we keep generic data types but remove generic functions?
+```
+Stack = [T: type -> Seq[T]]
+push = (s: Stack[any], x: any) #abstract
+push = (s: Stack[$1], x: $1) ...
+```
+Generic data structures are much more limited.
+**Proposal**:
+1. Drop generic functions
+2. Add `any`
+3. Add `$x` notation to write implementations for an abstract functions.
+Again, you cannot address impl function. only abstract one.
+`$x` notation means compiler will generate a new code for each call/type.
+q: How will this affect seq, map, receive, send, cache?
+cache is just and receive.
+```
+send = (x: wid, data: any)...
+send = (x: wid, data: $1) ... #using $ notation means type cannot be any union type
+receive = (predicate: (any->bool) -> any)
+receive = (predicate: ($1->bool) -> $1)
+```
+So the rule is, no actual function (a function with body, or impl function), can have union input type.
+If I call the function with `int`, the code for `int` will be generated and called.
+```
+Seq = [T: type -> {
+	Type: type = T, 
+	ref: ptr, 
+	length = (->coreLen(ref)),
+	concat = (target: Seq[T] -> out: Seq[T])
+	{
+		data = alloc(len(ptr)+len(target.ptr))
+		...
+	},
+	create = (data: T... -> Seq[T])
+	{
+		result = coreAlloc(T, data)
+	},
+	get = (index: int -> coreGet(ref, T, index))
+}
+]
+#using a sequence
+x = Seq[int].create(1,2,3,4)
+len = x.length()
+new = x.concat(my_int_sequence)
+```
+Putting functions inside struct will cause confusion. Because fn cannot be generic but a fn inside a generic type, is generic by nature.
+```
+Seq = [T: type -> {ref: ptr}]
+
+createSequence = (data: any... -> Seq[any])
+createSequence = (data: $1... -> Seq[$1]) ...
+```
+So: Proposal: Do not allow setting values in struct type.
+What if I really want to call a function with a union?
+e.g. create a sequence of int or string?
+```
+getHashCode = (data: any -> string)
+getHashCode = (data: Customer -> string ) ...
+getHashCode = (data: Circle -> string) ...
+getHashCode = (data: Square -> string) ...
+```
+Does it make sense to write getHashCode for int_or_string type? I think it might make sense and as long as we only have one abs function it should be ok.
+**Proposal**:
+1. Drop generic functions
+2. Add `any`
+3. Add `$x` notation to write implementations for an abstract functions.
+4. No value in struct types
+How can we have a sequence of `int_or_string`? Or call function with union?
+Union cannot be at the arg level.
+e.g. get: `get = (Seq[any], index: int -> any`
+what if seq is int or string?
+`get = (Seq[$1], index: int -> $1)`
+And without generics:
+`get = (Seq[int], index: int -> int)`
+`get = (Seq[string], index: int -> string)`
+We can write:
+`get = (Seq[int|string], index: int -> int|string)`
+Note that function input is not union. Internal type of an argument is.
+You cannot write a body for abstract function.
+This concept helps us implement polymorphism.
+Can `$x` notation be mixed?
+`process = (data: $1|$2 -> $1|$2)`
+
+? - If we follow `$x` notation, can we have optional args?
+```
+process = (x: int, y:int|nothing)
+process = (x:int, y:nothing) -> process(x, 100)
+process = (x:int, y:int) -> ...
+```
+
+? - Again: How do we address a generic function using a lambda?
+`serialise = (T: type, data: T -> string)`
+If we apply above change, we won't have a generic function.
 
 ? - `type{}` for types that must be struct.
 So when we have `... (InType: type, args: InType -> invokePtr(OutType, func_ptr, *{c, *args}))` we are sure that `InType` is a struct.
