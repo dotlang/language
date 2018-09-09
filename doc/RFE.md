@@ -2246,7 +2246,42 @@ You can use `?` notation to use compiler to decide which function to call. This 
 `getShape = (name:string -> (`
 What if output of a function is a group function?
 `process[T] = (name:string -> [T](x:int->string))`
+This is a change which makes inconsistent results. we should stick to normal naming.
+For polymorphism, it is fine. We can easily drop the `[T]` notation and use a union.
+```
+#Generics:
+add[T] = (a: T, b: T -> T ) { :: a+b }
+add[int](10,20)
 
+#Polymorphism:
+draw = (shape: Shape -> int)
+draw = (shape: Circle -> int) { ...}
+draw(my_shape)
+draw(my_circle)
+```
+But even for polymorphism, we may have some relations.
+`compare = (s1: Shape, s2: Shape -> int)` s1 and s2 must have the same type.
+Having abstract function helps user know he should add a draw function when adding a new type to Shape.
+We can write generics as functions on any or a union.
+The problem is relationship. So the general problem is: we want to have a relationship (checked at compile time), between function inputs and outputs.
+This relationship can be equality (s1 and s2 must be same shape) or maybe another generic? `A: type, B: type, x: A[B]` but this is too complicated.
+Let's stick to equality.
+`process = (s: Shape, t: Shape -> Shape)` we want to say inputs have the same type and output will be the same.
+We can say arguments with the same type name, should have the same type.
+`draw = (s1: Shape, s2: Shape -> int)` s1 and s2 must have the same type
+`Shape2 := Shape`
+`draw = (s1: Shape, s2: Shape2 -> int)` s1 and s2 can have different types.
+But how can I call draw with a Shape?
+Suppose that I have two shapes of type Shape.
+When calling `draw` I should write: `draw(my_circle, Shape2(my_square))`?
+The point is `A := B` means A is just a label for data of type B. so you can easily convert in any direction.
+But when we say `add = (x: int, y: int)` x and y must have the same type which makes sense.
+`add = (a: any, b:any -> a+b)`
+So will compiler generate code for add for each type we call it?
+Let's say the rule is: Functions cannot have union input. If a function does, either developer or compiler should provide concrete implementations for basic types.
+So `process(int|string)` is not allowed, unless you write two implementations for int and string.
+
+? - 
 
 ? - If we follow `$x` notation, can we have optional args?
 ```
