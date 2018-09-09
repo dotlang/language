@@ -1777,11 +1777,50 @@ The dirty part is in lambda. So maybe we can put it in a core function: given a 
 4. No `_` in generics.
 5. No compile time union. All unions are fixed without any change.
 
+N - If we follow `$x` notation, can we have optional args?
+```
+process = (x: int, y:int|nothing)
+process = (x:int, y:nothing) -> process(x, 100)
+process = (x:int, y:int) -> ...
+```
 
+N - `type{}` for types that must be struct.
+So when we have `... (InType: type, args: InType -> invokePtr(OutType, func_ptr, *{c, *args}))` we are sure that `InType` is a struct.
 
+N - Shall we allow using union instead of `type` keyword? But no further syntax.
+Only union types are allowed. That's the only constraint.
+If we stop union extension, then it will be of no use. (?)
+No. Because then we cannot emphasis type relationship.
+`process = (T: type, x: T, y: T ->` says type of x and y must be the same. but
+`process = (x: Shape, y: Shape ->` does not say that.
 
+N - With generics, how can we define a lambda? Because a generic function's signature relies on name of the first argument.
+And in lambda or function type, we just ignore names.
+`process = (T: type, g: T -> string) ...`
+`view = (T: type, processHandler(type, `
+Maybe we should provide type when creating a lambda.
+q: What is type of `process` above?
+Maybe we can use `$1` and `$2`... to refer to generic arguments.
+This is same in Java and there, you must specify types.
+```
+process = (T: type, x: T -> string) ...
 
-? - Proposal for polymorphism
+myLambda = process(int, _)
+```
+I think we cannot have generic lambdas. Because lambda is a runtime concept and generic is compile time.
+If we have a function which accepts a generic lambda, it can be called with different functions. 
+So we don't know what to call if we have `myLambda(int, 10)`.
+
+N - Make sure LL way for polymorphism is powerful and re-usable for other cases, types, multiple-types, ...
+
+N - `t: Circle` is t of type Circle or it's value is Circle type?
+Maybe we should use `=` for values. To make it explicitly different.
+
+N - Review examples section
+
+N - If it turns out we don't need dynamic union, can we put more effort on pattern matching?
+
+N - Proposal for polymorphism
 ```
 HandlerList = {t: type, handler: ptr, next: nothing|HandlerList}
 
@@ -2056,13 +2095,49 @@ If we have multiple unions, dynamic type of all of them will be used to match.
 7. You cannot address implementations of an abstract function via lambda. You can only point to the abstract function and your call will be redirected.
 8. If you call a function with union type, it's dynamic runtime type will be used to dispatch. Otherwise, static type.
 
-? - q: How can we use this to implement hashCode function?
+N - `type{}` for types that must be struct.
+So when we have `... (InType: type, args: InType -> invokePtr(OutType, func_ptr, *{c, *args}))` we are sure that `InType` is a struct.
+
+N - Shall we allow using union instead of `type` keyword? But no further syntax.
+Only union types are allowed. That's the only constraint.
+If we stop union extension, then it will be of no use. (?)
+No. Because then we cannot emphasis type relationship.
+`process = (T: type, x: T, y: T ->` says type of x and y must be the same. but
+`process = (x: Shape, y: Shape ->` does not say that.
+
+N - With generics, how can we define a lambda? Because a generic function's signature relies on name of the first argument.
+And in lambda or function type, we just ignore names.
+`process = (T: type, g: T -> string) ...`
+`view = (T: type, processHandler(type, `
+Maybe we should provide type when creating a lambda.
+q: What is type of `process` above?
+Maybe we can use `$1` and `$2`... to refer to generic arguments.
+This is same in Java and there, you must specify types.
 ```
-getHashCode = (data: ? -> string)
+process = (T: type, x: T -> string) ...
+
+myLambda = process(int, _)
+```
+I think we cannot have generic lambdas. Because lambda is a runtime concept and generic is compile time.
+If we have a function which accepts a generic lambda, it can be called with different functions. 
+So we don't know what to call if we have `myLambda(int, 10)`.
+
+N - Make sure LL way for polymorphism is powerful and re-usable for other cases, types, multiple-types, ...
+
+N - `t: Circle` is t of type Circle or it's value is Circle type?
+Maybe we should use `=` for values. To make it explicitly different.
+
+N - Review examples section
+
+N - If it turns out we don't need dynamic union, can we put more effort on pattern matching?
+
+N - (moved to next item) q: How can we use this to implement hashCode function?
+```
+getHashCode = (data: ?  -> string)
 ```
 or toString?
 ```
-toString = (data: ? -> string)
+toString = (data: ?  -> string)
 ```
 This is really really similar to generics. Maybe we can replace generics with this?
 Suppose that we have a special union called `any` which is union of everything.
@@ -2280,55 +2355,55 @@ But when we say `add = (x: int, y: int)` x and y must have the same type which m
 So will compiler generate code for add for each type we call it?
 Let's say the rule is: Functions cannot have union input. If a function does, either developer or compiler should provide concrete implementations for basic types.
 So `process(int|string)` is not allowed, unless you write two implementations for int and string.
+How can we interpret this correctly and make it intuitive?
+For polymorphism, no change is needed. Just write your functions and call them via a union type.
+No new notation, no new syntax or interpretation.
+For generics: We have two types of functions: normal functions with non-union input types, and generic functions with union input type.
+For generic functions, the body of the function will be duplicated for all applicable types (compiler will optimize to only duplicate for types needed, but that is implementation dependant).
+Generic functions have union inputs. And type names specify relationship between input and output types.
+`process = (x: Shape -> y: Shape)` this means output will have the same type as input.
+- Shall we use a special notation for generic functions?
+e.g. their name should start with `%`? This can be helpful to make things more explicit and readable. Because these are super-functions.
+- What about function with union output type? I think these are not generic.
+Also note that we have `_` prefix for private functions.
+`push%`, `push$`. Suffix is not beaufitul.
+`$push`, `%push`, `$` is better because `%` is confusing with math operators.
+`$push`, `[push]`. We have generic types that uses `[]`.
+`push[]`, `pop[]` But empty brackets does not make sense. 
+`push = (s: Stack[any], x: any -> Stack[any])`
+Problem: This is not intuitive that three `any` types are generic types.
+Let's just use current status: Type arguments
+`push = (T: type, s: Stack[T], x: T -> Stack[T]) { ... }`
+About lambda? `fp = push(_, _, _)`?
+`fp(int, my_stack, data)` `fp = push(int, _, _)` `fp(my_stack, 10)`
+ok. So our proposal only covers for polymorphism:
+**Proposal**:
+1. No `_` notation in generics
+2. If you define multiple functions with the same name and number of arguments, the compiler will handle calling them based on dynamic type of unions.
+3. No `_:Type` notation in lambda. You cannot discriminate a group of function with the same name. Just pass appropriate type and the corresponding function will be called.
+4. Expression problem: Add new type using dynamic compile-time union, add new function using writing the function normally.
 
-? - 
-
-? - If we follow `$x` notation, can we have optional args?
-```
-process = (x: int, y:int|nothing)
-process = (x:int, y:nothing) -> process(x, 100)
-process = (x:int, y:int) -> ...
-```
+? - Polymorphism and generic:
+**Proposal**:
+1. No `_` notation in generics
+2. If you define multiple functions with the same name and number of arguments, the compiler will handle calling them based on dynamic type of unions.
+3. No `_:Type` notation in lambda. You cannot discriminate a group of function with the same name. Just pass appropriate type and the corresponding function will be called.
+4. Expression problem: Add new type using dynamic compile-time union, add new function using writing the function normally.
 
 ? - Again: How do we address a generic function using a lambda?
 `serialise = (T: type, data: T -> string)`
 If we apply above change, we won't have a generic function.
 
-? - `type{}` for types that must be struct.
-So when we have `... (InType: type, args: InType -> invokePtr(OutType, func_ptr, *{c, *args}))` we are sure that `InType` is a struct.
-
-? - Shall we allow using union instead of `type` keyword? But no further syntax.
-Only union types are allowed. That's the only constraint.
-If we stop union extension, then it will be of no use. (?)
 
 ? - We say that argument name is not part of the type but for generics, it is.
-
-? - With generics, how can we define a lambda? Because a generic function's signature relies on name of the first argument.
-And in lambda or function type, we just ignore names.
-`process = (T: type, g: T -> string) ...`
-`view = (T: type, processHandler(type, `
-Maybe we should provide type when creating a lambda.
-q: What is type of `process` above?
-Maybe we can use `$1` and `$2`... to refer to generic arguments.
-This is same in Java and there, you must specify types.
-```
-process = (T: type, x: T -> string) ...
-
-myLambda = process(int, _)
-```
-I think we cannot have generic lambdas. Because lambda is a runtime concept and generic is compile time.
-If we have a function which accepts a generic lambda, it can be called with different functions. 
-So we don't know what to call if we have `myLambda(int, 10)`.
-
-
-
-? - Make sure LL way for polymorphism is powerful and re-usable for other cases, types, multiple-types, ...
-
-
-
-
-? - `t: Circle` is t of type Circle or it's value is Circle type?
-Maybe we should use `=` for values. To make it explicitly different.
+You cannot send a generic lambda to another function as it is a compile time construct.
+But you can remove the compile time part by specifying types for it.
+`sort = (T: type, data: Seq[T] -> Seq[T])`
+`sortAndProcess = (T: type, sorter: (T, Seq[T] -> Seq[T]) -> int`
+or:
+`process(Customer, customer_list, sort(Customer, _))`
+`process = (T: type, list: Seq[T], sorter: (Seq[T]->Seq[T]))` You cannot have two levels of generics.
+So: When assigning a generic function to a pointer, you must specify types for generic args.
 
 ? - we need a type for wid.
 so we can pass it to other functions.
@@ -2363,12 +2438,10 @@ Even if we add if/else keywords, it won't solve early return problem.
 we can add this notation: `cond::retval` so if condition holds, we will have early return.
 `::ret` to do normal return
 
-? - Review examples section
-
-
 ? - Use case: How to implement a code which starts a helper thread to load some required data at the beginning
 and later asks for that data?
 
-? - If it turns out we don't need dynamic union, can we put more effort on pattern matching?
-
 ? - Ability to import a module with only some functions or types
+
+? - Can we make `T: type` notation more elegant?
+
