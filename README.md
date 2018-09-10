@@ -95,9 +95,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 12. `:=`  Named type, lazy/parallel evaluation
 13. `_`   Place-holder (lambda creator, generics, assignments and function declaration)
 14. `@[]` Import
-15. `!`   Write-only channel
-16. `?`   Read-only channel
-17. `...` Varargs function
+15. `...` Varargs function
 
 ## Reserved keywords
 
@@ -128,9 +126,9 @@ Conditional operators return `true` or `false` which are `1` and `0` when used a
 
 A binding assigns an identifier that refers to an immutable memory location. A binding's value can be a literal value, an expression or another binding. The literal value can be of any valid type (integer number, function literal, struct literal, ...). Bindings must start with a lowercase letter.
 
-You can define bindings at module-level or inside a function. Module-level bindings can only have literals as their value, but function bindings can have expressions too. Type of a binding should be inferred without ambiguity from right side value (Example 7).
+You can define bindings at module-level or inside a function. Module-level bindings can only have literals as their value, but function bindings can have expressions too. Type of a binding should be inferred without ambiguity from right side value.
 
-Note that all bindings are immutable. So you cannot manipulate or re-assign them. But module-level bindings can be updated as long as they are pure data. See Polymorphism title in Patterns section for an application of this.
+Note that all bindings are immutable. So you cannot manipulate or re-assign them. But module-level bindings can be updated as long as they are pure data.
 
 If the value is a struct, you can destruct it into it's elements by using `*` operator which simply replaces it's operand with it's internal data (Example 5). In this process, you can also use underscore to indicate you are not interested in one or more of those elements (Example 6). You can use `*` in any place where a series of comma separated values are needed, but you have to consume the result of this operator (either via binding assignment or function call).
 
@@ -148,14 +146,6 @@ You can call built-in dispose function to explicitly free resources allocated fo
 4. `x = y`
 5. `a,b = *{1, 100}`
 6. `a,_ = *{1, 100}`
-7.
-```
-process1 = (x:int -> x+1 )
-process2 = (x:float -> x*2)
-process = [process1, process2]
-handler = process #which process?
-handler = process(_:int) #handler points to process1
-```
 
 ## Binding name resolution
 
