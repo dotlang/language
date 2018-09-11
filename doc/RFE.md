@@ -2383,20 +2383,6 @@ ok. So our proposal only covers for polymorphism:
 3. No `_:Type` notation in lambda. You cannot discriminate a group of function with the same name. Just pass appropriate type and the corresponding function will be called.
 4. Expression problem: Add new type using dynamic compile-time union, add new function using writing the function normally.
 
-? - Polymorphism and generic:
-**Proposal**:
-1. No `_` notation in generics
-2. If you define multiple functions with the same name and number of arguments, the compiler will handle calling them based on dynamic type of unions.
-3. No `_:Type` notation in lambda. You cannot discriminate a group of function with the same name. Just pass appropriate type and the corresponding function will be called.
-4. Expression problem: Add new type using dynamic compile-time union, add new function using writing the function normally.
-
-? - Again: How do we address a generic function using a lambda?
-`serialise = (T: type, data: T -> string)`
-If we apply above change, we won't have a generic function.
-We don't address it directly. Either call function yourself or provide a type.
-Because module level functions are compile-time but lambdas ar runtime (you can pass them around)
-So: When assigning a generic function to a pointer, you must specify types for generic args.
-
 N - We say that argument name is not part of the type but for generics, it is.
 You cannot send a generic lambda to another function as it is a compile time construct.
 But you can remove the compile time part by specifying types for it.
@@ -2407,7 +2393,7 @@ or:
 `process = (T: type, list: Seq[T], sorter: (Seq[T]->Seq[T]))` You cannot have two levels of generics.
 So: When assigning a generic function to a pointer, you must specify types for generic args.
 
-? - we need a type for wid.
+Y - we need a type for wid.
 so we can pass it to other functions.
 `ref`?
 I don't like acronyms like `pid` or `cid`. It is a keyword and should have a meaning.
@@ -2422,8 +2408,9 @@ but maybe later we want to add functions to get age of a process, get stats, ...
 `thread`
 **`task`**
 `fibre`
+This is done in 
 
-? - How can we implement complex logics?
+Y - How can we implement complex logics?
 ```
 if ( x ) return false
 if ( y and z ) return false
@@ -2440,13 +2427,29 @@ Even if we add if/else keywords, it won't solve early return problem.
 we can add this notation: `cond::retval` so if condition holds, we will have early return.
 `::ret` to do normal return
 
+N - Can we make `T: type` notation more elegant?
+`process = (T: ?, ...`
+to make this orth, we should allow it everywhere: even inside functions.
+
+? - Polymorphism and generic:
+**Proposal**:
+1. No `_` notation in generics
+2. If you define multiple functions with the same name and number of arguments, the compiler will handle calling them based on dynamic type of unions.
+3. No `_:Type` notation in lambda. You cannot discriminate a group of function with the same name. Just pass appropriate type and the corresponding function will be called.
+4. Expression problem: Add new type using dynamic compile-time union, add new function using writing the function normally.
+
+? - Again: How do we address a generic function using a lambda?
+`serialise = (T: type, data: T -> string)`
+If we apply above change, we won't have a generic function.
+We don't address it directly. Either call function yourself or provide a type.
+Because module level functions are compile-time but lambdas ar runtime (you can pass them around)
+So: When assigning a generic function to a pointer, you must specify types for generic args.
+
 ? - Use case: How to implement a code which starts a helper thread to load some required data at the beginning
 and later asks for that data?
 
 ? - Ability to import a module with only some functions or types
 
-? - Can we make `T: type` notation more elegant?
-`process = (T: ?, ...`
-to make this orth, we should allow it everywhere: even inside functions
+
 
 
