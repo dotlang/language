@@ -2393,9 +2393,11 @@ ok. So our proposal only covers for polymorphism:
 ? - Again: How do we address a generic function using a lambda?
 `serialise = (T: type, data: T -> string)`
 If we apply above change, we won't have a generic function.
+We don't address it directly. Either call function yourself or provide a type.
+Because module level functions are compile-time but lambdas ar runtime (you can pass them around)
+So: When assigning a generic function to a pointer, you must specify types for generic args.
 
-
-? - We say that argument name is not part of the type but for generics, it is.
+N - We say that argument name is not part of the type but for generics, it is.
 You cannot send a generic lambda to another function as it is a compile time construct.
 But you can remove the compile time part by specifying types for it.
 `sort = (T: type, data: Seq[T] -> Seq[T])`
@@ -2444,4 +2446,7 @@ and later asks for that data?
 ? - Ability to import a module with only some functions or types
 
 ? - Can we make `T: type` notation more elegant?
+`process = (T: ?, ...`
+to make this orth, we should allow it everywhere: even inside functions
+
 
