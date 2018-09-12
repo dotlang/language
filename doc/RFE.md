@@ -2446,6 +2446,16 @@ masterDraw = (x: Shape ... ) {
 	draw(unwrap(x), ...)
 }
 ```
+This will make less hidden parts and give the developer more control.
+We can use `*` for unions to mean unwrap.
+We want to make this process is flexible as we can but still have extensibility so people can add new types and functions.
+```
+draw = (c: Circle -> int) {...}
+draw = (s: Square -> int) {...}
+masterDraw = (x: Shape ... ) {
+	draw(*x, ...)
+}
+```
 
 ? - Again: How do we address a generic function using a lambda?
 `serialise = (T: type, data: T -> string)`
