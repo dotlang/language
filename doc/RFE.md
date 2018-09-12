@@ -2437,6 +2437,15 @@ to make this orth, we should allow it everywhere: even inside functions.
 2. If you define multiple functions with the same name and number of arguments, the compiler will handle calling them based on dynamic type of unions.
 3. No `_:Type` notation in lambda. You cannot discriminate a group of function with the same name. Just pass appropriate type and the corresponding function will be called.
 4. Expression problem: Add new type using dynamic compile-time union, add new function using writing the function normally.
+Another idea: we have multiple methods with the same name but cannot call them with a shape.
+But write a master method which accepts a shape and redirects. This way the process is less automated
+```
+draw = (c: Circle ...
+draw = (s: Square..
+masterDraw = (x: Shape ... ) {
+	draw(unwrap(x), ...)
+}
+```
 
 ? - Again: How do we address a generic function using a lambda?
 `serialise = (T: type, data: T -> string)`
