@@ -2456,6 +2456,7 @@ masterDraw = (x: Shape ... ) {
 	draw(*x, ...)
 }
 ```
+We can even assign `*x` to a binding. It's type will be one of shape types but we don't know at compile time.
 
 ? - Again: How do we address a generic function using a lambda?
 `serialise = (T: type, data: T -> string)`
@@ -2469,6 +2470,88 @@ and later asks for that data?
 
 ? - Ability to import a module with only some functions or types
 
-
-
+? - If we assume polymorphic functions using same name, can it replace generics?
+we still have generic data types.
+e.g. find something in a linked list.
+`find = (ll: LinkedList[T], data: T)...`
+`find = (ll: LinkedList[any], data: any)...`
+We can use `any` but it won't capture relations.
+Maybe we can have relationship with some compile time restrictions.
+```
+find = (ll: LinkedList[any], data: any -> boolean) type(ll) == type(data)
+{
+	...
+}
+reverseMap = (m1: Map[any, any] -> Map[any, any]) {
+	...
+}
+```
+Idea: we can tag union types to specify their relationship.
+`any$1` tags type with `$1`.
+```
+find = (ll: LinkedList[any$1], data: any$1 -> boolean)
+{
+	...
+}
+reverseMap = (m1: Map[any$1, any$2] -> Map[any$2, any$1]) {
+	...
+}
+```
+But what if we really want a union here? `Map[int|string, float]`
+What if I call draw with`Circle|Square`? It works on only one. So depending on the runtime type, one draw method will be called.
+But in abstract data types like map, we sometimes need to do something e.g. search or sort, on a sequence of unions.
+In other words, `any` type arguments will have only one type/
+But `any` generic arguments for generic types, can be anything.
+This is confusing. because we are re-using the union concept.
+```
+find = (T: type, ll: LinkedList[T], data: T -> boolean)
+{
+	...
+}
+reverseMap = (K: type, V: type, m1: Map[K, V] -> Map[V, K]) {
+	...
+}
+```
+Does the union issue exist for polymorphic functions?
+e.g. we have a method called serialise which gets a sequence of shapes.
+`save = (x: Seq[Shape]...)`
+But, `Seq[Shape]` is not a union so it is fine. You can put any compliant binding inside `Seq[Shape]` and it will be fine to use it for save.
+we didn't write: `Seq[Shape] | Seq[Drawable]`.
+If an argument is of union type then polymorphism says, write separate functions and runtime will find appropriate impl for dynamic type.
+So, back to generics, can we use this to solve initial problem?
+```
+find = (ll: LinkedList[any$1], data: any$1 -> boolean)
+{
+	...
+}
+reverseMap = (m1: Map[any$1, any$2] -> Map[any$2, any$1]) {
+	...
+}
+```
+any means the type is not important for us. if it is always coming with `$` can we eliminate it?
+```
+find = (ll: LinkedList[$1], data: $1 -> boolean)
+{
+	...
+}
+map = (arr: Seq[$1], pred: ($1->$2) -> Seq[$2]) {
+	...
+}
+groupBy = (arr: Seq[$1], group: ($1->$2) -> Map[$2, Seq[$1]]) {
+	...
+}
+```
+Can we make this more limited? For 90% of the cases, only two generic type arguments are enough? `$` and `&`.
+But we have a rule: zero, one or unlimited.
+Can we do this via one type only? Maybe divide complex functions into multiple functions each with one type?
+This notation is more limited that `T: type` notation because you cannot mix types (e.g. `$1[$2]`).
+But we cannot re-assign a binding. We have many bindings with the same name `find`.
+This is ok for polymorphism because we create a master union type. Can we create a master function for this case too?
+We don't need to. Because we don't have a master union type.
+```
+for all types T:
+get = (s: Seq[T], index: int -> T) {
+	...
+}
+```
 
