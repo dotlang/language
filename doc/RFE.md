@@ -2457,6 +2457,7 @@ masterDraw = (x: Shape ... ) {
 }
 ```
 We can even assign `*x` to a binding. It's type will be one of shape types but we don't know at compile time.
+What is the difference between type of `my_shape` and `*my_shape`?
 
 ? - Again: How do we address a generic function using a lambda?
 `serialise = (T: type, data: T -> string)`
@@ -2627,12 +2628,34 @@ Other functions are camedCased.
 Other bindings are under_line_separated.
 So we have to kinds of binding: To store a type or to store a value.
 type bindings are compile time decidable.
+`Customer = MakeCustomerType(string)`
+How to define a linked list?
+```
+LinkedList = (T: type -> type) 
+{
+	Node = {
+		data: T,
+		next: Node
+	}
+	:: Node
+}
+```
 
 ? - anonym types
 To keep the language small and uniform, all aggregate types in Zig are anonymous. To give a type a name, we assign it to a constant:
 ```
-const Node = struct {
+Node = struct {
     next: *Node,
     name: []u8,
 };
 ```
+
+? - Let developer use function calls to initialise module level bindings
+
+? - Is it possible to have a generic logger function which accepts any function, logs something and calls the function?
+
+? - If `[]` will only be used for generics, maybe we should stop using it in import.
+
+? - how can someone implement BigInt?
+
+? - Can we implement smart slice without core?
