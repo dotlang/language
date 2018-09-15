@@ -2555,3 +2555,84 @@ get = (s: Seq[T], index: int -> T) {
 }
 ```
 
+? - For error handling we can use polymorphism concepts:
+```
+ErrorItem = A | B
+ErrorItem = ErrorItem | MyFileError
+Error = {errorItem: ErrorItem, cause: Nothing|Error}
+process = (x:int -> nothing|Error)`
+```
+This way we can have nested and extensible errors.
+
+? - We can use `Shape = Circle |` notation to have a union which for now has only one option.
+
+? - Zig
+https://andrewkelley.me/post/zig-programming-language-blurs-line-compile-time-run-time.html
+The idea is like me.
+Type are first class citizens. Functions can even return types.
+```
+fn max(comptime T: type, a: T, b: T) -> T {
+    if (a > b) a else b
+}
+
+max(f32, a, b)
+```
+comptime means the value must be specified at compile time.
+I think we can eliminate that and say types must be specified at compile time.
+specialisation:
+```
+fn max(comptime T: type, a: T, b: T) -> T {
+    if (T == bool) {
+        return a or b;
+    } else if (a > b) {
+        return a;
+    } else {
+        return b;
+    }
+}
+```
+Using functions that return a type, we can have generic types.
+```
+fn List(comptime T: type) -> type {
+    struct {
+        items: []T,
+        len: usize,
+    }
+}
+```
+In dot:
+```
+list = (T: type -> type) {
+	:: {item: T, next: list(T)
+}
+```
+So we can have:
+`Customer = {name: string, age:int}`
+or use a function to create a type.
+`Customer = makeCustomerType(string)`
+This will make this notation obsolete:
+`Customer = [T: type -> {name:T, age: int}]`
+And so we will have no application for `[]`.
+Maybe we can use it for sequence notation at it's most raw form:
+`x = [1,2,3]`
+`process = (x: [int]...)`
+we can use generic types like this:
+`process = (c: makeCustomerType(string) ...)`
+or
+`process = (c: Customer ...)`
+But we need to have a difference between types and values.
+Functions that return a type should be PascalCased.
+Bindings that store a type, should be PascalCased.
+Other functions are camedCased.
+Other bindings are under_line_separated.
+So we have to kinds of binding: To store a type or to store a value.
+type bindings are compile time decidable.
+
+? - anonym types
+To keep the language small and uniform, all aggregate types in Zig are anonymous. To give a type a name, we assign it to a constant:
+```
+const Node = struct {
+    next: *Node,
+    name: []u8,
+};
+```
