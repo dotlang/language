@@ -2458,6 +2458,77 @@ masterDraw = (x: Shape ... ) {
 ```
 We can even assign `*x` to a binding. It's type will be one of shape types but we don't know at compile time.
 What is the difference between type of `my_shape` and `*my_shape`?
+idea: Just like compile time dynamic union, we can have dynamic functions. These functions are all part of a single function.
+```
+Shape = Shape | Circle #here we extend shape function
+drawCircle = (x: Circle -> int) { ... }
+draw = draw | drawCircle
+```
+What if we don't have multiple functions with the same name? So lambda problem will be solved.
+But how can I call a function without knowing its name? and without knowing it's exact type?
+Idea: When adding a new type to a union, we specify it's identifier which is used to create it's polymorphic functions
+```
+Shape = Shape | Circle {circle}
+drawCircle = (x: Circle -> int) ...
+draw(my_shape)
+```
+```
+#all shapes have id
+Circle = {... id: "circle"}
+Shape = Shape | Circle
+drawCircle = (x: Circle -> int) ...
+draw#my_shape.id(my_shape)
+```
+String concat is not very elegant.
+what if we say we don't have polymorphism?
+what happens?
+Rather than adding some new concept (multiple functions with the same name), let's provide essentials to implement a vtable.
+```
+Circle = {...
+	vtable: { draw = drawCircle }
+}
+
+Shape = Shape | Circle
+
+process = (s: Shape -> s.vtable.draw)
+```
+But type of vtable is not the same across all shapes.
+Another idea: All shapes keep track of their parent.
+```
+Circle = { s: Shape, ... }
+```
+Nope.
+Another idea: traits, the function to read a shape, does not return a shape, returns a drawable.
+```
+ShapeTrait = { draw: (int->string), save: ... }
+Circle = { ... draw = ..., save: ... }
+getShape = (f: File -> ShapeTrait) {
+	if type == "Circle":
+		return ShapeTrait(Circle{...})
+}
+s = getShape(...)
+s.draw(...)
+s.save(...)
+```
+So ShapeTrait contains the common functionality of all shapes.
+Pro: 
+- No need to vtable 
+- No need to dynamic union
+- Is intuitive
+- No new syntax.
+- The only change: casting a struct to another struct
+Con:
+- How can I add a new type? Just implement it with appropriate functions so it can be casted to ShapeTrait
+- How can I add a new operation?
+we need to modify the shape trait.
+`ShapeTrait = {*ShapeTrait, export: (...)}`
+and we need to add export to all shape structs.
+nope.
+defining functions inside structs is nice but will be a huge problem when solving expression problem.
+decl should be separate or else they won't be extensible: type decl and function decl
+let's say we use trait method but using a notation to find functions of a specific type. This is not good because type is not everything.
+
+
 
 ? - Again: How do we address a generic function using a lambda?
 `serialise = (T: type, data: T -> string)`
