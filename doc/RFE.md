@@ -2527,8 +2527,62 @@ nope.
 defining functions inside structs is nice but will be a huge problem when solving expression problem.
 decl should be separate or else they won't be extensible: type decl and function decl
 let's say we use trait method but using a notation to find functions of a specific type. This is not good because type is not everything.
+How is polymorphism implemented internally? It is using vtable. So let's provide features that can be used to add a vtable.
+But vtable is specific to one type. It is attached to an object in OOP.
+```
+my_shape.draw() #?
+draw(my_shape) #?
+```
+I think the second version is better. To more separated things are, the easier to extend them.
+```
+draw_vtable.apply(my_shape)
+```
+What if we allow compile time sequences which can be modified at compile time?
+Either we have to use `ptr` or very complex union types or unknown generics.
+I think the third option is better.
+```
+getShape(my_file)(vtable)(name, age, input3)
+```
+The ideal solution: No change to union types, no functions with the same name
+```
+Circle = {...}
+Square = {...}
 
+drawCircle = (x: Circle, g: Canvas, scale: float -> int) {...}
+drawSquare = (x: Square, g: Canvas, scale: float -> int) {...}
 
+VTable = {t: type, handler: ptr, next: nothing|VTable}
+DrawFunc = (Canvas, float -> int)
+
+#Define a linked list of handlers for different types.
+draw_handlers = VTable{t: Circle, handler: &drawCircle, next: nothing}
+draw_handlers = VTable{t: Square, handler: &drawSquare, next: draw_handlers}
+
+getShape = (string: name -> (VTable, FType: type ->FType)) {
+	if name is "Circle" {
+		c = Circle{...}
+		:: (x: VTable, FType: type -> FType)
+		{
+			func_ptr = findEntry(x, Circle);
+			:: coreInjectArg(FType, func_ptr, c)
+		}
+	}
+	if name is "Square" ... 
+}
+
+my_canvas = createCanvas()
+int_result = getShape(DrawFunc, "Circle")(draw_handlers)(my_canvas, 1.19) #we can keep drawfunc and drawfuncraw types inside vtable
+```
+I think we should have a notation that says, calling a function with insufficient args will create a lambda for remaining args.
+This way, we can return a function with some number of args in the code without caring for each individual arg.
+Generics: We have same function for all types
+Polymorphism: We have different functions for each type
+Idea: We can assign a linked list to a function. compiler will lookup appropriate element to call
+```
+draw = [drawCircle, drawSquare]
+draw = draw & [drawTriangle]
+```
+But still we will have a problem about keeping track of a shape. How can we do that?
 
 ? - Again: How do we address a generic function using a lambda?
 `serialise = (T: type, data: T -> string)`
