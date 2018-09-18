@@ -2583,6 +2583,115 @@ draw = [drawCircle, drawSquare]
 draw = draw & [drawTriangle]
 ```
 But still we will have a problem about keeping track of a shape. How can we do that?
+```
+Circle = {...}
+Square = {...}
+
+drawCircle = (x: Circle, g: Canvas, scale: float -> int) {...}
+drawSquare = (x: Square, g: Canvas, scale: float -> int) {...}
+
+VTableRow = {t: type, handler: ptr, next: nothing|VTableRow}
+
+#Define a linked list of handlers for different types.
+draw_handlers = VTableRow{t: Circle, handler: &drawCircle, next: nothing}
+draw_handlers = VTableRow{t: Square, handler: &drawSquare, next: draw_handlers}
+
+VTable = [T: type -> { FType: T, rows: VTableRow}]
+draw_vtable = VTable[(Canvas, float -> int)]{ rows: draw_handlers }
+
+getShape = (string: name -> VFunc) {
+	if name is "Circle" {
+		c = Circle{...}
+		:: stdCreateVFunc(Circle, c)
+		:: (x: VTable -> VTable.FType)
+		{
+			func_ptr = findEntry(x, Circle);
+			:: coreInjectArg(x.FType, func_ptr, c)
+		}
+	}
+	if name is "Square" ... 
+}
+
+my_canvas = createCanvas()
+int_result = getShape("Circle")(draw_handlers)(my_canvas, 1.19) #we can keep drawfunc and drawfuncraw types inside vtable
+```
+This works but we are relying too much on the developer. Mostly about `FType` being a correct type.
+Can we embed FType inside vtable?
+Why can't we use a generic type? Because we will still have the problem of storing output of getShape.
+Another strategy: inclusion types: we can define a type which means "some type which includes a field with this name and type"
+```
+getShape = (name: string -> {Shape...})
+```
+No. too much change.
+The good thing about current approach is that we don't need dynamic union.
+But the con is that it's a bit far from static type (we store ptr and let developer pass us any type).
+Now that we want to ask for compiler's help, why not store everything in one place? Something like a sequence but different?
+But what will be it's type? We have to have a type for everything. We can store `ptr` in it. And compiler will handle type matching.
+But how are we going to store output of getShape? That is also a question.
+```
+Circle = {...}
+Square = {...}
+
+drawCircle = (x: Circle, g: Canvas, scale: float -> int) {...}
+drawSquare = (x: Square, g: Canvas, scale: float -> int) {...}
+
+draw = [&drawCircle, &drawSquare]
+```
+This is too complex. 
+**Proposal**:
+1. No `_` notation in generics
+2. If you define multiple functions with the same name and number of arguments, the compiler will handle calling them based on dynamic type of unions.
+3. No `_:Type` notation in lambda. You cannot discriminate a group of function with the same name. Just pass appropriate type and the corresponding function will be called.
+4. Expression problem: Add new type using dynamic compile-time union, add new function using writing the function normally.
+Another idea: we have multiple methods with the same name but cannot call them with a shape.
+But write a master method which accepts a shape and redirects. This way the process is less automated
+```
+draw = (c: Circle ...
+draw = (s: Square..
+
+draw(my_circle)
+draw(my_square)
+```
+Simple and straight forward.
+Only about lambda: When you say `x = draw(_)` if there is ambiguity, you should specify type.
+if you want multi-method to be called: `x = (x: Shape -> draw(x))` but this does not work. we said function inputs cannot be union.
+we may need sometimes to have a multimethod function pointer. a function that works on a shape.
+"You cannot define a function with union input" is an exception which we don't want. Let's allow as much as possible.
+Allow everythng and even for multimethod rely on developer defining it.
+Of course there cannot be overlap between functions. This will be caught by the compiler.
+so `(Shape)` and `(Circle)`? Is this overlap? Not really. If you call `func` with a circle it will call the second one.
+If you call it with a Shape, it will call the first one.
+In other words, the developer is responsible for redirection. Compiler and runtime will dispatch function calls based on static type (Shape).
+How can I do the redirection?
+```
+xdraw = (x: Circle -> ...)
+xdraw = (x: Square -> ...)
+...
+draw = (T: type, s: Shape -> xdraw(T(s)))
+...
+my_shape = getShape("Circle")
+draw(type(my_shape), my_shape)
+```
+and `type` function only works on a union. in these cases, we generate all implementations for `draw` for all possible types of `my_shape`.
+```
+draw = (x: Circle -> ...)
+draw = (x: Square -> ...)
+...
+my_shape = getShape("Circle")
+draw(*my_shape)
+hashCode = (x:int -> int)
+hashCode = (x:string -> int)
+hashCode = (x:Circle -> int)
+hashCode = (x:Customer -> int)
+sort = (T: type, data: Seq[T] -> ...) {
+	f = hashCode(data.get(0))
+}
+```
+Can this replace generic functions? Polymorphism is different code for different types. Generic is same code for different types.
+```
+Stack = [T: type -> ...]
+
+```
 
 ? - Again: How do we address a generic function using a lambda?
 `serialise = (T: type, data: T -> string)`
