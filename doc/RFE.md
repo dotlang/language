@@ -2690,8 +2690,24 @@ sort = (T: type, data: Seq[T] -> ...) {
 Can this replace generic functions? Polymorphism is different code for different types. Generic is same code for different types.
 ```
 Stack = [T: type -> ...]
+push = (x: 
 
 ```
+Generic also allows us to specify relationship between data.
+If we call `sort` with `Seq[int|string]` it will call hashCode for `int|string` unless we use `*` but we don't know if T will be a union type.
+Let's do this: functions can be defined with any type. call dispatch will be based on static type. 
+```
+draw = (x: Circle -> ...)
+draw = (x: Square -> ...)
+...
+my_shape = getShape("Circle")
+draw(my_shape)
+xd = (x: Shape -> draw(x)) #dispatch based on static type?
+xd(my_shape)
+```
+If we allow defining functions on union types, people can write a function for a large union and it will be diverging to generics.
+If we don't, in some places it might make code more difficult to write.
+
 
 ? - Again: How do we address a generic function using a lambda?
 `serialise = (T: type, data: T -> string)`
@@ -2893,3 +2909,10 @@ Node = struct {
 ? - how can someone implement BigInt?
 
 ? - Can we implement smart slice without core?
+
+? - dotLang and FP are ideal for data processing. Filter/map a set of data ...
+Check some examples
+
+? - Idea: Use functions for generic types and return `[]` notation for map and sequence.
+With generics we can allow for more customised hash
+q: what about specialised types? e.g. TreeMap, HashSet,...
