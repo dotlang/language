@@ -2431,7 +2431,131 @@ N - Can we make `T: type` notation more elegant?
 `process = (T: ?, ...`
 to make this orth, we should allow it everywhere: even inside functions.
 
-? - Polymorphism and generic:
+N - Again: How do we address a generic function using a lambda?
+`serialise = (T: type, data: T -> string)`
+If we apply above change, we won't have a generic function.
+We don't address it directly. Either call function yourself or provide a type.
+Because module level functions are compile-time but lambdas ar runtime (you can pass them around)
+So: When assigning a generic function to a pointer, you must specify types for generic args.
+
+N - Use case: How to implement a code which starts a helper thread to load some required data at the beginning
+and later asks for that data?
+```
+task := process()
+...
+waitFor(task, FIN)
+#or use core function, 
+waitForFinish(task)
+```
+
+N - If we assume polymorphic functions using same name, can it replace generics?
+we still have generic data types.
+e.g. find something in a linked list.
+`find = (ll: LinkedList[T], data: T)...`
+`find = (ll: LinkedList[any], data: any)...`
+We can use `any` but it won't capture relations.
+Maybe we can have relationship with some compile time restrictions.
+```
+find = (ll: LinkedList[any], data: any -> boolean) type(ll) == type(data)
+{
+	...
+}
+reverseMap = (m1: Map[any, any] -> Map[any, any]) {
+	...
+}
+```
+Idea: we can tag union types to specify their relationship.
+`any$1` tags type with `$1`.
+```
+find = (ll: LinkedList[any$1], data: any$1 -> boolean)
+{
+	...
+}
+reverseMap = (m1: Map[any$1, any$2] -> Map[any$2, any$1]) {
+	...
+}
+```
+But what if we really want a union here? `Map[int|string, float]`
+What if I call draw with`Circle|Square`? It works on only one. So depending on the runtime type, one draw method will be called.
+But in abstract data types like map, we sometimes need to do something e.g. search or sort, on a sequence of unions.
+In other words, `any` type arguments will have only one type/
+But `any` generic arguments for generic types, can be anything.
+This is confusing. because we are re-using the union concept.
+```
+find = (T: type, ll: LinkedList[T], data: T -> boolean)
+{
+	...
+}
+reverseMap = (K: type, V: type, m1: Map[K, V] -> Map[V, K]) {
+	...
+}
+```
+Does the union issue exist for polymorphic functions?
+e.g. we have a method called serialise which gets a sequence of shapes.
+`save = (x: Seq[Shape]...)`
+But, `Seq[Shape]` is not a union so it is fine. You can put any compliant binding inside `Seq[Shape]` and it will be fine to use it for save.
+we didn't write: `Seq[Shape] | Seq[Drawable]`.
+If an argument is of union type then polymorphism says, write separate functions and runtime will find appropriate impl for dynamic type.
+So, back to generics, can we use this to solve initial problem?
+```
+find = (ll: LinkedList[any$1], data: any$1 -> boolean)
+{
+	...
+}
+reverseMap = (m1: Map[any$1, any$2] -> Map[any$2, any$1]) {
+	...
+}
+```
+any means the type is not important for us. if it is always coming with `$` can we eliminate it?
+```
+find = (ll: LinkedList[$1], data: $1 -> boolean)
+{
+	...
+}
+map = (arr: Seq[$1], pred: ($1->$2) -> Seq[$2]) {
+	...
+}
+groupBy = (arr: Seq[$1], group: ($1->$2) -> Map[$2, Seq[$1]]) {
+	...
+}
+```
+Can we make this more limited? For 90% of the cases, only two generic type arguments are enough? `$` and `&`.
+But we have a rule: zero, one or unlimited.
+Can we do this via one type only? Maybe divide complex functions into multiple functions each with one type?
+This notation is more limited that `T: type` notation because you cannot mix types (e.g. `$1[$2]`).
+But we cannot re-assign a binding. We have many bindings with the same name `find`.
+This is ok for polymorphism because we create a master union type. Can we create a master function for this case too?
+We don't need to. Because we don't have a master union type.
+```
+for all types T:
+get = (s: Seq[T], index: int -> T) {
+	...
+}
+```
+```
+Stack = [T: type -> Seq[T]]
+push = (T: type, data: T, stack: Stack[T] -> Stack[T]) { ... }
+#alternative
+StackProtocol = [T: type -> { push: (T -> Stack[T]), peek: (->T)}]
+createStack = () {
+	s = Stack[int]...
+	return StackProtocol[int]{push = (int -> Stack[int]) ..., peek = (->int) ...}
+	
+}
+```
+
+N - For error handling we can use polymorphism concepts:
+```
+ErrorItem = A | B
+ErrorItem = ErrorItem | MyFileError
+Error = {errorItem: ErrorItem, cause: Nothing|Error}
+process = (x:int -> nothing|Error)`
+```
+This way we can have nested and extensible errors.
+
+N - We can use `Shape = Circle |` notation to have a union which for now has only one option.
+
+N - (moved to next item) Polymorphism and generic:
 **Proposal**:
 1. No `_` notation in generics
 2. If you define multiple functions with the same name and number of arguments, the compiler will handle calling them based on dynamic type of unions.
@@ -2707,115 +2831,327 @@ xd(my_shape)
 ```
 If we allow defining functions on union types, people can write a function for a large union and it will be diverging to generics.
 If we don't, in some places it might make code more difficult to write.
+Let's not allow defining functions with union type.
+```
+draw = (x: Circle -> ...)
+draw = (x: Square -> ...)
+...
+my_shape = getShape("Circle")
+draw(my_shape)
+hashCode = (x:int -> int)
+hashCode = (x:string -> int)
+hashCode = (x:Circle -> int)
+hashCode = (x:Customer -> int)
+sort = (T: type, data: Seq[T] -> ...) {
+	f = hashCode(data.get(0))
+}
+```
+Here `hashCode` will be called with actual type of `data.get(0)`. It can be `int|string` in which case the underlying real type will be used.
+**Proposal**:
+1. No `_` notation in generics
+2. If you define multiple functions with the same name and number of arguments, the compiler will handle calling them based on dynamic type of unions.
+3. No function can have union argument.
+4. No `_:Type` notation in lambda. You cannot discriminate a group of function with the same name. Just pass appropriate type and the corresponding function will be called.
+5. Expression problem: Add new type using dynamic compile-time union, add new function using writing the function normally.
+What about item 4? How are we going to have a lambda which covers all draw/hashCode functions?
+What happens if I pass `hashCode(_)` to a function?
+Maybe there should be a compiler warning: you should use `hashCode(_:int)` instead.
+or, we can say we allow functions with union args as long as there is no conflict.
+And compiler will decide which one to call.
+```
+draw = (x: Circle -> ...)
+draw = (x: Square -> ...)
+...
+my_shape = getShape("Circle")
+draw(my_shape) #no draw for Shape so use it's underlying type
+hashCode = (x:int -> int)
+hashCode = (x:string -> int)
+hashCode = (x:Circle -> int)
+hashCode = (x:Customer -> int)
+sort = (T: type, data: Seq[T] -> ...) {
+	f = hashCode(data.get(0))
+}
+```
+But this will make things complicated in case of multiple union args. What if some have candidates but some don't.
+Lets allow any type of functions and dispatch will be based on static type.
+```
+draw = (x: Circle -> ...)
+draw = (x: Square -> ...)
+...
+xdraw = (s: Shape -> ...)
+my_shape = getShape("Circle")
+draw(my_shape) #not allowed
+xdraw(my_shape) #allowed
+hashCode = (x:int -> int)
+hashCode = (x:string -> int)
+hashCode = (x:Circle -> int)
+hashCode = (x:Customer -> int)
+superHashCode = (x: any -> ???)
+sort = (T: type, data: Seq[T] -> ...) {
+	f = hashCode(data.get(0)) #if T is a simple type this works fine. If it is int|string, we must have a hashCode for int|string.
+}
+myLambda = hashCode(_) #not allowed because it has ambiguity. You should specify the type of input
+myLambda = hashCode(_:int)
+```
+Two questions:
+1 - How do we redirect from xdraw for Shapes to draws for each shape?
+2 - How can I have a lambda that points to all hashCode functions?
+If we solve 1, we can solve 2.
+`xdraw = (s: Shape -> draw(*s))`
+`*x` will cast union binding x to it's underlying type. Obviously you cannot store it in a place where type is fixed because type can change.
+Can we make this notation more elegant?
+```
+my_shape
+Circle(my_shape).1::Circle(my_shape).0
+Square(my_shape).1::Square(my_shape).0
+...
+```
+We need this to have our important function call dispatch rule: dispatch only based on static type.
+Currently we have two options:
+1. Manual VTable implementation (std + some notations like &)
+2. Multimethods (functions with same name with or without forwarding) + dynamic union
+```
+Circle = {...}
+Square = {...}
 
+drawCircle = (x: Circle, g: Canvas, scale: float -> int) {...}
+drawSquare = (x: Square, g: Canvas, scale: float -> int) {...}
 
-? - Again: How do we address a generic function using a lambda?
-`serialise = (T: type, data: T -> string)`
-If we apply above change, we won't have a generic function.
-We don't address it directly. Either call function yourself or provide a type.
-Because module level functions are compile-time but lambdas ar runtime (you can pass them around)
-So: When assigning a generic function to a pointer, you must specify types for generic args.
+VTable = {t: type, handler: ptr, next: nothing|VTable}
 
-? - Use case: How to implement a code which starts a helper thread to load some required data at the beginning
-and later asks for that data?
+#Define a linked list of handlers for different types.
+draw_handlers = VTable{t: Circle, handler: &drawCircle, next: nothing}
+draw_handlers = VTable{t: Square, handler: &drawSquare, next: draw_handlers}
+DrawType = (Canvas, float -> int)
+
+getShape = (string: name -> (type, VTable -> FType)) {
+	if name is "Circle" {
+		c = Circle{...}
+		:: stdCreateVFunc(Circle, c)
+		:: (FType: type, x: VTable -> FType)
+		{
+			func_ptr = findEntry(x, Circle);
+			:: coreInjectArg(FType, func_ptr, c)
+		}
+	}
+	if name is "Square" ... 
+}
+
+my_canvas = createCanvas()
+int_result = getShape("Circle")(DrawType, draw_handlers)(my_canvas, 1.19)
+```
+This is not simple.
+```
+draw = (x: Circle -> ...)
+draw = (x: Square -> ...)
+...
+xdraw = (s: Shape -> ...)
+my_shape = getShape("Circle")
+draw(my_shape) #not allowed
+xdraw(my_shape) #allowed
+hashCode = (x:int -> int)
+hashCode = (x:string -> int)
+hashCode = (x:Circle -> int)
+hashCode = (x:Customer -> int)
+superHashCode = (x: any -> ???)
+sort = (T: type, data: Seq[T] -> ...) {
+	f = hashCode(data.get(0)) #if T is a simple type this works fine. If it is int|string, we must have a hashCode for int|string.
+}
+myLambda = hashCode(_) #not allowed because it has ambiguity. You should specify the type of input
+myLambda = hashCode(_:int)
+```
+What is the problem?
+- We want to be able to solve expression problem.
+- We want to have polymorphism.
+What if we don't solve expression problem?
+- (In terms of Shapes) We want to be able to add new shapes and new operations on them easily.
+- We want to be able to define different implementations for different types.
+I don't like extending types (`Shape = Shape | Square`) because it makes tracking type changes difficult.
+We have two problems: on the operation side (how to add a new function for existing shapes), and on the type side (what is output of getShape).
+Can we say: getShape return me something that I can feed into "draw" and we have multiple draw functions for different types.
+```
+draw = (s: Circle, Canvas, float -> int) {...}
+draw = (s: Square, Canvas, float -> int) {...}
+Drawable = draw(?,,)
+...
+getShape = (name: string -> Drawable) {
+	if name is "Circle" return Circle{...}
+	if name is "Square" ...
+}
+
+my_shape = getShape("Circle")
+draw(my_shape, c1, 1.12)
+```
+A protocol is a type which is union of all types that can fill in it's blank.
+Let's separate it from union. Because then we will need to change function call dispatch rules.
+- How to have multiple functions in protocol?
+- How this solves exp problem?
+- What needs to change about function dispatch rules?
+- What about generics?
+```
+draw = (s: Circle, Canvas, float -> int) {...}
+draw = (s: Square, Canvas, float -> int) {...}
+print = (s: Circle, int, int, float -> string) {..}
+Shape = draw(?,Canvas,float) + print(?,int,int,float)
+...
+getShape = (name: string -> Shape) {
+	if name is "Circle" return Circle{...} #this means we have draw(Circle, ...) defined in the code
+	if name is "Square" ...
+}
+
+my_shape = getShape("Circle")
+draw(my_shape, c1, 1.12)
+print(my_shape, ...)
+
+#Add a new shape
+Triangle = {...}
+draw = (Triangle ...)
+print = (Triangle, ...)
+
+#add a new op
+getArea = (Circle ...)
+getArea = (Square ...)
+getArea = (Triangle ...)
+#we also need to extend shape protocol
+NewShape = Shape + getArea(?, int, float)
+```
+- Can we use protocols with generics?
+Another way using closure:
+```
+draw = (s: Circle, Canvas, float -> int) {...}
+draw = (s: Square, Canvas, float -> int) {...}
+
+Drawable = {draw: (Canvas, float -> int)}
+getShape = (name: String -> Drawable) {
+	if name is "Circle" 
+		c = Circle{...}
+		return Drawable{draw = (n: Canvas, f: float -> draw(c, n, f))}
+}
+f = getShape("Circle")
+f.draw(c, 1.12)
+```
+This needs absolutely no change and provides polymorphism.
+Adding new shape: Add new draw and a new case in getShape
+Adding new operation: Define a new struct e.g. Printable
+```
+draw = (s: Circle, Canvas, float -> int) {...}
+draw = (s: Square, Canvas, float -> int) {...}
+
+Draw = (Canvas, float -> int)
+getShape = (name: String -> Draw) {
+	if name is "Circle" 
+		c = Circle{...}
+		return (n: Canvas, f: float -> draw(c, n, f))
+}
+f = getShape("Circle")
+f.draw(c, 1.12)
+```
+This basically simplified version of vtable approach. We can return multiple lambdas too, and enclose them in a struct.
+```
+draw = (s: Circle, Canvas, float -> int) {...}
+draw = (s: Square, Canvas, float -> int) {...}
+
+Shape = { draw: (Canvas, float -> int), paint: (Canvas, int -> string)}
+getShape = (name: String -> Shape) {
+	if name is "Circle" 
+		c = Circle{...}
+		return Shape{draw = (n: Canvas, f: float -> draw(c, n, f)), paint = (n: Canvas, x:int -> paint(c, n, x))}
+}
+f = getShape("Circle")
+f.draw(c, 1.12)
+```
+Adding new shape: just implement appropriate functions
+Adding a new operation: not so easily (unless we use more complex ways like VTable)
+Suppose that we want to add area function:
+```
+draw = (s: Circle, Canvas, float -> int) {...}
+draw = (s: Square, Canvas, float -> int) {...}
+area = (s: Circle ->float)
+area = (s: Square -> float)
+
+Shape = { draw: (Canvas, float -> int), paint: (Canvas, int -> string)}
+ShapeEx = { Shape, area: (->float) }
+
+getShape = (name: String -> Shape) {...}
+
+newGetShape = (name: string -> ShapeEx) {
+	if name is "Circle" 
+		c = Circle{...}
+		return ShapeEx{area = (->area(c)), *getShape(name)}
+}
+f = getShape("Circle")
+f.draw(c, 1.12)
+```
+- How can we reference to global `draw` in `return Shape{draw = (n: Canvas, f: float -> draw(c, n, f))`?
+So it's not impossible to add a new operation. OTOH we have a simple language with no special syntax.
+Everything is already there: closure, lambda, struct, ...
+**Proposal**:
+1. No `_` notation in generics. 
+2. You can define multiple functions with the same name. Dispatch is based on static type.
+3. Unions will not support dynamic extension.
+4. You are free to have union args, but there should be no overlap.
+5. When using function name to create lambda, if there are multiple candidates you have to use `_:int` notation to specify which one.
+How can I return a lambda which can point to any draw? you can't. you can use `draw(_:Circle, _, _)` to create a lambda based on one function.
+```
+Hashable = {hashCode: (->int)}
+```
+
+N - Let developer use function calls to initialise module level bindings
+
+N - Is it possible to have a generic logger function which accepts any function, logs something and calls the function?
+
+N - how can someone implement BigInt? using a linked list of integers.
+
+N - How can we initiate n threads and wait for all of them to finish? core func
+
+N - anonym types
+To keep the language small and uniform, all aggregate types in Zig are anonymous. To give a type a name, we assign it to a constant:
+```
+Node = struct {
+    next: *Node,
+    name: []u8,
+};
+```
+
+N - Let developer use function calls to initialise module level bindings
+
+N - Is it possible to have a generic logger function which accepts any function, logs something and calls the function?
+
+N - how can someone implement BigInt? using a linked list of integers.
+
+N - How can we initiate n threads and wait for all of them to finish? core func
+
+? - Poymorphism and exp problem
+**Proposal**:
+1. No `_` notation in generics. 
+2. You can define multiple functions with the same name. Dispatch is based on static type.
+3. Unions will not support dynamic extension.
+4. You are free to have union args, but there should be no overlap.
+5. When using function name to create lambda, if there are multiple candidates you have to use `_:int` notation to specify which one.
+How can I return a lambda which can point to any draw? you can't. you can use `draw(_:Circle, _, _)` to create a lambda based on one function.
+```
+Hashable = {hashCode: (->int)}
+```
+```
+draw = (s: Circle, Canvas, float -> int) {...}
+draw = (s: Square, Canvas, float -> int) {...}
+
+Shape = { draw: (Canvas, float -> int), paint: (Canvas, int -> string)}
+getShape = (name: String -> Shape) {
+	if name is "Circle" 
+		c = Circle{...}
+		return Shape{draw = (n: Canvas, f: float -> draw(c, n, f)), paint = (n: Canvas, x:int -> paint(c, n, x))}
+}
+f = getShape("Circle")
+f.draw(c, 1.12)
+```
+
+? - How can we extend a struct?
+e.g. we have `A={int, string}`
+and we want to define B type as A plus a float.
+Proposal: use `*` for this. makes sense
 
 ? - Ability to import a module with only some functions or types
-
-? - If we assume polymorphic functions using same name, can it replace generics?
-we still have generic data types.
-e.g. find something in a linked list.
-`find = (ll: LinkedList[T], data: T)...`
-`find = (ll: LinkedList[any], data: any)...`
-We can use `any` but it won't capture relations.
-Maybe we can have relationship with some compile time restrictions.
-```
-find = (ll: LinkedList[any], data: any -> boolean) type(ll) == type(data)
-{
-	...
-}
-reverseMap = (m1: Map[any, any] -> Map[any, any]) {
-	...
-}
-```
-Idea: we can tag union types to specify their relationship.
-`any$1` tags type with `$1`.
-```
-find = (ll: LinkedList[any$1], data: any$1 -> boolean)
-{
-	...
-}
-reverseMap = (m1: Map[any$1, any$2] -> Map[any$2, any$1]) {
-	...
-}
-```
-But what if we really want a union here? `Map[int|string, float]`
-What if I call draw with`Circle|Square`? It works on only one. So depending on the runtime type, one draw method will be called.
-But in abstract data types like map, we sometimes need to do something e.g. search or sort, on a sequence of unions.
-In other words, `any` type arguments will have only one type/
-But `any` generic arguments for generic types, can be anything.
-This is confusing. because we are re-using the union concept.
-```
-find = (T: type, ll: LinkedList[T], data: T -> boolean)
-{
-	...
-}
-reverseMap = (K: type, V: type, m1: Map[K, V] -> Map[V, K]) {
-	...
-}
-```
-Does the union issue exist for polymorphic functions?
-e.g. we have a method called serialise which gets a sequence of shapes.
-`save = (x: Seq[Shape]...)`
-But, `Seq[Shape]` is not a union so it is fine. You can put any compliant binding inside `Seq[Shape]` and it will be fine to use it for save.
-we didn't write: `Seq[Shape] | Seq[Drawable]`.
-If an argument is of union type then polymorphism says, write separate functions and runtime will find appropriate impl for dynamic type.
-So, back to generics, can we use this to solve initial problem?
-```
-find = (ll: LinkedList[any$1], data: any$1 -> boolean)
-{
-	...
-}
-reverseMap = (m1: Map[any$1, any$2] -> Map[any$2, any$1]) {
-	...
-}
-```
-any means the type is not important for us. if it is always coming with `$` can we eliminate it?
-```
-find = (ll: LinkedList[$1], data: $1 -> boolean)
-{
-	...
-}
-map = (arr: Seq[$1], pred: ($1->$2) -> Seq[$2]) {
-	...
-}
-groupBy = (arr: Seq[$1], group: ($1->$2) -> Map[$2, Seq[$1]]) {
-	...
-}
-```
-Can we make this more limited? For 90% of the cases, only two generic type arguments are enough? `$` and `&`.
-But we have a rule: zero, one or unlimited.
-Can we do this via one type only? Maybe divide complex functions into multiple functions each with one type?
-This notation is more limited that `T: type` notation because you cannot mix types (e.g. `$1[$2]`).
-But we cannot re-assign a binding. We have many bindings with the same name `find`.
-This is ok for polymorphism because we create a master union type. Can we create a master function for this case too?
-We don't need to. Because we don't have a master union type.
-```
-for all types T:
-get = (s: Seq[T], index: int -> T) {
-	...
-}
-```
-
-? - For error handling we can use polymorphism concepts:
-```
-ErrorItem = A | B
-ErrorItem = ErrorItem | MyFileError
-Error = {errorItem: ErrorItem, cause: Nothing|Error}
-process = (x:int -> nothing|Error)`
-```
-This way we can have nested and extensible errors.
-
-? - We can use `Shape = Circle |` notation to have a union which for now has only one option.
 
 ? - Zig
 https://andrewkelley.me/post/zig-programming-language-blurs-line-compile-time-run-time.html
@@ -2854,7 +3190,7 @@ fn List(comptime T: type) -> type {
 In dot:
 ```
 list = (T: type -> type) {
-	:: {item: T, next: list(T)
+	:: {item: T, next: nothing|list(T)
 }
 ```
 So we can have:
@@ -2890,23 +3226,22 @@ LinkedList = (T: type -> type)
 	:: Node
 }
 ```
-
-? - anonym types
-To keep the language small and uniform, all aggregate types in Zig are anonymous. To give a type a name, we assign it to a constant:
+We can return a struct of two types and use `*` to use both of them.
 ```
-Node = struct {
-    next: *Node,
-    name: []u8,
-};
+LinkedList = (T: type -> {type, type}) 
+{
+	T1 = {
+			data: T,
+			next: T1|nothing
+		}
+	:: {T1, T}
+}
+f,g: *LinkedList(int) #f will be ll and g will be int
 ```
+Does this mean we can define a type inside a struct?
 
-? - Let developer use function calls to initialise module level bindings
-
-? - Is it possible to have a generic logger function which accepts any function, logs something and calls the function?
 
 ? - If `[]` will only be used for generics, maybe we should stop using it in import.
-
-? - how can someone implement BigInt?
 
 ? - Can we implement smart slice without core?
 
@@ -2916,3 +3251,4 @@ Check some examples
 ? - Idea: Use functions for generic types and return `[]` notation for map and sequence.
 With generics we can allow for more customised hash
 q: what about specialised types? e.g. TreeMap, HashSet,...
+
