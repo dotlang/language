@@ -86,14 +86,14 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 03. `()`  Function declaration and call, cast
 04. `{}`  Code block, struct definition and struct literal
 05. `[]`  Generic types
-06. `*`   Destruct a struct
+06. `*`   Destruct a struct (type or value)
 07. `|`   Union data type 
 08. `->`  Function declaration
 09. `//`  Nothing-check operator
 10. `:`   Type declaration (struct field and function inputs)
 11. `=`   Binding declaration, type alias
 12. `:=`  Named type, lazy/parallel evaluation
-13. `_`   Place-holder (lambda creator, generics, assignments and function declaration)
+13. `_`   Place-holder (lambda creator, assignments and function declaration)
 14. `@[]` Import
 15. `...` Varargs function
 16. `::`  Return
@@ -204,8 +204,6 @@ Bindings of a union type, have ability to hold multiple different types and are 
 
 When you convert a union variable to one of it's types (Example 3), you also get a boolean flag indicating whether conversion was successful.
 
-You can amend a union type using `|` notation (Example 4).
-
 **Examples**
 
 1. 
@@ -220,9 +218,6 @@ x = Sat
 
 2. `int_or_float: = 11`
 3. `int_value, is_valid = int(my_union)`
-4. `Shape = Triangle | Circle`
-`Shape = Shape | Square`
-
 
 ## Struct
 
@@ -234,7 +229,7 @@ You can use `.0,.1,.2,...` notation to access fields inside an untyped struct (E
 
 You can provide values for struct fields. If these values are functions, based on closure rules, they will have access to struct fields. If they don't access any of those fields, they will be type-level field (rather than instance-level field) and you can use them by using name of the type (Example 8) otherwise they are instance-level.
 
-If a struct has a private field (starting with `_`), only type or instance level functions will have access to them.
+If a struct has a private field (starting with `_`), only type or instance level functions will have access to them. You can also use `*` operator when defining a struct to include fields from another struct into current one (Example 9).
 
 **Examples**
 
@@ -251,6 +246,11 @@ Customer = { name: string, getName = (->name), newCustomer = (->Customer{name: "
 #in the code:
 my_customer.getName() #this gives you the name inside my_customer binding
 cust = Customer.newCustomer()  #this will call type-level function
+```
+9.
+```
+Person = {name: string}
+Employee = {*Person, employee_id: int}
 ```
 
 ## Named types
@@ -316,8 +316,6 @@ Generic types are defined similar to a function but using `type` keyword for the
 
 Note that arguments of type `type` must be named like a type, not like a binding, and must receive value at compile time. This means that you cannot use a runtime dynamic binding value as a type.
 
-You can use `_` as type name which means the value will is not available at the point of declaration but will be provided at compile time (Example 5).
-
 **Examples**
 
 1. `LinkedList = [T: type -> {data: T, next: LinkedList[T]}]`
@@ -329,12 +327,7 @@ process = (T: type, data: List[T] ...
 pointer = process(_,_) #right, type of pointer is (T,List[T])
 pointer = process(int, _) #right, type of pointer is (int, List[int])
 ```
-5. 
-```
-Data = [T: type -> {name: string, data: T}]
-writeName = (x: Data[_] -> print(x.name))
-```
-6. `process = (T: type, x: [T], index: int -> x[index])`
+5. `process = (T: type, x: [T], index: int -> x[index])`
 
 # Functions
 
@@ -429,7 +422,7 @@ We use a static dispatch for function calls. Also because you cannot have two fu
 
 If `MyInt := int` is defined in the code, you cannot call a function which needs an `int` with a `MyInt` binding, unless it is forwarded explicitly in the code (e.g. `process = (x:MyInt -> process(int(x)))`).
 
-To resolve a function call, first bindings with appropriate type in current function will be searched. If not found, search will continue to parent functions, then module-level and then imported modules. At any scope, if there are multiple candidates (matching with name and argument types) there will be a compiler error.
+To resolve a function call, first bindings with that name in current function will be searched. If not found, search will continue to parent functions, then module-level and then imported modules. At any scope, if there are multiple candidates (matching with name and argument types) there will be a compiler error.
 
 ## Lambda (Function literal)
 
@@ -508,31 +501,24 @@ Because a lot of non-critical tools are removed from the language and core, the 
 
 ## Polymorphism
 
-Basically, polymorphism is a list of candidate functions to call. Each function is for a specific type. You can implement this using a linked list.
-
-Below example shows how you can provide a `draw` function for all shapes defined in the program. In this way, you can easily add a new shape (Add a new case to `Shape` union), or add a new operation (Define a new linked list). So [Expression Problem](https://en.wikipedia.org/wiki/Expression_problem) can be solved.
+Polymorphism can be achieved using cloure and lambdas. 
 
 ```
-#define Shape type using compile-time dynamic union
-Shape = Circle | Triangle
-Shape = Shape | Square
+drawCircle = (s: Circle, Canvas, float -> int) {...}
+drawSquare = (s: Square, Canvas, float -> int) {...}
 
-#Type of a function candidate which does a specific operation for a specific type.
-CandidateList = [T: type -> {T: type, handler: (T->), next: nothing|CandidateList[_]}]
-#Define a linked list of handlers for different types.
-shape_handlers = CandidateList[Circle]{Circle, drawCircle, nothing}
-
-#amend the list of handlers
-shape_handlers = CandidateList[Square]{Square, drawSquare, shape_handlers}
-shape_handlers = CandidateList[Triangle]{Triangle, drawTriangle, shape_handlers}
-
-#The draw function can be invoked on any shape
-draw = (s: Shape, element: CandidateList[_] -> ) { #here is where we need ?
-	if element.T is same as internal type of S, then call element.handler and return
-	if element.next is nothing then return
-	else recursively call with element.next
+Shape = { draw: (Canvas, float -> int)}
+getShape = (name: String -> Shape) {
+	if name is "Circle" 
+		c = Circle{...}
+		return Shape{draw = drawCircle}
 }
+f = getShape("Circle")
+f.draw(c, 1.12)
 ```
+
+If you want to add a new shape (e.g. Triangle), you should add appropriate functions (And the case checks in `getShape` needs to be modified).
+If you want to add a new operation (e.g. print), you will need to add a new function that returns a lambda to print.
 
 ## Sequence
 
@@ -840,4 +826,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
 - **Version 0.99**: Dec 30, 2017 - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting, removed `^` operator and replaced with generics, removed `@` (replaced with chain operator and casting), removed function forwarding, removed compound literal, changed notation for channel read, write and select (Due to changes in generics and sequence and removal of compound literal) and added `$` for select, add notation to filter imported identifiers in import, removed autoBind section and added a brief explanation for `TargetType()` notation in cast section, rename chain operator to `@`, replaced return keyword with `::`, replaced `import` with `@` notation and support for rename and filter for imported items, replaced `@` with `.[]` for chain operator, remove condition for return and replaced with rule of returning non-`nothing` values, change chain notation from `.[]` to `.{}` and import notation from `@[]` to `@()`, Added notation for polymorphic generic types, changed the notation for import generic module and rename identifiers, removed `func` keyword, extended general union type syntax to unnamed types with field type and names (e.g. `{id:int, name:string,...}`), Added shift-left and right `>>,<<` and power `**` operators, all litearls for seq and map and struct must be prefixed with `_`, in struct literals you can include other structs to implement struct update, changed notation for abstract functions, Allow access to common parts of a union type with polymorphic union types, use `nothing` instead of `...` for generic types and abstract functions, removed phantom types, change `=>` notation to `^T :=` notation to rename symbols, removed composition for structs and extended/clarified usage of polymorphic sum types for embedding and function forwarding, change map type from `[K,V]` to `[K:V]`, removed auto-bind `Type()`, remove abstract functions, remove `_` prefix for literals, remove `^` and add `=>` to rename types so as to fix issue with introducion of new named types when filtering an import operation, replace operators `:=` to `=` and `:==` to `==` and `=` (comparison) to `=?`, adding type alias notation `T:X`, change import operator to `@[]` and replace `=>` with type alias notation, use `:=` to calculate in parallel and `==` to equality check
 - **Version 1.00**: July 5, 2018 - Use `=` for type alias and `:=` for lazy (parallel) calculation and named type, More clarification about binding type inference, explain name resolution mechanism for types and bindings and function call, added explanation about using function name as a function pointer, explanation about public functions with private typed input/output, removed type specifier after binding name (it will be inferred from RHS), changed function type to `(input:type->output_type)`, removed chanin operator, some clarifications about casting operator and expressions, remove `::` and use bindings for output with future reference, allow calling lambda at the point of definition, allow omitting types if they can be inferred in defining functions, indicate that functions cannot have same name and introduce compile-time dynamic sequence to store multiple functions and treat the sequence as a function, restore using type name before struct literal, change `...` as a more general notation for polymorphic union types, re-write generics as code-generation + compile-time dynamic sequence for functions, add `*` destruct operator for struct explode which can also be used to call a function with named arguments or initialize a sequence, remove notation for casting a union to it's elements (replaced with use of sequence of functions), replace `...` notation with already defined `&` and `|`, removed `${}` notation for select and replaced with a function call on a sequence, removed concept of treating sequence of functions as a function, added `type` core function + ability to amend module level collections using `&`, explained loop built-in function for map, reduce and filter operations
-- **Version 1.01**: Add support for `type` keyword and generics data types and generic functions, remove map and sequence from language, defined instance-level and type-level fields with values, added `byte` and `ptr` types to primitive types, add support for vararg functions, added Patterns section to show how basic tools can be used to achieve more complex features (polymorphism, sequence, map, ...), use mailbox instead of channels for concurrency, clarification about using unions as enums + concrete types, added `::` operator for return and conditional return
+- **Version 1.01**: Add support for `type` keyword and generics data types and generic functions, remove map and sequence from language, defined instance-level and type-level fields with values, added `byte` and `ptr` types to primitive types, add support for vararg functions, added Patterns section to show how basic tools can be used to achieve more complex features (polymorphism, sequence, map, ...), use mailbox instead of channels for concurrency, clarification about using unions as enums + concrete types, added `::` operator for return and conditional return, changed polymorphism method to avoid strange linked-list notations for VTable or functions with the same name and use closure instead, added `*` for struct types
