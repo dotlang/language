@@ -3167,12 +3167,37 @@ N - Are we planning to support https://langserver.org/?
 Language server
 probably but this is not part of core or syntax.
 
+N - Ability to import a module with only some functions or types.
+Covered in another item
 
-? - Proposal:
+N - (covered elsewhere) If we allow types inside struct, it means we can import a whole module into a struct.
+And because no functions have same names, it might actually be useful and won't cause a serious problem.
+This can help with name conflicts.
+And also importing only part of a module.
+
+N - There is an argument about simplicity and map/seq types.
+Should they be built-in or not?
+Costs of having them outside core: 
+	- We need ptr and byte type
+	- We need core support for memory allocation and dereferencing
+	- We won't have map/seq literals
+Costs of having them inside core:
+	- Extra notation
+	- It will be difficult to implement some specialised structures (e.g. special map or treemap or set ...)
+	- Confusion with generic types (argument: unless we use functions to generate types)
+Advantage of having them outside core:
+	- Less things in language spec (Argument: map/seq is not a very complicated subject and everybody needs them)
+Advantage of having them in core:
+	- more intuitive code
+	
+? - Proposal about generics:
 1. Allow functions to return types (generic data types)
 2. Use `[]` for map and sequence and bring them back in syntax (with their literals)
-3. Allow defining types inside a struct.
-4. Import a module into current module or as a struct using some special function
+q: what about specialised types? e.g. TreeMap, HashSet,...
+
+? - Proposal:
+1. Allow defining types inside a struct.
+2. Import a module into current module or as a struct using some special function
 ========
 All types must be compile time decidable.
 Struct defines a set of bindings that have the same purpose.
@@ -3273,6 +3298,29 @@ Can I do the same with modules?
 `c = !("/aaa/customer")?????` If it is a value, it already has everything and I cannot mutate it.
 `c = !("/aaa/customer){name: "mahdi"}` if it is a type, I can set fields and use the type to create a new binding.
 so I think it makes more sense to say imported modules are types. they are struct types. which contains all the types and bindings defined within the imported modules.
+If it is value, to use it multiple times we need to import it multiple times.
+can we gather all dependencies in one place then?
+```
+#root module
+Set = !("/core/set")
+Utils = !("/github/process/v1.5/master")
+Helper = !("....")
+#anybody who imports root (this module) will have a struct type which has 3 types in it: Set, Utils and Helper.
+
+#other modules
+Set = !("root").Set 
+Utils = !("root").Utils #we don't care about version here
+```
+This can help with name conflicts.
+And also importing only part of a module.
+Types defined in a struct, cannot be overriden in its instances (?)
+```
+Customer = {name: string, Case = int}
+g = Customer{name = string, Case = float}
+```
+Even if we allow this, using type from a binding is not possible. because types must be compile time decidable.
+So referring to `my_customer.Case` may refer to any type. so it is not allowed
+But `Customer.Case` is ok because at type level, Case is statically defined.
 
 ? - What about adding operators for send/receive and string regex match `~`?
 Don't forget about select/alt.
@@ -3286,9 +3334,44 @@ They should be composable. Why not make it part of task type?
 we also need sometimes to send and wait for message to be picked.
 1. send a data to a task
 2. receive data with a filter
+3. send and wait for message to be picked up
+4. receive with timeout
 what if we give access to the mailbox? It's internal elements can have different types. How can we do this?
 But if we do, send means append to mailbox.
 receive means remove from my mailbox. but this conflicts with mutability.
+receive with timeout can be simulated with a timeout process.
+1. send a data to a task
+2. receive data with a filter
+3. send and wait for message to be picked up
+I think 3 is also not very common. The whole point of tasks is being async.
+1. send a data to a task
+2. receive data with a filter
+receive with a filter is actually a filter on a sequence but returns zero or one elements. so it is firstMatch.
+```
+was_sent = $.send(data, wid)
+msg = $.firstMatch(Message, (m: Message -> m.sender = 12))
+```
+we can say that `$` is my mailbox. 
+but what is its type? we have types for everything.
+and what if I pass it to some other process?
+And how does `firstMatch` imply item will be removed?
+```
+# you cannot send $ to any other function. It is just available eveywhere and points to the current process local mailbox.
+was_sent = $.send(data, wid)
+msg = $.firstMatch(Message, (m: Message -> m.sender = 12))
+```
+too much exceptions.
+```
+was_sent = data>>wid
+msg = Message{sender=12}<<
+```
+Instead of lambda, we can write example to match. But what if we don't care about some fields?
+The match has all the fields.
+This is not receive. We have already received the message. 
+This is a pickup operation. we just have to make sure it is not applicable to any other binding.
+because it is mutating.
+`data.(wid)`? not very intuitive.
+Maybe its better to use functions. 
 
 ? - Built-in notation for map/reduce/filter:
 Map/reduce/filter can be done on any type. In java it is a stream or iterable or collection.
@@ -3307,10 +3390,13 @@ fltrd = tbl.filter((k:string, v:int -> v>0))
 This is better than using strange notations for map/reduce/filter. and is easy to use.
 Note that `map` function of a sequence is a real function that only accepts a lambda. It's owner is in its closure so we can use `data.map` as a lambda and pass it to others.
 Similarly we can add other useful functions: `foreach`, `allmatch`, `anymatch`, ...
+```
+Set = !("/core/set").CreateType
+process = (x: Set(int) -> 
+```
 
 ? - Add `task` as primitive type. But can we avoid it?
 
-? - Ability to import a module with only some functions or types
 
 ? - Zig
 https://andrewkelley.me/post/zig-programming-language-blurs-line-compile-time-run-time.html
@@ -3393,42 +3479,20 @@ LinkedList = (T: type -> {type, type})
 			data: T,
 			next: T1|nothing
 		}
-	:: {T1, T}
+	:: T1
 }
 f,g: *LinkedList(int) #f will be ll and g will be int
 ```
 Does this mean we can define a type inside a struct?
 If we think of types as first class values, it makes sense.
+We still have generic functions as usual: with type inputs. 
+But output of a generic function is not a type.
 
-? - If we allow types inside struct, it means we can import a whole module into a struct.
-And because no functions have same names, it might actually be useful and won't cause a serious problem.
-This can help with name conflicts.
-And also importing only part of a module.
-
-? - If `[]` will only be used for generics, maybe we should stop using it in import.
-It will definitely be used either for generics or for map/seq.
-But if we decide to import modules as structs, we may be able to use it as a function (or maybe even give name to it).
-
-? - Idea: Use functions for generic types and return `[]` notation for map and sequence.
+N - Idea: Use functions for generic types and return `[]` notation for map and sequence.
 With generics we can allow for more customised hash
 q: what about specialised types? e.g. TreeMap, HashSet,...
 
-? - There is an argument about simplicity and map/seq types.
-Should they be built-in or not?
-Costs of having them outside core: 
-	- We need ptr and byte type
-	- We need core support for memory allocation and dereferencing
-	- We won't have map/seq literals
-Costs of having them inside core:
-	- Extra notation
-	- It will be difficult to implement some specialised structures (e.g. special map or treemap or set ...)
-	- Confusion with generic types (argument: unless we use functions to generate types)
-Advantage of having them outside core:
-	- Less things in language spec (Argument: map/seq is not a very complicated subject and everybody needs them)
-Advantage of having them in core:
-	- more intuitive code
-	
-? - Think of a real-world example.
+N - Think of a real-world example.
 We have a set of identifiers `Set<String>`
 Each identifier has some children. The children may have children too.
 ```
@@ -3443,4 +3507,9 @@ If dotLang is going to be a choice for data processing systems (db, messaging, q
 the features for data processing should be easy to use.
 And I don't say strong/powerful. because those are going to be basic essential features.
 More powerful tools will be created off them.
+
+
+N - If `[]` will only be used for generics, maybe we should stop using it in import.
+It will definitely be used either for generics or for map/seq.
+But if we decide to import modules as structs, we may be able to use it as a function (or maybe even give name to it).
 
