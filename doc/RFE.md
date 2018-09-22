@@ -3190,6 +3190,33 @@ Advantage of having them outside core:
 Advantage of having them in core:
 	- more intuitive code
 	
+
+N - Idea: Use functions for generic types and return `[]` notation for map and sequence.
+With generics we can allow for more customised hash
+q: what about specialised types? e.g. TreeMap, HashSet,...
+
+N - Think of a real-world example.
+We have a set of identifiers `Set<String>`
+Each identifier has some children. The children may have children too.
+```
+process = (ids: [string] -> Graph[int]) {
+	result = map(ids, (s: string -> getChildren(s)))
+	:: Graph[int]{result}...
+}
+```
+We also need a very good notation for data processing.
+Maybe better than map/reduce/filter functions.
+If dotLang is going to be a choice for data processing systems (db, messaging, queue, cache, ...) which are also concurrent,
+the features for data processing should be easy to use.
+And I don't say strong/powerful. because those are going to be basic essential features.
+More powerful tools will be created off them.
+
+N - If `[]` will only be used for generics, maybe we should stop using it in import.
+It will definitely be used either for generics or for map/seq.
+But if we decide to import modules as structs, we may be able to use it as a function (or maybe even give name to it).
+
+
+
 ? - Proposal about generics:
 1. Allow functions to return types (generic data types)
 2. Use `[]` for map and sequence and bring them back in syntax (with their literals)
@@ -3371,7 +3398,7 @@ This is not receive. We have already received the message.
 This is a pickup operation. we just have to make sure it is not applicable to any other binding.
 because it is mutating.
 `data.(wid)`? not very intuitive.
-Maybe its better to use functions. 
+Maybe its better to use functions.
 
 ? - Built-in notation for map/reduce/filter:
 Map/reduce/filter can be done on any type. In java it is a stream or iterable or collection.
@@ -3396,7 +3423,16 @@ process = (x: Set(int) ->
 ```
 
 ? - Add `task` as primitive type. But can we avoid it?
+Why can't we use a struct? Defined in core but it's not a primitive type.
+`task = {id: int, address: int, ...}`
+If we do this, we can add appropriate functions for send/receive.
+We can use a core function to get current task.
+```
+my_task = getCurrentTask()
+my_task.mailbox.pick(Message, (m: Message -> m.sender = 12))
+```
 
+? - Now that no two functions can have the same name, why not force import into a struct?
 
 ? - Zig
 https://andrewkelley.me/post/zig-programming-language-blurs-line-compile-time-run-time.html
@@ -3488,28 +3524,6 @@ If we think of types as first class values, it makes sense.
 We still have generic functions as usual: with type inputs. 
 But output of a generic function is not a type.
 
-N - Idea: Use functions for generic types and return `[]` notation for map and sequence.
-With generics we can allow for more customised hash
-q: what about specialised types? e.g. TreeMap, HashSet,...
-
-N - Think of a real-world example.
-We have a set of identifiers `Set<String>`
-Each identifier has some children. The children may have children too.
-```
-process = (ids: [string] -> Graph[int]) {
-	result = map(ids, (s: string -> getChildren(s)))
-	:: Graph[int]{result}...
-}
-```
-We also need a very good notation for data processing.
-Maybe better than map/reduce/filter functions.
-If dotLang is going to be a choice for data processing systems (db, messaging, queue, cache, ...) which are also concurrent,
-the features for data processing should be easy to use.
-And I don't say strong/powerful. because those are going to be basic essential features.
-More powerful tools will be created off them.
-
-
-N - If `[]` will only be used for generics, maybe we should stop using it in import.
-It will definitely be used either for generics or for map/seq.
-But if we decide to import modules as structs, we may be able to use it as a function (or maybe even give name to it).
-
+? - Do we need a defer?
+something to run before end of method.
+For res
