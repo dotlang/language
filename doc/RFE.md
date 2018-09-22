@@ -3121,7 +3121,7 @@ N - how can someone implement BigInt? using a linked list of integers.
 
 N - How can we initiate n threads and wait for all of them to finish? core func
 
-? - Poymorphism and exp problem
+Y - Poymorphism and exp problem
 **Proposal**:
 1. No `_` notation in generics. 
 2. You can define multiple functions with the same name. Dispatch is based on static type.
@@ -3145,11 +3145,170 @@ getShape = (name: String -> Shape) {
 f = getShape("Circle")
 f.draw(c, 1.12)
 ```
+**Proposal**:
+1. No `_` notation in generics.
+2. No functions with same name. 
+3. You can define union or non-union for function input.
+4. Functions can return a protocl: a lambda or a struct which has a set of lambdas.
+5. Expression problem: Adding new types: just add new functions that support expected protocols, adding new operations (e.g. print): You need to write your own function to support this.
+q: Can this be combined with generics to make it more powerful?
 
-? - How can we extend a struct?
+Y - How can we extend a struct?
 e.g. we have `A={int, string}`
 and we want to define B type as A plus a float.
 Proposal: use `*` for this. makes sense
+
+N - Can we implement smart slice without core?
+
+N - dotLang and FP are ideal for data processing. Filter/map a set of data ...
+Check some examples
+
+N - Are we planning to support https://langserver.org/?
+Language server
+probably but this is not part of core or syntax.
+
+
+? - Proposal:
+1. Allow functions to return types (generic data types)
+2. Use `[]` for map and sequence and bring them back in syntax (with their literals)
+3. Allow defining types inside a struct.
+4. Import a module into current module or as a struct using some special function
+========
+All types must be compile time decidable.
+Struct defines a set of bindings that have the same purpose.
+How does type fit in here?
+```
+Customer = {name: string, age:int, Case: [int]}
+process = (x: Customer.Case -> int)
+```
+And we can have multi-level types:
+`process = (x: Customer.Case.Element ...)`
+But Customer type is explicit and we can easily know where it is.
+If we allow this, then a module will virtually a struct.
+Can this give us polymorphism? doesn't seem so.
+What should be name of a function that returns type?
+The naming rule becomes more complicated because things are becoming more and more similar.
+We can have a lambda in a binding: `processCustomers = (int->int) {...}` not `process_customers`
+But we don't name functions based on their output type. a function will return a binding but its not named like a binding.
+```
+createStruct = ...
+or
+CreateStruct = ...
+```
+We should ask: Is this a function or a type?
+The goal is to have a function here. We will in future support custom code in these functions so for example we can implement generics specialisation.
+How does this work when I have a map of date to list of pair of customers to a list of orders as input?
+`process = (data: [Date:[Customer: [Order]]]` nothing to do with functions that return type.
+What about when input is a stack of above?
+`process = (data: Stack([Date:[Customer: [Order]]]), num: int -> [string]) ...`
+- This can help us remove ptr and byte from code. But maybe we still need byte for some bit level processing (e.g. encryption)
+`int, float, char, byte, bool, string, type, ptr, nothing`
+We can say primitives are `int, float, char, byte, type, nothing`
+bool and string are derived.
+```
+CacheState = [string:int]
+cache = (cs: CacheState->)
+{
+    request = receive(Message(CacheStore))
+    new_cache_state = update(cs, request)
+    query = receive(Message[CacheQuery])
+    result = lookup(new_cache_state, query)
+    send(Message{my_wid, query.sender_wid, result})
+    cache(new_cache_state)
+}
+```
+if functions that returns a type should be named like a type.
+then how should I name a lambda that points to these functions?
+answer: Lambdas can never (?) return types. because lambdas are dynamic and can point to any code.
+But types must be compile decidable.
+But this can be combined so we can have: `Customer(int).Case(float)`
+But we can have:
+```
+helpers = @("/core/std/utils")
+helpers.io.write("Hello world")
+#inside utils module
+io = @("/core/utils/io")
+```
+There will be no problem with name conflicts.
+We can use `*` to import into current: `_ = *@("/core/std/data")`
+start does not mix with `@` beautifully.
+`_ = *!("/core/std/data")`
+`Helper = !("/core/std/data").DataUtils`
+This also means that we can provide values for bindings inside a struct
+```
+Customer = {name: string, age:int, id = 12}
+```
+Can we define `name:string` within a module level decls?
+```
+name: string
+printData = (->writeOut(name))
+```
+It does not make a lot of sense but should not be disallowed. We want orth and consistency.
+What about comma separator?
+I think we definitely need it when defining a real struct but for module we don't.
+map/seq can be their own modules. we can import them as a struct.
+If we assume a module is a struct, is it a type or a binding?
+If it is a type (much similar to oop), then I can have a sequence module which I import and use it's type to define my sequences.
+If it is a binding, then for sequence, the type must be defined within the module.
+But I don't need to import anything for sequence. Let's say we have a set. then:
+```
+Set = !("/core/set")
+process = (x: Set -> int) ...
+#or
+Set = !("/core/set").SetType
+process = (x: Set -> int) ...
+```
+A module is a static definition of types and functions and it does not make a lot of sense to "instantiate" or "copy" that (?). Because of this, maybe it's better to have them as types.
+So imported module will not be a value. So I cannot access its bindings unless I instantiate them.
+Let's try to make things more simple and easy to understand.
+What is the default behavior that someone expects?
+Of course it would be easy if I can write: `Set = !("/core/set")` and then use Set directly as a type.
+Doesn't this simulate OOP? Module is a type, it has private and public items. others can import it and use it but only public members.
+in OOP (C#) when I import a package, I have access to it's defined classess and types -> types. But it is not a type itself.
+If imported module is a type, I can easily have multiple types within it. Because a struct can contain other types too.
+If imported module is a binding, I still can have multiple types in it.
+when I have a binding, I expect data in it. or at least I expect I can set value for its fields.
+Just like when I create a new customer: `c = Customer{name: "mahdi", age:10}`
+Can I do the same with modules?
+`c = !("/aaa/customer")?????` If it is a value, it already has everything and I cannot mutate it.
+`c = !("/aaa/customer){name: "mahdi"}` if it is a type, I can set fields and use the type to create a new binding.
+so I think it makes more sense to say imported modules are types. they are struct types. which contains all the types and bindings defined within the imported modules.
+
+? - What about adding operators for send/receive and string regex match `~`?
+Don't forget about select/alt.
+`send(my_task, data)`
+`msg = receive((m: Message -> m == {source:1, type:2}))`
+For send, we need a task and a message (anything) to send.
+`data >> task`
+`msgs = <<(m: Message -> m.sender = 1)`
+They should be composable. Why not make it part of task type?
+`task.send(x)`? no. makes no sense.
+we also need sometimes to send and wait for message to be picked.
+1. send a data to a task
+2. receive data with a filter
+what if we give access to the mailbox? It's internal elements can have different types. How can we do this?
+But if we do, send means append to mailbox.
+receive means remove from my mailbox. but this conflicts with mutability.
+
+? - Built-in notation for map/reduce/filter:
+Map/reduce/filter can be done on any type. In java it is a stream or iterable or collection.
+So this should not be only limited to seq/map.
+But 95% of use cases are for map/sequence. So why make things so complicated? Work for 95% and 5% will write their own code.
+```
+data = [1,2,3]
+data2 = data.map((x:int -> x+1))
+data3 = data.filter(x:int -> x> 0)
+data4 = data.reduce((x:int, state:int -> x+state), 0)
+tbl = ["A":1, "B":2] #[string:int]
+tbl2 = tbl.map((k: string, v: int -> {k, v+1})
+sum = tbl.reduce((k:string, v:int, state:int -> v+state), 0)
+fltrd = tbl.filter((k:string, v:int -> v>0))
+```
+This is better than using strange notations for map/reduce/filter. and is easy to use.
+Note that `map` function of a sequence is a real function that only accepts a lambda. It's owner is in its closure so we can use `data.map` as a lambda and pass it to others.
+Similarly we can add other useful functions: `foreach`, `allmatch`, `anymatch`, ...
+
+? - Add `task` as primitive type. But can we avoid it?
 
 ? - Ability to import a module with only some functions or types
 
@@ -3239,16 +3398,49 @@ LinkedList = (T: type -> {type, type})
 f,g: *LinkedList(int) #f will be ll and g will be int
 ```
 Does this mean we can define a type inside a struct?
+If we think of types as first class values, it makes sense.
 
+? - If we allow types inside struct, it means we can import a whole module into a struct.
+And because no functions have same names, it might actually be useful and won't cause a serious problem.
+This can help with name conflicts.
+And also importing only part of a module.
 
 ? - If `[]` will only be used for generics, maybe we should stop using it in import.
-
-? - Can we implement smart slice without core?
-
-? - dotLang and FP are ideal for data processing. Filter/map a set of data ...
-Check some examples
+It will definitely be used either for generics or for map/seq.
+But if we decide to import modules as structs, we may be able to use it as a function (or maybe even give name to it).
 
 ? - Idea: Use functions for generic types and return `[]` notation for map and sequence.
 With generics we can allow for more customised hash
 q: what about specialised types? e.g. TreeMap, HashSet,...
+
+? - There is an argument about simplicity and map/seq types.
+Should they be built-in or not?
+Costs of having them outside core: 
+	- We need ptr and byte type
+	- We need core support for memory allocation and dereferencing
+	- We won't have map/seq literals
+Costs of having them inside core:
+	- Extra notation
+	- It will be difficult to implement some specialised structures (e.g. special map or treemap or set ...)
+	- Confusion with generic types (argument: unless we use functions to generate types)
+Advantage of having them outside core:
+	- Less things in language spec (Argument: map/seq is not a very complicated subject and everybody needs them)
+Advantage of having them in core:
+	- more intuitive code
+	
+? - Think of a real-world example.
+We have a set of identifiers `Set<String>`
+Each identifier has some children. The children may have children too.
+```
+process = (ids: [string] -> Graph[int]) {
+	result = map(ids, (s: string -> getChildren(s)))
+	:: Graph[int]{result}...
+}
+```
+We also need a very good notation for data processing.
+Maybe better than map/reduce/filter functions.
+If dotLang is going to be a choice for data processing systems (db, messaging, queue, cache, ...) which are also concurrent,
+the features for data processing should be easy to use.
+And I don't say strong/powerful. because those are going to be basic essential features.
+More powerful tools will be created off them.
 
