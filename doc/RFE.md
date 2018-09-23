@@ -3215,12 +3215,27 @@ N - If `[]` will only be used for generics, maybe we should stop using it in imp
 It will definitely be used either for generics or for map/seq.
 But if we decide to import modules as structs, we may be able to use it as a function (or maybe even give name to it).
 
+N - Do we need a defer?
+something to run before end of method.
+For res
+`print("done")::`
+But this makes conditional return confusing
+`::100 <- dsdsds`?
+Not needed
 
+=============================
 
 ? - Proposal about generics:
 1. Allow functions to return types (generic data types)
 2. Use `[]` for map and sequence and bring them back in syntax (with their literals)
 q: what about specialised types? e.g. TreeMap, HashSet,...
+`type`s are compile time so if a function returns a type, it must be callable at compile time.
+```
+x = [1,2,3]
+y = ["A"':1, "B":2 ]
+g = x[0]
+g = y["A"] #returns int|nothing
+```
 
 ? - Proposal:
 1. Allow defining types inside a struct.
@@ -3348,6 +3363,10 @@ g = Customer{name = string, Case = float}
 Even if we allow this, using type from a binding is not possible. because types must be compile time decidable.
 So referring to `my_customer.Case` may refer to any type. so it is not allowed
 But `Customer.Case` is ok because at type level, Case is statically defined.
+The whole idea of defining type inside struct was due to defining a linked list via a function, but actually we don't need it.
+We should give a meaningful explanation about structs that have types and relation with instances.
+But this idea simplifies import.
+
 
 ? - What about adding operators for send/receive and string regex match `~`?
 Don't forget about select/alt.
@@ -3421,6 +3440,8 @@ Similarly we can add other useful functions: `foreach`, `allmatch`, `anymatch`, 
 Set = !("/core/set").CreateType
 process = (x: Set(int) -> 
 ```
+**Proposal**
+1. For map and sequence type, add methods for map, reduce, filter, anymatch, ...
 
 ? - Add `task` as primitive type. But can we avoid it?
 Why can't we use a struct? Defined in core but it's not a primitive type.
@@ -3431,8 +3452,38 @@ We can use a core function to get current task.
 my_task = getCurrentTask()
 my_task.mailbox.pick(Message, (m: Message -> m.sender = 12))
 ```
+We can define two tasks in core: `CurrentTask` and `Task`
+For current task I have `pick` function.
+For Task, I have offer function to send a message.
+```
+getCurrentTask().pick(Message, (m:Message -> m.sender = 12))
+xid := process(10)
+#type of xid is Task
+xid.accept(my_message)
+```
+we can say CurrentTask includes all fields of Task so we can send messages to it too.
 
-? - Now that no two functions can have the same name, why not force import into a struct?
+N - Now that no two functions can have the same name, why not force import into a struct?
+Of course import to current ns should be allowed too.
+```
+_ = *@("/core/std/data")
+DataModule = @("/core/data")
+Type1, func2, binding3 = *@("/core/module1")
+```
+Import result is a struct so you can unpack it just like any other struct type.
+We allow `*` for both struct values and type. so we can destruct result of an import
+But does it make sense to use `*` on a struct outside another struct?
+It makes sense inside a module. It defined module level bindings and types.
+But not inside a function.
+We don't define types/data inside a function. We can use `*` on a struct value though.
+
+N - Do we need a defer?
+something to run before end of method.
+For res
+`print("done")::`
+But this makes conditional return confusing
+`::100 <- dsdsds`?
+Not needed
 
 ? - Zig
 https://andrewkelley.me/post/zig-programming-language-blurs-line-compile-time-run-time.html
@@ -3517,13 +3568,13 @@ LinkedList = (T: type -> {type, type})
 		}
 	:: T1
 }
-f,g: *LinkedList(int) #f will be ll and g will be int
+f: LinkedList(int)
 ```
 Does this mean we can define a type inside a struct?
 If we think of types as first class values, it makes sense.
 We still have generic functions as usual: with type inputs. 
 But output of a generic function is not a type.
 
-? - Do we need a defer?
-something to run before end of method.
-For res
+
+? - Review primitive types
+consider cryptography use cases and see what can be removed.
