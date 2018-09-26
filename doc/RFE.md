@@ -1,3 +1,4 @@
+
 N - Add to pattern section: Stack, Tree, loop
 
 N - Allowing functions in a struct is just like defining a function to create instances of the struct.
@@ -3223,9 +3224,7 @@ But this makes conditional return confusing
 `::100 <- dsdsds`?
 Not needed
 
-=============================
-
-? - Proposal about generics:
+Y - Proposal about generics:
 1. Allow functions to return types (generic data types)
 2. Use `[]` for map and sequence and bring them back in syntax (with their literals)
 q: what about specialised types? e.g. TreeMap, HashSet,...
@@ -3237,7 +3236,7 @@ g = x[0]
 g = y["A"] #returns int|nothing
 ```
 
-? - Proposal:
+Y - Proposal:
 1. Allow defining types inside a struct.
 2. Import a module into current module or as a struct using some special function
 ========
@@ -3368,7 +3367,7 @@ We should give a meaningful explanation about structs that have types and relati
 But this idea simplifies import.
 
 
-? - What about adding operators for send/receive and string regex match `~`?
+Y - What about adding operators for send/receive and string regex match `~`?
 Don't forget about select/alt.
 `send(my_task, data)`
 `msg = receive((m: Message -> m == {source:1, type:2}))`
@@ -3419,7 +3418,7 @@ because it is mutating.
 `data.(wid)`? not very intuitive.
 Maybe its better to use functions.
 
-? - Built-in notation for map/reduce/filter:
+Y - Built-in notation for map/reduce/filter:
 Map/reduce/filter can be done on any type. In java it is a stream or iterable or collection.
 So this should not be only limited to seq/map.
 But 95% of use cases are for map/sequence. So why make things so complicated? Work for 95% and 5% will write their own code.
@@ -3443,7 +3442,7 @@ process = (x: Set(int) ->
 **Proposal**
 1. For map and sequence type, add methods for map, reduce, filter, anymatch, ...
 
-? - Add `task` as primitive type. But can we avoid it?
+Y - Add `task` as primitive type. But can we avoid it?
 Why can't we use a struct? Defined in core but it's not a primitive type.
 `task = {id: int, address: int, ...}`
 If we do this, we can add appropriate functions for send/receive.
@@ -3463,7 +3462,7 @@ xid.accept(my_message)
 ```
 we can say CurrentTask includes all fields of Task so we can send messages to it too.
 
-N - Now that no two functions can have the same name, why not force import into a struct?
+Y - Now that no two functions can have the same name, why not force import into a struct?
 Of course import to current ns should be allowed too.
 ```
 _ = *@("/core/std/data")
@@ -3485,7 +3484,7 @@ But this makes conditional return confusing
 `::100 <- dsdsds`?
 Not needed
 
-? - Zig
+Y - Zig
 https://andrewkelley.me/post/zig-programming-language-blurs-line-compile-time-run-time.html
 The idea is like me.
 Type are first class citizens. Functions can even return types.
@@ -3578,3 +3577,11 @@ But output of a generic function is not a type.
 
 ? - Review primitive types
 consider cryptography use cases and see what can be removed.
+
+? - What about `&` to concat?
+
+? - What if we define types inside anonymous struct?
+
+? - What if I send a CurrentTask to another task using send?
+
+? - Do we still need vararg functions?
