@@ -3574,14 +3574,23 @@ If we think of types as first class values, it makes sense.
 We still have generic functions as usual: with type inputs. 
 But output of a generic function is not a type.
 
-
-? - Review primitive types
+N - Review primitive types
 consider cryptography use cases and see what can be removed.
 
-? - What about `&` to concat?
+Y - What about `&` to concat?
 
-? - What if we define types inside anonymous struct?
+N - What if we define types inside anonymous struct?
+That won't be accessible. It must have a name.
+```
+data = {x = 12, Case: float}
+```
 
-? - What if I send a CurrentTask to another task using send?
+Y - Do we still need vararg functions?
+no.
 
-? - Do we still need vararg functions?
+Y - What if I send a CurrentTask to another task using send?
+That might cause problems because the whole purpose of task is being synchronized.
+Now for `Task` it should be fine because we can only send or `save` messages.
+But for CurrentTask, if you send it to multiple concurrent codes, they might start consuming messages and it can cause problems.
+The underlying assumption is that mailbox is for a single thread and won't be shared.
+
