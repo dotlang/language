@@ -3611,3 +3611,17 @@ If we use a notation to receive, why not use a notation to send?
 A process may decide to only accept certain types of messages and drop everything else. 
 The possible options are numerous (send, sendwait, pick, pickwithdefault, ...) so let's stick to functions.
 The limitation of: you cannot pass currenttask to another function makes sense and is not a huge deal.
+```
+msg = getCurrentTask().pick(Message, (m: Message -> m.sender = 12))
+
+task := process(10) #type of xid is Task
+accepted = getCurrentTask().send(Message, my_message, task)
+picked_up = getCurrentTask().sendAndWait(Message, my_message, task)
+```
+
+N - Use string for task id
+Why do we need details about another task? Why not make it just a number/identifier?
+If the task is located on a remote machine, still the task_id will be an index into a reference table.
+But we can send this task to any function. So it should be possible to find out about all the info we need to send messages.
+If we use int, it won't be possible. But string can contain anything. a simple number, a hostname + port + number, an IP address, ...
+Anyway, this is just a matter of `Task := string` definition. No big deal.
