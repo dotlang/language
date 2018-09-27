@@ -509,16 +509,12 @@ Exclusive resources (sockets, file, standard I/O...) are implemented using tasks
 
 **Examples**
 
-1. 
-```
-my_task = getCurrentTask() #type of my_task is CurrentTask
-msg = my_task.pick(Message, (m: Message -> m.sender = 12))
-```
+1. `msg = getCurrentTask().pick(Message, (m: Message -> m.sender = 12))`
 2.
 ```
-task := process(10) #type of xid is Task
-accepted = task.save(Message, my_message)
-picked_up = task.saveAndWait(Message, my_message)
+task := process(10) #type of task is Task
+accepted = getCurrentTask().send(Message, my_message, task)
+picked_up = getCurrentTask().sendAndWait(Message, my_message, task)
 ```
 3. 
 ```
