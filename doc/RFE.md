@@ -3593,4 +3593,21 @@ That might cause problems because the whole purpose of task is being synchronize
 Now for `Task` it should be fine because we can only send or `save` messages.
 But for CurrentTask, if you send it to multiple concurrent codes, they might start consuming messages and it can cause problems.
 The underlying assumption is that mailbox is for a single thread and won't be shared.
+Another solution: Don't give anything like `CurrentTask` to the developer.
+Provide a notation to pick a message.
+```
+my_task = getCurrentTask() #type of my_task is CurrentTask
+msg = my_task.pick(Message, (m: Message -> m.sender = 12))
 
+task := process(10) #type of xid is Task
+accepted = task.save(Message, my_message)
+picked_up = task.saveAndWait(Message, my_message)
+```
+getCurrentTask will return a Task which can be used to send a message.
+To receive a message:
+`msg = $(m: Message -> m.sender = 12)`
+If we use a notation to receive, why not use a notation to send?
+`accepted = task$my_message`
+A process may decide to only accept certain types of messages and drop everything else. 
+The possible options are numerous (send, sendwait, pick, pickwithdefault, ...) so let's stick to functions.
+The limitation of: you cannot pass currenttask to another function makes sense and is not a huge deal.
