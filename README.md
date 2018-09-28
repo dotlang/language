@@ -518,8 +518,8 @@ picked_up = getCurrentTask().sendAndWait(Message, my_message, task)
 ```
 3. 
 ```
-f := open("a.txt")
-f.save("mydata") #to write
+f := open("a.txt", getCurrentTask().task_id)
+getCurrentTask().send(string, "mydata", f)
 receive(...)
 ```
 
