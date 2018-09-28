@@ -3625,3 +3625,24 @@ If the task is located on a remote machine, still the task_id will be an index i
 But we can send this task to any function. So it should be possible to find out about all the info we need to send messages.
 If we use int, it won't be possible. But string can contain anything. a simple number, a hostname + port + number, an IP address, ...
 Anyway, this is just a matter of `Task := string` definition. No big deal.
+
+? - How can we read data from a file if it is a task?
+We need to send a command "read" then wait for a message, which is not ideal.
+```
+file = open("a.txt")
+new_file, line = *read(file, string)
+```
+what about network?
+we can do the same
+```
+socket = net("192.168.1.1")
+socket2 = send(socket, "A")
+```
+console:
+```
+io = getConsole()
+new_io = write(io, "Hello world")
+new_io2, data = *read(new_io, string)
+```
+for socket, we can use task concept. but for console and file, there needs to be a signal that says "read input"
+because they do not have an active party on the other side. We decide when to read. 
