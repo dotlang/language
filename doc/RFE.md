@@ -3626,7 +3626,7 @@ But we can send this task to any function. So it should be possible to find out 
 If we use int, it won't be possible. But string can contain anything. a simple number, a hostname + port + number, an IP address, ...
 Anyway, this is just a matter of `Task := string` definition. No big deal.
 
-? - How can we read data from a file if it is a task?
+Y - How can we read data from a file if it is a task?
 We need to send a command "read" then wait for a message, which is not ideal.
 ```
 file = open("a.txt")
@@ -3646,3 +3646,129 @@ new_io2, data = *read(new_io, string)
 ```
 for socket, we can use task concept. but for console and file, there needs to be a signal that says "read input"
 because they do not have an active party on the other side. We decide when to read. 
+- For console IO there is no mutation. You can simply use standard functions.
+- For file: 1) we can say file open gives an integer (just like C) which is index of an open file in OS table.
+
+Y - Using `$` in place of `getCurrentTask()`.
+`$.pick(...)`
+`$.send(...)`
+
+Y - We can have both `List.insert` for List module and `List.insert` for List struct.
+Does it make sense?
+```
+List = @("/core/List")
+my_list = List.insert(int, 1)
+vs.
+List = @("/core/ListUtils").ListType
+my_list = List.insert(int, 1)
+insertOp = @("/core/ListUtils").ListType.insert
+x = insertOp(int, 1)
+```
+I think both are possible because a module is a type and it is a struct type.
+Add to pattern section
+
+N - Add to pattern:
+```
+Point = {x:int, y:int, 
+	mult = (p: Point, p2: Point -> p.x * p2.x + p.y * p2.y)
+}
+```
+
+Y - This is how you init a struct in Zig:
+```
+const p = Point {
+    .x = 0.12,
+    .y = 0.34,
+};
+```
+
+Y - We can even init a struct imported 
+```
+my_customer = @("/data/customer").Customer{.name = "mahdi", .id = 112}
+```
+
+Y - Shall we return notation to set type for bindings?
+
+N - With recent change, should we say Modules should be named like types?
+`Set = @("/core/set")`
+`Set = @("/core/Set")`
+We import modules into types so the file name is no longer important.
+
+N - Is this ok?
+`point4 = Point{point3, .y = 101} #update a struct`
+
+Y - Can we import from a sequence?
+
+Y - Extra comma at the end?
+
+? - Can we have const definitions inside a struct?
+```
+Numeric = { PI = 3.14 }
+```
+But PI is not a type
+```
+Numeric = { pi = 3.14 }
+```
+You can have this at module level and use it inside module.
+But same question happens if you import that module.
+`pi_number = Numeric.pi`
+Maybe we should have a separate notation for consts? 
+Because `pi` might be `pi: float`
+But this is obvious.
+But someone can instantiate Numberic with a different value for pi!
+```
+n: Numeric = Numeric{pi = 1.2}
+```
+Idea: You cannot override value for bindings inside struct which already have a value.
+This is like module level bindings that are constant.
+Proposal: When instantiating a struct (which can also be a module), you cannot override values for bindings which already have values.
+Proposal: You can access bindings at struct type level if they are initialized in struct decl.
+If I can access a binding at type level, what happens to closure?
+If I cannot, what happens to module level constants?
+I think it makes complete sense to have closure at struct decl. and its useful (seq.map).
+Let's say you can only access non-function bindings at type level.
+So:
+Struct type -> You can access types and value bindings
+struct value -> You can access value and function bindings.
+Let's also allow access to struct inner types. They have values (must have) and you cannot override them.
+q: If I don't have access to a struct's internal function with its type, how can I do it with a module?
+what if I say, importing a module gives you a struct value not a struct type?
+Then you have closure, you can initialise values upon instantiation and you can call functions normally.
+About constants: Still you have access to them.
+Proposal:
+- Import gives you a struct binding not a struct type.
+- With a struct type you have access to inner types
+- With a struct binding, you have access to everythin.
+- For constants, just define a struct type + a struct literal
+```
+MathConst = { .pi = 3.14 }
+mathConst = MathConst{}
+```
+You have access to module level bindings inside a module level function because it is closure.
+If import gives me a binding, how can I define type of that binding?
+Maybe we can use the name that comes left?
+```
+SetType = @("/core/set")
+my_set = @("/core/set")
+```
+with SetType, I have the type so I can instantiate from it and access its internal types
+With `my_set` I have a struct binding, closure, access to internal everything
+so `@("")` can give either type or binding.
+q: Why not make it one thing: type and you can instantiate from it? 
+q: Even with type, I don't have access to decls like `MathConst.pi`?
+with type I can have bindings. 
+If import gives me a type, I can easily use it to instantiate multiple bindings. But if it gives me binding, I cannot have its type.
+And it will make things simpler.
+Also you can have bindings easily: `my_set = @("/core/set"]){}`
+But with a pure import, you have a type so you only have access to types defined inside the module.
+For anything else, you need to instantiate. 
+so for example, if you have some functions defined inside a module, you don't have access to them with a simple import.
+
+? - Add to pattern
+DB code reading with sql
+
+? - `map` on a sequence has access to the owner struct. Does that make sense?
+```
+Customer = { name: string, print = (->console.writeLine(name))}
+```
+
