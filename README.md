@@ -267,7 +267,7 @@ If a struct has a private field (starting with `_`), only type or instance level
 
 You can also define types inside a struct. These types will be accessible by using struct type name (Example 10). When using struct name, you have access to inner types and value bindings. When using a struct value, you have access to everything.
 
-If there are bindings defined in struct type declaration, you cannot override their values when instantiating the struct. These bindings however will be accessible both using struct type name and binding name (Example 12).
+If there are bindings defined in struct type declaration, you cannot override their values when instantiating the struct. These bindings however will be accessible both using struct type name and binding name (Example 12). Note that if there are fields inside a struct without value, you have to initialise them upon instantiation (Example 13).
 
 **Examples**
 
@@ -307,6 +307,13 @@ Customer = {id: 12, name: string}
 c = Customer{.name = "mahdi"}
 id_12 = Customer.id
 new_id_12 = c.id
+```
+13.
+```
+Point = {x:int, y:int, size:int = 2}
+p = Point{} #invalid, we need values for x and y here
+MathConst = { pi: float = 3.14 }
+m = MathConst{} #valid
 ```
 
 ## Named types
