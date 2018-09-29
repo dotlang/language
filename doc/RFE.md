@@ -3708,6 +3708,12 @@ Is this ok?
 I think it should not be allowed. Because 1) compiler is not supposed to do thing on behalf of the developer
 2) the code/data inside Point may rely on appropriate values for those fields.
 
+N - `map` on a sequence has access to the owner struct. Does that make sense?
+```
+Customer = { name: string, print = (->console.writeLine(name))}
+```
+yes this is closure and is compatible with import and module concept.
+
 ? - Can we have const definitions inside a struct?
 ```
 Numeric = { PI = 3.14 }
@@ -3776,19 +3782,40 @@ Proposal:
 1. Import gives you a struct type.
 2. With struct type, you only have access to inner types
 3. With struct bindings, you have access to everything including defined types.
+Nothing is wrong with getting a binding with import. With a type I can create a binding.
+The point is, we want to make things simple. So instead of defining two functionalities for one notation, we just have one.
+q: What if that module has bindings without value? When someone wants to instantiate, they must provide value.
+And if I import that module into current module, they will be my arguments too.
+So, if I want to have access to functions of another module, I cannot simply use output of import or its type.
+I have to create an instance. `helpers = @("helper"){}`
+The output of import is not an issue. I can easily convert type to binding.
+And it makes sense that import does not give me binding because module might have some inputs.
+Point is about access, closure, types, ...
+Proposal:
+1. Import notation gives a struct type.
+2. To instantiate a struct, you must define values for types or bindings that don't have values:
+`x: int`
+`T: type`
+`process: (int ->int)`
+3. Inside a module or struct, you have a closure which is access to bindings defined at outside scope.
+4. If you have a struct type (which can also be a module), you only have access to it's inner types. Not the ones without value e.g. `T: type`
+5. If you have a struct binding, you have access to everything defined inside it (not private of course)
+
 
 ? - You are not allowed to have types without value:
 `DataType: type`
 Because this can give developer ability to instantiate the struct with some random type.
 But maybe it is a good thing.
 Maybe this can give us another way for generics.
-
+We can say any type must be specified at compile time.
+so:
+`Stack = {T: type, data: [T], push = (x: T) ...}`
+`s = Stack{.T=int, ...}`
+What's wrong with this?
+We can say even types can get their value at the time of defining structs. but definitely compile time.
+We can say, closure also covers types. I can have access to `T` when defining `push`.
+But of course, I cannot have a lambda pointing to `Stack of int.push` because it's a generic function.
 
 ? - Add to pattern
 DB code reading with sql
-
-? - `map` on a sequence has access to the owner struct. Does that make sense?
-```
-Customer = { name: string, print = (->console.writeLine(name))}
-```
 
