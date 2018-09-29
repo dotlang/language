@@ -265,7 +265,7 @@ You can provide values for struct fields. If these values are functions, based o
 
 If a struct has a private field (starting with `_`), only type or instance level functions will have access to them. You can also use `*` operator when defining a struct to include fields from another struct into current one (Example 9).
 
-You can also define types inside a struct. These types will be accessible by using struct type name (Example 10). 
+You can also define types inside a struct. These types will be accessible by using struct type name (Example 10). When using struct name, you have access to inner types and value bindings. When using a struct value, you have access to everything.
 
 If there are bindings defined in struct type declaration, you cannot override their values when instantiating the struct. These bindings however will be accessible both using struct type name and binding name (Example 12).
 
