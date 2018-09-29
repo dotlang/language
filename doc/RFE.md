@@ -3701,6 +3701,13 @@ Y - Can we import from a sequence?
 
 Y - Extra comma at the end?
 
+Y - What if I use `Type{}` notation when there are fields in type that need initialisation?
+`Point = {x: int, y:int, size:int = 2}`
+`p = Point{}`?
+Is this ok?
+I think it should not be allowed. Because 1) compiler is not supposed to do thing on behalf of the developer
+2) the code/data inside Point may rely on appropriate values for those fields.
+
 ? - Can we have const definitions inside a struct?
 ```
 Numeric = { PI = 3.14 }
@@ -3763,6 +3770,19 @@ Also you can have bindings easily: `my_set = @("/core/set"]){}`
 But with a pure import, you have a type so you only have access to types defined inside the module.
 For anything else, you need to instantiate. 
 so for example, if you have some functions defined inside a module, you don't have access to them with a simple import.
+The only problem: For constants (pi, dayOfWeek, ...) you have to instantiate. which is not end of the world.
+`math = @("/core/math").MathConstants{}`
+Proposal:
+1. Import gives you a struct type.
+2. With struct type, you only have access to inner types
+3. With struct bindings, you have access to everything including defined types.
+
+? - You are not allowed to have types without value:
+`DataType: type`
+Because this can give developer ability to instantiate the struct with some random type.
+But maybe it is a good thing.
+Maybe this can give us another way for generics.
+
 
 ? - Add to pattern
 DB code reading with sql
