@@ -3815,6 +3815,7 @@ What's wrong with this?
 We can say even types can get their value at the time of defining structs. but definitely compile time.
 We can say, closure also covers types. I can have access to `T` when defining `push`.
 But of course, I cannot have a lambda pointing to `Stack of int.push` because it's a generic function.
+So we can say, when calling a function or instntiating a struct, you have to specify type for types.
 
 ? - Add to pattern
 DB code reading with sql
