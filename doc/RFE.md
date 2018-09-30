@@ -3842,7 +3842,7 @@ Proposal:
 5. If you have a struct binding, you have access to everything defined inside it (not private of course)
 The problem with struct value is that we cannot come to type from it. So e.g. if I want to pass it to another function, type is not known.
 Con of getting type: To access functions or bindings, I have to instantiate.
-Con of getting binding: There is no certain way to have type in case I want to pass it.
+Con of getting binding: There is no certain way to have type in case I want to pass it, you cannot embed a module inside a struct definition
 We can have polymorphism with modules, I think.
 ```
 Persister = { save: (string->int) }
@@ -3861,6 +3861,16 @@ If import gives us types, shall we change naming rules for modules? not necessar
 `Set = @("/core/set")`
 `SetUtils = @("/core/set")`
 `@("/core/set").Helpers{}.format`
+Proposal:
+1. Import notation gives a struct type.
+2. To instantiate a struct, you must define values for types or bindings that don't have values:
+`x: int`
+`T: type`
+`process: (int ->int)`
+3. Inside a module or struct, you have a closure which is access to bindings defined at outside scope.
+4. If you have a struct type (which can also be a module), you only have access to it's inner types. Not the ones without value e.g. `T: type`. B
+5. If you have a struct binding, you have access to everything defined inside it (not private of course)
+
 
 ? - The border between type and binding becomes more and more blurred.
 We can define a struct type with some functions.
@@ -3889,3 +3899,16 @@ It is orth and consistent to support both approaches.
 
 
 ? - Can we mix import with struct decl? import inside struct def?
+```
+Customer = { name: string,
+	age: int,
+	*@("/std/customer_info")
+}
+```
+If import gives us a binding, you cannot use it when defining a type like above.
+But if import gives a type, you can prefix it with `*` to embed inside another struct.
+and it makes sense and should not be forbidden.
+If import gives binding, I can embed it inside a struct binding:
+`my_customer = {name: "A", age: 12, @("/dasdsad"){}}`
+
+? - Formalise `T: type` as a type parameter vs. named type or type alias
