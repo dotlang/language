@@ -3735,7 +3735,7 @@ saveCustomer = (c: Customer -> ...) {
 }
 ```
 
-? - Can we have const definitions inside a struct?
+Y - Can we have const definitions inside a struct?
 ```
 Numeric = { PI = 3.14 }
 ```
@@ -3872,7 +3872,7 @@ Proposal:
 5. If you have a struct binding, you have access to everything defined inside it (not private of course)
 
 
-? - The border between type and binding becomes more and more blurred.
+N - The border between type and binding becomes more and more blurred.
 We can define a struct type with some functions.
 Or we can define anonymous struct and store it in a binding with some functions.
 ```
@@ -3880,7 +3880,7 @@ Helpers = { format = ... }
 helpers = { format = ... }
 ```
 
-? - You are not allowed to have types without value:
+N - You are not allowed to have types without value:
 `DataType: type`
 Because this can give developer ability to instantiate the struct with some random type.
 But maybe it is a good thing.
@@ -3898,7 +3898,7 @@ But we were supposed to support generic data types by using functions, not struc
 It is orth and consistent to support both approaches.
 
 
-? - Can we mix import with struct decl? import inside struct def?
+N - Can we mix import with struct decl? import inside struct def?
 ```
 Customer = { name: string,
 	age: int,
