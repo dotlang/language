@@ -3714,6 +3714,27 @@ Customer = { name: string, print = (->console.writeLine(name))}
 ```
 yes this is closure and is compatible with import and module concept.
 
+N - Add to pattern
+DB code reading with sql
+```
+Customer = {name: string, age: int}
+saveCustomer = (c: Customer -> ...) {
+	sql = string.format("insert into table values (%s, %s)", c.name, c.age)
+}
+```
+It is similar to parsing json.
+
+N - format/printf/...
+Is there a good/elegant way of converting things to string with format?
+e.g. rounded, date with ymd format, number with 6 digits, with padding zeros, ...
+we can define them in separate functions and use string in our string.format
+```
+Customer = {name: string, age: int}
+saveCustomer = (c: Customer -> ...) {
+	sql = string.format("insert into table values (%, %)", format.toLower(c.name), format.prefixed(c.age))
+}
+```
+
 ? - Can we have const definitions inside a struct?
 ```
 Numeric = { PI = 3.14 }
@@ -3800,7 +3821,54 @@ Proposal:
 3. Inside a module or struct, you have a closure which is access to bindings defined at outside scope.
 4. If you have a struct type (which can also be a module), you only have access to it's inner types. Not the ones without value e.g. `T: type`
 5. If you have a struct binding, you have access to everything defined inside it (not private of course)
+So note that then you cannot write: `process = @("/core/Helper").process`
+because `@` will give you a type, so you will have to write: `process = @("/core/Helper"){}.process`
+And you cannot access any of functions (most important functionality of a module) without instantiating.
+Maybe we should instantiate with `@`. We have access to types inside the module anyway, even with a binding.
+If I get a binding, what happens to constants like pi?
+`pi = @("/core/math").pi`
+inside math module: `pi: float = 3.1415`
+or if I define a type:
+`MathConst = { .pi = 3.14 }`
+I will need to instantiate it: `math_const = @("/core/math").MathConst{}`
+Proposal:
+1. Import notation gives a struct value.
+2. To instantiate a struct, you must define values for types or bindings that don't have values:
+`x: int`
+`T: type`
+`process: (int ->int)`
+3. Inside a module or struct, you have a closure which is access to bindings defined at outside scope.
+4. If you have a struct type (which can also be a module), you only have access to it's inner types. Not the ones without value e.g. `T: type`
+5. If you have a struct binding, you have access to everything defined inside it (not private of course)
+The problem with struct value is that we cannot come to type from it. So e.g. if I want to pass it to another function, type is not known.
+Con of getting type: To access functions or bindings, I have to instantiate.
+Con of getting binding: There is no certain way to have type in case I want to pass it.
+We can have polymorphism with modules, I think.
+```
+Persister = { save: (string->int) }
+#file_persister
+save = (string -> int) ...
 
+#console_persister
+save = (string -> int) ...
+
+#main
+p = $("/core/file_persister"){}
+q = $("/core/console_persister"){}
+```
+But this can be easily achieved using function pointers. The main use for polym is for having different types.
+If import gives us types, shall we change naming rules for modules? not necessary. Because you should be free to choose any name for result of import.
+`Set = @("/core/set")`
+`SetUtils = @("/core/set")`
+`@("/core/set").Helpers{}.format`
+
+? - The border between type and binding becomes more and more blurred.
+We can define a struct type with some functions.
+Or we can define anonymous struct and store it in a binding with some functions.
+```
+Helpers = { format = ... }
+helpers = { format = ... }
+```
 
 ? - You are not allowed to have types without value:
 `DataType: type`
@@ -3818,7 +3886,4 @@ But of course, I cannot have a lambda pointing to `Stack of int.push` because it
 So we can say, when calling a function or instntiating a struct, you have to specify type for types.
 But we were supposed to support generic data types by using functions, not structs.
 It is orth and consistent to support both approaches.
-
-? - Add to pattern
-DB code reading with sql
 
