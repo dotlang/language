@@ -3887,3 +3887,5 @@ So we can say, when calling a function or instntiating a struct, you have to spe
 But we were supposed to support generic data types by using functions, not structs.
 It is orth and consistent to support both approaches.
 
+
+? - Can we mix import with struct decl? import inside struct def?
