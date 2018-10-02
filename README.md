@@ -30,7 +30,7 @@ I call the paradigm of this language "Data-oriented". This is a combination of O
 
 Two main objectives are pursued in the design and implementation of this programming language:
 
-1. **Simplicity**: The code written in dotLang should be consistent, easy to write, read and understand. There has been a lot of effort to make sure there are as few exceptions and rules as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them. Very few (but essential) things are done implicitly and transparently by the compiler or runtime system. Also, I have tried to reduce the need for nested blocks and parentheses as much as possible. Another aspect of simplicity is minimalism in the language. It has very few keywords and rules to remember.
+1. **Simplicity**: The code written in dotLang should be consistent, easy to write, read and understand. There has been a lot of effort to make sure there are as few exceptions and rules as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them. Very few (but essential) things are done implicitly and transparently by the compiler or runtime system. Also, I have tried to reduce the need for nested blocks and parentheses, as much as possible. Another aspect of simplicity is minimalism in the language. It has very few keywords and rules to remember.
 2. **Performance**: The source will be compiled to native code which will result in higher performance compared to interpreted languages. The compiler tries to do as much as possible (optimizations, dereferencing, in-place mutation, sending by copy or reference, type checking, phantom types, inlining, disposing, reference counting GC, ...) so runtime performance will be as high as possible. Where performance is a concern, the corresponding functions in core library will be implemented in a lower level language.
 
 Achieving both of the above goals at the same time is impossible so there will definitely be trade-offs and exceptions.
@@ -39,17 +39,17 @@ The underlying rules of design of this language are
 [KISS rule](https://en.wikipedia.org/wiki/KISS_principle) and
 [DRY rule](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-As a 10,000 foot view of the language, the code is written in files (called modules) organized in directories (called packages).  We have bindings (immutable data which include first-class functions and values) and types (Blueprints to create bindings). Type system includes primitive data types, struct and union. Concurrency and lambda expression are also provided and everything is immutable.
+As a 10,000 foot view of the language, the code is written in files (called modules) organized in directories (called packages).  We have bindings (immutable data which can be first-class functions and values) and types (Blueprints to create bindings). Type system includes primitive data types, struct and union. Concurrency and lambda expression are also provided and everything is immutable.
 
 ## Comparison
 
-Language | Sum types | Full Immutability| Garbage Collector | Module System | Lambda | Polymorphism | Concurrency | Number of keywords |
---- | --- | --- | --- | --- | --- | --- |
-C  |  Partial  | No  | No |  No | No | No | No | 32 |
-Scala | Yes | No | Yes | Yes | Yes | Yes | Yes | ~27 |
-Go | No | No | Yes | Yes | Yes | Yes | Yes | 25 |
-Java | No | No | Yes | Yes | Yes | Yes | Yes | 50 |
-dotLang | Yes | Yes | Yes | Yes | Yes | Partial | Yes | 11 |
+Language | Sum types | Full Immutability| Garbage Collector | Module System | Lambda | Polymorphism | Concurrency | Number of keywords
+--- | --- | --- | --- | --- | --- | --- | --- | ---
+C  |  Partial  | No  | No |  No | No | No | No | 32
+Scala | Yes | No | Yes | Yes | Yes | Yes | Yes | ~27
+Go | No | No | Yes | Yes | Yes | Yes | Yes | 25
+Java | No | No | Yes | Yes | Yes | Yes | Yes | 50
+dotLang | Yes | Yes | Yes | Yes | Yes | Partial | Yes | 10
 
 ## Components
 
@@ -57,8 +57,8 @@ dotLang consists of these components:
 
 1. The language manual (this document).
 2. `dot`: A command line tool to compile, debug and package code.
-3. `core`: Core library: This package is used to implement some basic, low-level features which can not be simply implemented using pure dotLang.
-4. `std`: Standard library: A layer above core which contains some general-purpose and common functions and data structures.
+3. `core` library: This package is used to implement some basic, low-level features which can not be simply implemented using pure dotLang.
+4. `std` library: A layer above core which contains some general-purpose and common functions and data structures.
 
 # Language in a nutshell
 
@@ -68,23 +68,23 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 
 01. **Import a module**: `Queue = @("/core/std/queue")` (you can also import from external sources like Github).
 02. **Primitive types**: `int`, `float`, `char`, `byte`, `bool`, `string`, `type`, `nothing`. 
-03. **Bindings**: `my_var = 19` (type will be automatically inferred, everything is immutable).
+03. **Bindings**: `my_var:int = 19` (type is optional, everything is immutable).
 04. **Sequence**: `my_arr = [1,2,3]` (type of `my_arr` is `[int]`)
-05. **Map**: `my_map = ["A":1,"B":2,"C":3]` (type of `my_map` is `[string:int]`)
-06. **Named type**: `MyInt := int` (Defines a new separate type with same binary representation as `int`).
+05. **Map**: `my_map = ["A":1, "B":2, "C":3]` (type of `my_map` is `[string:int]`)
+06. **Named type**: `MyInt := int` (Defines a new type `MyInt` with same binary representation as `int`).
 07. **Type alias**: `IntType = int` (A different name for the same type).
 08. **Struct type**: `Point = {x: int, y:int, data: float}` (Like `struct` in C).
 09. **Struct literal**: `location = Point{.x=10, .y=20, .data=1.19}`.
 10. **Union type**: `MaybeInt = int | nothing` (Can store either of possible types).
-11. **Function**: `calculate = (x:int, y:int -> z:float) { z = x/y  }` (Assigning to binding for output type means return).
+11. **Function**: `calculate = (x:int, y:int -> float) { :: x/y  }` (`::` is used to return).
 12. **Lambda**: `sort( *{ source: my_sequence, compareFunction: (x,y -> x-y)} )` (If types can be inferred, you can omit them, `*` destructs a struct)
-13. **Concurrency**: `result := processData(x,y,z)` (Evaluate an expression in parallel).
+13. **Concurrency**: `my_task := processData(x,y,z)` (Evaluate an expression in parallel).
 14. **Generics**: `ValueKeeper = (T: type -> {data: T})`
 
 ## Symbols
 
 01. `#`   Comment
-02. `.`   Access struct fields
+02. `.`   Access struct members
 03. `()`  Function declaration and call, cast
 04. `{}`  Code block, struct definition and struct literal
 05. `[]`  Sequence and map
@@ -96,9 +96,9 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 10. `//`  Nothing-check operator
 11. `:`   Type declaration (struct field and function inputs)
 12. `=`   Binding declaration, type alias
-13. `:=`  Named type, lazy/parallel evaluation
+13. `:=`  Named type, parallel evaluation
 14. `_`   Place-holder (lambda creator, assignments and function declaration)
-15. `@[]` Import
+15. `@`   Import
 16. `::`  Return
 
 ## Reserved keywords
