@@ -3912,3 +3912,5 @@ If import gives binding, I can embed it inside a struct binding:
 `my_customer = {name: "A", age: 12, @("/dasdsad"){}}`
 
 ? - Formalise `T: type` as a type parameter vs. named type or type alias
+
+? - How can this be used to ease interop with other languages e.g. C or Java or C++ or Go?
