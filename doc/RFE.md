@@ -3914,3 +3914,10 @@ If import gives binding, I can embed it inside a struct binding:
 N - Formalise `T: type` as a type parameter vs. named type or type alias
 
 N - How can this be used to ease interop with other languages e.g. C or Java or C++ or Go?
+
+? - When I write `my_task = process(10)` there should be a way to get result of `process`.
+Like:
+```
+isReady(my_task)::getResult(int, my_task)
+```
+So task structure needs to be generic.
