@@ -333,17 +333,15 @@ Two named types are never equal. Otherwise, two types T1 and T2 are identical/as
 
 There is no implicit and automatic casting. The only exception is using boolean as a sequence index which will be translated to 0 and 1. You can use core functions to do casting to/from primitive types (e.g char to int or float to int). To cast to a compatible named type or for unions you can use `TypeName(value)` notation.
 
-The `Type(nothing)` notation gives you the default value for the given type (empty/zero value). You can also cast using a type argument (Example 5).
+The `Type(nothing)` notation gives you the default value for the given type (empty/zero value). You can also cast using a type argument (Example 3).
 
-**Syntax**: `TargetType(data)`
+**Syntax**: `TargetType(value)`
 
 **Examples**
 
 1. `x = int(1.91)`
 2. `MyInt = int`, `x = MyInt(int_var)`
-3. `y = x`
-4. `x = MyFuncType(t)`
-5. 
+3. 
 ```
 process = (T: type, my_shape: Shape -> ...)
 {
@@ -356,7 +354,7 @@ process = (T: type, my_shape: Shape -> ...)
 
 Generic types are defined using functions that return a `type` (a type argument). These functions must be compile time calculatable (because anything related to `type` must be) (Example 1).
 
-Note that arguments or functions of type `type` must be named like a type, not like a binding, and must receive value at compile time. This means that you cannot use a runtime dynamic binding value as a type. You also cannot assign a function that receives or return a type to a lambda. Because lambdas are dynamic and runtime concept.
+Note that arguments or functions of type `type` must be named like a type, not like a binding, and must receive value at compile time. This means that you cannot use a runtime dynamic binding value as a type. You also cannot assign a function that receives or return a type to a lambda. Because lambdas are a runtime concept.
 
 **Examples**
 
@@ -376,29 +374,23 @@ LinkedList = (T: type -> type)
 4. 
 ```
 process = (T: type, data: List[T] ...
-pointer = process(_,_) #right, type of pointer is (T,List[T])
 pointer = process(int, _) #right, type of pointer is (int, List[int])
 ```
 5. `process = (T: type, x: [T], index: int -> x[index])`
 
 # Functions
 
-Functions are a type of binding which can accept a set of inputs and give an output. Lambda or a function pointer is defined similarly to a normal function in a module. They use the same syntax, except that, they are defined inside a function.
-When defining a function, just like a normal binding. For example `(int,int -> int)` is a function type, but `(x:int, y:int -> int) {:: x+y}` is function literal.
+Functions are a type of binding which can accept a set of inputs and give an output. For example `(int,int -> int)` is a function type, but `(x:int, y:int -> int) {:: x+y}` is function literal.
 
-There are two ways to define a function: Simple method (e.g. `process = (x:int -> x+1)` and complete method where result of the function is expressed in a code block. Note that `process = (x:int -> nothing)` is a complete function definition because it is providing an expression for it's output.
+To return a value from function, you should use `::` operator. This can be prefixed with a condition to make return conditional (Example 7).
 
-A function call with union data (e.g. `int|string`) means there must be functions defined for all possible types in the union (e.g. for `int` and `string`). 
-
-To return a value from function, you should use `::` operator. This can be prefixed with a condition to make return conditional (Example 10).
-
-You can alias a function by defining another binding pointing to it (Example 12). 
+You can alias a function by defining another binding pointing to it (Example 8). 
 
 Note that a public function must have public input/output types (although their internal can be private type, eg. a public struct with private typed fields).
 
-If type of function input and output can be implied from the context (e.g. when defining a lambda as a function argument), you can ignore type for input and output (Example 13).
+If type of function input and output can be implied from the context (e.g. when defining a lambda as a function argument), you can ignore type for input and output (Example 9).
 
-You can use `*` (destruct) operator to prepare input when calling a function. This can be useful if you need to write names for parameters (Example 17).
+You can use `*` (destruct) operator to prepare input when calling a function. This can be useful if you need to write names for parameters (Example 13).
 
 **Syntax**: 
 
@@ -413,14 +405,11 @@ You can use `*` (destruct) operator to prepare input when calling a function. Th
 
 01. `myFunc = (x:int, y:int -> int) { :: 6+y+x }`
 02. `log = (s: string -> nothing) { print(s) } #this function returns nothing`
-03. `process = (pt: Point -> pt.x)`
-04. `process2 = (pt: Point -> {int,int}) { :: {pt.x, pt.y} } #this function returns a struct`
-05. `my_func = (x:int -> int) { :: x+9 }`
-06. `myFunc9 = (x:int -> {int}) { :: {12} } #this function returns a struct literal`
-07. `process = (x: int|Point -> int) ... #this function can accept either int or Point type as input or int|Point type`
-08. `fileOpen = (path: string -> File) {...}`
-09. `_,b = *process2(myPoint) #ignore function output`
-10. 
+03. `process2 = (pt: Point -> {int,int}) { :: {pt.x, pt.y} } #this function returns a struct`
+04. `myFunc9 = (x:int -> {int}) { :: {x+12} } #this function returns a struct literal`
+05. `process = (x: int|Point -> int) ... #this function can accept either int or Point type as input or int|Point type`
+06. `_,b = *process2(myPoint) #ignore second output of the function`
+07. 
 ```
 process = (x:int -> int) 
 { 
@@ -429,13 +418,12 @@ process = (x:int -> int)
   :: 200
 }
 ``` 
-11. `T1 = (x:int -> out:int|string) { ... }`
-12. `process = (x:int -> x+1)`, `process2 = process`
-13. `sorted = sort(my_sequence, (x,y -> x-y))`
-14. `Adder = (int,int->int) #defining a named type based on a function type`
-15. `sort = (x: [int], comparer: (int,int -> bool) -> [int]) #this function accepts a function pointers`
-16. `map = (input: [int], mapper: (int -> string) -> [string])`
-17. 
+08. `process = (x:int -> x+1)`, `process2 = process`
+09. `sorted = sort(my_sequence, (x,y -> x-y))`
+10. `Adder = (int,int->int) #defining a named type based on a function type`
+11. `sort = (x: [int], comparer: (int,int -> bool) -> [int]) {...} #this function accepts a function pointers`
+12. `map = (input: [int], mapper: (int -> string) -> [string])`
+13. 
 ```
 drawPoint = (x:int, y:int -> ...)
 point = Point{x:100, y:200}
@@ -449,31 +437,30 @@ We use a static dispatch for function calls. Also because you cannot have two fu
 
 If `MyInt := int` is defined in the code, you cannot call a function which needs an `int` with a `MyInt` binding, unless it is forwarded explicitly in the code (e.g. `process = (x:MyInt -> process(int(x)))`).
 
-To resolve a function call, first bindings with that name in current function will be searched. If not found, search will continue to parent functions, then module-level and then imported modules. At any scope, if there are multiple candidates (matching with name and argument types) there will be a compiler error.
+To resolve a function call, first bindings with that name in current function will be searched. If not found, search will continue to parent functions, then module-level. At any scope, if there are multiple candidates (matching with name) there will be a compiler error.
 
 ## Lambda (Function literal)
 
-Lambda or a function literal is used to specify value for a binding of function type. It is very similar to the way you define body of a function binding. Lambdas are closures and can capture bindings in the parent function which come before their definition (Example 3 and 4). They cal also capture members of the parent struct, if the code is part of a lambda field inside a struct.
+Lambda or a function literal is used to specify value for a binding of function type. It is very similar to the way you define body of a function binding. Lambdas are closures and can capture bindings in the parent function which come before their definition (Example 1). They can also capture members of the parent struct, if the code is part of a binding inside a struct.
 
-You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normal call and replace the lambda inputs with `_` (Example 8).
+You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normal call and replace the lambda inputs with `_` (Example 5).
 
-If lambda is assigned to a variable, you can invoke itself from inside (Example 8). This can be used to implement iteration loops.
+If lambda is assigned to a variable, it can invoke itself from inside (Example 6). This can be used to implement iteration loops.
 
 **Examples**
 
-1. `f1 = (x: int, y:int -> x+y)`
-2. `rr = (x: int, y:int -> x + y) #you can ignore return type and braces`  
-3. `rr = (nothing -> out:int) { out = x + y } #here x and y are captures from parent function`
-4. `test = (x:int -> out:PlusFunc) { out = (y:int -> y + x) } #this function returns a lambda`
-5. `(x:int -> x+1) (10) #you can invoke a lambda at the point of declaration`
-6. `process = (x:int, y:float, z: (string -> float)) { ... }`
-7. `lambda1 = process(10, _, _) #defining a lambda based on existing function`
-8. `ff = (x:int -> ff(x+1))`
-9. `r = (x:int -> x+1)(100)`
+1. `rr = (nothing -> out:int) { out = x + y } #here x and y are captures from parent function/struct`
+2. `test = (x:int -> out:PlusFunc) { out = (y:int -> y + x) } #this function returns a lambda`
+3. `(x:int -> x+1) (10) #you can invoke a lambda at the point of declaration`
+4. `process = (x:int, y:float, z: (string -> float)) { ... } #a function that accepts a lambda`
+5. `lambda1 = process(10, _, _) #defining a lambda based on existing function`
+6. `ff = (x:int -> ff(x+1))`
 
 # Modules
 
-Modules are source code files. You can import them into current module and use their public declarations. You can import modules from local file-system, GitHub or any other external source which the compiler supports (If import path starts with `.` or `..` it is relative path, if it start with `/` it is based on global DOTPATH, else it's using external protocols like `git`). The result of import is a struct type. You can use `*` to destruct it into current module (and have access to types and bindings without prefix), or you can assign it's output to a new type. You can also use `{}` to instantiate that module into a binding.
+Modules are source code files. You can import them into current module and use their public declarations. You can import modules from local file-system, GitHub or any other external source which the compiler supports (If import path starts with `.` or `..` it is relative path, if it start with `/` it is based on global DOTPATH, else it's using external protocols like `git`). 
+
+The result of import is a struct type. You can use `*` to destruct it into current module (and have access to types and bindings without a prefix), or you can assign it's output to a new type. You can also use `{}` to instantiate that module and have a binding.
 
 Bindings defined at module level must be compile time calculatable. 
 If you import multiple modules at the same time, result will be a struct with appropriate types for each module. You can still use them by `*` notation (Example 3).
@@ -495,7 +482,7 @@ You can define type arguments inside a module. These must get a literal, compile
 3. `Queue, Stack, Headp = *@("/core/std/queue, stack, heap") #import multiple modules from the same path`
 4. `Module = @("git/github.com/net/server/branch1/dir1/dir2/module") #you need to specify branch/tag/commit name here`
 5. `base_cassandra = "github/apache/cassandra/mybranch"`
-6. `Module = @(base_cassandra&"/path/module") #you can create string literals for import path`
+6. `Module = @(base_cassandra & "/path/module") #you can create string literals for import path`
 7.
 ```
 Set = @("/core/set").SetType
@@ -505,17 +492,15 @@ process = (x: Set -> int) ...
 
 # Concurrency
 
-We have `:=` notation for parallel execution of an expression. This will give you a task identifier which is a unique identifier for that process.
+We have `:=` notation for parallel execution of an expression. This will give you a task identifier which is a unique identifier for the parallel task.
 
-Each process has an unbounded mailbox which contains messages. Processes can send and receive messages using core functions. Sending to an invalid task will return immediately with a false result indicating send has failed. Receive from a terminated or invalid task will never return. You can use `$` notation to access current task's functions (pick a message, send a message to another process, ...). You cannot send `$` to another function.
+Each task has an unbounded mailbox which can accept messages from any other task. Sending to an invalid task will return immediately with a false result indicating send has failed. Receive from a terminated or invalid task will never return. You can use built-in `$` struct to access current task's functionality (pick a message from mailbox, send a message to another task, ...). You cannot send `$` to another function.
 
-For some exclusive resources (e.g. sockets) operations are implemented using tasks to hide inherent mutability of their underlying resources (Example 3). For some others (console, file) normal functions are provided in core.
+For some exclusive resources (e.g. sockets) operations are implemented using tasks to hide inherent mutability of their underlying resources (Example 3).
 
 **Syntax**
 
 1. Parallel execute `my_task := expression` 
-2. Send message: `was_sent = send(my_task, data)`
-2. Receive message: `msg = receive(predicate)`
 
 **Examples**
 
