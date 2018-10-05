@@ -76,7 +76,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 08. **Struct type**: `Point = {x: int, y:int, data: float}` (Like `struct` in C).
 09. **Struct literal**: `location = Point{.x=10, .y=20, .data=1.19}`.
 10. **Union type**: `MaybeInt = int | nothing` (Can store either of possible types).
-11. **Function**: `calculate = (x:int, y:int -> float) { :: x/y  }` (`::` is used to return).
+11. **Function**: `calculate = (x:int, y:int -> float) { :: x/y  }` (`::` is used for return).
 12. **Lambda**: `sort( *{ source: my_sequence, compareFunction: (x,y -> x-y)} )` (If types can be inferred, you can omit them, `*` destructs a struct)
 13. **Concurrency**: `my_task := processData(x,y,z)` (Evaluate an expression in parallel).
 14. **Generics**: `ValueKeeper = (T: type -> {data: T})`
@@ -88,34 +88,33 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 03. `()`  Function declaration and call, cast
 04. `{}`  Code block, struct definition and struct literal
 05. `[]`  Sequence and map
-06. `&`   Concatenation
+06. `&`   Concatenation (string and sequence)
 07. `$`   Access current task
-07. `*`   Destruct a struct (type or value)
-08. `|`   Union data type 
-09. `->`  Function declaration
-10. `//`  Nothing-check operator
-11. `:`   Type declaration (struct field and function inputs)
-12. `=`   Binding declaration, type alias
-13. `:=`  Named type, parallel evaluation
-14. `_`   Place-holder (lambda creator, assignments and function declaration)
-15. `@`   Import
-16. `::`  Return
+08. `*`   Destruct a struct (type or value)
+09. `|`   Union data type 
+10. `->`  Function declaration
+11. `//`  Nothing-check operator
+12. `:`   Type declaration (struct field and function inputs)
+13. `=`   Binding declaration, type alias
+14. `:=`  Named type, parallel evaluation
+15. `_`   Place-holder (lambda creator, assignments and function declaration)
+16. `@`   Import
+17. `::`  Return
+18. `..`  Range operator
 
 ## Reserved keywords
 
-**Data types**: `int`, `float`, `char`, `byte`, `bool`, `string`, `type`, `nothing`
+**Data types**: `int`, `float`, `char`, `byte`, `bool`, `string`, `nothing`
 
 **Reserved identifiers**: `true`, `false`
 
 ## Coding style
 
-These rules are highly advised but not mandatory.
-
 1. 4 spaces indentation.
 2. You must put each statement on a separate line. 
-3. Naming: `SomeDataType`, `someLambdaBindings`, `someFunction`, `any_simple_binding`, `my_package_dir`, `my_modue_file`.
+3. Naming: `SomeDataType`, `someLambdaBinding`, `someFunction`, `any_data_binding`, `my_package_dir`, `MyModuleFile`.
 4. If a function returns a type it should be named like a type.
-5. If a binding is a pointer to a function, it should be named like a function.
+5. If a binding is a pointer to a function (lambda), it should be named like a function.
 6. Braces must appear on their own line. 
 7. You can use `0x` prefix for hexadecimal numbers and `0b` for binary.
 8. You can use `_` as digit separator in number literals.
@@ -124,7 +123,7 @@ These rules are highly advised but not mandatory.
 
 Operators are mostly similar to C language (Conditional operators: `and, or, not, xor, ==, <>, >=, <=`, Arithmetic: `+, -, *, /, %, %%`, `>>`, `<<`, `**` power) and some of them which are different are explained in corresponding sections (Casting, underscore, ...).
 
-Note that `=` will do a comparison based on contents of bindings.
+Note that `==` will do a comparison based on contents of its operands.
 `A // B` will evaluate to A if it is not `nothing`, else it will be evaluated to B (e.g. `y = x // y // z // 0`).
 Conditional operators return `true` or `false` which are `1` and `0` when used as index of a sequence.
 
@@ -132,11 +131,9 @@ Conditional operators return `true` or `false` which are `1` and `0` when used a
 
 A binding assigns an identifier to an immutable memory location. A binding's value can be a literal value, an expression or another binding. The literal value can be of any valid type (integer number, function literal, struct literal, ...). Bindings must start with a lowercase letter.
 
-You can define bindings at module-level or inside a function. Module-level bindings can only have literals as their value. Type of a binding can be inferred without ambiguity from right side value, but you also have the option to specify that.
+You can define bindings at module-level or inside a function. Module-level bindings can only have literals as their value. Type of a binding can be inferred without ambiguity from right side value, but you also have the option to specify the type (Example 1).
 
-Note that all bindings are immutable. So you cannot manipulate or re-assign them. But module-level bindings can be updated as long as they are pure data.
-
-If the value is a struct, you can destruct it into it's elements by using `*` operator which simply replaces it's operand with it's internal data (Example 5). In this process, you can also use underscore to indicate you are not interested in one or more of those elements (Example 6). You can use `*` in any place where a series of comma separated values are needed, but you have to consume the result of this operator (either via binding assignment or function call).
+If the right side is a struct, you can destruct it into it's elements by using `*` operator which simply replaces it's operand with it's internal data (Example 3). In this process, you can also use underscore to indicate you are not interested in one or more of those elements (Example 4). You can use `*` in any place where a series of comma separated values are needed, but you have to consume the result of this operator (either via binding assignment as in example 3 or function call as in example 5).
 
 You can call built-in dispose function to explicitly free resources allocated for a binding. Any reference to a binding after call to dispose will result in compiler error.
 
@@ -149,24 +146,23 @@ You can call built-in dispose function to explicitly free resources allocated fo
 
 1. `x : int = 12`
 2. `g = 19.8 #type is inferred`
-3. `a,b = process() #call the function and store the result in two bindings: a and b`
-4. `x = y`
-5. `a,b = *{1, 100}`
-6. `a,_ = *{1, 100}`
+3. `a,b = *{1, 100}`
+4. `a,_ = *{1, 100}`
+5. `process(*{name: "A", age:21})`
 
 ## Binding name resolution
 
-To resolve a binding name, first bindings with given type in current function will be searched. If not found, search will continue to parent functions, then module-level and then imported modules. At any scope, if there are multiple candidates (with same name) there will be a compiler error.
+To resolve a binding name, first bindings in current function will be searched. If not found, search will continue to parent functions, then module-level. At any scope, if there are multiple candidates (with same name) there will be a compiler error.
 
 # Type system
 
-Types are blueprints which are used to create values for bindings.
+Types are blueprints which are used to create values for bindings. Types can be simple or compound (sequence, map, struct, ...).
 
 Simple type is a type which can be described using an identifier without any characters (e.g `MyCustomer` is a simgple type but `[int]` is not).
 
 ## Basic types
 
-**Syntax**: `int`, `float`, `char`, `byte`, `bool`, `string`, `type`, `nothing`
+**Syntax**: `int`, `float`, `char`, `byte`, `bool`, `string`, `nothing`
 
 **Notes**:
 
@@ -187,11 +183,11 @@ Simple type is a type which can be described using an identifier without any cha
 3. `x = 'c'`
 4. `g = true`
 5. `str = "Hello world!"`
-6. `str2 = "Hello" + "World!"`
+6. `str2 = "Hello" & "World!"`
 
 ## Sequence
 
-Sequence is similar to array in other languages. It represents a fixed-size block of memory space with elements of the same type, T and is shows with `[T]` notation. You can initialize a sequence with a sequence literal (Example 1) or range operator (Example 2). Sequence literal must be prefixed with underscore.
+Sequence is similar to array in other languages. It represents a fixed-size block of memory with elements of the same type, `T` and is shows with `[T]` notation. You can initialize a sequence with a sequence literal (Example 1) or range operator (Example 2).
 
 You refer to elements inside sequence using `x[i]` notation where `i` is index number. Referring to an index outside sequence will cause a runtime error. Putting an extra comma at the end of a sequence literal is allowed. `[]` represents an empty sequence.
 
@@ -200,15 +196,15 @@ Core defines built-in functions for sequence for common operations: `map, reduce
 **Examples**
 
 1. `x = [1, 2, 3, 4]`
-2. `x = [1..10] #initialize a sequence using range operator`
+2. `x = [1..10]`
 3. `x = [ [1, 2], [3, 4], [5, 6] ] #a 2-D sequence of integer numbers`
-4. `x = [1, 2]&[3, 4]&[5, 6] #merging multiple sequences`
+4. `x = [1, 2]&[3, 4]&[5, 6]] #merging multiple sequences`
 5. `n = x[10]`
 6. `n = [*{100,200}]`
 
 ## Map
 
-You can use `[KeyType:ValueType]` to define a map type. When reading from a map, you will also receive a flag indicating whether the key exists in the map. Map literals must be prefixed with underscore.
+You can use `[KeyType:ValueType]` to define a map type. When reading from a map, you will also receive a flag indicating whether the key exists in the map.
 
 An empty map can be denoted using `[:]` notation. Putting an extra comma at the end of a map literal is allowed.
 
@@ -216,12 +212,12 @@ Core defines built-in functions for maps for common operations: `map, reduce, fi
 
 **Examples**
 
-1. `pop = ["A":1,"B":2,"C":3]`
+1. `pop = ["A":1, "B":2, "C":3]`
 2. `data, is_found = pop["A"]`
 
 ## Concrete types
 
-These are types that have only one value which is specified when declaring the type. This can be used for enums.
+These are types that have only one value which is specified when declaring the type. This can be used for enum types (Explained in the next section).
 
 **Examples**:
 
@@ -232,9 +228,9 @@ Failure = 0
 
 ## Union
 
-Bindings of a union type, have ability to hold multiple different types and are shown as `T1|T2|T3|...`. If any of used types are not defined, they will be automatically defined by compiler as a named type for `nothing`. This can be used to define enumerations (Example 1). Note that you cannot use a complex type as a part of a union. You can only used named or primitive types.
+Bindings of a union type, have ability to hold multiple different types and are shown as `T1|T2|T3|...`. This can be used to define enumerations (Example 1).
 
-When you convert a union variable to one of it's types (Example 3), you also get a boolean flag indicating whether conversion was successful.
+When you cast a union variable to one of it's types (Example 3), you also get a boolean flag indicating whether conversion was successful.
 
 **Examples**
 
@@ -244,33 +240,30 @@ When you convert a union variable to one of it's types (Example 3), you also get
 Sat = 1
 Sun = 2
 Mon = 3
-WeekDay = Sat | Sun | ...
+WeekDay = Sat | Sun | Mon
 x = Sat
 ```
-
-2. `int_or_float: = 11`
-3. `int_value, is_valid = *int(my_union)`
+2. `int_or_float: int|float = 11`
+3. `int_value, is_valid = int(int_or_float)`
 
 ## Struct
 
-A struct (Similar to struct in C), represents a set of related binding definitions which do not have values. To provide a value for a struct, you can use either a typed struct literal (e.g. `Type{.field1=value1, .field2=value2, ...}`, note that field names are mandatory) or an untyped struct literal (e.g. `{value1, value2, value3, ...}`). Struct literals must be prefixed either with underscore or type name.
-
-You can update a struct binding and create a new binding (Example 4). You can include as many other bindings are you want in a struct litearls, as long as they are struct bindings too. Values will be applied in order, so anything you add at the end will overwrite what is already defined with the same name.
+A struct (Similar to struct in C), represents a set of related binding definitions which can have values (e.g. you can define lambda bindings inside a struct and specify value for them). To provide a value for a struct, you can use either a typed struct literal (e.g. `Type{.field1=value1, .field2=value2, ...}`, note that field names are mandatory, or an untyped struct literal (e.g. `{value1, value2, value3, ...}`). 
 
 You can use `.0,.1,.2,...` notation to access fields inside an untyped struct (Example 7).
 
-You can provide values for struct fields. If these values are functions, based on closure rules, they will have access to struct fields. If they don't access any of those fields, they will be type-level field (rather than instance-level field) and you can use them by using name of the type (Example 8) otherwise they are instance-level.
+You can provide values for struct fields when you create bindings of their type. Note that for fields that get value upon struct declaration, they will have closure access to struct fields.
 
-If a struct has a private field (starting with `_`), only type or instance level functions will have access to them. You can also use `*` operator when defining a struct to include fields from another struct into current one (Example 9).
+If a struct has a private field (starting with `_`), only its member functions will have access to them. You can also use `*` operator when defining a struct to include fields from another struct into current one (Example 8).
 
-You can also define types inside a struct. These types will be accessible by using struct type name (Example 10). When using struct type, you have access to inner types and value bindings. When using a struct value, you have access to everything defined inside its type.
+You can also define types inside a struct. These types will be accessible by using struct type name (Example 9). When using struct type, you have access to inner types and value bindings. When using a struct value, you have access to everything defined inside the struct (types, bindings, ...).
 
-If there are bindings defined in struct type declaration, you cannot override their values when instantiating the struct. These bindings however will be accessible both using struct type name and binding name (Example 12). Note that if there are fields inside a struct without value, you have to initialise them upon instantiation (Example 13) and you cannot change value of any field which already has a value.
+Note that if there are fields inside a struct without value, you have to initialise them upon instantiation (Example 11) and you cannot change value of any field which already has a value.
 
 **Examples**
 
-1. `Point = {x:int, y:int}`
-2. `point2 = Point{.x=100, .y=200}`
+1. `Point = {x:int, y:int} #defining a struct type`
+2. `point2 = Point{.x=100, .y=200} #create a binding of type Point`
 3. `point1 = {100, 200} #untyped struct`
 4. `point4 = Point{point3, .y = 101} #update a struct`
 5. `x,y = *point1 #destruction to access struct data`
@@ -278,35 +271,21 @@ If there are bindings defined in struct type declaration, you cannot override th
 7. `x = point1.1 #another way to access untyped struct data`
 8.
 ```
-Customer = { name: string, getName = (->name), newCustomer = (->Customer{name: "Test"})}
-#in the code:
-my_customer.getName() #this gives you the name inside my_customer binding
-cust = Customer.newCustomer()  #this will call type-level function
-```
-9.
-```
 Person = {name: string}
 Employee = {*Person, employee_id: int}
 ```
-10.
+9.
 ```
 Customer = {name: string, Case: float}
 process = (data: Customer.Case -> string) ...
 ```
-11.
+10.
 ```
 Point = {x:int, y:int, 
 	mult = (p: Point, p2: Point -> p.x * p2.x + p.y * p2.y)
 }
 ```
-12.
-```
-Customer = {id: 12, name: string}
-c = Customer{.name = "mahdi"}
-id_12 = Customer.id
-new_id_12 = c.id
-```
-13.
+11.
 ```
 Point = {x:int, y:int, size:int = 2}
 p = Point{} #invalid, we need values for x and y here
@@ -318,23 +297,20 @@ m = MathConst{} #valid
 
 You can name a type so you will be able to refer to that type later in the code. Type names must start with a capital letter to be distinguished from bindings. You define a named type similar to a binding: `NewType := UnderlyingType`.The new type has same binary representation as the underlying type but it will be treated as a different type.
 
-You can use casting operator to convert between a named type and its underlying type (Example 5).
-
-If a function is called which has no candidate for the named type, the candidate for underlying type will be invoked (if any).
+You can use casting operator to convert between a named type and its underlying type (Example 4).
 
 **Examples**
 
 1. `MyInt := int`
 2. `IntArray := [int]`
 3. `Point := {x: int, y: int}`
-4. `bool := true | false`
-5. `x = 10`, `y = MyInt(10)`
+4. `x = 10`, `y = MyInt(10)`
 
 ## Type alias
 
 You can use `T = X` notation to define `T` as another spelling for type `X`. In this case, `T` and `X` will be the same thing, so you cannot define two functions with same name for `T` and `X`.
 
-You can use a type alias to prevent name conflict when importing modules. Access level for a type alias must be same or more restricted as it's base type (If base type is public, alias can be either public or private, but if base is private, alias must be private).
+You can use a type alias to prevent name conflict when importing modules.
 
 **Examples**
 
@@ -349,13 +325,13 @@ More in "Generics" section.
 
 ## Type name resolution
 
-To resolve a type name, first module-level types and then imported modules will be searched for a type name or alias with the same name. At any scope, if there are multiple candidates there will be a compiler error.
+To resolve a type name, first closure level types and then module-level types will be searched for a type name or alias with the same name. At any scope, if there are multiple candidates there will be a compiler error.
 
 Two named types are never equal. Otherwise, two types T1 and T2 are identical/assignable/exchangeable if they have the same structure (e.g. `int|string` vs `int|string`).
 
 ## Casting
 
-There is no implicit and automatic casting. The only exception is using boolean as a sequence index which will be translated to 0 and 1. You can use core functions to do casting to/from primitive types (e.g char to int or float to int). To cast to a compatible named type you can use `TypeName(value)` notation.
+There is no implicit and automatic casting. The only exception is using boolean as a sequence index which will be translated to 0 and 1. You can use core functions to do casting to/from primitive types (e.g char to int or float to int). To cast to a compatible named type or for unions you can use `TypeName(value)` notation.
 
 The `Type(nothing)` notation gives you the default value for the given type (empty/zero value). You can also cast using a type argument (Example 5).
 
