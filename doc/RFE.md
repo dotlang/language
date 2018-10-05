@@ -3921,3 +3921,14 @@ Like:
 isReady(my_task)::getResult(int, my_task)
 ```
 So task structure needs to be generic.
+
+? - If a struct has a field with a literal value, can I access it without instantiating the struct?
+I think it shouldn't be allowed.
+But what if I import a module which has some module-level bindings with constant values?
+Just instantiate it.
+```
+Customer = {id: 12, name: string}
+c = Customer{.name = "mahdi"}
+id_12 = Customer.id
+new_id_12 = c.id
+```
