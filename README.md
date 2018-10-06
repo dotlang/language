@@ -520,21 +520,23 @@ $.pick(SocketMessage, (m: SocketMessage -> m.sender = "192.168.1.1"))
 
 # Patterns
 
-Because a lot of non-critical tools are removed from the language and core, the user has freedom to implement them however they want (using features provided in the language). In this section we provide some of possible solutions for these types of features.
+Because a lot of non-critical features are removed from the language and core, the user has freedom to implement them however they want (using features provided in the language). In this section we provide some of possible solutions for these types of features.
 
 ## Polymorphism
 
 Polymorphism can be achieved using cloure and lambdas. 
 
+Pseudo code:
 ```
 drawCircle = (s: Circle, Canvas, float -> int) {...}
 drawSquare = (s: Square, Canvas, float -> int) {...}
 
 Shape = { draw: (Canvas, float -> int)}
-getShape = (name: String -> Shape) {
+getShape = (name: String -> Shape) 
+{
 	if name is "Circle" 
 		c = Circle{...}
-		return Shape{draw = drawCircle}
+		:: Shape{draw = drawCircle}
 }
 f = getShape("Circle")
 f.draw(c, 1.12)
@@ -545,21 +547,24 @@ If you want to add a new operation (e.g. print), you will need to add a new func
 
 ## Exception handling
 
-There is no explicit support for exceptions. You can return a specific `exception` type instead.
+There is no explicit support for exceptions. You can return a specific `exception` type instead (or use `nothing` type to indicate exception).
 
-If a really unrecoverable error happens, you should exit the application by calling `exit` function in core. 
+If a really unrecoverable error happens, you should exit the application by calling `exit` function from core. 
 
 In special cases like a plugin system, where you must control exceptions, you can use built-in function `invoke` which will return an error result if the function which it calls exits.
 
-Example: `process = (nothing -> out:int|exception) { ... out = exception{...} }`
+Example: `process = (nothing -> int|exception) { ... :: exception{...} }`
 
 ## Conditionals
 
 If and Else constructs can be implemented using the fact that booleans converted to integer will result to either 0 or 1 (for `false` and `true`).
 
 ```
-ifElse = (T: type, cond: bool, trueCase: T, falseCase:T -> get(T, int(cond), falseCase, trueCase)
-get = (T: type, index: int, items: T... -> getVar(items, index))
+ifElse = (T: type, cond: bool, true_case: T, true_case:T -> T) 
+{
+	cond::true_case
+	:: false_case
+}
 ```
 
 ## Modules as types
@@ -568,18 +573,17 @@ Modules are treated as types and also they can contain types too.
 
 ```
 #Import a module as List type
-List = @("/core/List")
-my_list = List.insert(int, 1)
+list = @("/core/List"){}
+my_list = list.insert(int, 1)
 
 #Import a module and use one of its internal types
-List = @("/core/ListUtils").ListType
-my_list = List.insert(int, 1)
+list = @("/core/ListUtils").ListType{}
+my_list = list.insert(int, 1)
 
 #Import a module and use a function in one of its internal types
 insertOp = @("/core/ListUtils").ListType.insert
 x = insertOp(int, 1)
 ```
-
 
 # Examples
 
@@ -594,10 +598,10 @@ This is a function, called `main` which has no input and always returns `0` (ver
 ## Hello world
 
 ```
-main = ( -> out:int) 
+main = ( -> int) 
 {
 	print("Hello world!")
-	out = 0
+	:: 0
 }
 ```
 
@@ -609,36 +613,42 @@ We want to write a function which accepts a string like `"2+4-3"` and returns th
 NormalExpression = {op: char, left: Expression, right: Expression}
 Expression = int|NormalExpression
 
-eval = (input: string -> out:float) 
+eval = (input: string -> float) 
 {
-  exp = parse(input)
-  out = innerEval(exp)
+  exp = parse(input) #assume we already have this
+  :: innerEval(exp)
 }
 
-innerEval = (exp: Expression -> out:float) 
+innerEval = (exp: Expression -> float) 
 {
-  out = [(->out1), (x:int->x](exp)
-  y,_ = NormalExpression(exp)
+  int(exp).1 :: int(exp).0
   
-  out1 = ifElse(y.op == '+', innerEval(y.left) + innerEval(y.right), out2)
-  out2 = ifElse(y.op == '-', out3, innerEval(y.left) - innerEval(y.right))
-  out3 = ifElse(y.op == '*', out4, innerEval(y.left) * innerEval(y.right))
-  out4 = ifElse(y.op == '/', 0, innerEval(y.left) / innerEval(y.right))
+  #now we are sure that exp is an expression
+  y,_ = *NormalExpression(exp)
+  
+  y.op == '+' :: innerEval(y.left) + innerEval(y.right)
+  y.op == '-' :: innerEval(y.left) - innerEval(y.right)
+  y.op == '*' :: innerEval(y.left) * innerEval(y.right)
+  y.op == '/' :: innerEval(y.left) / innerEval(y.right)
+  
+  #no exception handling for now
+  :: 0
 }
 ```
 
 ## Quick sort
+
 ```
-quickSort:([int], int, int)->[int] = (list:[int], low: int, high: int -> out:[int])
+quickSort = (list:[int], low: int, high: int -> out:[int])
 {
-  out = [result, list][high >= low]
+  high<low :: list
   
   mid_index = (high+low)/2
   pivot = list[mid_index]
   
   #filter is a built-in function
-  small_list = filter( list, (x:int)-> x<pivot )
-  big_list   = filter( list, (x:int)-> x>pivot )
+  small_list = list.filter((x -> x < pivot))
+  big_list   = list.filter((x -> x > pivot))
   
   result = quickSort(small_list) & [pivot] & quickSort(big_list)
 }
@@ -647,16 +657,17 @@ quickSort:([int], int, int)->[int] = (list:[int], low: int, high: int -> out:[in
 ## Sequence sum
 
 A function which accepts a list of numbers and returns sum of numbers.
+
 ```
-filteredSum = (data: [int] -> out:int)
+filteredSum = (data: [int] -> int)
 {
-  calc = (index: int, sum: int -> calc_out:int)
+  calc = (index: int, sum: int -> int)
   {
-    calc_out = [out2, sum][index>=length(data)]
-    out2 = calc(index+1, sum+data[index])
+  	index >= length(data) :: sum
+    :: calc(index+1, sum+data[index])
   }
   
-  out = calc(0,0)
+  :: calc(0,0)
 }
 ```
 
@@ -664,12 +675,13 @@ filteredSum = (data: [int] -> out:int)
 
 A function which accepts a number and returns it's digits in a sequence of characters.
 Generally for this purpose, using a linked-list is better because it will provide better performance.
+
 ```
-extractor = (n: number, result: string -> out:string)
+extractor = (n: number, result: string -> string)
 {
-  out = [out2, append(result, char(48+n))][n<10]
+  n < 10 :: result & char(48+n)
   digit = n % 10
-  out2 = extractor(n/10, append(result, char(48+digit))
+  :: extractor(n/10, result & char(48+digit)
 }
 ```
 
@@ -677,68 +689,47 @@ extractor = (n: number, result: string -> out:string)
 
 A function which accepts two sequences of numbers and returns the maximum of sum of any any two numbers chosen from each of them.
 This can be done by finding maximum element in each of the arrays but we want to do it with a nested loop.
+
 ```
-maxSum = (a: [int], b: [int] -> out:int)
+maxSum = (a: [int], b: [int] -> int)
 {
 	calc = (idx1: int, idx2: int, current_max: int -> int)
 	{
-		out = [out2, current_max][idx2 >= length(b)]
+		idx2 >= length(b) :: current_max
 		sum = a[idx1] + b[idx2]
 		next1 = (idx1+1) % length(a)
-		next2 = idx2 + (idx1+1)/length(a)
-		out2 = calc(next1, next2, max(current_max, sum))
+		next2 = idx2 + int((idx1+1)/length(a))
+		:: calc(next1, next2, max(current_max, sum))
 	}
 	
-	out = calc(0, 0, 0)
+	:: calc(0, 0, 0)
 }
 ```
 
 ## Fibonacci
+
 ```
-fib = (n: int, cache: [int|nothing] -> out:int)
+fib = (n: int, cache: [int|nothing] -> int)
 {
-	out = [out2, int(cache[n]).0][cache[n] <> nothing]
+	cache[n] != nothing :: int(cache[n]).0
 	seq_final1 = set(seq, n-1, fib(n-1, cache))
 	seq_final2 = set(seq_final1, n-2, fib(n-2, seq_final1))
 
-	out2 = seq_final2[n-1]+seq_final2[n-2]
+	:: seq_final2[n-1] + seq_final2[n-2]
 }
-```
-
-## Channel based compression
-
-This is a function that uses channels to get input, compresses them and writes them to the output channel. Like a normal function but it is based on channels.
-```
-setupCompression = (nothing -> {string!, string?}) 
-{
-	input_r, input_w = setupInput()
-	result_r, result_w = setupResult()
-	process = ( -> ) 
-	{ 
-		x = [input_r]()
-		r = compress(x)
-		[resut_w](r)
-		process() 
-	}
-	_ := process
-	return {input_w, result_r}
-}
-input_w, output_r = *setupCompression()
-[input_w]("AA")
-result = [output_r]()
 ```
 
 ## Cache
 
-A cache can be implemented using a parallel process. Everytime cache is updated, it will call itself with the new state.
+A cache can be implemented using a parallel task. Everytime cache is updated, it will call itself with the new state.
 
 ```
 CacheState = Map[string, int]
 cache = (cs: CacheState->)
 {
-    request = receive(Message[CacheStore])
+    request = $.pick(Message[CacheStore])
     new_cache_state = update(cs, request)
-    query = receive(Message[CacheQuery])
+    query = $.receive(Message[CacheQuery])
     result = lookup(new_cache_state, query)
     send(Message{my_wid, query.sender_wid, result})
     cache(new_cache_state)
@@ -749,9 +740,8 @@ cache = (cs: CacheState->)
 
 ## Core packages
 
-A set of core packages will be included in the language which provides basic and low-level functionality (This part may be written in C or LLVM IR):
+A set of core packages will provide basic and low-level functionality (This part may be written in C or LLVM IR):
 
-- Security policy (how to call a code you don't trust)
 - Calling C/C++ methods
 - Interacting with the OS
 - Load code on the fly and hot swap
@@ -759,8 +749,10 @@ A set of core packages will be included in the language which provides basic and
 - Garbage collector (Runtime)
 - Serialization and Deserialization
 - Dump an object
-- RegEx operators and functions
-- Cast binary to unsigned number
+- RegEx functions
+- Concurrency
+- Security policy (how to call a code you don't trust)
+- Bitwise operators (and, or, shift, xor, ...)
 
 Generally, anything that cannot be written in dotLang will be placed in this package.
 
@@ -769,40 +761,16 @@ Generally, anything that cannot be written in dotLang will be placed in this pac
 There will be another set of packages built on top of core which provide common utilities. This will be much larger and more complex than core, so it will be independent of the core and language (This part will be written in dotLang). Here is a list of some of classes in this package collection:
 
 - I/O (Network, Console, File, ...)
-- Thread and synchronization management
-- Serialization/Deserialization
-- Functional programming: map/reduce/filter
-- String and Regex
 - Collections (Stack, Queue, Linked List, ...)
 - Encryption
 - Math
-- Bitwise operators (and, or, shift, xor, ...)
-- Methods to help work with natively mutable data structures and algorithms (sort, tree, ...)
 - ...
 
 ## Package Manager
 
-The package manager is a separate utility which helps you package, publish, install and deploy packages (Like `maven` or `dub`).
-Suppose someone downloads the source code for a project written in dotLang which has some dependencies. How is he going to compile/run the project? There should be an easy and transparent for fetching dependencies at runtime and defining them at the time of development.
+The package manager is a utility which helps you package, publish, install and deploy packages (Like `maven`, `NuGet` or `dub`).
+Suppose someone downloads the source code for a project written in dotLang which has some dependencies. How is he going to compile/run the project? There should be an easy and transparent way to fetch dependencies at runtime and defining them at the time of development.
 
-Perl has a `MakeFile.PL` where you specify metadata about your package, requirements + their version, test requirements and packaging options.
-Python uses the same approach with a `setup.py` file containing similar data like Perl.
-Java without maven has a packaging but not a dependency management system. For dependency, you create a `pom.xml` file and describe requirements + their version. 
-C# has dll method which is contains byte-code of the source package. DLL has a version meta data but no dependency management. For dependency it has NuGet.
-
-## ToDo
-
-- **Language**: (`lang` package) Notation for axioms and related operators like `=>` to define semantics of a data structure or function, dependent types
-- **Compiler**: test, debug and profiling code, plugins for Editors (e.g. vim, emacs), code vetting for format the code based on the standard (indentation, spacing, brace placement, warning about namings, ...), escape analysis and optimize them to use mutable variable (for example for numerical calculations which happens only inside a function), parallel compilation
-- **`std` package**: loop helper functions for iteration 
-- **`core` package**: hash, ser/deser, assert, sequence slice functions, create special channels, I/O, OS
-- **Others**: 
-  1. Build, dependency management, versioning, packaging, and distribution
-  2. Plugin system to load/unload libraries at runtime without need to recompile
-  3. Distributed processing: Moving code to another machine and running there (Actor model + channel), or creating a channel which is bound to a remote process
-  4. Define notation to write low-level (Assembly or IR) code in a function body and also force inline.
-  5. Provide ability to update used libraries without need to re-compile main application.
-  
 # History
 
 - **Version 0.1**: Sep 4, 2016 - Initial document created after more than 10 months of research, comparison and evaluation.
@@ -820,4 +788,4 @@ C# has dll method which is contains byte-code of the source package. DLL has a v
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
 - **Version 0.99**: Dec 30, 2017 - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting, removed `^` operator and replaced with generics, removed `@` (replaced with chain operator and casting), removed function forwarding, removed compound literal, changed notation for channel read, write and select (Due to changes in generics and sequence and removal of compound literal) and added `$` for select, add notation to filter imported identifiers in import, removed autoBind section and added a brief explanation for `TargetType()` notation in cast section, rename chain operator to `@`, replaced return keyword with `::`, replaced `import` with `@` notation and support for rename and filter for imported items, replaced `@` with `.[]` for chain operator, remove condition for return and replaced with rule of returning non-`nothing` values, change chain notation from `.[]` to `.{}` and import notation from `@[]` to `@()`, Added notation for polymorphic generic types, changed the notation for import generic module and rename identifiers, removed `func` keyword, extended general union type syntax to unnamed types with field type and names (e.g. `{id:int, name:string,...}`), Added shift-left and right `>>,<<` and power `**` operators, all litearls for seq and map and struct must be prefixed with `_`, in struct literals you can include other structs to implement struct update, changed notation for abstract functions, Allow access to common parts of a union type with polymorphic union types, use `nothing` instead of `...` for generic types and abstract functions, removed phantom types, change `=>` notation to `^T :=` notation to rename symbols, removed composition for structs and extended/clarified usage of polymorphic sum types for embedding and function forwarding, change map type from `[K,V]` to `[K:V]`, removed auto-bind `Type()`, remove abstract functions, remove `_` prefix for literals, remove `^` and add `=>` to rename types so as to fix issue with introducion of new named types when filtering an import operation, replace operators `:=` to `=` and `:==` to `==` and `=` (comparison) to `=?`, adding type alias notation `T:X`, change import operator to `@[]` and replace `=>` with type alias notation, use `:=` to calculate in parallel and `==` to equality check
 - **Version 1.00**: July 5, 2018 - Use `=` for type alias and `:=` for lazy (parallel) calculation and named type, More clarification about binding type inference, explain name resolution mechanism for types and bindings and function call, added explanation about using function name as a function pointer, explanation about public functions with private typed input/output, removed type specifier after binding name (it will be inferred from RHS), changed function type to `(input:type->output_type)`, removed chanin operator, some clarifications about casting operator and expressions, remove `::` and use bindings for output with future reference, allow calling lambda at the point of definition, allow omitting types if they can be inferred in defining functions, indicate that functions cannot have same name and introduce compile-time dynamic sequence to store multiple functions and treat the sequence as a function, restore using type name before struct literal, change `...` as a more general notation for polymorphic union types, re-write generics as code-generation + compile-time dynamic sequence for functions, add `*` destruct operator for struct explode which can also be used to call a function with named arguments or initialize a sequence, remove notation for casting a union to it's elements (replaced with use of sequence of functions), replace `...` notation with already defined `&` and `|`, removed `${}` notation for select and replaced with a function call on a sequence, removed concept of treating sequence of functions as a function, added `type` core function + ability to amend module level collections using `&`, explained loop built-in function for map, reduce and filter operations
-- **Version 1.01**: Add support for `type` keyword and generics data types and generic functions, remove map and sequence from language, defined instance-level and type-level fields with values, added `byte` and `ptr` types to primitive types, add support for vararg functions, added Patterns section to show how basic tools can be used to achieve more complex features (polymorphism, sequence, map, ...), use mailbox instead of channels for concurrency, clarification about using unions as enums + concrete types, added `::` operator for return and conditional return, changed polymorphism method to avoid strange linked-list notations for VTable or functions with the same name and use closure instead, added `*` for struct types, Allow functions to return types and use it to implement generics, Return to `[]` notation for map and sequence and their literals, Allow defining types inside struct which are acceissble through struct type name, Import gives you a struct which you can assign to a name or alias or import into current namespace using `*`, Make task a type in core as `SelfTask` and `Task` which provide functions to work with mailbox, Add functions in core to seq and map for map/reduce/filter/anymatch, remove `ptr` type, remove vararg functions, clarification about tasks and exclusive resources, use core for file and console operations, use `$` to access current task, use dot notation to initialise a struct, support optional type specification when defining a binding, set `@` notation to import a module as a struct type which you can use just like any other type, we have closure at module level, 
+- **Version 1.01**: Add support for `type` keyword and generics data types and generic functions, remove map and sequence from language, defined instance-level and type-level fields with values, added `byte` and `ptr` types to primitive types, add support for vararg functions, added Patterns section to show how basic tools can be used to achieve more complex features (polymorphism, sequence, map, ...), use mailbox instead of channels for concurrency, clarification about using unions as enums + concrete types, added `::` operator for return and conditional return, changed polymorphism method to avoid strange linked-list notations for VTable or functions with the same name and use closure instead, added `*` for struct types, Allow functions to return types and use it to implement generics, Return to `[]` notation for map and sequence and their literals, Allow defining types inside struct which are acceissble through struct type name, Import gives you a struct which you can assign to a name or alias or import into current namespace using `*`, Make task a type in core as `SelfTask` and `Task` which provide functions to work with mailbox, Add functions in core to seq and map for map/reduce/filter/anymatch, remove `ptr` type, remove vararg functions, clarification about tasks and exclusive resources, use core for file and console operations, use `$` to access current task, use dot notation to initialise a struct, support optional type specification when defining a binding, set `@` notation to import a module as a struct type which you can use just like any other type, we have closure at module level, review the whole spec
