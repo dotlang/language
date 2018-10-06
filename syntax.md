@@ -20,7 +20,7 @@ NUMBER             = INT_NUMBER [ "." DIGIT { DIGIT | "_" } ]
 Basic literals (`Expression` is a general purpose expression defined later):
 ```
 ExpressionLiteral  = CharLiteral | BoolLiteral | StringLiteral | SequenceLiteral |
-                     StructLiteral | MapLiteral | NumberLiteral | "nothing"
+                     StructLiteral | MapLiteral | NumberLiteral | "nothing" | "$"
 CharLiteral        = "'" character "'"
 BoolLiteral        = "true" | "false"
 StringLiteral      = """ [ STRING ] """ | "`" [ MULTI_LINE_STRING ] "`"
@@ -28,7 +28,7 @@ SequenceLiteral    = "[" Expression* "]"
 NumberLiteral      = NUMBER
 MapLiteral         = "[" MapLiteralElement* "]"
 MapLiteralElement  = Expression ":" Expression
-StructLiteral      = [ TYPE_NAME ] "{" DotFieldValue* "}" | "{" Expression* "}"
+StructLiteral      = [ TYPE_NAME ] "{" ( Expression | DotFieldValue)* "}" | "{" Expression* "}"
 DotFieldValue      = "." BINDING_NAME "=" Expression
 ```
 
@@ -51,7 +51,7 @@ BindingLhs         = "_" | BINDING_NAME [ ":" TypeDecl ]
 Syntax for type declaration:
 ```
 TypeDecl           = SimpleTypeDecl | CompoundTypeDecl | "*" CompoundTypeDecl | SequenceTypeDecl | 
-                     MapTypeDecl | UnionTypeDecl | FnTypeDecl
+                     MapTypeDecl | UnionTypeDecl | FnTypeDecl | GenericTypeDecl
 SimpleTypeDecl     = TYPE_NAME | PrimitiveTypeDecl
 CompoundTypeDecl   = Import | StructTypeDecl
 Import             = "@" "(" STRING+ ")"
@@ -60,55 +60,32 @@ SequenceTypeDecl   = "[" TypeDecl "]"
 MapTypeDecl        = "[" TypeDecl ":" TypeDecl "]"
 UnionTypeDecl      = SimpleTypeDecl { "|" SimpleTypeDecl }
 FnTypeDecl         = "(" TypeDecl* "->" TypeDecl ")"
+GenericTypeDecl    = Expression "(" TypeDecl* ")"
 ```
 
 Expressions:
 ```
 Expression         = EqExpression     { ("and"|"or"|"xor") EqExpression }
-EqExpression       = CmpExpression    { ("=="|"<>") CmpExpression }
+EqExpression       = CmpExpression    { ("=="|"!=") CmpExpression }
 CmpExpression      = ShiftExpression  { (">"|"<"|">="|"<=") ShiftExpression }
 ShiftExpression    = AddExpression    { (">>"|"<<"|"^") AddExpression }
 AddExpression      = MulExpression    { ("+"|"-") MulExpression }
 MulExpression      = UnaryExpression  { ("*"|"/"|"%"|"%%") UnaryExpression }
-UnaryExpression    = ["not"|"-"]      PrimaryExpression
-PrimaryExpression  = ( BINDING_NAME | "(" Expression ")" | ExpressionLiteral )  | FunctionDecl
-                     {  "(" Expression* ")" | "." Expression | "[" Expression "]" }
-                     (*  function call      / struct access    / seq/map access    *)
-                     
-FunctionDecl       = "(" TypedName* ")" "->" ( Expression | ["("] TypeDecl [")"] CodeBlock )
-CodeBlock          = "{" { ReturnStatement | Binding } "}" | "{" "..." "}"
-ReturnStatement    = "::" Expression
-
-```
-Named type declaration:
-add support for `*` in typedecl
-```
-NamedType          = TYPE_NAME "=" TypeDecl
-
-
-
-
-StructTypeDecl     = "{" ( TypeDecl* | TypedName* [ "..." ] ) "}" 
-
-
-ChannelTypeDecl    = ( TYPE_NAME | PrimitiveTypeDecl ) ("!"|"?")
-```
-
-Advanced operators (to be added later):
-```
-TypeAlias = ???
-(* Range op *)       PrimaryExpression ".." PrimaryExpression |
-(* Nothing check*)   Expression "//" Expression |
-(* Cast *)           ( TYPE_NAME | PrimitiveTypeDecl ) "(" Expression* ")" |
-(* Struct modify *)  [ Expression ] "{" DynamicBinding* "}" |
-(* Merge seq *)      PrimaryExpression "&" PrimaryExpression |
-(* Lambda creator *) Lambda |
-(* Chain *)          ( PrimaryExpression | "(" PrimaryExpression+ ")" ) "." "{" (Lambda|PrimaryExpression)+ "}" |
-(* Select *)         "$" "{" SelectTerm+ "}" |
-(* Channels *)       Expression "?" | Expression "!" Expression
-Lambda             = PrimaryExpression "(" ( PrimaryExpression | "_" )* ")"
-SelectTerm         = PrimaryExpression "?" | PrimaryExpression "!" PrimaryExpression | 
-                     "[" PrimaryExpression+ "]" ("?" | "!" "[" PrimaryExpression+ "]" )
+UnaryExpression    = ["not"|"-"|"*"]      PrimaryExpression
+PrimaryExpression  = BasicExpression | "(" Expression ")" | FunctionDecl |
+                     FunctionCall | LambdaCreator | StructAccess | SeqMapAccess | RangeOp |
+                     NothingOp | ConcatOp
+BasicExpression    = BINDING_NAME | ExpressionLiteral
+FunctionDecl       = "(" Argument* "->" ( Expression | TypeDecl ) ")" [ CodeBlock ]
+CodeBlock          = "{" { ReturnStatement | Binding } "}"
+ReturnStatement    = [ Expression ] "::" Expression
+FunctionCall       = Expression "(" Expression* ")"
+LambdaCreator      = Expression "(" ( Expression | "_" )* ")"
+StructAccess       = Expression "." Expression
+SeqMapAccess       = "[" Expression "]"
+RangeOp            = Expression ".." Expression
+NothingOp          = Expression "//" Expression
+ConcatOp           = Expression "&" Expression 
 ```
 
 ### Implementation Notes
