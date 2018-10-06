@@ -3915,20 +3915,31 @@ N - Formalise `T: type` as a type parameter vs. named type or type alias
 
 N - How can this be used to ease interop with other languages e.g. C or Java or C++ or Go?
 
-? - When I write `my_task = process(10)` there should be a way to get result of `process`.
+Y - When I write `my_task = process(10)` there should be a way to get result of `process`.
 Like:
 ```
 isReady(my_task)::getResult(int, my_task)
 ```
 So task structure needs to be generic.
 
-? - If a struct has a field with a literal value, can I access it without instantiating the struct?
+N - Casting sometimes returns two items and sometimes one.
+clarify
+cast to union returns two items
+anything else one. because source and destination are fixed.
+
+Y - If a struct has a field with a literal value, can I access it without instantiating the struct?
 I think it shouldn't be allowed.
 But what if I import a module which has some module-level bindings with constant values?
 Just instantiate it.
 ```
-Customer = {id: 12, name: string}
+Customer = {id = 12, name: string}
 c = Customer{.name = "mahdi"}
 id_12 = Customer.id
 new_id_12 = c.id
+...
+Numeric = { pi = 3.14 }
+pi_number = Numeric.pi
 ```
+Let's allow it.
+So with a struct type, you have access to types and constants.
+for anything else, you need to instantiate.
