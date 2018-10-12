@@ -3943,3 +3943,40 @@ pi_number = Numeric.pi
 Let's allow it.
 So with a struct type, you have access to types and constants.
 for anything else, you need to instantiate.
+
+N - Can we make code more readable?
+Normally code (in real world) is polluted with two things: error checking and logging.
+So it will make it difficult to read the actual code.
+```
+log("running process with args: " & 1)
+data = process(1)
+log("checking result")
+data == nothing :: nothing
+log("running process2 with args: " & 2)
+data2 = process2(2, data) 
+log("checking result 2")
+data2 == nothing :: {100}
+...
+```
+In Go2 one proposal is for collect (run multiple commands and as long as no error continue):
+```
+collect err {
+		_! := SomeErrorProneFunction()
+		_, _! = AnotherFunc()
+		// ...
+
+		i, _! = LastFunc()
+	}
+	if err != nil {
+		fmt.Println("Error in SomeBigFunction:", err)
+		return 0, err
+	}
+```
+another proposal:
+`x, checked err := someCall()`
+meaning if err was not null, return it.
+can we write this?
+`data2 = process2(2, data) // :: 100`
+as a shortcut for:
+`data2 = process2(2, data)`
+`data2 == nothing :: 100`
