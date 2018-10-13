@@ -3981,7 +3981,7 @@ as a shortcut for:
 `data2 = process2(2, data)`
 `data2 == nothing :: 100`
 
-? - We say you cannot re-use function names. So what about casting?
+Y - We say you cannot re-use function names. So what about casting?
 `int(x)` x can be float or string or ...
 We have 3 applications for cast:
 1. To NamedType: `x = MyInt(int_var)`
@@ -4000,3 +4000,16 @@ opt 3 can be congfusing and not possible for named types.
 1. To NamedType: `x = MyInt(int, int_var)`
 2. To primitive types `y = int(string, my_age_str)`
 3. Union `int_value, is_valid = int(int|float, int_or_float)`
+or we can have a special notation for casting: e.g. `$Type`
+So it is different from normal function call.
+for casting string to int and similar, we can use normal functions: `strToInt(my_age_str)`, or `floatToInt(pi)`
+For named type, a syntax similar to struct? `x = MyInt{int_var}`
+or we can say, `Type{...}` is used to cast what we have inside `{}` to type `Type`.
+this can be used for other examples too.
+`x = MyInt{int_var}`
+`y = int{my_age_str}`
+`int_value, is_valid = int{int_or_float}`
+But this last one does not make sense.
+`int_or_nothing_value = int|nothing{int_or_float}`
+We can use a core function: `hasType(int, int_or_float)` will return true if given binding has int.
+So, the casting happens only to named types and for primitives.
