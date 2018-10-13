@@ -230,7 +230,7 @@ Failure = 0
 
 Bindings of a union type, have ability to hold multiple different types and are shown as `T1|T2|T3|...`. This can be used to define enumerations (Example 1).
 
-When you cast a union variable to one of it's types (Example 3), you also get a boolean flag indicating whether conversion was successful.
+You can use core function `hasType` to check if a union has a specific type in it (Example 3).
 
 **Examples**
 
@@ -244,7 +244,7 @@ WeekDay = Sat | Sun | Mon
 x = Sat
 ```
 2. `int_or_float: int|float = 11`
-3. `int_value, is_valid = int(int_or_float)`
+3. `has_int = hasType(int, int_or_float)`, `int_value = int{int_or_float}`
 
 ## Struct
 
@@ -332,24 +332,16 @@ Two named types are never equal. Otherwise, two types T1 and T2 are identical/as
 
 ## Casting
 
-There is no implicit and automatic casting. The only exception is using boolean as a sequence index which will be translated to 0 and 1. You can use core functions to do casting to/from primitive types (e.g char to int or float to int). To cast to a compatible named type or for unions you can use `TypeName(value)` notation.
+There is no implicit and automatic casting. The only exception is using boolean as a sequence index which will be translated to 0 and 1. You can use core functions to do casting to/from primitive types (e.g char to int or float to int). To cast to a compatible named type or for unions you can use `TypeName{value}` notation.
 
-The `Type(nothing)` notation gives you the default value for the given type (empty/zero value). You can also cast using a type argument (Example 3).
+The `Type{nothing}` notation gives you the default value for the given type (empty/zero value). 
 
-**Syntax**: `TargetType(value)`
+**Syntax**: `TargetType{value}`
 
 **Examples**
 
-1. `x = int(1.91)`
-2. `MyInt = int`, `x = MyInt(int_var)`
-3. 
-```
-process = (T: type, my_shape: Shape -> ...)
-{
-	t_value, is_valid = T(my_shape)
-	...
-}
-```
+1. `x = int{1.91}`
+2. `MyInt = int`, `x = MyInt{int_var}`
 
 ## Generics
 
