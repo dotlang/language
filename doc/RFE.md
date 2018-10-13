@@ -4013,3 +4013,19 @@ But this last one does not make sense.
 `int_or_nothing_value = int|nothing{int_or_float}`
 We can use a core function: `hasType(int, int_or_float)` will return true if given binding has int.
 So, the casting happens only to named types and for primitives.
+
+N - Can we remove type spec in bindign decl and use casting notation instead?
+`x: int = 12` vs `x = int{12}`
+So, casting a literal means type spec.
+You can also use cast to "stress" the type:
+`int_result = int{getIntVar(10)}`
+The only problem: what about complex types?
+`g = [int]{1,2,3}`
+`h = [string:int]["A":1, "B":2]`
+We can either use `[]` eveywhere (what about structs then?)
+or use `{}` everywhere -> what about seq and map?
+First one is better:
+`Type[data]` to seq, map.
+`Type{fields}` to cast struct
+Or we can allow `name: type ` notation to prevent all this confusion. To cast `Type{}` and thats it.
+For sequence and map, you can still cast but for a literal, you just need to define type of the left side of `=` if you like.
