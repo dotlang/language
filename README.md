@@ -94,7 +94,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 09. `|`   Union data type 
 10. `->`  Function declaration
 11. `//`  Nothing-check operator
-12. `:`   Type declaration (struct field and function inputs)
+12. `:`   Type declaration (binding, struct field and function inputs)
 13. `=`   Binding declaration, type alias
 14. `:=`  Named type, parallel evaluation
 15. `_`   Place-holder (lambda creator, assignments and function declaration)
@@ -332,9 +332,7 @@ Two named types are never equal. Otherwise, two types T1 and T2 are identical/as
 
 ## Casting
 
-There is no implicit and automatic casting. The only exception is using boolean as a sequence index which will be translated to 0 and 1. You can use core functions to do casting to/from primitive types (e.g char to int or float to int). To cast to a compatible named type or for unions you can use `TypeName{value}` notation.
-
-The `Type{nothing}` notation gives you the default value for the given type (empty/zero value). 
+There is no implicit and automatic casting. The only exception is using boolean as a sequence index which will be translated to 0 and 1. To cast to a compatible named type or for primitives you can use `TypeName{value}` notation.
 
 **Syntax**: `TargetType{value}`
 
@@ -453,14 +451,11 @@ If lambda is assigned to a variable, it can invoke itself from inside (Example 6
 
 Modules are source code files. You can import them into current module and use their public declarations. You can import modules from local file-system, GitHub or any other external source which the compiler supports (If import path starts with `.` or `..` it is relative path, if it start with `/` it is based on global DOTPATH, else it's using external protocols like `git`). 
 
-The result of import is a struct type. You can use `*` to destruct it into current module (and have access to types and bindings without a prefix), or you can assign it's output to a new type. You can also use `{}` to instantiate that module and have a binding.
+The result of import is a struct type. You can use `*` to destruct it into current module (or struct), or you can assign it's output to a named type. You can also use `{}` to instantiate that module and have a binding.
 
 Bindings defined at module level must be compile time calculatable. 
-If you import multiple modules at the same time, result will be a struct with appropriate types for each module. You can still use them by `*` notation (Example 3).
 
-There is closure at module level too. So you have access to all module level declarations inside functions. When a module has a binding without value (e.g. `year: int`), it must be initialised when instantiating that module.
-
-You can define type arguments inside a module. These must get a literal, compile-time value when instantiating their type after it is being imported. You can even import a module inside a struct definition because import will give you a normal type you can use wherever you want.
+There is closure at module level too. So you have access to all module level declarations inside functions. When a module has a binding without value (e.g. `year: int` or `T: type`), it must be initialised when instantiating that module. 
 
 **Syntax**
 
@@ -472,16 +467,15 @@ You can define type arguments inside a module. These must get a literal, compile
 
 1. `Socket = @("/core/st/socket") #import everything, addressed module with absolute path`
 2. `Socket = @("../core/st/socket") #import with relative path`
-3. `Queue, Stack, Headp = *@("/core/std/queue, stack, heap") #import multiple modules from the same path`
-4. `Module = @("git/github.com/net/server/branch1/dir1/dir2/module") #you need to specify branch/tag/commit name here`
-5. `base_cassandra = "github/apache/cassandra/mybranch"`
-6. `Module = @(base_cassandra & "/path/module") #you can create string literals for import path`
-7.
+3. `Module = @("git/github.com/net/server/branch1/dir1/dir2/module") #you need to specify branch/tag/commit name here`
+4. `base_cassandra = "github/apache/cassandra/mybranch"`
+5. `Module = @(base_cassandra & "/path/module") #you can create string literals for import path`
+6.
 ```
 Set = @("/core/set").SetType
 process = (x: Set -> int) ...
 ```
-8. `my_customer = @("/data/customer").Customer{.name = "mahdi", .id = 112}`
+7. `my_customer = @("/data/customer").Customer{.name = "mahdi", .id = 112}`
 
 # Concurrency
 
@@ -507,14 +501,14 @@ int_result = $.resolve(int, task) #wait until task is finished and get the resul
 ```
 3. 
 ```
-socket = net("192.168.1.1")
+socket := net("192.168.1.1")
 $.send(socket, "A")
 $.pick(SocketMessage, (m: SocketMessage -> m.sender = "192.168.1.1"))
 ```
 
 # Patterns
 
-Because a lot of non-critical features are removed from the language and core, the user has freedom to implement them however they want (using features provided in the language). In this section we provide some of possible solutions for these types of features.
+Because a lot of non-essential features are removed from the language and core, the user has freedom to implement them however they want (using features provided in the language). In this section we provide some of possible solutions for these types of features.
 
 ## Polymorphism
 
@@ -566,11 +560,11 @@ ifElse = (T: type, cond: bool, true_case: T, true_case:T -> T)
 Modules are treated as types and also they can contain types too.
 
 ```
-#Import a module as List type
+#Import a module and instantiate immediately
 list = @("/core/List"){}
-my_list = list.insert(int, 1)
+my_list = list.create(int, 1)
 
-#Import a module and use one of its internal types
+#Import a module and instantiate one of its internal types
 list = @("/core/ListUtils").ListType{}
 my_list = list.insert(int, 1)
 
@@ -615,10 +609,10 @@ eval = (input: string -> float)
 
 innerEval = (exp: Expression -> float) 
 {
-  int(exp).1 :: int(exp).0
+  hasType(int, exp) :: int(exp).0
   
   #now we are sure that exp is an expression
-  y,_ = *NormalExpression(exp)
+  y,_ = *NormalExpression{exp}
   
   y.op == '+' :: innerEval(y.left) + innerEval(y.right)
   y.op == '-' :: innerEval(y.left) - innerEval(y.right)
@@ -657,7 +651,7 @@ filteredSum = (data: [int] -> int)
 {
   calc = (index: int, sum: int -> int)
   {
-  	index >= length(data) :: sum
+    index >= length(data) :: sum
     :: calc(index+1, sum+data[index])
   }
   
