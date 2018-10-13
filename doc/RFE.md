@@ -3996,3 +3996,7 @@ option 3: As members of a struct
 1. To NamedType: `x = int.parse(MyInt, int_var)`
 2. To primitive types `y = int.parse(string, my_age_str)`
 3. Union `int_value, is_valid = int.parse(int|float, int_or_float)`
+opt 3 can be congfusing and not possible for named types.
+1. To NamedType: `x = MyInt(int, int_var)`
+2. To primitive types `y = int(string, my_age_str)`
+3. Union `int_value, is_valid = int(int|float, int_or_float)`
