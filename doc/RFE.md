@@ -4029,3 +4029,18 @@ First one is better:
 `Type{fields}` to cast struct
 Or we can allow `name: type ` notation to prevent all this confusion. To cast `Type{}` and thats it.
 For sequence and map, you can still cast but for a literal, you just need to define type of the left side of `=` if you like.
+
+Y - Is this notation elegant?
+`Queue, Stack, Headp = *@("/core/std/queue, stack, heap") #import multiple modules from the same path`
+It is confusing. You can simply take out the prefix and re-use it.
+`p = "/core/std/"`
+`Queue, Stack, Headp = *@(p & "queue") #import multiple modules from the same path`
+`Queue, Stack, Headp = *@(p & "stack") #import multiple modules from the same path`
+`Queue, Stack, Headp = *@("/core/std/queue, stack, heap") #import multiple modules from the same path`
+
+N - Can we have a better notation than `*`?
+Goal is to expand/destruct a struct.
+`}{` no. too confusing.
+`f,g = *struct1`
+`Circle = {r: float, *Shape}`
+No its ok.
