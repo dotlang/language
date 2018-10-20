@@ -189,7 +189,7 @@ Sequence is similar to array in other languages. It represents a fixed-size bloc
 
 You refer to elements inside sequence using `x[i]` notation where `i` is index number. Referring to an index outside sequence will cause a runtime error. Putting an extra comma at the end of a sequence literal is allowed. `[]` represents an empty sequence.
 
-Core defines built-in functions for sequence for common operations: `map, reduce, filter, anyMatch, allMatch, ...`
+Core defines built-in functions for sequence for common operations: `slice, map, reduce, filter, anyMatch, allMatch, ...`
 
 **Examples**
 
