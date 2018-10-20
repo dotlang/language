@@ -71,7 +71,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 03. **Bindings**: `my_var:int = 19` (type is optional, everything is immutable).
 04. **Sequence**: `my_arr = [1,2,3]` (type of `my_arr` is `[int]`)
 05. **Map**: `my_map = ["A":1, "B":2, "C":3]` (type of `my_map` is `[string:int]`)
-06. **Named type**: `MyInt := int` (Defines a new type `MyInt` with same binary representation as `int`).
+06. **Named type**: `MyInt = int` (Defines a new type `MyInt` with same binary representation as `int`).
 07. **Type alias**: `IntType : int` (A different name for the same type).
 08. **Struct type**: `Point = {x: int, y:int, data: float}` (Like `struct` in C).
 09. **Struct literal**: `location = Point{.x=10, .y=20, .data=1.19}`.
@@ -96,7 +96,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 11. `//`  Nothing-check operator
 12. `:`   Type declaration (binding, struct field and function inputs) and type alias
 13. `=`   Binding declaration
-14. `:=`  Named type, parallel evaluation
+14. `:=`  Parallel evaluation
 15. `_`   Place-holder (lambda creator and assignment)
 16. `@`   Import
 17. `::`  Return
@@ -296,15 +296,15 @@ pi = MathConst.pi #valid
 
 ## Named types
 
-You can name a type so you will be able to refer to that type later in the code. Type names must start with a capital letter to be distinguished from bindings. You define a named type similar to a binding: `NewType := UnderlyingType`.The new type has same binary representation as the underlying type but it will be treated as a different type.
+You can name a type so you will be able to refer to that type later in the code. Type names must start with a capital letter to be distinguished from bindings. You define a named type similar to a binding: `NewType = UnderlyingType`.The new type has same binary representation as the underlying type but it will be treated as a different type.
 
 You can use casting operator to convert between a named type and its underlying type (Example 4).
 
 **Examples**
 
-1. `MyInt := int`
-2. `IntArray := [int]`
-3. `Point := {x: int, y: int}`
+1. `MyInt = int`
+2. `IntArray = [int]`
+3. `Point = {x: int, y: int}`
 4. `x = 10`, `y = MyInt(10)`
 
 ## Type alias
@@ -426,7 +426,7 @@ drawPoint(*{x_offset:100, y_offset: 200})
 
 We use a static dispatch for function calls. Also because you cannot have two functions with the same name, it is easier to find what happens with a function call.
 
-If `MyInt := int` is defined in the code, you cannot call a function which needs an `int` with a `MyInt` binding, unless it is forwarded explicitly in the code (e.g. `process = (x:MyInt -> process(int(x)))`).
+If `MyInt = int` is defined in the code, you cannot call a function which needs an `int` with a `MyInt` binding, unless it is forwarded explicitly in the code (e.g. `process = (x:MyInt -> process(int(x)))`).
 
 To resolve a function call, first bindings with that name in current function will be searched. If not found, search will continue to parent functions, then module-level. At any scope, if there are multiple candidates (matching with name) there will be a compiler error.
 
