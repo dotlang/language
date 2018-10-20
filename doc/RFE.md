@@ -4069,7 +4069,16 @@ or:
 
 Y - Use `:` for type alias 
 
-? - Can we also stop using `:=` for concurrency?
+N - Can we replace `{}` with new?
+what about modify on struct?
+`location = Point{.x=10, .y=20, .data=1.19}`
+`point4 = Point{point3, .y = 101}`
+`point4 = Point{point3, .y = 101}`
+becomes:
+`location = new Point{.x=10, .y=20}`
+`point4 = modify point3{.y=101}`? 
+
+Y - Can we also stop using `:=` for concurrency?
 `x = process(100)`
 `task1 = \\process(100)`
 We can use `&` for concurrency. and `+` for concat.
@@ -4078,8 +4087,13 @@ We can use `&` for concurrency. and `+` for concat.
 1. Use `+` for concat
 2. Use `&` to start parallel processing
 3. Remove `:=` for concurrency
+But what if I don't use `&` prefix? It won't run in parallel.
+Also, you can have a normal function which returns a task_id.
+what about socket/...?
+`socket_task = net("192.168.1.1")`
+Don't prefix `&`. It will give you a task always.
 
-? - can we make the notation for destruct, better?
+Y - can we make the notation for destruct, better?
 `x,y = *struct1`
 this is taken form python
 Note that we can also use it for type in addition to value. which might be confusing.
@@ -4101,3 +4115,5 @@ why do we even need this for types? maybe not. originally, I think it was needed
 1. Remove `*`
 2. To destruct a struct: `{x,y,_} = getStruct()`
 3. No destruct for types
+
+? - Extend comparison table
