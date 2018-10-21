@@ -48,7 +48,7 @@ Language | First-class functions | Sum types | Full Immutability| Garbage Collec
 C  |  Yes | Partial  | No  | No |  No | No | No | 32
 Scala | Yes | Yes | No | Yes | Yes | Yes | Yes | ~27
 Go | Yes | No | No | Yes | Yes | Yes | Yes | 25
-Java | No | No | Yes | Yes | Yes | Yes | 50
+Java | Yes | No | No | Yes | Yes | Yes | No | 50
 Haskell | Yes | Yes | No | Yes | Yes | Yes | No | 28
 dotLang | Yes | Yes | Yes | Yes | Yes | Yes | Yes | 10
 
