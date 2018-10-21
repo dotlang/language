@@ -4116,4 +4116,15 @@ why do we even need this for types? maybe not. originally, I think it was needed
 2. To destruct a struct: `{x,y,_} = getStruct()`
 3. No destruct for types
 
+N - Do we still have slices? with re-use features?
+This should be in core.
+
 ? - Extend comparison table
+
+Y - To simplify map query, we say `map[key1]` will return `Value|nothing`. So you are not supposed to store nothgin as value or else your data will be lost.
+Shall we do the same for array?
+from SO: `The very reason we have Haskell is to avoid such runtime errors!`
+Same for casting for unions.
+But for union, it is fairly common to have `int|nothing`. So how can I say if `int{my_value}` gives me nothing, then I don't have int inside my_value.
+`nothing{my_value}` will always give me nothing. because if it has a nothing, I will get nothing. If it doesn't, I will get nothing to indicate cast failed.
+In these cases, you can use `hasType` from core or check for other types.
