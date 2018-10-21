@@ -43,13 +43,14 @@ As a 10,000 foot view of the language, the code is written in files (called modu
 
 ## Comparison
 
-Language | Sum types | Full Immutability| Garbage Collector | Module System | Lambda | Polymorphism | Concurrency | Number of keywords
+Language | First-class functions | Sum types | Full Immutability| Garbage Collector | Module System | Lambda | Concurrency | Number of keywords
 --- | --- | --- | --- | --- | --- | --- | --- | ---
-C  |  Partial  | No  | No |  No | No | No | No | 32
-Scala | Yes | No | Yes | Yes | Yes | Yes | Yes | ~27
-Go | No | No | Yes | Yes | Yes | Yes | Yes | 25
-Java | No | No | Yes | Yes | Yes | Yes | Yes | 50
-dotLang | Yes | Yes | Yes | Yes | Yes | Partial | Yes | 10
+C  |  Yes | Partial  | No  | No |  No | No | No | 32
+Scala | Yes | Yes | No | Yes | Yes | Yes | Yes | ~27
+Go | Yes | No | No | Yes | Yes | Yes | Yes | 25
+Java | No | No | Yes | Yes | Yes | Yes | 50
+Haskell | Yes | Yes | No | Yes | Yes | Yes | No | 28
+dotLang | Yes | Yes | Yes | Yes | Yes | Yes | Yes | 10
 
 ## Components
 
@@ -251,38 +252,33 @@ You can use `.0,.1,.2,...` notation to access fields inside an untyped struct (E
 
 You can provide values for struct fields when you create bindings of their type. Note that for fields that get value upon struct declaration, they will have closure access to struct fields.
 
-If a struct has a private field (starting with `_`), only its member functions will have access to them. You can also use `*` operator when defining a struct to include fields from another struct into current one (Example 8).
+If a struct has a private field (starting with `_`), only its member functions will have access to them. 
 
-You can also define types inside a struct. These types will be accessible by using struct type name (Example 9). When using struct type, you have access to inner types and bindings that have literal value. When using a struct value, you have access to everything defined inside the struct (types, bindings, ...).
+You can also define types inside a struct. These types will be accessible by using struct type name (Example 8). When using struct type, you have access to inner types and bindings that have literal value. When using a struct value, you have access to everything defined inside the struct (types, bindings, ...).
 
-Note that if there are fields inside a struct without value, you have to initialise them upon instantiation (Example 11) and you cannot change value of any field which already has a value.
+Note that if there are fields inside a struct without value, you have to initialise them upon instantiation (Example 10) and you cannot change value of any field which already has a value.
 
 **Examples**
 
 1. `Point = {x:int, y:int} #defining a struct type`
 2. `point2 = Point{.x=100, .y=200} #create a binding of type Point`
 3. `point1 = {100, 200} #untyped struct`
-4. `point4 = Point{point3, .y = 101} #update a struct`
+4. `point4 = point3{.y = 101} #update a struct`
 5. `{x,y} = point1 #destruction to access struct data`
 6. `another_point = Point{.x=11, .y=my_point.y + 200}`
 7. `x = point1.1 #another way to access untyped struct data`
 8.
 ```
-Person = {name: string}
-Employee = {p: Person, employee_id: int}
-```
-9.
-```
 Customer = {name: string, Case: float}
 process = (data: Customer.Case -> string) ...
 ```
-10.
+9.
 ```
 Point = {x:int, y:int, 
 	mult = (p: Point, p2: Point -> p.x * p2.x + p.y * p2.y)
 }
 ```
-11.
+10.
 ```
 Point = {x:int, y:int, size:int = 2}
 p = Point{} #invalid, we need values for x and y here
