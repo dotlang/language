@@ -4119,7 +4119,7 @@ why do we even need this for types? maybe not. originally, I think it was needed
 N - Do we still have slices? with re-use features?
 This should be in core.
 
-? - Extend comparison table
+N - Extend comparison table
 
 Y - To simplify map query, we say `map[key1]` will return `Value|nothing`. So you are not supposed to store nothgin as value or else your data will be lost.
 Shall we do the same for array?
@@ -4128,3 +4128,14 @@ Same for casting for unions.
 But for union, it is fairly common to have `int|nothing`. So how can I say if `int{my_value}` gives me nothing, then I don't have int inside my_value.
 `nothing{my_value}` will always give me nothing. because if it has a nothing, I will get nothing. If it doesn't, I will get nothing to indicate cast failed.
 In these cases, you can use `hasType` from core or check for other types.
+
+Y - For struct modify, can we use `+`?
+`{10} + {20}` will give you a struct with two int fields.
+`{.x=10} + {.y=20}`
+`point2 = point1 + Point{.y=100}` take x from point1. No does not make sense. How is compiler going to know which field to keep and which one to take from point1?
+```
+{x,y, _} = point1
+point2 = {.x=x, .y=y, .data="A"}
+point2 = {.x=point1.x, .y=point1.y, .data="A"}
+point2 = point1{.data="A"}
+```
