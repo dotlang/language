@@ -4139,3 +4139,121 @@ point2 = {.x=x, .y=y, .data="A"}
 point2 = {.x=point1.x, .y=point1.y, .data="A"}
 point2 = point1{.data="A"}
 ```
+
+? - Reddit feedback:
+The main ones I object to are &, @ and ::, and function declaration without any keyword (nothing bad about () and {}, but I wish there were more to indicate what kind of block each is rather than -> inside the () turning the whole thing into a function).
+`fn`?
+`process = fn (x:int -> int)`
+Rust: 
+```
+fn is_divisible_by(lhs: u32, rhs: u32) -> bool {...
+}
+Lambda: 
+let x = |i: i32| -> i32 { i + 1 };
+```
+Swift:
+```
+func greet(person: String) -> String {
+... return x
+}
+```
+Scala:
+```
+def addInt( a:Int, b:Int ) : Int = {
+	...
+      return sum
+   }
+Lambda:
+val even =  ( x :Int ) => x % 2 == 0
+```
+Go:
+```
+func add(x int, y int) int {
+	return x + y
+}
+var baz Stringy = func()string{
+    ...
+};
+```
+Can we act like Rust and use last expression in the block as return? And make early return easier by using nested blocks?
+Proposal for function decl:
+```
+process = fn(x:int->int) { :: x+1 }
+process2 = fn(x:int -> x+1)
+```
+Or we can use a symbol:
+`process = ~(x:int -> x+1)`
+`process : fn(int->int) = fn(x:int -> int) :: x+1`
+`process : fn(int->int) = fn(x:int -> int) { :: x+1 }`
+Golang does not allow shortcut syntax for functions.
+`process : fn(int->int) = fn(x:int -> int) { :: x+1 }`
+
+? - Reddit feedback:
+Five out of the 16 are not well known or really used that that way in any other language I can remember:
+```
+& Concurrency
+
+$ Access current task
+
+// Nothing-check operator
+
+@ Import
+
+:: Return
+```
+That's a third of the operators being invented then and there. What's worse is I can think of popular and renowned languages that use these operators for completely different purpose, so saying they're well known is not really right: all the symbols on the keyboard are well known but using them with new semantics changes everything.
+Reply:
+`//` I think `//` is fine because it is also used in Perl so not completely invention.
+`&` Concurrency: Go uses `go`. Maybe I should use a core function? 
+`$` access current task. 
+`@` import: We can use `import` function from core. But this is not a function. It gives you a completely new type which didn't exist before.
+`::` return. This either has to be a statement or a symbol. Because it does not give you an expression.
+We can follow Perl way:
+`return 100`
+`return 200 if x < 0`
+If we use `if` in this context, nothing should stop people to use it in other contexts.
+Maybe we can use `@import`, `@task`, `@run` ...
+Issues with: return, current task, concurrent run, import, function decl.
+`$` -> `currentTask()`
+`&` -> `currentTask().spawn(int, ( -> process(10)))`
+`//` keep it
+`@` 
+`::`
+Maybe we can only use `return` but introduce `match` 
+if I can only keep two of these, they will be `$` and `::`.
+Then what about import?
+`$` -> keep it
+`&` -> `$.spawn`
+`//` keep it
+`@` 
+`::` keep it?
+`customer = import "/core/a/data"`
+if I use `()` it will be like a function.
+The responsibility of import is to create a type based on definitions in another file. You can use this type to instantiate or ...
+using `::` to access types inside another type makes more sense (similar to C++).
+But then, what are we going to do about return?
+`return 100`
+`return 200 if X`
+`->100` return 100
+`(x>0)->100` return if
+
+
+
+N - How can I import into current ns? e.g. I don't want to prefix core functions.
+Maybe we should not allow that.
+
+? - Getting type as a result of import is a bit odd.
+Suggestion: Import gives a struct instance and you can use the import notation to refer to other types inside the struct.
+
+? - Replace range operator with core function
+
+? - Can we avoid mixing type and struct?
+It is confusing.
+We can use a different notation to access types. e.g. `Mod..Type1`
+Let's say import gives us a binding with everything that the module has.
+We can then use `.x` to access inside bindings or `..X` to access inside types.
+`Module1..X..Y` means type Y defined inside struct type X defined in some module.
+
+? - Fix import section, remove `*` and multiple impotrs 
+
+? - If we use `import1` keyword, can we import a struct defined locally?
