@@ -4143,6 +4143,12 @@ point2 = point1{.data="A"}
 N - How can I import into current ns? e.g. I don't want to prefix core functions.
 Maybe we should not allow that.
 
+Y - Fix import section, remove `*` and multiple impotrs 
+
+N - If we use `import` keyword, can we import a struct defined locally?
+
+Y - Replace range operator with core function
+
 ? - Reddit feedback:
 The main ones I object to are `&, @ and ::` and function declaration without any keyword (nothing bad about () and {}, but I wish there were more to indicate what kind of block each is rather than -> inside the () turning the whole thing into a function).
 `fn`?
@@ -4195,6 +4201,17 @@ Or we can use `[]` for decl and `()` for call.
 `process : fn[int->int] = fn[x:int -> int] { :: x+1 }`
 `process = fn[x:int, y: fn[int->int] -> fn[string->int]] { ... }`
 `[]` is also used for decl of seq and map and their literals.
+So:
+**Proposal**:
+- `fn[]` is used for function type and declaration `fn[x:int -> int] { :: x+1 }`
+- `()` is used to call function
+q: Can we make it similar to a hash?
+`process = [string:int] ...`
+`process = [string:int] { ... }`
+But then we need to use `[]` to invoke too.
+Let's use `()`
+- `fn()` is used for function type and declaration `fn(x:int -> int) { :: x+1 }`
+`process = fn(x:int, y: fn(int->int) -> fn(string->int)) { ... }`
 
 
 ? - Reddit feedback:
@@ -4248,12 +4265,12 @@ But then, what are we going to do about return?
 **Proposal**:
 - Keep `::` for return and `@` for import and `//`
 - use `getCurrentTask` instead of `$` and use it for `&` too.
-
+But it will make things more difficult to read for concurrency,
 
 ? - Getting type as a result of import is a bit odd.
 Suggestion: Import gives a struct instance and you can use the import notation to refer to other types inside the struct.
 
-? - Replace range operator with core function
+
 
 ? - Can we avoid mixing type and struct?
 It is confusing.
@@ -4266,6 +4283,3 @@ Proposal:
 - Import gives you the decl inside the module but not types
 - For types use a different notation.
 
-? - Fix import section, remove `*` and multiple impotrs 
-
-? - If we use `import` keyword, can we import a struct defined locally?
