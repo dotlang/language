@@ -4140,8 +4140,11 @@ point2 = {.x=point1.x, .y=point1.y, .data="A"}
 point2 = point1{.data="A"}
 ```
 
+N - How can I import into current ns? e.g. I don't want to prefix core functions.
+Maybe we should not allow that.
+
 ? - Reddit feedback:
-The main ones I object to are &, @ and ::, and function declaration without any keyword (nothing bad about () and {}, but I wish there were more to indicate what kind of block each is rather than -> inside the () turning the whole thing into a function).
+The main ones I object to are `&, @ and ::` and function declaration without any keyword (nothing bad about () and {}, but I wish there were more to indicate what kind of block each is rather than -> inside the () turning the whole thing into a function).
 `fn`?
 `process = fn (x:int -> int)`
 Rust: 
@@ -4187,6 +4190,12 @@ Or we can use a symbol:
 `process : fn(int->int) = fn(x:int -> int) { :: x+1 }`
 Golang does not allow shortcut syntax for functions.
 `process : fn(int->int) = fn(x:int -> int) { :: x+1 }`
+`process = fn(x:int, y: fn(int->int) -> fn(string->int))`
+Or we can use `[]` for decl and `()` for call.
+`process : fn[int->int] = fn[x:int -> int] { :: x+1 }`
+`process = fn[x:int, y: fn[int->int] -> fn[string->int]] { ... }`
+`[]` is also used for decl of seq and map and their literals.
+
 
 ? - Reddit feedback:
 Five out of the 16 are not well known or really used that that way in any other language I can remember:
@@ -4236,11 +4245,10 @@ But then, what are we going to do about return?
 `return 200 if X`
 `->100` return 100
 `(x>0)->100` return if
+**Proposal**:
+- Keep `::` for return and `@` for import and `//`
+- use `getCurrentTask` instead of `$` and use it for `&` too.
 
-
-
-N - How can I import into current ns? e.g. I don't want to prefix core functions.
-Maybe we should not allow that.
 
 ? - Getting type as a result of import is a bit odd.
 Suggestion: Import gives a struct instance and you can use the import notation to refer to other types inside the struct.
@@ -4253,7 +4261,11 @@ We can use a different notation to access types. e.g. `Mod..Type1`
 Let's say import gives us a binding with everything that the module has.
 We can then use `.x` to access inside bindings or `..X` to access inside types.
 `Module1..X..Y` means type Y defined inside struct type X defined in some module.
+Proposal:
+- Ban type inside struct
+- Import gives you the decl inside the module but not types
+- For types use a different notation.
 
 ? - Fix import section, remove `*` and multiple impotrs 
 
-? - If we use `import1` keyword, can we import a struct defined locally?
+? - If we use `import` keyword, can we import a struct defined locally?
