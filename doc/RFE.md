@@ -4303,3 +4303,13 @@ Proposal:
 If I get `[int]` in a function how am I supposed to compile `x[0]` or `x(0)`?
 I think this might be possible. I can save accessor code (which can be a function invoke or memory ref)
 I can keep track of this accessor and inline it if it is small.
+
+? - Can we make `:=` notation more natural?
+e.g. `{result, task} := process(10)`
+most minimal way: `result := process(10)` where result is the output of the call.
+But how can we get a reference to the new task?
+one way: make another call
+```
+result := process(10)
+task_1 = getLastTask()
+```
