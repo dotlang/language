@@ -4149,7 +4149,7 @@ N - If we use `import` keyword, can we import a struct defined locally?
 
 Y - Replace range operator with core function
 
-? - Reddit feedback:
+N - Reddit feedback:
 The main ones I object to are `&, @ and ::` and function declaration without any keyword (nothing bad about () and {}, but I wish there were more to indicate what kind of block each is rather than -> inside the () turning the whole thing into a function).
 `fn`?
 `process = fn (x:int -> int)`
@@ -4212,9 +4212,9 @@ But then we need to use `[]` to invoke too.
 Let's use `()`
 - `fn()` is used for function type and declaration `fn(x:int -> int) { :: x+1 }`
 `process = fn(x:int, y: fn(int->int) -> fn(string->int)) { ... }`
+Summary in later item.
 
-
-? - Reddit feedback:
+Y - Reddit feedback:
 Five out of the 16 are not well known or really used that that way in any other language I can remember:
 ```
 & Concurrency
@@ -4265,12 +4265,23 @@ But then, what are we going to do about return?
 **Proposal**:
 - Keep `::` for return and `@` for import and `//`
 - use `getCurrentTask` instead of `$` and use it for `&` too.
-But it will make things more difficult to read for concurrency,
+But it will make things more difficult to read for concurrency, because everything must be converted to a lambda.
+`x = $.spawn(int, (->process(10)))`
+vs
+`x = &process(10)`
+Let's revert back to `:=`. Because we use `:` for type alias and `=` for named type.
+`:=` gives us task ids?
+What if on the right side we have a function that gives you int.
+`x := getCustomerAge(a)`
+having int on the right but task on the left seems a bit unusual.
+what about using case?
+`x = task[int](getCustomerAge(a))` but here I will need to execute the getCustomer first.
+This is a different concept and semantic.
+What if a function already returns a task? Then you don't need to use `:=`.
+
 
 ? - Getting type as a result of import is a bit odd.
 Suggestion: Import gives a struct instance and you can use the import notation to refer to other types inside the struct.
-
-
 
 ? - Can we avoid mixing type and struct?
 It is confusing.
@@ -4283,3 +4294,12 @@ Proposal:
 - Import gives you the decl inside the module but not types
 - For types use a different notation.
 
+? - use `fn` for functions
+- `fn()` is used for function type and declaration `fn(x:int -> int) { :: x+1 }`
+`process = fn(x:int, y: fn(int->int) -> fn(string->int)) { ... }`
+
+
+? - Idea: treat array and map as a function. Good re orth and generality but bad re performance.
+If I get `[int]` in a function how am I supposed to compile `x[0]` or `x(0)`?
+I think this might be possible. I can save accessor code (which can be a function invoke or memory ref)
+I can keep track of this accessor and inline it if it is small.
