@@ -4303,6 +4303,58 @@ Proposal:
 If I get `[int]` in a function how am I supposed to compile `x[0]` or `x(0)`?
 I think this might be possible. I can save accessor code (which can be a function invoke or memory ref)
 I can keep track of this accessor and inline it if it is small.
+So, sequence and map are also functions. Everywhere that you need a map/sequence, the caller can also send a function instead.
+```
+process = [int->string] { ... }
+data = [int->string] {1->"A", 2->"B", 3-> "C"}
+a_data = data(1)
+data2 = [string] { "A", "B", "C" }
+func2 = [a:int, b:float->string] { string{a+b} }
+func3 = func2(9,_)
+```
+So `[]` will be used for function decl and `()` for function call.
+We also use `[]` for generics? No. We use functions to define generics.
+So `[]` will solely be used to declare a function type or literal.
+`()` only for function call (which also is for generic types)
+Ultimate unification: `[]` for map and sequence and function declaration
+`{}` for map and sequence and function literal
+`()` for map and sequence and function get/invoke
+We can say, a sequence or map definition is actually a function which you can invoke using the key.
+Hence we should be able to define a map with multiple keys:
+`map2 = [int,float->string] {1->2->"A", 3->4->"B"}`
+`f2 = [x:int, y:float->string] { :: string{x+y} }`
+We also use `{}` for struct decl and literal and casting.
+`[string]` is a shortcut for `[int->string]`
+But we are using same symbol for many different usages. `[]` is ok because it is only function decl.
+`()` is also ok because it is only for function call.
+But `{}` is for A) struct type decl B) struct literal C) code block and D) casting
+We can either use another notation or use some keyword prefix.
+```
+Customer = {name:string, age:int}
+my_customer = Customer{.name="A", .age=12}
+new_customer = old_customer{.name="B"}
+process = [x:int->string] { ... }
+data = int{other_data}
+```
+For casting and struct literals, we have a prefix but still it can be confusing.
+We need to have simple rules, this can make reading code and writing it and also writing the parser and compiler easy
+- When you see `fn {}` it means this is a code block. that's it.
+- When you see `struct {` it is a struct type decl
+- When you see ? it is a struct literal `Type{`
+- When you see ? it is a type cast: `data = cast(string, int, some_string)`
+We can use core functions to reduce usage of notations or using them for multiple purposes. Casting is one of the areas that we can use.
+We use casting for union, named type and primitives.
+`{age, is_valid} = castUnion(int|string, int, my_int_or_string)`
+`int_val = cast(MyInt, int, my_int_val)`
+`int_val = cast(string, int, age_str)`
+So we have:
+```
+Customer = struct {name:string, age:int}
+my_customer = Customer{.name="A", .age=12}
+new_customer = old_customer{.name="B"}
+process = [x:int->string] { ... }
+```
+We can say `[]` prefix means it is a struct type, but it will be super confusing.
 
 ? - Can we make `:=` notation more natural?
 e.g. `{result, task} := process(10)`
@@ -4312,4 +4364,20 @@ one way: make another call
 ```
 result := process(10)
 task_1 = getLastTask()
+```
+or
+```
+result := process(10)
+task_1 = getTask(result)
+```
+But regarding the second option, it will be difficult to keep track of result because it can be sent over to other functions.
+In this interpretation, `:=` is exactly like `=` but the output will not be ready immediately.
+```
+result := process(10)
+task1 = task{result}
+```
+But there is room for mis-use. People can cast garbage to task and cause exception.
+```
+result := process(10)
+task1 = getCurrentTask().getChildren().last()
 ```
