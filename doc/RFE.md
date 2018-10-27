@@ -4293,6 +4293,43 @@ Proposal:
 - Ban type inside struct
 - Import gives you the decl inside the module but not types
 - For types use a different notation.
+If we ban types inside a struct, then what is the output of an import?
+Maybe it should be something new, not a struct.
+So, we won't be able to pass it around.
+Suppose that we have customer module. It has a Customer type + CRUD functions for customer.
+```
+Customer = {name: string, age: int}
+
+saveCustomer = (x: Customer -> ... )
+loadCustomer = (id: int -> Customer) ...
+deletecustomer = (id: int -> )
+upadteCustomer = (id: int, new: Customer ) ...
+```
+Then when we import this module, in addition to the functions, we also need access to the customer type.
+We have two options:
+1) Import everything in one import and access using `.` or `..`
+2) Import types separately.
+`chelper = @("customer")`
+`CustomerType = @(`
+a module with types is a struct with `type` fields.
+```
+Customer: type = {name: string, age: int}
+```
+So, if we look at it like this, a struct binding would be enough. We have access to bindings (functions, values and types).
+But, if the module has some variable bindings (e.g. `x:int`) we have to specify values for it.
+`customer_module = @("customer"){.x=100}`
+We can simply ban bindings without value inside a module. But it will be a new exception.
+What's wrong with having type? Because if import notation gives us value, we then will have to add a new rule (ban).
+Can we embed `..` inside import?
+`A..B` means access to type B defined inside sturct/module A. Now we can use `@` as the root type.
+`CustomerType = @..("Customer")`
+We are accessing type "Customer" module from root type. No. too confusing.
+`CM = @("customer")`
+`Customer: CM..Customer`
+Let's say:
+- Types are accessible using struct type and `..` prefix.
+- Types in another module are accessible using import's output type and `..`
+
 
 ? - use `fn` for functions
 - `fn()` is used for function type and declaration `fn(x:int -> int) { :: x+1 }`
@@ -4355,6 +4392,20 @@ new_customer = old_customer{.name="B"}
 process = [x:int->string] { ... }
 ```
 We can say `[]` prefix means it is a struct type, but it will be super confusing.
+Can we say struct is a combination of multiple functions?
+```
+Customer = {name:string, age:int}
+Customer = ["name"->string, "age"->int]
+```
+Too much change and this is not intuitive and lacks a lot of properties that a struct should have.
+
+? - Use core fn for casting
+- When you see ? it is a type cast: `data = cast(string, int, some_string)`
+We can use core functions to reduce usage of notations or using them for multiple purposes. Casting is one of the areas that we can use.
+We use casting for union, named type and primitives.
+`{age, is_valid} = tryCast(int|string, int, my_int_or_string)`
+`int_val = cast(MyInt, int, my_int_val)`
+`int_val = cast(string, int, age_str)`
 
 ? - Can we make `:=` notation more natural?
 e.g. `{result, task} := process(10)`
@@ -4381,3 +4432,5 @@ But there is room for mis-use. People can cast garbage to task and cause excepti
 result := process(10)
 task1 = getCurrentTask().getChildren().last()
 ```
+
+? - Should we be able to define type alias inside a function?
