@@ -4279,11 +4279,10 @@ what about using case?
 This is a different concept and semantic.
 What if a function already returns a task? Then you don't need to use `:=`.
 
-
-? - Getting type as a result of import is a bit odd.
+N - Getting type as a result of import is a bit odd.
 Suggestion: Import gives a struct instance and you can use the import notation to refer to other types inside the struct.
 
-? - Can we avoid mixing type and struct?
+Y - Can we avoid mixing type and struct?
 It is confusing.
 We can use a different notation to access types. e.g. `Mod..Type1`
 Let's say import gives us a binding with everything that the module has.
@@ -4329,14 +4328,48 @@ We are accessing type "Customer" module from root type. No. too confusing.
 Let's say:
 - Types are accessible using struct type and `..` prefix.
 - Types in another module are accessible using import's output type and `..`
+- Import gives you type.
 
+Y - Use core fn for casting
+- When you see ? it is a type cast: `data = cast(string, int, some_string)`
+We can use core functions to reduce usage of notations or using them for multiple purposes. Casting is one of the areas that we can use.
+We use casting for union, named type and primitives.
+`{age, is_valid} = tryCast(int|string, int, my_int_or_string)`
+`int_val = cast(MyInt, int, my_int_val)`
+`int_val = cast(string, int, age_str)`
 
-? - use `fn` for functions
+Y - Can we make `:=` notation more natural?
+e.g. `{result, task} := process(10)`
+most minimal way: `result := process(10)` where result is the output of the call.
+But how can we get a reference to the new task?
+one way: make another call
+```
+result := process(10)
+task_1 = getLastTask()
+```
+or
+```
+result := process(10)
+task_1 = getTask(result)
+```
+But regarding the second option, it will be difficult to keep track of result because it can be sent over to other functions.
+In this interpretation, `:=` is exactly like `=` but the output will not be ready immediately.
+```
+result := process(10)
+task1 = task{result}
+```
+But there is room for mis-use. People can cast garbage to task and cause exception.
+```
+result := process(10)
+task1 = getCurrentTask().getChildren().last()
+```
+Y - Should we be able to define type alias inside a function?
+
+N - use `fn` for functions
 - `fn()` is used for function type and declaration `fn(x:int -> int) { :: x+1 }`
 `process = fn(x:int, y: fn(int->int) -> fn(string->int)) { ... }`
 
-
-? - Idea: treat array and map as a function. Good re orth and generality but bad re performance.
+N - Idea: treat array and map as a function. Good re orth and generality but bad re performance.
 If I get `[int]` in a function how am I supposed to compile `x[0]` or `x(0)`?
 I think this might be possible. I can save accessor code (which can be a function invoke or memory ref)
 I can keep track of this accessor and inline it if it is small.
@@ -4398,39 +4431,36 @@ Customer = {name:string, age:int}
 Customer = ["name"->string, "age"->int]
 ```
 Too much change and this is not intuitive and lacks a lot of properties that a struct should have.
-
-? - Use core fn for casting
-- When you see ? it is a type cast: `data = cast(string, int, some_string)`
-We can use core functions to reduce usage of notations or using them for multiple purposes. Casting is one of the areas that we can use.
-We use casting for union, named type and primitives.
-`{age, is_valid} = tryCast(int|string, int, my_int_or_string)`
-`int_val = cast(MyInt, int, my_int_val)`
-`int_val = cast(string, int, age_str)`
-
-? - Can we make `:=` notation more natural?
-e.g. `{result, task} := process(10)`
-most minimal way: `result := process(10)` where result is the output of the call.
-But how can we get a reference to the new task?
-one way: make another call
+`{}` is for A) struct type decl B) struct literal C) code block D) Sequence literal E) map literal
+C,D,E are same or similar. But what about A and B?
 ```
-result := process(10)
-task_1 = getLastTask()
+Customer = {name:string, age:int}
+my_customer = Customer{.name="A", .age=12}
+new_customer = old_customer{.name="B"}
+process = [x:int->string] { ... }
 ```
-or
-```
-result := process(10)
-task_1 = getTask(result)
-```
-But regarding the second option, it will be difficult to keep track of result because it can be sent over to other functions.
-In this interpretation, `:=` is exactly like `=` but the output will not be ready immediately.
-```
-result := process(10)
-task1 = task{result}
-```
-But there is room for mis-use. People can cast garbage to task and cause exception.
-```
-result := process(10)
-task1 = getCurrentTask().getChildren().last()
-```
-
-? - Should we be able to define type alias inside a function?
+If we do this, what happens to 2-d sequence? 
+`matrix = [[int]]` 
+`matrix = [int->[int->int]]`
+We can say either:
+1) Everything is a map (sequence and function are maps)
+2) Everything is a function (Sequence and map are functions)
+second option is more flexible.
+`age = nameToAgeMap("A")`
+`lambda1 = my_map(_, "A")`
+Sequence is a special function:
+`data2 = [string] { "A", "B", "C" }`
+This can give us some sort of polymorphism.
+Caller can send a real function when an array is needed. or a hash-map.
+But, we have some things like map or length on array. How are they going to be defined for a function?
+it will be confusing and sometimes undoable.
+what should `.length` return if sequene is a function? We don't know. Because sequence is a function not a struct!
+So let's ignore this.
+Back to the original problem: Use of notations, especially function decl is a bit confusing,
+`()` function call
+`[]` sequence and map
+`{}` code block and struct
+Now `(x:int->string)` as a function decl. It is a bit confusing maybe, because until we see `->` we don't know if this is a function decl.
+But it's not totally confusing. What else can it be? struct? No. it has to start with `{`.
+binding decl? It appears on the right side of `=`.
+`x: (int->int)` x is a function that given an integer will return an integer.
