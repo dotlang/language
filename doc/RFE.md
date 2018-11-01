@@ -4464,3 +4464,6 @@ Now `(x:int->string)` as a function decl. It is a bit confusing maybe, because u
 But it's not totally confusing. What else can it be? struct? No. it has to start with `{`.
 binding decl? It appears on the right side of `=`.
 `x: (int->int)` x is a function that given an integer will return an integer.
+
+? - Instead of making it forbidden to send "current task" to other functions, design core functions so that user can only "query" for its internal data.
+`getCurrentTaskChildren`, `getCurrentTaskId`, ...
