@@ -440,8 +440,7 @@ There is closure at module level too. So you have access to all module level dec
 
 **Syntax**
 
-`Mod1 = @(["/path/to/module1", "path/to/module2", ...])`
-`Mod1 = @("/path/to/module1")`
+`TypeName = @("/path/to/module")`
 
 **Examples**
 
@@ -461,7 +460,7 @@ process = (x: Set -> int) ...
 
 We have `:=` for parallel execution of an expression. This will initiate a new task as a child of the current task. Any access to the output of `:=` will block current task until the child is finished.
 
-Each task has an unbounded mailbox which can accept messages from any other task. Sending to an invalid task will return immediately with a false result indicating send has failed. Receive from a terminated or invalid task will never return. You can use built-in `getCurrentTask()` function to access current task's functionality (pick a message from mailbox, send a message to another task, ...). You cannot send current task to another function or use in in a closure.
+Each task has an unbounded mailbox which can accept messages from any other task. Sending to an invalid task will return immediately with a false result indicating send has failed. Receive from a terminated or invalid task will never return. You can use built-in functions to access current task's functionality (pick a message from mailbox, send a message to another task, ...). You cannot send current task to another function or use in in a closure.
 
 For some exclusive resources (e.g. sockets) operations are implemented using tasks to hide inherent mutability of their underlying resources (Example 3).
 
@@ -475,16 +474,16 @@ For some exclusive resources (e.g. sockets) operations are implemented using tas
 2.
 ```
 int_result := process(10)
-task_id = getCurrentTask().getChildren().last()
-accepted = getCurrentTask().send(Message, my_message, task)
-picked_up = getCurrentTask().sendAndWait(Message, my_message, task)
-int_result = getCurrentTask().resolve(int, task) #wait until task is finished and get the result
+task_id = getCurrentTaskChildren().last()
+accepted = sendMessage(Message, my_message, task)
+picked_up = sendAndWait(Message, my_message, task)
+int_result = resolve(int, task) #wait until task is finished and get the result
 ```
 3. 
 ```
 socket_task = net("192.168.1.1")
-getCurrentTask().send(socket_task, "A")
-getCurrentTask().pick(SocketMessage, (m: SocketMessage -> m.sender = "192.168.1.1"))
+send(socket_task, "A")
+pick(SocketMessage, (m: SocketMessage -> m.sender = "192.168.1.1"))
 ```
 
 # Patterns
