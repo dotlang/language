@@ -4468,9 +4468,15 @@ binding decl? It appears on the right side of `=`.
 Y - Instead of making it forbidden to send "current task" to other functions, design core functions so that user can only "query" for its internal data.
 `getCurrentTaskChildren`, `getCurrentTaskId`, ...
 
-? - How are we going to handle toString for different types?
-
-
-? - If we see this:
+Y - If we see this:
 `process = (x:int -> {` 
 we still don't know if we `{` specifies output type or output expression.
+Only type will be allowed there.
+
+N - How are we going to handle toString for different types?
+suppose that I want to print something to stdout or a file or ...
+`int_val = cast(string, int, age_str)`
+why not use normal functions?
+`str = customerToString(my_customer)+" "+locationtoString(my_lcoation)`
+
+
