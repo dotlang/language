@@ -4,7 +4,7 @@ Perfection is finally attained not when there is no longer anything to add, but 
 
 Version 1.00
 
-Oct ?, 2018
+Nov 6, 2018
 
 # Table of Contents
 
@@ -374,8 +374,8 @@ If type of function input and output can be implied from the context (e.g. when 
 **Syntax**: 
 
 - Defining a function:
-`functionName = (name1: type1, name2: type2... -> out: OutputType) { code block ... out = expression }`
-`functionName = (name1:type1, name2:type2, ... -> expression)`
+
+`functionName = (name1: type1, name2: type2... -> OutputType) { code block ... out = expression }`
 
 - Defining a function type (Examples 14, 15 and 16):
 `FunctionType = (type1, type2, ... -> OutputType)`
@@ -558,7 +558,7 @@ x = insertOp(int, 1)
 ## Empty application
 
 ```
-main = ( -> 0 )
+main = ( -> int ) { :: 0 }
 ```
 
 This is a function, called `main` which has no input and always returns `0` (very similar to C/C++ except `main` function has no input).
@@ -607,7 +607,7 @@ innerEval = (exp: Expression -> float)
 ## Quick sort
 
 ```
-quickSort = (list:[int], low: int, high: int -> out:[int])
+quickSort = (list:[int], low: int, high: int -> [int])
 {
   high<low :: list
   
@@ -618,7 +618,7 @@ quickSort = (list:[int], low: int, high: int -> out:[int])
   small_list = list.filter((x -> x < pivot))
   big_list   = list.filter((x -> x > pivot))
   
-  result = quickSort(small_list) + [pivot] + quickSort(big_list)
+  :: quickSort(small_list) + [pivot] + quickSort(big_list)
 }
 ```
 
@@ -695,9 +695,9 @@ A cache can be implemented using a parallel task. Everytime cache is updated, it
 CacheState = Map[string, int]
 cache = (cs: CacheState->)
 {
-    request = $.pick(Message[CacheStore])
+    request = pick(Message[CacheStore])
     new_cache_state = update(cs, request)
-    query = $.receive(Message[CacheQuery])
+    query = receive(Message[CacheQuery])
     result = lookup(new_cache_state, query)
     send(Message{my_wid, query.sender_wid, result})
     cache(new_cache_state)
