@@ -102,7 +102,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 
 ## Reserved keywords
 
-**Data types**: `int`, `float`, `char`, `byte`, `bool`, `string`, `nothing`
+**Data types**: `int`, `float`, `char`, `byte`, `bool`, `string`, `nothing`, `type`
 
 **Reserved identifiers**: `true`, `false`
 
@@ -409,7 +409,7 @@ We use a static dispatch for function calls. Also because you cannot have two fu
 
 If `MyInt = int` is defined in the code, you cannot call a function which needs an `int` with a `MyInt` binding, unless it is forwarded explicitly in the code (e.g. `process = (x:MyInt -> process(int(x)))`).
 
-To resolve a function call, first bindings with that name in current function will be searched. If not found, search will continue to parent functions, then module-level. At any scope, if there are multiple candidates (matching with name) there will be a compiler error.
+To resolve a function call, first bindings with that name in current function will be searched. If not found, search will continue to parent functions, then module-level. At any scope, if there are multiple candidates (matching with name) there will be a compiler error. Parameter types must be "compatible" with function arguments, or else there will be a compiler error. For example if function argument type is `int | nothing` and parameter is an `int` it is a valid function call.
 
 ## Lambda (Function literal)
 
