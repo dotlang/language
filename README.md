@@ -415,9 +415,9 @@ To resolve a function call, first bindings with that name in current function wi
 
 Lambda or a function literal is used to specify value for a binding of function type. It is very similar to the way you define body of a function binding. Lambdas are closures and can capture bindings in the parent function which come before their definition (Example 1). They can also capture members of the parent struct, if the code is part of a binding inside a struct.
 
-You can use `_` to define a lambda based on an existing function or another lambda or function pointer value. Just make a normal call and replace the lambda inputs with `_` (Example 5).
+You can use `_` to define a lambda based on an existing function. Just make a normal call and replace the lambda inputs with `_` (Example 5).
 
-If lambda is assigned to a variable, it can invoke itself from inside (Example 6). This can be used to implement iteration loops.
+If lambda is assigned to a variable, it can invoke itself from inside (Example 6). This can be used to implement recursive calls.
 
 **Examples**
 
@@ -504,10 +504,10 @@ getShape = (name: String -> Shape)
 {
 	if name is "Circle" 
 		c = Circle{...}
-		:: Shape{draw = drawCircle}
+		:: Shape{ draw = drawCircle(c, _, _) }
 }
 f = getShape("Circle")
-f.draw(c, 1.12)
+f.draw(my_canvas, 1.12)
 ```
 
 If you want to add a new shape (e.g. Triangle), you should add appropriate functions (And the case checks in `getShape` needs to be modified).
