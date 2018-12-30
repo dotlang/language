@@ -252,7 +252,7 @@ You can provide values for struct fields when you create bindings of their type.
 
 If a struct has a private field (starting with `_`), only its member functions will have access to them. 
 
-You can also define types inside a struct. These types will be accessible by using struct type name (Example 8). When using struct type, you have access to inner types and bindings that have literal value. When using a struct value, you have access to everything defined inside the struct (types, bindings, ...).
+You can also define types (named or alias) inside a struct. These types will be accessible by using struct type name (Example 8). When using struct type, you have access to inner types and bindings that have literal value. When using a struct value, you have access to everything defined inside the struct (types, bindings, ...).
 
 Note that if there are fields inside a struct without value, you have to initialise them upon instantiation (Example 10) and you cannot change value of any field which already has a value.
 
@@ -268,7 +268,7 @@ Note that if there are fields inside a struct without value, you have to initial
 8.
 ```
 Customer = {name: string, Case: float}
-process = (data: Customer.Case -> string) ...
+process = (data: Customer..Case -> string) ...
 ```
 9.
 ```
@@ -278,11 +278,11 @@ Point = {x:int, y:int,
 ```
 10.
 ```
-Point = {x:int, y:int, size:int = 2}
+Point = {x:int, y:int, size:int = 2} #you cannot change value of size
 p = Point{} #invalid, we need values for x and y here
 MathConst = { pi: float = 3.14 }
 m = MathConst{} #valid
-pi = MathConst.pi #valid
+pi = m.pi #valid
 ```
 
 ## Named types
