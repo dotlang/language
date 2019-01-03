@@ -4474,9 +4474,103 @@ we still don't know if we `{` specifies output type or output expression.
 Only type will be allowed there.
 
 N - How are we going to handle toString for different types?
+
 suppose that I want to print something to stdout or a file or ...
 `int_val = cast(string, int, age_str)`
 why not use normal functions?
 `str = customerToString(my_customer)+" "+locationtoString(my_lcoation)`
 
+N - Everything is a function even seq or map.
+`age = nameToAgeMap("A")`
+`lambda1 = my_map(_, "A")`
+Sequence is a special function:
+`data2 = [string] { "A", "B", "C" }`
+This can give us some sort of polymorphism.
+Caller can send a real function when an array is needed. or a hash-map.
+But, we have some things like map or length on array. How are they going to be defined for a function?
+it will be confusing and sometimes undoable.
+what should `.length` return if sequene is a function? We don't know. Because sequence is a function not a struct!
+Sequence must have a fixed length. 
+So does map. But maybe not. All we care is when we want to go over a sequence and do a map.
+if we do this, map becomes function combination:
+`x = [int] { 1,2,3 }`
+`y = (index:int -> x[index]+1)` y is map of x
+This is too confusing.
 
+? - Marker to differentiate type vs literal
+It makes code more readable to differentiate between struct type and value.
+We can say the same for seq/map
+
+```
+process = (x:int -> {name: String})
+process = (x:int -> {x})
+process = (x:int, y:int -> Point{.x=x, .y=y)
+process = (x:int, y:int -> {x,y)
+process = (X: Type -> {X})
+numbers = [1, 2, 3]
+IntArr = [int]
+populations = ["CA": 45, "NY": 22]
+Pop = [string:int]
+```
+option1: use keywords: `struct, map, seq`
+```
+Pop = map[string:int]
+IntArr = seq[int]
+process = (X: Type -> struct{X})
+```
+option 2: use a notation like `$`.
+But then we will have to use same for all 3 cases (which is confusing) or use 3 different notations for 3 cases which is also too much.
+If we use keywords, we can also then use `func` keyword for function types.
+But what about literals?
+```
+process = (x:int -> {name: String})
+process = (x:int -> {x})
+process = (x:int, y:int -> Point{.x=x, .y=y)
+process = (x:int, y:int -> {x,y})
+process = (X: Type -> struct {X})
+numbers = [1, 2, 3]
+IntArr = seq[int]
+populations = ["CA": 45, "NY": 22]
+Pop = map[string:int]
+```
+I think we don't need this for seq and map.
+note that combining these with a union will make reading it difficult: `Data = struct {int,int} | seq[int] | map[string:int]`
+we have:
+- function: `(x:int -> int)` value: `process = (x:int -> int ) { :: x+1 }`
+- struct `{name:string, age:int}` value: `x = Point{.x=10, .y=20}`
+- sequence `[int]` value: `x = [1,2,3]`
+- map `[string:int]` value: `x=["A":1, "B":2]`
+option 1:
+- function: `fn (x:int -> int)` value: `process = fn (x:int -> int ) { :: x+1 }`
+- struct `struct {name:string, age:int}` value: `x = struct Point{.x=10, .y=20}`
+- sequence `seq[int]` value: `x = seq[1,2,3]`
+- map `map[string:int]` value: `x = map["A":1, "B":2]`
+It will make code ugly.
+For struct literals, we always use type before `{` unless it is anonymous. In that case we can use `_` as type.
+- function: `(x:int -> int)` value: `process = (x:int -> int ) { :: x+1 }`
+- struct `{name:string, age:int}` value: `x = Point{.x=10, .y=20}` or `x = _{10,20}`
+- sequence `[int]` value: `x = [1,2,3]`
+- map `[string:int]` value: `x=["A":1, "B":2]`
+So:
+If we have a function definition before `{` then this is a code block.
+If we have a type name or `_` before `{` then it is a struct literal
+If we have none of them, this is a struct type.
+what about a fn that returns another fn?
+`process = (x:int -> (y:int -> y+x))`
+rules: minimal, consistent, orthogonal, simple
+Proposal:
+- `fn` for function type and literal as prefix
+- `struct` for struct type
+- `_` for untyped struct literals and mandatory type for typed struct literals
+```
+process = fn (x:int -> {name: String})
+process = fn (x:int -> {x})
+process = fn (x:int -> (y:int -> y+x))
+process = fn (x:int, y:int -> Point{.x=x, .y=y)
+process = fn (x:int, y:int -> _{x,y})
+process = fn (X: Type -> struct {X})
+```
+- function: `T = fn (x:int -> int)` value: `process = fn (x:int -> int ) { :: x+1 }`
+- struct `S = struct {name:string, age:int}` value: `x = Point{.x=10, .y=20}`
+- unnamed struct `S = struct {string, int}` value: `x = S{"A", 10}`
+- untyped struct `x = _{"A", 10}`
