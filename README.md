@@ -513,6 +513,8 @@ f.draw(my_canvas, 1.12)
 If you want to add a new shape (e.g. Triangle), you should add appropriate functions (And the case checks in `getShape` needs to be modified).
 If you want to add a new operation (e.g. print), you will need to add a new function that returns a lambda to print.
 
+Note that above `Shape` is very similar to "trait".
+
 ## Exception handling
 
 There is no explicit support for exceptions. You can return a specific `exception` type instead (or use `nothing` type to indicate exception).
