@@ -4574,3 +4574,10 @@ process = fn (X: Type -> struct {X})
 - struct `S = struct {name:string, age:int}` value: `x = Point{.x=10, .y=20}`
 - unnamed struct `S = struct {string, int}` value: `x = S{"A", 10}`
 - untyped struct `x = _{"A", 10}`
+Can I use type when defining a function literal? Just like struct.
+```
+Adder = (int,int->int)
+myAdder = Adder(x,y->int) { ... }
+```
+Not beautiful. but otherwise it will be different from struct which means more exceptions.
+for struct type 
