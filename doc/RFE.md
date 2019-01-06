@@ -4570,7 +4570,7 @@ process = fn (x:int, y:int -> Point{.x=x, .y=y)
 process = fn (x:int, y:int -> _{x,y})
 process = fn (X: Type -> struct {X})
 ```
-- function: `T = fn (x:int -> int)` value: `process = fn (x:int -> int ) { :: x+1 }`
+- function: `T = fn (int -> int)` value: `process = fn (x:int -> int ) { :: x+1 }`
 - struct `S = struct {name:string, age:int}` value: `x = Point{.x=10, .y=20}`
 - unnamed struct `S = struct {string, int}` value: `x = S{"A", 10}`
 - untyped struct `x = _{"A", 10}`
@@ -4580,4 +4580,39 @@ Adder = (int,int->int)
 myAdder = Adder(x,y->int) { ... }
 ```
 Not beautiful. but otherwise it will be different from struct which means more exceptions.
-for struct type 
+for struct type FollowUp
+This is how you define a lambda in Scala: `var inc = (x:Int) => x+1`
+Swift: 
+```
+x = () -> Int {
+        runningTotal += amount
+        return runningTotal
+}
+```
+Rust: `let plus_one = |x: i32| x + 1;`
+They don't have any identifier for a lambda.
+So, what if we just focus on structs?
+- struct `S = ${name:string, age:int}` value: `x = Point{.x=10, .y=20}`
+- unnamed struct `S = ${string, int}` value: `x = S{"A", 10}`
+- untyped struct `x = _{"A", 10}`
+But it feels odd, why do we need a prefix for struct and nothing else? If we want to have prefixes, we have to have them for all types.
+when compiler sees a `{`:
+- If there is a fn declaration before it -> this is a code block
+- If no fn decl before, and no prefix -> struct type
+- If no fn decl before and some prefix (`_` or a type name or a binding name) -> struct value
+`process = (x:int -> {int,int})`
+is output of this function a type? or a struct with two integers? we (and compiler) have to look further to see if there is a code block or no.
+If there is a code block then output might or might not be a type
+If no code block ?
+No. even if there is a code block we don't know if output will be `{1,2}` struct or a struct type.https://mail.google.com/mail/u/1/#inbox
+No. output cannot be type.
+You have to write it like this:
+`process = (x:int -> type) ...`
+`{int,int}` means output will be a struct value with two int numbers.
+But what if we want to use the shortcut mode: like `process = (x:int -> x+1)` where we write output on the right side of `->`
+We may write similarly: `process = (x:int -> {int,int})`
+we have map, sequence, struct and function. to be consistent, either we have to use prefixes for all of them or none.
+option: force right side of `->` to be a type and not an expression. it make writing more difficult but reading easier and also parsing easier.
+`process = (x:int -> int ) { :: x+1 }`
+so what comes before `{...}` is always type of the function
+`process : (int->int) = (x:int -> int ) { :: x+1 }`
