@@ -4605,7 +4605,7 @@ is output of this function a type? or a struct with two integers? we (and compil
 If there is a code block then output might or might not be a type
 If no code block ?
 No. even if there is a code block we don't know if output will be `{1,2}` struct or a struct type.https://mail.google.com/mail/u/1/#inbox
-No. output cannot be type.
+No. output cannot be atype.
 You have to write it like this:
 `process = (x:int -> type) ...`
 `{int,int}` means output will be a struct value with two int numbers.
@@ -4616,3 +4616,11 @@ option: force right side of `->` to be a type and not an expression. it make wri
 `process = (x:int -> int ) { :: x+1 }`
 so what comes before `{...}` is always type of the function
 `process : (int->int) = (x:int -> int ) { :: x+1 }`
+Example:
+```
+data = (x:int->int) { :: x+1 } (10)
+```
+now, when you see `(x` you don't know what is this. 
+Proposal:
+- use `fn` prefix for function type and literal
+- right side of `->` must be type.
