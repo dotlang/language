@@ -4624,3 +4624,14 @@ now, when you see `(x` you don't know what is this.
 Proposal:
 - use `fn` prefix for function type and literal
 - right side of `->` must be type.
+
+? - Select construct.
+This enforces checks for input so for example if input can only be 1 or 2, we can have:
+```
+select x {
+1=> ...
+2=> ...
+else=> throw_exception
+}
+```
+Helps check for all possible cases and make code robust.
