@@ -495,7 +495,7 @@ Because a lot of non-essential features are removed from the language and core, 
 Polymorphism can be achieved using cloure and lambdas. 
 
 Pseudo code:
-```
+```swift
 drawCircle = (s: Circle, Canvas, float -> int) {...}
 drawSquare = (s: Square, Canvas, float -> int) {...}
 
