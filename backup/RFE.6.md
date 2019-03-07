@@ -2253,7 +2253,7 @@ another way: a prefix which indicates in this expression, fn arg comes before fn
 why not make use of struct?
 `x.{f}` x can be a struct
 `{1,2,3}.{f}` -> `f(1,2,3)`
-`{{1}, {2}, {3}}.{f}` -> `f({1}, {2}, {3})`
+`{ {1}, {2}, {3} }.{f}` -> `f({1}, {2}, {3})`
 now if f's output is a struct with two elements, and g needs two inputs:
 `{1,2,3}.{f}.{g}`
 `my_struct.{f}.{g}`
