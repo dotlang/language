@@ -1316,16 +1316,16 @@ ParseResult<V> VParser::parse_impl(ParseState state)
 {
     ParseResult<A> a = a_parser.parse(state);
     if (ParseSuccess<A> * success = a.get_success())
-        return ParseSuccess<V>{%{%std::move(success->value)}%, success->new_state}%;
+        return ParseSuccess<V>{%{%std::move(success->value)%}, success->new_state%};
     ParseResult<B> b = b_parser.parse(state);
     if (ParseSuccess<B> * success = b.get_success())
-        return ParseSuccess<V>{%{%std::move(success->value)}%, success->new_state}%;
+        return ParseSuccess<V>{%{%std::move(success->value)%}, success->new_state%};
     ParseResult<C> c = c_parser.parse(state);
     if (ParseSuccess<C> * success = c.get_success())
-        return ParseSuccess<V>{%{%std::move(success->value)}%, success->new_state}%;
+        return ParseSuccess<V>{%{%std::move(success->value)%}, success->new_state%};
     ParseResult<D> d = d_parser.parse(state);
     if (ParseSuccess<D> * success = d.get_success())
-        return ParseSuccess<V>{%{%std::move(success->value)}%, success->new_state}%;
+        return ParseSuccess<V>{%{%std::move(success->value)%}, success->new_state%};
     return select_parse_error(*a.get_error(), *b.get_error(), *c.get_error(), *d.get_error());
 }
 ```
