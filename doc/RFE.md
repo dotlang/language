@@ -4625,6 +4625,9 @@ Proposal:
 - right side of `->` must be type.
 If we have a deterministic way to differentiate struct value and type, maybe this can be solved.
 and `fn` prefix for fn types? It makes reading code easier: `(x:int->int)` vs `fn(x:int->int)`
+What about this?
+`data = ::(x:int->int) { :: x+1 } (10)`
+
 
 ? - Select construct.
 This enforces checks for input so for example if input can only be 1 or 2, we can have:
@@ -4640,6 +4643,25 @@ This can be used with a any type like int, string, or a union type.
 But how can we unify value and type selects?
 If select is on a non-union, you must use values.
 If select is on a union, you must use types.
-
+This should be an expression. So, for union you must specify all possible types. and for values, you must have a default case.
+```
+result = $exp0
+{
+	exp_cond_1 => exp1
+	exp_cond_2 => exp2
+	_ => exp_default
+}
+```
+- Think about how this will work when nested?
+```
+result = $exp0
+{
+	exp_cond_1 => $other_value {
+							
+							  }
+	exp_cond_2 => exp2
+	_ => exp_default
+}
+```
 
 ? - Empty sequence is `[]`, empty map is `[:]`
