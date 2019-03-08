@@ -4500,7 +4500,6 @@ This is too confusing.
 ? - Marker to differentiate type vs literal
 It makes code more readable to differentiate between struct type and value.
 We can say the same for seq/map
-
 ```
 process = (x:int -> {name: String})
 process = (x:int -> {x})
@@ -4604,7 +4603,7 @@ when compiler sees a `{`:
 is output of this function a type? or a struct with two integers? we (and compiler) have to look further to see if there is a code block or no.
 If there is a code block then output might or might not be a type
 If no code block ?
-No. even if there is a code block we don't know if output will be `{1,2}` struct or a struct type.https://mail.google.com/mail/u/1/#inbox
+No. even if there is a code block we don't know if output will be `{1,2}` struct or a struct type.
 No. output cannot be atype.
 You have to write it like this:
 `process = (x:int -> type) ...`
@@ -4624,6 +4623,8 @@ now, when you see `(x` you don't know what is this.
 Proposal:
 - use `fn` prefix for function type and literal
 - right side of `->` must be type.
+If we have a deterministic way to differentiate struct value and type, maybe this can be solved.
+and `fn` prefix for fn types? It makes reading code easier: `(x:int->int)` vs `fn(x:int->int)`
 
 ? - Select construct.
 This enforces checks for input so for example if input can only be 1 or 2, we can have:
@@ -4635,3 +4636,10 @@ else=> throw_exception
 }
 ```
 Helps check for all possible cases and make code robust.
+This can be used with a any type like int, string, or a union type. 
+But how can we unify value and type selects?
+If select is on a non-union, you must use values.
+If select is on a union, you must use types.
+
+
+? - Empty sequence is `[]`, empty map is `[:]`
