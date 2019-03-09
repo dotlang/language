@@ -737,6 +737,33 @@ cache = (cs: CacheState->)
 }
 ```
 
+### Guessing game
+
+```
+stdin = import("/http/github.com/dotLang/std/stdin"){}
+stdout = import("/http/github.com/dotLang/std/stdout"){}
+rand = import("/http/github.com/dotLang/std/random"){}
+
+main = fn
+{
+	secret = rand(1,100)
+	stdout.write("Please enter a number: ");
+	guessRaw: int|nothing = tryParseString(int, stdin.readLine())
+		
+	ifElse(guessRaw == nothing, 
+	fn{
+		stdout.write("Invalid number")
+	},
+	fn {
+		guess = cast(int, guessRaw)
+		actions = [guess<secret: fn{ stdout.write("Too small!") },
+				   guess>secret: fn{ stdout.write("Too large!") },
+				   guess==secret: fn{ stdout.write("Well done!") }
+				  ][true]()
+	})
+}
+```
+
 # Other components
 
 ## Core packages
