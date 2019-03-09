@@ -4932,9 +4932,6 @@ You can also provide path: `dot compile src/a/b/c/d.dot`
 same for `dot run`.
 But these are secondary after language, syntax, semantics and core.
 
-? - Can we remove `return` keyword?
-Like Rust, say the last expression evaluated in the function will be returned
-
 N - Do we need traits?
 For example in Rust:
 ```
@@ -4944,3 +4941,25 @@ fn print_area<T: HasArea>(shape: T) {
 ```
 We can use above to tell what types we accept in generic function.
 No. this is a big change and does not provide much value.
+
+? - Can we remove `return` keyword?
+Like Rust, say the last expression evaluated in the function will be returned
+
+? - When a module is main module vs. when it is dependency of another module, the role of `/` will change in imports.
+Suppose I am compiling ModuleA which needs ModuleB which needs ModuleC.
+will this be dir structure?
+```
+/ ---- http/www/github.com
+			---- ModuleB
+			---- ModuleC
+	- src
+		--- ModuleA
+	- build
+	- ...
+```
+this works fine with remote dependencies.
+But when I use `import("/src/ModuleX")` inside source code for ModuleC, where should ModuleX be looked?
+It is not remote and not external dependency.
+One solution: Compiler will first try to find `/src/ModuleX` by mounting `/` to `/http/www/github.com/ModuleC/` directory.
+If not found, it will look in higher levels.
+So, when compiler is compiling dependencies of the main module, it will first try to find referenced modules within module source. If not found, it will check higher level. If not found will download to main module's structure.
