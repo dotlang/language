@@ -4880,5 +4880,43 @@ and everywhere else:
 `refs = import("/src/main"){}`
 `X = import(refs.std)`
 
+Y - Example of a small app which generates a random number between 1-100, asks for a number from input and outputs if these two are equal/greater/smaller.
+```
+stdin = import("/http/github.com/dotLang/std/stdin"){}
+stdout = import("/http/github.com/dotLang/std/stdout"){}
+rand = import("/http/github.com/dotLang/std/random"){}
+
+main = fn
+{
+	secret = rand(1,100)
+	stdout.write("Please enter a number: ");
+	guessRaw: int|nothing = tryParseString(int, stdin.readLine())
+		
+	ifElse(guessRaw == nothing, 
+	fn{
+		stdout.write("Invalid number")
+	},
+	fn {
+		guess = cast(int, guessRaw)
+		actions = [guess<secret: fn{ stdout.write("Too small!") },
+				   guess>secret: fn{ stdout.write("Too large!") },
+				   guess==secret: fn{ stdout.write("Well done!") }
+				  ][true]()
+	})
+}
+```
+compare above ifElse with what we would write in C:
+```
+if ( guessRaw == nothing) {
+	printf("Invalid number");
+} else {
+	if ( guess<secret ) printf("Too small!");
+	else if ( guess>= secret) printf("Too large!");
+	else printf("Well done!");
+}
+```
+Not a huge difference in terms of number of characters.
+
+
 
 
