@@ -1,6 +1,6 @@
 Perfection is finally attained not when there is no longer anything to add, but when there is no longer anything to take away. (Antoine de Saint-Exupéry, translated by Lewis Galantière.)
 
-dotLang is a general-purpose programming language which is built upon a small set of rules and minimum exceptions and a consistent set of specifications.
+dotLang is a general-purpose programming language which is built upon a small set of rules and minimum number of exceptions and a consistent set of specifications.
 
 # Why dotLang?
 
