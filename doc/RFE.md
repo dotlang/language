@@ -4474,7 +4474,6 @@ we still don't know if we `{` specifies output type or output expression.
 Only type will be allowed there.
 
 N - How are we going to handle toString for different types?
-
 suppose that I want to print something to stdout or a file or ...
 `int_val = cast(string, int, age_str)`
 why not use normal functions?
@@ -4496,6 +4495,148 @@ if we do this, map becomes function combination:
 `x = [int] { 1,2,3 }`
 `y = (index:int -> x[index]+1)` y is map of x
 This is too confusing.
+
+N - Select construct.
+This enforces checks for input so for example if input can only be 1 or 2, we can have:
+```
+select x {
+1=> ...
+2=> ...
+else=> throw_exception
+}
+```
+Helps check for all possible cases and make code robust.
+This can be used with a any type like int, string, or a union type. 
+But how can we unify value and type selects?
+If select is on a non-union, you must use values.
+If select is on a union, you must use types.
+This should be an expression. So, for union you must specify all possible types. and for values, you must have a default case.
+```
+result = $exp0
+{
+	exp_cond_1 => exp1
+	exp_cond_2 => exp2
+	_ => exp_default
+}
+```
+- Think about how this will work when nested?
+```
+result = $exp0
+{
+	exp_cond_1 => $other_value {
+							
+							  }
+	exp_cond_2 => exp2
+	_ => exp_default
+}
+```
+But value based select is possible by using a function and probably a sequence.
+Same can be done for union by having `hasType` function in core.
+
+N - Empty sequence is `[]`, empty map is `[:]`
+
+N - Review channel ops and casting notation
+
+N - Review notations and if they can be replaced with keywords.
+We use `cast(A,B, value)`, but isn't it a bit too verbose?
+At least don't have to use source type. only target type.
+Unusual notations:
+12. `@`   Import - A candidate for using core `import` function.
+13. `::`  Return - This returns an expression and also can be conditioned.
+14. `:=`  Parallel execution
+15. `..`  Access type within a module/struct
+07. `->`  Function declaration - Used in Swift, Rust
+06. `|`   Union data type - used in F# and Haskell
+08. `//`  Nothing-check operator, used in Perl
+11. `_`   Place-holder (lambda creator and assignment), used in Scala
+What can I replace `::` with?
+`:: 10`
+`cond :: 10`
+`ret 10`
+`cond ret 10` this does not look good
+`(cond) ret 10`
+`cond ret process(x)` the function will only be called if condition is satisfied.
+That is starting point of ambiguity.
+
+Y - Replace `@` with import keyword.
+because memorizing `@` is difficult and unintuitive. This notation for this purpose is never used anywhere else.
+
+
+Y - source of ambiguity: in conditional return `cond :: exp` will expression be evaluated all the time? even if condition does not hold?
+```
+ifElse = (T: type, cond: bool, true_case: T, true_case:T -> T) 
+{
+	cond::true_case
+	:: false_case
+}
+```
+we cannot say: You HAVE to use a literal or identifier in return
+consider this example:
+```
+process = func(x:int -> string)
+{
+	x>0 :: saveLargeFileToDB("SDSDASDA")
+	process2(x)
+	:: saveSmallFileToDB("ddsadsadas")
+}
+```
+How do we know that saveLargeFileToDB is not called all the time?
+in other words will above function be like this?
+```
+process = func(x:int -> string)
+{
+	temp = saveLargeFileToDB("SDSDASDA")
+	x>0 :: temp
+	:: saveSmallFileToDB("ddsadsadas")
+}
+```
+If yes, then it is not good because we don't want to save the large file if `x<=0`
+we can do this via lambda or other functions:
+```
+process = func(x:int -> string)
+{
+	temp = [x>0 : fn(->string) { saveLargeFileToDB("SDSDASDA") }, 
+		x<=0: fn(x:int->string) { innerProcess(x) },  ]
+
+	:: temp[true]()
+}
+innerProcess = fn(x:int -> string) {
+	process2(x)
+	:: saveSmallFileToDB("ddsadsadas")
+}
+```
+What about a notation that return if not nothing?
+`c = ifOrNothing(x>0, fn (->int) { saveLargeFileToDB("DSADAS") })`
+`return c // fn(->int) { ... }()`
+Essentially it is still the old way of using lambda to represent rest of the function.
+Proposal:
+- Use `return` instead of `::` and remove conditional return
+```
+process = func(x:int -> string)
+{
+	return ifCond(x>0, fn{ return saveLargeFileToDB("SDSDASDA") },
+		fn { return saveSmallFileToDB(">>>>") }
+}
+```
+
+Y - Use a shortcut to create lambda based on a code block
+instead of 
+`fn (->int) { saveLargeFileToDB("DSADAS") }`
+we write:
+`fn{ saveLargeFileToDB("DSADAS") }`
+If we decide to ditch conditional return, it will help. Also with conditionals in general.
+Because we will have a lot of code blocks which have no input but some output.
+for example:
+```
+process = func(x:int -> string)
+{
+	temp = [x>0 : fn{ return saveLargeFileToDB("SDSDASDA") }, 
+		x<=0: fn(x:int->string) { return innerProcess(x) },  ]
+
+	:: temp[true]()
+}
+```
+and it will be a general rule: Any function without input can be shown by `fn { ... }` notation.
 
 ? - Marker to differentiate type vs literal
 It makes code more readable to differentiate between struct type and value.
@@ -4627,41 +4768,42 @@ If we have a deterministic way to differentiate struct value and type, maybe thi
 and `fn` prefix for fn types? It makes reading code easier: `(x:int->int)` vs `fn(x:int->int)`
 What about this?
 `data = ::(x:int->int) { :: x+1 } (10)`
+We are already using name/keywords for types: `int, string, bool, char, ...`. 
+Why not use the same for `function, sequence, map, struct`?
+`x:int`
+`x:seq[int]`
+`x:map[int:string]`
+`t:map[int:seq[string]]`
+`r:struct{x:int, y:string}`
+`T = struct{x:int, y:string}`
+`r = func (x:int -> bool) { ... }`
+Now we are sure that `{` without struct before it, is a code block.
+```
+MapType = map[int:string]
+x: map[int:string]
+SeqType = seq[int]
+x:seq[int]
+FType = func(int,string->bool)
+fvar = func(int, string->bool) { ... }
+fvar = func(x:int, y:int -> x+y) #not a type
+fvar = func(x:int, y:int -> int) { :: x+y }
+```
+So, proposal:
+- In function decl, after `->` it must be a type
+- We use `seq`, `map`, `fn` and `struct` keywords before types
+- No prefix for sequence and map literals.
+- Struct values must be prefixed with type or `_` for untyped structs.
+- Struct type must be prefixed by `struct` keyword
+So, how can we define a lambda? What comes on the right side of `=` is a lambda.
+`process = fn(s: fn(int->int) -> bool)`
+`process = fn(x:int -> fn(int->int)) {...}`
+How will this work with generic type functions?
+`ValueKeeper = (T: type -> {data: T})`
+and lambda or anything based on them? maybe we should use `type`.
+But then, we can have two function with same name that return different things, both denoted via `type`.
+which is not a good idea. Functions should not have same name (and cannot).
+But, point is, function decl will not indicate the type of output. because we decided to have only type on the right side of `->`.
+But generic type IS a type, but it might be complicated, e.g. combining two types ...
 
-
-? - Select construct.
-This enforces checks for input so for example if input can only be 1 or 2, we can have:
-```
-select x {
-1=> ...
-2=> ...
-else=> throw_exception
-}
-```
-Helps check for all possible cases and make code robust.
-This can be used with a any type like int, string, or a union type. 
-But how can we unify value and type selects?
-If select is on a non-union, you must use values.
-If select is on a union, you must use types.
-This should be an expression. So, for union you must specify all possible types. and for values, you must have a default case.
-```
-result = $exp0
-{
-	exp_cond_1 => exp1
-	exp_cond_2 => exp2
-	_ => exp_default
-}
-```
-- Think about how this will work when nested?
-```
-result = $exp0
-{
-	exp_cond_1 => $other_value {
-							
-							  }
-	exp_cond_2 => exp2
-	_ => exp_default
-}
-```
-
-? - Empty sequence is `[]`, empty map is `[:]`
+? - Can we define a type inside a function?
+we should be able to do that. this is specially useful in generic function types.
