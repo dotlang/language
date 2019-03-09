@@ -2,7 +2,7 @@
 
 Perfection is finally attained not when there is no longer anything to add, but when there is no longer anything to take away. (Antoine de Saint-Exupéry, translated by Lewis Galantière.)
 
-Version 1.00
+Version 1.00-beta2
 
 Nov 6, 2018
 
@@ -74,13 +74,13 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 05. **Map**: `my_map = ["A":1, "B":2, "C":3]` (type of `my_map` is `[string:int]`)
 06. **Named type**: `MyInt = int` (Defines a new type `MyInt` with same binary representation as `int`).
 07. **Type alias**: `IntType : int` (A different name for the same type).
-08. **Struct type**: `Point = {x: int, y:int, data: float}` (Like `struct` in C).
+08. **Struct type**: `Point = struct {x: int, y:int, data: float}` (Like `struct` in C).
 09. **Struct literal**: `location = Point{.x=10, .y=20, .data=1.19}`.
 10. **Union type**: `MaybeInt = int | nothing` (Can store either of possible types).
-11. **Function**: `calculate = (x:int, y:int -> float) { return x/y  }`.
-12. **Lambda**: `sort(my_sequence, (x,y -> x-y))` (sort a sequence using given lambda for comparison)
+11. **Function**: `calculate = fn(x:int, y:int -> float) { return x/y  }`.
+12. **Lambda**: `sort(my_sequence, fn(x,y -> bool) { return x-y })` (sort a sequence using given lambda for comparison)
 13. **Concurrency**: `my_task := processData(x,y,z)` (Evaluate an expression in parallel).
-14. **Generics**: `ValueKeeper = (T: type -> {data: T})`
+14. **Generics**: `ValueKeeper = fn(T: type -> type) { return struct {data: T}} )`
 
 ## Symbols
 
@@ -102,7 +102,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 
 **Data types**: `int`, `float`, `char`, `byte`, `bool`, `string`, `nothing`, `type`
 
-**Reserved identifiers**: `true`, `false`
+**Reserved identifiers**: `true`, `false`, `fn`
 
 ## Coding style
 
@@ -254,31 +254,33 @@ You can also define types (named or alias) inside a struct. These types will be 
 
 Note that if there are fields inside a struct without value, you have to initialise them upon instantiation (Example 10) and you cannot change value of any field which already has a value.
 
+Struct literals must be prefixed by their type, parent value or `_` for untyped structs.
+
 **Examples**
 
-1. `Point = {x:int, y:int} #defining a struct type`
+1. `Point = struct {x:int, y:int} #defining a struct type`
 2. `point2 = Point{.x=100, .y=200} #create a binding of type Point`
-3. `point1 = {100, 200} #untyped struct`
+3. `point1 = _{100, 200} #untyped struct`
 4. `point4 = point3{.y = 101} #update a struct`
 5. `{x,y} = point1 #destruction to access struct data`
 6. `another_point = Point{.x=11, .y=my_point.y + 200}`
 7. `x = point1.1 #another way to access untyped struct data`
 8.
 ```
-Customer = {name: string, Case: float}
+Customer = struct {name: string, Case: float}
 process = (data: Customer..Case -> string) ...
 ```
 9.
 ```
-Point = {x:int, y:int, 
-	mult = (p: Point, p2: Point -> p.x * p2.x + p.y * p2.y)
+Point = struct {x:int, y:int, 
+	mult = fn(p: Point, p2: Point -> int) { return p.x * p2.x + p.y * p2.y })
 }
 ```
 10.
 ```
-Point = {x:int, y:int, size:int = 2} #you cannot change value of size
+Point = struct {x:int, y:int, size:int = 2} #you cannot change value of size
 p = Point{} #invalid, we need values for x and y here
-MathConst = { pi: float = 3.14 }
+MathConst = struct { pi: float = 3.14 }
 m = MathConst{} #valid
 pi = m.pi #valid
 ```
@@ -287,13 +289,13 @@ pi = m.pi #valid
 
 You can name a type so you will be able to refer to that type later in the code. Type names must start with a capital letter to be distinguished from bindings. You define a named type similar to a binding: `NewType = UnderlyingType`.The new type has same binary representation as the underlying type but it will be treated as a different type.
 
-You can use casting operator to convert between a named type and its underlying type (Example 4).
+You can use casting operator to convert between a named type and its underlying type (Example 4). You can define named type inside a function.
 
 **Examples**
 
 1. `MyInt = int`
 2. `IntArray = [int]`
-3. `Point = {x: int, y: int}`
+3. `Point = struct {x: int, y: int}`
 4. `x = 10`, `y = MyInt(10)`
 
 ## Type alias
@@ -305,8 +307,8 @@ You can use a type alias to prevent name conflict when importing modules or insi
 **Examples**
 
 1. `MyInt : int`
-2. `process = (x:int -> 10)`
-3. `process = (x:MyInt -> 10)` Error! `process:(int->int)` is already defined.
+2. `process = fn(x:int -> int) { return 10}`
+3. `process = fn(x:MyInt -> int)` Error! `process:(int->int)` is already defined.
 
 ## Type argument
 
@@ -325,8 +327,8 @@ There is no implicit and automatic casting. The only exception is using boolean 
 
 **Examples**
 
-1. `MyInt = int`, `int_val = cast(MyInt, int, my_int_val)`
-2. `int_val = cast(float, int, age_float)`
+1. `MyInt = int`, `int_val = cast(int, my_int_val)`
+2. `int_val = cast(int, age_float)`
 
 
 ## Generics
@@ -339,29 +341,29 @@ Note that arguments or functions of type `type` must be named like a type, not l
 
 1. 
 ```
-LinkedList = (T: type -> type) 
+LinkedList = fn(T: type -> type) 
 {
-	Node = {
+	Node = struct {
 		data: T,
 		next: Node
 	}
 	return Node
 }
 ```
-2. `process = (x: LinkedList(int) -> int)`
-3. `process = (T: type, ll: LinkedList(T) -> ...`
+2. `process =fnn(x: LinkedList(int) -> int)`
+3. `process = fn(T: type, ll: LinkedList(T) -> ...`
 4. 
 ```
 process = (T: type, data: List[T] ...
 pointer = process(int, _) #right, type of pointer is (int, List[int])
 ```
-5. `process = (T: type, x: [T], index: int -> x[index])`
+5. `process = fn(T: type, x: [T], index: int -> T) { return x[index] }`
 
 # Functions
 
-Functions are a type of binding which can accept a set of inputs and give an output. For example `(int,int -> int)` is a function type, but `(x:int, y:int -> int) {return x+y}` is function literal.
+Functions are a type of binding which can accept a set of inputs and give an output. For example `(int,int -> int)` is a function type, but `(x:int, y:int -> int) {return x+y}` is function literal. What comes after `->` must be a type.
 
-To return a value from function, you should use `return` keyword. This can be prefixed with a condition to make return conditional (Example 7).
+To return a value from function, you should use `return` keyword. 
 
 You can alias a function by defining another binding pointing to it (Example 8). 
 
@@ -369,45 +371,43 @@ If a function has no input, you can can eliminate input/output type declaration 
 
 Note that a public function must have public input/output types (although their internal can be private type, eg. a public struct with private typed fields).
 
-If type of function input and output can be implied from the context (e.g. when defining a lambda as a function argument), you can ignore type for input and output (Example 9).
-
 **Syntax**: 
 
 - Defining a function:
 
-`functionName = (name1: type1, name2: type2... -> OutputType) { code block ... out = expression }`
+`functionName = fn(name1: type1, name2: type2... -> OutputType) { code block ... out = expression }`
 
 - Defining a function type (Examples 14, 15 and 16):
-`FunctionType = (type1, type2, ... -> OutputType)`
+`FunctionType = fn(type1, type2, ... -> OutputType)`
 
 **Examples**
 
-01. `myFunc = (x:int, y:int -> int) { return 6+y+x }`
-02. `log = (s: string -> nothing) { print(s) } #this function returns nothing`
-03. `process2 = (pt: Point -> {int,int}) { return {pt.x, pt.y} } #this function returns a struct`
-04. `myFunc9 = (x:int -> {int}) { return {x+12} } #this function returns a struct literal`
-05. `process = (x: int|Point -> int) ... #this function can accept either int or Point type as input or int|Point type`
+01. `myFunc = fn(x:int, y:int -> int) { return 6+y+x }`
+02. `log = fn(s: string -> nothing) { print(s) } #this function returns nothing`
+03. `process2 = fn(pt: Point -> struct {int,int}) { return {pt.x, pt.y} } #this function returns a struct`
+04. `myFunc9 = fn(x:int -> {int}) { return {x+12} } #this function returns a struct literal`
+05. `process = fn(x: int|Point -> int) ... #this function can accept either int or Point type as input or int|Point type`
 06. `{_,b} = process2(myPoint) #ignore second output of the function`
 07. 
 ```
-process = (x:int -> int) 
+process = fn(x:int -> int) 
 { 
   #if x<10 return 100, otherwise return 200
   return [x<10: 100, x>=10: 200][true]
 }
 ``` 
-08. `process = (x:int -> x+1)`, `process2 = process`
-09. `sorted = sort(my_sequence, (x,y -> x-y))`
-10. `Adder = (int,int->int) #defining a named type based on a function type`
-11. `sort = (x: [int], comparer: (int,int -> bool) -> [int]) {...} #this function accepts a function pointers`
-12. `map = (input: [int], mapper: (int -> string) -> [string])`
+08. `process = fn(x:int -> int) { return x+1 }`, `process2 = process`
+09. `sorted = sort(my_sequence, fn(x,y -> int) { return x-y} )`
+10. `Adder = fn(int,int->int) #defining a named type based on a function type`
+11. `sort = fn(x: [int], comparer: fn(int,int -> bool) -> [int]) {...} #this function accepts a function pointers`
+12. `map = fn(input: [int], mapper: fn(int -> string) -> [string])`
 13. `process = fn{ return 100 }`
 
 ## Function call resolution
 
 We use a static dispatch for function calls. Also because you cannot have two functions with the same name, it is easier to find what happens with a function call.
 
-If `MyInt = int` is defined in the code, you cannot call a function which needs an `int` with a `MyInt` binding, unless it is forwarded explicitly in the code (e.g. `process = (x:MyInt -> process(int(x)))`).
+If `MyInt = int` is defined in the code, you cannot call a function which needs an `int` with a `MyInt` binding, unless it is forwarded explicitly in the code (e.g. `process = fn(x:MyInt -> process(int(x)))`).
 
 To resolve a function call, first bindings with that name in current function will be searched. If not found, search will continue to parent functions, then module-level. At any scope, if there are multiple candidates (matching with name) there will be a compiler error. Parameter types must be "compatible" with function arguments, or else there will be a compiler error. For example if function argument type is `int | nothing` and parameter is an `int` it is a valid function call.
 
@@ -421,12 +421,12 @@ If lambda is assigned to a variable, it can invoke itself from inside (Example 6
 
 **Examples**
 
-1. `rr = (nothing -> out:int) { out = x + y } #here x and y are captures from parent function/struct`
-2. `test = (x:int -> out:PlusFunc) { out = (y:int -> y + x) } #this function returns a lambda`
-3. `(x:int -> x+1) (10) #you can invoke a lambda at the point of declaration`
+1. `rr = fn(nothing -> int) { return x + y } #here x and y are captures from parent function/struct`
+2. `test = fn(x:int -> PlusFunc) { return fn(y:int -> int) { return y + x} } #this function returns a lambda`
+3. `fn(x:int -> int) { return x+1} (10) #you can invoke a lambda at the point of declaration`
 4. `process = (x:int, y:float, z: (string -> float)) { ... } #a function that accepts a lambda`
 5. `lambda1 = process(10, _, _) #defining a lambda based on existing function`
-6. `ff = (x:int -> ff(x+1))`
+6. `ff = fn(x:int -> int) { return ff(x+1)}`
 
 # Modules
 
@@ -452,7 +452,7 @@ There is closure at module level too. So you have access to all module level dec
 6.
 ```
 Set = import("/core/set")..SetType
-process = (x: Set -> int) ...
+process = fn(x: Set -> int) ...
 ```
 7. `my_customer = import("/data/customer")..Customer{.name = "mahdi", .id = 112}`
 
@@ -470,7 +470,7 @@ For some exclusive resources (e.g. sockets) operations are implemented using tas
 
 **Examples**
 
-1. `msg = getCurrentTask().pick(Message, (m: Message -> m.sender = 12))`
+1. `msg = getCurrentTask().pick(Message, fn(m: Message -> bool) { return m.sender = 12 })`
 2.
 ```
 int_result := process(10)
@@ -483,7 +483,7 @@ int_result = resolve(int, task) #wait until task is finished and get the result
 ```
 socket_task = net("192.168.1.1")
 send(socket_task, "A")
-pick(SocketMessage, (m: SocketMessage -> m.sender = "192.168.1.1"))
+pick(SocketMessage, fn(m: SocketMessage -> bool) { return m.sender = "192.168.1.1" })
 ```
 
 # Patterns
@@ -496,11 +496,11 @@ Polymorphism can be achieved using cloure and lambdas.
 
 Pseudo code:
 ```swift
-drawCircle = (s: Circle, Canvas, float -> int) {...}
-drawSquare = (s: Square, Canvas, float -> int) {...}
+drawCircle = fn(s: Circle, Canvas, float -> int) {...}
+drawSquare = fn(s: Square, Canvas, float -> int) {...}
 
-Shape = { draw: (Canvas, float -> int)}
-getShape = (name: String -> Shape) 
+Shape = struct { draw: fn(Canvas, float -> int)}
+getShape = fn(name: String -> Shape) 
 {
 	if name is "Circle" 
 		c = Circle{...}
@@ -523,14 +523,14 @@ If a really unrecoverable error happens, you should exit the application by call
 
 In special cases like a plugin system, where you must control exceptions, you can use built-in function `invoke` which will return an error result if the function which it calls exits.
 
-Example: `process = (nothing -> int|exception) { ... return exception{...} }`
+Example: `process = fn(nothing -> int|exception) { ... return exception{...} }`
 
 ## Conditionals
 
 If and Else constructs can be implemented using the fact that booleans converted to integer will result to either 0 or 1 (for `false` and `true`).
 
 ```
-ifElse = (T: type, cond: bool, true_case: T, true_case:T -> T) 
+ifElse = fn(T: type, cond: bool, true_case: T, true_case:T -> T) 
 {
 	return [cond: true_case, !cond: false_case]
 }
@@ -539,7 +539,7 @@ ifElse = (T: type, cond: bool, true_case: T, true_case:T -> T)
 Another example:
 
 ```
-process = func(x:int -> string)
+process = fn(x:int -> string)
 {
 	temp = [x>0 : fn{ return saveLargeFileToDB("SDSDASDA") }, 
 		x<=0: fn(x:int->string) { return innerProcess(x) },  ]
@@ -571,7 +571,7 @@ x = insertOp(int, 1)
 ## Empty application
 
 ```
-main = ( -> int ) { return 0 }
+main = fn( -> int ) { return 0 }
 ```
 
 This is a function, called `main` which has no input and always returns `0` (very similar to C/C++ except `main` function has no input).
@@ -579,7 +579,7 @@ This is a function, called `main` which has no input and always returns `0` (ver
 ## Hello world
 
 ```
-main = ( -> int) 
+main = fn( -> int) 
 {
 	print("Hello world!")
 	return 0
@@ -594,13 +594,13 @@ We want to write a function which accepts a string like `"2+4-3"` and returns th
 NormalExpression = {op: char, left: Expression, right: Expression}
 Expression = int|NormalExpression
 
-eval = (input: string -> float) 
+eval = fn(input: string -> float) 
 {
   exp = parse(input) #assume we already have this
   return innerEval(exp)
 }
 
-innerEval = (exp: Expression -> float) 
+innerEval = fn(exp: Expression -> float) 
 {
   hasType(int, exp) :: int(exp).0
   
@@ -620,7 +620,7 @@ innerEval = (exp: Expression -> float)
 ## Quick sort
 
 ```
-quickSort = (list:[int], low: int, high: int -> [int])
+quickSort = fn(list:[int], low: int, high: int -> [int])
 {
   high<low :: list
   
@@ -628,8 +628,8 @@ quickSort = (list:[int], low: int, high: int -> [int])
   pivot = list[mid_index]
   
   #filter is a built-in function
-  small_list = list.filter((x -> x < pivot))
-  big_list   = list.filter((x -> x > pivot))
+  small_list = list.filter(fn(x -> x < pivot))
+  big_list   = list.filter(fn(x -> x > pivot))
   
   :: quickSort(small_list) + [pivot] + quickSort(big_list)
 }
@@ -705,7 +705,7 @@ fib = (n: int, cache: [int|nothing] -> int)
 A cache can be implemented using a parallel task. Everytime cache is updated, it will call itself with the new state.
 
 ```
-CacheState = Map[string, int]
+CacheState = [string: int]
 cache = (cs: CacheState->)
 {
     request = pick(Message[CacheStore])
@@ -769,4 +769,5 @@ Suppose someone downloads the source code for a project written in dotLang which
 - **Version 0.98**: Aug 7, 2017 - implicit type inference in variable declaration, Universal immutability + compiler optimization regarding re-use of values, new notation to change tuple, array and map, `@` is now type-id operator, functions can return one output, new semantics for chain operator and no `opChain`, no `opEquals`, Disposable protocol, `nothing` as built-in type, Dual notation to read from array or map and it's usage for block-if, Closure variable capture and compiler re-assignment detection, use `:=` for variable declaration, definition for exclusive resource, Simplify type filters, chain using `>>`, change function and lambda declaration notation to use `|`, remove protocols and new notation for polymorphic union, added `do` and `then` keywords to reduce need for parens, changed chaining operator to `~`, re-write and clean this document with correct structure and organization, added `autoBind`, change notation for union to `|` and `()` for lambda, simplify primitive types, handle conditional and pattern matching using map and array, renamed tuple to struct, `()` notation to read from map and array, made `=` a statement, added `return` and `assert` statement, updated definition of chaining operator, everything is now immutable, Added concept of namespace which also replaces `autoBind`, functions are all lambdas defined using `let`, `=` for comparison and `:=` for binding, move `map` data type out of language specs, made `seq` the primitive data type instead of `array` and provide clearer syntax for defining `seq` and compound literals (for maps and other data types), review the manual, removed `assert` keyword and replace with `(condition) return..`, added `$` notation, added `//` as nothing-check, changed comment indicator to `#`, removed `let` keyword, changed casting notation to `Type.{}`, added `.[]` instead of `var()`, added `.()` operator
 - **Version 0.99**: Dec 30, 2017 - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting, removed `^` operator and replaced with generics, removed `@` (replaced with chain operator and casting), removed function forwarding, removed compound literal, changed notation for channel read, write and select (Due to changes in generics and sequence and removal of compound literal) and added `$` for select, add notation to filter imported identifiers in import, removed autoBind section and added a brief explanation for `TargetType()` notation in cast section, rename chain operator to `@`, replaced return keyword with `::`, replaced `import` with `@` notation and support for rename and filter for imported items, replaced `@` with `.[]` for chain operator, remove condition for return and replaced with rule of returning non-`nothing` values, change chain notation from `.[]` to `.{}` and import notation from `@[]` to `@()`, Added notation for polymorphic generic types, changed the notation for import generic module and rename identifiers, removed `func` keyword, extended general union type syntax to unnamed types with field type and names (e.g. `{id:int, name:string,...}`), Added shift-left and right `>>,<<` and power `**` operators, all litearls for seq and map and struct must be prefixed with `_`, in struct literals you can include other structs to implement struct update, changed notation for abstract functions, Allow access to common parts of a union type with polymorphic union types, use `nothing` instead of `...` for generic types and abstract functions, removed phantom types, change `=>` notation to `^T :=` notation to rename symbols, removed composition for structs and extended/clarified usage of polymorphic sum types for embedding and function forwarding, change map type from `[K,V]` to `[K:V]`, removed auto-bind `Type()`, remove abstract functions, remove `_` prefix for literals, remove `^` and add `=>` to rename types so as to fix issue with introducion of new named types when filtering an import operation, replace operators `:=` to `=` and `:==` to `==` and `=` (comparison) to `=?`, adding type alias notation `T:X`, change import operator to `@[]` and replace `=>` with type alias notation, use `:=` to calculate in parallel and `==` to equality check
 - **Version 1.00-beta**: July 5, 2018 - Use `=` for type alias and `:=` for lazy (parallel) calculation and named type, More clarification about binding type inference, explain name resolution mechanism for types and bindings and function call, added explanation about using function name as a function pointer, explanation about public functions with private typed input/output, removed type specifier after binding name (it will be inferred from RHS), changed function type to `(input:type->output_type)`, removed chanin operator, some clarifications about casting operator and expressions, remove `::` and use bindings for output with future reference, allow calling lambda at the point of definition, allow omitting types if they can be inferred in defining functions, indicate that functions cannot have same name and introduce compile-time dynamic sequence to store multiple functions and treat the sequence as a function, restore using type name before struct literal, change `...` as a more general notation for polymorphic union types, re-write generics as code-generation + compile-time dynamic sequence for functions, add `*` destruct operator for struct explode which can also be used to call a function with named arguments or initialize a sequence, remove notation for casting a union to it's elements (replaced with use of sequence of functions), replace `...` notation with already defined `&` and `|`, removed `${}` notation for select and replaced with a function call on a sequence, removed concept of treating sequence of functions as a function, added `type` core function + ability to amend module level collections using `&`, explained loop built-in function for map, reduce and filter operations
-- **Version 1.00**: Add support for **`type` keyword** and generics data types and generic functions, remove map and sequence from language, defined instance-level and type-level fields with values, added `byte` and `ptr` types to primitive types, add support for vararg functions, added Patterns section to show how basic tools can be used to achieve more complex features (polymorphism, sequence, map, ...), use **mailbox instead of channels** for concurrency, clarification about using unions as enums + concrete types, added `::` operator for return and conditional return, changed polymorphism method to avoid strange linked-list notations for VTable or functions with the same name and use closure instead, added `*` for struct types, Allow functions to return types and use it to implement generics, Return to `[]` notation for map and sequence and their literals, Allow defining types inside struct which are acceissble through struct type name, Import gives you a struct which you can assign to a name or alias or import into current namespace using `*`, Make task a type in core as `SelfTask` and `Task` which provide functions to work with mailbox, Add functions in core to seq and map for map/reduce/filter/anymatch, remove `ptr` type, remove vararg functions, clarification about tasks and exclusive resources, use core for file and console operations, use `$` to access current task, use dot notation to initialise a struct, support optional type specification when defining a binding, set `@` notation to **import a module as a struct type** which you can use just like any other type, we have closure at module level, review the whole spec, use `{}` for casting, use `:` for type alias, use `+` for concat and `&` for concurrency, destruct using `{}` on the left side, no more `:=`, remove range operator, use `:=` for concurrency, replace `$` with core function, `:=` returns a normal output and you should use `getCurrentTask().children()` to access newly created child task, replace `@` with import keyword, replace `::` with `return` keyword and remove conditional return
+- **Version 1.00-beta2**: Add support for **`type` keyword** and generics data types and generic functions, remove map and sequence from language, defined instance-level and type-level fields with values, added `byte` and `ptr` types to primitive types, add support for vararg functions, added Patterns section to show how basic tools can be used to achieve more complex features (polymorphism, sequence, map, ...), use **mailbox instead of channels** for concurrency, clarification about using unions as enums + concrete types, added `::` operator for return and conditional return, changed polymorphism method to avoid strange linked-list notations for VTable or functions with the same name and use closure instead, added `*` for struct types, Allow functions to return types and use it to implement generics, Return to `[]` notation for map and sequence and their literals, Allow defining types inside struct which are acceissble through struct type name, Import gives you a struct which you can assign to a name or alias or import into current namespace using `*`, Make task a type in core as `SelfTask` and `Task` which provide functions to work with mailbox, Add functions in core to seq and map for map/reduce/filter/anymatch, remove `ptr` type, remove vararg functions, clarification about tasks and exclusive resources, use core for file and console operations, use `$` to access current task, use dot notation to initialise a struct, support optional type specification when defining a binding, set `@` notation to **import a module as a struct type** which you can use just like any other type, we have closure at module level, review the whole spec, use `{}` for casting, use `:` for type alias, use `+` for concat and `&` for concurrency, destruct using `{}` on the left side, no more `:=`, remove range operator, use `:=` for concurrency, replace `$` with core function, `:=` returns a normal output and you should use `getCurrentTask().children()` to access newly created child task
+- **Version 1.00**: replace `@` with import keyword, replace `::` with `return` keyword and remove conditional return, In function decl, after `->` it must be a type, use `fn` prefix for function type and literal, use `struct` for struct type declarations
