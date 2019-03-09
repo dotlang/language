@@ -4917,6 +4917,30 @@ if ( guessRaw == nothing) {
 ```
 Not a huge difference in terms of number of characters.
 
+N - We can say compiler will look in two places for imports.
+`src` directory, and
+`deps`?
+But it will be a limitation.
+All external dependencies have http or https prefix.
+No. It is better to have minimum number of rules.
 
+N - We should make it easy for people to download and run dotlang project from web (e.g. GH)
+So, user sees a GH project. how can he run?
+first `git clone` to have a local copy
+then `dot compile` without any input, it will look for `main.dot` at project root.
+You can also provide path: `dot compile src/a/b/c/d.dot`
+same for `dot run`.
+But these are secondary after language, syntax, semantics and core.
 
+? - Can we remove `return` keyword?
+Like Rust, say the last expression evaluated in the function will be returned
 
+N - Do we need traits?
+For example in Rust:
+```
+fn print_area<T: HasArea>(shape: T) {
+    println!("This shape has an area of {}", shape.area());
+}
+```
+We can use above to tell what types we accept in generic function.
+No. this is a big change and does not provide much value.
