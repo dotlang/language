@@ -2,6 +2,9 @@
 ---
 
 @import "{{ site.theme }}";
+@import url('https://fonts.googleapis.com/css?family=Open+Sans');
+@import url('https://fonts.googleapis.com/css?family=Fira+Sans');
+
 header p { width: 500px; }
 .wrapper { width: 900px; }
 
