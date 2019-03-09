@@ -21,6 +21,10 @@ dotLang is very similar to C but with some significant improvements:
 
 This is the main document for the language. It is not a formal specification, but explains all the features of the language with examples: [dotLang: Language Manual](manual.md)
 
+# Contribute
+
+Currently, the manual document is being finalised. Please contact me if you are interested in helping either with the documentation or implementation.
+
 # Contact
 
 [GitHub](https://github.com/mahdix)
