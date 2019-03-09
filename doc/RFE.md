@@ -4810,3 +4810,75 @@ But generic type IS a type, but it might be complicated, e.g. combining two type
 Makes sense to use `type` for return type. Also note we cannot pass these functions around or play with them very much because anything related to type must be compile time calculatable.
 Do we really need `seq` and `map` prefix for those types? no.
 it is not big source of confusion. Of course compiler/parser needs some info before it can say if `[` is type or value but that should be fine.
+
+N - Review module import notation and using type/values from imported module
+```
+Std = import("/core/std")
+
+x:int = Std{}.x_value
+print = Std{}.printHelper
+Customer = Std..CustomerType
+```
+
+Y - What if I want to import from project root?
+not DOTPATH and not current module's path.
+Let's say DOTPATH is set to where you run compiler from.
+But we may actually want to import a sibling module.
+`import("./module")` import from relative path
+`import("../dir1/module")` import from relative path
+`import("/dir2/module")` import from project root
+If code imports something from std, first time compiler will download from github and put it in project's modules path
+So to import std:
+`StdMapper = import("git/dotLang/std/helpers/map")`
+If compiler will download above, then we will never have to import from `/`?
+We can put above statements in startup file so compiler will download them and put in modules root path.
+Then everywhere else, we just write:
+`StdMapper = import(/git/dotLang/std/helpers/map")`
+We may have some local modules we want to use. If so, you need to copy them to project dir and use `/` to import them.
+But for remote modules, we just use github/... url.
+what about versioning?
+`StdMapper = import(/git/dotLang/std/helpers/map")`
+This should be put in branch name.
+`StdMapper = import(/git/dotLang/std/v1.5.1/helpers/map")`
+`StdMapper = import(/git/dotLang/std/v1.5.*/helpers/map")` import v1.5 with any revision number
+`StdMapper = import(/git/dotLang/std/v1.5.4+/helpers/map")` import 1.5.4 and newer in `1.5.*`
+`StdMapper = import(/git/dotLang/std/[84cfe230]/helpers/map")` specific commit
+`StdMapper = import(/git/dotLang/std/{1.9.0-RC}/helpers/map")` specific release
+Above is just a simple convention and naming.
+Assume we only have one version or we don't care about version.
+How are we going to handle importing a module on multiple places and module is on GH or local?
+Let's say we dont allow local copy of files. but this is against gen.
+But not really. Compiler will clean `deps` directory.
+Rust uses `deps` and golang uses `vendor`.
+We will use something like deps.
+So, question is: when compiler sees `import(git/...` it will download and save to deps
+when compiler sees `import(/..` it will look into deps directory.
+But we may have other modules locally and not on github (for example they are sensitive).
+Compiler should support using those local modules.
+this will be project structure:
+```
+root ---- deps
+	- src
+	- build
+	- ...
+```
+You can create an additional dir in above structure and put everything you want there.
+and do `import(/myDeps/...`.
+so this should be fine.
+But when compiler sees `import(git/...` it will download and save to deps?
+Or maybe not. why deps?
+we can write `import(/git/dotLang/std/...)` and if the dir is not there, compiler knows what the URL is.
+my point is, we may need to import some specific branch of a module from github in multiple locations in the code.
+how can we prevent repeating the same string multiple times?
+Why not use module level bindings?
+define a main module and there:
+```
+#main
+std = "/http/github.com/dotLang/std/v1.9.5/MapHelper"
+```
+and everywhere else:
+`refs = import("/src/main"){}`
+`X = import(refs.std)`
+
+
+
