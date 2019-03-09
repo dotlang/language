@@ -100,9 +100,9 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 
 ## Reserved keywords
 
-**Data types**: `int`, `float`, `char`, `byte`, `bool`, `string`, `nothing`, `type`
+**Data types**: `int`, `float`, `char`, `byte`, `bool`, `string`, `nothing`, `type`, `struct`
 
-**Reserved identifiers**: `true`, `false`, `fn`
+**Reserved identifiers**: `true`, `false`, `fn`, `import`, `return`, `and`, `or`, `not`, `xor`
 
 ## Coding style
 
@@ -584,7 +584,7 @@ MapHelper = import(refs.std_map)
 refs = import("/src/main"){}
 MapHelper = import(refs.std_map)
 ```
-When compiler sees first usage of `std_map` in import, it will notice it does not exist. So will convert string to URL (adding `://` and ...) and download and save it to corresponding directory at project root. The next time, module will be there.
+When compiler sees first usage of `std_map` in import, it will notice it does not exist locally. So will convert string to URL (adding `://` and ...) and download and save it to corresponding directory relative to project root. The next time, module will be there.
 
 # Examples
 
