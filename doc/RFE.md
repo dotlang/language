@@ -3543,7 +3543,7 @@ Functions that return a type should be PascalCased.
 Bindings that store a type, should be PascalCased.
 Other functions are camedCased.
 Other bindings are under_line_separated.
-So we have to kinds of binding: To store a type or to store a value.
+So we have two kinds of binding: To store a type or to store a value.
 type bindings are compile time decidable.
 `Customer = MakeCustomerType(string)`
 How to define a linked list?
@@ -4638,7 +4638,10 @@ process = func(x:int -> string)
 ```
 and it will be a general rule: Any function without input can be shown by `fn { ... }` notation.
 
-? - Marker to differentiate type vs literal
+Y - Can we define a type inside a function?
+we should be able to do that. this is specially useful in generic function types.
+
+Y - Marker to differentiate type vs literal
 It makes code more readable to differentiate between struct type and value.
 We can say the same for seq/map
 ```
@@ -4804,6 +4807,6 @@ But then, we can have two function with same name that return different things, 
 which is not a good idea. Functions should not have same name (and cannot).
 But, point is, function decl will not indicate the type of output. because we decided to have only type on the right side of `->`.
 But generic type IS a type, but it might be complicated, e.g. combining two types ...
-
-? - Can we define a type inside a function?
-we should be able to do that. this is specially useful in generic function types.
+Makes sense to use `type` for return type. Also note we cannot pass these functions around or play with them very much because anything related to type must be compile time calculatable.
+Do we really need `seq` and `map` prefix for those types? no.
+it is not big source of confusion. Of course compiler/parser needs some info before it can say if `[` is type or value but that should be fine.
