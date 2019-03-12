@@ -4942,10 +4942,7 @@ fn print_area<T: HasArea>(shape: T) {
 We can use above to tell what types we accept in generic function.
 No. this is a big change and does not provide much value.
 
-? - Can we remove `return` keyword?
-Like Rust, say the last expression evaluated in the function will be returned
-
-? - When a module is main module vs. when it is dependency of another module, the role of `/` will change in imports.
+N - When a module is main module vs. when it is dependency of another module, the role of `/` will change in imports.
 Suppose I am compiling ModuleA which needs ModuleB which needs ModuleC.
 will this be dir structure?
 ```
@@ -4963,3 +4960,14 @@ It is not remote and not external dependency.
 One solution: Compiler will first try to find `/src/ModuleX` by mounting `/` to `/http/www/github.com/ModuleC/` directory.
 If not found, it will look in higher levels.
 So, when compiler is compiling dependencies of the main module, it will first try to find referenced modules within module source. If not found, it will check higher level. If not found will download to main module's structure.
+But anyway, compiler will NOT look into main module's source for dependencies of sub modules.
+
+? - Can we remove `return` keyword?
+Like Rust, say the last expression evaluated in the function will be returned
+
+? - Import multiple modules at once
+`{Socket, Stack, Queue} = import("/core/st/{socket, stack, queue}")`
+
+? - Remove the rule that braces must be on their own line
+
+? - Idea: implement compiler in Rust or D
