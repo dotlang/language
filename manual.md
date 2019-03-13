@@ -586,6 +586,20 @@ MapHelper = import(refs.std_map)
 ```
 When compiler sees first usage of `std_map` in import, it will notice it does not exist locally. So will convert string to URL (adding `://` and ...) and download and save it to corresponding directory relative to project root. The next time, module will be there.
 
+## Pattern matching
+
+You can do pattern matching on union types using map and type identifiers:
+
+```
+f = fopen("...") 
+#now suppose that type of f is File|Identifier|nothing 
+number_inside_the_file = [
+	File:		fn{freadInt(f)}, 
+	Identifier: 	fn{convert(int, Identifier)}, 
+	nothing: 	fn{0}]
+[getType(f)]()
+```
+
 # Examples
 
 ## Empty application
