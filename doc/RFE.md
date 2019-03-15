@@ -4971,3 +4971,160 @@ Like Rust, say the last expression evaluated in the function will be returned
 ? - Remove the rule that braces must be on their own line
 
 ? - Idea: implement compiler in Rust or D
+
+? - How can we define a map with custom hasher?
+easy solution: Core function
+`x = createMap(int, string, fn(x:int->int) { x })`
+
+? - Idea: Provide hlper methods for array/map to return `x|nothing` type, where `a[100]` can exit process.
+
+N - Pattern matching
+For values, this is not very useful because we can easily use boolean with array or map.
+can't we extend `//`?
+In rust we can write:
+```
+let f = File::open("hello.txt");
+
+    let f = match f {
+        Ok(file) => file,
+        Err(error) => {
+            panic!("There was a problem opening the file: {:?}", error)
+        },
+    };
+```
+So, user can easily rely on union/sum types in the code.
+what about us?
+```
+f = fopen("...") 
+#now type of f is File|Identifier|nothing for example
+number_inside_the_file = [
+	File:		fn{freadInt(f)}, 
+	Identifier: 	fn{convert(int, Identifier)}, 
+	nothing: 	fn{0}]
+[getType(f)]()
+```
+I think this is a good enough pattern matching.
+
+? - Do we need some kind of static if in generic functions to check input type?
+I think compiler can check them if a core function is called.
+
+? - Trait as type
+In rust you can define trait (similar to interface) and then say this function accepts any type which satisfies this trait (or for its return value).
+Can we simulate this with generic types?
+A specific generic type which has these functions.
+For example, suppose that we have different animals (e.g. Sheep and Horse). And we want to have function `talk` for them.
+```
+trait Talker = { talk = fn(string->nothing) }
+implement Talker for Horse as { ... }
+implement Talker for Sheep as { ... }
+
+process = fn(x:Talker ... )
+```
+In dotLang:
+```
+Talker = fn(T: type -> type) 
+{
+	Result = struct {
+		data: T,
+		talk: fn(string->nothing)
+	}
+	return Result
+}
+Sheep = struct {...}
+Horse = struct {...}
+
+process = (x: Talker(?) ...)
+
+x = process(Talker(Sheep){.data = my_sheep, .talk = ...})
+```
+Or to make it easier:
+```
+Talker = fn(string->nothing)
+
+Sheep = struct {...}
+Horse = struct {...}
+
+process = (x: Talker ...)
+
+sheepTalker = fn(s: string -> nothing) { return talkSheep(my_sheep, s) }
+x = process(Talker(Sheep){.data = my_sheep, .talk = ...})
+```
+I think we can do it via function pointers. 
+
+? - Is the closure scope for in-struct functions ok?
+Doesn't it cause confusion?
+Go already has this:
+```
+type Rectangle struct {
+    length, width int
+}
+
+func (r Rectangle) Area() int {
+    return r.length * r.width
+}
+```
+But in Go it is a method. Here we define the function within the struct. There is no self or this and we access struct members via closure.
+Also D has this:
+```
+struct Foo
+    {
+        int a = 7;
+        int bar() { return a; }
+    }
+    
+    Foo f;
+    writeln(f.bar());
+```
+
+
+? - underscored identifiers are private in their context: function, struct or module.
+these identifiers inside function, will not be in closure.
+in module, will only be accessible to functions inside the module.
+in struct will only be accessible to code inside struct, and so cannot be overwritten.
+what if I want to have a struct member as public but not changeable?
+This mostly applies for functions.
+
+? - Can user pass a function pointer to a built-in function?
+What important built-in function do we have?
+import -> not allowed obviously.
+cast?
+getType
+getCurrentTask
+set/get
+
+
+
+? - Early return
+Scala does not have it.
+In favor of no return: https://tpolecat.github.io/2014/05/09/return.html
+
+? - An easy notation for number range can be useful for loops:
+`forLoop([1..10], fn{ ... })`
+
+? - For generic functions like cast or map or filter, we have assumed they don't need type. Compiler will deduce that.
+Can't we do this for all functions?
+`x = map(int, int_array, fn(x:int -> int) { return x+1 })`
+instead we can write:
+`x = map(int_array, fn...)`
+can't we use a special notation to say: Hey compiler! infer the needed generic type to use here.
+and if compiler cannot, it will throw compile time error.
+Easiest: Caller can ignore type arguments completely. Compiler will infer them.
+This can be confusing. 
+We can define map/fiter as member of seq or map so there will be no need for type args.
+
+? - A better notation for casting?
+Scala: `val recognizer = cm.lookup("recognizer").asInstanceOf[Recognizer]`
+Go: `var z uint = uint(f)`
+D: `MyType castedValue = cast(MyType) someValue;`
+Rust: `let size: f64 = len(values) as f64;`
+Swift: `case 0 as Int:`
+
+? - Should there be an easy way to import from other module into current module without needing to use dot?
+e.g.
+```
+math = import("math"){}
+PI = math.PI
+#use PI as if it was defined internally, no need for dot.
+```
+Can we make above easier?
+
