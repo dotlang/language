@@ -80,7 +80,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 11. **Function**: `calculate = fn(x:int, y:int -> float) { x/y  }`.
 12. **Lambda**: `sort(my_sequence, fn(x,y -> bool) { x-y })` (sort a sequence using given lambda for comparison)
 13. **Concurrency**: `my_task := processData(x,y,z)` (Evaluate an expression in parallel).
-14. **Generics**: `ValueKeeper = fn(T: type -> type) { struct {data: T}} )`
+14. **Generics**: `ValueKeeper = fn(T: type -> type) { struct {data: T} }`
 
 ## Symbols
 
@@ -364,7 +364,7 @@ LinkedList = fn(T: type -> type)
 4. 
 ```
 process = (T: type, data: List[T] ...
-pointer = process(int, _) #right, type of pointer is (int, List[int])
+pointer = process(int, _) #right, type of pointer is fn(int, List[int])
 ```
 5. `process = fn(T: type, x: [T], index: int -> T) { x[index] }`
 
