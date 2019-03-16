@@ -467,7 +467,7 @@ There is closure at module level too. So you have access to all module level dec
 
 Absolute paths that start with http or https will be downloaded from the net if not available locally.
 
-You can also import multiple modules at the same time using `{}` notation inside module path. In this case you can destruct output to have better access to imported modules. If you don't destruct, you will have a struct of types that have no names and you can use `.0, .1, ...` notation to access them.
+You can also import multiple modules at the same time using sequence notation after module path. In this case you can destruct output to have better access to imported modules. If you don't destruct, you will have a struct of types that have no names and you can use `.0, .1, ...` notation to access them.
 
 You can import at any place: module level, inside struct or inside a function. The output of import will be valid only inside its enclosing context.
 
@@ -490,10 +490,10 @@ Set = import("/core/set")..SetType
 process = fn(x: Set -> int) ...
 ```
 7. `my_customer = import("/data/customer")..Customer{.name = "mahdi", .id = 112}`
-8. `{Socket, Stack, Queue} = import("/core/st/{socket, stack, queue}")`
+8. `{Socket, Stack, Queue} = import("/core/st", ["socket", "stack", "queue"])`
 9. 
 ```
-MultiModule = import("/core/st/{socket, stack, queue}")
+MultiModule = import("/core/st", ["socket", "stack", "queue"])
 MySocket = MultiModule.0
 ```
 10.
