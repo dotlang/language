@@ -77,10 +77,10 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 08. **Struct type**: `Point = struct {x: int, y:int, data: float}` (Like `struct` in C).
 09. **Struct literal**: `location = Point{.x=10, .y=20, .data=1.19}`.
 10. **Union type**: `MaybeInt = int | nothing` (Can store either of possible types).
-11. **Function**: `calculate = fn(x:int, y:int -> float) { return x/y  }`.
-12. **Lambda**: `sort(my_sequence, fn(x,y -> bool) { return x-y })` (sort a sequence using given lambda for comparison)
+11. **Function**: `calculate = fn(x:int, y:int -> float) { x/y  }`.
+12. **Lambda**: `sort(my_sequence, fn(x,y -> bool) { x-y })` (sort a sequence using given lambda for comparison)
 13. **Concurrency**: `my_task := processData(x,y,z)` (Evaluate an expression in parallel).
-14. **Generics**: `ValueKeeper = fn(T: type -> type) { return struct {data: T}} )`
+14. **Generics**: `ValueKeeper = fn(T: type -> type) { struct {data: T}} )`
 
 ## Symbols
 
@@ -102,7 +102,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 
 **Data types**: `int`, `float`, `char`, `byte`, `bool`, `string`, `nothing`, `type`, `struct`
 
-**Reserved identifiers**: `true`, `false`, `fn`, `import`, `return`, `and`, `or`, `not`, `xor`
+**Reserved identifiers**: `true`, `false`, `fn`, `import`, `and`, `or`, `not`, `xor`
 
 ## Coding style
 
@@ -111,9 +111,8 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 3. Naming: `SomeDataType`, `someLambdaBinding`, `someFunction`, `any_data_binding`, `my_package_dir`, `MyModuleFile`.
 4. If a function returns a type it should be named like a type.
 5. If a binding is a pointer to a function (lambda), it should be named like a function.
-6. Braces must appear on their own line. 
-7. You can use `0x` prefix for hexadecimal numbers and `0b` for binary.
-8. You can use `_` as digit separator in number literals.
+6. You can use `0x` prefix for hexadecimal numbers and `0b` for binary.
+7. You can use `_` as digit separator in number literals.
 
 ## Operators
 
@@ -126,6 +125,8 @@ Conditional operators return `true` or `false` which are `1` and `0` when used a
 # Bindings
 
 A binding assigns an identifier to an immutable memory location. A binding's value can be a literal value, an expression or another binding. The literal value can be of any valid type (integer number, function literal, struct literal, ...). Bindings must start with a lowercase letter.
+
+Bindings that start with udnerscore are considered private. If they are module-level, they will be only accessible inside the module. If they are inside a function, they won't be included in closure.
 
 You can define bindings at module-level or inside a function. Module-level bindings can only have literals as their value. Type of a binding can be inferred without ambiguity from right side value, but you also have the option to specify the type (Example 1).
 
@@ -187,7 +188,7 @@ Sequence is similar to array in other languages. It represents a fixed-size bloc
 
 You refer to elements inside sequence using `x[i]` notation where `i` is index number. Referring to an index outside sequence will return `nothing`. Putting an extra comma at the end of a sequence literal is allowed. `[]` represents an empty sequence.
 
-Core defines built-in functions for sequence for common operations: `slice, map, reduce, filter, anyMatch, allMatch, ...`
+Core defines built-in functions for sequence for common operations: `slice, map, reduce, filter, anyMatch, allMatch, ...` plus functions for safe get where they return `T|nothing`.
 
 **Examples**
 
@@ -238,7 +239,7 @@ WeekDay = Sat | Sun | Mon
 x = Sat
 ```
 2. `int_or_float: int|float = 11`
-3. `has_int = hasType(int, int_or_float)`, `int_or_nothing_value = int{int_or_float}`
+3. `has_int = hasType(int, int_or_float)`, `int_or_nothing_value = tryCast(int|float, int, int_or_float)`
 
 ## Struct
 
@@ -273,7 +274,7 @@ process = (data: Customer..Case -> string) ...
 9.
 ```
 Point = struct {x:int, y:int, 
-	mult = fn(p: Point, p2: Point -> int) { return p.x * p2.x + p.y * p2.y })
+	mult = fn(p: Point, p2: Point -> int) { p.x * p2.x + p.y * p2.y })
 }
 ```
 10.
@@ -307,7 +308,7 @@ You can use a type alias to prevent name conflict when importing modules or insi
 **Examples**
 
 1. `MyInt : int`
-2. `process = fn(x:int -> int) { return 10}`
+2. `process = fn(x:int -> int) { 10}`
 3. `process = fn(x:MyInt -> int)` Error! `process:(int->int)` is already defined.
 
 ## Type argument
@@ -327,8 +328,8 @@ There is no implicit and automatic casting. The only exception is using boolean 
 
 **Examples**
 
-1. `MyInt = int`, `int_val = cast(int, my_int_val)`
-2. `int_val = cast(int, age_float)`
+1. `MyInt = int`, `int_val = cast(MyInt, int, my_int_val)`
+2. `int_val = cast(float, int, age_float)`
 
 
 ## Generics
@@ -347,7 +348,7 @@ LinkedList = fn(T: type -> type)
 		data: T,
 		next: Node
 	}
-	return Node
+	Node
 }
 ```
 2. `process =fnn(x: LinkedList(int) -> int)`
@@ -357,13 +358,13 @@ LinkedList = fn(T: type -> type)
 process = (T: type, data: List[T] ...
 pointer = process(int, _) #right, type of pointer is (int, List[int])
 ```
-5. `process = fn(T: type, x: [T], index: int -> T) { return x[index] }`
+5. `process = fn(T: type, x: [T], index: int -> T) { x[index] }`
 
 # Functions
 
-Functions are a type of binding which can accept a set of inputs and give an output. For example `(int,int -> int)` is a function type, but `(x:int, y:int -> int) {return x+y}` is function literal. What comes after `->` must be a type.
+Functions are a type of binding which can accept a set of inputs and give an output. For example `(int,int -> int)` is a function type, but `(x:int, y:int -> int) { x+y}` is function literal. What comes after `->` must be a type.
 
-To return a value from function, you should use `return` keyword. 
+A function will return the result of its last expression.
 
 You can alias a function by defining another binding pointing to it (Example 8). 
 
@@ -382,10 +383,10 @@ Note that a public function must have public input/output types (although their 
 
 **Examples**
 
-01. `myFunc = fn(x:int, y:int -> int) { return 6+y+x }`
+01. `myFunc = fn(x:int, y:int -> int) { 6+y+x }`
 02. `log = fn(s: string -> nothing) { print(s) } #this function returns nothing`
 03. `process2 = fn(pt: Point -> struct {int,int}) { return {pt.x, pt.y} } #this function returns a struct`
-04. `myFunc9 = fn(x:int -> {int}) { return {x+12} } #this function returns a struct literal`
+04. `myFunc9 = fn(x:int -> {int}) { _{x+12} } #this function returns a struct literal`
 05. `process = fn(x: int|Point -> int) ... #this function can accept either int or Point type as input or int|Point type`
 06. `{_,b} = process2(myPoint) #ignore second output of the function`
 07. 
@@ -393,15 +394,15 @@ Note that a public function must have public input/output types (although their 
 process = fn(x:int -> int) 
 { 
   #if x<10 return 100, otherwise return 200
-  return [x<10: 100, x>=10: 200][true]
+  [x<10: 100, x>=10: 200][true]
 }
 ``` 
-08. `process = fn(x:int -> int) { return x+1 }`, `process2 = process`
-09. `sorted = sort(my_sequence, fn(x,y -> int) { return x-y} )`
+08. `process = fn(x:int -> int) { x+1 }`, `process2 = process`
+09. `sorted = sort(my_sequence, fn(x,y -> int) { x-y} )`
 10. `Adder = fn(int,int->int) #defining a named type based on a function type`
 11. `sort = fn(x: [int], comparer: fn(int,int -> bool) -> [int]) {...} #this function accepts a function pointers`
 12. `map = fn(input: [int], mapper: fn(int -> string) -> [string])`
-13. `process = fn{ return 100 }`
+13. `process = fn{ 100 }`
 
 ## Function call resolution
 
@@ -421,12 +422,12 @@ If lambda is assigned to a variable, it can invoke itself from inside (Example 6
 
 **Examples**
 
-1. `rr = fn(nothing -> int) { return x + y } #here x and y are captures from parent function/struct`
-2. `test = fn(x:int -> PlusFunc) { return fn(y:int -> int) { return y + x} } #this function returns a lambda`
-3. `fn(x:int -> int) { return x+1} (10) #you can invoke a lambda at the point of declaration`
+1. `rr = fn(nothing -> int) { x + y } #here x and y are captures from parent function/struct`
+2. `test = fn(x:int -> PlusFunc) { fn(y:int -> int) { y + x} } #this function returns a lambda`
+3. `fn(x:int -> int) { x+1} (10) #you can invoke a lambda at the point of declaration`
 4. `process = (x:int, y:float, z: (string -> float)) { ... } #a function that accepts a lambda`
 5. `lambda1 = process(10, _, _) #defining a lambda based on existing function`
-6. `ff = fn(x:int -> int) { return ff(x+1)}`
+6. `ff = fn(x:int -> int) { ff(x+1)}`
 
 # Modules
 
@@ -470,7 +471,7 @@ For some exclusive resources (e.g. sockets) operations are implemented using tas
 
 **Examples**
 
-1. `msg = getCurrentTask().pick(Message, fn(m: Message -> bool) { return m.sender = 12 })`
+1. `msg = getCurrentTask().pick(Message, fn(m: Message -> bool) { m.sender == 12 })`
 2.
 ```
 int_result := process(10)
@@ -483,7 +484,7 @@ int_result = resolve(int, task) #wait until task is finished and get the result
 ```
 socket_task = net("192.168.1.1")
 send(socket_task, "A")
-pick(SocketMessage, fn(m: SocketMessage -> bool) { return m.sender = "192.168.1.1" })
+pick(SocketMessage, fn(m: SocketMessage -> bool) { m.sender = "192.168.1.1" })
 ```
 
 # Patterns
@@ -504,7 +505,7 @@ getShape = fn(name: String -> Shape)
 {
 	if name is "Circle" 
 		c = Circle{...}
-		return Shape{ draw = drawCircle(c, _, _) }
+		Shape{ draw = drawCircle(c, _, _) }
 }
 f = getShape("Circle")
 f.draw(my_canvas, 1.12)
@@ -532,7 +533,7 @@ If and Else constructs can be implemented using the fact that booleans converted
 ```
 ifElse = fn(T: type, cond: bool, true_case: T, true_case:T -> T) 
 {
-	return [cond: true_case, !cond: false_case]
+	[cond: true_case, !cond: false_case]
 }
 ```
 
@@ -541,10 +542,10 @@ Another example:
 ```
 process = fn(x:int -> string)
 {
-	temp = [x>0 : fn{ return saveLargeFileToDB("SDSDASDA") }, 
-		x<=0: fn(x:int->string) { return innerProcess(x) },  ]
+	temp = [x>0 : fn{ saveLargeFileToDB("SDSDASDA") }, 
+		x<=0: fn(x:int->string) { innerProcess(x) },  ]
 
-	:: temp[true]()
+	temp[true]()
 }
 ```
 
@@ -605,7 +606,7 @@ number_inside_the_file = [
 ## Empty application
 
 ```
-main = fn( -> int ) { return 0 }
+main = fn( -> int ) { 0 }
 ```
 
 This is a function, called `main` which has no input and always returns `0` (very similar to C/C++ except `main` function has no input).
@@ -616,7 +617,7 @@ This is a function, called `main` which has no input and always returns `0` (ver
 main = fn( -> int) 
 {
 	print("Hello world!")
-	return 0
+	0
 }
 ```
 
@@ -631,7 +632,7 @@ Expression = int|NormalExpression
 eval = fn(input: string -> float) 
 {
   exp = parse(input) #assume we already have this
-  return innerEval(exp)
+  innerEval(exp)
 }
 
 innerEval = fn(exp: Expression -> float) 
@@ -831,4 +832,4 @@ Suppose someone downloads the source code for a project written in dotLang which
 - **Version 0.99**: Dec 30, 2017 - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting, removed `^` operator and replaced with generics, removed `@` (replaced with chain operator and casting), removed function forwarding, removed compound literal, changed notation for channel read, write and select (Due to changes in generics and sequence and removal of compound literal) and added `$` for select, add notation to filter imported identifiers in import, removed autoBind section and added a brief explanation for `TargetType()` notation in cast section, rename chain operator to `@`, replaced return keyword with `::`, replaced `import` with `@` notation and support for rename and filter for imported items, replaced `@` with `.[]` for chain operator, remove condition for return and replaced with rule of returning non-`nothing` values, change chain notation from `.[]` to `.{}` and import notation from `@[]` to `@()`, Added notation for polymorphic generic types, changed the notation for import generic module and rename identifiers, removed `func` keyword, extended general union type syntax to unnamed types with field type and names (e.g. `{id:int, name:string,...}`), Added shift-left and right `>>,<<` and power `**` operators, all litearls for seq and map and struct must be prefixed with `_`, in struct literals you can include other structs to implement struct update, changed notation for abstract functions, Allow access to common parts of a union type with polymorphic union types, use `nothing` instead of `...` for generic types and abstract functions, removed phantom types, change `=>` notation to `^T :=` notation to rename symbols, removed composition for structs and extended/clarified usage of polymorphic sum types for embedding and function forwarding, change map type from `[K,V]` to `[K:V]`, removed auto-bind `Type()`, remove abstract functions, remove `_` prefix for literals, remove `^` and add `=>` to rename types so as to fix issue with introducion of new named types when filtering an import operation, replace operators `:=` to `=` and `:==` to `==` and `=` (comparison) to `=?`, adding type alias notation `T:X`, change import operator to `@[]` and replace `=>` with type alias notation, use `:=` to calculate in parallel and `==` to equality check
 - **Version 1.00-beta**: July 5, 2018 - Use `=` for type alias and `:=` for lazy (parallel) calculation and named type, More clarification about binding type inference, explain name resolution mechanism for types and bindings and function call, added explanation about using function name as a function pointer, explanation about public functions with private typed input/output, removed type specifier after binding name (it will be inferred from RHS), changed function type to `(input:type->output_type)`, removed chanin operator, some clarifications about casting operator and expressions, remove `::` and use bindings for output with future reference, allow calling lambda at the point of definition, allow omitting types if they can be inferred in defining functions, indicate that functions cannot have same name and introduce compile-time dynamic sequence to store multiple functions and treat the sequence as a function, restore using type name before struct literal, change `...` as a more general notation for polymorphic union types, re-write generics as code-generation + compile-time dynamic sequence for functions, add `*` destruct operator for struct explode which can also be used to call a function with named arguments or initialize a sequence, remove notation for casting a union to it's elements (replaced with use of sequence of functions), replace `...` notation with already defined `&` and `|`, removed `${}` notation for select and replaced with a function call on a sequence, removed concept of treating sequence of functions as a function, added `type` core function + ability to amend module level collections using `&`, explained loop built-in function for map, reduce and filter operations
 - **Version 1.00-beta2**: Add support for **`type` keyword** and generics data types and generic functions, remove map and sequence from language, defined instance-level and type-level fields with values, added `byte` and `ptr` types to primitive types, add support for vararg functions, added Patterns section to show how basic tools can be used to achieve more complex features (polymorphism, sequence, map, ...), use **mailbox instead of channels** for concurrency, clarification about using unions as enums + concrete types, added `::` operator for return and conditional return, changed polymorphism method to avoid strange linked-list notations for VTable or functions with the same name and use closure instead, added `*` for struct types, Allow functions to return types and use it to implement generics, Return to `[]` notation for map and sequence and their literals, Allow defining types inside struct which are acceissble through struct type name, Import gives you a struct which you can assign to a name or alias or import into current namespace using `*`, Make task a type in core as `SelfTask` and `Task` which provide functions to work with mailbox, Add functions in core to seq and map for map/reduce/filter/anymatch, remove `ptr` type, remove vararg functions, clarification about tasks and exclusive resources, use core for file and console operations, use `$` to access current task, use dot notation to initialise a struct, support optional type specification when defining a binding, set `@` notation to **import a module as a struct type** which you can use just like any other type, we have closure at module level, review the whole spec, use `{}` for casting, use `:` for type alias, use `+` for concat and `&` for concurrency, destruct using `{}` on the left side, no more `:=`, remove range operator, use `:=` for concurrency, replace `$` with core function, `:=` returns a normal output and you should use `getCurrentTask().children()` to access newly created child task
-- **Version 1.00**: replace `@` with import keyword, replace `::` with `return` keyword and remove conditional return, In function decl, after `->` it must be a type, use `fn` prefix for function type and literal, use `struct` for struct type declarations, clarification about module import and dependency management
+- **Version 1.00**: replace `@` with import keyword, replace `::` with `return` keyword and remove conditional return, In function decl, after `->` it must be a type, use `fn` prefix for function type and literal, use `struct` for struct type declarations, clarification about module import and dependency management, remove return keyword, don't force braces to be on their own line
