@@ -5219,6 +5219,85 @@ MyType = g.0
 ```
 I think this makes sense. 
 
+N - Do we need a notation that says "A gneric type of any type"?
+For example: a function that accepts a Stack of any type.
+But can't that be defined as a generic argument?
+```
+process = fn(x: Stack(?) ...
+process = fn(T: type, x: Stack(T), ...
+```
+
+N - 
+We can define a type/binding/lambda inside another lambda (function)
+We can define a type/binding/lambda inside another struct
+We can define a type/binding/lambda inside another module
+
+Y - You can import at anywhere: at module level or at function level.
+even in struct because struct is like a module
+
+Y - Suppose that we want to have `seq` function to create a sequence of integers.
+```
+x = seq(10)
+x = seq(0,10)
+```
+We want to have two definitions. But cannot because two functions cannot have the same name.
+We can say: nothing arguments at the end of argument list which are omitted, will be passed as nothing.
+```
+seq = fn(start:int, end:int|nothing -> ...)
+```
+But this can change semantics of `start` argument. If end is present, it is start, if not present, it is length.
+or for substring: `seq1.slice(10)` returns 10 first elements
+`seq1.slice(1,5)` returns elements 1 to 5
+```
+seq = fn(start_or_length:int, end:int|nothing -> ...)
+slice = fn(start: int, end: int|nothing -> ...)
+```
+Proposal:
+- If function argument is `|nothing`, caller can omit it if it is last argument.
+
+Y - If we see `T:int` in a module, how do we know if it is a type alias or a type argument which needs to get a value?
+`T = struct { x:int }`
+In above case, x is a field and must be initialised when creating an instance of type T/
+`T = struct { X: type }`
+If we see `T:int` it is a type alias because right hand side is a type identifier.
+But `T: type` means it is a type argument
+It is a bit confusing and difficult to read.
+We should provide another notation for type alias so that it is fully different from module-level or struct-level arguments.
+`T = int` is for named type
+`T := int` no. is used for parallel computation.
+What about using `T := int` for named type and `T = int` for type alias?
+If we have a struct or module level argument, it cannot have value, so `T=int` does not cause confusion.
+`Capital=Something` is a type alias
+`Capital: type` is a type argument
+`non_capital: int` is a binding argument
+`non_capital = something` is a normal binding with value
+`non_capital: Type = something` same as above, but with explicit type
+
+N - If app usese A v1.0 and A uses B v1.0.
+Later if B is updated to 1.1 but A is not.
+How can main app force A to use newer version of B? It cannot and shouldn't.
+This will work only if A was not strict when defining B dependency and said "I need any B version which is 1.*"
+
+N - Allow selective destruction of struct elements.
+Can be used to import some definitions from a module.
+```
+{a,b,c} = point.{data1, data2, data3}
+```
+`point.{data1, data2, data3}` is a new struct which only contains 3 fields from point. You can use it as is, or destruct it.
+So:
+`f1, f2, f3 = import("...."){}.{function1, function2, function3}`
+`.{}` notation will give you bindings and can be applied on a struct binding
+`..{}` notation will give you types and can be applied on a type
+`{x,y} = point1`
+But, this is only a shortcut, a syntax sugar. Not a necessary thing.
+We can do it without this notation too.
+I think this is too much new notation. We can live without it, and although it makes code smaller and simpler but the new notation will also increase complexity.
+New things: `.{}`, `..{}` 
+
+
+=======================
+
+
 
 ? - A notation to ask compiler to infer type arg values for generic functions.
 ```
@@ -5233,4 +5312,105 @@ int_v = cast(!, !, float_v)
 
 result = add($, int1_var, int2_var)
 int_v = cast($, $, float_v)
+
+result = add(::, int1_var, int2_var)
+int_v = cast(::, ::, float_v)
+
+result = add(?, int1_var, int2_var)
+int_v = cast(?, ?, float_v)
+
+result = add(auto, int1_var, int2_var)
+int_v = cast(auto, auto, float_v)
 ```
+We can use this notation and really treat import as a function. We import a module but output type is now known and compiler should infer that.
+Leaving the place blank works too but is confuging:
+```
+result = add(, int1_var, int2_var)
+int_v = cast(,, float_v)
+
+result = add(__, int1_var, int2_var)
+int_v = cast(__, __, float_v)
+g = pop(?, my_int_stack)
+g = pop(:, my_int_stack)
+```
+Or maybe an empty space:
+```
+g = pop( , my_int_stack)
+result = add( , int1_var, int2_var)
+int_v = cast( , , float_v)
+```
+As long as it is one or more whitespaces, it is fine.
+It is easy to write, but makes reading a bit difficult.
+```
+g = pop(., my_int_stack)
+result = add(.,.int1_var, int2_var)
+int_v = cast(.,., float_v)
+int_array = map(., int1, fn(x:int->int){x+1})
+```
+using dot is more readable.
+So when calling a function, you can use dot in place of type arguments. And compiler will try to find a value for that argument.
+another candidate: `;`
+But still none of them are intuitive. dot is used elsewhere, blank is confusing, semicolo is odd.
+Or maybe we can use a notation which can also replace `typeof` and `hasType`?
+Like `$(x)` which returns type of x. 
+```
+g = pop($my_int_stack, my_int_stack)
+result = add($int1_var,$int2_var, int1_var, int2_var)
+int_v = cast($float_v,int, float_v)
+int_array = map($[int], int1, fn(x:int->int){x+1})
+```
+Java uses `<>` diamond notation to say compiler should infer.
+Candidates: `?, ::, @, $, !, *`
+`*` is not good because it is also used for multiplication.
+
+
+
+? - writing `import("/http/github.com/dotLang/stdlib/...")` all the time is difficult.
+Maybe we can make it easier?
+Maybe add a rule. just like http, absolute paths starting with std will be treated differently. 
+But what if we later change path/url for std?
+Even http rule is a bit unintuitive.
+Write down a full app with 3-4 levels of dependency and figure out how dependency resolution will work.
+In Go, when you import `/http/github.com/...` compiler does not download it. It just looks for it in local directory.
+You have to download it first via `go get`. But that is a PITA, why not do it when compiling in a smart way?
+We do not differentiate between module, package and library. We import a single module.
+The problem is, a module can embed its dependencies in itself and make things complicated. And we cannot ban that because it will add an exception to the language and 
+make it more difficult to learn/read.
+When we import from absolute path, we should specify the border between library and directories. So that compiler can later find out root path for that dependency.
+Lets just forget about web and http. Assume that we have some local modules we want to use. 
+They are in `/usr/lib`. so no download from web.
+But I cannot use them unless they are inside project dir.
+So if project is in `/home/docker/project1` they should be copied or symlinked to project dir.
+`ln -s /usr/lib/lib1 /home/docker/project1/vendor/lib1`
+So now I will have access to `/vendor/lib1`.
+One guiding principle is everything should be as dumb and simple as possible.
+Simplification 1: No commit id, only `@tag_or_branch` notation, with support for `*` and `+` for semver. First we look for tag. If not found we will search for branch.
+Simplification 2: Compiler knows root path for every module including master module (top most)
+Rule: Every import with absolute path, if not found, will be downloaded into master module's root. So we won't have to download a dependency twice in two different places.
+Should it be possible to have multiple modules (and versions) in a single GH repo?
+We can save branch/tag name as a directory under main package dir.
+In go, transitive dependencies will be saved under the main module.
+q: What if we have a local server with zipped archives of dependencies?
+q: What if we have a local directory with zipped archived of dependencies?
+So, proposal:
+1. When compiler tries to compile a dot file, it will keep track of the master root path which is root path of the top most project.
+2. Compiler will also keep track of the current module being compiled (its root path).
+3. For any import with absolute path, current module's path will be searched, if not found top most project will be searched.
+4. If still not found, compiler will try to get from external source (based on the url prefix). If it points to a compressed file, compiler will decompress.
+5. The dependency downloaded will always be saved into root path of top most project.
+6. `*` and `+` and `@` have special meanings in url. `1+` means 1 and newer. `*` means any version. `@` is prefix for version or branch name.
+7. If no `@` is used, compiler will assume `@master` and will just do a `git clone`
+8. Examples of import:
+`T = import("/https/github.com/uber/web/@v1.9+.*/request/parser")`
+`T = import("/https/github.com/uber/web/@new_branch/request/parser")`
+`T = import("/https/server.com/web/@v1.9+.*.zip/request/parser")`
+`ref = import("/refs"){}`
+`T = import(ref.uber_web + "/request/parser")`
+Idea: we can create our own type which is based on string and add an import function to it.
+```
+ref = import("/refs"){}
+ref.uber.import(
+```
+No. Import should be 100% compile time. This is confusing.
+
+
