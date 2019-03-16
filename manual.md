@@ -72,8 +72,8 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 03. **Bindings**: `my_var:int = 19` (type is optional, everything is immutable).
 04. **Sequence**: `my_arr = [1,2,3]` (type of `my_arr` is `[int]`)
 05. **Map**: `my_map = ["A":1, "B":2, "C":3]` (type of `my_map` is `[string:int]`)
-06. **Named type**: `MyInt = int` (Defines a new type `MyInt` with same binary representation as `int`).
-07. **Type alias**: `IntType : int` (A different name for the same type).
+06. **Named type**: `MyInt := int` (Defines a new type `MyInt` with same binary representation as `int`).
+07. **Type alias**: `IntType = int` (A different name for the same type).
 08. **Struct type**: `Point = struct {x: int, y:int, data: float}` (Like `struct` in C).
 09. **Struct literal**: `location = Point{.x=10, .y=20, .data=1.19}`.
 10. **Union type**: `MaybeInt = int | nothing` (Can store either of possible types).
@@ -92,10 +92,10 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 06. `|`   Union data type 
 07. `->`  Function declaration
 08. `//`  Nothing-check operator
-09. `:`   Type declaration (binding, struct field and function inputs) and type alias
-10. `=`   Binding declaration
+09. `:`   Type declaration (binding, struct field and function inputs) 
+10. `=`   Binding declaration, type alias
 11. `_`   Place-holder (lambda creator and assignment)
-12. `:=`  Parallel execution
+12. `:=`  Parallel execution, named type
 13. `..`  Access type within a module/struct
 
 ## Reserved keywords
@@ -271,7 +271,7 @@ Struct literals must be prefixed by their type, parent value or `_` for untyped 
 7. `x = point1.1 #another way to access untyped struct data`
 8.
 ```
-Customer = struct {name: string, Case: float}
+Customer := struct {name: string, Case: float}
 process = (data: Customer..Case -> string) ...
 ```
 9.
@@ -296,26 +296,26 @@ process = fn(x: struct {int, int} -> int) { x.1 }
 
 ## Named types
 
-You can name a type so you will be able to refer to that type later in the code. Type names must start with a capital letter to be distinguished from bindings. You define a named type similar to a binding: `NewType = UnderlyingType`.The new type has same binary representation as the underlying type but it will be treated as a different type.
+You can name a type so you will be able to refer to that type later in the code. Type names must start with a capital letter to be distinguished from bindings. You define a named type similar to a binding: `NewType := UnderlyingType`.The new type has same binary representation as the underlying type but it will be treated as a different type.
 
 You can use casting operator to convert between a named type and its underlying type (Example 4). You can define named type inside a function.
 
 **Examples**
 
-1. `MyInt = int`
-2. `IntArray = [int]`
-3. `Point = struct {x: int, y: int}`
+1. `MyInt := int`
+2. `IntArray := [int]`
+3. `Point := struct {x: int, y: int}`
 4. `x = 10`, `y = MyInt(10)`
 
 ## Type alias
 
-You can use `T : X` notation to define `T` as another spelling for type `X`. In this case, `T` and `X` will be the same thing, so you cannot define two functions with same name for `T` and `X`.
+You can use `T = X` notation to define `T` as another spelling for type `X`. In this case, `T` and `X` will be the same thing, so you cannot define two functions with same name for `T` and `X`.
 
 You can use a type alias to prevent name conflict when importing modules or inside a function.
 
 **Examples**
 
-1. `MyInt : int`
+1. `MyInt = int`
 2. `process = fn(x:int -> int) { 10}`
 3. `process = fn(x:MyInt -> int)` Error! `process:(int->int)` is already defined.
 
@@ -871,4 +871,4 @@ Suppose someone downloads the source code for a project written in dotLang which
 - **Version 0.99**: Dec 30, 2017 - Added `@[]` operator, Sequence and custom literals are separated by space, Use parentheses for custom literals, `~` can accept multiple candidates to chain to, rename `.[]` to custom process operator, simplified `_` and use `()` for multiple inputs in chain operator, enable type after `_`, removed type alias and `type` keyword, added some explanations about type assignability and identity, explain about using parenthesis in function output type, added `^` for polymorphic union type, added concurrency section with `:==` and notations for channels and select, added ToC, ability to merge multiple modules into a single namespace, import parameter is now a string so you can re-use existing bindings to build import path, import from github accepts branch/tag/commit name, Allow defining types inside struct, re-defined generics using module-level types, changed `.[]` to `[]`, comma separator is used in sequence literals, remove `$` prefix for struct literals, `[Type]` notation for sequence, `[K,V]` notation for map, `T!` notation for write-only channel and `T?` notation for read-only channel, Removed `.()` operator (we can use `//` instead), Replaced `.{}` notation with `()` for casting, removed `^` operator and replaced with generics, removed `@` (replaced with chain operator and casting), removed function forwarding, removed compound literal, changed notation for channel read, write and select (Due to changes in generics and sequence and removal of compound literal) and added `$` for select, add notation to filter imported identifiers in import, removed autoBind section and added a brief explanation for `TargetType()` notation in cast section, rename chain operator to `@`, replaced return keyword with `::`, replaced `import` with `@` notation and support for rename and filter for imported items, replaced `@` with `.[]` for chain operator, remove condition for return and replaced with rule of returning non-`nothing` values, change chain notation from `.[]` to `.{}` and import notation from `@[]` to `@()`, Added notation for polymorphic generic types, changed the notation for import generic module and rename identifiers, removed `func` keyword, extended general union type syntax to unnamed types with field type and names (e.g. `{id:int, name:string,...}`), Added shift-left and right `>>,<<` and power `**` operators, all litearls for seq and map and struct must be prefixed with `_`, in struct literals you can include other structs to implement struct update, changed notation for abstract functions, Allow access to common parts of a union type with polymorphic union types, use `nothing` instead of `...` for generic types and abstract functions, removed phantom types, change `=>` notation to `^T :=` notation to rename symbols, removed composition for structs and extended/clarified usage of polymorphic sum types for embedding and function forwarding, change map type from `[K,V]` to `[K:V]`, removed auto-bind `Type()`, remove abstract functions, remove `_` prefix for literals, remove `^` and add `=>` to rename types so as to fix issue with introducion of new named types when filtering an import operation, replace operators `:=` to `=` and `:==` to `==` and `=` (comparison) to `=?`, adding type alias notation `T:X`, change import operator to `@[]` and replace `=>` with type alias notation, use `:=` to calculate in parallel and `==` to equality check
 - **Version 1.00-beta**: July 5, 2018 - Use `=` for type alias and `:=` for lazy (parallel) calculation and named type, More clarification about binding type inference, explain name resolution mechanism for types and bindings and function call, added explanation about using function name as a function pointer, explanation about public functions with private typed input/output, removed type specifier after binding name (it will be inferred from RHS), changed function type to `(input:type->output_type)`, removed chanin operator, some clarifications about casting operator and expressions, remove `::` and use bindings for output with future reference, allow calling lambda at the point of definition, allow omitting types if they can be inferred in defining functions, indicate that functions cannot have same name and introduce compile-time dynamic sequence to store multiple functions and treat the sequence as a function, restore using type name before struct literal, change `...` as a more general notation for polymorphic union types, re-write generics as code-generation + compile-time dynamic sequence for functions, add `*` destruct operator for struct explode which can also be used to call a function with named arguments or initialize a sequence, remove notation for casting a union to it's elements (replaced with use of sequence of functions), replace `...` notation with already defined `&` and `|`, removed `${}` notation for select and replaced with a function call on a sequence, removed concept of treating sequence of functions as a function, added `type` core function + ability to amend module level collections using `&`, explained loop built-in function for map, reduce and filter operations
 - **Version 1.00-beta2**: Add support for **`type` keyword** and generics data types and generic functions, remove map and sequence from language, defined instance-level and type-level fields with values, added `byte` and `ptr` types to primitive types, add support for vararg functions, added Patterns section to show how basic tools can be used to achieve more complex features (polymorphism, sequence, map, ...), use **mailbox instead of channels** for concurrency, clarification about using unions as enums + concrete types, added `::` operator for return and conditional return, changed polymorphism method to avoid strange linked-list notations for VTable or functions with the same name and use closure instead, added `*` for struct types, Allow functions to return types and use it to implement generics, Return to `[]` notation for map and sequence and their literals, Allow defining types inside struct which are acceissble through struct type name, Import gives you a struct which you can assign to a name or alias or import into current namespace using `*`, Make task a type in core as `SelfTask` and `Task` which provide functions to work with mailbox, Add functions in core to seq and map for map/reduce/filter/anymatch, remove `ptr` type, remove vararg functions, clarification about tasks and exclusive resources, use core for file and console operations, use `$` to access current task, use dot notation to initialise a struct, support optional type specification when defining a binding, set `@` notation to **import a module as a struct type** which you can use just like any other type, we have closure at module level, review the whole spec, use `{}` for casting, use `:` for type alias, use `+` for concat and `&` for concurrency, destruct using `{}` on the left side, no more `:=`, remove range operator, use `:=` for concurrency, replace `$` with core function, `:=` returns a normal output and you should use `getCurrentTask().children()` to access newly created child task
-- **Version 1.00**: replace `@` with import keyword, replace `::` with `return` keyword and remove conditional return, In function decl, after `->` it must be a type, use `fn` prefix for function type and literal, use `struct` for struct type declarations, clarification about module import and dependency management, remove return keyword, don't force braces to be on their own line, added optional arguments to pattern section, clarification about structs with field name but no named type, allow multiple module import, destruct without assignment gives you struct with unnamed fields which has both bindings and types, allow omit argument which are `|nothing` in function call
+- **Version 1.00**: replace `@` with import keyword, replace `::` with `return` keyword and remove conditional return, In function decl, after `->` it must be a type, use `fn` prefix for function type and literal, use `struct` for struct type declarations, clarification about module import and dependency management, remove return keyword, don't force braces to be on their own line, added optional arguments to pattern section, clarification about structs with field name but no named type, allow multiple module import, destruct without assignment gives you struct with unnamed fields which has both bindings and types, allow omit argument which are `|nothing` in function call, use `=` for type alias and `:=` for named type (because `:` for type alias caused confusion and ambiguity)
