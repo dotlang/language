@@ -5294,12 +5294,7 @@ We can do it without this notation too.
 I think this is too much new notation. We can live without it, and although it makes code smaller and simpler but the new notation will also increase complexity.
 New things: `.{}`, `..{}` 
 
-
-=======================
-
-
-
-? - A notation to ask compiler to infer type arg values for generic functions.
+Y - A notation to ask compiler to infer type arg values for generic functions.
 ```
 add = fn(T: type, x:T , y: T -> T) { ... }
 result = add(int, int1_var, int2_var)
@@ -5362,10 +5357,17 @@ int_array = map($[int], int1, fn(x:int->int){x+1})
 Java uses `<>` diamond notation to say compiler should infer.
 Candidates: `?, ::, @, $, !, *`
 `*` is not good because it is also used for multiplication.
+`@` is going to be used in import.
+S we have `!, $, ?, ::`
+`::` is confusing and difficult to type
+`?` is also not relevant and counter intuitive
+So we have `$` and `!`.
+`!` means not so will be confusing.
+So let's use `$`.
+Proposal:
+- When calling a generic function, you can use `$` for type arguments to indicate compiler should infer the type to be used.
 
-
-
-? - writing `import("/http/github.com/dotLang/stdlib/...")` all the time is difficult.
+Y - writing `import("/http/github.com/dotLang/stdlib/...")` all the time is difficult.
 Maybe we can make it easier?
 Maybe add a rule. just like http, absolute paths starting with std will be treated differently. 
 But what if we later change path/url for std?
