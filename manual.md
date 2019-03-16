@@ -98,6 +98,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 12. `:=`  Parallel execution, named type
 13. `..`  Access type within a module/struct
 14. `$`   Infer generic type
+15. `@`   Import version specification
 
 ## Reserved keywords
 
