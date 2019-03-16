@@ -5415,4 +5415,23 @@ ref.uber.import(
 ```
 No. Import should be 100% compile time. This is confusing.
 
+N - Can we use `$` also to get type of a union?
+`t = tryCast($, int, int_or_float)`
 
+? - The `{}` notation in import is a bit counter intuitive.
+Why not replace it with seq?
+instead of:
+`X = import("/dev/{a,b,c}")`
+write:
+`X = import("/dev/", ["a", "b", "c"])`
+or `X = import("/dev", ["a", "b", "c"])`
+
+? - it is possible to have multiple modules in one repo.
+Just use master branch for the repo (or that can even be versioned).
+Use dirs for modules and subdirs for versions.
+`X = import("/http/github.com/lib/module1/@1.4+/dir/stack")`
+`X = import("/http/github.com/lib/module2/@1.1+/dir2/helper")`
+So `lib` is the repo and `module1` is one of modules inside that repo.
+We then need to implement versions using directories there. Because git cannot tag per directory.
+`git tag b/v0.1.1 ` You can use this to apply tag to a module withint repo.
+maybe use `import("...@pack1/1.5+.*")`
