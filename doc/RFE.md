@@ -4962,21 +4962,16 @@ If not found, it will look in higher levels.
 So, when compiler is compiling dependencies of the main module, it will first try to find referenced modules within module source. If not found, it will check higher level. If not found will download to main module's structure.
 But anyway, compiler will NOT look into main module's source for dependencies of sub modules.
 
-? - Can we remove `return` keyword?
+Y - Can we remove `return` keyword?
 Like Rust, say the last expression evaluated in the function will be returned
 
-? - Import multiple modules at once
-`{Socket, Stack, Queue} = import("/core/st/{socket, stack, queue}")`
+Y - Remove the rule that braces must be on their own line
 
-? - Remove the rule that braces must be on their own line
-
-? - Idea: implement compiler in Rust or D
-
-? - How can we define a map with custom hasher?
+N - How can we define a map with custom hasher?
 easy solution: Core function
 `x = createMap(int, string, fn(x:int->int) { x })`
 
-? - Idea: Provide hlper methods for array/map to return `x|nothing` type, where `a[100]` can exit process.
+Y - Idea: Provide hlper methods for array/map to return `x|nothing` type, where `a[100]` can exit process.
 
 N - Pattern matching
 For values, this is not very useful because we can easily use boolean with array or map.
@@ -5005,10 +5000,11 @@ number_inside_the_file = [
 ```
 I think this is a good enough pattern matching.
 
-? - Do we need some kind of static if in generic functions to check input type?
+
+N - Do we need some kind of static if in generic functions to check input type?
 I think compiler can check them if a core function is called.
 
-? - Trait as type
+N - Trait as type
 In rust you can define trait (similar to interface) and then say this function accepts any type which satisfies this trait (or for its return value).
 Can we simulate this with generic types?
 A specific generic type which has these functions.
@@ -5051,7 +5047,7 @@ x = process(Talker(Sheep){.data = my_sheep, .talk = ...})
 ```
 I think we can do it via function pointers. 
 
-? - Is the closure scope for in-struct functions ok?
+N - Is the closure scope for in-struct functions ok?
 Doesn't it cause confusion?
 Go already has this:
 ```
@@ -5076,32 +5072,95 @@ struct Foo
     writeln(f.bar());
 ```
 
-
-? - underscored identifiers are private in their context: function, struct or module.
+Y - underscored identifiers are private in their context: function, struct or module.
 these identifiers inside function, will not be in closure.
 in module, will only be accessible to functions inside the module.
 in struct will only be accessible to code inside struct, and so cannot be overwritten.
 what if I want to have a struct member as public but not changeable?
 This mostly applies for functions.
 
-? - Can user pass a function pointer to a built-in function?
-What important built-in function do we have?
-import -> not allowed obviously.
-cast?
-getType
-getCurrentTask
-set/get
-
-
-
-? - Early return
+N - Early return
 Scala does not have it.
 In favor of no return: https://tpolecat.github.io/2014/05/09/return.html
 
-? - An easy notation for number range can be useful for loops:
-`forLoop([1..10], fn{ ... })`
+N - We have a lot of different collections in Java. If we say map/reduce is a member of seq, how can we implement them efficiently?
+Examples:
+- treeset
+- Hashset
+- Linkedhashset
+- Vector
+- Stack
+- PriorityQueue
+We can define them as generic types that embed a seq/map and expose a map/filter function that calls them.
 
-? - For generic functions like cast or map or filter, we have assumed they don't need type. Compiler will deduce that.
+N - Scala like Perl, allows you to write lambda separate from function call parens.
+```
+def whileLoop(condition: => Boolean)(body: => Unit): Unit =
+  if (condition) {
+    body
+    whileLoop(condition)(body)
+  }
+
+var i = 2
+
+whileLoop (i > 0) {
+  println(i)
+  i -= 1
+}  // prints 2 1
+```
+This can enable us to write if/for but in fact calling a normal function.
+No this is confusing and we are not interested in tricky ways to write short code.
+
+N - Should there be an easy way to import from other module into current module without needing to use dot?
+e.g.
+```
+math = import("math"){}
+PI = math.PI
+#use PI as if it was defined internally, no need for dot.
+```
+Can we make above easier? Not needed.
+
+N - An easy notation for number range can be useful for loops:
+`forLoop([1..10], fn{ ... })`
+Can be easily done via functions in core.
+
+Y -  A better notation for casting?
+Scala: `val recognizer = cm.lookup("recognizer").asInstanceOf[Recognizer]`
+Go: `var z uint = uint(f)`
+D: `MyType castedValue = cast(MyType) someValue;`
+Rust: `let size: f64 = len(values) as f64;`
+Swift: `case 0 as Int:`
+`int_or_nothing_value = int{int_or_float}`
+Usage:
+- Primitive types: int to float
+- Named types
+- Union
+`x = type(y)`
+So, we can treat type name as a function to do the casting.
+But this is not a real function. is it?
+What is function input type? can I use it as a lambda?
+we should not treat it as a function.
+`x = type{value}` is good but a bit confusing. we are already using `{}` for code block, struct type and struct value.
+why not use cast function?
+it is actually a function. But to be so, we need to have 3 inputs:
+`float_var = cast(int, float, int_var)`
+This makes sense but is too much. Maybe we can fina an `auto-infer type` notation for compiler. but anyway, this is the right way to do it.
+And cast will be a real function. But a generic function.
+
+N - Can we have by-name parameters now?
+now that there cannot be two functions with the same name?
+Scala: `printName(first = "John", last = "Smith")`
+q: What if arg name changes? Should client also change?
+When should one use named arguments, and when not? Easily can lead to needless style-guide wars.
+What about using untyped struct?
+```
+process = fn(x:int, y: struct{id: int,age: int} -> int) ...
+...
+process(10, _{.id=10, .age=20})
+```
+No. too much confusion and it can be achieved using other ways.
+
+N - For generic functions like cast or map or filter, we have assumed they don't need type. Compiler will deduce that.
 Can't we do this for all functions?
 `x = map(int, int_array, fn(x:int -> int) { return x+1 })`
 instead we can write:
@@ -5112,19 +5171,66 @@ Easiest: Caller can ignore type arguments completely. Compiler will infer them.
 This can be confusing. 
 We can define map/fiter as member of seq or map so there will be no need for type args.
 
-? - A better notation for casting?
-Scala: `val recognizer = cm.lookup("recognizer").asInstanceOf[Recognizer]`
-Go: `var z uint = uint(f)`
-D: `MyType castedValue = cast(MyType) someValue;`
-Rust: `let size: f64 = len(values) as f64;`
-Swift: `case 0 as Int:`
+N - Can we have default parameter value?
+Can't we use `|nothing`?
+`process = (x:int, y:int|nothing -> ...) { actual_y = y //100 ... }`
+when we can have it via existing constructs, why add something new?
+the only draw back is that caller won't know what the actual value will be but this is also some kind of encapsulation.
+This argument is optional so if you don't have a value for it, forget about it and don't care.
 
-? - Should there be an easy way to import from other module into current module without needing to use dot?
-e.g.
-```
-math = import("math"){}
-PI = math.PI
-#use PI as if it was defined internally, no need for dot.
-```
-Can we make above easier?
+Y - Can untyped struct's fields have name?
+`process = fn(x:int, y: struct{id: int,age: int} -> int) ...`
+struct type can provide field type and possibly field name.
+untyped struct must have field type but optional field name.
 
+N - What about variadic functions?
+can't we have them via sequence?
+
+N - Can user create a function pointer using a built-in function?
+What important built-in function do we have?
+import -> not allowed obviously.
+cast?
+getType
+getCurrentTask
+set/get
+It should be fine. We don't have any magical function.
+
+Y - Import multiple modules at once
+`{Socket, Stack, Queue} = import("/core/st/{socket, stack, queue}")`
+We can use some core function to generate a string sequence
+`{Socket, Stack, Queue} = import(multi("/core/st/", ["socket", "stack", "queue"]))`
+But this is supposed to be compile time.
+But above notation is wrong. You cannot destruct types. 
+But we can have types inside a struct. and we can destruct a struct, 
+What will happen when we destruct a struct? All its bindings and types will be exploded.
+I think that makes sense.
+
+Y - If a module writes `import("/src/ref")` and there are two ref modules in the directories under src, which one should compiler pick?
+when using relative paths, there is no issue.
+when path is absolute, compiler will try module's root path. Even if module is a dependency inside another module.
+But what if the dependency is already downloaded by the parent module?
+So, if path is absolute, compiler will try current module's root, if not found, it will try parent module's root and ...
+
+Y - If a struct has bindings and types and they have no name, using `.0, .1` will give us both bindings and typs?
+```
+g = _{int, int, 10}
+int_var = g.2
+MyType = g.0
+```
+I think this makes sense. 
+
+
+? - A notation to ask compiler to infer type arg values for generic functions.
+```
+add = fn(T: type, x:T , y: T -> T) { ... }
+result = add(int, int1_var, int2_var)
+int_v = cast(float, int, float_v)
+```
+```
+add = fn(T: type, x:T , y: T -> T) { ... }
+result = add(!, int1_var, int2_var)
+int_v = cast(!, !, float_v)
+
+result = add($, int1_var, int2_var)
+int_v = cast($, $, float_v)
+```
