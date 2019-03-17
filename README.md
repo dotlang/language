@@ -97,8 +97,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 11. `_`   Place-holder (lambda creator and assignment)
 12. `:=`  Parallel execution, named type
 13. `..`  Access type within a module/struct
-14. `$`   Infer generic type
-15. `@`   Import version specification
+14. `$`   Inference of generic type
 
 ## Reserved keywords
 
