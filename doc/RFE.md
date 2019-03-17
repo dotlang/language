@@ -5436,3 +5436,42 @@ We then need to implement versions using directories there. Because git cannot t
 `git tag b/v0.1.1 ` You can use this to apply tag to a module withint repo.
 maybe use `import("...@pack1/1.5+.*")`
 This is already provided.
+
+N - How to simplify import?
+`X = import("/http/github.com/lib/module1/@1.4+/dir/stack")`
+vs
+```
+ref = import("/refs"){}
+X = import(ref.stack)
+```
+
+N - What is the reason Rust or Go keep track of extra files like Cargo.toml?
+Basically, `refs.dot` can act just like Cargo.toml or gopkgs file.
+They need `Cargo.lock` to pinpoint to a specific version (commit id) so that if later someone
+adds/removes something from that branch or tag, no one has a problem.
+But if we specify a tag, that's what we want. Latest information under that tag.
+Also if you want to have specific version, just keep it locally so compiler won't download it.
+So we replace `Cargo.toml` with import code in code files (+ optional use of refs file)
+And we replace `cargo.lock` with ability to include source code inside the main code.
+So no need 
+
+N - Make import structure more formal.
+Instead of a simple string, use a struct that has separate fields for protocol, version, tag, ...
+```
+stack_ref = Dependency
+{
+	protocol: "git",
+    path: "https://github.com/a/b"
+    version: "v.1.5+"
+}
+queue_ref = Dependency
+{
+	protocol: "zip",
+    path: "https://server.local/path/a.zip"
+    version: "v.1.5+"
+}
+```
+But, what is the advantage? If we can include everything inside a string (protocol, path ,version, tag, ...)
+why do we need to do this?
+It definitely makes the code more readable, but also more difficult to import. Because
+we will need to write more things.
