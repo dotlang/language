@@ -5502,3 +5502,11 @@ we can rely on message type only:
 `pick(SocketMessage, task_id)` pick any message of this type from this sender
 For other types of logics, just do them inside the processing code. If the message is not to be processed you can put it back, or throw it away.
 or keep it somewhere else.
+Another idea: each process can setup a mailbox processor. This will process any incoming message. It can be used to tag messages.
+In receive part, we can specify key value for tags to match. So we receive by filtering tags.
+One more thing: We promote composition for threads. Many of common patterns can be implemented via a mediator process.
+For example throttling or limiting size of mailbox, or load balancer.
+Any addition to sender and message type will open a can of worm.
+
+? - Can we use `type` in union type?
+I don't think so.
