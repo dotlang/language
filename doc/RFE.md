@@ -5475,3 +5475,30 @@ But, what is the advantage? If we can include everything inside a string (protoc
 why do we need to do this?
 It definitely makes the code more readable, but also more difficult to import. Because
 we will need to write more things.
+
+N - Syntax sugars: 
+- Nothing arguments at the end
+- `//`
+
+? - Maybe we should still use some more keywords just like the way we used `fn` and `import` and ...
+
+? - Should we replace `getCurrentTask` with a keyword or notation?
+Erlang `pid!message`
+`msg = getCurrentTask().pick(Message, fn(m: Message -> bool) { m.sender == 12 })`
+`int_result := process(10)`
+`task_id = getCurrentTaskChildren().last()`
+We can use `this`
+`msg = this.pick(...)`
+`task_id = this.newestChild()`
+In continue of our efforts to make things simple, should we allow for so much flexibility here, when receiving a message?
+`pick(SocketMessage, fn(m: SocketMessage -> bool) { m.sender = "192.168.1.1" })`
+Btw, we don't even need a notation to refer to current process. We will use core functions for all of this.
+`send(msg, target_id)`
+`pick(...)`
+Erlang uses pattern matching. But we have eliminated that. We have map and it can be used for union type matching.
+we can rely on message type only:
+`pick()` pick any message
+`pick(SocketMessage)` pick any message of this type
+`pick(SocketMessage, task_id)` pick any message of this type from this sender
+For other types of logics, just do them inside the processing code. If the message is not to be processed you can put it back, or throw it away.
+or keep it somewhere else.
