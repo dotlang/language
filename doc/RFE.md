@@ -5480,9 +5480,7 @@ N - Syntax sugars:
 - Nothing arguments at the end
 - `//`
 
-? - Maybe we should still use some more keywords just like the way we used `fn` and `import` and ...
-
-? - Should we replace `getCurrentTask` with a keyword or notation?
+Y - Should we replace `getCurrentTask` with a keyword or notation?
 Erlang `pid!message`
 `msg = getCurrentTask().pick(Message, fn(m: Message -> bool) { m.sender == 12 })`
 `int_result := process(10)`
@@ -5507,6 +5505,33 @@ In receive part, we can specify key value for tags to match. So we receive by fi
 One more thing: We promote composition for threads. Many of common patterns can be implemented via a mediator process.
 For example throttling or limiting size of mailbox, or load balancer.
 Any addition to sender and message type will open a can of worm.
+We can use a tag instead of sender. So it will give process more flexibility. 
+They can use tag to show sender id, or any other type of data, or any combination.
+Or maybe we can make tag a sequence of strings?
+What if tag is "sender_id+priority" and I want to get all messages from a specific sender regardless of priority?
+We can achieve this using regex. But it will mean complexity. How often do we need that?
+What are big examples of concurrent systems?
+- Web server: master + n-slaves
+It would be helpful to allow process to have full control on what to send. 
+For example we may want to keep sender pid when forwarding a message. If runtime automatically sets this, then it won't be possible.
+So, if runtime does not set that, then on the receiver side, we cannot support filtering based on sender at language level.
+If message is not what I wanted, I can pass it to a delay process to send it back to me after x seconds.
+Assume a complex scenario like a distributed database: Processes can send files, lines, records, ...
+What if we really need to know sender? For example, we listen to n processes, but one of them is high priority.
+and it doesn't know. So they all send a normal `Message` structure.
+The order is important. We should process messages in the incoming order.
+What if replace message with a simple map?
+Then we can even remove message type from receive function.
+But what will be type of values in the map?
+We may need some king of tag to track things.
+Suppose that we only have two processes P1 and P2. P1 sends a lot of messages all of the same type to P2.
+P2 will process and reply back. How can P1 know which response is for which request?
+This does not seem to need support from language. You can add id field to message and support it from both P1 and P2.
+so, proposal:
+- In concurrency part, support only message type when receiving a message.
 
-? - Can we use `type` in union type?
+N - Can we use `type` in union type?
 I don't think so.
+`T = type | int`
+
+? - Maybe we should still use some more keywords just like the way we used `fn` and `import` and ...
