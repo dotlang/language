@@ -5534,4 +5534,20 @@ N - Can we use `type` in union type?
 I don't think so.
 `T = type | int`
 
-? - Maybe we should still use some more keywords just like the way we used `fn` and `import` and ...
+N - Maybe we should still use some more keywords just like the way we used `fn` and `import` and ...
+
+N - Assume `[nothing:...]` can we know if this is a map type or literal?
+We can use the left side of `=`. If it starts with capital it is a type otherwise a value.
+
+N - Write a sample code for reading something from a file.
+Is file pointer mutable?
+```
+f = fopen("a.txt")
+line = fReadLine(f)
+fClose(f)
+```
+or
+```
+f := fopen("a.txt")
+line = fReadLine(f)
+```
