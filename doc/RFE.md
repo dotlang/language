@@ -5551,3 +5551,49 @@ or
 f := fopen("a.txt")
 line = fReadLine(f)
 ```
+
+Y - Are we giving enough tools to developer to implement below patterns easily?
+- VTable for polymorphism
+what is a vtable?
+it is a list of functions with the same signature, each bound to a specific type.
+When we invoke vtable, we pass arguments common for all functions. and we get the result.
+So basically this is a map of type to function pointer.
+But those function pointers, are almost the same except for one argument type.
+e.g. `draw` type is Circle, we have `Circle, Color, Canvas`
+but if type is `Square` we have `Square, Color, Canvas`
+Now we can make this super flexible: any type of function, custom logic to decide dispatch, ...
+But how much flexible this should be?
+If we put a restriction on this (one argument type should differ or ...) it is against orth.
+If we allow maximum flexibility, again it might be difficult to use in practice. 
+The usual example: We have Circle, Square and Triangle types.
+we have draw for all of them.
+we want to have a single draw function for all of them which delegates to specialised draw functions (drawCircle, drawSquare, ...)
+```
+Circle = struct {...}
+Square = struct {...}
+Triangle = struct {...}
+drawCircle, drawSquare, drawTriangle ... = fn(item: Circle/Triangle/Square, c: Color, n: Canvas -> ...)
+
+vtable = [Circle: drawCircle, triangle: drawTriangle, square: drawSquare]
+draw = fn(T: type, x:T, c: Color, n: Canvas -> nothing) { vtable[typeof(T)](x, c, n) }
+
+```
+or another way:
+```
+drawCircle = fn(s: Circle, Canvas, float -> int) {...}
+drawSquare = fn(s: Square, Canvas, float -> int) {...}
+
+getDraw = fn(T: type, x: T -> fn(Canvas, float -> int)) 
+{
+	vtable = [Circle : fn{drawCircle(x, _, _)},
+                Square: fn{drawSquare(x, _, _)}]
+                
+    vtable[T]()
+}
+f = getDraw(Circle, my_circle)()
+```
+
+
+
+
+
