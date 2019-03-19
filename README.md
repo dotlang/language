@@ -559,6 +559,21 @@ If you want to add a new operation (e.g. print), you will need to add a new func
 
 Note that above `Shape` is very similar to "trait".
 
+Another way to implement polymorphism:
+```
+drawCircle = fn(s: Circle, Canvas, float -> int) {...}
+drawSquare = fn(s: Square, Canvas, float -> int) {...}
+
+getDraw = fn(T: type, x: T -> fn(Canvas, float -> int)) 
+{
+	vtable = [Circle : fn{drawCircle(x, _, _)},
+                Square: fn{drawSquare(x, _, _)}]
+                
+    vtable[T]()
+}
+f = getDraw(Circle, my_circle)()
+```
+
 ## Exception handling
 
 There is no explicit support for exceptions. You can return a specific `exception` type instead (or use `nothing` type to indicate exception).
