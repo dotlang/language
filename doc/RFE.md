@@ -5593,7 +5593,8 @@ getDraw = fn(T: type, x: T -> fn(Canvas, float -> int))
 f = getDraw(Circle, my_circle)()
 ```
 
-
-
-
-
+? - Can we make it simpler?
+Most complicated notations in terms of learning the language or reading the code:
+- `$`
+- `..`
+- `:=`
