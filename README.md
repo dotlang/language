@@ -559,19 +559,20 @@ If you want to add a new operation (e.g. print), you will need to add a new func
 
 Note that above `Shape` is very similar to "trait".
 
-Another way to implement polymorphism:
+Another approach to implement polymorphism:
+
 ```
 drawCircle = fn(s: Circle, Canvas, float -> int) {...}
 drawSquare = fn(s: Square, Canvas, float -> int) {...}
 
+vtable = {.T = Circle, .func = drawCircle, next: {.T = Square, .func=drawSquare}}
+
 getDraw = fn(T: type, x: T -> fn(Canvas, float -> int)) 
 {
-	vtable = [Circle : fn{drawCircle(x, _, _)},
-                Square: fn{drawSquare(x, _, _)}]
-                
-    vtable[T]()
+	vtable = [Circle : drawCircle, Square: drawSquare]
+    cast($, fn(T, Canvas, float), vtable[T])(x, _, _)
 }
-f = getDraw(Circle, my_circle)()
+f = getDraw(Circle, my_circle)(my_canvas, 1.52)
 ```
 
 ## Exception handling
