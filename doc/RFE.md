@@ -5593,8 +5593,70 @@ getDraw = fn(T: type, x: T -> fn(Canvas, float -> int))
 f = getDraw(Circle, my_circle)()
 ```
 
-? - Can we make it simpler?
+N - Can we make it simpler?
 Most complicated notations in terms of learning the language or reading the code:
 - `$`
 - `..`
 - `:=`
+
+N - This example is not correct
+```
+drawCircle = fn(s: Circle, Canvas, float -> int) {...}
+drawSquare = fn(s: Square, Canvas, float -> int) {...}
+
+vtable = {.T = Circle, .func = drawCircle, next: {.T = Square, .func=drawSquare}}
+
+getDraw = fn(T: type, x: T -> fn(Canvas, float -> int)) 
+{
+	
+	vtable = [Circle : drawCircle, Square: drawSquare]
+                
+    vtable[T](x, _, _)
+}
+f = getDraw(Circle, my_circle)()
+```
+One way to solve this is to have a core function which guarantees no compilation for non-matching cases.
+So if we call above function with a Circle, the `Square: fn{drawSquare(x,_,_)}` will not even compile.
+```
+getDraw = fn(T: type, x: T -> fn(Canvas, float -> int)) 
+{
+	
+	vtable = [Circle : drawCircle, Square: drawSquare]
+                
+    vtable[T](x, _, _)
+}
+f = getDraw(Circle, my_circle)()
+```
+This is much better. The only issue: `vtable[T]` will give you a union of two fns. Because that is the type of map values.
+Maybe we can cast.
+```
+getDraw = fn(T: type, x: T -> fn(Canvas, float -> int)) 
+{
+	
+	vtable = [Circle : drawCircle, Square: drawSquare]
+                
+    cast(fn(Circle, Canvas, float)|fn(Square, Canvasm float), fn(T, Canvas, float), vtable[T])(x, _, _)
+}
+f = getDraw(Circle, my_circle)()
+```
+Or simpler:
+```
+getDraw = fn(T: type, x: T -> fn(Canvas, float -> int)) 
+{
+	
+	vtable = [Circle : drawCircle, Square: drawSquare]
+                
+    cast($, fn(T, Canvas, float), vtable[T])(x, _, _)
+}
+f = getDraw(Circle, my_circle)(my_canvas, 1.52)
+```
+
+
+? - Can we call a generic function with a union type?
+if we have `fn(int->int)` we can call it with only int.
+But if it is `fn(int|string->int)` we can call it with int or string or `int|string`.
+but if it is: `process = (T: type, x: T->int)`
+can I call it with `int|string`?
+`int_var = process(type(int_or_string_var), int_or_string_var)`
+or:
+`getDraw(type(my_shape), my_shape)`
