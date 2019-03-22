@@ -565,14 +565,12 @@ Another approach to implement polymorphism:
 drawCircle = fn(s: Circle, Canvas, float -> int) {...}
 drawSquare = fn(s: Square, Canvas, float -> int) {...}
 
-vtable = {.T = Circle, .func = drawCircle, next: {.T = Square, .func=drawSquare}}
-
 getDraw = fn(T: type, x: T -> fn(Canvas, float -> int)) 
 {
-	vtable = [Circle : drawCircle, Square: drawSquare]
+    vtable = [Circle : drawCircle, Square: drawSquare]
     cast($, fn(T, Canvas, float), vtable[T])(x, _, _)
 }
-f = getDraw(Circle, my_circle)(my_canvas, 1.52)
+f = getDraw($, my_circle)(my_canvas, 1.52)
 ```
 
 ## Exception handling
