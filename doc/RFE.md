@@ -5819,9 +5819,9 @@ If we have `process` inside function with 2 args int and string and a process in
 and we call process with an int and string, which one will be called?
 Of course the local one. because it is in a nearer scope and this is in line with resolution that we have.
 
-? - The fact that everything is inside a struct, doesn't it make us OOP? or less functional?
+N - The fact that everything is inside a struct, doesn't it make us OOP? or less functional?
 
-? - Should we be providing more for unions?
+Y - Should we be providing more for unions?
 We can provide a core function `match`
 ```c
 x: int|string|float = ...
@@ -5853,8 +5853,9 @@ result = check($,$,$, x, fn(i:int -> string) { ... }) //
 ```
 so check is:
 `check = fn(Type: type, Remain: type, Target: type, x: Type|Remain, logic: fn(Type->Target) -> Target|nothing) {...}`
+Proposal: Indicate that we have check function that can be used with unions for type matching.
 
-? - It is a bit weird to write `$` in function call.
+Y - It is a bit weird to write `$` in function call.
 In java we write `<>` and it looks good because java separates generic type args from normal args.
 canwe handle this with optional arguments? mark it as `type|nothing` and in fn body write: `Type1=type//core_infere` and compiler will handle it properly
 but this means type should be at the end.
@@ -5886,3 +5887,39 @@ check = fn(x: Type//$|Remain//$, logic: fn(Type//$->Target//$),
 ```
 It is compatible with `|nothing` notation. We `//` with inferred type within function decl. so no confusion about when this should happen.
 we are re-using union type concept and optional argument concept. so more orth.
+But OTOH, if we use the new `//$` notation:
+A. `check = fn(data: T, S: type, f: int|nothing, T: type//$)`
+B. `check = fn(data: T//$, S: type, f:int|nothing, T: type|nothing)`
+`//`is not applicable to types but we are using it. 
+B. `//` is allowed for types too but with same semantic: if it is nothing, then use right side of `//`
+What if we really want to have generic with nothing type? then we pass other parameters accordingly so that compiler will infer nothing.
+so `T//$` will become `T//nothing` which will become `nothing//nothing` which will become `nothing`.
+But, what is the difference between `type//$` and `T//$`?
+the first one, `type` is not nothing. It is completely different thing. And this can be source of confusion.
+what we mean by `type//$` is if type is missing then infer. But missing type is only acceptable if argument is optional which is `|nothing`.
+So I think B is more compatible with other rules and concepts that we have.
+`check = fn(data: T//$, S: type, f:int|nothing, T: type|nothing)`
+`push = fn(data: T//$, stack: Stack(T//$), T: type|nothing -> Stack(T//$)){...}`
+We have to use `T//$` everywhere and when calling push: 
+`result = push(10, int_stack)`
+can we simplify and eliminate need to use `T//$` multiple times?
+`push = fn(data: S, stack: Stack(S), S: T//$|nothing, T: type|nothing -> Stack(T//$)){...}`
+it will be a bit confusing and counter intuitive.
+and maybe wrong: What does `S: T//$|nothing` mean? is T an argument? If so, how can caller provide a value for it?
+It is an argument of type `T`. If S is missing value, it will be inferred. no. too confusing.
+`check = fn(data: T//$, S: type, f:int|nothing, T: type|nothing)`
+`push = fn(data: T//$, stack: Stack(T//$), T: type|nothing -> Stack(T//$)){...}`
+So, proposal:
+1. When defining a function, you can use `type|nothing` to indicate an optional generic type.
+2. When using an optional generic type, you can say if that is missing, you want compiler to infer appropriate type.
+3. So you should use `T//$` to indicate if T (an optional generic type) was missing, then compiler should infer type.
+can we then remove `$` notation alltogether? why not use convention?
+optional generic type arguments will be implied by compiler.
+`push = fn(data: T, stack: Stack(T), T: type|nothing -> Stack(T)){...}`
+Now if we explicitly pass `nothing` as T it is fine. But if we omit that, compiler will infer.
+We don't need to write `S = T // $`.
+Just add a simple rule:
+- Optional generic type arguments will be infered using compiler if not specified.
+So the concept of optional argumetns was one arrow for two targets:
+- Make it easier to have optional arguments
+- Provide generic type inference
