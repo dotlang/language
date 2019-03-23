@@ -5990,3 +5990,79 @@ Let's deal with this later.
 
 N - Do we need to/can we implement stream concept of Java here?
 We can do it via a task. 
+
+
+N - import creates a binding, `Import` creates a type?
+I think it is too much. We can easily have binding with type. 
+
+? - remove xor keyword
+
+? - How can I easily import multiple bindings/types from a module?
+Support `.{}` notation to create a subset struct:
+```
+Point = {x: int, y:int, z:int, f: float}
+p = Point{...}
+x = p.{x,y}
+x = _{p.x, p.y}
+{a.b} = p.{x,y}
+```
+Advantage: can be used in import
+```
+assert = import("std"){}.debug.{assert}
+```
+But is it really needed? Can't we just use normal assignment?
+```
+T = import("std")
+t = import("std"}{}
+assert = t.assert
+trace = t.trace
+MyType = T..MyType1
+```
+But it is a big too much. we will be having these statements a lot and there should be a way to simplify/minimalise them.
+```
+t = import("std"){}.{assert, trace}
+```
+We need a short notation to refer to bindings/types inside a struct type or value.
+If we do that, we will have multiple values or types. How can we use them?
+The only existing way is destruction.
+`{x,y} = point1`
+`{name1, name2, name3} = import("A"){}.{n1, n2, n3}`
+`{Type1, Type2, Type3} = import("A")..{T1, T2, T3}`
+**Proposal:**
+1. A new notation `A.{B}` where A is a struct binding and B is a list of field names withing A
+2. `A..{B}` where A is a struct type and B is a list of types within A
+Above two will give you a new struct binding/type that you can use directly or destruct.
+`{assert, trace} = import("std"){}.{assert, trace}`
+Why do we use `..` to refer to types?
+Initially we wanted to avoid confusion. because we had everything inside structs.
+Reminder:
+- With type we only have access to inner types
+- With value we only have access to inner values
+**Proposal**
+1. Introduce a new notation `A.{B}` where A is a struct binding and B is a list of field or type names inside A.
+2. Remove `..` notation.
+
+? - Why import gives us type?
+When using struct type, you have access to inner types and bindings that have literal value. When using a struct value, you have access to everything defined inside the struct (types, bindings, ...).
+why do we need type when importing?
+maybe we have a fn with input of type T where T is a module.
+we can have a notation (compile time) which gives type of a binding.
+it is easy with generics and optional generic type:
+```
+getType = (x:T , T: type|nothing -> type) { T }
+process = (data: getType(imported_module))
+```
+this works fine and is consistent with all semantics that we have.
+I think it is exceptional that we need type of an imported module but that is possible anyway.
+So, proposal:
+- import gives you instantiated type of a module.
+- If module needs input (has bindings without value like `x:int`) you can use `{}` notation to set their values.
+but above is conflicting.
+what about banning bindings without value at module level?
+they are not really needed. The only use case: have functions at module level with a common argument at module level initialised from outside.
+But you can easily add them to fn args.
+**Proposal**:
+1. import gives you struct value
+2. module level bindings must have value.
+Ask zig website: Can we init a struct without setting value for a field? Can we have types inside module?
+How to access a type defined inside imported module?
