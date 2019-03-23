@@ -5923,3 +5923,70 @@ Just add a simple rule:
 So the concept of optional argumetns was one arrow for two targets:
 - Make it easier to have optional arguments
 - Provide generic type inference
+
+N - How are we going to do console I/O?
+print something or read something?
+For core functions, you do not need prefix.
+```
+write("Hello")
+result = readLine()
+```
+For network:
+```
+socket_task = net("192.168.1.1")
+send(socket_task, "A")
+receive(SocketMessage)
+```
+But how are we going to receive data from a socket?
+We can subscribe.
+```
+socket_task = net("192.168.1.1", fn(data: SocketMessage->nothing) { ...} )
+```
+Or we can simply tell the socket our own task id to it will send anything received.
+```
+socket_task = net("192.168.1.1", my_task_id)
+receive(SocketMessage)
+```
+But I think having sockets as process/task is too much load. Some systems can have up to 1M concurrent connections.
+If we save them all as task, it will be difficult to manage and slow.
+No problem. We can use what we use with map/sequence update.
+Actually maybe we can treat socket like a linked list. We read and traverse until we reach the end.
+Same for file. Actually socket is just a file where we read and write.
+They are the same concept (ipc, socket, file, device, directory, ...).
+So we have a handle. We send data or we get data.
+we simply use: `write(socket1, "A")` or `read(socket1, int)`
+but, what happens to the original socket?
+and what if I have a sequence of 10K sockets and send on one/some of them?
+```
+s = createSocketAndBind("0.0.0.0", 8080, IPV4, 2, 
+	fn(c: Connection -> ) { c.write("Hello") }
+    
+)
+conn = accept(s)
+conn.send("Hello")
+#client side
+s = socketAndConnect("172.16.1.1", 8080, ...)
+int_var = s.read(int)
+s.write("Hello")
+```
+We can have one task for multiple connections/sockets.
+A server usually has one (or a small number of) socket and that socket has a lot of connection.
+Here (https://medium.freecodecamp.org/million-websockets-and-go-cc58418460bb) also they say they use goroutines for connections.
+We can have a special task which has a linked list of sockets/connections.
+```
+socket_task = newTask...
+send(socket_task, NewSocket{my_id, ...})
+socket_id = receive(SocketCreated)
+socket_task.send(socket_id, "Hello")
+socket_task.wait(socket_id, ...)
+socket_task.bind(socket_id, ...)
+socket_task.listen(socket_id, ...)
+```
+All options are possible:
+- Core functions
+- Tasks: one task per socket
+- Tasks: one task per multiple socket
+Let's deal with this later.
+
+N - Do we need to/can we implement stream concept of Java here?
+We can do it via a task. 
