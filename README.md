@@ -510,8 +510,6 @@ We have `:=` for parallel execution of an expression. This will initiate a new t
 
 Each task has an unbounded mailbox which can accept messages from any other task. Sending to an invalid task will return immediately with a false result indicating send has failed. Receive with an empty inbox, will block the current process. You can use built-in functions to access current task's functionality (pick a message from mailbox, send a message to another task, ...).
 
-For some exclusive resources (e.g. sockets) operations are implemented using tasks to hide inherent mutability of their underlying resources (Example 3).
-
 **Syntax**
 
 1. Parallel execute `output := expression` 
@@ -527,12 +525,7 @@ accepted = sendMessage(Message, my_message, task_id)
 picked_up = sendAndWait(Message, my_message, task_id)
 int_result = resolve(int, task_id) #wait until task is finished and get the result
 ```
-3. 
-```
-socket_task = net("192.168.1.1")
-send(socket_task, "A")
-receive(SocketMessage)
-```
+
 
 # Patterns
 
