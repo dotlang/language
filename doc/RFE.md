@@ -5854,3 +5854,35 @@ result = check($,$,$, x, fn(i:int -> string) { ... }) //
 so check is:
 `check = fn(Type: type, Remain: type, Target: type, x: Type|Remain, logic: fn(Type->Target) -> Target|nothing) {...}`
 
+? - It is a bit weird to write `$` in function call.
+In java we write `<>` and it looks good because java separates generic type args from normal args.
+canwe handle this with optional arguments? mark it as `type|nothing` and in fn body write: `Type1=type//core_infere` and compiler will handle it properly
+but this means type should be at the end.
+```
+check = fn(x: Type|Remain, logic: fn(Type->Target),
+		Type: type|nothing, Remain: type|nothing, Target: type|nothing -> Target|nothing) 
+{
+    Type2 =  Type // $
+    Remain2 = Remain // $
+    Target2 = Target // $
+}
+```
+But optional argument means if caller did not provide it, the function will.
+But what happens to function title/prototype?
+we can introduce optional type arguments which appear at the end of arg list and are `type|$` so if caller did not include it, compiler will provide value.
+But this is not a real union type. 
+So if we want to introduce a new notation, why ruin/change meaning of an existing one?
+we can write `T: type//$` to tell compiler that if T was not provided, infer it. should they be at the end in this case?
+`check = fn(Type: type//$, Remain: type//$, Target: type//$, x: Type|Remain, logic: fn(Type->Target) -> Target|nothing) {...}`
+question is: can we replace `$` with something else? for example int.
+We should be able to do that. But if the caller sends strings and ignores type, then compiler will complain.
+This should be fine because no functions can have same name. So just by writing function name, compiler can deduce all these.
+can this be source of ambiguity? 
+`check = fn(T: type//$, S: type, f: int|nothing)`
+what about this?
+```
+check = fn(x: Type//$|Remain//$, logic: fn(Type//$->Target//$), 
+    Type: type|nothing, Remain: type|nothing, Target: type|nothing -> Target|nothing) {...}
+```
+It is compatible with `|nothing` notation. We `//` with inferred type within function decl. so no confusion about when this should happen.
+we are re-using union type concept and optional argument concept. so more orth.
