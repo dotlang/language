@@ -5681,9 +5681,7 @@ Also we are trying to avoid "behind the scene" things.
 so if I cann `process($, my_shape)` the method will be called with `Shape` type.
 If I want to call with detailed inner type, I 
 
-? - The fact that everything is inside a struct, doesn't it make us OOP? or less functional?
-
-? - Now that we use `struct` for struct, can we use `union` keyword for union?
+N - Now that we use `struct` for struct, can we use `union` keyword for union?
 ```
 Payload = union {
     Int: i64,
@@ -5726,3 +5724,133 @@ maybe we can say, each field inside a union is `T|nothing`. Then we can use `//`
 MyType = unin {int_var: int, int_var2: int, float_var: float}
 data = my_type.int_var // my_type.int_var2 // toInt(my_type.float_var)
 ```
+Allowing fields to overlay in memory is not a very good idea. and not very useful. and can be confusing.
+but this will be a rule/exception on itself: You can NOT read from all fields in the union except the field which is initialised.
+q: How can we destruct a union?
+q: can union destruction be used for matching?
+Examples:
+```rust
+enum OptionalTuple {
+    Value(i32, i32, i32),
+    Missing,
+}
+
+let x = OptionalTuple::Value(5, -2, 3);
+
+match x {
+    OptionalTuple::Value(..) => println!("Got a tuple!"),
+    OptionalTuple::Missing => println!("No such luck."),
+}
+```
+```swift
+directionToHead = .south
+switch directionToHead {
+case .north:
+    print("Lots of planets have a north")
+```
+```kotlin
+val directoryType = UnixFileType.D
+ 
+    val objectType = when (directoryType) {
+        UnixFileType.D -> "d"
+        UnixFileType.HYPHEN_MINUS -> "-"
+        UnixFileType.L -> "l"
+    }
+```
+```scala
+notification: Notification
+notification match {
+    case Email(email, title, _) =>
+      s"You got an email from $email with title: $title"
+    case SMS(number, message) =>
+      s"You got an SMS from $number! Message: $message"
+    case VoiceRecording(name, link) =>
+      s"you received a Voice Recording from $name! Click the link to hear it: $link"
+  }
+```
+Problem is, I don't want to add a new nested level.
+another option: `union1.unwrap()` will give you internal type. But this is not good in a statically typed language.
+q: Isn't allowing users to write to any or all fields of a union, allowing them to mis-use the language? shouldn't we limit this? But how exactly can they mis-use it?
+```
+U = union { i: int, f: float }
+u = U{.i=100}
+data = ifElse(u::i, u.i, nothing) // toInt(u.f) #no. not scalable to many types in union
+```
+How can we support reading both data? suppose that the union has int and string. if we write to string, reading from int, will give us what?
+the first 8 bytes? 
+```
+U = union { i: int, f: float }
+u = U{.i=100}
+str_var = match(u) {
+    fn(i:int -> string) { "A" }
+    fn(f:float -> string) { B" }
+}
+```
+less readable but:
+```
+U = union { i: int, f: float }
+u = U{.i=100}
+str_var = index(u) [ 0: fn{"i is set"}, 1: fn{"f is set"} ]()
+}
+```
+Also we can delegate this to the developer:
+```
+S = struct { index: int, union { i: int, f: float } }
+my_s: S = S{.index=0, .i = 100}
+```
+Not a good idea. dotLang should be simple.
+we do not want to indent. So no lambdas.
+no match/when/case/switch keyword.
+q: Do rules about function input/output in presense of union types still hold?
+    if a function accepts int and works fine, later if it is changed to `union{int, string}` does caller need to change anything?
+Maybe its not a good idea after all.
+1. It makes notation more complicated. Matching will be needed and either we have to use something like `unwrap` or `getIndex` or a new indentation.
+2. Makes union like a new type notation while it is not a new notation. It is simple combination of other types with "OR".
+3. If I define a fn that takes int and call it via `f(5)` then later change it to `union {x:int, y:int}` then which one is set? will caller need to change their code? this is not good. even if I use `union{x:int, f:float}` the call syntax should change or else I should have two completely different ways to initialise a union.
+can we provide a better notation for the current union?
+`has_int = hasType(int, int_or_float), int_or_nothing_value = tryCast(int|float, int, int_or_float)`
+we can have core function `typeof` which works only on unions and will return type id.
+we can mix it with map.
+But we said, anything related to type must be compile time.
+
+
+N - Optional types.
+If we have `process` inside function with 2 args int and string and a process in module level with the same name but int, string, float or nothing input
+and we call process with an int and string, which one will be called?
+Of course the local one. because it is in a nearer scope and this is in line with resolution that we have.
+
+? - The fact that everything is inside a struct, doesn't it make us OOP? or less functional?
+
+? - Should we be providing more for unions?
+We can provide a core function `match`
+```c
+x: int|string|float = ...
+match(int|string|float, string, x, 
+    fn(i:int -> string) { ...}, 
+    fn(f: float -> string) { ...}, 
+    fn(s:string->string) { ...}
+)
+match($, $, x, 
+    fn(i:int -> string) { ...}, 
+    fn(f: float -> string) { ...}, 
+    fn(s:string->string) { ...}
+)
+```
+No additional indentation but instead we have a function call.
+But match is a special function. for example, you cannot pass a pointer to match.
+this is because match is generic. you cannot pass a ptr to any generic because they need type.
+You can however pass ptr to match with specific types.
+So it will be:
+`match = fn(U: type, Target: type, x: U, fn(?->Target) ...`
+similar to this but not completely. Compiler will also help.
+So match is a syntax sugar? or a real function?
+why not use `//`?
+```
+x: int|string|float = ...
+result = check($,$,$, x, fn(i:int -> string) { ... }) //
+         check($,$,$, x, fn(s: string -> string) {...}) //
+         check($,$,$, x, fn(f:float->string){...})
+```
+so check is:
+`check = fn(Type: type, Remain: type, Target: type, x: Type|Remain, logic: fn(Type->Target) -> Target|nothing) {...}`
+
