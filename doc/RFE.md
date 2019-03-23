@@ -5652,7 +5652,7 @@ f = getDraw(Circle, my_circle)(my_canvas, 1.52)
 ```
 
 
-? - Can we call a generic function with a union type?
+N - Can we call a generic function with a union type?
 if we have `fn(int->int)` we can call it with only int.
 But if it is `fn(int|string->int)` we can call it with int or string or `int|string`.
 but if it is: `process = (T: type, x: T->int)`
@@ -5660,3 +5660,69 @@ can I call it with `int|string`?
 `int_var = process(type(int_or_string_var), int_or_string_var)`
 or:
 `getDraw(type(my_shape), my_shape)`
+Suppose that we have:
+`process = (T: type, x: T -> ...) ...`
+and we have this union type:
+`Shape = A | B | C | D | E`
+and `my_shape` is of type `Shape`.
+Clearly, process is generic and can accept any type.
+Technically, I can call process with a series of if/switch commands (implemented via functions):
+if type is A then call `process(A, cast(Shape, A, my_shape))`
+if type is B then call `process(B, cast(Shape, B, my_shape))` 
+etc.
+But can this be simplified?
+In any case, compiler will have to generate code for all possible case types for `Shape`.
+Maybe we can add a syntax sugar so that: `process(typeof(my_shape), my_shape)` can then be automatically handled via compiler.
+or even simpler: `process($, my_shape)`.
+But what if we really want to call process with `Shape` type and not `A, B, C, ...` types?
+This can be handy many times but makes the language inflexible in some cases.
+Because compiler is making an assumption and doing some stuff behind the scene, that can sometimes be wrong.
+Also we are trying to avoid "behind the scene" things.
+so if I cann `process($, my_shape)` the method will be called with `Shape` type.
+If I want to call with detailed inner type, I 
+
+? - The fact that everything is inside a struct, doesn't it make us OOP? or less functional?
+
+? - Now that we use `struct` for struct, can we use `union` keyword for union?
+```
+Payload = union {
+    Int: i64,
+    Float: f64,
+    Bool: bool,
+}
+var payload = Payload{ .Int = 1234 };
+payload.Float = 12.34;
+```
+This may also help with doing stuff like C unions where you map type A and B so that you have access to internals of A.
+q: How does this affect Polymorphism? switch? lambda definition?
+q: readability of an expression?
+q: union switych?
+q: enums?
+q: can we have multiple fields of the same type but different names? is this good? This will be a suprtset of current unions.
+q: how does it affect function/binding resolution?
+q: can an imported module be a union instead of struct?
+```
+MyType = union { x:int, y:int, z: float }
+DayOfWeek = union { sat, sun, mon, tue, wed, thu, fri }
+t: MyType = MyType{.x = 100} #only x has a value, init same as struct
+flt = t.z #you can read anything from a union -> no rule/exception here
+#to see which field was set, you can use this notation
+h = t.z? #returns true if z is set
+h = t..z
+h = t::z
+```
+This will give us both flexibility of C union and an enum feature and sum type of Haskell.
+It would be good if we can mix this with a map which can be used in place of switch.
+So that we do not need to add a new notation/keyword.
+q: can we have lambdas in a union? How will it be treated?
+q: if we allow access to any of union fields, what if union has lambdas. if I set lambda1 and access lambda2 and call it, what will happen?
+q: can we say if type is not specified, it is `nothing`? everywhere.
+maybe we can add a core function to return index of the field which is set.
+q: If I define a struct, inside which there is a lambda and a union, how will that lambda access union fields? Is it still closure? what if union is unnamed?
+q: Can I define unnamed struct/union inside each other?
+q: How does this affect `//`? Can we make use of it for unions?
+maybe we can say, each field inside a union is `T|nothing`. Then we can use `//` to write expressions for each field.
+```
+MyType = unin {int_var: int, int_var2: int, float_var: float}
+data = my_type.int_var // my_type.int_var2 // toInt(my_type.float_var)
+```
