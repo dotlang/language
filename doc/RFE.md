@@ -6147,3 +6147,25 @@ We can say:
 
 ? - What happens for `x= int_nothing // float_nothing // string_int_nothing`? 
 what will be output type?
+
+? - Do we need to simplify structs?
+https://github.com/ziglang/zig/issues/1250
+If we ban value setting inside a struct, we should do the same inside a module.
+or else, module cannot be struct.
+no confusion about where to define functions.
+Do we really need encapsulation and `_`? If not, then anything can access any binding inside a struct.
+we can remove the `_` rule and just use it as a convention. fields or methods starting with `-` are private so do not rely on them.
+what are structs?
+- C structs
+- namespace
+- C++ class
+I prefer first option: structs be C structs.
+so that we move away from OOP as much as possible.
+So, the only place to define a lambda is inside a module or inside another lambda.
+But:
+q: what will a module be?
+q: what is output of import function?
+q: How can we access another module's types and bindings? Shall we use dot notation?
+Treating module like a struct has its own advantages but is a bit confusing. Everything can be defined everywhere!
+Let's say: module/ns can have bindings with compile-time decideable values and types.
+struct: can have binding definitions without any value (No types).
