@@ -6169,3 +6169,6 @@ q: How can we access another module's types and bindings? Shall we use dot notat
 Treating module like a struct has its own advantages but is a bit confusing. Everything can be defined everywhere!
 Let's say: module/ns can have bindings with compile-time decideable values and types.
 struct: can have binding definitions without any value (No types).
+we want to avoid confusion because it leads to ambiguity and different ways of doing one thing which makes code difficult to read and maintain.
+Now we can have functions defined inside struct or at the module level `->` two ways to define functionality.
+If we only allow lambda at module level, this will be reduces.
