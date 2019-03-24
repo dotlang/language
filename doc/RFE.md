@@ -6043,7 +6043,8 @@ Reminder:
 2. Remove `..` notation.
 
 ? - Why import gives us type?
-When using struct type, you have access to inner types and bindings that have literal value. When using a struct value, you have access to everything defined inside the struct (types, bindings, ...).
+- When using struct type, you have access to inner types and bindings that have literal value. 
+- When using a struct value, you have access to everything defined inside the struct (types, bindings, ...).
 why do we need type when importing?
 maybe we have a fn with input of type T where T is a module.
 we can have a notation (compile time) which gives type of a binding.
@@ -6066,3 +6067,83 @@ But you can easily add them to fn args.
 2. module level bindings must have value.
 Ask zig website: Can we init a struct without setting value for a field? Can we have types inside module?
 How to access a type defined inside imported module?
+q: Suppose that I have a struct type. How can I access its types? use dot
+
+? - We can have `this` or `self` by using optional arguments in struct methods
+```
+Customer = struct {
+	age: int,
+    print = fn(this: Customer|nothing) {
+        
+    }
+}
+```
+But what is use of this, if we allow closure?
+Dlang has this type of closure.
+Now we can scrap closure alltogether and use this. 
+but what about normal closure inside a function?
+https://michaelfeathers.silvrback.com/variable-capture-considered-harmful
+Closure makes reading code difficult because a function uses a binding but we don't know where it is. 
+We have to look at the parent fn then parent struct then parent module, ... to find its source
+"Locality is one of the most important conditions for understandability in code."
+When do we need closure?
+- Lambda defined inside a fn (lambda)
+- Lambda defined inside a struct
+- Lambda defined inside a module
+Also we may need to access parent module while inside a struct
+and this can have many/multiple levels.
+module -> struct -> struct -> function -> function: needs access X defined at module level
+one way: define keywords to access current struct, fn, module. But this won't help because we may have multiple struct/fn in context
+another way: manually implement this or any other pointer we need to a parent closure
+In zig:
+```
+fn List(comptime T: type) type {
+    return struct {
+        const Self = @This();
+
+        items: []T,
+
+        fn length(self: Self) usize {
+            return self.items.len;
+        }
+    };
+}
+```
+we can use a keyword like `this` to point to the "current" closure (fn, struct, module, ...) depending on where it is defined.
+is it a function? binding? type? keyword?
+```
+T = struct { x:int, t: this, process = fn(->){t.x}
+```
+When do we need closure?
+1 - Lambda defined inside a fn (lambda): just pass the data it needs and set other args to `_`
+2 - Lambda defined inside a struct. We need to access parent struct fields
+3 - Lambda defined inside a module
+```
+Record = struct 
+{ 
+    x:int, 
+    process = fn(holder: Record|nothing->int)
+    {
+        self = holder // this
+        self.x+1
+    }
+}
+my_t.process()
+```
+But what about calling methods in the current module? Do we still need to use some prefix?
+e.g. `this.module`
+And if we allow `this` keyword, people will stop using `holder:Record|nothing` and directly use this.
+Then it will be more and more OOP.
+Anyway, `this` is exactly same as closure. The only difference is notation and being explicit/clear.
+And the fact that there are "TWO" ways to call these functions is also confusing. So better avoid it.
+Let optional arguments be there when they are really optional.
+And the only exception for now is generics with type inference.
+We can say:
+- Lambda does not have access to parent functions' bindings.
+- Lambda (or module level or struct level functions) have access to their parent data structure (struct/module) bindings/types
+
+
+? - How else can we use optionals to make language more expressive?
+
+? - What happens for `x= int_nothing // float_nothing // string_int_nothing`? 
+what will be output type?
