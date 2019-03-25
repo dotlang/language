@@ -6142,7 +6142,6 @@ We can say:
 - Lambda does not have access to parent functions' bindings.
 - Lambda (or module level or struct level functions) have access to their parent data structure (struct/module) bindings/types
 
-
 ? - How else can we use optionals to make language more expressive?
 
 ? - What happens for `x= int_nothing // float_nothing // string_int_nothing`? 
@@ -6165,8 +6164,8 @@ I prefer first option: structs be C structs.
 so that we move away from OOP as much as possible.
 So, the only place to define a lambda is inside a module or inside another lambda.
 But:
-q: what will a module be?
-q: what is output of import function?
+q: what will a module be? it will be a new thing. Not a type, not a struct, not a binding.
+q: what is output of import function? A module.
 q: How can we access another module's types and bindings? Shall we use dot notation?
 Treating module like a struct has its own advantages but is a bit confusing. Everything can be defined everywhere!
 Let's say: module/ns can have bindings with compile-time decideable values and types.
@@ -6174,8 +6173,8 @@ struct: can have binding definitions without any value (No types).
 we want to avoid confusion because it leads to ambiguity and different ways of doing one thing which makes code difficult to read and maintain.
 Now we can have functions defined inside struct or at the module level `->` two ways to define functionality.
 If we only allow lambda at module level, this will be reduces.
-q: What about aliasing?
-q: So it will not be allowed to define a type inside a struct? 
+q: What about aliasing? no aliasing
+q: So it will not be allowed to define a type inside a struct? no,
 q: Can we still define a type inside a function?
 ```
 #dlang
@@ -6235,22 +6234,30 @@ Can we simplify `::` notation? maybe use `..`
 so, lets remove selective and rename import. Always import into a name. 
 and you can import anywhere there are braces: module level, fn level, struct level and it will be valid inside braces or module level
 **Proposal:**
-- import: `T = import("/core/std/Stack")
-- use: `MyType = T..Type1`
-- Can import at module, fn or struct level
-- No rename, no selective import
-- You can import or define a type inside a function.
+- import: `T = import("/core/std/Stack")`, no rename, no selective, no nested modules
+- use: `MyType = T..Type1` to access identifiers inside a module
+- import can be in a module or inside a function
+- struct: only a list of bindings without value assignment
 - You can not import inside a struct and cannot define a type (struct is just a dumb list of fields)
-- Use `..` notation to access anything inside a module. 
-- No nested modules or a hierarchy.
-- No assignment inside a struct.
-- At module level: all assignments must be compile time
+- Naming: Like a value binding
 What happens if I import inside a struct and use a type from imported module? Then anyone using that struct should have access to that module too.
-Can we expose our imports? For example: `T = import("A")` then `f1 = T..m1..m2` 
+Can we expose our imports? For example: `T = import("A")` then `f1 = T..m1..m2` yes why not? we can expose elements inside imported module but not module itself
 No this will be confusing because we will have to study inside m1 to see what is m2 and then study inside another module.
-idea: fn only code and import. struct only field list. module only import and binding and type
-idea: for generic type: inference dont use nothing but use a new keyword
-idea: fn inside struct, can we allow it to have access to parent struct?
+q: What should be naming of a module? should it have a prefix? it is definitely not a fn. type or binding? it will be used a lot so lets go with binding name.
+q: can we import multiple modules?
+
+? - links to read
 idea: cmu fox project
 lambda th eultimate: why do we need modules at all
 5 mistaked in PL desig
+
+? - Each element/concept must have one simple well defined mission.
+e.g. struct/module/function/type/...
+maybe in this way, functions that create types is not a very good concept
+if this is not the case, people will be confused, ask questions, implement in multiple different/wrong methods, ...
+
+? - idea: for generic type: inference dont use nothing but use a new keyword
+
+? - idea: fn inside struct, can we allow it to have access to parent struct?
+
+? - You cannot define a type inside a function or struct. only at module level.
