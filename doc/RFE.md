@@ -6148,6 +6148,8 @@ We can say:
 ? - What happens for `x= int_nothing // float_nothing // string_int_nothing`? 
 what will be output type?
 
+? - Remove semantics from `_`. Make it a convention
+
 ? - Do we need to simplify structs?
 https://github.com/ziglang/zig/issues/1250
 If we ban value setting inside a struct, we should do the same inside a module.
@@ -6172,3 +6174,77 @@ struct: can have binding definitions without any value (No types).
 we want to avoid confusion because it leads to ambiguity and different ways of doing one thing which makes code difficult to read and maintain.
 Now we can have functions defined inside struct or at the module level `->` two ways to define functionality.
 If we only allow lambda at module level, this will be reduces.
+q: What about aliasing?
+q: So it will not be allowed to define a type inside a struct? 
+q: Can we still define a type inside a function?
+```
+#dlang
+import std.stdio; 
+//rename import
+import io = std.stdio;
+std.stdio.writeln("hello!");
+io.writeln("hello!");
+//selective import
+import std.stdio : writeln, foo = write;
+there is also scoped import where import only works inside a fn
+#kotlin
+import foo.Bar
+import foo.* 
+import bar.Bar as bBar 
+#rust
+mod my_mod {...}
+my_mod::function();
+extern crate deeply;
+use deeply::nested::{
+    my_first_function,
+    my_second_function,
+    AndATraitType
+};
+my_first_function();
+use deeply::nested::function as other_function;
+#swift
+import moduleName
+import func Pentathlon.swim
+import func Darwin.fputs
+import var Darwin.stderr
+#c++
+MyNamespace::MyClass* pClass = new MyNamespace::MyClass();
+using namespace MyNamespace;
+#zig
+const warn = @import("std").debug.warn;
+
+```
+Namespace is too generic and gives us impression of being nested.
+Why not use module?
+```
+stack_module = import("/core/std/Stack")
+T = stack_module::Type1
+f1 = stack_module::processFunction
+import("/core/std/Stack") #import into current module
+selective_module = import("/core/std/Stack")::{Type1, func1, binding3}
+selective_module::Type1
+selective_module::func1
+selective_module::binding3
+```
+Look at the questions people have asked in SO for import in Rust, Swift, ... and try to prevent those type of questions
+- Allow import inside a function
+- We can import into current module, named import and selective named import
+Why do we need selective import? Because in case we want to import inside current module it can prevent name collission.
+But then, do not import into current module. Just import with name.
+Can we simplify `::` notation? maybe use `..`
+so, lets remove selective and rename import. Always import into a name. 
+and you can import anywhere there are braces: module level, fn level, struct level and it will be valid inside braces or module level
+**Proposal:**
+- import: `T = import("/core/std/Stack")
+- use: `MyType = T..Type1`
+- Can import at module, fn or struct level
+- No rename, no selective import
+- You can import or define a type inside a function.
+- You can not import inside a struct and cannot define a type (struct is just a dumb list of fields)
+- Use `..` notation to access anything inside a module. 
+- No nested modules or a hierarchy.
+- No assignment inside a struct.
+- At module level: all assignments must be compile time
+What happens if I import inside a struct and use a type from imported module? Then anyone using that struct should have access to that module too.
+Can we expose our imports? For example: `T = import("A")` then `f1 = T..m1..m2` 
+No this will be confusing because we will have to study inside m1 to see what is m2 and then study inside another module.
