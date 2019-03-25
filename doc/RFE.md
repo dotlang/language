@@ -6248,3 +6248,9 @@ and you can import anywhere there are braces: module level, fn level, struct lev
 What happens if I import inside a struct and use a type from imported module? Then anyone using that struct should have access to that module too.
 Can we expose our imports? For example: `T = import("A")` then `f1 = T..m1..m2` 
 No this will be confusing because we will have to study inside m1 to see what is m2 and then study inside another module.
+idea: fn only code and import. struct only field list. module only import and binding and type
+idea: for generic type: inference dont use nothing but use a new keyword
+idea: fn inside struct, can we allow it to have access to parent struct?
+idea: cmu fox project
+lambda th eultimate: why do we need modules at all
+5 mistaked in PL desig
