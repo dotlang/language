@@ -6302,3 +6302,6 @@ Having types that accept a generic argument is more a change than having functio
 ? - can we make closure more explicit?
 
 ? - Review concepts. Are there any case where it is not a simple clear one with a basic well-defined mission?
+
+? - Casting for union or primitives is runtime. But for named types it is compile time.
+Can we use a separate notation for named types?
