@@ -6296,12 +6296,82 @@ LinkedList = LinkedListNode | nothing
 ```
 Having types that accept a generic argument is more a change than having functions that accept a generic type argument.
 
+N - How else can we use optionals to make language more expressive?
+It is generally not good for one concept to have multiple meanings.
 
-? - How else can we use optionals to make language more expressive?
+
+===============
+
+? - We use `_` for multiple purposes:
+1. type for untyped structs: `x = _{10,20}`
+2. create lambda: `process = processFunc(10,_,_)`
+3. destruc to ignore items in assignments `{x,_} = my_data`
+
+? - generic type arguments are all optional if they are at the end, no need for `nothing`.
+why would writer of generic function want force caller to specify generic type?
+This should be like module level bindings: type is optional.
+Same for generic type arguments: type is always optional (if at the end).
+So no need to write `type|nothing`.
+what if it is mixed with optional args?
+it should be fine. `process = (x:T, y:float|nothing, T: type)` 
+then you call `process(10)` it will be called as `process(10, nothing, int)`
+
+? -  things that look different should work differently
+About `=` and `:=`?
+Now that we have removed module level bindings without value, I think we can restore `:` notation for type alias
+`T : int` to define type alias
+`T = int` to define named type
+idea: `=` for binding, `:=` for concurrency
+`<-` for type alias
+`<=` for named type
+`X <- int` type alias
+`X <= int` named type
+now: `=` binding and named type, `:=` concurrency, `:` type alias and fn arg and struct field
+I think `:` and `=` make enough sense
+
+? - Do we need to support a group of modules. either importing multiple modules or having a package concepts?
+
+? - Can we move away from using lots of braces?
+`ValueKeeper = fn(T: type -> type) { struct {data: T} }`
+idea: `fn` and `endfn`
+`ValueKeeper = fn(T: type -> type) struct {data: T} endfn`
+idea: use binding name in the output
+`ValueKeeper = fn(T: type -> R: type) R = struct {data: T}`
+function ends when that binding is assigned a value
+idea: julia:
+```
+function f(x,y)
+           x + y
+       end
+```
+option1: end
+`ValueKeeper = fn(T: type -> type) struct {data: T} end`
+option2: assign output
+`ValueKeeper = fn(T: type -> R: type) R = struct {data: T}`
+con of option2: it makes it difficult to write `fn{...}` notation.
+```
+temp = [x>0 : fn{ saveLargeFileToDB("SDSDASDA") }, 
+	x<=0: fn(x:int->string) { innerProcess(x) },  ]
+
+	temp[true]()
+```
 
 ? - can we make closure more explicit?
+In C++ you have to explicitly specify which vars to capture in lamnbda.
+Proposal for Julia: https://github.com/JuliaLang/julia/issues/14959
+```
+process = fn(x:int->int) {
+	y=f1(x)
+    z = fn{
+        g = f2(x) #x?
+        g
+    }
+}
+```
 
 ? - Review concepts. Are there any case where it is not a simple clear one with a basic well-defined mission?
+Sometimes unification makes things more complicated: for example module is a struct. So we don't need a new "Module" concept. But now the "struct" concept is having a more complicated meaning which makes things more difficult.
+
 
 ? - Casting for union or primitives is runtime. But for named types it is compile time.
 Can we use a separate notation for named types?
