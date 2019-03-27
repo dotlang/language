@@ -6299,15 +6299,7 @@ Having types that accept a generic argument is more a change than having functio
 N - How else can we use optionals to make language more expressive?
 It is generally not good for one concept to have multiple meanings.
 
-
-===============
-
-? - We use `_` for multiple purposes:
-1. type for untyped structs: `x = _{10,20}`
-2. create lambda: `process = processFunc(10,_,_)`
-3. destruc to ignore items in assignments `{x,_} = my_data`
-
-? - generic type arguments are all optional if they are at the end, no need for `nothing`.
+Y - generic type arguments are all optional if they are at the end, no need for `nothing`.
 why would writer of generic function want force caller to specify generic type?
 This should be like module level bindings: type is optional.
 Same for generic type arguments: type is always optional (if at the end).
@@ -6318,7 +6310,7 @@ then you call `process(10)` it will be called as `process(10, nothing, int)`
 **Proposal**
 1. Generic type arguments are inferred by compiler if they are at tht ene and omitted
 
-? -  things that look different should work differently
+Y -  things that look different should work differently
 About `=` and `:=`?
 Now that we have removed module level bindings without value, I think we can restore `:` notation for type alias
 `T : int` to define type alias
@@ -6332,6 +6324,18 @@ now: `=` binding and named type, `:=` concurrency, `:` type alias and fn arg and
 I think `:` and `=` make enough sense
 **Proposal**
 1. Use `:` for type alias and `=` for named type
+
+
+===============
+
+? - We use `_` for multiple purposes:
+1. type for untyped structs: `x = _{10,20}`
+2. create lambda: `process = processFunc(10,_,_)`
+3. destruc to ignore items in assignments `{x,_} = my_data`
+`_` should mean, I don't know or I don't care.
+so for lambda creation maybe we should pick another symbol or keyword.
+`x = process(10,?`
+`x = fn(x:int ->
 
 ? - Do we need to support a group of modules. either importing multiple modules or having a package concepts?
 
@@ -6390,3 +6394,6 @@ Also concrete types
 ? - Do we support specifying name for arguments?
 
 ? - How can we make lambda out of a function which has no input?
+
+? - Make notation to invalidate a binding more explicit
+`dispose(name)` is not explicit enough
