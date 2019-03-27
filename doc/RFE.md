@@ -6315,6 +6315,8 @@ So no need to write `type|nothing`.
 what if it is mixed with optional args?
 it should be fine. `process = (x:T, y:float|nothing, T: type)` 
 then you call `process(10)` it will be called as `process(10, nothing, int)`
+**Proposal**
+1. Generic type arguments are inferred by compiler if they are at tht ene and omitted
 
 ? -  things that look different should work differently
 About `=` and `:=`?
@@ -6328,6 +6330,8 @@ idea: `=` for binding, `:=` for concurrency
 `X <= int` named type
 now: `=` binding and named type, `:=` concurrency, `:` type alias and fn arg and struct field
 I think `:` and `=` make enough sense
+**Proposal**
+1. Use `:` for type alias and `=` for named type
 
 ? - Do we need to support a group of modules. either importing multiple modules or having a package concepts?
 
@@ -6368,6 +6372,9 @@ process = fn(x:int->int) {
     }
 }
 ```
+C++ uses this notation:
+`[&] (const string& addr) { return addr.find( name ) != string::npos; }`
+
 
 ? - Review concepts. Are there any case where it is not a simple clear one with a basic well-defined mission?
 Sometimes unification makes things more complicated: for example module is a struct. So we don't need a new "Module" concept. But now the "struct" concept is having a more complicated meaning which makes things more difficult.
@@ -6375,3 +6382,11 @@ Sometimes unification makes things more complicated: for example module is a str
 
 ? - Casting for union or primitives is runtime. But for named types it is compile time.
 Can we use a separate notation for named types?
+
+? - Another thing that is acting like two concepts: unions
+is used for sum types and enums
+Also concrete types
+
+? - Do we support specifying name for arguments?
+
+? - How can we make lambda out of a function which has no input?
