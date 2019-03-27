@@ -96,7 +96,6 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 10. `=`   Binding declaration, type alias
 11. `_`   Place-holder (lambda creator and assignment)
 12. `:=`  Parallel execution, named type
-13. `..`  Access type within a module/struct
 
 ## Reserved keywords
 
@@ -493,7 +492,6 @@ picked_up = sendAndWait(Message, my_message, task_id)
 int_result = resolve(int, task_id) #wait until task is finished and get the result
 ```
 
-
 # Patterns
 
 Because a lot of non-essential features are removed from the language and core, the user has freedom to implement them however they want (using features provided in the language). In this section we provide some of possible solutions for these types of features.
@@ -529,7 +527,7 @@ Another approach to implement polymorphism:
 drawCircle = fn(s: Circle, Canvas, float -> int) {...}
 drawSquare = fn(s: Square, Canvas, float -> int) {...}
 
-getDraw = fn(T: type, x: T -> fn(Canvas, float -> int)) 
+getDraw = fn(x: T, T: type -> fn(Canvas, float -> int)) 
 {
     vtable = [Circle : drawCircle, Square: drawSquare]
     cast(fn(T, Canvas, float), vtable[T])(x, _, _)
@@ -568,24 +566,6 @@ process = fn(x:int -> string)
 
 	temp[true]()
 }
-```
-
-## Modules as types
-
-Modules are treated as types and also they can contain types too.
-
-```
-#Import a module and instantiate immediately
-list = import("/core/List"){}
-my_list = list.create(int, 1)
-
-#Import a module and instantiate one of its internal types
-list = import("/core/ListUtils").ListType{}
-my_list = list.insert(int, 1)
-
-#Import a module and use a function in one of its internal types
-insertOp = import("/core/ListUtils").ListType.insert
-x = insertOp(int, 1)
 ```
 
 ## Dependency management
