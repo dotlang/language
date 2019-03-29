@@ -6379,6 +6379,80 @@ no. What if arg name changes? Should client also change?
 N - Make notation to invalidate a binding more explicit
 `dispose(name)` is not explicit enough
 
+N - Do we need to support a group of modules. either importing multiple modules or having a package concepts?
+In java you have to import them separately. Also we provide for group import.
+Idea: Allow to provide multiple strings to import so we can import base part from Refs module and provide the rest.
+e.g.
+```
+Refs = import("refs")
+stack = import(Refs.base_import, "/utils/Stack")
+```
+What about string concat?
+**Proposal**
+1. State that `+` can be used to concatenate string or sequences
+
+N - A fn that accepts any fn and logs before/after calling it. can we have this?
+We can say our logger accepts a function with no input so caller can lambda it
+```
+log = fn(f: fn(->T), msg: string, T: type) {
+    write(msg)
+    result = f()
+    write("done")
+    result
+}
+```
+But what if F has inputs? they will be passed by caller
+```
+z_result = log(fn{processData(x,y,z)}, "Hello")
+```
+
+N - We use `_` for multiple purposes:
+1. type for untyped structs: `x = _{10,20}`
+2. create lambda: `process = processFunc(10,_,_)`
+3. destruc to ignore items in assignments `{x,_} = my_data` or `_ := process()`
+`_` should mean, I don't know or I don't care.
+so for lambda creation maybe we should pick another symbol or keyword.
+`x = process(10,?`
+`x = fn(x:int ->`
+I think using `_` for assignment and lambda is ok.
+But for struct, we should find something else.
+scala: `val p = scala.math.pow(_, _)`
+this is divided into two points
+
+N - Can we eliminate `_` when creating a lambda?
+`process = f(int, int, int -> string) ...`
+`p = fn(x:int->string) { process(10, x, 20) }`
+We need a shortcut for p, right now we have `p = process(10, _, 20)`
+`process(10, _, 20)` vs `fn(x:int->string) { process(10, x, 20) }`
+obviously this is a syntax sugar because right side is completely possible to do.
+can we do this via generics?
+`lambda = fn(f: fn(T->O),`
+or maybe we can extend `fn{}` notation:
+`fn(x){process(10, x, 20)}` so that compiler will infer type for x from process call.
+`fn(x,y){process(10, x, 20, y)}`
+won't this be difficult to read?
+and what if inside `{}` is a big block?
+`fn(x,y){x=process(10);h=save(x,y,10); ...}`
+this can be mis-used because we have braces.
+Let's keep this.
+
+N - Why it must be a type on the right side of `->`?
+ambiguity with structs
+
+N - Will it have a conflict between generic functions that generate generic types with casting notation?
+`x = Stack(int){...}` create a struct of type `Stack(int)` 
+`x = Stack(int)(data)` cast
+
+N - How does type inference work with generic struct types when defining bindings?
+suppose that `Stack(t)` is a struct
+`x = Stack(){...}` now what if I want to infer type of Stack input?
+type inference works fine when I call a generic function. I ignore the type and compiler will infer that.
+But what about generic types?
+Generic types are functions that generate types for us. So just ignore their input!
+`x = Stack(){...}` 
+can we simplify above to: `x = Stack{...}`?
+
+
 
 ===============
 
@@ -6480,37 +6554,37 @@ x: CustomerType = 0 #invalid, but you can cast CustomerType to int
 ```
 This `enum:int` notation is not ideal.
 
-? - Do we need to support a group of modules. either importing multiple modules or having a package concepts?
-In java you have to import them separately. Also we provide for group import.
-Idea: Allow to provide multiple strings to import so we can import base part from Refs module and provide the rest.
-e.g.
-```
-Refs = import("refs")
-stack = import(Refs.base_import, "/utils/Stack")
-```
-What about string concat?
-**Proposal**
-1. State that `+` can be used to concatenate string or sequences
 
-? - We use `_` for multiple purposes:
-1. type for untyped structs: `x = _{10,20}`
-2. create lambda: `process = processFunc(10,_,_)`
-3. destruc to ignore items in assignments `{x,_} = my_data` or `_ := process()`
-`_` should mean, I don't know or I don't care.
-so for lambda creation maybe we should pick another symbol or keyword.
-`x = process(10,?`
-`x = fn(x:int ->`
-I think using `_` for assignment and lambda is ok.
-But for struct, we should find something else.
-scala: `val p = scala.math.pow(_, _)`
+? - How can we get rid of `_{....}` notation for structs?
+scala: `val t = (1, "hello", Console)`
+above is syntax sugar for `val t = new Tuple3(1, "hello", Console)`
+we have generics and we have type inference.
+so why not replace `_` with a std type?
+`x = _{1,2,3}`
+`x = Tuple3(){1,2,3}`
+`x = Tuple3(int,int,int){1,2,3}`
+**Proposal**:
+1. No use of `_` for untyped structs.
+2. No untyped structs. You have to set type.
+3. You can use standard generic `Tuple1`, `Tuple2`, ... types for your struct.
+
+? - Maybe we can use a new notation like `.[]` for casting.
+or `.()`
 
 
 
-
-
-? - Review concepts. Are there any case where it is not a simple clear one with a basic well-defined mission?
-Sometimes unification makes things more complicated: for example module is a struct. So we don't need a new "Module" concept. 
-But now the "struct" concept is having a more complicated meaning which makes things more difficult.
+? - q: Can a generic function call with all arguments inferred, omit `()`?
+but, if I see `x = MyType{...}` I won't be able to know if `MyType` is generic or not.
+and then can I use the same in function decl?
+`process = fn(x: MyType, ...` no because I need the type of MyType. unless I don't care.
+`process = fn(x: Stack, y: ...` this means `x` can be stack of any type.
+no. wrong. confusing.
+`process = fn(x: Stack(T), T: type, ...`
+you can omit types when calling process.
+when in argument list, you cannot omit `()` because you must specify inputs. there is no inference.
+when calling function, you can infer and if all inferred, you can omit `()`.
+because `Stack(){...}` is also misleading.
+what if we use `Type[T]` notation for generic data types? will it be easier to read and understand?
 
 
 ? - Casting for union or primitives is runtime. But for named types it is compile time.
@@ -6533,6 +6607,13 @@ y = int(MyType) # this will give us int|nothing
 What is wrong with core `check` function? We can always add something which is missing but removing something we not really need?
 But almost all languages have the pattern matching/switch concept.
 
-? - How can we get rid of `_{....}` notation for structs?
 
-? - A fn that accepts any fn and logs before/after calling it. can we have this?
+
+
+
+
+? - Review concepts. Are there any case where it is not a simple clear one with a basic well-defined mission?
+Sometimes unification makes things more complicated: for example module is a struct. So we don't need a new "Module" concept. 
+But now the "struct" concept is having a more complicated meaning which makes things more difficult.
+1. union/enum
+2. function/generic types
