@@ -6325,23 +6325,14 @@ I think `:` and `=` make enough sense
 **Proposal**
 1. Use `:` for type alias and `=` for named type
 
+N - How can we make lambda out of a function which has no input?
+just use function name or assign it
+`process = fn(->int) { 5 }`
+`...x = process`
+because functions ARE lambdas
 
-===============
 
-? - We use `_` for multiple purposes:
-1. type for untyped structs: `x = _{10,20}`
-2. create lambda: `process = processFunc(10,_,_)`
-3. destruc to ignore items in assignments `{x,_} = my_data`
-4. struct
-`_` should mean, I don't know or I don't care.
-so for lambda creation maybe we should pick another symbol or keyword.
-`x = process(10,?`
-`x = fn(x:int ->`
-
-? - Do we need to support a group of modules. either importing multiple modules or having a package concepts?
-In java you have to import them separately. Also we provide for group import.
-
-? - Can we move away from using lots of braces?
+N - Can we move away from using lots of braces?
 `ValueKeeper = fn(T: type -> type) { struct {data: T} }`
 idea: `fn` and `endfn`
 `ValueKeeper = fn(T: type -> type) struct {data: T} endfn`
@@ -6366,7 +6357,7 @@ temp = [x>0 : fn{ saveLargeFileToDB("SDSDASDA") },
 	temp[true]()
 ```
 
-? - can we make closure more explicit?
+N - can we make closure more explicit?
 In C++ you have to explicitly specify which vars to capture in lamnbda.
 Proposal for Julia: https://github.com/JuliaLang/julia/issues/14959
 ```
@@ -6380,6 +6371,141 @@ process = fn(x:int->int) {
 ```
 C++ uses this notation:
 `[&] (const string& addr) { return addr.find( name ) != string::npos; }`
+Let it be free like other languages. Adding more notation will be more confusing.
+
+N - Do we support specifying name for arguments?
+no. What if arg name changes? Should client also change?
+
+N - Make notation to invalidate a binding more explicit
+`dispose(name)` is not explicit enough
+
+
+===============
+
+? - Another thing that is acting like two concepts: unions
+is used for sum types and enums
+Also concrete types
+Purpose of union: A type that can only accept a subset of allowed values
+e.g. int can accept any int that can fit in 8 bytes
+but Color is a special type of int that can only accept a limited values
+Proposal: Treat it like union but with bindings (as name for values)
+```
+a = 1
+b = 2
+MyUnion = a | b
+```
+So a sum type of types is a union 
+but sum type of bindings is an enum
+**Proposal**
+1. Union must have types as alternatives
+2. Enum is a sum type with bindings as their alternatives
+3. Bindigns of enum type can only accept specified values
+Technically we can define bindings of different types for an enum (by mixing union and enum)
+so: `MyType = int1 | int2 | str1 | str2` should be allowed.
+Also technically we can mix values with types because:
+```
+MyType = int1 | int2
+MyUnion = MyType | float
+MyUnion2 = int1 | int2 | float
+```
+then what happens? how can I use check function? 
+if I check for type, then it can either have int or int1 -> this is not possible because union cannot have repeated types.
+With MyUnion I check for type first (float or MyType?) then if it is MyType, I can cast and then check for int1 or int2.
+alternatively: use `enum` keyword: `MyType = enum { int1, int2 }`
+in this way it will not be possible to mix it with union and cause confusion.
+In Haxe these two are mixed:
+```
+enum Color2 {
+      red;
+      green;
+      blue;
+      grey( v : Int );
+      rgb( r : Int, g : Int, b : Int );
+  }
+ static function toInt( c : Color2 ) : Int {
+        return switch( c ) {
+            case red: 0xFF0000;
+            case green: 0x00FF00;
+            case blue: 0x0000FF;
+            case grey(v): (v << 16) | (v << 8) | v;
+            case rgb(r,g,b): (r << 16) | (g << 8) | b;
+        }
+    }
+```
+But the power that comes with above comes with a cost
+Can we show enum with a map?
+map: values must have the same type, you can have int key and use binding names for key
+the only missing piece is banning values other than keys defined in the map.
+```
+saturday = 0
+sunday = 1
+DayOfWeekMap: [int, string] = [saturday: "Saturday", sunday: "Sunday", ...]
+DayOfWeekSeq: [int] = [saturday, sunday, ...]
+myDayOfWeek: int???
+DayOfWeek = int@[satuday, sunday, ...]
+DayOfWeek = @DayOfWeekMap
+```
+Best case: Leave it to the developer, write a map where key is labels you want to use, value is actual values you want
+goal: I want to have a type which can only accept a limited number of possible values (for example DayOfWeek).
+idea: allow to append a sequence after type name to allow list of allowed values for it.
+what is the absolute minimum the language can provide?
+I want to make sure bindings of type X, can only have these types.
+I want to make it easy to assign those values.
+I want to make sure when I read value of a type X binding, I check for all possible options.
+idea: Specify the only way to create an instance of type X is by calling function F.
+idea: `Enum[T] = [T: nothing]`
+This can be compile time checked. If the map is compile time.
+```
+DayOfWeek = enum { saturday, ... }
+DayOfWeek = int[0,1,2,3]
+saturday=0 ...
+DayOfWeek = int[saturday, sunday, ...]
+DayOfWeek = T[T]
+Enum[T] = T[T]
+```
+So this will be a new notation: `type[sequence of values]` means enum.
+```
+DayOfWeek = int[0,1,2,3,4,5,6]
+DayOfWeek = enum { 0, 1, 2, 3, 4, 5, 6 }
+CustomerTypes = int[valid, invalid]
+x: CustomerTypes = valid
+CustomerTypes = int[valid=0, invalid=1]
+```
+But this notation is difficult to read and memorize. `int[...]` who knows this is an enum.
+everybody knows enum so why not use it?
+```
+CustomerType = enum:int{valid=0, invalid=1}
+x: CustomerType = CustomerTypes.valid
+x: CustomerType = 0 #invalid, but you can cast CustomerType to int
+```
+This `enum:int` notation is not ideal.
+
+? - Do we need to support a group of modules. either importing multiple modules or having a package concepts?
+In java you have to import them separately. Also we provide for group import.
+Idea: Allow to provide multiple strings to import so we can import base part from Refs module and provide the rest.
+e.g.
+```
+Refs = import("refs")
+stack = import(Refs.base_import, "/utils/Stack")
+```
+What about string concat?
+**Proposal**
+1. State that `+` can be used to concatenate string or sequences
+
+? - We use `_` for multiple purposes:
+1. type for untyped structs: `x = _{10,20}`
+2. create lambda: `process = processFunc(10,_,_)`
+3. destruc to ignore items in assignments `{x,_} = my_data` or `_ := process()`
+`_` should mean, I don't know or I don't care.
+so for lambda creation maybe we should pick another symbol or keyword.
+`x = process(10,?`
+`x = fn(x:int ->`
+I think using `_` for assignment and lambda is ok.
+But for struct, we should find something else.
+scala: `val p = scala.math.pow(_, _)`
+
+
+
 
 
 ? - Review concepts. Are there any case where it is not a simple clear one with a basic well-defined mission?
@@ -6389,17 +6515,23 @@ But now the "struct" concept is having a more complicated meaning which makes th
 
 ? - Casting for union or primitives is runtime. But for named types it is compile time.
 Can we use a separate notation for named types?
+`int_val = cast(MyInt, int, my_int_val)`
+idea: Use named type as a function
+`int_val = MyInt(my_int_val)`
+can we use the same for union?
+```
+MyType = int | float | string
+x: MyType = 12
+y = int(MyType) # this will give us int|nothing
+```
+**Proposal**
+1. Allow treating type names as function which accept a union or named type to cast.
+2. For named types, output is type name (e.g. `int(my_int_value)`)
+3. For unions, output is type or nothing
 
-? - Another thing that is acting like two concepts: unions
-is used for sum types and enums
-Also concrete types
-
-? - Do we support specifying name for arguments?
-
-? - How can we make lambda out of a function which has no input?
-
-? - Make notation to invalidate a binding more explicit
-`dispose(name)` is not explicit enough
+? - In line with providing needed features, should we provide a switch statement for union and enums?
+What is wrong with core `check` function? We can always add something which is missing but removing something we not really need?
+But almost all languages have the pattern matching/switch concept.
 
 ? - How can we get rid of `_{....}` notation for structs?
 
