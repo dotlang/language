@@ -6332,12 +6332,14 @@ I think `:` and `=` make enough sense
 1. type for untyped structs: `x = _{10,20}`
 2. create lambda: `process = processFunc(10,_,_)`
 3. destruc to ignore items in assignments `{x,_} = my_data`
+4. struct
 `_` should mean, I don't know or I don't care.
 so for lambda creation maybe we should pick another symbol or keyword.
 `x = process(10,?`
-`x = fn(x:int ->
+`x = fn(x:int ->`
 
 ? - Do we need to support a group of modules. either importing multiple modules or having a package concepts?
+In java you have to import them separately. Also we provide for group import.
 
 ? - Can we move away from using lots of braces?
 `ValueKeeper = fn(T: type -> type) { struct {data: T} }`
@@ -6381,7 +6383,8 @@ C++ uses this notation:
 
 
 ? - Review concepts. Are there any case where it is not a simple clear one with a basic well-defined mission?
-Sometimes unification makes things more complicated: for example module is a struct. So we don't need a new "Module" concept. But now the "struct" concept is having a more complicated meaning which makes things more difficult.
+Sometimes unification makes things more complicated: for example module is a struct. So we don't need a new "Module" concept. 
+But now the "struct" concept is having a more complicated meaning which makes things more difficult.
 
 
 ? - Casting for union or primitives is runtime. But for named types it is compile time.
@@ -6397,3 +6400,7 @@ Also concrete types
 
 ? - Make notation to invalidate a binding more explicit
 `dispose(name)` is not explicit enough
+
+? - How can we get rid of `_{....}` notation for structs?
+
+? - A fn that accepts any fn and logs before/after calling it. can we have this?
