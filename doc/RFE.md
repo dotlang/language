@@ -6452,6 +6452,58 @@ Generic types are functions that generate types for us. So just ignore their inp
 `x = Stack(){...}` 
 can we simplify above to: `x = Stack{...}`?
 
+Y - Casting for union or primitives is runtime. But for named types it is compile time.
+Can we use a separate notation for named types?
+`int_val = cast(MyInt, int, my_int_val)`
+idea: Use named type as a function
+`int_val = MyInt(my_int_val)`
+can we use the same for union?
+```
+MyType = int | float | string
+x: MyType = 12
+y = int(MyType) # this will give us int|nothing
+```
+**Proposal**
+1. Allow treating type names as function which accept a union or named type to cast.
+2. For named types, output is type name (e.g. `int(my_int_value)`)
+3. For unions, output is type or nothing
+q: what about primitives? can we use the same notation?
+we did not use type name as function because it was re-using a fn name. But with generics and type inference that is fine.
+q: can developer write a function with name of a type to provide custom casting? No. This is compiler service and function naming should not 
+be the same as type naming.
+
+N - Maybe we can use a new notation like `.[]` for casting.
+or `.()`
+
+Y - How can we get rid of `_{....}` notation for structs?
+scala: `val t = (1, "hello", Console)`
+above is syntax sugar for `val t = new Tuple3(1, "hello", Console)`
+we have generics and we have type inference.
+so why not replace `_` with a std type?
+`x = _{1,2,3}`
+`x = Tuple3(){1,2,3}`
+`x = Tuple3(int,int,int){1,2,3}`
+**Proposal**:
+1. No use of `_` for untyped structs.
+2. No untyped structs. You have to set type.
+3. You can use standard generic `Tuple1`, `Tuple2`, ... types for your struct.
+Why do we need untyped struct? Because we just want to return some stuff and dont want to add a new type for that.
+idea: use golang's approach to allow return multiple outputs and ban untyped struct.
+```
+process = fn(x:int, y:int -> int, string, float) {
+	1, "A", 2.9
+}
+```
+Seems like a big change.
+But nothing prevents us to write:
+`process = fn(x:int -> struct{int, float, string})...`
+And how can I return something?
+`result = struct{int, float, string}{1,1.2,"A"}`
+It is long but it is based on rules. If you don't want that, you can write a type for it, like Tuple2.
+**Proposal**:
+1. No use of `_` for untyped structs.
+
+Y - We can also get rid of `.1` notation and use destruction.
 
 
 ===============
@@ -6553,24 +6605,38 @@ x: CustomerType = CustomerTypes.valid
 x: CustomerType = 0 #invalid, but you can cast CustomerType to int
 ```
 This `enum:int` notation is not ideal.
-
-
-? - How can we get rid of `_{....}` notation for structs?
-scala: `val t = (1, "hello", Console)`
-above is syntax sugar for `val t = new Tuple3(1, "hello", Console)`
-we have generics and we have type inference.
-so why not replace `_` with a std type?
-`x = _{1,2,3}`
-`x = Tuple3(){1,2,3}`
-`x = Tuple3(int,int,int){1,2,3}`
-**Proposal**:
-1. No use of `_` for untyped structs.
-2. No untyped structs. You have to set type.
-3. You can use standard generic `Tuple1`, `Tuple2`, ... types for your struct.
-
-? - Maybe we can use a new notation like `.[]` for casting.
-or `.()`
-
+We should not limit enum to integers. Any type can be enum.
+being enum means having a limited available allowed values.
+`CustomerType = int{valid=0, invalid=1}`
+`Data=string{ok="OK", not_ok="NOK"}`
+`str: string = string(Data.ok)`
+`x: Data = Data.ok`
+So `Data.ok` is a string and bindings of type `Data` can only have one of two above values.
+`TypeName = TypeName { Binding_Name=Literal, ... }`
+it should be very simple and minimal but general and orth and concise
+**Proposal**
+1. Union must have types as alternatives
+2. You can make any type enum by using below notation:
+`NewTypeName = TypeName { Identifier=Literal, ... }`
+q: Can we do above for `type`?
+`MyType = type { Int=int, Float=float, String=string }`
+then use it in generics?
+`process = fn(x: T, T: MyType, ...`
+This makes sense. Anything of type `MyType` can either be int or float or string.
+So enum can also be used for limiting allowed types in generics.
+q: can we omit name? and only provide literals? That is possible but you must then pass literal when that type is needed.
+q: how can I convert a string to StrEnum value? write a function.
+or if it is literal, you can cast. 
+`Data=string{ok="OK", not_ok="NOK"}`
+`x = Data("OK")` but in this case it makes more sense to write `Data.ok`
+in general, with a runtime string, you need to write your own function
+**Proposal**
+1. Union must have types as alternatives
+2. You can make any type enum by using below notation:
+`NewTypeName = TypeName { Identifier=Literal, ... }`
+Literal must be compile time and of type `TypeName`
+3. Note that `TypeName` can be `type` too.
+4. Identifier is optional.
 
 
 ? - q: Can a generic function call with all arguments inferred, omit `()`?
@@ -6584,33 +6650,30 @@ you can omit types when calling process.
 when in argument list, you cannot omit `()` because you must specify inputs. there is no inference.
 when calling function, you can infer and if all inferred, you can omit `()`.
 because `Stack(){...}` is also misleading.
-what if we use `Type[T]` notation for generic data types? will it be easier to read and understand?
+what if we use `Type[T]` notation for generic data types? will it be easier to read and understand? No.
+proposal: If the function only has generic type argument and all of them are going to be inferred, you can omit `()` too (Example 7).
+Any specific example which depicts above problem?
+This is not relevant in fn definition. 
+also in fn call, we already have all the data.
+e.g. set of T
+`process = fn(s: Set(T), T: type...`
+`x=process(my_int_set)` works fine
+`x=process(Set(int){4,[1,2,3,4]})`
+This only applies for generic functions that return a struct.
+
+? - We treat functions as type for generics.
+We treat types as functions for casting.
+is that not confusing?
 
 
-? - Casting for union or primitives is runtime. But for named types it is compile time.
-Can we use a separate notation for named types?
-`int_val = cast(MyInt, int, my_int_val)`
-idea: Use named type as a function
-`int_val = MyInt(my_int_val)`
-can we use the same for union?
-```
-MyType = int | float | string
-x: MyType = 12
-y = int(MyType) # this will give us int|nothing
-```
-**Proposal**
-1. Allow treating type names as function which accept a union or named type to cast.
-2. For named types, output is type name (e.g. `int(my_int_value)`)
-3. For unions, output is type or nothing
+
+
+
+
 
 ? - In line with providing needed features, should we provide a switch statement for union and enums?
 What is wrong with core `check` function? We can always add something which is missing but removing something we not really need?
 But almost all languages have the pattern matching/switch concept.
-
-
-
-
-
 
 ? - Review concepts. Are there any case where it is not a simple clear one with a basic well-defined mission?
 Sometimes unification makes things more complicated: for example module is a struct. So we don't need a new "Module" concept. 
