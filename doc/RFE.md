@@ -7016,10 +7016,43 @@ But now there is no left side and it is also optional.
 
 Y - Naming: module files should be named like bindings
 
-? - We use `.` for two purposes: struct and module
+N - Can we have module level bindings which do not have compile time values?
+like `stdio` at module level which is a struct of all required functions.
+```
+Stdio = struct(write: fn..., read: fn...)
+stdio = createStdio()
+createStdio = fn{ Stdio(write: writeToOutput, read: readFromOutput) }
+```
+In another module:
+```
+io = import("/core/std/io")
+io.stdio.write(...)
+```
+Not needed. You can simply assign value to stdio:
+```
+Stdio = struct(write: fn..., read: fn...)
+stdio = Stdio(write: ..., read: ...)
+```
+
+Y - We use `.` for two purposes: struct and module
 rust usese `::`
 Idea: use `..`
 ```
 std = import("/core/std/stack")
 ```
+on one hand we want to have a notation different from existing ones.
+on the other hand, we want this to be easy to write because devs will need to write lots of this.
+idea: use a completely new and different notation, BUT allow developer to import into current ns
+```
+std = import("/core/std/stack")
+g = std::g_data
+import("/core/std/stack")
+process(g_data) #g_data comes from stack module
+```
+`g = std::g_data`
+`g = std..g_data`
+`:: ..`
+both `.` and `:` are already used.
+`::` is more intuitive.
+
 
