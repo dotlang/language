@@ -6700,6 +6700,66 @@ maybe casting notation should be similar to `:type`
 `x = int_var:float`
 but we want to make it composable.
 
+N - q: Can a generic function call with all arguments inferred, omit `()`?
+but, if I see `x = MyType{...}` I won't be able to know if `MyType` is generic or not.
+and then can I use the same in function decl?
+`process = fn(x: MyType, ...` no because I need the type of MyType. unless I don't care.
+`process = fn(x: Stack, y: ...` this means `x` can be stack of any type.
+no. wrong. confusing.
+`process = fn(x: Stack(T), T: type, ...`
+you can omit types when calling process.
+when in argument list, you cannot omit `()` because you must specify inputs. there is no inference.
+when calling function, you can infer and if all inferred, you can omit `()`.
+because `Stack(){...}` is also misleading.
+what if we use `Type[T]` notation for generic data types? will it be easier to read and understand? No.
+proposal: If the function only has generic type argument and all of them are going to be inferred, you can omit `()` too (Example 7).
+Any specific example which depicts above problem?
+This is not relevant in fn definition. 
+also in fn call, we already have all the data.
+e.g. set of T
+`process = fn(s: Set(T), T: type...`
+`x=process(my_int_set)` works fine
+`x=process(Set(int){4,[1,2,3,4]})`
+This only applies for generic functions that return a struct. Because how else can compiler deduce generic types?
+`data = Customer(int)(10)`
+`data = Customer(10)`
+`data = ValueHolder(10)` short for `data = ValueHolder(int)(10)`
+but won't it be confusing? what if the struct HAS types.
+`data = ValueHolder(int)`, `data = ValueHolder(type)(int)`
+this is for a generic type which is internally a struct.
+shall we say this is forbidden? When calling a generic type, you must provide value for type arguments.
+but when calling a generic fn, you can omit them and let compiler deduce.
+
+N - How can I cast to a type alias? if we use core fn it will be easy.
+
+
+Y - Casting notation can be confusing with new struct notation.
+maybe casting notation should be similar to `:type`
+`x = int_var:float`
+but we want to make it composable.
+`result = Type(data)`
+`result = Type?(data)`
+or maybe we cal altogether get rid of castings.
+why do we need casting?
+- union: cast to `T|nothing`
+- named type: 
+- primitives
+- type alias
+`x = (int|nothing).(value)`
+Ada, Fortran and golang use `type(value)` notation.
+But we need something to assert this is a type casting, not a function call.
+we want to have a notation which is easy to read and remember and different (so that it is not ambiguous)
+`value as Type`
+`(type).(value)`
+maybe using cast function is the best choice.
+it will be a core fn so compiler will handle it.
+you can use `tryCast` for unions.
+```
+int_val = cast(my_int_val, int)
+possibly_int = tryCast(int_or_float, int) #gives int|nothing
+int_var = cast(3.14, int)
+```
+
 
 ===============
 
@@ -6834,32 +6894,9 @@ Literal must be compile time and of type `TypeName`
 4. Identifier is optional.
 
 
-? - q: Can a generic function call with all arguments inferred, omit `()`?
-but, if I see `x = MyType{...}` I won't be able to know if `MyType` is generic or not.
-and then can I use the same in function decl?
-`process = fn(x: MyType, ...` no because I need the type of MyType. unless I don't care.
-`process = fn(x: Stack, y: ...` this means `x` can be stack of any type.
-no. wrong. confusing.
-`process = fn(x: Stack(T), T: type, ...`
-you can omit types when calling process.
-when in argument list, you cannot omit `()` because you must specify inputs. there is no inference.
-when calling function, you can infer and if all inferred, you can omit `()`.
-because `Stack(){...}` is also misleading.
-what if we use `Type[T]` notation for generic data types? will it be easier to read and understand? No.
-proposal: If the function only has generic type argument and all of them are going to be inferred, you can omit `()` too (Example 7).
-Any specific example which depicts above problem?
-This is not relevant in fn definition. 
-also in fn call, we already have all the data.
-e.g. set of T
-`process = fn(s: Set(T), T: type...`
-`x=process(my_int_set)` works fine
-`x=process(Set(int){4,[1,2,3,4]})`
-This only applies for generic functions that return a struct. Because how else can compiler deduce generic types?
-
-
 
 ? - The new notation for struct, will it be confused with:
-- type casting
+- type casting: no more
 - generic types
 `x = Customer(...)` a struct
 `Type = LinkedList(...)` a generic type
@@ -6868,27 +6905,13 @@ if result is used as a value, it is a struct
 shall we make them differ more?
 
 
-? - Casting notation can be confusing with new struct notation.
-maybe casting notation should be similar to `:type`
-`x = int_var:float`
-but we want to make it composable.
-`result = Type(data)`
-`result = Type?(data)`
-or maybe we cal altogether get rid of castings.
-why do we need casting?
-- union: cast to `T|nothing`
-- named type: 
-- primitives
-- type alias
-`x = (int|nothing).(value)`
-Ada, Fortran and golang use `type(value)` notation.
-But we need something to assert this is a type casting, not a function call.
 
-
-? - Can we call fn by name?
+? - Can we call fn by arg name?
 fn arg name can change just like struct members names can change.
+`data = fnName(a:1, b:2, c:3)`
+it will be more like structs but because of the naming it won't be confused.
 
-? - How can I cast to a type alias?
+
 
 ? - We treat functions as type for generics.
 We treat types as functions for casting.
