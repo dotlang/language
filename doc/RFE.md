@@ -6760,10 +6760,36 @@ possibly_int = tryCast(int_or_float, int) #gives int|nothing
 int_var = cast(3.14, int)
 ```
 
+N - The new notation for struct, will it be confused with:
+- type casting: no more
+- generic types
+`x = Customer(...)` a struct
+`Type = LinkedList(...)` a generic type
+if result is used as a type, it is a generic type
+if result is used as a value, it is a struct
+shall we make them differ more?
+struct/generic types/function call all have `a(b)` notation.
+`x = process(x:10, y:20)` call fn with arg name
+`X = Stack(int)`
+`x = Pointer(x:10, y:20)` create struct. Capital letter at the beginning
+idea: we can use `!` for generic types. but it is used for inequality check.
+so no confusion with fn call.
+The confusion is between struct creation and generic type.
+But it should be easy to say if we need a type or a value at some point.
+So if we need a value, then this is a struct.
+If we need a type, then this is a generic data type function.
 
-===============
+N - We treat functions as type for generics.
+We treat types as functions for casting. no more
+is that not confusing?
 
-? - Another thing that is acting like two concepts: unions
+N - Review concepts. Are there any case where it is not a simple clear one with a basic well-defined mission?
+Sometimes unification makes things more complicated: for example module is a struct. So we don't need a new "Module" concept. 
+But now the "struct" concept is having a more complicated meaning which makes things more difficult.
+1. union/enum
+2. function/generic types
+
+Y - Another thing that is acting like two concepts: unions
 is used for sum types and enums
 Also concrete types
 Purpose of union: A type that can only accept a subset of allowed values
@@ -6891,42 +6917,78 @@ in general, with a runtime string, you need to write your own function
 `NewTypeName = TypeName { Identifier=Literal, ... }`
 Literal must be compile time and of type `TypeName`
 3. Note that `TypeName` can be `type` too.
+`NumericType = type { int, float }`
 4. Identifier is optional.
+we don't really need TypeName. It can be deduced from literals.
+`NewTypeName = enum { Identifier=Literal, Identifier2=Literal2, ... }`
+`DayOfWeek = enum { Saturday=0, Sunday=1, ... }`
+`x: DayOfWeek = DayOfWeek.saturday`
+we want to make it minimal. so why assign values here?
+```
+saturday=0
+sunday=1
+...
+DayOfWeek = enum{saturday, sunday, ...}
+x: DayOfWeek = saturday
+```
+q: Can I use named types in enum?
+q: can I just write values in enum? No. there should not be two ways to do this. only one way.
+So:
+`Type = enum {list of already defined bindings of the same type}`
+so `Type` is a new type and any binding of this type can only be assigned one of given bindings.
+why `{}`?
+`DayOfWeek = [saturday, sunday, ...]`
+enum is a list of bindings of the same type. so this is a sequence.
+but sequence can also have values.
+`array1 = [0,1,2]`
+`array2 = [saturday, 1, 2]`
+`MyType = [1,2,3]`
+MyType is a new type that can only accept one of the given values.
+So enum is just a compile time sequence which we treat as a type.
+**Proposal**
+1. Union must have types as alternatives
+2. You can assign any compile time sequence to a type and it will be an enum type.
+`NewTypeName = enum [sequence literal]`
+3. Note that sequence can have types too.
+`NumericType = enum [int, float]` and this can be used in generics.
+4. variables of enum type must accept values of exactly what is specified inside sequence, nothing else, even if they have same value.
+No. difficult to read. lets add `enum` keyword
 
+Y - In line with providing needed features, should we provide a switch statement for union and enums?
+What is wrong with core `check` function? We can always add something which is missing but removing something we not really need?
+But almost all languages have the pattern matching/switch concept.
+We can use maps for enum and union. and compiler can check for completeness of the map
+```
+x = [1: "A", 2: "B", ...][my_int_enum]
+x = [int: fn(x:int|float->string)..., float: fn(x:int|float->string)...][type(int_or_float)](int_or_float)
+```
+Add to enum and union section.
 
-
-? - The new notation for struct, will it be confused with:
-- type casting: no more
-- generic types
-`x = Customer(...)` a struct
-`Type = LinkedList(...)` a generic type
-if result is used as a type, it is a generic type
-if result is used as a value, it is a struct
-shall we make them differ more?
-
-
-
-? - Can we call fn by arg name?
+N - Can we call fn by arg name?
 fn arg name can change just like struct members names can change.
 `data = fnName(a:1, b:2, c:3)`
 it will be more like structs but because of the naming it won't be confused.
+even if we allow, it should be optional. And I don't like optional things. Either mandatory or banned.
+what if we think of function input as a struct?
+
+N - If we call fn with arg names, maybe we can use something else instead of `_` to create lambda.
+`p = process(x: 10, y: 20, z: ?)`
+but what if we make it optional.
+
+Y - `typeOf` function in core will return type of a binding.
+For union, its output is an enum of possible types of that enum
+```
+IF = int|float
+IFType = enum {int, float}
+typeOf = (x: int|float -> enum {int, float})
+```
+
+N - What can we remove from language?
+
+? - We use functions for two purposes: function and generic types.
+Should we make them differentiate?
 
 
+? - Is there an easy way to document for developer and compiler, out expectation of a generic type?
 
-? - We treat functions as type for generics.
-We treat types as functions for casting.
-is that not confusing?
-
-
-
-
-
-? - In line with providing needed features, should we provide a switch statement for union and enums?
-What is wrong with core `check` function? We can always add something which is missing but removing something we not really need?
-But almost all languages have the pattern matching/switch concept.
-
-? - Review concepts. Are there any case where it is not a simple clear one with a basic well-defined mission?
-Sometimes unification makes things more complicated: for example module is a struct. So we don't need a new "Module" concept. 
-But now the "struct" concept is having a more complicated meaning which makes things more difficult.
-1. union/enum
-2. function/generic types
+? - We use `.` for two purposes: struct and module
