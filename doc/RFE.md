@@ -6505,170 +6505,14 @@ It is long but it is based on rules. If you don't want that, you can write a typ
 
 Y - We can also get rid of `.1` notation and use destruction.
 
-
-===============
-
-? - Another thing that is acting like two concepts: unions
-is used for sum types and enums
-Also concrete types
-Purpose of union: A type that can only accept a subset of allowed values
-e.g. int can accept any int that can fit in 8 bytes
-but Color is a special type of int that can only accept a limited values
-Proposal: Treat it like union but with bindings (as name for values)
-```
-a = 1
-b = 2
-MyUnion = a | b
-```
-So a sum type of types is a union 
-but sum type of bindings is an enum
-**Proposal**
-1. Union must have types as alternatives
-2. Enum is a sum type with bindings as their alternatives
-3. Bindigns of enum type can only accept specified values
-Technically we can define bindings of different types for an enum (by mixing union and enum)
-so: `MyType = int1 | int2 | str1 | str2` should be allowed.
-Also technically we can mix values with types because:
-```
-MyType = int1 | int2
-MyUnion = MyType | float
-MyUnion2 = int1 | int2 | float
-```
-then what happens? how can I use check function? 
-if I check for type, then it can either have int or int1 -> this is not possible because union cannot have repeated types.
-With MyUnion I check for type first (float or MyType?) then if it is MyType, I can cast and then check for int1 or int2.
-alternatively: use `enum` keyword: `MyType = enum { int1, int2 }`
-in this way it will not be possible to mix it with union and cause confusion.
-In Haxe these two are mixed:
-```
-enum Color2 {
-      red;
-      green;
-      blue;
-      grey( v : Int );
-      rgb( r : Int, g : Int, b : Int );
-  }
- static function toInt( c : Color2 ) : Int {
-        return switch( c ) {
-            case red: 0xFF0000;
-            case green: 0x00FF00;
-            case blue: 0x0000FF;
-            case grey(v): (v << 16) | (v << 8) | v;
-            case rgb(r,g,b): (r << 16) | (g << 8) | b;
-        }
-    }
-```
-But the power that comes with above comes with a cost
-Can we show enum with a map?
-map: values must have the same type, you can have int key and use binding names for key
-the only missing piece is banning values other than keys defined in the map.
-```
-saturday = 0
-sunday = 1
-DayOfWeekMap: [int, string] = [saturday: "Saturday", sunday: "Sunday", ...]
-DayOfWeekSeq: [int] = [saturday, sunday, ...]
-myDayOfWeek: int???
-DayOfWeek = int@[satuday, sunday, ...]
-DayOfWeek = @DayOfWeekMap
-```
-Best case: Leave it to the developer, write a map where key is labels you want to use, value is actual values you want
-goal: I want to have a type which can only accept a limited number of possible values (for example DayOfWeek).
-idea: allow to append a sequence after type name to allow list of allowed values for it.
-what is the absolute minimum the language can provide?
-I want to make sure bindings of type X, can only have these types.
-I want to make it easy to assign those values.
-I want to make sure when I read value of a type X binding, I check for all possible options.
-idea: Specify the only way to create an instance of type X is by calling function F.
-idea: `Enum[T] = [T: nothing]`
-This can be compile time checked. If the map is compile time.
-```
-DayOfWeek = enum { saturday, ... }
-DayOfWeek = int[0,1,2,3]
-saturday=0 ...
-DayOfWeek = int[saturday, sunday, ...]
-DayOfWeek = T[T]
-Enum[T] = T[T]
-```
-So this will be a new notation: `type[sequence of values]` means enum.
-```
-DayOfWeek = int[0,1,2,3,4,5,6]
-DayOfWeek = enum { 0, 1, 2, 3, 4, 5, 6 }
-CustomerTypes = int[valid, invalid]
-x: CustomerTypes = valid
-CustomerTypes = int[valid=0, invalid=1]
-```
-But this notation is difficult to read and memorize. `int[...]` who knows this is an enum.
-everybody knows enum so why not use it?
-```
-CustomerType = enum:int{valid=0, invalid=1}
-x: CustomerType = CustomerTypes.valid
-x: CustomerType = 0 #invalid, but you can cast CustomerType to int
-```
-This `enum:int` notation is not ideal.
-We should not limit enum to integers. Any type can be enum.
-being enum means having a limited available allowed values.
-`CustomerType = int{valid=0, invalid=1}`
-`Data=string{ok="OK", not_ok="NOK"}`
-`str: string = string(Data.ok)`
-`x: Data = Data.ok`
-So `Data.ok` is a string and bindings of type `Data` can only have one of two above values.
-`TypeName = TypeName { Binding_Name=Literal, ... }`
-it should be very simple and minimal but general and orth and concise
-**Proposal**
-1. Union must have types as alternatives
-2. You can make any type enum by using below notation:
-`NewTypeName = TypeName { Identifier=Literal, ... }`
-q: Can we do above for `type`?
-`MyType = type { Int=int, Float=float, String=string }`
-then use it in generics?
-`process = fn(x: T, T: MyType, ...`
-This makes sense. Anything of type `MyType` can either be int or float or string.
-So enum can also be used for limiting allowed types in generics.
-q: can we omit name? and only provide literals? That is possible but you must then pass literal when that type is needed.
-q: how can I convert a string to StrEnum value? write a function.
-or if it is literal, you can cast. 
-`Data=string{ok="OK", not_ok="NOK"}`
-`x = Data("OK")` but in this case it makes more sense to write `Data.ok`
-in general, with a runtime string, you need to write your own function
-**Proposal**
-1. Union must have types as alternatives
-2. You can make any type enum by using below notation:
-`NewTypeName = TypeName { Identifier=Literal, ... }`
-Literal must be compile time and of type `TypeName`
-3. Note that `TypeName` can be `type` too.
-4. Identifier is optional.
-
-
-? - q: Can a generic function call with all arguments inferred, omit `()`?
-but, if I see `x = MyType{...}` I won't be able to know if `MyType` is generic or not.
-and then can I use the same in function decl?
-`process = fn(x: MyType, ...` no because I need the type of MyType. unless I don't care.
-`process = fn(x: Stack, y: ...` this means `x` can be stack of any type.
-no. wrong. confusing.
-`process = fn(x: Stack(T), T: type, ...`
-you can omit types when calling process.
-when in argument list, you cannot omit `()` because you must specify inputs. there is no inference.
-when calling function, you can infer and if all inferred, you can omit `()`.
-because `Stack(){...}` is also misleading.
-what if we use `Type[T]` notation for generic data types? will it be easier to read and understand? No.
-proposal: If the function only has generic type argument and all of them are going to be inferred, you can omit `()` too (Example 7).
-Any specific example which depicts above problem?
-This is not relevant in fn definition. 
-also in fn call, we already have all the data.
-e.g. set of T
-`process = fn(s: Set(T), T: type...`
-`x=process(my_int_set)` works fine
-`x=process(Set(int){4,[1,2,3,4]})`
-This only applies for generic functions that return a struct. Because how else can compiler deduce generic types?
-
-? - Don't use `{}` for destruction
+Y - Don't use `{}` for destruction
 `name, age, weight = my_data` 
 but it fails for a struct with just one member
 `name = my_name_struct`
 `name,_ = my_name_struct`
 This seems good. Add a dummy `_` at the end which will cover 0 fields.
 
-? - q: So now when compiler sees something like `identifier(...)` what is that?
+Y - q: So now when compiler sees something like `identifier(...)` what is that?
 it can be function call `camelCase`
 or struct `TypeName`
 or struct modification `binding_name`
@@ -6683,7 +6527,14 @@ lets do it difficult way: `new_c = Customer(name:"A", id: old_c.id)`
 **Proposal**
 1. No `name(...)` notation to copy-modify struct. use normal notation: `new_c = Customer(name:"A", id: old_c.id)`
 
-? - Can we eliminate too much use of `{}`
+N - q: can we use struct to provide function args?
+e.g. `process = (int,int->int)`
+`Customer=struct(int,int)`
+then call process with a binding of type Customer?
+this can be used with generics to call any function.
+but is that really useful?
+
+Y - Can we eliminate too much use of `{}`
 usages:
 - code block in function
 - struct type
@@ -6842,26 +6693,206 @@ LinkedList = fn(T: type -> type) {
 1. `Customer = struct(name: string, id: int)`
 2. `my_cust = Customer("A", 10)` or `my_cust = Customer(name:"A", id: 10)`
 3. `process = fn(->struct(int, string)) { struct(int, string)(10, "A") }`
+This is same as existing notation except for replacing `{}` with `()`
+so, this is same as casting? what differentiates them?
+`x = Customs(1)`
+maybe casting notation should be similar to `:type`
+`x = int_var:float`
+but we want to make it composable.
+
+
+===============
+
+? - Another thing that is acting like two concepts: unions
+is used for sum types and enums
+Also concrete types
+Purpose of union: A type that can only accept a subset of allowed values
+e.g. int can accept any int that can fit in 8 bytes
+but Color is a special type of int that can only accept a limited values
+Proposal: Treat it like union but with bindings (as name for values)
+```
+a = 1
+b = 2
+MyUnion = a | b
+```
+So a sum type of types is a union 
+but sum type of bindings is an enum
+**Proposal**
+1. Union must have types as alternatives
+2. Enum is a sum type with bindings as their alternatives
+3. Bindigns of enum type can only accept specified values
+Technically we can define bindings of different types for an enum (by mixing union and enum)
+so: `MyType = int1 | int2 | str1 | str2` should be allowed.
+Also technically we can mix values with types because:
+```
+MyType = int1 | int2
+MyUnion = MyType | float
+MyUnion2 = int1 | int2 | float
+```
+then what happens? how can I use check function? 
+if I check for type, then it can either have int or int1 -> this is not possible because union cannot have repeated types.
+With MyUnion I check for type first (float or MyType?) then if it is MyType, I can cast and then check for int1 or int2.
+alternatively: use `enum` keyword: `MyType = enum { int1, int2 }`
+in this way it will not be possible to mix it with union and cause confusion.
+In Haxe these two are mixed:
+```
+enum Color2 {
+      red;
+      green;
+      blue;
+      grey( v : Int );
+      rgb( r : Int, g : Int, b : Int );
+  }
+ static function toInt( c : Color2 ) : Int {
+        return switch( c ) {
+            case red: 0xFF0000;
+            case green: 0x00FF00;
+            case blue: 0x0000FF;
+            case grey(v): (v << 16) | (v << 8) | v;
+            case rgb(r,g,b): (r << 16) | (g << 8) | b;
+        }
+    }
+```
+But the power that comes with above comes with a cost
+Can we show enum with a map?
+map: values must have the same type, you can have int key and use binding names for key
+the only missing piece is banning values other than keys defined in the map.
+```
+saturday = 0
+sunday = 1
+DayOfWeekMap: [int, string] = [saturday: "Saturday", sunday: "Sunday", ...]
+DayOfWeekSeq: [int] = [saturday, sunday, ...]
+myDayOfWeek: int???
+DayOfWeek = int@[satuday, sunday, ...]
+DayOfWeek = @DayOfWeekMap
+```
+Best case: Leave it to the developer, write a map where key is labels you want to use, value is actual values you want
+goal: I want to have a type which can only accept a limited number of possible values (for example DayOfWeek).
+idea: allow to append a sequence after type name to allow list of allowed values for it.
+what is the absolute minimum the language can provide?
+I want to make sure bindings of type X, can only have these types.
+I want to make it easy to assign those values.
+I want to make sure when I read value of a type X binding, I check for all possible options.
+idea: Specify the only way to create an instance of type X is by calling function F.
+idea: `Enum[T] = [T: nothing]`
+This can be compile time checked. If the map is compile time.
+```
+DayOfWeek = enum { saturday, ... }
+DayOfWeek = int[0,1,2,3]
+saturday=0 ...
+DayOfWeek = int[saturday, sunday, ...]
+DayOfWeek = T[T]
+Enum[T] = T[T]
+```
+So this will be a new notation: `type[sequence of values]` means enum.
+```
+DayOfWeek = int[0,1,2,3,4,5,6]
+DayOfWeek = enum { 0, 1, 2, 3, 4, 5, 6 }
+CustomerTypes = int[valid, invalid]
+x: CustomerTypes = valid
+CustomerTypes = int[valid=0, invalid=1]
+```
+But this notation is difficult to read and memorize. `int[...]` who knows this is an enum.
+everybody knows enum so why not use it?
+```
+CustomerType = enum:int{valid=0, invalid=1}
+x: CustomerType = CustomerTypes.valid
+x: CustomerType = 0 #invalid, but you can cast CustomerType to int
+```
+This `enum:int` notation is not ideal.
+We should not limit enum to integers. Any type can be enum.
+being enum means having a limited available allowed values.
+`CustomerType = int{valid=0, invalid=1}`
+`Data=string{ok="OK", not_ok="NOK"}`
+`str: string = string(Data.ok)`
+`x: Data = Data.ok`
+So `Data.ok` is a string and bindings of type `Data` can only have one of two above values.
+`TypeName = TypeName { Binding_Name=Literal, ... }`
+it should be very simple and minimal but general and orth and concise
+**Proposal**
+1. Union must have types as alternatives
+2. You can make any type enum by using below notation:
+`NewTypeName = TypeName { Identifier=Literal, ... }`
+q: Can we do above for `type`?
+`MyType = type { Int=int, Float=float, String=string }`
+then use it in generics?
+`process = fn(x: T, T: MyType, ...`
+This makes sense. Anything of type `MyType` can either be int or float or string.
+So enum can also be used for limiting allowed types in generics.
+q: can we omit name? and only provide literals? That is possible but you must then pass literal when that type is needed.
+q: how can I convert a string to StrEnum value? write a function.
+or if it is literal, you can cast. 
+`Data=string{ok="OK", not_ok="NOK"}`
+`x = Data("OK")` but in this case it makes more sense to write `Data.ok`
+in general, with a runtime string, you need to write your own function
+**Proposal**
+1. Union must have types as alternatives
+2. You can make any type enum by using below notation:
+`NewTypeName = TypeName { Identifier=Literal, ... }`
+Literal must be compile time and of type `TypeName`
+3. Note that `TypeName` can be `type` too.
+4. Identifier is optional.
+
+
+? - q: Can a generic function call with all arguments inferred, omit `()`?
+but, if I see `x = MyType{...}` I won't be able to know if `MyType` is generic or not.
+and then can I use the same in function decl?
+`process = fn(x: MyType, ...` no because I need the type of MyType. unless I don't care.
+`process = fn(x: Stack, y: ...` this means `x` can be stack of any type.
+no. wrong. confusing.
+`process = fn(x: Stack(T), T: type, ...`
+you can omit types when calling process.
+when in argument list, you cannot omit `()` because you must specify inputs. there is no inference.
+when calling function, you can infer and if all inferred, you can omit `()`.
+because `Stack(){...}` is also misleading.
+what if we use `Type[T]` notation for generic data types? will it be easier to read and understand? No.
+proposal: If the function only has generic type argument and all of them are going to be inferred, you can omit `()` too (Example 7).
+Any specific example which depicts above problem?
+This is not relevant in fn definition. 
+also in fn call, we already have all the data.
+e.g. set of T
+`process = fn(s: Set(T), T: type...`
+`x=process(my_int_set)` works fine
+`x=process(Set(int){4,[1,2,3,4]})`
+This only applies for generic functions that return a struct. Because how else can compiler deduce generic types?
+
+
+
+? - The new notation for struct, will it be confused with:
+- type casting
+- generic types
+`x = Customer(...)` a struct
+`Type = LinkedList(...)` a generic type
+if result is used as a type, it is a generic type
+if result is used as a value, it is a struct
+shall we make them differ more?
+
+
+? - Casting notation can be confusing with new struct notation.
+maybe casting notation should be similar to `:type`
+`x = int_var:float`
+but we want to make it composable.
+`result = Type(data)`
+`result = Type?(data)`
+or maybe we cal altogether get rid of castings.
+why do we need casting?
+- union: cast to `T|nothing`
+- named type: 
+- primitives
+- type alias
+`x = (int|nothing).(value)`
+Ada, Fortran and golang use `type(value)` notation.
+But we need something to assert this is a type casting, not a function call.
 
 
 ? - Can we call fn by name?
 fn arg name can change just like struct members names can change.
 
-
-? - q: can we use struct to provide function args?
-e.g. `process = (int,int->int)`
-`Customer=struct(int,int)`
-then call process with a binding of type Customer?
-this can be used with generics to call any function.
-but is that really useful?
-
-
+? - How can I cast to a type alias?
 
 ? - We treat functions as type for generics.
 We treat types as functions for casting.
 is that not confusing?
-
-
 
 
 
