@@ -6985,10 +6985,41 @@ typeOf = (x: int|float -> enum {int, float})
 
 N - What can we remove from language?
 
-? - We use functions for two purposes: function and generic types.
+N - We are using `()` for 4 purposes:
+1. fn def:  `process = fn(int,int,int)...`
+2. fn call `process(1,2,3)`
+3. struct decl `S = struct(x:int, y:float)`
+4. struct binding instantiation `s = S(x:10, y:1.23)`
+3 is different because it has `struct` prefix
+4 is different because it has type name prefix
+1 is different because it has `fn` prefix
+
+N - Is there an easy way to document for developer and compiler, out expectation of a generic type?
+
+Y - We use functions for two purposes: function and generic types.
 Should we make them differentiate?
+What about this: for generic types, we write them as function but with `[]`
+```
+Stack = fn[T: type -> type] { ... }
+...
+x: Stack[int]
+```
+Won't it be confused with seq/map access? No because type name starts with Capital letter.
+**Proposal**
+1. Generic types are defined just like functions but instead of `()` we use `[]` to declare and invoke them.
 
+N - Can we have type inference with generic types?
+when I call push function, its generic type can be inferred from other inputs.
+but when I call Stack generic type, how can its type be inferred?
+in java I can write `Map<Int, String> x = new HashMap<>()` and on the right side type is inferred but from the left side.
+But now there is no left side and it is also optional.
 
-? - Is there an easy way to document for developer and compiler, out expectation of a generic type?
+Y - Naming: module files should be named like bindings
 
 ? - We use `.` for two purposes: struct and module
+rust usese `::`
+Idea: use `..`
+```
+std = import("/core/std/stack")
+```
+
