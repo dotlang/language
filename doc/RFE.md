@@ -6659,7 +6659,203 @@ e.g. set of T
 `process = fn(s: Set(T), T: type...`
 `x=process(my_int_set)` works fine
 `x=process(Set(int){4,[1,2,3,4]})`
-This only applies for generic functions that return a struct.
+This only applies for generic functions that return a struct. Because how else can compiler deduce generic types?
+
+? - Don't use `{}` for destruction
+`name, age, weight = my_data` 
+but it fails for a struct with just one member
+`name = my_name_struct`
+`name,_ = my_name_struct`
+This seems good. Add a dummy `_` at the end which will cover 0 fields.
+
+? - q: So now when compiler sees something like `identifier(...)` what is that?
+it can be function call `camelCase`
+or struct `TypeName`
+or struct modification `binding_name`
+or casting
+can we get rid of struct modification? but that is useful. when we want to change only one field.
+`new_customer = old_customer(name: "A")`
+but the more robust way is to move `old_customer` inside `()`
+`new_customer = Customer(old_customer, name: "A")` but again, confusing.
+idea: use `+`: `new_c = old_c + Customer(name:"A")`
+we can use `+` to join structs. but `Customer(name:"A")` is missing id which is not good.
+lets do it difficult way: `new_c = Customer(name:"A", id: old_c.id)`
+**Proposal**
+1. No `name(...)` notation to copy-modify struct. use normal notation: `new_c = Customer(name:"A", id: old_c.id)`
+
+? - Can we eliminate too much use of `{}`
+usages:
+- code block in function
+- struct type
+- struct literal
+- destruction
+scala: `val(name, age, weight) = ("Al", 42, 200.0)`
+one way is:
+`name, age, weight = my_data` 
+but it fails for a struct with just one member
+`name = my_name_struct`
+`name,_ = my_name_struct`
+This seems good. Add a dummy `_` at the end which will cover 0 fields.
+```
+Customer = struct { name: string, id: int }
+Customer = struct(string, int)
+Customer = struct(
+```
+can we treat struct as a function?
+`Customer = struct(name: string, id: int)`
+and to create a customer call struct function:
+`x = struct("A", 10)`
+or even simpler:
+`Customer = fn(name: string, id: int -> struct)`
+`my_customer = Customer("A", 10)`
+`my_customer.name`
+`my_customer.id`
+basically, above is constructor of the struct type.
+but, how can we specify field names? This makes code more readable.
+If we allow that, we effectively allow calling functions by arg name.
+`process = fn(id: int, name: string -> int) { ... }`
+`x = process(id: 10, name: "A")`
+The reason against calling fn by arg name is what if arg name changes.
+Same as what if struct field name changes.
+both have same chances of change, for struct the chance is even higher.
+IDE can provide names for the developer so it is not a burden for them.
+About go: The reason for this is because the names are not really important for someone calling a method or a function. What matters is the types of the parameters and their order.
+pro: we can re-arrange arguments as we like
+q: What happens to optional args? they can appear anywhere.
+q: what about generic types? They also can appear anywhere. Just ignore them if you want compiler to infer them.
+**Proposal**:
+1. `{}` will be only used for code blocks.
+2. struct type is a function. you call it with values and it gives you a struct.
+3. you should also call fn with arg name same as struct.
+`Customer = fn(name: string, id: int -> struct)`
+`my_customer = Customer(name:"A", id:10)`
+`process(data: a, names: [1,2,3])`
+4. you can specify args in any order you want
+5. optional arguments including types and `|nothing` can be omitted and don't have to be at the end.
+q: shall we make it optional to specify arg name?
+struct is just like a generic: `Stack = fn(x: T, T: type -> type)`
+but it does not have a body.
+or maybe we can drop the fn notation altogether.
+`x = Customer(name: "A", id: 10)`
+`x = (name: "A", id: 10)` and x is a struct
+but how can we refer to its type?
+`(name:"A", id:10)` is bad because ignored type and dotLang is supposed to be strongly typed.
+but can we write a body for Customer?
+```
+Customer = fn(name: string, id: int -> struct) {
+	(name: name, id: id)
+}
+```
+so we accept that output of above is a struct.
+so we accept we can have unnamed/anonymous struct
+how can we show that? `struct ("A", 1)` is a value
+`struct(name: string, id:int)` is type.
+So why do we need functions?
+The reason we can use this is that now struct is a bare list of fields. No value, no import, no types, ...
+**Proposal**:
+1. `{}` will be only used for code blocks.
+2. define struct type: `Customer = $(name: string, id: int)`
+3. define struct value: `c = Customer(name: "A", id: 10)`
+4. anonymous struct: `process = fn(->struct(int, string))`
+5. anonymous struct value: `x=struct(int,int)(10, 20)`
+q: so, shall we name it tuple now? or maybe something shorter?
+q: what happens to call fn by arg name?
+maybe use `$` prefix?
+But in `Customer(name: "A", id: 10)` we are really treating struct type like a function.
+so, just like generic types, struct types are functions.
+```
+Customer = fn(name: string, id: int -> struct) {}
+```
+But what should be the return value? If we specify anything here, it will be the "actual" struct type.
+so some magic by compiler should happen here.
+basically, the body is defined in the argument list: name and types, 
+so compiler will write the return for us. we can write nothing or `{}` or `{struct}`
+I think writing nothing makes most sense.
+So:
+to define a struct type, you must define a function with appropriate args.
+q: but what happens to anonymous structs?
+q: can struct be type of an input? it can be. because it is type of an output.
+so if something is of type struct, it can be any struct. but it makes no sense.
+if it makes no sense, why use the keyword `struct`? so that we explicitly state this is a struct type.
+`Customer = fn(name: string, id: int -> )` this is too confusing.
+```
+Customer = fn(name: string, id: int -> type)
+```
+struct is a generic type. so we define `Customer` just like a Stack, but without body. this makes sense but is definitely confusing.
+```
+Stack = fn(T: type -> type) { ... }
+Customer = fn(name: string, id: int -> type) 
+```
+so how can I define a generic LinkedList?
+```
+LinkedList = fn(T: type -> type) {
+    Node = fn(data: T, next: Node(
+    Result = fn(value: T, next: ?)
+    Result
+    
+}
+```
+About anonymous struct we can define std functions to create tuples:
+`Tuple2 = (T: type, U: type, field1: T, field2: U -> struct)`
+Main issue is combining generic fn with struct fn is confusing.
+```
+LinkedList = fn(T: type -> type) {
+    Node = Tuple2(T, Node)
+    Node
+}
+```
+We can define core fn to define recursive data types. These are really edge cases and exceptions.
+so, what is the explicit sign to differentiate struct from a generic function?
+struct is a generic function without body.
+`Customer = fn(name: string, id: int -> type)`
+`LinkedList = fn(T: type -> type) { SelfPtr(T) }`
+`my_customer = Customer(name:"A", id:10)`
+`my_ll = LinkedList(int)`
+No. These two are totally different: struct function returns a value
+generic function returns a type.
+Both are types, but generic fn is a type that generates types so `-> type`
+But struct fn is a type that generates values so `-> struct`
+**Proposal**:
+1. `{}` will be only used for code blocks.
+2. define struct type: `Customer = fn(name: string, id: int -> struct)`
+3. define struct value: `c = Customer(name: "A", id: 10)`
+4. anonymous struct: `process = fn(->Tuple2(int, string))`
+5. anonymous struct value: `x=struct(int,int)(10, 20)`
+Tuple is a generic type that generates structs.
+`Tuple2 = (T: type, U: type, field1: T, field2: U -> struct)`
+so `-> struct`: does it mean output is a struct type or a struct value?
+it is not struct type.
+`Tuple2 = (T: type, U: type, field1: T, field2: U -> type)`
+I think this whole thing is super confusing. We should be ok with adding new keyword notation at the cost of making language easier to understand.
+Original goal: remove usages of `{}`
+to define struct type: `Customer = struct(name: string, id: int)` field name is optional
+struct value: `x = Customer(name: "A", id: 10)`
+anonym struct: `process = (x:int -> struct(string, int))`
+an. struct value: `f = struct(string, int)("A", 10)`
+```
+LinkedList = fn(T: type -> type) {
+    Node = struct(data: T, next: Node)
+    Node
+}
+```
+**Proposal**:
+1. `Customer = struct(name: string, id: int)`
+2. `my_cust = Customer("A", 10)` or `my_cust = Customer(name:"A", id: 10)`
+3. `process = fn(->struct(int, string)) { struct(int, string)(10, "A") }`
+
+
+? - Can we call fn by name?
+fn arg name can change just like struct members names can change.
+
+
+? - q: can we use struct to provide function args?
+e.g. `process = (int,int->int)`
+`Customer=struct(int,int)`
+then call process with a binding of type Customer?
+this can be used with generics to call any function.
+but is that really useful?
+
+
 
 ? - We treat functions as type for generics.
 We treat types as functions for casting.
