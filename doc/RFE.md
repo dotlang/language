@@ -7063,3 +7063,19 @@ option2: use `..`
 option3: import at identifier level not module level
 
 ? - for union use destruction syntax and remove all type checking functions from core
+another wy, that can be used is to treat a union binding as a struct
+`int_or_float.int`, `int_or_float.float`, ...
+this forces developer to use named types for a union
+also it can be used in expressions.
+`f = int_or_float.int // cast(int, int_or_float.float)`
+`int_iorfloat.int` is of type `int|nothing`.
+so if `T = int|nothing`, a binding of type T will have `.int`? yes and it will be itself.
+and `my_t.nothing`? what will it be? it is not orth.
+also `x.Type` notation will be confusing.
+
+? - How to have fn redirect?
+e.g. getNext can accept `int|nothing` so we want to redirect to two other fns based on whether input is int or nothing
+
+? - How to have iterators?
+e.g. reading a very long xml element by element
+or multiple file reader/writers
