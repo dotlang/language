@@ -7056,3 +7056,10 @@ both `.` and `:` are already used.
 `::` is more intuitive.
 
 
+? - using `::` is not very good.
+use another notation
+option1: use `.`
+option2: use `..`
+option3: import at identifier level not module level
+
+? - for union use destruction syntax and remove all type checking functions from core
