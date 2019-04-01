@@ -7139,12 +7139,35 @@ h: MyInt = ...
 g:int = toInt[h]
 ```
 
-? - what other applications can we have for compile time fns?
+N - what other applications can we have for compile time fns?
 - implement language level if? no.
 these are not inline functions. they are compile time evaluated
 zig has this
 Dlang has them as ctfe
 also c++ has them
+can they act like macros? because this is how generics work.
+```
+process = fn[cond: boolean, ifPart: fn(->T), elsePart: fn(->T), T: type -> T] {
+	[ifPart, elsePart][cond]()
+}
+```
+there is no use for having macros with ctfe. compiler can inline normal fns and that is enough.
+- we can do assertion
+what about this? if fn inputs are compile time, then compiler will process it at compile time.
+other wise runtime
+but then what happens to casting of named types? the `[]` notation does not help them.
+```
+MyInt = int
+toInt = fn(x: MyInt -> int) { x }
+h: MyInt = ...
+g:int = toInt[h]
+```
+Y - cancel `[]` notation for compile time fns.
+just use normal notation but compiler will optimise.
 
+N - can we provide monads?
 
-? - can we provide monads?
+Y - can we destruct a module? to only have some of its symbols?
+```
+Set, process, my_data = import("/core/set")..{SetType, processFunc, my_data}
+```
