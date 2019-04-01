@@ -7055,14 +7055,60 @@ process(g_data) #g_data comes from stack module
 both `.` and `:` are already used.
 `::` is more intuitive.
 
+N - How to have iterators?
+e.g. reading a very long xml element by element
+or multiple file reader/writers
+it will be a combination of struct, generics, function.
 
-? - using `::` is not very good.
+N - How to have fn redirect?
+e.g. getNext can accept `int|nothing` so we want to redirect to two other fns based on whether input is int or nothing
+can we do it with above notation?
+```
+intn, floatn = int_or_float
+invoke(intn, int_func) // invoke(floatn, float_func)
+```
+but can it be done at a higher level? so that compiler can optimize?
+even if compiler does this, it'll be similar to above.
+
+N - we can allow string interpolation
+and use `{base}/helper` as module path to import where base is taken from another module
+```
+x = import("{refs.a}/helper")
+x = import(refs.a+"/helper")
+```
+
+Y - using `::` is not very good.
 use another notation
 option1: use `.`
 option2: use `..`
-option3: import at identifier level not module level
+option3: import at identifier level not module level.
+```
+myFunc = import("/core/std/helper", myFunc)
+MyType = import("/core/std/helper", MyType)
+my_binding = import("/core/std/helper", my_binding)
+a,b,c = import("/core/std/helper/{a,b,c}")
+_ = import("/core/std/helper/{a,b,c}")
+d,e,f = import("/core/std/helper/{a,b,c}")
+_ = import("/core/std/helper")
+```
+if we decide to import at id level:
+1. it might be difficult to import many things
+2. how can I import everything?
+3. how can I rename?
+4. should identifiers be part of module path string?
+but import at module level: no need for alias or selective import
+but in this case we need to decide notation for accessing inside a module.
+```
+m = import("...")
+MyType = m..MyCustomType
+MyType = m
+```
+lets go with `..`
 
-? - for union use destruction syntax and remove all type checking functions from core
+Y - what about `import("...",["a","b"...])` notation?
+dropped
+
+Y - for union use destruction syntax and remove all type checking functions from core
 another wy, that can be used is to treat a union binding as a struct
 `int_or_float.int`, `int_or_float.float`, ...
 this forces developer to use named types for a union
@@ -7072,10 +7118,33 @@ also it can be used in expressions.
 so if `T = int|nothing`, a binding of type T will have `.int`? yes and it will be itself.
 and `my_t.nothing`? what will it be? it is not orth.
 also `x.Type` notation will be confusing.
+**Proposal**:
+1. You can destruct a union to its types (except nothing)
+`intv, floatv = int_or_nothing`
+each element on the left will be of type `T|nothing`.
 
-? - How to have fn redirect?
-e.g. getNext can accept `int|nothing` so we want to redirect to two other fns based on whether input is int or nothing
+Y - can we say fn with `[]` are compile time functions?
+con: it will be confusing with bindings
+`data[...]` is it a seq or a compile time fn call?
 
-? - How to have iterators?
-e.g. reading a very long xml element by element
-or multiple file reader/writers
+Y - can we remove casting altogether?
+usage:
+primitive: can use custom purpose fns
+union: can use destruct
+named type: can we use compile time fn?
+```
+MyInt = int
+toInt = fn[x: MyInt -> int] { x }
+h: MyInt = ...
+g:int = toInt[h]
+```
+
+? - what other applications can we have for compile time fns?
+- implement language level if? no.
+these are not inline functions. they are compile time evaluated
+zig has this
+Dlang has them as ctfe
+also c++ has them
+
+
+? - can we provide monads?
