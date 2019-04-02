@@ -233,7 +233,7 @@ DayOfWeek enum [saturday, sunday, ...]
 
 ## Union
 
-Bindings of a union type, have ability to hold multiple different types and are shown as `T1|T2|T3|...`.  You can destruct a binding of union type. This will give you a list of values each of type `T|nothing` for each type of the union (except nothing itself). You can use `_` to ignore one or more possible outputs.
+Bindings of a union type, have ability to hold multiple different types and are shown as `T1|T2|T3|...`.  You can destruct a binding of union type. This will give you a list of values each of type `T|nothing` for each type of the union based on type of the binding (except nothing itself). You can use `_` to ignore one or more possible outputs.
 
 **Examples**
 
@@ -245,6 +245,14 @@ x: int|string|float = getData()
 result = check(x, fn(i:int -> boolean) { ... }) //
          check(x, fn(s: string -> boolean) {...}) //
          check(x, fn(f:float->boolean){...})
+```
+4.
+```
+#although T type can be at any position in x's original type, but inside hasType T is the first type so a will be corresponding to type T
+hasType = fn(x: T|U, T: type, U: type -> bool) {
+	a,_ = x
+	a!=nothing
+}
 ```
 
 ## Struct
