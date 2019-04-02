@@ -7171,3 +7171,21 @@ Y - can we destruct a module? to only have some of its symbols?
 ```
 Set, process, my_data = import("/core/set")..{SetType, processFunc, my_data}
 ```
+
+? - Need for clarification: 
+what if I write `x,y=union_var` but right side is union of 5 types?
+option1: this is not allowed
+option2: x will be the first type and y will be union of the rest
+but option 2 is confusing, and the notation will not be same as struct.
+`x,y=int_or_float_or_string_union`
+x will be `int|nothing`
+y will be `float|string|nothing`
+this can be used in a generic function to have things like `hasType`
+```
+hasType = fn(x: T|U, T: type, U: type -> bool) {
+	a,b = x
+	a!=nothing
+}
+
+has_int = hasType(int_or_float_or_string, int)
+```
