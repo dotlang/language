@@ -7172,7 +7172,7 @@ Y - can we destruct a module? to only have some of its symbols?
 Set, process, my_data = import("/core/set")..{SetType, processFunc, my_data}
 ```
 
-? - Need for clarification: 
+N - Need for clarification: 
 what if I write `x,y=union_var` but right side is union of 5 types?
 option1: this is not allowed
 option2: x will be the first type and y will be union of the rest
@@ -7187,5 +7187,53 @@ hasType = fn(x: T|U, T: type, U: type -> bool) {
 	a!=nothing
 }
 
-has_int = hasType(int_or_float_or_string, int)
+has_int = hasType(int_or_float_or_string, string) #T will be string, U will be int|float|nothing
+#so: a,b = x means a will be int|nothing, b (or _) will be float|string|nothing
 ```
+But result of destruction is based on the union types, not T and U in the generic function.
+so destruction, does not work based on the type I need. It works based on the type that the binding is defined as.
+maybe we can do a recursive call for this purpose?
+```
+hasType = fn(x: T|U, T: type, U: type -> bool) {
+	if U is nothing then return this:
+        if x is nothing return false
+        if x is not nothing return true
+    otherwise, if U is not nothing:
+        a,b = x
+        if a is of type T|nothing and is not nothing then return true
+}
+```
+No this is confusing.
+Maybe we can use identity function? no. 
+```
+getType = fn(x: T|U, T,U: type -> T|nothing) {
+    x
+}
+```
+no this is also confusing.
+so how can we use destruction to provide `hasType` function?
+what about this?
+`a:string|nothing,_ = int_or_float_or_string_var`
+confusing. when having a single identifier on the left `:` notation is fine but with multiple identifiers it becomes confusing.
+what if we write fns for all numbers of types?
+```
+hasType = fn(x: T|U, T: type, U: type -> bool) {
+    a,b = x
+    if a's type is T and is not nothing return true
+    if b's type is T and is not nothing return true
+    else return hasType(x)
+}
+```
+our purpose is to be able to get `int|nothing` from a union which has int in its types (at any location).
+```
+getData = (x: T|U, T,U: type -> T|nothing) {
+    #return nothing if x does not have type T
+    #othertiwse if x's internal value is of type T, return it
+}
+```
+Let's leave it. developer can use destruction whenever needed to decide.
+
+Y - q: if we have `int|string|float` can it be sent to a generic function of type `T|U`?
+it should be fine. Because, anyway `U` can be a union type itself.
+`T|U` says input should be a union of at least two types.
+clarify
