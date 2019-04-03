@@ -1,7 +1,3 @@
-markdown: kramdown
-kramdown:
-  syntax_highlighter: pygments
-highlighter: pygments
 theme: jekyll-theme-modernist
 title: dotLang
 show_downloads: false
