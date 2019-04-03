@@ -4,4 +4,12 @@
 @import "{{ site.theme }}";
 
 header p { width: 500px; }
-//div.wrapper { width: 900px; }
+header {
+    padding: 15px 15px 5px 15px;
+}
+
+header div.menu_items a {
+    padding-right: 30px;
+    text-decoration: none;
+    font-weight: bold;
+}
