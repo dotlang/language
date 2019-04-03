@@ -61,3 +61,10 @@ public abstract class CacheKey implements IMeasurableMemory
     }
 }
 ```
+```c
+#although T type can be at any position in x's original type, but inside hasType T is the first type so a will be corresponding to type T
+hasType = fn(x: T|U, T: type, U: type -> bool) {
+	a,_ = x
+	a!=nothing
+}
+```
