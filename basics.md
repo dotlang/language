@@ -1,24 +1,3 @@
-# dot Programming Language (dotLang)
-
-Perfection is finally attained not when there is no longer anything to add, but when there is no longer anything to take away. (Antoine de Saint-Exupéry, translated by Lewis Galantière.)
-
-Version 1.00-beta2
-
-Nov 6, 2018
-
-# Table of Contents
-
-1. [Introduction](https://github.com/dotlang/language/blob/master/README.md#introduction)
-2. [Language in a nutshell](https://github.com/dotlang/language/blob/master/README.md#language-in-a-nutshell)
-3. [Bindings](https://github.com/dotlang/language/blob/master/README.md#bindings)
-4. [Type system](https://github.com/dotlang/language/blob/master/README.md#type-system)
-5. [Functions](https://github.com/dotlang/language/blob/master/README.md#functions)
-6. [Modules](https://github.com/dotlang/language#modules)
-7. [Concurrency](https://github.com/dotlang/language/blob/master/README.md#concurrency)
-8. [Examples](https://github.com/dotlang/language/blob/master/README.md#examples)
-9. [Other components](https://github.com/dotlang/language/blob/master/README.md#other-components)
-10. [History](https://github.com/dotlang/language/blob/master/README.md#history)
-
 # Introduction
 
 After having worked with a lot of different languages (C\#, Java, Scala, Perl, Javascript, C, C++ and Python) and getting familiar with some others (including Go, D, Swift, Erlang, Rust, Zig, Crystal, Fantom, OCaml and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions to keep in mind. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
