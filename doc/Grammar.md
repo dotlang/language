@@ -14,14 +14,22 @@ Result: component1 ( component2 | component3 ) | component4 | [component5] compo
 
 # Main parts
 
-**SourceFile**: Module  
-**Module**: ( ImportDecl | BindingDecl | TypeDecl )*  
+```ebnf
+SourceFile              ::= Module  
+Module                  ::= ( ImportDecl | BindingDecl | TypeDecl )*  
+```
 
-**ImportDecl**: ImportAliasDecl | ImportSelectiveDecl  
-**ImportAliasDecl**: [ ModuleAlias '='] Import  
-**ModuleAlias**: Identifier  
-**Import**: 'import' '(' StringLiteral ')'  
-**ImportSelectiveDecl**: IdentifierList '=' Import  
+## Import
+
+```ebnf
+ImportDecl              ::= ImportAliasDecl | ImportSelectiveDecl  
+ImportAliasDecl         ::= [ ModuleAlias '='] Import  
+ModuleAlias             ::= Identifier  
+Import                  ::= 'import' '(' StringLiteral ')'  
+ImportSelectiveDecl     ::= IdentifierList '=' Import  
+```
+
+
 
 **TemplateComment**: '//' (TemplateParameterDecl)+  
 **TemplateParameterDecl**: '<' CapitalIdentifier ['=' Identifier] '>'  
