@@ -136,3 +136,4 @@ Operators are mostly similar to C language:
 * Note that `==` will do a comparison based on contents of its operands.
 * `A // B` will evaluate to A if it is not `nothing`, else it will be evaluated to B (e.g. `y = x // y // z // 0`).
 * Conditional operators return `true` or `false` which are `1` and `0` when used as index of a sequence.
+* Comments can appear anywhere in the code and start with `#`. Anything after `#` till end of the line is comment.
