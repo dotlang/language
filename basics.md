@@ -1,10 +1,36 @@
-# Introduction
+# Basics
+
+## Introduction
 
 After having worked with a lot of different languages (C\#, Java, Scala, Perl, Javascript, C, C++ and Python) and getting familiar with some others (including Go, D, Swift, Erlang, Rust, Zig, Crystal, Fantom, OCaml and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions to keep in mind. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
 
 That's why I am creating a new programming language: **dotLang**.
 
-dot programming language (or dotLang for short) is an imperative, static-typed, garbage collected, functional, general-purpose language based on author's experience and doing research on many programming languages (namely Go, Java, C\#, C, C++, Scala, Rust, Objective-C, Python, Perl, Smalltalk, Ruby, Swift, Haskell, Clojure, Eiffel, Erlang, Elixir, Elm, Falcon, Julia, Zig, F\# and Oberon-2). 
+dot programming language (or dotLang for short) is an imperative, static-typed, garbage collected, functional, general-purpose language based on author's experience and doing research on many programming languages (namely 
+[Go](https://golang.org/), 
+[Java](https://docs.oracle.com/javase/tutorial/), 
+[C\#](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/), 
+[C](https://en.cppreference.com/w/c), 
+[C++](https://en.cppreference.com/w/), 
+[Scala](https://www.scala-lang.org/), 
+[Rust](https://www.rust-lang.org/), 
+[Objective-C](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ProgrammingWithObjectiveC/Introduction/Introduction.html), 
+[Swift](https://swift.org/),
+[Python](https://python.org/), 
+[Perl](https://www.perl.org/), 
+[Smalltalk](https://en.wikipedia.org/wiki/Smalltalk), 
+[Ruby](https://www.ruby-lang.org/en/),
+[Haskell](https://www.haskell.org/),
+[Clojure](https://clojure.org/),
+[Eiffel](https://www.eiffel.org/),
+[Erlang](https://www.erlang.org/),
+[Elixir](https://elixir-lang.org/),
+[Elm](https://elm-lang.org/),
+[Falcon](http://www.falconpl.org/),
+Julia,
+Zig,
+F\# and
+Oberon-2). 
 I call the paradigm of this language "Data-oriented". This is an imperative language which is also very similar to Functional approach and it is designed to work with data. There are no objects or classes. Only data types and functions. We have first-class and higher-order functions borrowed from the functional approach.
 
 Two main objectives are pursued in the design and implementation of this programming language:
