@@ -27,11 +27,11 @@ dot programming language (or dotLang for short) is an imperative, static-typed, 
 [Elixir](https://elixir-lang.org/),
 [Elm](https://elm-lang.org/),
 [Falcon](http://www.falconpl.org/),
-Julia,
-Zig,
-F\# and
-Oberon-2). 
-I call the paradigm of this language "Data-oriented". This is an imperative language which is also very similar to Functional approach and it is designed to work with data. There are no objects or classes. Only data types and functions. We have first-class and higher-order functions borrowed from the functional approach.
+[Julia](https://julialang.org/),
+[Zig](https://ziglang.org/),
+[F\#](https://fsharp.org/) and
+[Oberon-2](https://cseweb.ucsd.edu/~wgg/CSE131B/oberon2.htm)). 
+I call the paradigm of this language "Data-oriented". This is an imperative language which is also very similar to Functional approach and it is designed to work with data. There are no objects or classes. Only data structures and functions. We have first-class and higher-order functions borrowed from the functional approach.
 
 Two main objectives are pursued in the design and implementation of this programming language:
 
@@ -44,27 +44,27 @@ The underlying rules of design of this language are
 [KISS rule](https://en.wikipedia.org/wiki/KISS_principle) and
 [DRY rule](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-As a 10,000 foot view of the language, the code is written in files (called modules) organized in directories (called packages). We have bindings (immutable data which can be functions or values) and types (Blueprints to create bindings). Type system includes primitive data types, sequence, map, enum, struct and union. Concurrency and lambda expression are also provided and everything is immutable.
+As a 10,000 foot view of the language, the code is written in files (called modules) organized in directories (called packages). We have bindings (immutable data which can be functions or values) and types (Blueprints to create bindings). Type system includes primitive data types, sequence, map, enum, struct and union. Concurrency and lambda expression are also provided.
 
 ## Comparison
 
-Language | First-class functions | Sum types | Full Immutability| Garbage Collector | Module System | Lambda | Concurrency | built-in data types | Number of keywords
+Language | First-class functions | Sum types | Full Immutability| Garbage Collector | Module System | Lambda | Concurrency | Generics | built-in data types | Number of keywords
 --- | --- | --- | --- | --- | --- | --- | --- | --- | --- 
-C  |  Yes | Partial  | No  | No |  No | No | No | 14 | 32
-Scala | Yes | Yes | No | Yes | Yes | Yes | Yes | 9 | ~27
-Go | Yes | No | No | Yes | Yes | Yes | Yes | 19 | 25
-Java | Yes | No | No | Yes | Yes | Yes | No | 8 | 50
-Haskell | Yes | Yes | No | Yes | Yes | Yes | No | 63 | 28
-dotLang | Yes | Yes | Yes | Yes | Yes | Yes | Yes | 8 | 0
+C  |  No | Partial  | No  | No |  No | No | No | No | 14 | 32
+Scala | Yes | Yes | No | Yes | Yes | Yes | Yes | Yes | 9 | ~27
+Go | Yes | No | No | Yes | Yes | Yes | Yes | No | 19 | 25
+Java | Yes | No | No | Yes | Yes | Yes | No | Yes | 8 | 50
+Haskell | Yes | Yes | No | Yes | Yes | Yes | No | Yes | 63 | 28
+dotLang | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | 8 | 9
 
 ## Components
 
 dotLang consists of these components:
 
-1. The language manual (this document).
-2. `dot`: A command line tool to compile, debug and package code.
-3. `core` library: This package is used to implement some built-in, low-level features which can not be simply implemented using pure dotLang.
-4. `std` library: A layer above core which contains some general-purpose and common functions and data structures.
+1. The language manual (this website).
+2. `dot`: A command line tool to compile, debug and package source code.
+3. `core` library: This package is used to implement some built-in, low-level features which can not be simply implemented using pure dotLang. This will be a built-in feature of the compiler/runtime.
+4. `std` library: A layer above core which contains some general-purpose and common functions and data structures. This is optional to use by developers.
 
 # Language in a nutshell
 
@@ -75,19 +75,18 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 01. **Import a module**: `queue = import("/core/std/queue")` (you can also import from external sources like Github).
 02. **Primitive types**: `int`, `float`, `char`, `byte`, `bool`, `string`, `type`, `nothing`. 
 03. **Bindings**: `my_var:int = 19` (type is optional, everything is immutable).
-04. **Sequence**: `my_array = [1, 2, 3]` (type of `my_arr` is `[int]` or sequence of integers)
-05. **Map**: `my_map = ["A":1, "B":2, "C":3]` (type of `my_map` is `[string:int]` or map of string to integers)
+04. **Sequence**: `my_array = [1, 2, 3]` (type of `my_arr` is `[int]`, sequence of integers).
+05. **Map**: `my_map = ["A":1, "B":2, "C":3]` (type of `my_map` is `[string:int]`, map of string to integer)
 06. **Named type**: `MyInt = int` (Defines a new type `MyInt` with same binary representation as `int`).
 07. **Type alias**: `IntType : int` (A different name for the same type).
-08. **Struct type**: `Point = struct(x: int, y:int, data: float)` (Like `struct` in C).
+08. **Struct type**: `Point = struct(x: int, y:int, data: float)` (Like C `struct`).
 09. **Struct literal**: `location = Point(x:10, y:20, data:1.19)`.
 10. **Union type**: `MaybeInt = int | nothing` (Can store either of two types, note that this is a named type).
 11. **Function**: `calculate = fn(x:int, y:int -> float) { x/y }` (Functions are all lambdas, the last expression in the body is return value).
-12. **Lambda**: `sort(my_sequence, fn(x,y:int -> bool) { x-y })` (sort a sequence using given lambda for comparison)
-13. **Concurrency**: `my_task := processData(x,y,z)` (Evaluate an expression in parallel).
-14. **Generics**: `ValueKeeper = fn(T: type -> type) { struct(data: T) }` (A generic type is defined similar to a function)
-15. **Generics**: `push = (x: T, stack: Stack(T), T: type -> Stack(T)) { ... }` (A generic function)
-16. **Enum**: `DayOfWeek = enum [saturday, sunday, monday, tuesday, wednesday, thursday, friday]`
+12. **Concurrency**: `my_task := processData(x,y,z)` (Start a new micro-thread and evaluate an expression in parallel).
+13. **Generics**: `ValueKeeper = fn(T: type -> type) { struct(data: T) }` (A generic type is defined similar to a function that returns a type)
+14. **Generics**: `push = (x: T, stack: Stack(T), T: type -> Stack(T)) { ... }` (A generic function)
+15. **Enum**: `DayOfWeek = enum [saturday, sunday, monday, tuesday, wednesday, thursday, friday]`
 
 ## Symbols
 
@@ -107,27 +106,31 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 
 ## Reserved keywords
 
-**Primitive data types**: `int`, `float`, `char`, `byte`, `bool`, `string`
+**Primitive data types**: `int`, `float`, `char`, `byte`, `bool`, `string`, `nothing`, `type`
 
-**Reserved identifiers**: `true`, `false`, `fn`, `import`, `and`, `or`, `not`, `struct`, `enum`, `type`, `nothing`
+**Operators**: `and`, `or`, `not`
+
+**Data type identifiers**: `fn`, `struct`, `enum`
+
+**Reserved identifiers**: `true`, `false`, `import`
 
 ## Coding style
 
-1. 4 spaces indentation.
-2. You must put each statement on a separate line. 
-3. Naming: `SomeDataType`, `someLambdaBinding`, `someFunction`, `any_binding`, `my_module`.
+1. Use 4 spaces indentation.
+2. You must put each statement on a separate line. Newline is statement separator.
+3. Naming: `SomeDataType`, `someFunction`, `some_data_binding`, `my_module_alias`.
 4. If a function returns a type (generic types) it should be named like a type.
-5. If a binding is a pointer to a function, it should be named like a function.
+5. If a binding is a reference to a function, it should be named like a function.
 6. You can use `0x` prefix for hexadecimal numbers and `0b` for binary.
 7. You can use `_` as digit separator in number literals.
 8. Any identifier starting with underscore, is supposed to be private at the declaration site (although this is not enforced by compiler).
 
 ## Operators
 
-Operators are mostly similar to C language (Conditional operators: `and, or, not, ==, <>, >=, <=`, Arithmetic: `+, -, *, /, %, %%`, `>>`, `<<`, `**` power) and some of them which are different are explained in corresponding sections (Casting, underscore, ...).
+Operators are mostly similar to C language:
 
-Note that `==` will do a comparison based on contents of its operands.
-`A // B` will evaluate to A if it is not `nothing`, else it will be evaluated to B (e.g. `y = x // y // z // 0`).
-Conditional operators return `true` or `false` which are `1` and `0` when used as index of a sequence.
-
-
+* Conditional operators: `and, or, not, ==, <>, >=, <=`
+* Arithmetic: `+, -, *, /, %, %%`, `>>`, `<<`, `**` for power)
+* Note that `==` will do a comparison based on contents of its operands.
+* `A // B` will evaluate to A if it is not `nothing`, else it will be evaluated to B (e.g. `y = x // y // z // 0`).
+* Conditional operators return `true` or `false` which are `1` and `0` when used as index of a sequence.
