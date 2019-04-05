@@ -3,7 +3,7 @@
 
 @import "{{ site.theme }}";
 
-header p { width: 500px; }
+header p { width: 50%; }
 header {
     padding: 15px 15px 5px 15px;
 }
@@ -18,4 +18,4 @@ header div.menu_items a {
     font-weight: bold;
 }
 
-div.wrapper { width: 1000px; }
+div.wrapper { width: 80%; }
