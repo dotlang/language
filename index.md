@@ -17,9 +17,10 @@ dotLang is very similar to C but with some significant improvements:
 4. No reference, no pointer, no manual memory management
 5. Powerful concurrency model
 
-# Documentation
+# Grammar
 
-This is the main document for the language. It is not a formal specification, but explains all the features of the language with examples: [dotLang: Language Manual](manual.md)
+Grammar of dotLang in a notation similar to EBNF can be found [here](./grammar.md)
+
 
 # Contribute
 
