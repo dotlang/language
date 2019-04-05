@@ -7237,3 +7237,5 @@ Y - q: if we have `int|string|float` can it be sent to a generic function of typ
 it should be fine. Because, anyway `U` can be a union type itself.
 `T|U` says input should be a union of at least two types.
 clarify
+
+? - Refering to an index outside sequence bounds, why would it return nothing?
