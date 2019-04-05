@@ -68,7 +68,7 @@ dotLang consists of these components:
 3. `core` library: This package is used to implement some built-in, low-level features which can not be simply implemented using pure dotLang. This will be a built-in feature of the compiler/runtime.
 4. `std` library: A layer above core which contains some general-purpose and common functions and data structures. This is optional to use by developers.
 
-# Language in a nutshell
+## Grammar
 
 You can see the grammar of the language in EBNF-like notation [here](https://github.com/dotlang/language/blob/master/syntax.md).
 
