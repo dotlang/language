@@ -1,46 +1,48 @@
 # Type system
 
-Types are blueprints which are used to create values for bindings. Types can be simple or compound (sequence, map, struct, ...).
-
-Simple type is a type which can be described using an identifier without any characters (e.g `MyCustomer` is a simgple type but `[int]` is not).
+Types are blueprints which are used to create values for bindings. Types can be basic (integer number, character, ...) or compound (sequence, map, struct, ...).
 
 ## Basic types
 
-**Syntax**: `int`, `float`, `char`, `byte`, `bool`, `string`, `nothing`
+**Syntax**: `int`, `float`, `byte`, `char`, `string`, `bool`, `nothing`
 
 **Notes**:
 
 1. `int` type is a signed 8-byte integer data type.
 2. `float` is double-precision 8-byte floating point number.
-3. `char` is a single character, represented as an unsigned byte.
-4. Character literals should be enclosed in single-quote.
-5. String literals should be enclosed in double quotes. 
-6. String literals enclosed in backtick can be multiline and escape character `\` will not be processed in them.
-7. `bool` type is same as int and `true` is 1, `false` is 0.
-8. `nothing` is a special type which is used to denote empty/invalid/missing data. This type has only one value which is the same identifier.
-9. `byte` is an unsigned 8-bit number.
+3. `byte` is an unsigned 8-bit number.
+4. `char` is a single character.
+  - Character literals should be enclosed in single-quote (e.g. `'a'`).
+5. `string` is a sequence of characters.
+  - String literals should be enclosed in double quotes.
+  - To represent double quote itself inside a string, you can use `\"`.
+6. `bool` type is same as int but with only two valid values.`true` is 1 and `false` is 0.
+7. `nothing` is a special type which is used to denote empty/invalid/missing data. This type has only one value which is the same identifier.
 
 **Examples**
 
-1. `x = 12`
-2. `x = 1.918`
-3. `x = 'c'`
-4. `g = true`
-5. `str = "Hello world!"`
+1. `int_val = 12`
+2. `float_val = 1.918`
+3. `char_val = 'c'`
+4. `bool_val = true`
+5. `str1 = "Hello world!"`
 6. `str2 = "Hello" + "World!"`
+7. `n: nothing = nothing`
+8. `byte_val: byte = 119`
 
 ## Sequence
 
-Sequence is similar to array in other languages. It represents a fixed-size block of memory with elements of the same type, `T` and is shows with `[T]` notation. You can initialize a sequence with a sequence literal (Example 1).
-
-You refer to elements inside sequence using `x[i]` notation where `i` is index number. Referring to an index outside sequence will return `nothing`. Putting an extra comma at the end of a sequence literal is allowed. `[]` represents an empty sequence.
-
-Core defines built-in functions for sequence for common operations: `slice, map, reduce, filter, anyMatch, allMatch, ...` plus functions for safe get where they return `T|nothing`.
+1. Sequence is similar to array in other languages. It represents a fixed-size block of memory with elements of the same type, `T`, and is shows with `[T]` notation. 
+2. You can initialize a sequence with a sequence literal (Example 1).
+3. You refer to elements inside sequence using `x[i]` notation where `i` is index number. 
+4. `[]` represents an empty sequence.
+5. Referring to an index outside sequence will throw a runtime error.
+6. Core defines built-in functions for sequence for common operations: `slice, map, reduce, filter, anyMatch, allMatch, ...`.
 
 **Examples**
 
 1. `x = [1, 2, 3, 4]`
-2. `x = [ [1, 2], [3, 4], [5, 6] ] #a 2-D sequence of integer numbers`
+2. `x: [[int]] = [ [1, 2], [3, 4], [5, 6] ] #a matrix of integer numbers`
 3. `x = [1, 2]+[3, 4]+[5, 6]] #merging multiple sequences`
 4. `int_or_nothing = x[10]`
 
