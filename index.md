@@ -1,4 +1,5 @@
-Perfection is finally attained not when there is no longer anything to add, but when there is no longer anything to take away. (Antoine de Saint-Exupéry, translated by Lewis Galantière.)
+_Perfection is finally attained not when there is no longer anything to add, but when there is no longer anything to take away.   
+**(Antoine de Saint-Exupéry, translated by Lewis Galantière.)**_
 
 dotLang is a general-purpose programming language which is built upon a small set of rules and minimum number of exceptions and a consistent set of specifications.
 
@@ -11,20 +12,23 @@ Because it is:
 3. **Fast**: dotLang is a compiled language. Because of its simplicity, compiler is able to quickly compile a large source code set and also by using LLVM, the binary output will have a high performance.
 
 dotLang is very similar to C but with some significant improvements:
-1. Module system
-2. Generics
+
+1. Module system (no header files!)
+2. Support for generics
 3. Full immutability
-4. No reference, no pointer, no manual memory management
+4. No reference type, no pointer, no manual memory management
 5. Powerful concurrency model
+6. First class functions
+7. Support for sum types
+8. And much more!
 
 # Grammar
 
 Grammar of dotLang in a notation similar to EBNF can be found [here](./grammar.md)
 
-
 # Contribute
 
-Currently, the manual document is being finalised. Please contact me if you are interested in helping either with the documentation or implementation.
+Currently, the language manual is finalised. Please contact me if you are interested in helping either with the documentation or implementation.
 
 # Contact
 
