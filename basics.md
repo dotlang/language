@@ -48,14 +48,16 @@ As a 10,000 foot view of the language, the code is written in files (called modu
 
 ## Comparison
 
-Language | First-class functions | Sum types | Full Immutability| Garbage Collector | Module System | Lambda | Concurrency | Generics | built-in data types | Number of keywords
+Language | First-class functions | Sum types | Full Immutability| Garbage Collector | Module System | Concurrency* | Generics | built-in data types | Number of keywords
 --- | --- | --- | --- | --- | --- | --- | --- | --- | --- 
-C  |  No | Partial  | No  | No |  No | No | No | No | 14 | 32
-Scala | Yes | Yes | No | Yes | Yes | Yes | Yes | Yes | 9 | ~27
-Go | Yes | No | No | Yes | Yes | Yes | Yes | No | 19 | 25
-Java | Yes | No | No | Yes | Yes | Yes | No | Yes | 8 | 50
-Haskell | Yes | Yes | No | Yes | Yes | Yes | No | Yes | 63 | 28
-dotLang | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | 8 | 9
+C  |  No | Partial  | No  | No |  No | No | No | 14 | 32
+Scala | Yes | Yes | No | Yes | Yes | Yes | Yes | 9 | ~27
+Go | Yes | No | No | Yes | Yes | Yes | No | 19 | 25
+Java | Yes | No | No | Yes | Yes | No | Yes | 8 | 50
+Haskell | Yes | Yes | No | Yes | Yes | No | Yes | 63 | 28
+dotLang | Yes | Yes | Yes | Yes | Yes | Yes | Yes | 8 | 9
+
+* Concurrency means built-in language level support.
 
 ## Components
 
