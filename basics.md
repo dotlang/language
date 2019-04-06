@@ -78,7 +78,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 02. **Primitive types**: `int`, `float`, `char`, `byte`, `bool`, `string`, `type`, `nothing`. 
 03. **Bindings**: `my_var:int = 19` (type is optional, everything is immutable).
 04. **Sequence**: `my_array = [1, 2, 3]` (type of `my_arr` is `[int]`, sequence of integers).
-05. **Map**: `my_map = ["A":1, "B":2, "C":3]` (type of `my_map` is `[string:int]`, map of string to integer)
+05. **HashMap**: `my_map = ["A":1, "B":2, "C":3]` (type of `my_map` is `[string:int]`, hash map of string to integer)
 06. **Named type**: `MyInt = int` (Defines a new type `MyInt` with same binary representation as `int`).
 07. **Type alias**: `IntType : int` (A different name for the same type).
 08. **Struct type**: `Point = struct(x: int, y:int, data: float)` (Like C `struct`).
@@ -96,7 +96,7 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 02. `.`  Access struct members
 03. `()` Function declaration and call, struct declaration and literals
 04. `{}` Code block, selective import
-05. `[]` Sequence and map
+05. `[]` Sequence and hashMap
 06. `|`  Union data type 
 07. `->` Function declaration
 08. `//` Nothing-check operator
