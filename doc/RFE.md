@@ -7269,3 +7269,7 @@ These are binding of type `type`. You can use these bindings anywhere you need (
 More in "Generics" section.
 
 ? - In type section mention about generic types.
+
+? - Literals can and should be castable to named types.
+Because:
+`test = fn(x:int -> PlusFunc) { fn(y:int -> int) { y + x } }`
