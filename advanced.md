@@ -1,16 +1,19 @@
 # Generics
 
-Generic types are defined using functions that return a `type` (a type argument) and use `[]` instead of `()` . These functions are compile time (because anything related to `type` must be) (Example 1). 
-
-Note that arguments or functions of type `type` must be named like a type, not like a binding, and must receive value at compile time. This means that you cannot use a runtime dynamic binding value as a type. You also cannot assign a function that receives or return a type to a lambda. Because lambdas are a runtime concept. Note that a generic function's input of form `T|U` means caller can provide a union binding which has at least two options for the type, it may have 2 or more allowed types.
-
-If a generic type is not passed in a function call (and it is at the end of argument list), compiler will infer it (Example 6). 
+1. There is a special data type called `type`. Bindings of this value (which should be named like a type), can have any possible type as their value.
+2. Every binding of type `type` must have compile time literal value.
+3. Generic types are defined using module-level functions that return a `type`. 
+4. These functions must be compile time (because anything related to `type` must be) (Example 1). 
+5. This means that you cannot use a runtime dynamic binding value as a type.
+6. You also cannot assign a function that receives or return a type to a function-level lambda.
+7. Note that a generic function's input of form `T|U` means caller can provide a union binding which has at least two options for the type, it may have 2 or more allowed types.
+8. If a generic type is omitted in a function call (and it is at the end of argument list), compiler will infer it (Example 6). 
 
 **Examples**
 
 1. 
-```
-LinkedList = fn[T: type -> type]
+```rust
+LinkedList = fn(T: type -> type)
 {
 	Node = struct (
 		data: T,
@@ -19,21 +22,21 @@ LinkedList = fn[T: type -> type]
 	Node|nothing
 }
 ```
-2. `process = fn(x: LinkedList[int] -> int)`
+2. `process = fn(x: LinkedList(int) -> int)`
 3. `process = fn(T: type, ll: LinkedList[T] -> ...`
 4. 
 ```
-process = (T: type, data: List[T] ...
-pointer = process(int, _) #right, type of pointer is fn(int, List[int])
+process = (T: type, data: List(T) -> float) ...
+pointer = process(int, _) #valid, type of pointer is fn(int, List(int)->float)
 ```
 5. `process = fn(T: type, x: [T], index: int -> T) { x[index] }`
 6. 
-`push = fn(data: T, stack: Stack(T), T: type -> Stack[T]){...}`
+`push = fn(data: T, stack: Stack(T), T: type -> Stack(T)) {...}`
 `resutl = push(int_var, int_stack)`
 
 # Modules
 
-Modules are source code files. You can import them into current module and use their declarations. You can import modules from local file-system, GitHub or any other external source which the compiler supports (If import path starts with `.` or `..` it is relative path, if it start with `/` it is based on project's root). If the specific absiolute module path does not exist, compiler will look into parent modules (if any). If still not found, compiler will try to download it from web. Compiler will support specifying specific branch/release/commit when importing a module. Compiler will keep track of current module root and all parent module roots. If a dependency is not found in any of parent roots, it will be downloaded into top most module root (If it is a zip file, it will be decompressed).
+1. Modules are source code files. You can import them into current module and use their declarations. You can import modules from local file-system, GitHub or any other external source which the compiler supports (If import path starts with `.` or `..` it is relative path, if it start with `/` it is based on project's root). If the specific absiolute module path does not exist, compiler will look into parent modules (if any). If still not found, compiler will try to download it from web. Compiler will support specifying specific branch/release/commit when importing a module. Compiler will keep track of current module root and all parent module roots. If a dependency is not found in any of parent roots, it will be downloaded into top most module root (If it is a zip file, it will be decompressed).
 
 The result of importing a module is a module definition which if named, should be named like a binding and used with `..` notation to access definitons inside module. You can also ignore output of an import to have its definitions inside current namespace. You can also use `..{}` notation to only access some of module's symbols (Examples 9 and 10).
 
