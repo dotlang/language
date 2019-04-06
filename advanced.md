@@ -36,15 +36,18 @@ pointer = process(int, _) #valid, type of pointer is fn(int, List(int)->float)
 
 # Modules
 
-1. Modules are source code files. You can import them into current module and use their declarations. You can import modules from local file-system, GitHub or any other external source which the compiler supports (If import path starts with `.` or `..` it is relative path, if it start with `/` it is based on project's root). If the specific absiolute module path does not exist, compiler will look into parent modules (if any). If still not found, compiler will try to download it from web. Compiler will support specifying specific branch/release/commit when importing a module. Compiler will keep track of current module root and all parent module roots. If a dependency is not found in any of parent roots, it will be downloaded into top most module root (If it is a zip file, it will be decompressed).
-
-The result of importing a module is a module definition which if named, should be named like a binding and used with `..` notation to access definitons inside module. You can also ignore output of an import to have its definitions inside current namespace. You can also use `..{}` notation to only access some of module's symbols (Examples 9 and 10).
-
-Absolute paths that start with http or https will be downloaded from the net if not available locally.
-
-You can import at module level or inside a function. The output of import will be valid only inside its enclosing context.
-
-You can use `@` notation to indicate required tag or branch name. This part allows using `+` and `*` to indicate versions equal or higher to x or any version are acceptable (Example 8).
+1. Modules are source code files. 
+2. You can import a module into current module and use their declarations. 
+3. You can import modules from local file-system, GitHub or any other external source which the compiler supports.
+4. If import path starts with `.` or `..` it is a relative path, if it start with `/` it is based on project's root.
+5. Project root is where the compiler is executed.
+6. If the specific absolute module path does not exist, compiler will look into parent modules (if any). If still not found, compiler will try to download it from web. Compiler will support specifying specific branch/release/commit when importing a module. Compiler will keep track of current module root and all parent module roots. If a dependency is not found in any of parent roots, it will be downloaded into top most module root (If it is a zip file, it will be decompressed).
+7. The result of importing a module is called a module alias which if named, should be named like a binding and used with `..` notation to access definitons inside module. 
+8. You can also ignore output of an import to have its definitions inside current namespace. 
+9. You can also use `..{}` notation to only access some of module's symbols (Examples 9 and 10).
+10. Absolute paths that start with http or https will be downloaded from the net if not available locally.
+11. You can import at module level only.
+12. You can use `@` notation to indicate required tag or branch name. This part allows using `+` and `*` to indicate versions equal or higher to x or any version are acceptable (Example 8).
 
 **Syntax**
 
