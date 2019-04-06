@@ -135,43 +135,46 @@ process2 = fn(x: struct (int, int) -> int) {
 
 ## Named types
 
-You can name a type so you will be able to refer to that type later in the code. Type names must start with a capital letter to be distinguished from bindings. You define a named type similar to a binding: `NewType = UnderlyingType`.The new type has same binary representation as the underlying type but it will be treated as a different type.
-
-You can use casting operator to convert between a named type and its underlying type (Example 4). You can define named type inside a function.
+1. You can name a type so you will be able to refer to that type later in the code.
+2. Type names must start with a capital letter to be distinguished from bindings.
+3. You define a named type similar to a binding: `NewType = UnderlyingType`.
+4. The new type has same binary representation as the underlying type but it will be treated as a different type.
+5. You have seen examples of named types in previous sections (Union, enum, ...).
 
 **Examples**
 
 1. `MyInt = int`
 2. `IntArray = [int]`
 3. `Point = struct {x: int, y: int}`
-4. `x = 10`, `y = MyInt(10)`
 
 ## Type alias
 
-You can use `T : X` notation to define `T` as another spelling for type `X`. In this case, `T` and `X` will be the same thing, so you cannot define two functions with same name for `T` and `X`.
-
-You can use a type alias to prevent name conflict when importing modules or inside a function.
+1. You can use `T : X` notation to define `T` as another spelling for type `X` type.
+2. In this case, `T` and `X` will be exactly the same thing.
+3. You can use a type alias to prevent name conflict when importing modules.
 
 **Examples**
 
 1. `MyInt : int`
-2. `process = fn(x:int -> int) { 10}`
-3. `process = fn(x:MyInt -> int)` Error! `process:(int->int)` is already defined.
-
-## Type argument
-
-These are binding of type `type`. You can use these bindings anywhere you need (inside function arguments, part of a struct, ...) but their value must be specified at compile time.
-More in "Generics" section.
+2. `process = fn(x:MyInt -> int) { x }`
 
 ## Type name resolution
 
-To resolve a type name, first closure level types and then module-level types will be searched for a type name or alias with the same name. At any scope, if there are multiple candidates there will be a compiler error.
-
-Two named types are never equal. Otherwise, two types T1 and T2 are identical/assignable/exchangeable if they have the same structure (e.g. `int|string` vs `int|string`).
+1. Order of search to resolve a type name:
+  A. Current function
+  B. Closure
+  C. Module level
+2. At any level, if there are multiple candidates there will be a compiler error.
+3. Two named types are never equal. 
+4. Two types T1 and T2 are identical/assignable/exchangeable if they have the same structure (e.g. `int|string` vs `int|string`).
 
 ## Casting
 
-In order to cast across named types, you will need to write an identity function (a function that only returns its input), but with correct types.
+1. For casting between primitive types (e.g. float to int), core functions are provided.
+2. In order to cast across named types, you will need to write an identity function (a function that only returns its input), but with correct types (Example 1).
+3. Note that, there is no automatic casting provided. All type changes must be explicitly specified in the code.
+4. Literals (e.g. `1` or `"Hello world"`) will get value of the most primitive associated type inferred (`int`, `string`, ...). 
+5. Based on 4, you cannot assign a literal to a named type without casting. Because for example `1` literal is an `int` literal not a named type that maps to `int`.
 
 **Examples**
 
@@ -179,8 +182,8 @@ In order to cast across named types, you will need to write an identity function
 ```
 MyInt = int
 toInt = fn(x: MyInt -> int) { x }
-h: MyInt = ...
-g:int = toInt(h)
+toMyInt = fn(x: int -> MyInt) { x }
+h: MyInt = getMyInt()
+g = toInt(h)
+j = toMyInt(g)
 ```
-
-
