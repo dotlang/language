@@ -23,4 +23,5 @@
 1. `x : int = 12`
 2. `g = 19.8 #type is inferred`
 3. `a,b = struct(int,int){1, 100}`
-4. `a,_ = point`, `a,_ = single_element_struct`
+4. `a,_ = point`
+5. `a,_ = single_element_struct`
