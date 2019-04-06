@@ -7267,3 +7267,5 @@ identity function
 
 These are binding of type `type`. You can use these bindings anywhere you need (inside function arguments, part of a struct, ...) but their value must be specified at compile time.
 More in "Generics" section.
+
+? - In type section mention about generic types.
