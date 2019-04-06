@@ -44,15 +44,15 @@ Types are blueprints which are used to create values for bindings. Types can be 
 1. `x = [1, 2, 3, 4]`
 2. `x: [[int]] = [ [1, 2], [3, 4], [5, 6] ] #a matrix of integer numbers`
 3. `x = [1, 2]+[3, 4]+[5, 6]] #merging multiple sequences`
-4. `int_or_nothing = x[10]`
+4. `int_var = x[10]`
 
-## Map
+## HashMap
 
-You can use `[KeyType:ValueType]` to define a map type. When reading from a map, you will get `nothing` if value does not exist in the map.
-
-An empty map can be denoted using `[:]` notation. Putting an extra comma at the end of a map literal is allowed.
-
-Core defines built-in functions for maps for common operations: `map, reduce, filter, anyMatch, allMatch, ...`
+1. HashMap is a hash table of key values.
+2. You can use `[KeyType:ValueType]` to define a map type. 
+3. When reading from a map, you will get runtime error if value does not exist in the map.
+4. An empty map can be denoted using `[:]` notation.
+5. Core defines built-in functions for maps for common operations: `slice, map, reduce, filter, anyMatch, allMatch, ...`
 
 **Examples**
 
@@ -61,42 +61,47 @@ Core defines built-in functions for maps for common operations: `map, reduce, fi
 
 ## Enum
 
-You can prefix any compile time sequence and `enum` keyword and it will be an enum type: `NewTypeName = enum [sequence of literals]`
-Note that sequence can have types too and it can be used with generics (Example 1). This is output of the core function that returns type of a union binding.
-variables of enum type must accept values of exactly what is specified inside sequence, nothing else, even if they have same value.
-
-You can use a map to decide something based on enum value. Compiler will make sure you have covered all possible types.
+1. You can prefix any sequence literal and `enum` keyword and it will be an enum type
+2. Example: `MyEnumType = enum [sequence of literals]`
+3. Variables of enum type must accept values of exactly what is specified inside the sequence, nothing else, even if they have equivalent value.
+4. You can use a map to decide something based on enum value (Example 2). 
+5. In case of 4, Compiler will make sure you have covered all possible types, and if not, will issue a warning.
 
 **Examples**
 
-1. `NumericType = enum [int, float]` 
-2.
+1.
 ```
 saturday=1
 sunday=2
 ...
-DayOfWeek enum [saturday, sunday, ...]
+DayOfWeek = enum [saturday, sunday, ...]
 ```
-3. `x = [saturday: "A", sunday: "B", ...][my_day_of_week]`
+2. `x = [saturday: "A", sunday: "B", ...][my_day_of_week]`
 
 ## Union
 
-Bindings of a union type, have ability to hold multiple different types and are shown as `T1|T2|T3|...`.  You can destruct a binding of union type. This will give you a list of values each of type `T|nothing` for each type of the union based on type of the binding (except nothing itself). You can use `_` to ignore one or more possible outputs.
+1. Bindings of union type, can store any of multiple pre-defined types.
+2. Union type are shown as `T1|T2|T3|...`. 
+3. You can destruct a binding of union type. 
+4. Union destruction will give you a list of `T|nothing` values for each inner type of the union. 
+5. During destruction, you can use `_` to ignore one or more of outputs.
 
 **Examples**
 
 1. `int_or_float: int|float = 11`
-2. `int_or_nothing, float_or_nothing = int_or_float_or_nothing_value`
-3. 
+2. `int_or_float: int|float = "ABCD"`
+3. `int_or_nothing, float_or_nothing = int_or_float_or_nothing_value`
+4. 
 ```
+#assuming check function is already defined
 x: int|string|float = getData()
 result = check(x, fn(i:int -> boolean) { ... }) //
          check(x, fn(s: string -> boolean) {...}) //
          check(x, fn(f:float->boolean){...})
 ```
-4.
+5.
 ```
-#although T type can be at any position in x's original type, but inside hasType T is the first type so a will be corresponding to type T
+#although T type can be at any position in x's original type, but inside hasType T is the first type so "a" will be corresponding to type T
 hasType = fn(x: T|U, T: type, U: type -> bool) {
 	a,_ = x
 	a!=nothing
@@ -105,11 +110,10 @@ hasType = fn(x: T|U, T: type, U: type -> bool) {
 
 ## Struct
 
-A struct (Similar to struct in C), represents a set of related binding definitions without values. To provide a value for a struct, you can use either a typed struct literal (e.g. `Type(field1:value1, field2:value2, ...)`, note that field names are mandatory. 
-
-You can use destruction to access unnamed fields inside a struct(Example 7).
-
-Struct literals must be prefixed by their type or parent value. When defining a struct type (either using named type or inline type) field types is mandatory but field names is optional (Example 11).
+1. A struct, similar to C, represents a set of related named binding definitions without values. 
+2. To create a binding based on a struct, you should use a struct literal (e.g. `Type(field1:value1, field2:value2, ...)`.
+3. You can define a struct type without named.
+4. You can use destruction to access unnamed fields inside a struct(Example 7).
 
 **Examples**
 
@@ -119,11 +123,11 @@ Struct literals must be prefixed by their type or parent value. When defining a 
 4. `point4 = Point(x:point3.x, y : 101} #update a struct based on existing struct binding`
 5. `x,y = point1 #destruction to access struct data`
 6. `another_point = Point(x:11, y:my_point.y + 200)`
-7. `_, x = point1 #another way to access untyped struct data`
-11.
+7. `_, x = point1 #You can use _ during destruction to ignore one or more of results
+8.
 ```
 process = fn(x: struct (id:int, age:int) -> int) { x.age }
-process = fn(x: struct (int, int) -> int) { 
+process2 = fn(x: struct (int, int) -> int) { 
 	_,a = x
     a
 }
