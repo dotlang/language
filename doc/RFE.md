@@ -7238,9 +7238,9 @@ it should be fine. Because, anyway `U` can be a union type itself.
 `T|U` says input should be a union of at least two types.
 clarify
 
-? - Refering to an index outside sequence bounds, why would it return nothing?
+N - Refering to an index outside sequence bounds, why would it return nothing?
 
-? - Why allow defining named type inside a function?
+N - Why allow defining named type inside a function?
 what if fn returns a binding of that named type? How are others supposed to access it?
 For function section: State you can only have bindings and a return 
 also say there is no function overriding.
@@ -7259,7 +7259,7 @@ But even struct, is a named type in above case.
 So, `Point(10)` will create a new binding of named type `Point` with value `10`.
 I think this is consistent with struct decl.
 
-? - How can I convert named type to original type?
+N - How can I convert named type to original type?
 identity function
 
 ? - For generic section
