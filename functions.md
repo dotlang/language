@@ -1,36 +1,30 @@
 # Functions
 
-Functions are a type of binding which can accept a set of inputs and give an output. For example `(int,int -> int)` is a function type, but `(x:int, y:int -> int) { x+y}` is function literal. What comes after `->` must be a type.
+Functions (or lambdas) are a type of binding which can accept a set of inputs and give an output. 
 
-A function will return the result of its last expression.
+For example `(int,int -> int)` is a function type (which accepts to integer numbers and gives an integer number) and `fn(x:int, y:int -> int) { x+y }` is function literal. 
 
-You can alias a function by defining another binding pointing to it (Example 8). 
+## Declaration
 
-If a function has no input, you can can eliminate input/output type declaration part (Example 13).
-
-When calling a function, you can ommit arguments that are at the end and accept `nothing` (Example 14). This can be used to have optional arguments.
-
-If a function is being called with literals (compile time known values), compiler will try to evaluate it during compilation. This is used in generic types (Example 15).
-
-**Syntax**: 
-
-- Defining a function:
-
-`functionName = fn(name1: type1, name2: type2... -> OutputType) { code block ... out = expression }`
-
-- Defining a function type (Examples 14, 15 and 16):
-`FunctionType = fn(type1, type2, ... -> OutputType)`
+1. `functionName = fn(name1: type1, name2: type2... -> OutputType) { code block }`
+2. Note that functions are namaed camelCased.
+3. Functions contain a set of bindings and the last expression in the code block determines function output.
+4. There is no function overloading.
+5. You can alias a function by defining another binding pointing to it (Example 8). 
+6. If a function has no input, you can can eliminate input/output type declaration part (Example 13). In this case, compiler will infer output type.
+7. Optional arguments: When calling a function, you can ommit arguments that are at the end and accept `nothing` (Example 14).
+8. If a function is being called with literals (compile time known values), compiler will try to evaluate it during compilation. 
+9. Above point is used in generic types (Example 15).
 
 **Examples**
 
 01. `myFunc = fn(x:int, y:int -> int) { 6+y+x }`
-02. `log = fn(s: string -> nothing) { print(s) } #this function returns nothing`
-03. `process2 = fn(pt: Point -> struct {int,int}) { return {pt.x, pt.y} } #this function returns a struct`
-04. `myFunc9 = fn(x:int -> {int}) { struct {int}{x+12} } #this function returns a struct literal`
-05. `process = fn(x: int|Point -> int) ... #this function can accept either int or Point type as input or int|Point type`
-06. `{_,b} = process2(myPoint) #ignore second output of the function`
+02. `log = fn(s: string -> nothing) { print(s) } #this function returns nothing, pun not intended`
+03. `process2 = fn(pt: Point -> struct (int,int)) { return struct(int,int)(pt.x, pt.y) } #this function returns a struct`
+05. `process = fn(x: int|Point -> int) { ... } #this function can accept either int or Point type as input or int|Point type`
+06. `_,b = process2(myPoint) #ignore second output of the function`
 07. 
-```
+```rust
 process = fn(x:int -> int) 
 { 
   #if x<10 return 100, otherwise return 200
@@ -38,31 +32,30 @@ process = fn(x:int -> int)
 }
 ``` 
 08. `process = fn(x:int -> int) { x+1 }`, `process2 = process`
-09. `sorted = sort(my_sequence, fn(x,y -> int) { x-y} )`
+09. `sorted = sort(my_sequence, fn(x,y -> int) { x-y })`
 10. `Adder = fn(int,int->int) #defining a named type based on a function type`
-11. `sort = fn(x: [int], comparer: fn(int,int -> bool) -> [int]) {...} #this function accepts a function pointers`
+11. `sort = fn(x: [int], comparer: fn(int,int -> bool) -> [int]) {...} #this function accepts a function`
 12. `map = fn(input: [int], mapper: fn(int -> string) -> [string])`
 13. `process = fn{ 100 }`
 14.
-```
+```rust
 seq = fn(start_or_length:int, end:int|nothing -> ...)
 ...
 x = seq(10)
 y = seq(1,10)
 ```
 15. 
-```
+```rust
 add = fn(a:int, b:int ->int) { a+b }
 g = add(1,2)
 ```
 
 ## Function call resolution
 
-We use a static dispatch for function calls. Also because you cannot have two functions with the same name, it is easier to find what happens with a function call.
-
-If `MyInt = int` is defined in the code, you cannot call a function which needs an `int` with a `MyInt` binding, unless it is forwarded explicitly in the code (e.g. `process = fn(x:MyInt -> process(int(x)))`).
-
-To resolve a function call, first bindings with that name in current function will be searched. If not found, search will continue to parent functions, then module-level. At any scope, if there are multiple candidates (matching with name) there will be a compiler error. Parameter types must be "compatible" with function arguments, or else there will be a compiler error. For example if function argument type is `int | nothing` and parameter is an `int` it is a valid function call.
+1. We use a static dispatch for function calls. 
+2. Also because you cannot have two functions with the same name, it is easier to find what happens with a function call.
+3. If `MyInt = int`, you cannot call a function which needs an `int` with a `MyInt` binding.
+4. Fucntion resoluTo resolve a function call, first bindings with that name in current function will be searched. If not found, search will continue to parent functions, then module-level. At any scope, if there are multiple candidates (matching with name) there will be a compiler error. Parameter types must be "compatible" with function arguments, or else there will be a compiler error. For example if function argument type is `int | nothing` and parameter is an `int` it is a valid function call.
 
 ## Lambda (Function literal)
 
