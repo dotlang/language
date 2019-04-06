@@ -6,7 +6,7 @@ Types are blueprints which are used to create values for bindings. Types can be 
 
 **Syntax**: `int`, `float`, `byte`, `char`, `string`, `bool`, `nothing`
 
-**Notes**:
+**Notes**:`
 
 1. `int` type is a signed 8-byte integer data type.
 2. `float` is double-precision 8-byte floating point number.
@@ -70,7 +70,7 @@ Types are blueprints which are used to create values for bindings. Types can be 
 **Examples**
 
 1.
-```
+```rust
 saturday=1
 sunday=2
 ...
@@ -92,7 +92,7 @@ DayOfWeek = enum [saturday, sunday, ...]
 2. `int_or_float: int|float = "ABCD"`
 3. `int_or_nothing, float_or_nothing = int_or_float_or_nothing_value`
 4. 
-```
+```rust
 #assuming check function is already defined
 x: int|string|float = getData()
 result = check(x, fn(i:int -> boolean) { ... }) //
@@ -100,7 +100,7 @@ result = check(x, fn(i:int -> boolean) { ... }) //
          check(x, fn(f:float->boolean){...})
 ```
 5.
-```
+```rust
 #although T type can be at any position in x's original type, but inside hasType T is the first type so "a" will be corresponding to type T
 hasType = fn(x: T|U, T: type, U: type -> bool) {
 	a,_ = x
@@ -125,7 +125,7 @@ hasType = fn(x: T|U, T: type, U: type -> bool) {
 6. `another_point = Point(x:11, y:my_point.y + 200)`
 7. `_, x = point1 #You can use _ during destruction to ignore one or more of results
 8.
-```
+```rust
 process = fn(x: struct (id:int, age:int) -> int) { x.age }
 process2 = fn(x: struct (int, int) -> int) { 
 	_,a = x
@@ -179,7 +179,7 @@ process2 = fn(x: struct (int, int) -> int) {
 **Examples**
 
 1. 
-```
+```rust
 MyInt = int
 toInt = fn(x: MyInt -> int) { x }
 toMyInt = fn(x: int -> MyInt) { x }
