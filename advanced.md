@@ -81,6 +81,7 @@ process = fn(x: Set -> int) { ... }
 3. Each task has an unbounded mailbox which can accept messages from any other task. 
 4. Sending to an invalid task will return immediately with a false result indicating send has failed. 
 5. Receive with an empty inbox, will block the current process. You can use built-in functions to access current task's functionality (pick a message from mailbox, send a message to another task, ...).
+6. You can receive with a union type which will indicate any message of one of given types should be picked up.
 
 **Examples**
 
