@@ -59,8 +59,8 @@ EnumType                ::= 'enum' SeqLiteral
 ## Binding Declaration
 
 ```ebnf
-BindingDecl             ::= { BindingLHS } ('='|':=') Expression
-BindingLHS              ::= BindingName [ ':' Type ]
+BindingDecl             ::= { BindingNameList } ('='|':=') Expression
+BindingNameList         ::= BindingName [ ':' Type ]
 Expression              ::= EqExpression     { ('and'|'or') EqExpression }
 EqExpression            ::= CmpExpression    { ('=='|'!=') CmpExpression }
 CmpExpression           ::= ShiftExpression  { ('>'|'<'|'>='|'<=') ShiftExpression }
@@ -68,6 +68,14 @@ ShiftExpression         ::= AddExpression    { ('>>'|'<<'|'^') AddExpression }
 AddExpression           ::= MulExpression    { ('+'|'-') MulExpression }
 MulExpression           ::= UnaryExpression  { ('*'|'/'|'%'|'%%') UnaryExpression }
 UnaryExpression         ::= ['not'|'-']      PrimaryExpression
-PrimaryExpression       ::= ( BindingName | '(' Expression ')' | Literal ) InnerExpression
-InnerExpression         ::= '(' { Expression } ')' | '.' Expression | '[' Expression ']' }
-                     (*  function call      / struct access    / seq/map access    *)```
+PrimaryExpression       ::= ['('] InnerExpression [')']
+InnerExpression         ::= Literal | Identifier | StructAccessExpression | MapSeqAccessExpression | 
+                                ModuleAccessExpression | FnCallExpression | StructExpression | LambdaCreatorExpression
+StructAccessExpression  ::= Expression '.' Identifier
+MapSeqAccessExpression  ::= Expression '[' Expression ']'
+ModuleAccessExpression  ::= Identifier '..' Expression
+FnCallExpression        ::= Expression '(' { Expression } ')'
+StructExpression        ::= ( TypeName | StructType) '(' FieldValueList ')'
+FieldValueList          ::= { [ Identifier ':' ] Expression }
+LambdaCreatorExpression ::= Expression '(' { Expression | '_' } ')'
+```
