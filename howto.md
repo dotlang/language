@@ -57,7 +57,7 @@ Example: `process = fn(nothing -> int|exception) { ... return exception{...} }`
 
 If and Else constructs can be implemented using the fact that booleans converted to integer will result to `0` or `1` (for `false` and `true`).
 
-```
+```rust
 ifElse = fn(cond: bool, true_case: T, false_case:T, T: type -> T) 
 {
 	[true: true_case, false: false_case][cond]
@@ -66,7 +66,7 @@ ifElse = fn(cond: bool, true_case: T, false_case:T, T: type -> T)
 
 Another example:
 
-```
+```rust
 process = fn(x:int -> string)
 {
 	temp = [x>0 : fn{ saveLargeFileToDB("SDSDASDA") }, 
@@ -81,7 +81,7 @@ process = fn(x:int -> string)
 
 It is advised to put all import paths in one module like `refs` and import it to specify import paths.
 
-```
+```rust
 #refs
 std_map = "/http/github.com/dotLang/std/v1.9.5/MapHelper"
 ```
@@ -96,7 +96,7 @@ MapHelper = import(refs..std_map)
 
 ## Empty application
 
-```
+```rust
 main = fn( -> int ) { 0 }
 ```
 
@@ -108,7 +108,7 @@ You can shorten `main` to below:
 
 ## Hello world
 
-```
+```rust
 main = fn( -> int) 
 {
 	print("Hello world!")
@@ -147,19 +147,19 @@ innerEval = fn(exp: Expression -> float)
 
 ## Quick sort
 
-```
+```rust
 quickSort = fn(list:[int], low: int, high: int -> [int])
 {
-  high<low :: list
-  
-  mid_index = (high+low)/2
-  pivot = list[mid_index]
-  
-  #filter is a built-in function
-  small_list = list.filter(fn(x -> x < pivot))
-  big_list   = list.filter(fn(x -> x > pivot))
-  
-  :: quickSort(small_list) + [pivot] + quickSort(big_list)
+    ifElse(high<low, list, fn{	
+        mid_index = (high+low)/2
+        pivot = list[mid_index]
+
+        #filter is a built-in function
+        small_list = filter(list, fn(x:int -> bool) {x < pivot}))
+        big_list   = filter(list, fn(x:int -> bool) {x > pivot}))
+
+        quickSort(small_list) + [pivot] + quickSort(big_list)
+    })
 }
 ```
 
@@ -167,16 +167,16 @@ quickSort = fn(list:[int], low: int, high: int -> [int])
 
 A function which accepts a list of numbers and returns sum of numbers.
 
-```
-filteredSum = (data: [int] -> int)
+```rust
+sum = (data: [int] -> int)
 {
   calc = (index: int, sum: int -> int)
   {
-    index >= length(data) :: sum
-    :: calc(index+1, sum+data[index])
+    iElse(index >= length(data), fn{sum}
+        fn{calc(index+1, sum + data[index]})()
   }
   
-  :: calc(0,0)
+  calc(0,0)
 }
 ```
 
@@ -185,12 +185,13 @@ filteredSum = (data: [int] -> int)
 A function which accepts a number and returns it's digits in a sequence of characters.
 Generally for this purpose, using a linked-list is better because it will provide better performance.
 
-```
+```rust
 extractor = (n: number, result: string -> string)
 {
-  n < 10 :: result + char(48+n)
-  digit = n % 10
-  :: extractor(n/10, result + char(48+digit)
+  ifElse(n < 10, fn{result + char(48+n)}, fn{
+        digit = n % 10
+        extractor(n/10, result + char(48+digit)
+     })
 }
 ```
 
@@ -199,19 +200,20 @@ extractor = (n: number, result: string -> string)
 A function which accepts two sequences of numbers and returns the maximum of sum of any any two numbers chosen from each of them.
 This can be done by finding maximum element in each of the arrays but we want to do it with a nested loop.
 
-```
+```rust
 maxSum = (a: [int], b: [int] -> int)
 {
 	calc = (idx1: int, idx2: int, current_max: int -> int)
 	{
-		idx2 >= length(b) :: current_max
-		sum = a[idx1] + b[idx2]
-		next1 = (idx1+1) % length(a)
-		next2 = idx2 + int((idx1+1)/length(a))
-		:: calc(next1, next2, max(current_max, sum))
+		ifElse(idx2 >= length(b), fn{current_max}, fn{
+		    sum = a[idx1] + b[idx2]
+		    next1 = (idx1+1) % length(a)
+		    next2 = idx2 + int((idx1+1)/length(a))
+		    calc(next1, next2, max(current_max, sum))
+        })
 	}
 	
-	:: calc(0, 0, 0)
+	calc(0, 0, 0)
 }
 ```
 
