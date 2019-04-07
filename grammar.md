@@ -67,12 +67,13 @@ CmpExpression           ::= ShiftExpression  { ('>'|'<'|'>='|'<=') ShiftExpressi
 ShiftExpression         ::= AddExpression    { ('>>'|'<<'|'^') AddExpression }
 AddExpression           ::= MulExpression    { ('+'|'-') MulExpression }
 MulExpression           ::= UnaryExpression  { ('*'|'/'|'%'|'%%') UnaryExpression }
-UnaryExpression         ::= ['not'|'-']      ['('] PrimaryExpression [')']
+UnaryExpression         ::= ['not'|'-']      BasicExpression
+BasicExpression         ::= ['('] PrimaryExpression [')']
 PrimaryExpression       ::= Literal | Identifier | StructAccessExpression | MapSeqAccessExpression | 
                                 ModuleAccessExpression | FnCallExpression | StructExpression | LambdaCreatorExpression
 StructAccessExpression  ::= Expression '.' Identifier
 MapSeqAccessExpression  ::= Expression '[' Expression ']'
-ModuleAccessExpression  ::= Identifier '..' Expression
+ModuleAccessExpression  ::= ( Import | Identifier ) '..' Expression
 FnCallExpression        ::= Expression '(' { Expression } ')'
 StructExpression        ::= ( TypeName | StructType) '(' FieldValueList ')'
 FieldValueList          ::= { [ Identifier ':' ] Expression }
