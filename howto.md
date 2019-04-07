@@ -219,14 +219,16 @@ maxSum = (a: [int], b: [int] -> int)
 
 ## Fibonacci
 
-```
+```rust
 fib = (n: int, cache: [int|nothing] -> int)
 {
-	cache[n] != nothing :: int(cache[n]).0
-	seq_final1 = set(seq, n-1, fib(n-1, cache))
-	seq_final2 = set(seq_final1, n-2, fib(n-2, seq_final1))
+	ifElse(cache[n] != nothing, unwrap(cache[n], int),
+		fn{
+	        seq_final1 = set(seq, n-1, fib(n-1, cache))
+	        seq_final2 = set(seq_final1, n-2, fib(n-2, seq_final1))
 
-	:: seq_final2[n-1] + seq_final2[n-2]
+	        seq_final2[n-1] + seq_final2[n-2]
+        })
 }
 ```
 
@@ -234,25 +236,26 @@ fib = (n: int, cache: [int|nothing] -> int)
 
 A cache can be implemented using a parallel task. Everytime cache is updated, it will call itself with the new state.
 
-```
+```rust
 CacheState = [string: int]
 cache = (cs: CacheState->)
 {
-    request = pick(Message[CacheStore])
+    request = pick(CacheStoreMessage)
     new_cache_state = update(cs, request)
-    query = receive(Message[CacheQuery])
+    query = receive(CacheQueryMessage)
     result = lookup(new_cache_state, query)
-    send(Message{my_wid, query.sender_wid, result})
+    send(Message(my_wid, query.sender_wid, result))
     cache(new_cache_state)
 }
 ```
 
 ### Guessing game
 
-```
-stdin = import("/http/github.com/dotLang/std/stdin"){}
-stdout = import("/http/github.com/dotLang/std/stdout"){}
-rand = import("/http/github.com/dotLang/std/random"){}
+```rust
+std = import("/http/github.com/dotLang/std")
+stdin = std..stdin
+stdout = std..stdout
+rand = std..random
 
 main = fn
 {
@@ -265,7 +268,7 @@ main = fn
 		stdout.write("Invalid number")
 	},
 	fn {
-		guess = cast(int, guessRaw)
+		guess = unwrap(guessRaw)
 		actions = [guess<secret: fn{ stdout.write("Too small!") },
 				   guess>secret: fn{ stdout.write("Too large!") },
 				   guess==secret: fn{ stdout.write("Well done!") }
