@@ -67,9 +67,8 @@ CmpExpression           ::= ShiftExpression  { ('>'|'<'|'>='|'<=') ShiftExpressi
 ShiftExpression         ::= AddExpression    { ('>>'|'<<'|'^') AddExpression }
 AddExpression           ::= MulExpression    { ('+'|'-') MulExpression }
 MulExpression           ::= UnaryExpression  { ('*'|'/'|'%'|'%%') UnaryExpression }
-UnaryExpression         ::= ['not'|'-']      PrimaryExpression
-PrimaryExpression       ::= ['('] InnerExpression [')']
-InnerExpression         ::= Literal | Identifier | StructAccessExpression | MapSeqAccessExpression | 
+UnaryExpression         ::= ['not'|'-']      ['('] PrimaryExpression [')']
+PrimaryExpression       ::= Literal | Identifier | StructAccessExpression | MapSeqAccessExpression | 
                                 ModuleAccessExpression | FnCallExpression | StructExpression | LambdaCreatorExpression
 StructAccessExpression  ::= Expression '.' Identifier
 MapSeqAccessExpression  ::= Expression '[' Expression ']'
@@ -78,4 +77,7 @@ FnCallExpression        ::= Expression '(' { Expression } ')'
 StructExpression        ::= ( TypeName | StructType) '(' FieldValueList ')'
 FieldValueList          ::= { [ Identifier ':' ] Expression }
 LambdaCreatorExpression ::= Expression '(' { Expression | '_' } ')'
+
+Literal                 ::= IntLiteral | FloatLiteral | CharLiterl | StringLiteral | NothingLiteral | 
+                                BoolLiteral | SeqLiteral | MapLiteral | StructLiteral | TypeLiteral
 ```
