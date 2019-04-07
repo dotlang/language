@@ -45,6 +45,7 @@ Types are blueprints which are used to create values for bindings. Types can be 
 2. `x: [[int]] = [ [1, 2], [3, 4], [5, 6] ] #a matrix of integer numbers`
 3. `x = [1, 2]+[3, 4]+[5, 6]] #merging multiple sequences`
 4. `int_var = x[10]`
+5. `string = [char]`
 
 ## HashMap
 
@@ -77,6 +78,12 @@ sunday=2
 DayOfWeek = enum [saturday, sunday, ...]
 ```
 2. `x = [saturday: "A", sunday: "B", ...][my_day_of_week]`
+3. 
+```rust
+true=1
+false=0
+bool = enum [true, false]
+```
 
 ## Union
 
