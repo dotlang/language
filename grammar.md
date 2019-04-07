@@ -5,7 +5,7 @@
 Format: 
 
 
-```
+```ebnf
 Result  ::= component1 ( component2 | component3 ) | component4 | [component5] component6
 - /* comments */
 - 'literal'
@@ -27,10 +27,10 @@ Module                  ::= ( ImportDecl | BindingDecl | TypeDecl )*
 
 ```ebnf
 ImportDecl              ::= ImportAliasDecl | ImportSelectiveDecl  
-ImportAliasDecl         ::= [ ModuleAlias '='] Import  
-ModuleAlias             ::= Identifier  
-Import                  ::= 'import' '(' StringLiteral ')'  
-ImportSelectiveDecl     ::= IdentifierList '=' Import  
+ImportAliasDecl         ::= [ Identifier '=' ] Import  
+Import                  ::= 'import' '(' StringLiteral ')'
+ImportSelectiveDecl     ::= IdentifierList '=' Import 
+StringLiteral           ::= STRING | STRING '+' StringLiteral       
 ```
 
 ## BindingDecl
