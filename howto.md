@@ -77,6 +77,35 @@ process = fn(x:int -> string)
 }
 ```
 
+Above sample implemented using ifElse function:
+
+```rust
+process = fn(x:int -> string)
+{
+    ifElse(x>0, fn{
+        saveLargeFileToDB("SDSDASDA") 
+    }, fn{
+        innerProcess(x)
+    })()
+}
+```
+
+Above is translation of below C code:
+
+```c
+string process(int x) {
+    char* result;
+    
+    if ( x > 0 ) {
+        result = saveLargeFileToDB("SDSDASDA");
+    } else {
+        result = innerProcess(x);
+    }
+    
+    return result;
+}
+```
+
 ## Dependency management
 
 It is advised to put all import paths in one module like `refs` and import it to specify import paths.
