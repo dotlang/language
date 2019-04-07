@@ -70,19 +70,18 @@ Types are blueprints which are used to create values for bindings. Types can be 
 
 **Examples**
 
+```rust
 1.
-```rust
-saturday=1
-sunday=2
-...
-DayOfWeek = enum [saturday, sunday, ...]
-```
-2. `x = [saturday: "A", sunday: "B", ...][my_day_of_week]`
+  saturday=1
+  sunday=2
+  ...
+  DayOfWeek = enum [saturday, sunday, ...]
+2. 
+  x = [saturday: "A", sunday: "B", ...][my_day_of_week]
 3. 
-```rust
-true=1
-false=0
-bool = enum [true, false]
+  true=1
+  false=0
+  bool = enum [true, false]
 ```
 
 ## Union
