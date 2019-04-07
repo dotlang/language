@@ -4,7 +4,6 @@
 
 Format: 
 
-
 ```ebnf
 Result  ::= component1 ( component2 | component3 ) | component4 | [component5] component6
 - /* comments */
@@ -21,7 +20,15 @@ Result  ::= component1 ( component2 | component3 ) | component4 | [component5] c
 
 ```ebnf
 SourceFile              ::= Module  
-Module                  ::= ( ImportDecl | BindingDecl | TypeDecl )*  
+Module                  ::= ( ImportDecl | TypeDecl | BindingDecl )*  
+```
+
+## Naming basics
+
+```ebnf
+TypeName
+BindingName
+Identifier
 ```
 
 ## Import
@@ -34,20 +41,33 @@ ImportSelectiveDecl     ::= {Identifier} '=' Import '..' '{' IdentifierList '}'
 StringLiteral           ::= STRING | Identifier | STRING '+' StringLiteral       
 ```
 
-## TypeDecl
+## Type Declaration
 
 ```ebnf
-TypeDecl                ::= AliasTypeDecl | NamedTypeDecl
-AliasTypeDecl           ::= TypeName ':' Type
-NamedTypeDecl           ::= TypeName '=' Type
-TypeIdentifier          ::= CAPITAL_LETTER ALNUM_LETTERS
-Type                    ::= PrimitiveType | StructType | UnionType | FnType
+TypeDecl                ::= TypeName (':'|'=') Type
+Type                    ::= PrimitiveType | StructType | UnionType | FnType | SeqType | MapType | EnumType | TypeName
 PrimitiveType           ::= 'int' | 'float' | 'string' | 'char' | 'byte' | 'bool' | 'nothing' | 'type'
 StructType              ::= 'struct' '(' FieldList ')'
 FieldList               ::= { [ Identifier ':' ] Type }
 UnionType               ::= (Type '|' Type) | (Type '|' UnionType)
 FnType                  ::= 'fn' '(' { Type } '->' Type ')'
+SeqType                 ::= '[' Type ']'
+MapType                 ::= '[' Type ':' Type ']'
+EnumType                ::= 'enum' SeqLiteral
 ```
  
+## Binding Declaration
 
-
+```ebnf
+BindingDecl             ::= { BindingLHS } ('='|':=') Expression
+BindingLHS              ::= BindingName [ ':' Type ]
+Expression              ::= EqExpression     { ('and'|'or') EqExpression }
+EqExpression            ::= CmpExpression    { ('=='|'!=') CmpExpression }
+CmpExpression           ::= ShiftExpression  { ('>'|'<'|'>='|'<=') ShiftExpression }
+ShiftExpression         ::= AddExpression    { ('>>'|'<<'|'^') AddExpression }
+AddExpression           ::= MulExpression    { ('+'|'-') MulExpression }
+MulExpression           ::= UnaryExpression  { ('*'|'/'|'%'|'%%') UnaryExpression }
+UnaryExpression         ::= ['not'|'-']      PrimaryExpression
+PrimaryExpression       ::= ( BindingName | '(' Expression ')' | Literal ) InnerExpression
+InnerExpression         ::= '(' { Expression } ')' | '.' Expression | '[' Expression ']' }
+                     (*  function call      / struct access    / seq/map access    *)```
