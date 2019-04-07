@@ -120,8 +120,8 @@ main = fn( -> int)
 
 We want to write a function which accepts a string like `"2+4-3"` and returns the result (`3`).
 
-```
-NormalExpression = {op: char, left: Expression, right: Expression}
+```rust
+NormalExpression = struct (op: char, left: Expression, right: Expression)
 Expression = int|NormalExpression
 
 eval = fn(input: string -> float) 
@@ -132,18 +132,16 @@ eval = fn(input: string -> float)
 
 innerEval = fn(exp: Expression -> float) 
 {
-  hasType(int, exp) :: int(exp).0
-  
-  #now we are sure that exp is an expression
-  y,_ = *NormalExpression{exp}
-  
-  y.op == '+' :: innerEval(y.left) + innerEval(y.right)
-  y.op == '-' :: innerEval(y.left) - innerEval(y.right)
-  y.op == '*' :: innerEval(y.left) * innerEval(y.right)
-  y.op == '/' :: innerEval(y.left) / innerEval(y.right)
-  
-  #no exception handling for now
-  :: 0
+	int_val, normal_exp = exp
+    int_val // fn{
+        #now we are sure that exp is of type NormalExpression
+        y = unwrap(normal_exp)
+
+        ['+' : fn{innerEval(y.left) + innerEval(y.right)},
+         '-' : fn{innerEval(y.left) - innerEval(y.right)},
+         '*' : fn{innerEval(y.left) * innerEval(y.right)},
+         '/' : fn{innerEval(y.left) / innerEval(y.right)}][y.op]()
+    }()
 }
 ```
 
