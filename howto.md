@@ -1,43 +1,45 @@
 # Patterns
 
-Because a lot of non-essential features are removed from the language and core, the user has freedom to implement them however they want (using features provided in the language). In this section we provide some of possible solutions for these types of features.
+Because a lot of non-essential features are removed from the language and core, the user has freedom to implement them however they want. In this section we provide some of possible solutions for these types of challenges.
 
 ## Polymorphism
 
 Polymorphism can be achieved using cloure and lambdas. 
 
-Pseudo code:
-```swift
-drawCircle = fn(s: Circle, Canvas, float -> int) {...}
-drawSquare = fn(s: Square, Canvas, float -> int) {...}
+```rust
+drawCircle = fn(s: Circle, c: Canvas, f: float -> int) {...}
+drawSquare = fn(s: Square, c: Canvas, f: float -> int) {...}
 
-Shape = struct { draw: fn(Canvas, float -> int)}
+Shape = struct ( draw: fn(Canvas, float -> int) )
 getShape = fn(name: String -> Shape) 
 {
-	if name is "Circle" 
+    ["Circle": fn{
 		c = Circle{...}
-		Shape{ draw = drawCircle(c, _, _) }
+		Shape( draw : drawCircle(c, _, _) )
+     }, "Square": ...][name]()
 }
+
 f = getShape("Circle")
 f.draw(my_canvas, 1.12)
 ```
 
-If you want to add a new shape (e.g. Triangle), you should add appropriate functions (And the case checks in `getShape` needs to be modified).
-If you want to add a new operation (e.g. print), you will need to add a new function that returns a lambda to print.
+If you want to add a new shape (e.g. Triangle), you should add appropriate functions (And the map in `getShape` needs to be modified).
+If you want to add a new operation (e.g. print), you will need to add a new function to `Shape` and assign to it in `gtShape`.
 
 Note that above `Shape` is very similar to "trait".
 
-Another approach to implement polymorphism:
+Another approach to implement polymorphism is by using a minified VTable:
 
-```
-drawCircle = fn(s: Circle, Canvas, float -> int) {...}
-drawSquare = fn(s: Square, Canvas, float -> int) {...}
+```rust
+drawCircle = fn(s: Circle, c: Canvas, f: float -> int) {...}
+drawSquare = fn(s: Square, c: Canvas, f: float -> int) {...}
 
 getDraw = fn(x: T, T: type -> fn(Canvas, float -> int)) 
 {
     vtable = [Circle : drawCircle, Square: drawSquare]
     cast(fn(T, Canvas, float), vtable[T])(x, _, _)
 }
+
 f = getDraw(my_circle)(my_canvas, 1.52)
 ```
 
@@ -47,18 +49,18 @@ There is no explicit support for exceptions. You can return a specific `exceptio
 
 If a really unrecoverable error happens, you should exit the application by calling `exit` function from core. 
 
-In special cases like a plugin system, where you must control exceptions, you can use built-in function `invoke` which will return an error result if the function which it calls exits.
+In special cases like a plugin system, where you must control exceptions, you can use built-in functions to call plugin. It will return an error result if the function which it calls exits unexpectedly.
 
 Example: `process = fn(nothing -> int|exception) { ... return exception{...} }`
 
 ## Conditionals
 
-If and Else constructs can be implemented using the fact that booleans converted to integer will result to either 0 or 1 (for `false` and `true`).
+If and Else constructs can be implemented using the fact that booleans converted to integer will result to `0` or `1` (for `false` and `true`).
 
 ```
-ifElse = fn(T: type, cond: bool, true_case: T, true_case:T -> T) 
+ifElse = fn(cond: bool, true_case: T, false_case:T, T: type -> T) 
 {
-	[cond: true_case, !cond: false_case]
+	[true: true_case, false: false_case][cond]
 }
 ```
 
@@ -68,7 +70,8 @@ Another example:
 process = fn(x:int -> string)
 {
 	temp = [x>0 : fn{ saveLargeFileToDB("SDSDASDA") }, 
-		x<=0: fn(x:int->string) { innerProcess(x) },  ]
+		    x<=0: fn{ innerProcess(x) }  
+            ]
 
 	temp[true]()
 }
@@ -85,27 +88,8 @@ std_map = "/http/github.com/dotLang/std/v1.9.5/MapHelper"
 and then use above:
 ```
 #File1
-Refs = import("/src/main")
-MapHelper = import(Refs.std_map)
-
-#File2
-refs = import("/src/main"){}
-MapHelper = import(refs.std_map)
-```
-When compiler sees first usage of `std_map` in import, it will notice it does not exist locally. So will convert string to URL (adding `://` and ...) and download and save it to corresponding directory relative to project root. The next time, module will be there.
-
-## Pattern matching
-
-You can do pattern matching on union types using map and type identifiers:
-
-```
-f = fopen("...") 
-#now suppose that type of f is File|Identifier|nothing 
-number_inside_the_file = [
-	File:		fn{freadInt(f)}, 
-	Identifier: 	fn{convert(int, Identifier)}, 
-	nothing: 	fn{0}]
-[getType(f)]()
+refs = import("/src/main")
+MapHelper = import(refs..std_map)
 ```
 
 # Examples
@@ -117,6 +101,10 @@ main = fn( -> int ) { 0 }
 ```
 
 This is a function, called `main` which has no input and always returns `0` (very similar to C/C++ except `main` function has no input).
+
+You can shorten `main` to below:
+
+`main = fn{ 0 }`
 
 ## Hello world
 
