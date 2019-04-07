@@ -14,6 +14,7 @@ Result  ::= component1 ( component2 | component3 ) | component4 | [component5] c
 - [A]: Optional A
 - (A)* : Repeating A zero or more times
 - (A)+ : Repeating A one or more times
+- {A}  : Repeating A zero or more times, separated with comma
 ```
 
 ## Main parts
@@ -29,13 +30,23 @@ Module                  ::= ( ImportDecl | BindingDecl | TypeDecl )*
 ImportDecl              ::= ImportAliasDecl | ImportSelectiveDecl  
 ImportAliasDecl         ::= [ Identifier '=' ] Import  
 Import                  ::= 'import' '(' StringLiteral ')'
-ImportSelectiveDecl     ::= IdentifierList '=' Import 
-StringLiteral           ::= STRING | STRING '+' StringLiteral       
+ImportSelectiveDecl     ::= {Identifier} '=' Import '..' '{' IdentifierList '}'
+StringLiteral           ::= STRING | Identifier | STRING '+' StringLiteral       
 ```
 
-## BindingDecl
+## TypeDecl
 
 ```ebnf
+TypeDecl                ::= AliasTypeDecl | NamedTypeDecl
+AliasTypeDecl           ::= TypeName ':' Type
+NamedTypeDecl           ::= TypeName '=' Type
+TypeIdentifier          ::= CAPITAL_LETTER ALNUM_LETTERS
+Type                    ::= PrimitiveType | StructType | UnionType | FnType
+PrimitiveType           ::= 'int' | 'float' | 'string' | 'char' | 'byte' | 'bool' | 'nothing' | 'type'
+StructType              ::= 'struct' '(' FieldList ')'
+FieldList               ::= { [ Identifier ':' ] Type }
+UnionType               ::= (Type '|' Type) | (Type '|' UnionType)
+FnType                  ::= 'fn' '(' { Type } '->' Type ')'
 ```
  
 
