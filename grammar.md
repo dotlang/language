@@ -26,19 +26,19 @@ Module                  ::= ( ImportDecl | TypeDecl | BindingDecl )*
 ## Naming basics
 
 ```ebnf
-TypeName
-BindingName
-Identifier
+TypeName                ::= [UNDERSCORE] CAPITAL_LETTER CHAR*
+BindingName             ::= [UNDERSCORE] (CHAR|'_')*
+ModuleAlias             ::= (CHAR|'_')*
 ```
 
 ## Import
 
 ```ebnf
 ImportDecl              ::= ImportAliasDecl | ImportSelectiveDecl  
-ImportAliasDecl         ::= [ Identifier '=' ] Import  
+ImportAliasDecl         ::= [ ModuleAlias '=' ] Import  
 Import                  ::= 'import' '(' StringLiteral ')'
-ImportSelectiveDecl     ::= {Identifier} '=' Import '..' '{' IdentifierList '}'
-StringLiteral           ::= STRING | Identifier | STRING '+' StringLiteral       
+ImportSelectiveDecl     ::= { BindingName } '=' Import '..' '{' { BindingName } '}'
+StringLiteral           ::= STRING | BindingName | STRING '+' StringLiteral       
 ```
 
 ## Type Declaration
@@ -70,7 +70,7 @@ MulExpression           ::= UnaryExpression  { ('*'|'/'|'%'|'%%') UnaryExpressio
 UnaryExpression         ::= ['not'|'-']      BasicExpression
 BasicExpression         ::= ['('] PrimaryExpression [')']
 PrimaryExpression       ::= Literal | Identifier | StructAccessExpression | MapSeqAccessExpression | 
-                                ModuleAccessExpression | FnCallExpression | StructExpression | LambdaCreatorExpression
+                                ModuleAccessExpression | FnCallExpression | StructExpression | LambdaCreatorExpression | FnDeclaration
 StructAccessExpression  ::= Expression '.' Identifier
 MapSeqAccessExpression  ::= Expression '[' Expression ']'
 ModuleAccessExpression  ::= ( Import | Identifier ) '..' Expression
@@ -78,6 +78,7 @@ FnCallExpression        ::= Expression '(' { Expression } ')'
 StructExpression        ::= ( TypeName | StructType) '(' FieldValueList ')'
 FieldValueList          ::= { [ Identifier ':' ] Expression }
 LambdaCreatorExpression ::= Expression '(' { Expression | '_' } ')'
+FnDeclaration           ::= 'fn' ['(' { Identifier ':' Type } '->' Type ')'] '{' Expression+ '}'
 
 Literal                 ::= IntLiteral | FloatLiteral | CharLiterl | StringLiteral | NothingLiteral | 
                                 BoolLiteral | SeqLiteral | MapLiteral | StructLiteral | TypeLiteral
