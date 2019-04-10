@@ -2,6 +2,7 @@
 ---
 
 @import "{{ site.theme }}";
+@import url('https://fonts.googleapis.com/css?family=Open+Sans');
 
 header p { width: 50%; }
 header {
@@ -19,3 +20,8 @@ header div.menu_items a {
 }
 
 div.wrapper { width: 80%; }
+
+div.wrapper section {
+    font-family: 'Open Sans', Helvetica, Arial, sans-serif;
+    font-size: 16px;
+}
