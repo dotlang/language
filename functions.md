@@ -20,34 +20,30 @@ For generics (types and functions) see Advanced section.
 
 **Examples**
 
-01. `myFunc = fn(x:int, y:int -> int) { 6+y+x }`
-02. `log = fn(s: string -> nothing) { print(s) } #this function returns nothing, pun not intended`
-03. `process2 = fn(pt: Point -> struct (int,int)) { return struct(int,int)(pt.x, pt.y) } #this function returns a struct`
-05. `process = fn(x: int|Point -> int) { ... } #this function can accept either int or Point type as input or int|Point type`
-06. `_,b = process2(myPoint) #ignore second output of the function`
-07. 
 ```rust
+01. myFunc = fn(x:int, y:int -> int) { 6+y+x }
+02. log = fn(s: string -> nothing) { print(s) } #this function returns nothing, pun not intended
+03. process2 = fn(pt: Point -> struct (int,int)) { return struct(int,int)(pt.x, pt.y) } #this function returns a struct
+05. process = fn(x: int|Point -> int) { ... } #this function can accept either int or Point type as input or int|Point type
+06. _,b = process2(myPoint) #ignore second output of the function
+07. 
 process = fn(x:int -> int) 
 { 
   #if x<10 return 100, otherwise return 200
   [x<10: 100, x>=10: 200][true]
 }
-``` 
-08. `process = fn(x:int -> int) { x+1 }`, `process2 = process`
-09. `sorted = sort(my_sequence, fn(x,y -> int) { x-y })`
-10. `Adder = fn(int,int->int) #defining a named type based on a function type`
-11. `sort = fn(x: [int], comparer: fn(int,int -> bool) -> [int]) {...} #this function accepts a function`
-12. `map = fn(input: [int], mapper: fn(int -> string) -> [string])`
-13. `process = fn{ 100 }`
+08. process = fn(x:int -> int) { x+1 }, process2 = process
+09. sorted = sort(my_sequence, fn(x,y -> int) { x-y })
+10. Adder = fn(int,int->int) #defining a named type based on a function type
+11. sort = fn(x: [int], comparer: fn(int,int -> bool) -> [int]) {...} #this function accepts a function
+12. map = fn(input: [int], mapper: fn(int -> string) -> [string])
+13. process = fn{ 100 }
 14.
-```rust
 seq = fn(start_or_length:int, end:int|nothing -> ...)
 ...
 x = seq(10)
 y = seq(1,10)
-```
 15. 
-```rust
 add = fn(a:int, b:int ->int) { a+b }
 g = add(1,2)
 ```
