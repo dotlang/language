@@ -2,7 +2,7 @@
 
 Functions (or lambdas) are a type of binding which can accept a set of inputs and give an output. 
 
-For example `(int,int -> int)` is a function type (which accepts to integer numbers and gives an integer number) and `fn(x:int, y:int -> int) { x+y }` is function literal. 
+For example `fn(int,int -> int)` is a function type (which accepts to integer numbers and gives an integer number) and `fn(x:int, y:int -> int) { x+y }` is function literal. 
 
 For generics (types and functions) see Advanced section.
 
