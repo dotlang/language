@@ -125,7 +125,6 @@ You can see the grammar of the language in EBNF-like notation [here](https://git
 5. If a binding is a reference to a function, it should be named like a function.
 6. You can use `0x` prefix for hexadecimal numbers and `0b` for binary.
 7. You can use `_` as digit separator in number literals.
-8. Any identifier starting with underscore, is supposed to be private at the declaration site (although this is not enforced by compiler).
 
 ## Operators
 
