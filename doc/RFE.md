@@ -7245,7 +7245,7 @@ what if fn returns a binding of that named type? How are others supposed to acce
 For function section: State you can only have bindings and a return 
 also say there is no function overriding.
 
-? - How can I write a binding of type of named type?
+N - How can I write a binding of type of named type?
 ```
 MyInt = int
 x = 10 #this is int type
@@ -7262,14 +7262,14 @@ I think this is consistent with struct decl.
 N - How can I convert named type to original type?
 identity function
 
-? - For generic section
+N - For generic section
 ## Type argument
 
 These are binding of type `type`. You can use these bindings anywhere you need (inside function arguments, part of a struct, ...) but their value must be specified at compile time.
 More in "Generics" section.
 
-? - In type section mention about generic types.
+N - In type section mention about generic types.
 
-? - Literals can and should be castable to named types.
+N - Literals can and should be castable to named types.
 Because:
 `test = fn(x:int -> PlusFunc) { fn(y:int -> int) { y + x } }`
