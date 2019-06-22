@@ -2,7 +2,7 @@
 
 Functions (or lambdas) are a type of binding which can accept a set of inputs and give an output. 
 
-For example `fn(int,int -> int)` is a function type (which accepts to integer numbers and gives an integer number) and `fn(x:int, y:int -> int) { x+y }` is function literal. 
+For example `fn(int,int -> int)` is a function type (which accepts two integer numbers and gives an integer number) and `fn(x:int, y:int -> int) { x+y }` is function literal. 
 
 For generics (types and functions) see Advanced section.
 
@@ -69,8 +69,15 @@ _testProcessWithInvalidInput = fn{...}
 
 **Examples**
 
-1. `rr = fn(nothing -> int) { x + y } #here x and y are captures from parent function/struct`
-2. `test = fn(x:int -> PlusFunc) { fn(y:int -> int) { y + x } } #this function returns a lambda`
-3. `fn(x:int -> int) { x+1} (10) #you can invoke a lambda at the point of declaration`
-4. `lambda1 = process(10, _, _) #defining a lambda based on existing function`
-5. `ff = fn(x:int -> int) { ff(x+1) }`
+```rust
+1. 
+rr = fn(nothing -> int) { x + y } #here x and y are captures from parent function/struct
+2. 
+test = fn(x:int -> PlusFunc) { fn(y:int -> int) { y + x } } #this function returns a lambda
+3. 
+fn(x:int -> int) { x+1} (10) #you can invoke a lambda at the point of declaration
+4. 
+lambda1 = process(10, _, _) #defining a lambda based on existing function
+5. 
+ff = fn(x:int -> int) { ff(x+1) }
+```
