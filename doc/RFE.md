@@ -7279,3 +7279,5 @@ Because:
 ? - Everything is a file
 Use this for stdio, sockets, ... 
 inspire from linux Kernel
+
+? - Builtin support for testing and doc
