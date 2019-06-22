@@ -17,6 +17,7 @@ For generics (types and functions) see Advanced section.
 7. Optional arguments: When calling a function, you can ommit arguments that are at the end and accept `nothing` (Example 14).
 8. If a function is being called with literals (compile time known values), compiler will try to evaluate it during compilation. 
 9. Above point is used in generic types (Example 15).
+10. Module level functions that start with `_test` and have no input are considered unit test functions. You can later instruct compiler to run them (Example 16).
 
 **Examples**
 
@@ -46,6 +47,8 @@ y = seq(1,10)
 15. 
 add = fn(a:int, b:int ->int) { a+b }
 g = add(1,2)
+16. 
+_testProcessWithInvalidInput = fn{...}
 ```
 
 ## Function call resolution
