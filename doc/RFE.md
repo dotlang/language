@@ -7273,11 +7273,3 @@ N - In type section mention about generic types.
 N - Literals can and should be castable to named types.
 Because:
 `test = fn(x:int -> PlusFunc) { fn(y:int -> int) { y + x } }`
-
-? - Use protothreads for lightweight threads implementation
-
-? - Everything is a file
-Use this for stdio, sockets, ... 
-inspire from linux Kernel
-
-? - Builtin support for testing and doc
