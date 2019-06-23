@@ -69,7 +69,7 @@ _testProcessWithInvalidInput = fn{...}
 
 **Examples**
 
-```js
+```python
 1. 
 rr = fn(nothing -> int) { x + y } #here x and y are captures from parent function/struct
 2. 
