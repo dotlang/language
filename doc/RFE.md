@@ -29,3 +29,6 @@ so:
 module level functions, without input that start with `_test` are considered test functions.
 if they are not used anywhere, will be dropped from compiler output.
 but you can force compiler to run them: `dotc test myProject`
+
+? - The concept of process mailbox means a lot of stuff in the background.
+replaces it with something like a channel object which we can send to or receive from functions
