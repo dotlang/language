@@ -32,3 +32,37 @@ but you can force compiler to run them: `dotc test myProject`
 
 ? - The concept of process mailbox means a lot of stuff in the background.
 replaces it with something like a channel object which we can send to or receive from functions
+but what about `select`?
+notations we need:
+1. define a channel with no or some buffer: 
+  `ch = 0`, `ch = [0,0,0]`
+  `ch_r, ch_w = makeChannel(0) #or 1 or n`
+2. read from channel: `ch_r(timeout_ms)`
+3. write to channel `ch_w(data, timeout_ms)`
+4. close channel: call `dispose`
+5. select: idea: don't do it yourself, give developer primitives and let him (or std) handle that
+if we make read, tryRead, and write, tryWrite, then what?
+so, tryRead will reutrn nothing if cannot read. or the data read
+tryWrite will return nothing if cannot write. or the data written
+then user can use these to write their own select. or, we can provide a helper too.
+this will also enable us to write our own default case: a function that always does the job.
+what if we cannot close a channel? you can signal (using another channel) that this channel is no longer valid.
+and stop reading from the channel.
+we want to make it simple and minimal.
+`ch_r, ch_w = makeChannel(size, identifier)`
+
+? - Should we make `dispose` more built-in?
+`dispose(x)`
+`x = ` no x is suppose to be immutable.
+`_ = x`
+`nothing = x`
+`x = nothing`
+but isn't this against immutability?
+what if another thread is using x?
+I think you should not be able to dispose anything.
+Just some specific functions that can be used to close a file, ...
+and they are typed, so you cannot call them with any other type
+
+? - If underscore has no meaning, why not ban it?
+so underscore will be for destruction and lambda creation
+so putting `_` at the beginning of a binding/type name can have a special meaning? or it can be banned.
