@@ -66,3 +66,5 @@ and they are typed, so you cannot call them with any other type
 ? - If underscore has no meaning, why not ban it?
 so underscore will be for destruction and lambda creation
 so putting `_` at the beginning of a binding/type name can have a special meaning? or it can be banned.
+
+? - Can we have a pattern that people can easily find functions/types/... in a file
