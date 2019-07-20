@@ -82,6 +82,17 @@ I think we can do this. For a channel with buffer size b we need b+1 unbuffered 
 b channels for the data and the last channel to keep track of two pointers (read/write).
 With every call to read/write, we update the b+1th channel with new indices.
 We just need to make sure, calls to read and write function are synced.
+This b+1th channel can also be used to sync read and writes.
+Because when I read its contents, another function wanting to read will have to wait, until I'm done and have written updated values.
+now, assuming we only have unbuffered channels: `ch_r, ch_w = createChannel(int)`?
+If unbuffered channel blocks on write, we cannot do this.
+rather than that we need buffered channels of size 1.
+Then, how can I block when writing, to make sure my data is picked up?
+
+
+? - Can I treat file/socket/console and all other IOs as channels?
+
+? - We can use closure to provide encapsulation and privacy.
 
 ? - Should we make `dispose` more built-in?
 `dispose(x)`
