@@ -30,6 +30,14 @@ module level functions, without input that start with `_test` are considered tes
 if they are not used anywhere, will be dropped from compiler output.
 but you can force compiler to run them: `dotc test myProject`
 
+N - Can we have a pattern that people can easily find functions/types/... in a file
+`process = fn(x:int -> string) ...`
+`number = 10`
+`fn/type/val`
+`val x = 10`
+`fn process = ...`
+no. confusing.
+
 ? - The concept of process mailbox means a lot of stuff in the background.
 replaces it with something like a channel object which we can send to or receive from functions
 but what about `select`?
@@ -50,6 +58,30 @@ what if we cannot close a channel? you can signal (using another channel) that t
 and stop reading from the channel.
 we want to make it simple and minimal.
 `ch_r, ch_w = makeChannel(size, identifier)`
+Pro for fn for channels: we can compose them easily
+the reader function can be called with a timeout which when `nothing` means just peek.
+`ch_r: (timeout: int|nothing -> string|nothing)` or maybe int timeout which when 0 means peek
+In this way, select can be implemented via the developer.
+All functions have similar signature: readers: `(timeout: int -> T|nothing)`
+writers: `(data: T, timeout: int -> T|nothing)`
+close channel: this is a write nature operation, so we should have access to write function.
+writing nothing means close.
+q: How to create a channel with 0 or more buffers?
+we want to avoid magic functions.
+`ch_r, ch_w = [0]` int channel with buffer of 1 cells
+No. 
+another option: We have a `Channel` struct type that when you create, a new channel will be created for you.
+but this means a lot of stuff in the background:
+`chr_, ch_w = Channel(int)(size:0)`
+so, essentially, we not only create the struct, we also create a channel in the background, which is bad because it is hidden.
+why not use core functions? we will need functions for file, net, IO, ...
+`ch_r, ch_w = createChannel(int, 10)`
+can we only have channels with 0 size and build buffered channels using them?
+can we say, buffered channel of size 10 is 10 unbuffered channels?
+I think we can do this. For a channel with buffer size b we need b+1 unbuffered channels.
+b channels for the data and the last channel to keep track of two pointers (read/write).
+With every call to read/write, we update the b+1th channel with new indices.
+We just need to make sure, calls to read and write function are synced.
 
 ? - Should we make `dispose` more built-in?
 `dispose(x)`
@@ -67,6 +99,3 @@ and they are typed, so you cannot call them with any other type
 so underscore will be for destruction and lambda creation
 so putting `_` at the beginning of a binding/type name can have a special meaning? or it can be banned.
 
-? - Can we have a pattern that people can easily find functions/types/... in a file
-
-? - Pro for fn for channels: we can compose them easily
