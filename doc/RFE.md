@@ -88,7 +88,21 @@ now, assuming we only have unbuffered channels: `ch_r, ch_w = createChannel(int)
 If unbuffered channel blocks on write, we cannot do this.
 rather than that we need buffered channels of size 1.
 Then, how can I block when writing, to make sure my data is picked up?
-
+can we replace read write function with something other than fn: read is a member in a struct, write is instantiating struct. 
+no this will be confusing.
+Crystal: `channel = Channel(Int32).new`, `channel.send(1)`, `value = channel.receive`, `channel = Channel(Int32).new(2)`
+Kotlin: `val channel = Channel<Int>()`, `channel.send(x * x)`, `println(channel.receive())`, `Channel<Int>(4)`
+q: how does select work with read and also with write?
+q: How can we have a channel with transformation (e.g. compress, or logging)?
+unbuffered channel: write blocks if no reader, read blocks if no writer
+write block: write to a buf1 channel, wait until it is read
+read block: read from buf1, you will be blocked if nothing is there
+how can a writer know if the data in the channel is read? peek operation.
+`ch_r: (timeout: int|nothing -> string|nothing)`
+if we call reader with a timeout, it will timeout after that time, 0 for immediate return: will give T if something is there or nothing if nothing is there
+NOW: if we call `ch_r` with `nothing` as timeout, it means a peek: return nothing if channel is empty, or return the data if it is there.
+and peek is immediate by nature, there is no block or timeout.
+q: how can this be done with good performance? Let's say I want to: block until the data is read. And a normal function call + sleep is not performant.
 
 ? - Can I treat file/socket/console and all other IOs as channels?
 
