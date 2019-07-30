@@ -172,6 +172,13 @@ int_val = superSelectWrite(100ms, chw1(data1, _), chw2(data2, _), chw3(data3, _)
 can we use `//`?
 `int_or_float_or_nothing = chr1(100ms) // chr2(200ms)` this makes sense, somehow
 `index_num = chw1(data1, 100) // chw2(data2, 200)`
+but we need to remove timeout right? because it doesn't make sense `chr1(100) // chr2(200)` means wait 100ms for channel1 reader then try channel 2 reader.
+`int_or_float_or_nothing = chr1(0) // chr2(0)` 
+above is better. but still does not imply loop/repeat.
+we can define a function that says: evaluate fn, if it is nothing then repeat again until it is not nothing. 
+`int_or_float_or_nothing = eval(fn{chr1(0) // chr2(0)}, 200ms)` and this can be a simple generic function.
+what about write?
+`type1_or_type2_or_nothing = eval(fn{chw1(data1, 0) // chw2(data2, 0)}, 200ms)`
 
 ? - Can I treat file/socket/console and all other IOs as channels?
 or maybe I can say: everything is a file.
