@@ -103,10 +103,42 @@ if we call reader with a timeout, it will timeout after that time, 0 for immedia
 NOW: if we call `ch_r` with `nothing` as timeout, it means a peek: return nothing if channel is empty, or return the data if it is there.
 and peek is immediate by nature, there is no block or timeout.
 q: how can this be done with good performance? Let's say I want to: block until the data is read. And a normal function call + sleep is not performant.
+`ch_r: fn(timeout: int|nothing -> string|nothing)` nothing as timeout means peek (do not remove)
+`ch_w: fn(data: int|nothing, timeout: int|nothing -> bool)` write nothing to close
+we can add a core fn to sleep (idle) until one of channels are ready.
+q: how to create a new channel?
+`ch_r, ch_w = createChannel(int)` this will create a channel of size? 1
+we can (have to validate) simulate buffered channel using size 1
+but what about size 0? 
+properties of size 0:
+1- if you read and no writer, you will be blocked
+2- if you write and no reader, you will be blocked.
+for 1, you can peek until there is something there.
+for 2, you write and peek as long as something is there.
+- another mechanism would be useful: wait for signal
+so, when I peek on a channel, don't sleep, register something so that the channel will notify me.
+idea: can we have a third function for peek?
+q: with peek we are exposed to concurrency issues. what if I peek something, but then someone else reads it?
+why not use read with 0 timeout?
+`ch_r: fn(timeout: int -> string|nothing)` 0 as timeout means return immediately
+`ch_w: fn(data: int|nothing, timeout: int -> bool)` write nothing to close
+properties of size 0:
+1- if you read and no writer, you will be blocked
+2- if you write and no reader, you will be blocked.
+for 1, just read. if no writer, then channel is empty. so you will be waited.
+for 2, write. but then, how can I make sure it is read? 
+we can use another channel for this. we write, and wait for the other channel. when reader reads, it will send a signal on the other channel.
+q: why do we need to close a channel?
+q: what happens if I close a channel that has data? it makes sense that a closed channel is cleared and empty. so no more data can be read.
+what happens if you close twice: nothing
+when happens if you read from closed channel: it is always empty, so reader will give you nothing
+
 
 ? - Can I treat file/socket/console and all other IOs as channels?
+or maybe I can say: everything is a file.
 
 ? - We can use closure to provide encapsulation and privacy.
+that is what is used in js.
 
 ? - Should we make `dispose` more built-in?
 `dispose(x)`
@@ -114,6 +146,7 @@ q: how can this be done with good performance? Let's say I want to: block until 
 `_ = x`
 `nothing = x`
 `x = nothing`
+`x = _`
 but isn't this against immutability?
 what if another thread is using x?
 I think you should not be able to dispose anything.
@@ -121,6 +154,8 @@ Just some specific functions that can be used to close a file, ...
 and they are typed, so you cannot call them with any other type
 
 ? - If underscore has no meaning, why not ban it?
-so underscore will be for destruction and lambda creation
+so underscore will be for destruction and lambda creation only.
 so putting `_` at the beginning of a binding/type name can have a special meaning? or it can be banned.
 
+? - Question: What comes on the right side of `:` when defining a type alias?
+can I put a generic function on the right side?
