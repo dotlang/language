@@ -145,7 +145,8 @@ PROPOSAL
 q: why do we need to "close" a channel? write stop writing, reader won't have any more data to read!
 so:
 3. `ch_w: fn(data: int, timeout: int -> bool)` 
-
+to simulate write block until data is read, you can write the data and then immediately write something else.
+it will be blocked until prev data is read (for channel of size 1)
 
 ? - Can I treat file/socket/console and all other IOs as channels?
 or maybe I can say: everything is a file.
