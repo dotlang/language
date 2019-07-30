@@ -247,6 +247,12 @@ what if another thread is using x?
 I think you should not be able to dispose anything.
 Just some specific functions that can be used to close a file, ...
 and they are typed, so you cannot call them with any other type
+`x = _`
+re-using underscore is not good here.
+`x = nothing`
+this does not make sense because maybe x is an int, we cannot assign nothing to it.
+but we can say this is a special case and syntax sugar. 
+
 
 ? - If underscore has no meaning, why not ban it?
 so underscore will be for destruction and lambda creation only.
@@ -254,3 +260,4 @@ so putting `_` at the beginning of a binding/type name can have a special meanin
 
 ? - Question: What comes on the right side of `:` when defining a type alias?
 can I put a generic function on the right side?
+no. type alias is for named types. `identifier : identifier`
