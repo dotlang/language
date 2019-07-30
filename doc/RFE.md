@@ -179,6 +179,55 @@ we can define a function that says: evaluate fn, if it is nothing then repeat ag
 `int_or_float_or_nothing = eval(fn{chr1(0) // chr2(0)}, 200ms)` and this can be a simple generic function.
 what about write?
 `type1_or_type2_or_nothing = eval(fn{chw1(data1, 0) // chw2(data2, 0)}, 200ms)`
+problem:
+- this is ordered, but we want it not to be
+- this will not work with variable channel count
+`int_or_float_or_nothing = select([fn{chr1(0)}, fn{chr2(0)}], 200ms)`
+`type1_or_type2_or_nothing = select([fn{chw1(data1, 0)}, fn{chw2(data2, 0)}, 200ms)`
+so:
+`select = fn(items: [fn(->T|nothing)], timeout: int, T: type)`
+we can even combine reader and writer functions.
+`result = select([fn{chr1(0)}, fn{chr2(0)}, fn{chw1(data, 0)}])`
+`reader: fn(timeout: int -> string|nothing)` 0 as timeout means return immediately
+`writer: fn(data: int|nothing, timeout: int -> int|nothing)`
+now, we can have a fn for timeout:
+`result = select([fn{chr1(0)}, fn{chr2(0)}, fn{chw1(data, 0)}, timeout(100ms)])`
+pro of now having timeout as arg of channel func: it will be simpler,
+con: people may forget to use timeout when calling channel ops
+`result = select([chreader1, chreader2, fn{chw1(data)}, timeout(100ms)])`
+NO. the assumption of select is that, functions will return immediately telling if they have a data or not.
+unless: we change it 180 degrees: reader and writer functions will always return immediately and tell you if they have something or not.
+so, no timeout will be needed.
+and then, if we want to synchronize? then what? we call select. select will keep trying on any given function until it has non-nothing result.
+`reader: fn(-> string|nothing)`
+`writer: fn(data: int -> int|nothing)`
+`select = fn(items: [fn(->T|nothing)], T: type)`
+`result = select([chreader1, chreader2, fn{chw1(data)}, timeout(100ms)])`
+but select's input cannot be sequence of functions that have `T|nothing` as output.
+it is `fn(->int|nothing)|fn(->string|nothing)|fn(->float|nothing)`
+but it can also be interpreted as: `fn(->int|string|float|nothing)`
+if I have a sequence of `fn(->int|float)` can I put a function that returns int, in that sequence?
+I should be able to do that.
+`x: fn(->int|string) = fn(->int) {...}`
+this is covariance we had before. if somewhere they need a fn that returns `int|string` I can pass a function that returns int, or a function that returns string.
+if we need a function that accepts `int|string` I should be able to call it with int or string or union.
+so: PROPOSAL
+`reader: fn(-> string|nothing)`
+`writer: fn(data: int -> int|nothing)`
+`select = fn(items: [fn(->T|nothing)], T: type)`
+`result = select([chreader1, chreader2, fn{chw1(data)}, timeout(100ms)])`
+1. we create a channel by cakking `createChannel(int, size)` this will give us a reader and writer function
+2. no close
+3. read and write function return immediately with the result: nothing if no data to read or cannot write, or the data read or written.
+4. you can combine it with select and timeout built-in func to have a waiting mechanism.
+5. select will keep trying each function until one of them gives a non-nothing output.
+6. makeChannel is built-in, others are in std.
+
+
+
+? - if I have a sequence of `fn(->int|float)` can I put a function that returns int, in that sequence?
+I should be able to do that.
+`x: fn(->int|string) = fn(->int) {...}`
 
 ? - Can I treat file/socket/console and all other IOs as channels?
 or maybe I can say: everything is a file.
