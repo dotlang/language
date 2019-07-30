@@ -132,6 +132,19 @@ q: why do we need to close a channel?
 q: what happens if I close a channel that has data? it makes sense that a closed channel is cleared and empty. so no more data can be read.
 what happens if you close twice: nothing
 when happens if you read from closed channel: it is always empty, so reader will give you nothing
+how can we know if a channel is closed? maybe it is empty! what is the difference? anyway, there is no data there.
+if you need more information, use another channel to relay those metadata.
+so:
+PROPOSAL
+1. we create a channel by cakking `createChannel(int)` this will give us a reader and writer function
+2. `ch_r: fn(timeout: int -> string|nothing)` 0 as timeout means return immediately
+3. `ch_w: fn(data: int|nothing, timeout: int -> bool)` write nothing to close
+4. You can close channel multiple times
+5. You can read from a closed channel which will give you nothing
+6. When you close a channel, all the data will be removed
+q: why do we need to "close" a channel? write stop writing, reader won't have any more data to read!
+so:
+3. `ch_w: fn(data: int, timeout: int -> bool)` 
 
 
 ? - Can I treat file/socket/console and all other IOs as channels?
