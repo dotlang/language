@@ -137,16 +137,41 @@ if you need more information, use another channel to relay those metadata.
 so:
 PROPOSAL
 1. we create a channel by cakking `createChannel(int)` this will give us a reader and writer function
-2. `ch_r: fn(timeout: int -> string|nothing)` 0 as timeout means return immediately
-3. `ch_w: fn(data: int|nothing, timeout: int -> bool)` write nothing to close
+2. `reader: fn(timeout: int -> string|nothing)` 0 as timeout means return immediately
+3. `writer: fn(data: int|nothing, timeout: int -> bool)` write nothing to close
 4. You can close channel multiple times
 5. You can read from a closed channel which will give you nothing
 6. When you close a channel, all the data will be removed
 q: why do we need to "close" a channel? write stop writing, reader won't have any more data to read!
 so:
-3. `ch_w: fn(data: int, timeout: int -> bool)` 
+3. `writer: fn(data: int, timeout: int -> bool)` 
 to simulate write block until data is read, you can write the data and then immediately write something else.
 it will be blocked until prev data is read (for channel of size 1)
+idea: can we use compare-and-swap instead? can it simplify things?
+but suppose we have a producer and consumer threads. how can producer put work for consumer? we can define a cas for work,
+the channel concept will make concurrency easier to reason and writing code easier.
+also: support size (default to 1) when creating a channel.
+we can add a core function that has a map of all channel functions to their identifier. this can be used for select or other functions (if needed)
+q: can we eliminate need for timeout?
+if we want to remove timeout and do it via a channel (or function), there should be a mechanism that accepts two (or more) functions that read from channel (one of them might be timeout)
+then it calls them in parallel and keeps calling until? but if calling read locks the caller (if there is no data)...
+maybe we can add a built in function (generic one), that actually works on functions (any function, can be channel read/write functions)
+No. the underlying concept is we don't have unlimited timeout. Any IO operation must be limited in time. just like when I say `int|nothing` caller should
+take into account for nothing.
+similarly, user of a channel, should take into account the timeout. so, timeout is always part of the equation.
+so, maybe it is all right to have timeout with function signature for channel read write.
+how will select work? it will be in std and not in core. we only have createChannel in core.
+in std: define select function that accepts a number of functions (either reader or writer).
+`multiRead = fn(items: [fn(int->???`
+this is a generic function but its input is variable size and with multiple types.
+maybe it is worth adding a new keyword. but it will be really channel specific.
+```
+nothing_or_int_or_float_or_string = superSelectRead(100ms, chr1, chr2, chr3) #it doesn't make sense to have timeout in select.
+int_val = superSelectWrite(100ms, chw1(data1, _), chw2(data2, _), chw3(data3, _))
+```
+can we use `//`?
+`int_or_float_or_nothing = chr1(100ms) // chr2(200ms)` this makes sense, somehow
+`index_num = chw1(data1, 100) // chw2(data2, 200)`
 
 ? - Can I treat file/socket/console and all other IOs as channels?
 or maybe I can say: everything is a file.
