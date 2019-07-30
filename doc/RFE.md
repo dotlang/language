@@ -214,7 +214,7 @@ if we need a function that accepts `int|string` I should be able to call it with
 so: PROPOSAL
 `reader: fn(-> string|nothing)`
 `writer: fn(data: int -> int|nothing)`
-`select = fn(items: [fn(->T|nothing)], T: type)`
+`select = fn(items: [fn(->T|nothing)], T: type -> T|nothing)`
 `result = select([chreader1, chreader2, fn{chw1(data)}, timeout(100ms)])`
 1. we create a channel by cakking `createChannel(int, size)` this will give us a reader and writer function
 2. no close
