@@ -222,6 +222,27 @@ so: PROPOSAL
 4. you can combine it with select and timeout built-in func to have a waiting mechanism.
 5. select will keep trying each function until one of them gives a non-nothing output.
 6. makeChannel is built-in, others are in std.
+it is good except, if we later want to use the built-in core function to get identifier of a channel function, it will be difficult.
+why we may need that?
+- when in select, I may want to use an OS level mutex to be notified when a change happens. but where will the mutex be? how can i access it?
+- the function cannot use it because it is supposed to return immediately.
+in linux we have sem_post to increase semaphore and sem_wait to wait (with timeout) for semaphore to be decreased.
+without timeout, it will not be efficient. 
+function (reader/writer), checks and returns immediately. but with a timeout, the function can wait on a semaphore/mutex or any other helper.
+but assume we have timeout, how can select work then? assume we have two reader functions with timeout.
+we can't. we should try each of them, and sleep for a short period of time.
+example: producer-consumer with multiple producers. each consumer has an array of channels corresponding to producers.
+now, how can consumer wait for any of producers? 
+option1: check p1, wait, check p2, wait, check p3, wait, ...
+option2: set a signal so that when either of p1, p2, p3 are ready tell me, with timeout of X.
+the timeout function does not make any sense. it has internal variable state! it is not a function.
+maybe we should use a timeout argument.
+`result = select([chreader1, chreader2, fn{chw1(data)}], 100ms)`
+but anyway, still it will be pulling strategy: try, sleep, try, sleep, ...
+here (https://coderanch.com/t/486179/java/Wait-multiple-semaphores) they say, it is a sign of design issue if a thread needs to wait for multiple mutexes.
+"Threads should wait for one type of work, do that work, and go back to waiting for more work. If there are more than one type of work, with more than one work queue, maybe it is a good idea to split it off -- and have different worker threads on each queue."
+again, assuming we use pulling, we still don't have a semaphore. if we enforce "only channel functions" then select, can use built-in function to get semaphore of a channel function.
+but not for writer!
 
 
 
