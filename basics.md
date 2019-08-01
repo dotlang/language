@@ -357,9 +357,7 @@ ff = fn(x:int -> int) { ff(x+1) }
 7. Type of a binding can be inferred without ambiguity from right side value, but you also have the option to specify the type (Example 1).
 8. If the right side of an assignment is a struct, you can destruct it into it's elements by using comma separated values on the left side of `=` (Example 3). 
 9. In destruction, you can also use underscore to indicate you are not interested in one or more of those elements (Example 4).
-10. You can call built-in dispose function to explicitly free resources allocated for a binding. 
-11. Any reference to a binding after call to dispose will result in compiler error.
-12. Binding name resolution is similar to type/function name resolution.
+10. Binding name resolution is similar to type/function name resolution.
 
 **Syntax**: 
 
