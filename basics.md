@@ -1,77 +1,5 @@
 # Basics
 
-## Introduction
-
-After having worked with a lot of different languages (C\#, Java, Scala, Perl, Javascript, C, C++ and Python) and getting familiar with some others (including Go, D, Swift, Erlang, Rust, Zig, Crystal, Fantom, OCaml and Haskell) it still irritates me that most of these languages sometimes seem to _intend_ to be overly complex with a lot of rules and exceptions to keep in mind. This doesn't mean I don't like them or I cannot develop software using them, but it also doesn't mean I should not be looking for a programming language which is simple, powerful and fast.
-
-That's why I am creating a new programming language: **dotLang**.
-
-dot programming language (or dotLang for short) is an imperative, static-typed, garbage collected, functional, general-purpose language based on author's experience and doing research on many programming languages (namely 
-[Go](https://golang.org/), 
-[Java](https://docs.oracle.com/javase/tutorial/), 
-[C\#](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/), 
-[C](https://en.cppreference.com/w/c), 
-[C++](https://en.cppreference.com/w/), 
-[Scala](https://www.scala-lang.org/), 
-[Rust](https://www.rust-lang.org/), 
-[Objective-C](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ProgrammingWithObjectiveC/Introduction/Introduction.html), 
-[Swift](https://swift.org/),
-[Python](https://python.org/), 
-[Perl](https://www.perl.org/), 
-[Smalltalk](https://en.wikipedia.org/wiki/Smalltalk), 
-[Ruby](https://www.ruby-lang.org/en/),
-[Haskell](https://www.haskell.org/),
-[Clojure](https://clojure.org/),
-[Eiffel](https://www.eiffel.org/),
-[Erlang](https://www.erlang.org/),
-[Elixir](https://elixir-lang.org/),
-[Elm](https://elm-lang.org/),
-[Falcon](http://www.falconpl.org/),
-[Julia](https://julialang.org/),
-[Zig](https://ziglang.org/),
-[F\#](https://fsharp.org/) and
-[Oberon-2](https://cseweb.ucsd.edu/~wgg/CSE131B/oberon2.htm)). 
-I call the paradigm of this language "Data-oriented". This is an imperative language which is also very similar to Functional approach and it is designed to work with data. There are no objects or classes. Only data structures and functions. We have first-class and higher-order functions borrowed from the functional approach.
-
-Two main objectives are pursued in the design and implementation of this programming language:
-
-1. **Simplicity**: The code written in dotLang should be consistent, easy to write, read and understand. There has been a lot of effort to make sure there are as few exceptions and rules as possible. Software development is complex enough. Let's keep the language as simple as possible and save complexities for when we really need them. Very few (but essential) things are done implicitly and transparently by the compiler or runtime system. Also, I have tried to reduce the need for nested blocks and parentheses, as much as possible. Another aspect of simplicity is minimalism in the language. It has very few keywords and rules to remember.
-2. **Performance**: The source will be compiled to native code which will result in higher performance compared to interpreted languages. The compiler tries to do as much as possible (optimizations, dereferencing, in-place mutation, sending by copy or reference, type checking, phantom types, inlining, disposing, reference counting GC, ...) so runtime performance will be as high as possible. Where performance is a concern, the corresponding functions in core library will be implemented in a lower level language.
-
-Achieving both of the above goals at the same time is impossible, so there will definitely be trade-offs and exceptions.
-The underlying rules of design of this language are 
-[Principle of least astonishment](https://en.wikipedia.org/wiki/Principle_of_least_astonishment), 
-[KISS rule](https://en.wikipedia.org/wiki/KISS_principle) and
-[DRY rule](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
-
-As a 10,000 foot view of the language, the code is written in files (called modules) organized in directories (called packages). We have bindings (immutable data which can be functions or values) and types (Blueprints to create bindings). Type system includes primitive data types, sequence, map, enum, struct and union. Concurrency and lambda expression are also provided.
-
-## Comparison
-
-Language | First-class functions | Sum types | Full Immutability| Garbage Collector | Module System | Concurrency* | Generics | built-in data types | Number of keywords
---- | --- | --- | --- | --- | --- | --- | --- | --- | --- 
-C  |  No | Partial  | No  | No |  No | No | No | 14 | 32
-Scala | Yes | Yes | No | Yes | Yes | Yes | Yes | 9 | ~27
-Go | Yes | No | No | Yes | Yes | Yes | No | 19 | 25
-Java | Yes | No | No | Yes | Yes | No | Yes | 8 | 50
-Haskell | Yes | Yes | No | Yes | Yes | No | Yes | 63 | 28
-dotLang | Yes | Yes | Yes | Yes | Yes | Yes | Yes | 8 | 9
-
-* Concurrency means built-in language level support.
-
-## Components
-
-dotLang consists of these components:
-
-1. The language manual (this website).
-2. `dot`: A command line tool to compile, debug and package source code.
-3. `core` library: This package is used to implement some built-in, low-level features which can not be simply implemented using pure dotLang. This will be a built-in feature of the compiler/runtime.
-4. `std` library: A layer above core which contains some general-purpose and common functions and data structures. This is optional to use by developers.
-
-## Grammar
-
-You can see the grammar of the language in EBNF-like notation [here](https://github.com/dotlang/language/blob/master/syntax.md).
-
 ## Main features
 
 01. **Import a module**: `queue = import("/core/std/queue")` (you can also import from external sources like Github).
@@ -136,3 +64,311 @@ Operators are mostly similar to C language:
 * `A // B` will evaluate to A if it is not `nothing`, else it will be evaluated to B (e.g. `y = x // y // z // 0`).
 * Conditional operators return `true` or `false` which are `1` and `0` when used as index of a sequence.
 * Comments can appear anywhere in the code and start with `#`. Anything after `#` till end of the line is comment.
+
+# Type system
+
+Types are blueprints which are used to create values for bindings. Types can be basic (integer number, character, ...) or compound (sequence, map, struct, ...).
+
+## Basic types
+
+**Syntax**: `int`, `float`, `byte`, `char`, `string`, `bool`, `nothing`
+
+**Notes**:`
+
+1. `int` type is a signed 8-byte integer data type.
+2. `float` is double-precision 8-byte floating point number.
+3. `byte` is an unsigned 8-bit number.
+4. `char` is a single character.
+  - Character literals should be enclosed in single-quote (e.g. `'a'`).
+5. `string` is a sequence of characters.
+  - String literals should be enclosed in double quotes.
+  - To represent double quote itself inside a string, you can use `\"`.
+6. `bool` type is same as int but with only two valid values.`true` is 1 and `false` is 0.
+7. `nothing` is a special type which is used to denote empty/invalid/missing data. This type has only one value which is the same identifier.
+
+**Examples**
+
+1. `int_val = 12`
+2. `float_val = 1.918`
+3. `char_val = 'c'`
+4. `bool_val = true`
+5. `str1 = "Hello world!"`
+6. `str2 = "Hello" + "World!"`
+7. `n: nothing = nothing`
+8. `byte_val: byte = 119`
+
+## Sequence
+
+1. Sequence is similar to array in other languages. It represents a fixed-size block of memory with elements of the same type, `T`, and is shows with `[T]` notation. 
+2. You can initialize a sequence with a sequence literal (Example 1).
+3. You refer to elements inside sequence using `x[i]` notation where `i` is index number. 
+4. `[]` represents an empty sequence.
+5. Referring to an index outside sequence will throw a runtime error.
+6. Core defines built-in functions for sequence for common operations: `slice, map, reduce, filter, anyMatch, allMatch, ...`.
+
+**Examples**
+
+1. `x = [1, 2, 3, 4]`
+2. `x: [[int]] = [ [1, 2], [3, 4], [5, 6] ] #a matrix of integer numbers`
+3. `x = [1, 2]+[3, 4]+[5, 6]] #merging multiple sequences`
+4. `int_var = x[10]`
+5. `string = [char]`
+
+## HashMap
+
+1. HashMap is a hash table of key values.
+2. You can use `[KeyType:ValueType]` to define a map type. 
+3. When reading from a map, you will get runtime error if value does not exist in the map.
+4. An empty map can be denoted using `[:]` notation.
+5. Core defines built-in functions for maps for common operations: `slice, map, reduce, filter, anyMatch, allMatch, ...`
+
+**Examples**
+
+1. `pop = ["A":1, "B":2, "C":3]`
+2. `data = pop["A"]`
+
+## Enum
+
+1. You can prefix any sequence literal and `enum` keyword and it will be an enum type
+2. Example: `MyEnumType = enum [sequence of literals]`
+3. Variables of enum type must accept values of exactly what is specified inside the sequence, nothing else, even if they have equivalent value.
+4. You can use a map to decide something based on enum value (Example 2). 
+5. In case of 4, Compiler will make sure you have covered all possible types, and if not, will issue a warning.
+
+**Examples**
+
+```rust
+1.
+  saturday=1
+  sunday=2
+  ...
+  DayOfWeek = enum [saturday, sunday, ...]
+2. 
+  x = [saturday: "A", sunday: "B", ...][my_day_of_week]
+3. 
+  true=1
+  false=0
+  bool = enum [true, false]
+```
+
+## Union
+
+1. Bindings of union type, can store any of multiple pre-defined types.
+2. Union type are shown as `T1|T2|T3|...`. 
+3. You can destruct a binding of union type. 
+4. Union destruction will give you a list of `T|nothing` values for each inner type of the union. 
+5. During destruction, you can use `_` to ignore one or more of outputs.
+
+**Examples**
+
+1. `int_or_float: int|float = 11`
+2. `int_or_float: int|float = "ABCD"`
+3. `int_or_nothing, float_or_nothing = int_or_float_or_nothing_value`
+4. 
+```rust
+#assuming check function is already defined
+x: int|string|float = getData()
+result = check(x, fn(i:int -> boolean) { ... }) //
+         check(x, fn(s: string -> boolean) {...}) //
+         check(x, fn(f:float->boolean){...})
+```
+5.
+```rust
+#although T type can be at any position in x's original type, but inside hasType T is the first type so "a" will be corresponding to type T
+hasType = fn(x: T|U, T: type, U: type -> bool) {
+	a,_ = x
+	a!=nothing
+}
+```
+
+## Struct
+
+1. A struct, similar to C, represents a set of related named binding definitions without values. 
+2. To create a binding based on a struct, you should use a struct literal (e.g. `Type(field1:value1, field2:value2, ...)`.
+3. You can define a struct type without named.
+4. You can use destruction to access unnamed fields inside a struct(Example 7).
+
+**Examples**
+
+1. `Point = struct (x:int, y:int) #defining a struct type`
+2. `point2 = Point(x:100, y:200) #create a binding of type Point`
+3. `point1 = struct(int,int)(100, 200) #untyped struct`
+4. `point4 = Point(x:point3.x, y : 101} #update a struct based on existing struct binding`
+5. `x,y = point1 #destruction to access struct data`
+6. `another_point = Point(x:11, y:my_point.y + 200)`
+7. `_, x = point1 #You can use _ during destruction to ignore one or more of results
+8.
+```rust
+process = fn(x: struct (id:int, age:int) -> int) { x.age }
+process2 = fn(x: struct (int, int) -> int) { 
+	_,a = x
+    a
+}
+```
+
+## Named types
+
+1. You can name a type so you will be able to refer to that type later in the code.
+2. Type names must start with a capital letter to be distinguished from bindings.
+3. You define a named type similar to a binding: `NewType = UnderlyingType`.
+4. The new type has same binary representation as the underlying type but it will be treated as a different type.
+5. You have seen examples of named types in previous sections (Union, enum, ...).
+
+**Examples**
+
+1. `MyInt = int`
+2. `IntArray = [int]`
+3. `Point = struct {x: int, y: int}`
+
+## Type alias
+
+1. You can use `T : X` notation to define `T` as another spelling for type `X` type.
+2. In this case, `T` and `X` will be exactly the same thing.
+3. You can use a type alias to prevent name conflict when importing modules.
+
+**Examples**
+
+1. `MyInt : int`
+2. `process = fn(x:MyInt -> int) { x }`
+
+## Type name resolution
+
+1. Order of search to resolve a type name:
+  A. Current function
+  B. Closure
+  C. Module level
+2. At any level, if there are multiple candidates there will be a compiler error.
+3. Two named types are never equal. 
+4. Two types T1 and T2 are identical/assignable/exchangeable if they have the same structure (e.g. `int|string` vs `int|string`).
+
+## Casting
+
+1. For casting between primitive types (e.g. float to int), core functions are provided.
+2. In order to cast across named types, you will need to write an identity function (a function that only returns its input), but with correct types (Example 1).
+3. Note that, there is no automatic casting provided. All type changes must be explicitly specified in the code.
+4. Literals (e.g. `1` or `"Hello world"`) will get value of the most primitive associated type inferred (`int`, `string`, ...). 
+5. Based on 4, you cannot assign a literal to a named type without casting. Because for example `1` literal is an `int` literal not a named type that maps to `int`.
+
+**Examples**
+
+1. 
+```rust
+MyInt = int
+toInt = fn(x: MyInt -> int) { x }
+toMyInt = fn(x: int -> MyInt) { x }
+h: MyInt = getMyInt()
+g = toInt(h)
+j = toMyInt(g)
+```
+
+# Functions
+
+Functions (or lambdas) are a type of binding which can accept a set of inputs and give an output. 
+
+For example `fn(int,int -> int)` is a function type (which accepts two integer numbers and gives an integer number) and `fn(x:int, y:int -> int) { x+y }` is function literal. 
+
+For generics (types and functions) see Advanced section.
+
+## Declaration
+
+1. `functionName = fn(name1: type1, name2: type2... -> OutputType) { code block }`
+2. Note that functions are namaed camelCased.
+3. Functions contain a set of bindings and the last expression in the code block determines function output.
+4. There is no function overloading.
+5. You can alias a function by defining another binding pointing to it (Example 8). 
+6. If a function has no input, you can can eliminate input/output type declaration part (Example 13). In this case, compiler will infer output type.
+7. Optional arguments: When calling a function, you can ommit arguments that are at the end and accept `nothing` (Example 14).
+8. If a function is being called with literals (compile time known values), compiler will try to evaluate it during compilation. 
+9. Above point is used in generic types (Example 15).
+10. Module level functions that start with `_test` and have no input are considered unit test functions. You can later instruct compiler to run them (Example 16).
+
+**Examples**
+
+```rust
+01. myFunc = fn(x:int, y:int -> int) { 6+y+x }
+02. log = fn(s: string -> nothing) { print(s) } #this function returns nothing, pun not intended
+03. process2 = fn(pt: Point -> struct (int,int)) { return struct(int,int)(pt.x, pt.y) } #this function returns a struct
+05. process = fn(x: int|Point -> int) { ... } #this function can accept either int or Point type as input or int|Point type
+06. _,b = process2(myPoint) #ignore second output of the function
+07. 
+process = fn(x:int -> int) 
+{ 
+  #if x<10 return 100, otherwise return 200
+  [x<10: 100, x>=10: 200][true]
+}
+08. process = fn(x:int -> int) { x+1 }, process2 = process
+09. sorted = sort(my_sequence, fn(x,y -> int) { x-y })
+10. Adder = fn(int,int->int) #defining a named type based on a function type
+11. sort = fn(x: [int], comparer: fn(int,int -> bool) -> [int]) {...} #this function accepts a function
+12. map = fn(input: [int], mapper: fn(int -> string) -> [string])
+13. process = fn{ 100 }
+14.
+seq = fn(start_or_length:int, end:int|nothing -> ...)
+...
+x = seq(10)
+y = seq(1,10)
+15. 
+add = fn(a:int, b:int ->int) { a+b }
+g = add(1,2)
+16. 
+_testProcessWithInvalidInput = fn{...}
+```
+
+## Function call resolution
+
+1. We use a static dispatch for function calls. 
+2. Also because you cannot have two functions with the same name, it is easier to find what happens with a function call.
+3. If `MyInt = int`, you cannot call a function which needs an `int` with a `MyInt` binding.
+4. Fucntion resolution is done similar to type name resolution. 
+5. Parameter types must be "compatible" with function arguments, or else there will be a compiler error. 
+6. For example if function argument type is `int | nothing` and parameter is an `int` it is a valid function call (But not the other way around).
+
+## Lambda (Function literal)
+
+1. All functions are lambdas.
+2. Functions are closure. So they have access to bindings in parent contexts (Module or parent function).
+3. You can use `_` to define a lambda based on an existing function. Just make a normal call and replace the lambda inputs with `_` (Example 4).
+4. If lambda is assigned to a variable, it can invoke itself from the inside (Example 5). This can be used to implement recursive calls.
+
+**Examples**
+
+```perl
+1. 
+rr = fn(nothing -> int) { x + y } #here x and y are captures from parent function/struct
+2. 
+test = fn(x:int -> PlusFunc) { fn(y:int -> int) { y + x } } #this function returns a lambda
+3. 
+fn(x:int -> int) { x+1} (10) #you can invoke a lambda at the point of declaration
+4. 
+lambda1 = process(10, _, _) #defining a lambda based on existing function
+5. 
+ff = fn(x:int -> int) { ff(x+1) }
+```
+
+# Bindings
+
+1. A binding assigns an identifier to a typed immutable memory location. 
+2. A binding's value can be a literal value, an expression or another binding.
+3. The literal value can be of any valid type (integer number, function literal, struct literal, ...). 
+4. Binding names must start with a lowercase letter (except bindings that define a generic type, more in Advanced section).
+5. You can define bindings at module-level or inside a function. 
+6. Module-level bindings can only have literals as their value. 
+7. Type of a binding can be inferred without ambiguity from right side value, but you also have the option to specify the type (Example 1).
+8. If the right side of an assignment is a struct, you can destruct it into it's elements by using comma separated values on the left side of `=` (Example 3). 
+9. In destruction, you can also use underscore to indicate you are not interested in one or more of those elements (Example 4).
+10. You can call built-in dispose function to explicitly free resources allocated for a binding. 
+11. Any reference to a binding after call to dispose will result in compiler error.
+12. Binding name resolution is similar to type/function name resolution.
+
+**Syntax**: 
+
+1. `identifier = expression`
+2. `identifier : type = expression`
+
+**Examples**
+
+1. `x : int = 12`
+2. `g = 19.8 #type is inferred`
+3. `a,b = struct(int,int){1, 100}`
+4. `a,_ = point`
+5. `a,_ = single_element_struct`
