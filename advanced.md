@@ -78,18 +78,25 @@ process = fn(x: Set -> int) { ... }
 
 1. We have `:=` for parallel execution of an expression. 
 2. Using `x := y` will initiate a new task as a child of the current task. Any access to the output of `:=` (`x`) will block current process until the child is finished.
-3. Each task has an unbounded mailbox which can accept messages from any other task. 
-4. Sending to an invalid task will return immediately with a false result indicating send has failed. 
-5. Receive with an empty inbox, will block the current process. You can use built-in functions to access current task's functionality (pick a message from mailbox, send a message to another task, ...).
-6. You can receive with a union type which will indicate any message of one of given types should be picked up.
+3. You can call `createChannel(type, size)` core function to create a new channel.
+4. A channel is represented via two functions: reader and writer (Example 3).
+5. Calling reader/writer functions will block current thread if channel is not ready to read/write.
+6. You can use `///` operator to do a select among multiple channel operations (Example 4).
+7. Channel reader and writer functions have an extra argument `int|nothing` which is used by runtime.
+8. You can wrap a channel function inside another function as long as you preserve the runtime argument.
 
 **Examples**
 
-1. `msg = receive(Message)`
+1. `_ := process(10, 20)`
 2.
 ```rust
-int_result := process(10)
-task_id = getCurrentTaskChildren().last()
-is_accepted = sendMessage(my_message, task_id)
-is_picked_up = sendAndWait(my_message, task_id)
+chr, chw = createChannel(int, 10)
+int_result := process(10, chr)
+chw(100)
 ```
+3.
+`reader: fn(extra:int|nothing-> string)`
+`writer: fn(data: int, extra: int|nothing -> int)`
+4.
+`result = chreader1 /// chreader2 /// chw1(data, _) /// makeTimeout(100) /// defaultChannel(200)`
+
