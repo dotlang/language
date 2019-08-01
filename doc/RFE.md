@@ -331,12 +331,54 @@ but `||` is not good because it will be confused with OR.
 6. makeChannel are built-in, others are in std.
 7. this is simple, minimal and composable. supports variable number of channels. 
 what happens if I use a normal function? this shouldn't happen. unless that normal function is backed by a channel function.
-
+but anyway if this happens, a runtime error will happen.
+q: now that we want to add a new notation, can we make it simpler?
+q: is `///` a good operator?
+`result = chreader1 \\ chreader2 \\ chw1(data, _) \\ makeTimeout(100)`
+we can use back slash, but it will become confusing: which one is which.
+`//` for nothing check
+`\\` for select on multiple functions
+q: if underlying OS, gives us the read/write result directly, then composing functions into each other will not be possible.
+specially in select. I sleep waiting for channel X, and when it is ready, it will send the data
+this can be implementation dependant. 
+to make it simpler:
+`result = chreader1 /// chreader2 /// chw1(data) /// makeTimeout(100)`
+Let's make it implementation independent.
+suppose that in implementation, we notice that after select for read, when I wake up data is already read. So I simple ask the function to keep it.
+call the main function and get the data.
+problem happens with write (?): I tell it to try to write, sleep, when I wake up:
+1 - if data is not written yet: call function to write
+2 - if data is written, the one that has passed through wrapper function is written. so its all right and I can continue.
+so, we can continue with function composition. we still need that additional int argument that is the communication channel between runtime and channel function.
+`result = chreader1 /// chreader2 /// chw1(data, _) /// makeTimeout(100)`
+each element in `///` will be a function that accepts an `int|nothing`.
+you can also provide a default:
+`result = chreader1 /// chreader2 /// chw(data,_) /// 100`
+the last item can be a non-function which means the default value, returned if none of functions have a data.
+q: what if channels are for function that accepts an int? then what should/can be put for default?
+we cannot ban having channels of lambdas.
+solution: instead of a value, use a core function: `defaultChannel(x)`
+q: can we have channels of channels? yes. these are functions that accept/return other functions.
+**PROPOSAL**
+`reader: fn(extra:int|nothing-> string)`
+`writer: fn(data: int, extra: int|nothing -> int)`
+`result = chreader1 /// chreader2 /// chw1(data, _) /// makeTimeout(100) /// defaultChannel(200)`
+1. we create a channel by calling `createChannel(int, size)` this will give us a reader and writer function
+2. no close
+3. read and write function block if channel is not ready, then will return with the data read/written
+4. we have select as operator `///`
+4. you can combine it with select op and timeout built-in func to have a waiting mechanism.
+5. select will keep trying each function until one of them gives an output.
+6. makeChannel are built-in, others are in std.
+7. this is simple, minimal and composable. but does not support variable number of channels.
 
 
 ? - if I have a sequence of `fn(->int|float)` can I put a function that returns int, in that sequence?
 I should be able to do that.
 `x: fn(->int|string) = fn(->int) {...}`
+So when I have `fn(T->U)` any function that can accept T (or more) is all right.
+any function that returns U (or less) is all right. 
+it is not all right if function does not accept part of T, or can return more than U.
 
 ? - Should we make `dispose` more built-in?
 `dispose(x)`
@@ -355,6 +397,7 @@ re-using underscore is not good here.
 `x = nothing`
 this does not make sense because maybe x is an int, we cannot assign nothing to it.
 but we can say this is a special case and syntax sugar. 
+what if x is used from another thread/function?
 
 
 ? - If underscore has no meaning, why not ban it?
@@ -364,3 +407,16 @@ so putting `_` at the beginning of a binding/type name can have a special meanin
 ? - Question: What comes on the right side of `:` when defining a type alias?
 can I put a generic function on the right side?
 no. type alias is for named types. `identifier : identifier`
+
+? - do we need contracts? like golang
+```go
+contract stringer(T) {
+	T String() string
+}
+```
+
+? - re-org website
+part 1 - intro
+part 2 - basic: types, functions
+part 3 - advanced: generic, modules, concurrency
+part 4 - examples
