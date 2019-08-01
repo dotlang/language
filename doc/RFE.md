@@ -38,6 +38,17 @@ N - Can we have a pattern that people can easily find functions/types/... in a f
 `fn process = ...`
 no. confusing.
 
+N - Is having optional arg compatible with lambda?
+I need a function that has no input. can I pass a function that needs `int|nothing`?
+I don't think this should be possible.
+But if I have a lambda that needs `int|nothing`, I can call it without args. 
+
+N - Can I treat file/socket/console and all other IOs as channels?
+or maybe I can say: everything is a file.
+
+N - We can use closure to provide encapsulation and privacy.
+that is what is used in js.
+
 ? - The concept of process mailbox means a lot of stuff in the background.
 replaces it with something like a channel object which we can send to or receive from functions
 but what about `select`?
@@ -243,18 +254,89 @@ here (https://coderanch.com/t/486179/java/Wait-multiple-semaphores) they say, it
 "Threads should wait for one type of work, do that work, and go back to waiting for more work. If there are more than one type of work, with more than one work queue, maybe it is a good idea to split it off -- and have different worker threads on each queue."
 again, assuming we use pulling, we still don't have a semaphore. if we enforce "only channel functions" then select, can use built-in function to get semaphore of a channel function.
 but not for writer!
+here (https://github.com/golang/go/blob/9e277f7d554455e16ba3762541c53e9bfc1d8188/src/runtime/select.go) golang, sleeps waiting for one of channels to wake it up.
+maybe, the idea of channel identifier is not too bad. but, we can hide it from the user: you can only select with a chr/w function.
+and, then we can say, channel functions block all the time if the channel is not ready. solution: use select.
+select is a built-in function. 
+now, what about channel writer function?
+`fn{chw1(data)}` is a new function.
+we want channels to be composable. so we use functions.
+we need something more than a function so that we can do low level optimizations.
+option1: when creating a channel, return r and w function and a channel identifier.
+in select: send channel identifier too. this is too complicated.
+option2: send data separately from channel w function
+option3: have a dedicated syntax.
+option4: functions (r/w) have a special syntax that when called with that input, will give their internal channel id.
+our aim:
+goal1: be simple and minimal
+goal2: be composable
+goal3: support for variable number of channels -> not high priority
+goal3 prevents dedicated syntax.
+but even with dedicated syntax, if we are composable, what extra can it do?
+`reader: fn(int|nothing-> string|nothing)`
+`writer: fn(data: int, arg: int|nothing -> int|nothing)`
+reader and writer have an additional runtime arg that can be called through runtime or select.
+`reader(nothing)` will just read for you. `reader(x)` is called through runtime to do something special.
+`result = select([chreader1, chreader2, chw1(data, _), timeout(100ms)])`
+now with this change, select becomes a bit simpler. no need to wrap chw around fn.
+runtime can pass all sorts of arguments to them. 
+of course user can ignore this arg and call it normally, but runtime functions like select make use of that extra argument.
+**PROPOSAL**
+`reader: fn(extra:int|nothing-> string)`
+`writer: fn(data: int, extra: int|nothing -> int)`
+`select = fn(items: [fn(int|nothing->T)], T: type -> T|nothing)`
+`result = select([chreader1, chreader2, chw1(data, _), makeTimeout(100)])`
+1. we create a channel by cakking `createChannel(int, size)` this will give us a reader and writer function
+2. no close
+3. read and write function block if channel is not ready, then will return with the data read/written
+4. you can combine it with select and timeout built-in func to have a waiting mechanism.
+5. select will keep trying each function until one of them gives an output.
+6. makeChannel/select are built-in, others are in std.
+7. this is simple, minimal and composable. supports variable number of channels. 
+q: can we re-use concept of `//` here instead of select function?
+con: won't be able to use with variable number of channels.
+we have a list of functions. input of each is `int|nothing`, output is type of channel.
+`result = chreader1 // chreader2 // chw1(data, _) // makeTimeout(100)`
+but, here functions cannot return `nothing`. so the meaning of `//` will be altered.
+unless, we get back to the old way: return immediately with nothing if not ready
+and compiler can handle functions ordering. but another problem: `//` is ordered.
+what about using `///`?
+`result = chreader1 /// chreader2 /// chw1(data, _) /// makeTimeout(100)`
+in this case: pro: we won't need to worry about select function signature.
+we can also use `//` and say, in this case, compiler will handle it. but it is not intuitive. two contradictory uses of `//`
+one usage is ordered and one is random on purpose.
+the select is a function itself: it will return as soon as any of its internal functions return.
+so we have a super function. no input (all inputs are already there), output is or of all types.
+timeout and default can be provided via built-in functions.
+so, we need an expression that defines a function. creates a new function.
+`selector: fn(extra:int|nothing->int|string|float) =  chreader1 /// chreader2 /// chreader3 /// chw1(data, _) /// makeTimeout(100)`
+if we follow this path, we may also be able to support variable channel count.
+`(chreader1 /// chreader2 /// chreader3 /// chw1(data, _) /// makeTimeout(100))()` will make the call but with what input?
+we cannot give the input, so either `select` core fn should do that or the syntax we want to have, will not support it.
+so lets have a syntax that also makes the call and everything. does not give us a function, but the result.
+`result = chreader1 /// chreader2 /// chw1(data, _) /// makeTimeout(100)`
+again, no need to return nothing. calls will be blocked until channel is ready for the operation.
+we can also use `||` this is used in csp to show parallel execution. 
+but `||` is not good because it will be confused with OR.
+**PROPOSAL**
+`reader: fn(extra:int|nothing-> string)`
+`writer: fn(data: int, extra: int|nothing -> int)`
+`result = chreader1 /// chreader2 /// chw1(data, _) /// makeTimeout(100)`
+1. we create a channel by cakking `createChannel(int, size)` this will give us a reader and writer function
+2. no close
+3. read and write function block if channel is not ready, then will return with the data read/written
+4. we have select as operator `///`
+4. you can combine it with select op and timeout built-in func to have a waiting mechanism.
+5. select will keep trying each function until one of them gives an output.
+6. makeChannel are built-in, others are in std.
+7. this is simple, minimal and composable. supports variable number of channels. 
+what happens if I use a normal function? this shouldn't happen. unless that normal function is backed by a channel function.
 
 
 
 ? - if I have a sequence of `fn(->int|float)` can I put a function that returns int, in that sequence?
 I should be able to do that.
 `x: fn(->int|string) = fn(->int) {...}`
-
-? - Can I treat file/socket/console and all other IOs as channels?
-or maybe I can say: everything is a file.
-
-? - We can use closure to provide encapsulation and privacy.
-that is what is used in js.
 
 ? - Should we make `dispose` more built-in?
 `dispose(x)`
