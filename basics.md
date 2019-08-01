@@ -20,19 +20,20 @@
 
 ## Symbols
 
-01. `#`  Comment
-02. `.`  Access struct members
-03. `()` Function declaration and call, struct declaration and literals
-04. `{}` Code block, selective import
-05. `[]` Sequence and hashMap
-06. `|`  Union data type 
-07. `->` Function declaration
-08. `//` Nothing-check operator
-09. `:`  Type declaration (binding, struct field and function inputs), type alias, struct literal
-10. `=`  Binding declaration, named type
-11. `_`  Place-holder (lambda creator and assignment)
-12. `:=` Parallel execution
-13. `..` Access inside module
+01. `#`   Comment
+02. `.`   Access struct members
+03. `()`  Function declaration and call, struct declaration and literals
+04. `{}`  Code block, selective import
+05. `[]`  Sequence and hashMap
+06. `|`   Union data type 
+07. `->`  Function declaration
+08. `//`  Nothing-check operator
+09. `:`   Type declaration (binding, struct field and function inputs), type alias, struct literal
+10. `=`   Binding declaration, named type
+11. `_`   Place-holder (lambda creator and assignment)
+12. `:=`  Parallel execution
+13. `..`  Access inside module
+14. `///` Select
 
 ## Reserved keywords
 
