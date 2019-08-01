@@ -323,6 +323,7 @@ _testProcessWithInvalidInput = fn{...}
 4. Fucntion resolution is done similar to type name resolution. 
 5. Parameter types must be "compatible" with function arguments, or else there will be a compiler error. 
 6. For example if function argument type is `int | nothing` and parameter is an `int` it is a valid function call (But not the other way around).
+7. When you need a function of type `fn(T->U)` any function that can accept T (or more) and returns U (or less) is all right.
 
 ## Lambda (Function literal)
 
