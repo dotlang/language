@@ -472,3 +472,16 @@ But any type used for T must have these properties: ...
 q: can this help with polymorphism? e.g. an array of shapes?
 if I say `T: SHType, x: [T]` x is a sequence of type T. But T can only have one and only one value.
 this is called existential type.
+
+? - Can we mix two channel functions?
+Maybe it doesn't make a lot of sense to separate channel reader and write.
+it is like having private variables.
+`reader: fn(extra:int|nothing-> string)`
+`writer: fn(data: int, extra: int|nothing -> int)`
+`channelFunc: fn(data: string|nothing, extra: int|nothing -> string)`
+to write: `channelFunc(data)`
+to read: `x = channelFunc()`
+it will be simpler.
+how does runtime call this?
+to write: `channelFunc(data, arg)`
+to read: `channelFunc(nothing, arg)`
