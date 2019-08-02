@@ -49,7 +49,55 @@ or maybe I can say: everything is a file.
 N - We can use closure to provide encapsulation and privacy.
 that is what is used in js.
 
-? - The concept of process mailbox means a lot of stuff in the background.
+Y - re-org website
+part 1 - intro
+part 2 - basic: types, functions
+part 3 - advanced: generic, modules, concurrency
+part 4 - examples
+
+Y - Question: What comes on the right side of `:` when defining a type alias?
+can I put a generic function on the right side?
+no. type alias is for named types. `identifier : identifier`
+
+N - Should we make `dispose` more built-in?
+`dispose(x)`
+`x = ` no x is suppose to be immutable.
+`_ = x`
+`nothing = x`
+`x = nothing`
+`x = _`
+but isn't this against immutability?
+what if another thread is using x?
+I think you should not be able to dispose anything.
+Just some specific functions that can be used to close a file, ...
+and they are typed, so you cannot call them with any other type
+`x = _`
+re-using underscore is not good here.
+`x = nothing`
+this does not make sense because maybe x is an int, we cannot assign nothing to it.
+but we can say this is a special case and syntax sugar. 
+what if x is used from another thread/function?
+but, we can say any runtime use after `_` will result in runtime error.
+Because sometimes you really need to close a resource.
+for example a file descriptor, you want to explicitly close it.
+for example: I open a socket, read data, process data (takes time) and then I want to close the socket.
+now, I don't want to finish everything, then close the socket.
+but we can simply enclose this logic in a function: open socket, read data, close socket
+and call above, then use its output for processing.
+let's for now forget this. no dispose. no free. automatic dispose/close.
+
+Y - if I have a sequence of `fn(->int|float)` can I put a function that returns int, in that sequence?
+I should be able to do that.
+`x: fn(->int|string) = fn(->int) {...}`
+So when I have `fn(T->U)` any function that can accept T (or more) is all right.
+any function that returns U (or less) is all right. 
+it is not all right if function does not accept part of T, or can return more than U.
+
+Y - If underscore has no meaning, why not ban it?
+so underscore will be for destruction and lambda creation only.
+so putting `_` at the beginning of a binding/type name can have a special meaning? or it can be banned.
+
+Y - The concept of process mailbox means a lot of stuff in the background.
 replaces it with something like a channel object which we can send to or receive from functions
 but what about `select`?
 notations we need:
@@ -372,41 +420,46 @@ q: can we have channels of channels? yes. these are functions that accept/return
 6. makeChannel are built-in, others are in std.
 7. this is simple, minimal and composable. but does not support variable number of channels.
 
-
-? - if I have a sequence of `fn(->int|float)` can I put a function that returns int, in that sequence?
-I should be able to do that.
-`x: fn(->int|string) = fn(->int) {...}`
-So when I have `fn(T->U)` any function that can accept T (or more) is all right.
-any function that returns U (or less) is all right. 
-it is not all right if function does not accept part of T, or can return more than U.
-
-? - Should we make `dispose` more built-in?
-`dispose(x)`
-`x = ` no x is suppose to be immutable.
-`_ = x`
-`nothing = x`
-`x = nothing`
-`x = _`
-but isn't this against immutability?
-what if another thread is using x?
-I think you should not be able to dispose anything.
-Just some specific functions that can be used to close a file, ...
-and they are typed, so you cannot call them with any other type
-`x = _`
-re-using underscore is not good here.
-`x = nothing`
-this does not make sense because maybe x is an int, we cannot assign nothing to it.
-but we can say this is a special case and syntax sugar. 
-what if x is used from another thread/function?
-
-
-? - If underscore has no meaning, why not ban it?
-so underscore will be for destruction and lambda creation only.
-so putting `_` at the beginning of a binding/type name can have a special meaning? or it can be banned.
-
-? - Question: What comes on the right side of `:` when defining a type alias?
-can I put a generic function on the right side?
-no. type alias is for named types. `identifier : identifier`
+N - Using `()` for struct doesn't feel right.
+`Point = struct(x: int, y:int, data: float)`
+`location = Point(x:10, y:20, data:1.19)`
+`point1 = struct(int,int)(100, 200)`
+```rust
+struct User {
+    username: String,
+    email: String,
+    sign_in_count: u64,
+    active: bool,
+}
+```
+```golang
+type Person struct {
+	FirstName, LastName string
+	Age       int
+}
+person{"Bob", 20}
+anonymousStruct := struct {
+	NESCarts 	[]string
+	numberOfCarts   int
+}{
+	nesCarts,
+	numberOfCarts,
+}
+```
+```kotlin
+data class User(val name: String = "", val age: Int = 0)
+val jane = User("Jane", 35) 
+data class Person(val name: String) {
+    var age: Int = 0
+}
+```
+why did we drop braces for struct? to prevent confusion with fn. if we have fn and struct in a function args, they can be confusing.
+`Point = struct(x: int, y:int, data: float)`
+`location = Point(x:10, y:20, data:1.19)`
+`point1 = struct(int,int)(100, 200)`
+struct keyword is like `fn` keyword. but without `{}` afterward.
+`struct(...)` defines a struct type.
+this looks good.
 
 ? - do we need contracts? like golang
 ```go
@@ -414,9 +467,8 @@ contract stringer(T) {
 	T String() string
 }
 ```
-
-? - re-org website
-part 1 - intro
-part 2 - basic: types, functions
-part 3 - advanced: generic, modules, concurrency
-part 4 - examples
+for generic functions and types, we may want to say "T" is not a general type for all available types.
+But any type used for T must have these properties: ...
+q: can this help with polymorphism? e.g. an array of shapes?
+if I say `T: SHType, x: [T]` x is a sequence of type T. But T can only have one and only one value.
+this is called existential type.
