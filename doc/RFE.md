@@ -461,19 +461,7 @@ struct keyword is like `fn` keyword. but without `{}` afterward.
 `struct(...)` defines a struct type.
 this looks good.
 
-? - do we need contracts? like golang
-```go
-contract stringer(T) {
-	T String() string
-}
-```
-for generic functions and types, we may want to say "T" is not a general type for all available types.
-But any type used for T must have these properties: ...
-q: can this help with polymorphism? e.g. an array of shapes?
-if I say `T: SHType, x: [T]` x is a sequence of type T. But T can only have one and only one value.
-this is called existential type.
-
-? - Can we mix two channel functions?
+Y - Can we mix two channel functions?
 Maybe it doesn't make a lot of sense to separate channel reader and write.
 it is like having private variables.
 `reader: fn(extra:int|nothing-> string)`
@@ -485,3 +473,22 @@ it will be simpler.
 how does runtime call this?
 to write: `channelFunc(data, arg)`
 to read: `channelFunc(nothing, arg)`
+if you want to give someone r-o access you can wrap channel function in another fn:
+`readerOnly = fn(runtime: int|nothing->int) { channelFunc(nothing, runtime) }`
+`result = chFunc1(nothing, _) /// chFunc2(nothing, _) /// chFunc3(data, _) /// makeTimeout(100) /// defaultChannel(200)`
+
+N - do we need contracts? like golang
+```go
+contract stringer(T) {
+	T String() string
+}
+```
+for generic functions and types, we may want to say "T" is not a general type for all available types.
+But any type used for T must have these properties: ...
+q: can this help with polymorphism? e.g. an array of shapes?
+if I say `T: SHType, x: [T]` x is a sequence of type T. But T can only have one and only one value.
+this is called existential type.
+but, does contract define a new type? or it just represents a set of existing types?
+if new type -> we can have a sequence of shapes
+but if it is set of existing types then `[T]` can have only one element type, even though T can represent multiple types.
+lets for now put it away.
