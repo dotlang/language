@@ -79,10 +79,10 @@ process = fn(x: Set -> int) { ... }
 1. We have `:=` for parallel execution of an expression. 
 2. Using `x := y` will initiate a new task as a child of the current task. Any access to the output of `:=` (`x`) will block current process until the child is finished.
 3. You can call `createChannel(type, size)` core function to create a new channel.
-4. A channel is represented via two functions: reader and writer (Example 3).
-5. Calling reader/writer functions will block current thread if channel is not ready to read/write.
+4. A channel is represented via a function that can be used to read from or write to the channel (Example 3).
+5. Calling channel function will block current thread if channel is not ready to read/write.
 6. You can use `///` operator to do a select among multiple channel operations (Example 4).
-7. Channel reader and writer functions have an extra argument `int|nothing` which is used by runtime.
+7. Channel functions have an extra argument `int|nothing` which is used by runtime.
 8. You can wrap a channel function inside another function as long as you preserve the runtime argument.
 
 **Examples**
@@ -90,13 +90,11 @@ process = fn(x: Set -> int) { ... }
 1. `_ := process(10, 20)`
 2.
 ```rust
-chr, chw = createChannel(int, 10)
-int_result := process(10, chr)
-chw(100)
+chFunc = createChannel(int, 10)
+int_result := process(10, chFunc)
+chFunc(100)
 ```
 3.
-`reader: fn(extra:int|nothing-> string)`
-`writer: fn(data: int, extra: int|nothing -> int)`
+`chFunc: fn(data: string|nothing, extra:int|nothing-> string)`
 4.
-`result = chreader1 /// chreader2 /// chw1(data, _) /// makeTimeout(100) /// defaultChannel(200)`
-
+`result = chFunc1(nothing, _) /// chFunc2(nothing, _) /// chFunc3(data, _) /// makeTimeout(100) /// defaultChannel(200)`
