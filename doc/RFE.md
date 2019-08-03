@@ -492,3 +492,12 @@ but, does contract define a new type? or it just represents a set of existing ty
 if new type -> we can have a sequence of shapes
 but if it is set of existing types then `[T]` can have only one element type, even though T can represent multiple types.
 lets for now put it away.
+
+N - contrats
+existential types
+polymorphism
+do we want to define a notation to specify a group of types or a notation to define a new type?
+```haskell
+data Worker x y = forall b. Buffer b => Worker {buffer :: b, input :: x, output :: y}
+```
+lets not do it now. maybe later.
