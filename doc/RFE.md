@@ -501,3 +501,21 @@ do we want to define a notation to specify a group of types or a notation to def
 data Worker x y = forall b. Buffer b => Worker {buffer :: b, input :: x, output :: y}
 ```
 lets not do it now. maybe later.
+
+N - If we want to have polymorphism, we can re-use the concept of sum types: `int|float`
+but provide tools to "describe" types in the sum type definition.
+so we don't enumerate them, we describe them. and any type that conforms to that description will be in that group.
+then: `T = description of shape`
+then I can use `[T]` as an array of shapes.
+or I can use `T` as a generic type argument.
+`draw = fn(T: ShapeType, x: T, c: Canvas)...`
+but then, we need to work with variables of type T which are sum type. can we use common properties of them?
+but what problem will this solve?
+There is inclusion polymorphism where we say `Student` type or any other type that includes a student's fields are all right.
+but this is just a simple type conversion. convert your type to student and call the function.
+maybe in order to increase performance in this regard, we can do something.
+but this won't be at language level.
+We can do this: When you filter out fields from a struct, result will be light weight. it will not be a completely new data struct. but just pointers to original struct.
+anyway, this is for the compiler.
+
+? - Is there anything we can remove?
