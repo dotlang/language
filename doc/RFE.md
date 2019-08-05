@@ -518,4 +518,15 @@ but this won't be at language level.
 We can do this: When you filter out fields from a struct, result will be light weight. it will not be a completely new data struct. but just pointers to original struct.
 anyway, this is for the compiler.
 
-? - Is there anything we can remove?
+N - Is there anything we can remove?
+unify the concept of map, seq and function.
+`x: [int] = [1,2,3]`
+`x: [string:int] = ["A":1, "B":2, "C":3]`
+`x = fn(s: string->int) { ... }`
+or unify struct with map. say: struct is a map.
+but when will be type of keys on that map? string? then it will become really perl-like and it won't be good for performance.
+unify sequence, map and function.
+how can we unify seq: 
+`[string]` is `[int:string]` and compiler will help write keys so you only need to write values.
+fn Input to Output is a map. input is a struct. output if function output.
+but it will be confusing..
