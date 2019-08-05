@@ -15,7 +15,7 @@
 11. **Function**: `calculate = fn(x:int, y:int -> float) { x/y }` (Functions are all lambdas, the last expression in the body is return value).
 12. **Concurrency**: `my_task := processData(x,y,z)` (Start a new micro-thread and evaluate an expression in parallel).
 13. **Generics**: `ValueKeeper = fn(T: type -> type) { struct(data: T) }` (A generic type is defined similar to a function that returns a type)
-14. **Generics**: `push = (x: T, stack: Stack(T), T: type -> Stack(T)) { ... }` (A generic function)
+14. **Generics**: `push = fn(x: T, stack: Stack(T), T: type -> Stack(T)) { ... }` (A generic function)
 15. **Enum**: `DayOfWeek = enum [saturday, sunday, monday, tuesday, wednesday, thursday, friday]`
 
 ## Symbols
