@@ -530,3 +530,16 @@ how can we unify seq:
 `[string]` is `[int:string]` and compiler will help write keys so you only need to write values.
 fn Input to Output is a map. input is a struct. output if function output.
 but it will be confusing..
+
+N - How can we implement a set of map of string to object (e.g. a set of documents read from ElasticSearch)?
+How will the Elastic API look like? `document: [String: int|string|float|Document]`
+`Attribute = int|string|float|Document`
+`Document = [String: Attribute]` is this allowed? should be fine.
+if we have the data model we can define the struct:
+`Document = struct (name: string, age: int, ...)`
+`data: [Document]`
+
+N - Shoudl we allow reverse call of function?
+`f(x)` vs `x::f(_)`?
+`(x,y)::f(_,9,_)`
+not for now.
