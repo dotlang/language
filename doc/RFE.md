@@ -543,3 +543,104 @@ N - Shoudl we allow reverse call of function?
 `f(x)` vs `x::f(_)`?
 `(x,y)::f(_,9,_)`
 not for now.
+
+? - Can we embed contract in fn?
+e.g. this function, when called with a connection, will release the connection.
+Goal is to make software more maintainable and prevent bugs.
+This can be partly done via documentation, proper naming, good design, named types and other language features.
+e.g. after I call function remove with a db connection, can I still use it?
+can I remove a connection from pool and later return it?
+types of contract:
+- pre-requirements of a function
+- post requirements of a function
+- requirements of a type
+can we embed contract for types in the generic function?
+```
+LinkedList = fn(T: type -> type)
+{
+	Node = struct (
+	    data: T,
+	    next: Node|nothing
+	)
+	Node|nothing
+}
+```
+on one hand it is useful. but otoh it makes language more complex.
+in some languages like Java or Scala they just provide some basic functions like assert, assume, ...
+there is also dependent types
+complexity: deciding and reasoning about equality of two types becomes difficult.
+in the easiest form, contract for a type is its constructor.
+```
+MyInt = int { _>=0 }
+```
+But, can I use `int{_>=0}` as type of a function argument?
+if so, what can I use to call the function?
+question: is `{_>=0}` part of the type? 
+it should be. so `MyInt` and `MyInt2` are not the same thing.
+but if I have `save = fn(x: int{_>=0} -> ...`
+can I call save with a normal int?
+q: what about multi-value types like struct or map or seq?
+```
+Point = struct(x:int, y:int) { _.x!=_.y}
+Months = [string] {length(_) == 12}
+```
+q: what if I call a function inside contract? it is fine. nothing hidden is happening. the fn will be called each time a binding of that type gets a value.
+`save = fn(x:int, y:int->float){x<y} { ... }`
+so, all examples that we have:
+```
+save = fn(x: int{_>=0} -> ...
+Point = struct(x:int, y:int) { _.x!=_.y}
+Months = [string] {length(_) == 12}
+save = fn(x:int, y:int->float){x<y} { ... }
+```
+it will put a performance cost and make type system complicated. 
+is there a way to make this simpler or more minimal?
+for fn, you can put anything you want inside the fn body.
+for types, we want to have a check function to make sure the value assigned is a valid one.
+```
+Point = struct(x:int, y:int) { _.x!=_.y}
+```
+why not embed this logic inside a normal function?
+```
+PointTemplate = struct(x:int, y:int) #{ _.x!=_.y}
+_PointTemplate = fn(x:int, y:int -> PointTemplate) {
+	assert(x!=y)
+	PointTemplate(x: x, y: y)
+}
+```
+but nothing prevents people from creating instances of Point without calling createPoint.
+so be it.
+rather than creating more rules and exceptions and dos and donts, let them use existing features.
+but, this may make sense to say: this type should not be created directly, it can only be created by calling function X.
+so, how can we tell this?
+naming? but naming convention for types and functions are totally different.
+maybe we can name these functions same as types. But then they will be confusing as they look like generic functions.
+```
+PointTemplate = struct(x:int, y:int) #{ _.x!=_.y}
+PointTemplate = fn(x:int, y:int -> PointTemplate) {
+	assert(x!=y)
+	PointTemplate(x: x, y: y)
+}
+my_point = PointTemplate(x: 10, y:20)
+```
+we normally create bindings by putting struct name and then values inside `()`. 
+if there is not `PointTemplate` function, then `PointTemplate(x:10, y:20)` will instantiate the struct.
+but if there is such a function, this will be a function call. not a struct instantiation.
+this is a little bit confusing.
+```
+PointTemplate = struct(x:int, y:int) fn{
+	assert(x!=y)
+}
+my_point = PointTemplate(x: 10, y:20)
+```
+this looks much better. we define PointTemplate as both a struct and a function.
+and as it seems, fn is part of the definition.
+q: can we have this fn notation for other types?
+```
+PointTemplate = struct(x:int, y:int) fn{ assert(x!=y) }
+MyInt = int fn{ ... }
+SeqInt = [int] fn { ... }
+Map1 = [string:int] fn { ... }
+```
+Either we have to make it complicated with lots of rules and notations.
+or we have to add lots of exceptions: you can define this but only for this type and not that type.
