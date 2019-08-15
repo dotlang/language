@@ -644,3 +644,91 @@ Map1 = [string:int] fn { ... }
 ```
 Either we have to make it complicated with lots of rules and notations.
 or we have to add lots of exceptions: you can define this but only for this type and not that type.
+Idea: put contracts in comments
+this way, we are explicitly stating they are not part of the real code.
+also we are explicitly stating that this is not part of the function/struct type
+but they can be checked by runtime in debug mode.
+Also as this is a code, it can only be placed inside a code block: function or maybe struct
+```
+save = fn(x:int, y:int -> nothing) {
+  ##(x<y)##
+  ...
+}
+PointTemplate = struct(
+  ##(x!=y)##
+  x:int, ##(x>0)##
+  y:int  ##(y<0)##
+)
+MyInt = int ##? there is nothing to refer to
+```
+so this only works for struct and function. not named type, sequence or map.
+we can add a new notation to refer to value of the type (named type, seq, map, ...) but it will be confusing.
+but not having this for seq/map/... is also confusing.
+solution: if you really need this, enclose them in a struct. so that they have a name.
+Also this will not be available for unnamed structs as there is no field name to refer to.
+we call this contract. 
+**PROPOSAL**:
+1. you can define contracts inside a function body or struct body.
+2. fn contracts will be executed at the time execution comes to their location.
+3. struct contracts will be executed all at once when a value is assigned to them.
+4. you can disable contract check and compilation using a compiler flag.
+5. You can call any function inside a contract.
+6. if a contract evaluates to "false" a runtime error will happen. anything else will be ignored.
+7.
+```
+save = fn(x:int, y:int -> nothing) {
+  ##(x<y)##
+  ...
+}
+PointTemplate = struct(
+  ##(x!=y)##
+  x:int, ##(x>0)##
+  y:int  ##(y<0)##
+)
+```
+So, basically you can put contract anywhere in the code or struct definition.
+you can use contract in an inline type, although it will make code messy.
+what would be a good notation for contract?
+- it should start with `#` comment notation
+- it should be very easily detected in the source code both by eyes and the editor
+`##x<0##`
+`#ensure(x<0)#`
+`#assume(x<0)#`
+we can use assert core function: we have assert function in core that can be normally used to make assertions.
+why comment? why not simply use assert?
+for struct, we can allow using assert in the struct definition.
+but advantage: 
+- no change in notation
+- no need to use comments, just call assert
+- no need to change fn
+- no ambiguity: can I call assert inside a fn call?
+for struct:
+```
+PointTemplate = struct(
+  x:int,
+  y:int,
+  assert(x>0),
+  assert(y<0),
+  assert(x+y<100)
+)
+```
+here, people may ask: why can't we call other functions inside struct definition?
+actually, this is a mini-function that is executed everytime a new PointTemplate is created.
+"AFTER"
+so, can't we make it look like a function?
+```
+PointTemplate = struct(
+  x:int,
+  y:int) {
+  assert(x>0)
+  assert(y<0)
+  assert(x+y<100)
+}
+```
+so, no new notation is needed.
+it looks like a function (inside braces, lines of code, ...)
+and it should be just like a function: you can write any type of code in it.
+`func = fn(x:int, y:int -> int) { ... }`
+`S1 = struct (x:int, y:int) { assert(x!=y) ... }`
+`data = S1(x:10, y:100)`
+actually, we are calling a pseudo function called S1 which creates a new instance of the struct, and runs some code.
