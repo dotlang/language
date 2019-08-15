@@ -732,3 +732,46 @@ and it should be just like a function: you can write any type of code in it.
 `S1 = struct (x:int, y:int) { assert(x!=y) ... }`
 `data = S1(x:10, y:100)`
 actually, we are calling a pseudo function called S1 which creates a new instance of the struct, and runs some code.
+**PROPOSAL**:
+1. you can use assert core function to do assertions/pre-req/post-req/ensure/contract/...
+2. you can put a `{}` after a struct type definition and write a code there. it will be executed after any instance of that struct created.
+3. you can disable compilation and checking of asserts during compiltation.
+Example:
+```
+PointTemplate = struct(
+  x:int,
+  y:int) fn{
+  assert(x>0)
+  assert(y<0)
+  assert(x+y<100)
+}
+```
+this is better. we use `fn{...}` so that it is actually a valid function. it is more orth.
+but we still cannot use a lambda here. because we are relying upon closure (sort of), to access struct fields.
+```
+PointTemplate = struct(
+  x:int,
+  y:int) fn(x:int, y:int->) {
+  assert(x>0)
+  assert(y<0)
+  assert(x+y<100)
+}
+```
+but this is messy and confusing.
+```
+PointTemplate = struct(
+  x:int,
+  y:int) fn{
+  assert(x>0)
+  assert(y<0)
+  assert(x+y<100)
+}
+```
+you can however, call you own function:
+```
+PointTemplate = struct(x:int, y:int) fn{ checkData(x,y) }
+```
+**PROPOSAL**:
+1. you can use assert core function to do assertions/pre-req/post-req/ensure/contract/...
+2. you can put a `fn{}` after a struct type definition and write a code there. it will be executed after any instance of that struct created. This can be used for contract or logging or any other usage.
+3. you can disable compilation and checking of asserts during compiltation.
