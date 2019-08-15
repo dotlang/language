@@ -775,3 +775,22 @@ PointTemplate = struct(x:int, y:int) fn{ checkData(x,y) }
 1. you can use assert core function to do assertions/pre-req/post-req/ensure/contract/...
 2. you can put a `fn{}` after a struct type definition and write a code there. it will be executed after any instance of that struct created. This can be used for contract or logging or any other usage.
 3. you can disable compilation and checking of asserts during compiltation.
+
+N - The notation of channel function, if we compose it inside another fn and want to call the wrapper in a select, it should return immediately.
+so does it support `nothing` result?
+`chFunc: fn(data: string|nothing, extra:int|nothing-> string)`
+- pass nothing as data, if you want to read
+- extra is used by runtime
+suppose that I have a logging wrapper on top of the channel. 
+so the wrapper is a function:
+```
+originalCh = ...
+wrapper = fn(data: string|nothing, extra: int|nothing -> string) {
+	log("calling channel func...")
+	originalCh(data, extra)
+}
+```
+- we can say: protocol is if extra is not nothing, do not interfere with the call and also ignore the output, but this is too much
+suppose that I want to implement `///`: I will need to call ch functions and pass them (or ask them), their pid or file identifier or anything.
+so I will need them to return! if they don't return, things will be complicated.
+lets focus on this later.
