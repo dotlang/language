@@ -188,6 +188,7 @@ hasType = fn(x: T|U, T: type, U: type -> bool) {
 2. To create a binding based on a struct, you should use a struct literal (e.g. `Type(field1:value1, field2:value2, ...)`.
 3. You can define a struct type without named.
 4. You can use destruction to access unnamed fields inside a struct(Example 7).
+5. You can add a function after definition of a struct type by `fn{...}` notation. This will be executed on each instantiation of that type (Example 9).
 
 **Examples**
 
@@ -205,6 +206,17 @@ process2 = fn(x: struct (int, int) -> int) {
 	_,a = x
     a
 }
+```
+9.
+```
+PointTemplate = struct(x:int, y:int) 
+	fn{
+  		assert(x>0)
+  		assert(y<0)
+  		assert(x+y<100)
+		log("a new instance of point-temlate is created")
+		validateCheck(x, y)
+	}
 ```
 
 ## Named types
@@ -283,6 +295,7 @@ For generics (types and functions) see Advanced section.
 8. If a function is being called with literals (compile time known values), compiler will try to evaluate it during compilation. 
 9. Above point is used in generic types (Example 15).
 10. Module level functions that start with `_test` and have no input are considered unit test functions. You can later instruct compiler to run them (Example 16).
+11. There is `assert` core function that can be used for checking assertions. You can disable assertions as a compiler flag.
 
 **Examples**
 
