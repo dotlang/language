@@ -544,7 +544,7 @@ N - Shoudl we allow reverse call of function?
 `(x,y)::f(_,9,_)`
 not for now.
 
-? - Can we embed contract in fn?
+Y - Can we embed contract in fn?
 e.g. this function, when called with a connection, will release the connection.
 Goal is to make software more maintainable and prevent bugs.
 This can be partly done via documentation, proper naming, good design, named types and other language features.
