@@ -84,19 +84,21 @@ Types are blueprints which are used to create values for bindings. Types can be 
 5. `string` is a sequence of characters.
   - String literals should be enclosed in double quotes.
   - To represent double quote itself inside a string, you can use `\"`.
-6. `bool` type is same as int but with only two valid values.`true` is 1 and `false` is 0.
+6. `bool` type is same as int but with only two valid values. `true` is 1 and `false` is 0.
 7. `nothing` is a special type which is used to denote empty/invalid/missing data. This type has only one value which is the same identifier.
 
 **Examples**
 
-1. `int_val = 12`
-2. `float_val = 1.918`
-3. `char_val = 'c'`
-4. `bool_val = true`
-5. `str1 = "Hello world!"`
-6. `str2 = "Hello" + "World!"`
-7. `n: nothing = nothing`
-8. `byte_val: byte = 119`
+```ruby
+int_val = 12
+float_val = 1.918
+char_val = 'c'
+bool_val = true
+str1 = "Hello world!"
+str2 = "Hello" + "World!"
+n: nothing = nothing
+byte_val: byte = 119
+```
 
 ## Sequence
 
