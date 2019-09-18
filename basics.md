@@ -89,7 +89,7 @@ Types are blueprints which are used to create values for bindings. Types can be 
 
 **Examples**
 
-```ruby
+```swift
 int_val = 12
 float_val = 1.918
 char_val = 'c'
