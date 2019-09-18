@@ -2,10 +2,10 @@
 
 ## Main features
 
-01. **Import a module**: `queue = import("/core/std/queue")` (you can also import from external sources like Github).
+01. **Import a module**: `queue = import("/core/std/queue")` (you can also import from external sources like GitHub).
 02. **Primitive types**: `int`, `float`, `char`, `byte`, `bool`, `string`, `type`, `nothing`. 
 03. **Bindings**: `my_var:int = 19` (type is optional, everything is immutable).
-04. **Sequence**: `my_array = [1, 2, 3]` (type of `my_arr` is `[int]`, sequence of integers).
+04. **Sequence**: `my_array = [1, 2, 3]` (type of `my_array` is `[int]`, sequence of integers).
 05. **HashMap**: `my_map = ["A":1, "B":2, "C":3]` (type of `my_map` is `[string:int]`, hash map of string to integer)
 06. **Named type**: `MyInt = int` (Defines a new type `MyInt` with same binary representation as `int`).
 07. **Type alias**: `IntType : int` (A different name for the same type).
@@ -51,7 +51,7 @@
 2. You must put each statement on a separate line. Newline is statement separator.
 3. Naming: `SomeDataType`, `someFunction`, `some_data_binding`, `my_module_alias`.
 4. If a function returns a type (generic types) it should be named like a type.
-5. If a binding is a reference to a function, it should be named like a function.
+5. If a binding is a reference to a function, it should be named like that function.
 6. You can use `0x` prefix for hexadecimal numbers and `0b` for binary.
 7. You can use `_` as digit separator in number literals.
 
@@ -60,7 +60,7 @@
 Operators are mostly similar to C language:
 
 * Conditional operators: `and, or, not, ==, <>, >=, <=`
-* Arithmetic: `+, -, *, /, %, %%`, `>>`, `<<`, `**` for power)
+* Arithmetic: `+, -, *, /, %, %%`, `>>`, `<<`, `**` for power
 * Note that `==` will do a comparison based on contents of its operands.
 * `A // B` will evaluate to A if it is not `nothing`, else it will be evaluated to B (e.g. `y = x // y // z // 0`).
 * Conditional operators return `true` or `false` which are `1` and `0` when used as index of a sequence.
@@ -74,7 +74,7 @@ Types are blueprints which are used to create values for bindings. Types can be 
 
 **Syntax**: `int`, `float`, `byte`, `char`, `string`, `bool`, `nothing`
 
-**Notes**:`
+**Notes**:
 
 1. `int` type is a signed 8-byte integer data type.
 2. `float` is double-precision 8-byte floating point number.
