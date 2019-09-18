@@ -2,3 +2,4 @@ theme: jekyll-theme-modernist
 title: dotLang
 show_downloads: false
 google_analytics: UA-429373-7
+highlighter: rouge
