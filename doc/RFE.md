@@ -5,6 +5,8 @@
 Use this for stdio, sockets, ... 
 inspire from linux Kernel
 
+? - We can add a built in function to convert between struct and json.
+
 Y - Builtin support for testing and doc
 compiler will drop any unused function in the final output. 
 from compiler's perspective, unit tests are a set of functions in the modules of the project that must be executed.
@@ -794,3 +796,4 @@ wrapper = fn(data: string|nothing, extra: int|nothing -> string) {
 suppose that I want to implement `///`: I will need to call ch functions and pass them (or ask them), their pid or file identifier or anything.
 so I will need them to return! if they don't return, things will be complicated.
 lets focus on this later.
+
