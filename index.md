@@ -19,7 +19,7 @@ dotLang is very similar to C but with some significant improvements:
 4. No reference type, no pointer, no manual memory management
 5. Powerful concurrency model
 6. First class functions
-7. Support for sum types
+7. Support for sum types and hash map types
 8. And much more!
 
 
