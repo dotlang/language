@@ -115,10 +115,17 @@ byte_val: byte = 119 #note that it is optional to mention type of a binding afte
 
 ```swift
 x = [1, 2, 3, 4]
-x: [[int]] = [ [1, 2], [3, 4], [5, 6] ] #a 2D matrix of integer numbers
-x = [1, 2]+[3, 4]+[5, 6] #merging multiple sequences
+
+#a 2D matrix of integer numbers
+x: [[int]] = [ [1, 2], [3, 4], [5, 6] ] 
+
+#merging multiple sequences
+x = [1, 2]+[3, 4]+[5, 6] 
+
 int_var = x[10]
-string = [char] #this is definition of string type
+
+#this is definition of string type
+string = [char] 
 ```
 
 ## HashMap
@@ -154,9 +161,10 @@ DayOfWeek = enum [saturday, sunday, ...]
 
 x = [saturday: "A", sunday: "B", ...][my_day_of_week]
  
+#definition of type bool
 true=1
 false=0
-bool = enum [true, false] #definition of type bool
+bool = enum [true, false] 
 ```
 
 ## Union
@@ -179,46 +187,62 @@ x: int|string|float = getData()
 result = check(x, fn(i:int -> boolean) { ... }) //
          check(x, fn(s: string -> boolean) {...}) //
          check(x, fn(f:float->boolean){...})
-#although T type can be at any position in x's original type, but inside hasType T is the first type so "a" will be corresponding to type T
+	 
+#although T type can be at any position in x's original type, 
+#but inside hasType T is the first type so "a" will be corresponding to type T
 hasType = fn(x: T|U, T: type, U: type -> bool) {
 	a,_ = x
-	a!=nothing
+	a != nothing
 }
 ```
 
 ## Struct
 
-1. A struct, similar to C, represents a set of related named binding definitions without values. 
+1. A struct, similar to C, represents a set of related named types. 
 2. To create a binding based on a struct, you should use a struct literal (e.g. `Type(field1:value1, field2:value2, ...)`.
-3. You can define a struct type without named.
-4. You can use destruction to access unnamed fields inside a struct(Example 7).
-5. You can add a function after definition of a struct type by `fn{...}` notation. This will be executed on each instantiation of that type (Example 9).
+3. You can define a struct type without a name (unnamed type).
+4. You can use destruction to access unnamed fields inside a struct.
+5. You can add a function after definition of a struct type by `fn{...}` notation. This will be executed on each instantiation of that type and can be used for logging or validation purposes.
 
 **Examples**
 
-1. `Point = struct (x:int, y:int) #defining a struct type`
-2. `point2 = Point(x:100, y:200) #create a binding of type Point`
-3. `point1 = struct(int,int)(100, 200) #untyped struct`
-4. `point4 = Point(x:point3.x, y : 101} #update a struct based on existing struct binding`
-5. `x,y = point1 #destruction to access struct data`
-6. `another_point = Point(x:11, y:my_point.y + 200)`
-7. `_, x = point1 #You can use _ during destruction to ignore one or more of results
-8.
-```rust
+```swift
+#defining a struct type
+Point = struct (x:int, y:int) 
+
+#create a binding of type Point, defined above
+point2 = Point(x:100, y:200) 
+
+#untyped struct
+point1 = struct(int,int)(100, 200) 
+
+#struct type with no field names
+Point = (int, int)
+
+#update an existing struct binding and save as a new binding
+point4 = Point(x:point3.x, y : 101)
+
+#destruction to access struct data
+x,y = point1
+
+another_point = Point(x:11, y:my_point.y + 200)
+
+#You can use _ during destruction to ignore one or more of results
+_, x = point1 
+
 process = fn(x: struct (id:int, age:int) -> int) { x.age }
+
 process2 = fn(x: struct (int, int) -> int) { 
 	_,a = x
     a
 }
-```
-9.
-```
+
 PointTemplate = struct(x:int, y:int) 
 	fn{
-  		assert(x>0)
-  		assert(y<0)
-  		assert(x+y<100)
-		log("a new instance of point-temlate is created")
+		assert(x>0)
+		assert(y<0)
+		assert(x+y<100)
+		log("a new instance of point-template is created")
 		validateCheck(x, y)
 	}
 ```
