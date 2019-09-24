@@ -252,33 +252,37 @@ PointTemplate = struct(x:int, y:int)
 1. You can name a type so you will be able to refer to that type later in the code.
 2. Type names must start with a capital letter to be distinguished from bindings.
 3. You define a named type similar to a binding: `NewType = UnderlyingType`.
-4. The new type has same binary representation as the underlying type but it will be treated as a different type.
+4. The new type has same binary representation as the underlying type but it will be treated as a completely different type.
 5. You have seen examples of named types in previous sections (Union, enum, ...).
 
 **Examples**
 
-1. `MyInt = int`
-2. `IntArray = [int]`
-3. `Point = struct {x: int, y: int}`
+```swift
+MyInt = int
+IntArray = [int]
+Point = struct (x: int, y: int)
+```
 
 ## Type alias
 
-1. You can use `T : X` notation to define `T` as another spelling for type `X` type.
+1. You can use `T : X` notation to define `T` as another spelling for type `X`.
 2. In this case, `T` and `X` will be exactly the same thing.
 3. You can use a type alias to prevent name conflict when importing modules.
 4. `X` on the right must be a type name. It cannot be definition of a type.
 
 **Examples**
 
-1. `MyInt : int`
-2. `process = fn(x:MyInt -> int) { x }`
+```swift
+MyInt : int
+process = fn(x:MyInt -> int) { x }
+```
 
 ## Type name resolution
 
 1. Order of search to resolve a type name:
-  A. Current function
-  B. Closure
-  C. Module level
+- Current function
+- Closure
+- Module level
 2. At any level, if there are multiple candidates there will be a compiler error.
 3. Two named types are never equal. 
 4. Two types T1 and T2 are identical/assignable/exchangeable if they have the same structure (e.g. `int|string` vs `int|string`).
@@ -288,13 +292,12 @@ PointTemplate = struct(x:int, y:int)
 1. For casting between primitive types (e.g. float to int), core functions are provided.
 2. In order to cast across named types, you will need to write an identity function (a function that only returns its input), but with correct types (Example 1).
 3. Note that, there is no automatic casting provided. All type changes must be explicitly specified in the code.
-4. Literals (e.g. `1` or `"Hello world"`) will get value of the most primitive associated type inferred (`int`, `string`, ...). 
-5. Based on 4, you cannot assign a literal to a named type without casting. Because for example `1` literal is an `int` literal not a named type that maps to `int`.
+4. Literals (e.g. `1` or `"Hello world"`) will get value of the most primitive type inferred by the compiler (`int`, `string`, ...). 
+5. Based on 4, you cannot assign an untyped literal to a named type without casting. Because for example `1` literal is an `int` literal not a named type that maps to `int`.
 
 **Examples**
 
-1. 
-```rust
+```swift
 MyInt = int
 toInt = fn(x: MyInt -> int) { x }
 toMyInt = fn(x: int -> MyInt) { x }
@@ -305,9 +308,9 @@ j = toMyInt(g)
 
 # Functions
 
-Functions (or lambdas) are a type of binding which can accept a set of inputs and give an output. 
+Functions (or lambdas) are a type of binding which can accept a set of inputs and gives an output. 
 
-For example `fn(int,int -> int)` is a function type (which accepts two integer numbers and gives an integer number) and `fn(x:int, y:int -> int) { x+y }` is function literal. 
+For example `fn(int,int -> int)` is a function type (which accepts two integer numbers and gives an integer number) and `fn(x:int, y:int -> int) { x+y }` is a function literal. 
 
 For generics (types and functions) see Advanced section.
 
@@ -316,44 +319,58 @@ For generics (types and functions) see Advanced section.
 1. `functionName = fn(name1: type1, name2: type2... -> OutputType) { code block }`
 2. Note that functions are namaed camelCased.
 3. Functions contain a set of bindings and the last expression in the code block determines function output.
-4. There is no function overloading.
-5. You can alias a function by defining another binding pointing to it (Example 8). 
-6. If a function has no input, you can can eliminate input/output type declaration part (Example 13). In this case, compiler will infer output type.
-7. Optional arguments: When calling a function, you can ommit arguments that are at the end and accept `nothing` (Example 14).
-8. If a function is being called with literals (compile time known values), compiler will try to evaluate it during compilation. 
-9. Above point is used in generic types (Example 15).
-10. Module level functions that start with `_test` and have no input are considered unit test functions. You can later instruct compiler to run them (Example 16).
-11. There is `assert` core function that can be used for checking assertions. You can disable assertions as a compiler flag.
+4. There is no function overloading. Functions should have unique names in their defining module.
+5. You can alias a function by defining another binding pointing to it (example A). 
+6. If a function has no input, you can can eliminate input/output type declaration part (Example B). In this case, compiler will infer output type.
+7. Optional arguments: When calling a function, you can ommit arguments that are at the end and accept `nothing` (Example C).
+8. If a function is being called with literals (compile time known values), compiler will try to evaluate it during compilation (e.g. generics). 
+9. Module level functions that start with `_test` and have no input are considered unit test functions. You can later instruct compiler to run them (Example D).
+10. There is `assert` core function that can be used for checking assertions. You can disable assertions as a compiler flag.
 
 **Examples**
 
-```rust
-01. myFunc = fn(x:int, y:int -> int) { 6+y+x }
-02. log = fn(s: string -> nothing) { print(s) } #this function returns nothing, pun not intended
-03. process2 = fn(pt: Point -> struct (int,int)) { return struct(int,int)(pt.x, pt.y) } #this function returns a struct
-05. process = fn(x: int|Point -> int) { ... } #this function can accept either int or Point type as input or int|Point type
-06. _,b = process2(myPoint) #ignore second output of the function
-07. 
+```swift
+myFunc = fn(x:int, y:int -> int) { 6+y+x }
+
+log = fn(s: string -> nothing) { print(s) } #this function returns nothing, pun not intended
+
+process2 = fn(pt: Point -> struct (int,int)) { return struct(int,int)(pt.x, pt.y) } #this function returns a struct
+
+process = fn(x: int|Point -> int) { ... } #this function can accept either int or Point type as input or int|Point type
+
+_,b = process2(myPoint) #ignore second output of the function
+
 process = fn(x:int -> int) 
 { 
   #if x<10 return 100, otherwise return 200
   [x<10: 100, x>=10: 200][true]
 }
-08. process = fn(x:int -> int) { x+1 }, process2 = process
-09. sorted = sort(my_sequence, fn(x,y -> int) { x-y })
-10. Adder = fn(int,int->int) #defining a named type based on a function type
-11. sort = fn(x: [int], comparer: fn(int,int -> bool) -> [int]) {...} #this function accepts a function
-12. map = fn(input: [int], mapper: fn(int -> string) -> [string])
-13. process = fn{ 100 }
-14.
+
+#A
+process = fn(x:int -> int) { x+1 }
+process2 = process
+
+sorted = sort(my_sequence, fn(x,y -> int) { x-y })
+
+Adder = fn(int,int->int) #defining a named type based on a function type
+
+sort = fn(x: [int], comparer: fn(int,int -> bool) -> [int]) {...} #this function accepts a function
+
+map = fn(input: [int], mapper: fn(int -> string) -> [string]) ...
+
+#B
+process = fn{ 100 }
+
+#C
 seq = fn(start_or_length:int, end:int|nothing -> ...)
 ...
 x = seq(10)
 y = seq(1,10)
-15. 
+
 add = fn(a:int, b:int ->int) { a+b }
 g = add(1,2)
-16. 
+
+#D
 _testProcessWithInvalidInput = fn{...}
 ```
 
@@ -363,29 +380,28 @@ _testProcessWithInvalidInput = fn{...}
 2. Also because you cannot have two functions with the same name, it is easier to find what happens with a function call.
 3. If `MyInt = int`, you cannot call a function which needs an `int` with a `MyInt` binding.
 4. Fucntion resolution is done similar to type name resolution. 
-5. Parameter types must be "compatible" with function arguments, or else there will be a compiler error. 
+5. Parameter types must be "identical/compatible" to function argument types, or else there will be a compiler error. 
 6. For example if function argument type is `int | nothing` and parameter is an `int` it is a valid function call (But not the other way around).
-7. When you need a function of type `fn(T->U)` any function that can accept T (or more) and returns U (or less) is all right.
+7. When you need a function of type `fn(T->U)` any function that can accept T (or more) and returns U (or less) works fine.
 
 ## Lambda (Function literal)
 
 1. All functions are lambdas.
 2. Functions are closure. So they have access to bindings in parent contexts (Module or parent function).
-3. You can use `_` to define a lambda based on an existing function. Just make a normal call and replace the lambda inputs with `_` (Example 4).
-4. If lambda is assigned to a variable, it can invoke itself from the inside (Example 5). This can be used to implement recursive calls.
+3. You can use `_` to define a lambda based on an existing function. Just make a normal call and replace the lambda inputs with `_` (Example A).
+4. If lambda is assigned to a variable, it can invoke itself from the inside (Example B). This can be used to implement recursive calls.
 
 **Examples**
 
-```perl
-1. 
+```swift
 rr = fn(nothing -> int) { x + y } #here x and y are captures from parent function/struct
-2. 
+
 test = fn(x:int -> PlusFunc) { fn(y:int -> int) { y + x } } #this function returns a lambda
-3. 
+
 fn(x:int -> int) { x+1} (10) #you can invoke a lambda at the point of declaration
-4. 
+#A
 lambda1 = process(10, _, _) #defining a lambda based on existing function
-5. 
+#B
 ff = fn(x:int -> int) { ff(x+1) }
 ```
 
@@ -397,9 +413,9 @@ ff = fn(x:int -> int) { ff(x+1) }
 4. Binding names must start with a lowercase letter (except bindings that define a generic type, more in Advanced section).
 5. You can define bindings at module-level or inside a function. 
 6. Module-level bindings can only have literals as their value. 
-7. Type of a binding can be inferred without ambiguity from right side value, but you also have the option to specify the type (Example 1).
-8. If the right side of an assignment is a struct, you can destruct it into it's elements by using comma separated values on the left side of `=` (Example 3). 
-9. In destruction, you can also use underscore to indicate you are not interested in one or more of those elements (Example 4).
+7. Type of a binding can be inferred without ambiguity from right side value, but you also have the option to specify the type (Example A).
+8. If the right side of an assignment is a struct, you can destruct it into its elements by using comma separated values on the left side of `=` (Example B). 
+9. In destruction, you can also use underscore to indicate you are not interested in one or more of those elements (Example C).
 10. Binding name resolution is similar to type/function name resolution.
 
 **Syntax**: 
@@ -409,8 +425,19 @@ ff = fn(x:int -> int) { ff(x+1) }
 
 **Examples**
 
-1. `x : int = 12`
-2. `g = 19.8 #type is inferred`
-3. `a,b = struct(int,int){1, 100}`
-4. `a,_ = point`
-5. `a,_ = single_element_struct`
+```swift
+#A
+x : int = 12
+
+#type is inferred
+g = 19.8 
+
+#B
+a,b = struct(int,int){1, 100}
+
+#C
+a,_ = point
+
+a,_ = single_element_struct
+```
+
