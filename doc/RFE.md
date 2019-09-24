@@ -797,3 +797,5 @@ suppose that I want to implement `///`: I will need to call ch functions and pas
 so I will need them to return! if they don't return, things will be complicated.
 lets focus on this later.
 
+? - Module alias. they will be used a lot.
+maybe we should define their own naming convention
