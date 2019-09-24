@@ -14,8 +14,8 @@
 10. **Union type**: `MaybeInt = int | nothing` (Can store either of two types, note that this is a named type).
 11. **Function**: `calculate = fn(x:int, y:int -> float) { x/y }` (Functions are all lambdas, the last expression in the body is return value).
 12. **Concurrency**: `my_task := processData(x,y,z)` (Start a new micro-thread and evaluate an expression in parallel).
-13. **Generics**: `ValueKeeper = fn(T: type -> type) { struct(data: T) }` (A generic type is defined similar to a function that returns a type)
-14. **Generics**: `push = fn(x: T, stack: Stack(T), T: type -> Stack(T)) { ... }` (A generic function)
+13. **Generics**: `ValueKeeper = fn(T: type -> type) { struct(data: T) }` (A function that returns a type)
+14. **Generics**: `push = fn(x: T, stack: Stack(T), T: type -> Stack(T)) { ... }`
 15. **Enum**: `DayOfWeek = enum [saturday, sunday, monday, tuesday, wednesday, thursday, friday]`
 
 ## Symbols
@@ -33,7 +33,7 @@
 11. `_`   Place-holder (lambda creator and assignment)
 12. `:=`  Parallel execution
 13. `..`  Access inside module
-14. `///` Select
+14. `///` Select (oncurrency)
 
 ## Reserved keywords
 
@@ -48,8 +48,8 @@
 ## Coding style
 
 1. Use 4 spaces indentation.
-2. You must put each statement on a separate line. Newline is statement separator.
-3. Naming: `SomeDataType`, `someFunction`, `some_data_binding`, `my_module_alias`.
+2. You must put each statement on a separate line. Newline is the statement separator.
+3. Naming: `SomeDataType`, `someFunction`, `some_data_binding`, `some_module_alias`.
 4. If a function returns a type (generic types) it should be named like a type.
 5. If a binding is a reference to a function, it should be named like that function.
 6. You can use `0x` prefix for hexadecimal numbers and `0b` for binary.
@@ -59,27 +59,29 @@
 
 Operators are mostly similar to C language:
 
-* Conditional operators: `and, or, not, ==, <>, >=, <=`
-* Arithmetic: `+, -, *, /, %, %%`, `>>`, `<<`, `**` for power
+* Conditional operators: `and, or, not, ==, !=, >=, <=`
+* Arithmetic: `+, -, *, /, %, %%, >>, <<, **`
 * Note that `==` will do a comparison based on contents of its operands.
 * `A // B` will evaluate to A if it is not `nothing`, else it will be evaluated to B (e.g. `y = x // y // z // 0`).
-* Conditional operators return `true` or `false` which are `1` and `0` when used as index of a sequence.
+* Conditional operators return `true` or `false` which are equal to `1` and `0` respectively when used as index of a sequence.
 * Comments can appear anywhere in the code and start with `#`. Anything after `#` till end of the line is comment.
 
 # Type system
 
-Types are blueprints which are used to create values for bindings. Types can be basic (integer number, character, ...) or compound (sequence, map, struct, ...).
+Types are blueprints which are used to create values for bindings. 
+
+Types can be basic (integer number, character, ...) or compound (sequence, map, struct, union).
 
 ## Basic types
 
-**Syntax**: `int`, `float`, `byte`, `char`, `string`, `bool`, `nothing`
+**Syntax**: `int, float, byte, char, string, bool, nothing`
 
 **Notes**:
 
 1. `int` type is a signed 8-byte integer data type.
 2. `float` is double-precision 8-byte floating point number.
 3. `byte` is an unsigned 8-bit number.
-4. `char` is a single character.
+4. `char` is a single unicode character.
   - Character literals should be enclosed in single-quote (e.g. `'a'`).
 5. `string` is a sequence of characters.
   - String literals should be enclosed in double quotes.
