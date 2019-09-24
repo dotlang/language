@@ -90,25 +90,37 @@ Set, process, my_data = imported_module..{SetType, processFunc, my_data}
 
 # Concurrency
 
-1. `result := expression` is used for parallel evaluation of an expression. 
-2. Using `x := y` will initiate a new task as a child of the current task. Any access to the output of `:=` (`x`) will block current process until the child is finished.
-3. You can call `createChannel(type, size)` core function to create a new channel.
-4. A channel is represented via a function that can be used to read from or write to the channel (Example 3).
-5. Calling channel function will block current thread if channel is not ready to read/write.
-6. You can use `///` operator to do a select among multiple channel operations (Example 4).
-7. Channel functions have an extra argument `int|nothing` which is used by runtime.
-8. You can wrap a channel function inside another function as long as you preserve the runtime argument.
+1. Using `result := expression` notation will initiate a new parallel task (green thread) as a child of the current task. Any access to the result `result` will block current process until the child is finished.
+2. You can call `createChannel(type, size|nothing)` core function to create a new channel. This can be used for communication and synchronization across tasks.
+3. A channel is represented via a function that can be used to read from or write to the channel (Example A).
+4. Calling channel function will block current thread if channel is not ready to read/write.
+5. You can use `///` operator to do a select among multiple channel operations (Example B). This will pick any of possible channel operations which is ready.
+6. Channel functions have an extra runtime argument of type `int|nothing` which is used by runtime.
+7. You can wrap a channel function inside another function as long as you preserve the runtime argument.
 
 **Examples**
 
-1. `_ := process(10, 20)`
-2.
-```rust
+```swift
+_ := process(10, 20)
+
 chFunc = createChannel(int, 10)
+
+#pass channel to a task
 int_result := process(10, chFunc)
+
+#write data into the channel (blocks if channel is full)
 chFunc(100)
+
+#read data from channel (blocks if there is nothing to read)
+data = chFunc()
+
+#A
+chFunc: fn(data: string|nothing, extra:int|nothing-> string)
+
+#B
+#do any of below operations if the corresponding channel is ready
+#result will be the data read/written
+#makeTimeout creates a timeout channel which after 100ms, returns nothing and unblocks select operation
+#defaultChannel creates an always ready channel so if none of the other operations are ready, it will return 200 as result
+result = chFunc1(nothing, _) /// chFunc2(nothing, _) /// chFunc3(data, _) /// makeTimeout(100) /// defaultChannel(200)
 ```
-3.
-`chFunc: fn(data: string|nothing, extra:int|nothing-> string)`
-4.
-`result = chFunc1(nothing, _) /// chFunc2(nothing, _) /// chFunc3(data, _) /// makeTimeout(100) /// defaultChannel(200)`
