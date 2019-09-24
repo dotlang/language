@@ -105,11 +105,11 @@ byte_val: byte = 119 #note that it is optional to mention type of a binding afte
 ## Sequence
 
 1. Sequence is similar to array in other languages. It represents a fixed-size block of memory with elements of the same type, `T`, and is shows with `[T]` notation. 
-2. You can initialize a sequence with a sequence literal (Example 1).
+2. You can initialize a sequence with a sequence literal (First example).
 3. You refer to elements inside sequence using `x[i]` notation where `i` is index number. 
 4. `[]` represents an empty sequence.
 5. Referring to an index outside sequence will throw a runtime error.
-6. Core defines built-in functions for sequence for common operations: `slice, map, reduce, filter, anyMatch, allMatch, ...`.
+6. Core defines built-in functions for sequence for common operations: `slice, map, reduce, filter, anyMatch, allMatch, ...`
 
 **Examples**
 
@@ -131,31 +131,32 @@ string = [char] #this is definition of string type
 
 **Examples**
 
-1. `pop = ["A":1, "B":2, "C":3]`
-2. `data = pop["A"]`
+```swift
+pop = ["A":1, "B":2, "C":3]
+data = pop["A"]
+```
 
 ## Enum
 
-1. You can prefix any sequence literal and `enum` keyword and it will be an enum type
+1. You can prefix any sequence literal with `enum` keyword and it will be an enum type.
 2. Example: `MyEnumType = enum [sequence of literals]`
 3. Variables of enum type must accept values of exactly what is specified inside the sequence, nothing else, even if they have equivalent value.
-4. You can use a map to decide something based on enum value (Example 2). 
+4. You can combine enum with a map to implement execution control. 
 5. In case of 4, Compiler will make sure you have covered all possible types, and if not, will issue a warning.
 
 **Examples**
 
-```rust
-1.
-  saturday=1
-  sunday=2
-  ...
-  DayOfWeek = enum [saturday, sunday, ...]
-2. 
-  x = [saturday: "A", sunday: "B", ...][my_day_of_week]
-3. 
-  true=1
-  false=0
-  bool = enum [true, false]
+```swift
+saturday=1
+sunday=2
+...
+DayOfWeek = enum [saturday, sunday, ...]
+
+x = [saturday: "A", sunday: "B", ...][my_day_of_week]
+ 
+true=1
+false=0
+bool = enum [true, false] #definition of type bool
 ```
 
 ## Union
@@ -168,19 +169,16 @@ string = [char] #this is definition of string type
 
 **Examples**
 
-1. `int_or_float: int|float = 11`
-2. `int_or_float: int|float = "ABCD"`
-3. `int_or_nothing, float_or_nothing = int_or_float_or_nothing_value`
-4. 
-```rust
+```swift
+int_or_float: int|float = 11
+int_or_float: int|float = "ABCD"
+int_or_nothing, float_or_nothing = int_or_float_or_nothing_value
+
 #assuming check function is already defined
 x: int|string|float = getData()
 result = check(x, fn(i:int -> boolean) { ... }) //
          check(x, fn(s: string -> boolean) {...}) //
          check(x, fn(f:float->boolean){...})
-```
-5.
-```rust
 #although T type can be at any position in x's original type, but inside hasType T is the first type so "a" will be corresponding to type T
 hasType = fn(x: T|U, T: type, U: type -> bool) {
 	a,_ = x
