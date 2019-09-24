@@ -10,23 +10,23 @@ Polymorphism can be achieved using cloure and lambdas.
 drawCircle = fn(s: Circle, c: Canvas, f: float -> int) {...}
 drawSquare = fn(s: Square, c: Canvas, f: float -> int) {...}
 
-Shape = struct ( draw: fn(Canvas, float -> int) )
-getShape = fn(name: String -> Shape) 
+drawFunction = fn(Canvas, float -> int)
+getShape = fn(name: String -> drawFunction) 
 {
     ["Circle": fn{
-		c = Circle{...}
-		Shape( draw : drawCircle(c, _, _) )
-     }, "Square": ...][name]()
+		c = Circle(...)
+		drawCircle(c, _, _)
+     }, 
+	 "Square": ...
+	 ][name]()
 }
 
 f = getShape("Circle")
-f.draw(my_canvas, 1.12)
+f(my_canvas, 1.12)
 ```
 
-If you want to add a new shape (e.g. Triangle), you should add appropriate functions (And the map in `getShape` needs to be modified).
-If you want to add a new operation (e.g. print), you will need to add a new function to `Shape` and assign to it in `gtShape`.
-
-Note that above `Shape` is very similar to "trait".
+If you want to add a new shape (e.g. Triangle), you should define appropriate functions (e.g. `drawTriangle`), and modify the map in `getShape`.
+If you want to add a new operation (e.g. print), you will need to add a new function (e.g. `getShapePrinter`).
 
 Another approach to implement polymorphism is by using a minified VTable:
 
@@ -47,11 +47,11 @@ f = getDraw(my_circle)(my_canvas, 1.52)
 
 There is no explicit support for exceptions. You can return a specific `exception` type instead (or use `nothing` type to indicate exception).
 
-If a really unrecoverable error happens, you should exit the application by calling `exit` function from core. 
+If a really unrecoverable error happens, you should exit the application by calling `exit` built-in function. 
 
 In special cases like a plugin system, where you must control exceptions, you can use built-in functions to call plugin. It will return an error result if the function which it calls exits unexpectedly.
 
-Example: `process = fn(nothing -> int|exception) { ... return exception{...} }`
+Example: `result = safeInvoke(myPluginHandler)`
 
 ## Conditionals
 
@@ -69,11 +69,11 @@ Another example:
 ```rust
 process = fn(x:int -> string)
 {
-	temp = [x>0 : fn{ saveLargeFileToDB("SDSDASDA") }, 
-		    x<=0: fn{ innerProcess(x) }  
-            ]
+	options = [x>0 : fn{ saveLargeFileToDB("SDSDASDA") }, 
+			x<=0: fn{ innerProcess(x) }  
+           ]
 
-	temp[true]()
+	options[true]()
 }
 ```
 
@@ -108,15 +108,15 @@ string process(int x) {
 
 ## Dependency management
 
-It is advised to put all import paths in one module like `refs` and import it to specify import paths.
+It is advised to put all import dependency paths in one module like `refs` and import it to specify import paths.
 
 ```rust
 #refs
 std_map = "/http/github.com/dotLang/std/v1.9.5/MapHelper"
 ```
-and then use above:
+and then use above to do actual import:
 ```
-#File1
+#File1 module
 refs = import("/src/main")
 MapHelper = import(refs..std_map)
 ```
@@ -131,7 +131,7 @@ main = fn( -> int ) { 0 }
 
 This is a function, called `main` which has no input and always returns `0` (very similar to C/C++ except `main` function has no input).
 
-You can shorten `main` to below:
+You can simplify `main` to:
 
 `main = fn{ 0 }`
 
