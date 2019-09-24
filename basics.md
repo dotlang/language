@@ -99,7 +99,7 @@ bool_val = true
 str1 = "Hello world!"
 str2 = "Hello" + "World!"
 n: nothing = nothing
-byte_val: byte = 119
+byte_val: byte = 119 #note that it is optional to mention type of a binding after its name
 ```
 
 ## Sequence
@@ -113,11 +113,13 @@ byte_val: byte = 119
 
 **Examples**
 
-1. `x = [1, 2, 3, 4]`
-2. `x: [[int]] = [ [1, 2], [3, 4], [5, 6] ] #a matrix of integer numbers`
-3. `x = [1, 2]+[3, 4]+[5, 6]] #merging multiple sequences`
-4. `int_var = x[10]`
-5. `string = [char]`
+```swift
+x = [1, 2, 3, 4]
+x: [[int]] = [ [1, 2], [3, 4], [5, 6] ] #a 2D matrix of integer numbers
+x = [1, 2]+[3, 4]+[5, 6] #merging multiple sequences
+int_var = x[10]
+string = [char] #this is definition of string type
+```
 
 ## HashMap
 
