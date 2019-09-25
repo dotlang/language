@@ -308,3 +308,55 @@ main = fn
 }
 ```
 
+
+
+
+
+```
+#File1 module
+refs = import("/src/main")
+MapHelper = import(refs..std_map)
+main = fn( -> int ) { 0 } #this is a comment
+```
+
+```rust
+#File1 module
+refs = import("/src/main")
+MapHelper = import(refs..std_map)
+main = fn( -> int ) { 0 } #this is a comment
+```
+
+```swift
+#File1 module
+refs = import("/src/main")
+MapHelper = import(refs..std_map)
+main = fn( -> int ) { 0 } #this is a comment
+```
+
+```perl
+#File1 module
+refs = import("/src/main")
+MapHelper = import(refs..std_map)
+main = fn( -> int ) { 0 } #this is a comment
+```
+
+```js
+#File1 module
+refs = import("/src/main")
+MapHelper = import(refs..std_map)
+main = fn( -> int ) { 0 } #this is a comment
+```
+
+```c
+#File1 module
+refs = import("/src/main")
+MapHelper = import(refs..std_map)
+main = fn( -> int ) { 0 } #this is a comment
+```
+
+```bash
+#File1 module
+refs = import("/src/main")
+MapHelper = import(refs..std_map)
+main = fn( -> int ) { 0 } #this is a comment
+```
