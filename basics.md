@@ -91,7 +91,7 @@ Types can be basic (integer number, character, ...) or compound (sequence, map, 
 
 **Examples**
 
-```swift
+```perl    
 int_val = 12
 float_val = 1.918
 char_val = 'c'
@@ -113,7 +113,7 @@ byte_val: byte = 119 #note that it is optional to mention type of a binding afte
 
 **Examples**
 
-```swift
+```perl    
 x = [1, 2, 3, 4]
 
 #a 2D matrix of integer numbers
@@ -138,7 +138,7 @@ string = [char]
 
 **Examples**
 
-```swift
+```perl    
 pop = ["A":1, "B":2, "C":3]
 data = pop["A"]
 ```
@@ -153,7 +153,7 @@ data = pop["A"]
 
 **Examples**
 
-```swift
+```perl    
 saturday=1
 sunday=2
 ...
@@ -177,7 +177,7 @@ bool = enum [true, false]
 
 **Examples**
 
-```swift
+```perl    
 int_or_float: int|float = 11
 int_or_float: int|float = "ABCD"
 int_or_nothing, float_or_nothing = int_or_float_or_nothing_value
@@ -187,12 +187,12 @@ x: int|string|float = getData()
 result = check(x, fn(i:int -> boolean) { ... }) //
          check(x, fn(s: string -> boolean) {...}) //
          check(x, fn(f:float->boolean){...})
-	 
+     
 #although T type can be at any position in x's original type, 
 #but inside hasType T is the first type so "a" will be corresponding to type T
 hasType = fn(x: T|U, T: type, U: type -> bool) {
-	a,_ = x
-	a != nothing
+    a,_ = x
+    a != nothing
 }
 ```
 
@@ -206,7 +206,7 @@ hasType = fn(x: T|U, T: type, U: type -> bool) {
 
 **Examples**
 
-```swift
+```perl    
 #defining a struct type
 Point = struct (x:int, y:int) 
 
@@ -233,18 +233,18 @@ _, x = point1
 process = fn(x: struct (id:int, age:int) -> int) { x.age }
 
 process2 = fn(x: struct (int, int) -> int) { 
-	_,a = x
+    _,a = x
     a
 }
 
 PointTemplate = struct(x:int, y:int) 
-	fn{
-		assert(x>0)
-		assert(y<0)
-		assert(x+y<100)
-		log("a new instance of point-template is created")
-		validateCheck(x, y)
-	}
+    fn{
+        assert(x>0)
+        assert(y<0)
+        assert(x+y<100)
+        log("a new instance of point-template is created")
+        validateCheck(x, y)
+    }
 ```
 
 ## Named types
@@ -257,7 +257,7 @@ PointTemplate = struct(x:int, y:int)
 
 **Examples**
 
-```swift
+```perl    
 MyInt = int
 IntArray = [int]
 Point = struct (x: int, y: int)
@@ -272,7 +272,7 @@ Point = struct (x: int, y: int)
 
 **Examples**
 
-```swift
+```perl    
 MyInt : int
 process = fn(x:MyInt -> int) { x }
 ```
@@ -297,7 +297,7 @@ process = fn(x:MyInt -> int) { x }
 
 **Examples**
 
-```swift
+```perl    
 MyInt = int
 toInt = fn(x: MyInt -> int) { x }
 toMyInt = fn(x: int -> MyInt) { x }
@@ -329,7 +329,7 @@ For generics (types and functions) see Advanced section.
 
 **Examples**
 
-```swift
+```perl    
 myFunc = fn(x:int, y:int -> int) { 6+y+x }
 
 log = fn(s: string -> nothing) { print(s) } #this function returns nothing, pun not intended
@@ -393,7 +393,7 @@ _testProcessWithInvalidInput = fn{...}
 
 **Examples**
 
-```swift
+```perl    
 rr = fn(nothing -> int) { x + y } #here x and y are captures from parent function/struct
 
 test = fn(x:int -> PlusFunc) { fn(y:int -> int) { y + x } } #this function returns a lambda
@@ -425,7 +425,7 @@ ff = fn(x:int -> int) { ff(x+1) }
 
 **Examples**
 
-```swift
+```perl    
 #A
 x : int = 12
 
