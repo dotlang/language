@@ -6,7 +6,7 @@ Because a lot of non-essential features are removed from the language and core, 
 
 Polymorphism can be achieved using cloure and lambdas. 
 
-```rust
+```perl
 drawCircle = fn(s: Circle, c: Canvas, f: float -> int) {...}
 drawSquare = fn(s: Square, c: Canvas, f: float -> int) {...}
 
@@ -32,7 +32,7 @@ If you want to add a new operation (e.g. print), you will need to add a new func
 
 Another approach to implement polymorphism is by using a minified VTable:
 
-```rust
+```perl
 drawCircle = fn(s: Circle, c: Canvas, f: float -> int) {...}
 drawSquare = fn(s: Square, c: Canvas, f: float -> int) {...}
 
@@ -59,7 +59,7 @@ Example: `result = safeInvoke(myPluginHandler)`
 
 If and Else constructs can be implemented using the fact that booleans converted to integer will result to `0` or `1` (for `false` and `true`).
 
-```rust
+```perl
 ifElse = fn(cond: bool, true_case: T, false_case:T, T: type -> T) 
 {
 	[true: true_case, false: false_case][cond]
@@ -68,7 +68,7 @@ ifElse = fn(cond: bool, true_case: T, false_case:T, T: type -> T)
 
 Another example:
 
-```rust
+```perl
 process = fn(x:int -> string)
 {
 	options = [x>0 : fn{ saveLargeFileToDB("SDSDASDA") }, 
@@ -81,7 +81,7 @@ process = fn(x:int -> string)
 
 Above sample implemented using ifElse function:
 
-```rust
+```perl
 process = fn(x:int -> string)
 {
     ifElse(x>0, fn{
@@ -94,7 +94,7 @@ process = fn(x:int -> string)
 
 Above is translation of below C code:
 
-```c
+```perl
 string process(int x) {
     char* result;
     
@@ -112,7 +112,7 @@ string process(int x) {
 
 It is advised to put all import dependency paths in one module like `refs` and import it to specify import paths.
 
-```rust
+```perl
 #refs
 std_map = "/http/github.com/dotLang/std/v1.9.5/MapHelper"
 ```
@@ -127,7 +127,7 @@ MapHelper = import(refs..std_map)
 
 ## Empty application
 
-```rust
+```perl
 main = fn( -> int ) { 0 }
 ```
 
@@ -139,7 +139,7 @@ You can simplify `main` to:
 
 ## Hello world
 
-```rust
+```perl
 main = fn( -> int) 
 {
 	print("Hello world!")
@@ -151,7 +151,7 @@ main = fn( -> int)
 
 We want to write a function which accepts a string like `"2+4-3"` and returns the result (`3`).
 
-```rust
+```perl
 NormalExpression = struct (op: char, left: Expression, right: Expression)
 Expression = int|NormalExpression
 
@@ -179,7 +179,7 @@ innerEval = fn(exp: Expression -> float)
 
 ## Quick sort
 
-```rust
+```perl
 quickSort = fn(list:[int], low: int, high: int -> [int])
 
     ifElse(high<low, list, fn{	
@@ -199,7 +199,7 @@ quickSort = fn(list:[int], low: int, high: int -> [int])
 
 A function which accepts a list of numbers and returns sum of numbers.
 
-```rust
+```perl
 sum = (data: [int] -> int)
 {
   calc = (index: int, sum: int -> int)
@@ -217,7 +217,7 @@ sum = (data: [int] -> int)
 A function which accepts a number and returns it's digits in a sequence of characters.
 Generally for this purpose, using a linked-list is better because it will provide better performance.
 
-```rust
+```perl
 extractor = (n: number, result: string -> string)
 {
   ifElse(n < 10, fn{result + char(48+n)}, fn{
@@ -232,7 +232,7 @@ extractor = (n: number, result: string -> string)
 A function which accepts two sequences of numbers and returns the maximum of sum of any any two numbers chosen from each of them.
 This can be done by finding maximum element in each of the arrays but we want to do it with a nested loop.
 
-```rust
+```perl
 maxSum = (a: [int], b: [int] -> int)
 {
 	calc = (idx1: int, idx2: int, current_max: int -> int)
@@ -251,7 +251,7 @@ maxSum = (a: [int], b: [int] -> int)
 
 ## Fibonacci
 
-```rust
+```perl
 fib = (n: int, cache: [int|nothing] -> int)
 {
 	ifElse(cache[n] != nothing, unwrap(cache[n], int),
@@ -268,7 +268,7 @@ fib = (n: int, cache: [int|nothing] -> int)
 
 A cache can be implemented using a parallel task. Everytime cache is updated, it will call itself with the new state.
 
-```rust
+```perl
 CacheState = [string: int]
 cache = (cs: CacheState->)
 {
@@ -283,7 +283,7 @@ cache = (cs: CacheState->)
 
 ### Guessing game
 
-```rust
+```perl
 std = import("/http/github.com/dotLang/std")
 stdin = std..stdin
 stdout = std..stdout
@@ -307,65 +307,4 @@ main = fn
 				  ][true]()
 	})
 }
-```
-
-
-
-
-
-```
-#File1 module
-refs = import("/src/main")
-MapHelper = import(refs..std_map)
-main = fn( -> int ) { 0 } #this is a comment
-```
-
-```rust
-#File1 module
-refs = import("/src/main")
-MapHelper = import(refs..std_map)
-main = fn( -> int ) { 0 } #this is a comment
-```
-
-```swift
-#File1 module
-refs = import("/src/main")
-MapHelper = import(refs..std_map)
-main = fn( -> int ) { 0 } #this is a comment
-```
-
-```perl
-#File1 module perl
-refs = import("/src/main")
-MapHelper = import(refs..std_map)
-main = fn( -> int ) { 0 } #this is a comment
-```
-
-```perl6
-#File1 module perl
-refs = import("/src/main")
-MapHelper = import(refs..std_map)
-main = fn( -> int ) { 0 } #this is a comment
-```
-
-
-```js
-#File1 module
-refs = import("/src/main")
-MapHelper = import(refs..std_map)
-main = fn( -> int ) { 0 } #this is a comment
-```
-
-```c
-#File1 module
-refs = import("/src/main")
-MapHelper = import(refs..std_map)
-main = fn( -> int ) { 0 } #this is a comment
-```
-
-```bash
-#File1 module
-refs = import("/src/main")
-MapHelper = import(refs..std_map)
-main = fn( -> int ) { 0 } #this is a comment
 ```
