@@ -181,7 +181,7 @@ innerEval = fn(exp: Expression -> float)
 
 ```perl
 quickSort = fn(list:[int], low: int, high: int -> [int])
-
+{
     ifElse(high<low, list, fn{	
         mid_index = (high+low)/2
         pivot = list[mid_index]
@@ -202,20 +202,20 @@ A function which accepts a list of numbers and returns sum of numbers.
 ```perl
 sum = (data: [int] -> int)
 {
-  calc = (index: int, sum: int -> int)
-  {
-    iElse(index >= length(data), fn{sum}
-        fn{calc(index+1, sum + data[index]})()
-  }
+    calc = (index: int, sum: int -> int)
+    {
+        iElse(index >= length(data), fn{sum}
+            fn{calc(index+1, sum + data[index]})()
+    }
   
-  calc(0,0)
+    calc(0,0)
 }
 ```
 
 ## Digit extractor
 
-A function which accepts a number and returns it's digits in a sequence of characters.
-Generally for this purpose, using a linked-list is better because it will provide better performance.
+A function which accepts a number and returns its digits in a sequence of characters.
+Generally for this purpose, using a linked-list is better because it will provide better performance, but we are using recursion to show how it works.
 
 ```perl
 extractor = (n: number, result: string -> string)
@@ -261,23 +261,6 @@ fib = (n: int, cache: [int|nothing] -> int)
 
 	        seq_final2[n-1] + seq_final2[n-2]
         })
-}
-```
-
-## Cache
-
-A cache can be implemented using a parallel task. Everytime cache is updated, it will call itself with the new state.
-
-```perl
-CacheState = [string: int]
-cache = (cs: CacheState->)
-{
-    request = pick(CacheStoreMessage)
-    new_cache_state = update(cs, request)
-    query = receive(CacheQueryMessage)
-    result = lookup(new_cache_state, query)
-    send(Message(my_wid, query.sender_wid, result))
-    cache(new_cache_state)
 }
 ```
 
