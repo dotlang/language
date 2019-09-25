@@ -11,6 +11,8 @@ drawCircle = fn(s: Circle, c: Canvas, f: float -> int) {...}
 drawSquare = fn(s: Square, c: Canvas, f: float -> int) {...}
 
 drawFunction = fn(Canvas, float -> int)
+
+#function to get another function to draw the given shape
 getShape = fn(name: String -> drawFunction) 
 {
     ["Circle": fn{
