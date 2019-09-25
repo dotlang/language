@@ -12,15 +12,15 @@
 
 **Examples**
 
-```swift
+```perl
 #A
 LinkedList = fn(T: type -> type)
 {
-	Node = struct (
-		data: T,
-		next: Node|nothing
-	)
-	Node|nothing
+    Node = struct (
+        data: T,
+        next: Node|nothing
+    )
+    Node|nothing
 }
 
 process = fn(x: LinkedList(int) -> int)
@@ -59,7 +59,7 @@ result = push(int_var, int_stack)
 
 **Examples**
 
-```swift
+```perl
 #A
 Socket = import("../core/st/socket")
 
@@ -100,7 +100,7 @@ Set, process, my_data = imported_module..{SetType, processFunc, my_data}
 
 **Examples**
 
-```swift
+```perl
 _ := process(10, 20)
 
 chFunc = createChannel(int, 10)
