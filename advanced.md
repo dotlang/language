@@ -27,7 +27,8 @@ process = fn(x: LinkedList(int) -> int)
 process = fn(T: type, ll: LinkedList(T) -> ...
 
 process = (T: type, data: List(T) -> float) ...
-pointer = process(int, _) #valid, type of pointer is fn(int, List(int)->float)
+#type of pointer is fn(int, List(int)->float)
+pointer = process(int, _) 
 
 process = fn(T: type, x: [T], index: int -> T) { x[index] }
 
@@ -60,13 +61,12 @@ result = push(int_var, int_stack)
 
 ```swift
 #A
-Socket = import("/core/st/socket")
 Socket = import("../core/st/socket")
 
 #B
-Module = import("/http/github.com/net/server/branch1/dir1/dir2/module") #you need to specify branch/tag/commit name here
+Socket = import("/core/st/socket")
 
-base_cassandra = "/http/github/apache/cassandra/mybranch"`
+base_cassandra = "/path/to/cassandra"
 
 #you can use a string literals expression for import path
 Module = import(base_cassandra + "/path/module") 
@@ -120,7 +120,8 @@ chFunc: fn(data: string|nothing, extra:int|nothing-> string)
 #B
 #do any of below operations if the corresponding channel is ready
 #result will be the data read/written
-#makeTimeout creates a timeout channel which after 100ms, returns nothing and unblocks select operation
-#defaultChannel creates an always ready channel so if none of the other operations are ready, it will return 200 as result
+#makeTimeout creates a timeout channel which after 100ms, returns nothing and unblocks 
+#select operation, defaultChannel creates an always ready channel so if none of the other 
+#operations are ready, it will return 200 as result
 result = chFunc1(nothing, _) /// chFunc2(nothing, _) /// chFunc3(data, _) /// makeTimeout(100) /// defaultChannel(200)
 ```
