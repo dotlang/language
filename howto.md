@@ -157,8 +157,9 @@ Expression = int|NormalExpression
 
 eval = fn(input: string -> float) 
 {
-  exp = parse(input) #assume we already have this
-  innerEval(exp)
+	#assume we already have parse function
+	exp = parse(input)
+	innerEval(exp)
 }
 
 innerEval = fn(exp: Expression -> float) 
@@ -180,7 +181,7 @@ innerEval = fn(exp: Expression -> float)
 
 ```rust
 quickSort = fn(list:[int], low: int, high: int -> [int])
-{
+
     ifElse(high<low, list, fn{	
         mid_index = (high+low)/2
         pivot = list[mid_index]
@@ -334,11 +335,19 @@ main = fn( -> int ) { 0 } #this is a comment
 ```
 
 ```perl
-#File1 module
+#File1 module perl
 refs = import("/src/main")
 MapHelper = import(refs..std_map)
 main = fn( -> int ) { 0 } #this is a comment
 ```
+
+```perl6
+#File1 module perl
+refs = import("/src/main")
+MapHelper = import(refs..std_map)
+main = fn( -> int ) { 0 } #this is a comment
+```
+
 
 ```js
 #File1 module
