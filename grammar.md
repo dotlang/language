@@ -19,15 +19,14 @@ Result  ::= component1 ( component2 | component3 ) | component4 | [component5] c
 ## Main parts
 
 ```ebnf
-SourceFile              ::= Module  
 Module                  ::= ( ImportDecl | TypeDecl | BindingDecl )*  
 ```
 
 ## Naming basics
 
 ```ebnf
-TypeName                ::= [UNDERSCORE] CAPITAL_LETTER CHAR*
-BindingName             ::= [UNDERSCORE] (CHAR|'_')*
+TypeName                ::= CAPITAL_LETTER CHAR*
+BindingName             ::= ['_test'] (CHAR|'_')*
 ModuleAlias             ::= (CHAR|'_')*
 ```
 
@@ -36,9 +35,9 @@ ModuleAlias             ::= (CHAR|'_')*
 ```ebnf
 ImportDecl              ::= ImportAliasDecl | ImportSelectiveDecl  
 ImportAliasDecl         ::= [ ModuleAlias '=' ] Import  
-Import                  ::= 'import' '(' StringLiteral ')'
+Import                  ::= 'import' '(' ImportString ')'
 ImportSelectiveDecl     ::= { BindingName } '=' Import '..' '{' { BindingName } '}'
-StringLiteral           ::= STRING | BindingName | STRING '+' StringLiteral       
+ImportString            ::= STRING | BindingName | STRING '+' StringLiteral       
 ```
 
 ## Type Declaration
