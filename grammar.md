@@ -43,9 +43,9 @@ ImportString            ::= STRING | BindingName | STRING '+' StringLiteral
 ## Type Declaration
 
 ```ebnf
-TypeDecl                ::= TypeName (':'|'=') Type
-Type                    ::= PrimitiveType | StructType | UnionType | FnType | SeqType | MapType | EnumType | TypeName
-PrimitiveType           ::= 'int' | 'float' | 'string' | 'char' | 'byte' | 'bool' | 'nothing' | 'type'
+TypeDecl                ::= TypeName (':'|'=') TypeLiteral
+TypeLiteral             ::= PrimitiveType | StructType | UnionType | FnType | SeqType | MapType | EnumType | TypeName
+PrimitiveType           ::= 'int' | 'float' | 'string' | 'char' | 'byte' | 'bool' | 'nothing'
 StructType              ::= 'struct' '(' FieldList ')'
 FieldList               ::= { [ Identifier ':' ] Type }
 UnionType               ::= (Type '|' Type) | (Type '|' UnionType)
@@ -58,8 +58,8 @@ EnumType                ::= 'enum' SeqLiteral
 ## Binding Declaration
 
 ```ebnf
-BindingDecl             ::= { BindingNameList } ('='|':=') Expression
-BindingNameList         ::= BindingName [ ':' Type ]
+BindingDecl             ::= { BindingNameItem } '=' Expression
+BindingNameItem         ::= BindingName [ ':' Type ] | '_'
 Expression              ::= EqExpression     { ('and'|'or') EqExpression }
 EqExpression            ::= CmpExpression    { ('=='|'!=') CmpExpression }
 CmpExpression           ::= ShiftExpression  { ('>'|'<'|'>='|'<=') ShiftExpression }
@@ -72,7 +72,7 @@ PrimaryExpression       ::= Literal | Identifier | StructAccessExpression | MapS
                                 ModuleAccessExpression | FnCallExpression | StructExpression | LambdaCreatorExpression | FnDeclaration
 StructAccessExpression  ::= Expression '.' Identifier
 MapSeqAccessExpression  ::= Expression '[' Expression ']'
-ModuleAccessExpression  ::= ( Import | Identifier ) '..' Expression
+ModuleAccessExpression  ::= ( Import | Identifier ) '..' Identifier
 FnCallExpression        ::= Expression '(' { Expression } ')'
 StructExpression        ::= ( TypeName | StructType) '(' FieldValueList ')'
 FieldValueList          ::= { [ Identifier ':' ] Expression }
@@ -82,3 +82,9 @@ FnDeclaration           ::= 'fn' ['(' { Identifier ':' Type } '->' Type ')'] '{'
 Literal                 ::= IntLiteral | FloatLiteral | CharLiterl | StringLiteral | NothingLiteral | 
                                 BoolLiteral | SeqLiteral | MapLiteral | StructLiteral | TypeLiteral
 ```
+
+
+# To Be Added Later
+
+- Generics
+- Concurrency
