@@ -33,7 +33,7 @@
 11. `_`   Place-holder (lambda creator and assignment)
 12. `:=`  Parallel execution
 13. `..`  Access inside module
-14. `///` Select (oncurrency)
+14. `///` Select (concurrency)
 
 ## Reserved keywords
 
