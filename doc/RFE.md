@@ -797,5 +797,42 @@ suppose that I want to implement `///`: I will need to call ch functions and pas
 so I will need them to return! if they don't return, things will be complicated.
 lets focus on this later.
 
+N - Can we define a generic function that can accept any function?
+e.g. a logger function/auth/validators/...
+we can simple define some pre-defined functions (generic) and use them.
+e.g.
+`fn1 = fn(x:T, T: type -> nothing)`
+`fn2 = fn(x:T, y:U, T: type, U: type, V:type -> V)`
+`logger = fn(f: T, T: type -> ?`
+it makes things complicated.
+and we don't support generics at runtime.
+example: a method tha is supposed to process some data, also have a validator for them, which is optional.
+`...validator: fn(x:int->boolean)|nothing...`
+how can I call validator only if it is not nothing?
+write a hlper function. but then function should be generic. we don't want to write one function per use case.
+`optionalInvoke = (x: fn(???)|nothing, input:??? -> OUT_TYPE)... if x is nothing then return nothing, else call x`
+either we have to:
+1. have a notation which is nothing-aware
+2. have generic variadic functions -> this makes things complicated but will also be useful for other cases lokie logging
+`x = y // 9`
+`//` is applied on two values and checks for nothing
+`result = nothing // x(data)`
+no. this is confusing.
+`result = x // nothing // x(data)`
+`result = [fn{nothing}, fn{x(data)}][isNothing(x)]()`
+`result = checked(x, fn{x(data)})`
+```
+checked = fn(t:T|nothing, result: fn(->U), T: type, U: type -> U|nothing) 
+{
+[fn{nothing}, result][isNothing(t)]()	
+}
+```
+But here we are calling `x(data)`. Is that ok?
+correct way is to write:
+```
+tryInvoke1(x, data)
+tryInvoke1 = (x: fn(T->U)|nothing, input:T -> U) 
+```
+
 ? - Module alias. they will be used a lot.
 maybe we should define their own naming convention
