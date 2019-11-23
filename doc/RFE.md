@@ -836,3 +836,8 @@ tryInvoke1 = (x: fn(T->U)|nothing, input:T -> U)
 
 ? - Module alias. they will be used a lot.
 maybe we should define their own naming convention
+
+? - Our goal is to minimize number of stuff the developer needs to keep in their head
+
+? - Maybe we also need some helpers to make writing common codes easier.
+e.g. if/else
