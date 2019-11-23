@@ -841,3 +841,25 @@ maybe we should define their own naming convention
 
 ? - Maybe we also need some helpers to make writing common codes easier.
 e.g. if/else
+
+? - for values we have `x//1` so we take x or if it is nothing, we take 1.
+what about functions? is there an easy way to do this?
+if it is nothing -> use this value
+if it is not -> just call it
+`result = func1(1,2,3)//0`
+`result = (func1//fn{0})(1,2,3)` but this is not correct. 
+`result = func1//(1,2,3)` this will return nothing if func1 is nothing, otherwise will make the call
+`result = func1//(1,2,3)//0` but it is not intuitive
+`result = func1(1,2,3)//0?`
+function or nothing is not a good idea maybe
+maybe it should always be a function and you can pass an actual function or a simple `fn{nothing}` for it.
+another solution is ifelse or `?:` operator.
+`X//Y` says if x is nothing use Y. but what if it is not?
+`result = func1//(1,2,3)//0` but it is not intuitive
+`result = func1//0//(1,2,3)` not intuitive
+`result = func1?(1,2,3)`
+or we can just say optional functions can be called. and result will be nothing if they are nothing.
+we can say, nothing can be a function that accepts any number/type of inputs and returns nothing.
+`x = nothing`
+`is_nothing = x(1,2,3,4,"A")`
+
