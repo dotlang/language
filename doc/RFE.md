@@ -862,4 +862,26 @@ or we can just say optional functions can be called. and result will be nothing 
 we can say, nothing can be a function that accepts any number/type of inputs and returns nothing.
 `x = nothing`
 `is_nothing = x(1,2,3,4,"A")`
+but this is super confusing. nothing is a function ...
+`x = func1 // func2 // ???`
+what if we make it the other way around: if func1 is nothing then use X, otherwise run this piece of code (which calls fn)
+`r = getValueIfNull(func1, 10) // func1(10,20,30)`
+```
+getValueIfNull = fn(x: T|nothing, default_value: U, T: type, U: type -> U|nothing) {
+	[nothing, default_value][isNull(x)]
+}
+```
+so, if func1 is nothing, we will have 10, otherwise getValueIfNull will return nothing. in this case, we will make the call.
+if func1 is not nothing, this will return nothing, which will cause the call.
+we should find a better name for this function.
+so, basically we are swapping. nothing becomes a valid value, otherwise, will return nothing.
+we swap valid with nothing and nothing with some value.
+`swapNothing`?
 
+? - When we see this `location = Point(x:10, y:20, data:1.19)`
+how do we know whether it is a struct or a generic function call?
+if we are allowed to write `location = Point(10, 20, 1.19)` then this becomes a bit more complicated.
+what about using `{}` for structs?
+`location = Point{x:10, y:20, data:1.19}`
+pro: differentiate from generic functions
+cons: will be same as code blocks
