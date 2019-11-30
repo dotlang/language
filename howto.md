@@ -141,7 +141,11 @@ checkedInvoke = fn(t:T|nothing, result: fn(->U), T: type, U: type -> U|nothing)
 
 And this is how you use this function:
 ```perl
-result = checkedInvoke(validator, fn{tryInvoke1(validator, data)})
+NopFunc1 = fn(input: T, T: type -> nothing)
+NopFunc2 = fn(input1: T, input2: U, T: type, U: type -> nothing)
+NopFunc3 = fn(input1: T, input2: U, input3: V, T: type, U: type, V: type -> nothing)
+...
+result = (validator//NopFunc3)(x, y, z)
 ```
 
 # Examples
