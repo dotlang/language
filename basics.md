@@ -23,7 +23,7 @@
 01. `#`   Comment
 02. `.`   Access struct members
 03. `()`  Function declaration and call, struct declaration and literals
-04. `{}`  Code block, selective import
+04. `{}`  Code block, multiple selection from module namespace
 05. `[]`  Sequence and hashMap
 06. `|`   Union data type 
 07. `->`  Function declaration
