@@ -834,15 +834,7 @@ tryInvoke1(x, data)
 tryInvoke1 = (x: fn(T->U)|nothing, input:T -> U) 
 ```
 
-? - Module alias. they will be used a lot.
-maybe we should define their own naming convention
-
-? - Our goal is to minimize number of stuff the developer needs to keep in their head
-
-? - Maybe we also need some helpers to make writing common codes easier.
-e.g. if/else
-
-? - for values we have `x//1` so we take x or if it is nothing, we take 1.
+N - for values we have `x//1` so we take x or if it is nothing, we take 1.
 what about functions? is there an easy way to do this?
 if it is nothing -> use this value
 if it is not -> just call it
@@ -877,6 +869,40 @@ we should find a better name for this function.
 so, basically we are swapping. nothing becomes a valid value, otherwise, will return nothing.
 we swap valid with nothing and nothing with some value.
 `swapNothing`?
+```
+r = swapNothing(func1, 10) // func1(10,20,30)
+swapNothing = fn(x: T|nothing, default_value: U, T: type, U: type -> U|nothing) {
+	[nothing, default_value][isNull(x)]
+}
+```
+BUT still func1 is not a pure function. it is function OR nothing.
+`x = int_or_nothing // 10` type of x will be int
+`r = swapNothing(func1, 10) // func1(10,20,30)` if func1 returns int, type of r will be int
+swapNothing returns `int|nothing` but problem is on the right side of `//` 
+we cannot simply invoke a `fn|nothing`
+invoking a `fn|nothing` is like referencing an object in java, there will be runtime error NPE at runtime if we make a mistake
+and compiler cannot do anything to prevent that.
+`func1//(1,2,3)` no
+`(func1//NopFunc3)(1,2,3)`
+one way: we define `NopFunc` functions that take 1,2,3... inputs and return nothing. 
+these can be defined in std.
+then we `//` with them. compiler should infer the argument types.
+```
+NopFunc1 = fn(input: T, T: type -> nothing)
+NopFunc2 = fn(input1: T, input2: U, T: type, U: type -> nothing)
+...
+(func1//NopFunc3)(1,2,3)
+```
+
+N - Module alias. they will be used a lot.
+maybe we should define their own naming convention
+But we use `..` for module aliases. which is different enough.
+
+N - Maybe we also need some helpers to make writing common codes easier.
+e.g. if/else
+
+
+? - Our goal is to minimize number of stuff the developer needs to keep in their head
 
 ? - When we see this `location = Point(x:10, y:20, data:1.19)`
 how do we know whether it is a struct or a generic function call?
@@ -885,3 +911,10 @@ what about using `{}` for structs?
 `location = Point{x:10, y:20, data:1.19}`
 pro: differentiate from generic functions
 cons: will be same as code blocks
+kotlin: `data class User(val name: String, val age: Int)`
+Scala: `case class Message(sender: String, recipient: String, body: String)`
+Oberon2: ```
+ObjectDesc* = RECORD
+		x-,y-: INTEGER;
+	END;
+```
