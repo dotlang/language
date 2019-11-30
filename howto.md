@@ -128,19 +128,6 @@ MapHelper = import(refs..std_map)
 Sometimes we need to have a generic function that can accept any other function (regardless of input count/type and output type). This is not directly possible in dotLang but there are other alternatives that can help in these cases. For example suppose that you have a function that accepts an optional validation function. If the function is provided, you want to call it, but if not, you want to ignore. You can define a generic function that can do this as here, we only care about the output of the validation function:
 
 ```perl
-nothingFunc1 = fn(useless:T, T: type -> nothing) { nothing }
-tryInvoke1 = (x: fn(T->U)|nothing, input:T -> U|nothing) 
-{
-	(x//nothingFunc1)(input)
-}
-checkedInvoke = fn(t:T|nothing, result: fn(->U), T: type, U: type -> U|nothing) 
-{
-	[fn{nothing}, result][isNothing(t)]()	
-}
-```
-
-And this is how you use this function:
-```perl
 NopFunc1 = fn(input: T, T: type -> nothing)
 NopFunc2 = fn(input1: T, input2: U, T: type, U: type -> nothing)
 NopFunc3 = fn(input1: T, input2: U, input3: V, T: type, U: type, V: type -> nothing)
