@@ -902,6 +902,10 @@ N - Maybe we also need some helpers to make writing common codes easier.
 e.g. if/else
 
 
+
+
+
+
 ? - Our goal is to minimize number of stuff the developer needs to keep in their head
 
 ? - When we see this `location = Point(x:10, y:20, data:1.19)`
@@ -913,8 +917,16 @@ pro: differentiate from generic functions
 cons: will be same as code blocks
 kotlin: `data class User(val name: String, val age: Int)`
 Scala: `case class Message(sender: String, recipient: String, body: String)`
-Oberon2: ```
+Oberon2: 
+```
 ObjectDesc* = RECORD
 		x-,y-: INTEGER;
 	END;
 ```
+
+? - rust has `?` which is a shortcut for error handling. shall we have the same?
+
+? - Can we have a `match` like rust?
+
+? - Not only dot is easy for users, it should also be easy for developers.
+so they should not need a lot to set up a dev env.
