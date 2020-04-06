@@ -930,3 +930,5 @@ ObjectDesc* = RECORD
 
 ? - Not only dot is easy for users, it should also be easy for developers.
 so they should not need a lot to set up a dev env.
+
+? - This can also be a good syntax `[a;b;c]` rather than `[a,b,c]`
