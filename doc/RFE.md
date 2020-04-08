@@ -924,11 +924,35 @@ ObjectDesc* = RECORD
 	END;
 ```
 
-? - rust has `?` which is a shortcut for error handling. shall we have the same?
-
 ? - Can we have a `match` like rust?
 
 ? - Not only dot is easy for users, it should also be easy for developers.
 so they should not need a lot to set up a dev env.
 
 ? - This can also be a good syntax `[a;b;c]` rather than `[a,b,c]`
+
+? - A dedicated syntax for error handling?
+Rust: `f.read_to_string(&mut s)?`
+Go2:
+```
+handle err {
+	return fmt.Errorf("copy %s %s: %v", src, dst, err)
+}
+check io.Copy(w, r)
+```
+we need to define a universal error structure, like Java (Exception) or Rust (`Result<T,E>`).
+and it should be nestable (like a linked list).
+and it should be extendable/composable (you should be able to mix multiple unrelated libraries each throwing their own errors).
+for example passing a function X to function `process` where X can throw an error.
+```
+error = struct(source: string, type: string, message: string, additional: string, nested_error: error)
+example of source: com.a.utils
+type:FileNotFound
+message: Path is invalid or file is missing
+additional: ...
+```
+and how do we deal with error?
+```
+result_or_error = process(data)
+hasType(result_or_error, error) result_or_error }
+```
