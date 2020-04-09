@@ -1,11 +1,11 @@
 
-? - Use protothreads for lightweight threads implementation
+N - Use protothreads for lightweight threads implementation
 
-? - Everything is a file
+N - Everything is a file
 Use this for stdio, sockets, ... 
 inspire from linux Kernel
 
-? - We can add a built in function to convert between struct and json.
+N - We can add a built in function to convert between struct and json.
 
 Y - Builtin support for testing and doc
 compiler will drop any unused function in the final output. 
@@ -810,7 +810,7 @@ example: a method tha is supposed to process some data, also have a validator fo
 `...validator: fn(x:int->boolean)|nothing...`
 how can I call validator only if it is not nothing?
 write a hlper function. but then function should be generic. we don't want to write one function per use case.
-`optionalInvoke = (x: fn(???)|nothing, input:??? -> OUT_TYPE)... if x is nothing then return nothing, else call x`
+`optionalInvoke = (x: fn(???)|nothing, input:XYZ -> OUT_TYPE)... if x is nothing then return nothing, else call x`
 either we have to:
 1. have a notation which is nothing-aware
 2. have generic variadic functions -> this makes things complicated but will also be useful for other cases lokie logging
@@ -924,8 +924,6 @@ ObjectDesc* = RECORD
 	END;
 ```
 
-? - Can we have a `match` like rust?
-
 ? - Not only dot is easy for users, it should also be easy for developers.
 so they should not need a lot to set up a dev env.
 
@@ -1012,6 +1010,88 @@ what is the purpose of early return? to check for errors or validations.
 `exp || R` R can be a value that will be an error value that will be returned. but how can we refer to the current error then?
 `result = exp || fn(x:error->error)`
 if exp is of type `T|erro` we can be sure that type of result will be T.
+`result = exp "or in case of error run this and immediately return from current function the value you get" fn(x:error->error)`
+`result = exp orthrow funcErr(_)`
+`result = exp guard funcErr(_)`
+or maybe its better if we do not mix this with `=`:
+`result = getData(...)` this can be T or error
+`result guard funcError(_)`
+but the bad thing is again we will have to destruct result to make sure it is T now, while if we combine it with `=` compiler can do that for us
+`result = exp guard funcError(_)`
+basically this is a combination of catch and return.
+`result = exp or raise funcError(_)`
+and we can say error return can only be done via raise keyword. but why limit that?
+we should be able to mix this: for example if a function input is int, and function B reutrns int or error, I should be able to write:
+`functionA(functionB(1,2,3) || makeError(_))`
+maybe we should not allow for error customization. just return the error. if you want customization, then do it properly.
+`x = @exp` meaning `if exp is int|error, if it is error then return it and exit immediately, otherwise, save int part in x`
+but it can be confusing when mixed.
+`x = @exp.field` now what part does `@` apply to?
+if we treat it like a function then this will be resolved, but we will be moved back to square one:
+1. can we mix multiple `@`s?
+2. can we use `@` with concurrency stuff?
+3. can we use `@` in struct init function or tests?
+4. what if inside`@` is not union of error?
+5. can I pass `@` as a lambda to a function?
+6. can I use `@` with other types as long as handler matches?
+`@ = fn(data: T| error -> T)...`
+no. making this a function will make a lot of confusion.
+it should be an operator. 
+defining an operator specifically for a single type looks like a lot but error handling is important.
+q: how can we simplify error type?
+and just like other operators like math or `.`, this operator has its own precedence:
+`@exp` means if exp is an error, then return it immediately, otherwise unwrap it.
+```
+error = struct(source: string, type: string, message: string, additional: string, nested_error: error)
+```
+golang defines it as an interface that has an `Error` method. but we don't have inheritance.
+maybe with generics?
+```
+error = fn(T: type -> type)
+{
+    Result = struct (
+        data: T,
+        next: Result|nothing
+    )
+    Result
+}
+```
+or maybe we can use type:
+`error = struct(code: type, data: string, nested_error: error)`
+it we want to have a dedicated operator, maybe it makes sense to have dedicated struct too.
+a struct that has a type, so client can use compiler tools to make sure it is checking correctly.
+`saveData = fn(... -> int | float | InvalidArgumentException | FileNotFoundException)`
+and we have:
+`InvalidArgumentException = struct(error: error, ...)`
+`FileNotFoundException = struct(error: error, ...)`
+`x = @saveData(1,2,3)` now x will be `int|float`
+how do we define an exception that is gonna be filtered by `@`?
+if it is a type with name ending with `Exception` or `Error`? not two options. 
+Error is more general.
+**PROPOSAL**
+1. An error type is any named type that ends with `Error`
+2. `@` operator works like `@expression` and if expression is an error type, returns it immediately. otherwise unwraps it.
+
+? - Can we have a `match` like rust?
+it can be used with enums and unions and other values.
+```
+//with unions
+result = match exp
+	[
+	 int : (x: int -> string ) { ... },
+	 string: (y: string -> string ) {...}
+	]
+//with values
+result = match exp
+[
+	value1 : fn{1},
+	value2:  fn{2}
+]
+```
+so we have `reulst = match exp hashMap`
+where hashMap's keys are types or values and values are functions that all return the same thing.
+in case of types, those functions have a single input of type provided.
+can't we redue this to a map lookup? what we already have?
 
 
 
