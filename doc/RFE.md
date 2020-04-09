@@ -954,5 +954,47 @@ additional: ...
 and how do we deal with error?
 ```
 result_or_error = process(data)
-hasType(result_or_error, error) result_or_error }
+hasType(result_or_error, error) @ enrichError(result_or_error, "Failed!")
 ```
+This means support for early return.
+```
+result_or_err@err //err is a keyword
+result_or_err@enrich(err, "Failed")
+result_or_err: error? //syntax for type check: var:type? gives you a boolean
+res_or_err: error? => enrich(res_or_err, "Failed") compiler will automatically cast r_or_e to error on the right side of => , here we have 4 new things: ?, => and early return concept and compiler auto-cast
+hasType(r_or_e, error) => enrich(r_or_e, "Failed") //her we have 3 new things =>, early return concept and compiler auto-cast
+getTyped(r_or_e, error) 
+```
+1. error handling should be done asap, this helps readability and compiler output generation and performance
+so instead of `if (x) {.....} else return error` we should do `if (!x) return error; othertiwse ...`
+an example with single-return and guard clauses:
+```
+public Foo merge (Foo a, Foo b) {
+    Foo result;
+    if      (a == null) result = b;
+    else if (b == null) result = a;
+    else
+    {
+        result = // complicated merge code goes here.
+    }
+
+    return result;
+  }
+```
+a problem with this is mutable state. maybe we can fix this with an uninitialised var which is only assigned once.
+`try(result_or_e, fn(e: error -> error) { error("A", e.type, ...) })`
+`try(result_or_e, { enrichError(result_or_e, "Failed") })`
+`result = @try(process(data), enrichError(_, "Failed"))` this calls process(data), if result is error, calls the lambda (enrich) and does early return with the result. otherwise, assigns result fo result (which is not an error)
+`result = @(process(data), enrichError(_, "Failed"))`
+`result = @(expression, error_lambda)`
+`result = @(exp, fn(e: error -> error)`
+`@ = fn(data: T|error, handler: fn(error->error), T: type -> T)`
+`@ = fn(data: T|U, handler: fn(U->U), T: type, U: type -> T)` but this is too generic and not very useful
+questions:
+1. can we mix multiple `@`s?
+2. can we use `@` with concurrency stuff?
+3. can we use `@` in struct init function or tests?
+4. what if inside`@` is not union of error?
+5. can I pass `@` as a lambda to a function?
+
+
