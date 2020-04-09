@@ -135,6 +135,18 @@ NopFunc3 = fn(input1: T, input2: U, input3: V, T: type, U: type, V: type -> noth
 result = (validator//NopFunc3)(x, y, z)
 ```
 
+## Pattern matching
+
+Many languages have `switch, case` or `match` keyword to do pattern matching. in dotLang we use hashmaps as a simple alternative.
+
+```perl
+int_result = 
+[
+	value1: fn{1},
+	value2: fn{2}
+][exp]()
+```
+
 # Examples
 
 ## Empty application
