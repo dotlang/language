@@ -987,7 +987,6 @@ a problem with this is mutable state. maybe we can fix this with an uninitialise
 `result = @try(process(data), enrichError(_, "Failed"))` this calls process(data), if result is error, calls the lambda (enrich) and does early return with the result. otherwise, assigns result fo result (which is not an error)
 `result = @(process(data), enrichError(_, "Failed"))`
 `result = @(expression, error_lambda)`
-`result = @(exp, fn(e: error -> error)`
 `@ = fn(data: T|error, handler: fn(error->error), T: type -> T)`
 `@ = fn(data: T|U, handler: fn(U->U), T: type, U: type -> T)` but this is too generic and not very useful
 questions:
@@ -996,5 +995,24 @@ questions:
 3. can we use `@` in struct init function or tests?
 4. what if inside`@` is not union of error?
 5. can I pass `@` as a lambda to a function?
+6. can I use `@` with other types as long as handler matches?
+using parens gives the impression that this is a function and raises all of above questions.
+`result = expression => enrichError(_, "Failed")`
+visually it is not very intuitive
+`result = expression catch lambda_accepting_error`
+why give user ability to write a function! just create an error struct (pointing to the current error) and return
+`result = expression => (source: "A", type: "B", ...)`
+`result = expression || error(source: "A", type: "B", ...)`
+`result = expression || makeError("A", "B", "Data", _)`
+so left side of `||` is `T|error` and right side if `fn(x:error->error)`?
+cant we use the same thing for early return? assuming we don't need a new notation/syntax
+`isError(expression) || makeError("A", "B", "Data", ?)`
+what is the purpose of early return? to check for errors or validations. 
+`expression orelse error()`
+`exp || R` R can be a value that will be an error value that will be returned. but how can we refer to the current error then?
+`result = exp || fn(x:error->error)`
+if exp is of type `T|erro` we can be sure that type of result will be T.
+
+
 
 
