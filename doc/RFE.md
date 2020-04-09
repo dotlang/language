@@ -901,14 +901,57 @@ But we use `..` for module aliases. which is different enough.
 N - Maybe we also need some helpers to make writing common codes easier.
 e.g. if/else
 
+N - This can also be a good syntax `[a;b;c]` rather than `[a,b,c]`
 
+N - Can we have a `match` like rust?
+it can be used with enums and unions and other values.
+```
+//with unions
+result = match exp
+	[
+	 int : (x: int -> string ) { ... },
+	 string: (y: string -> string ) {...}
+	]
+//with values
+result = match exp
+[
+	value1 : fn{1},
+	value2:  fn{2}
+]
+```
+so we have `reulst = match exp hashMap`
+where hashMap's keys are types or values and values are functions that all return the same thing.
+in case of types, those functions have a single input of type provided.
+can't we redue this to a map lookup? what we already have?
+```
+//with unions
+result = 
+	[
+	 int : (x: int -> string ) { ... },
+	 string: (y: string -> string ) {...}
+	][typeof(exp)]
+//with values
+result = 
+[
+	value1: fn{1},
+	value2: fn{2}
+][exp]()
+```
 
+N - swift has argument label
+```swift
+func greet(_ person: String, from town: String) -> String {
+    return "Hello \(person)!  Glad you could visit from \(town)."
+}
 
+greet("Bill", from: "Cupertino")
+```
+now above function call reads very much like english
+```
+find = fn(data: string, in target: string)...
+```
 
-
-? - Our goal is to minimize number of stuff the developer needs to keep in their head
-
-? - When we see this `location = Point(x:10, y:20, data:1.19)`
+N - When we see this `location = Point(x:10, y:20, data:1.19)`
 how do we know whether it is a struct or a generic function call?
 if we are allowed to write `location = Point(10, 20, 1.19)` then this becomes a bit more complicated.
 what about using `{}` for structs?
@@ -923,11 +966,16 @@ ObjectDesc* = RECORD
 		x-,y-: INTEGER;
 	END;
 ```
+struct init without `:` should be forbidden.
+function call with `:` should be forbidden.
+generic functions all have a type argument.
+structs have all values as arguments
+
+
+? - Our goal is to minimize number of stuff the developer needs to keep in their head
 
 ? - Not only dot is easy for users, it should also be easy for developers.
 so they should not need a lot to set up a dev env.
-
-? - This can also be a good syntax `[a;b;c]` rather than `[a,b,c]`
 
 ? - A dedicated syntax for error handling?
 Rust: `f.read_to_string(&mut s)?`
@@ -1071,28 +1119,4 @@ Error is more general.
 **PROPOSAL**
 1. An error type is any named type that ends with `Error`
 2. `@` operator works like `@expression` and if expression is an error type, returns it immediately. otherwise unwraps it.
-
-? - Can we have a `match` like rust?
-it can be used with enums and unions and other values.
-```
-//with unions
-result = match exp
-	[
-	 int : (x: int -> string ) { ... },
-	 string: (y: string -> string ) {...}
-	]
-//with values
-result = match exp
-[
-	value1 : fn{1},
-	value2:  fn{2}
-]
-```
-so we have `reulst = match exp hashMap`
-where hashMap's keys are types or values and values are functions that all return the same thing.
-in case of types, those functions have a single input of type provided.
-can't we redue this to a map lookup? what we already have?
-
-
-
 
