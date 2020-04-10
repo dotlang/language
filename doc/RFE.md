@@ -1059,6 +1059,21 @@ and a new hidden rule will make those stuff confusing.
 and having labels is also confusing. it promotes using one field for multiple purposes.
 this does not exist in any other lang except Swift
 
+N - Can we use `_` in struct initialization to automatically define a lambda?
+`ptGenerator = Point(x:10, y:20, z:_)`
+what would be the advantage?
+
+Y - notation to edit a struct should be better. having to re-write all fields is daunting.
+`another_point = Point(x:11, y:my_point.y + 200)`
+we can use `//`:
+`another_point = Point(x:10) // my_point` but `Point(x:10)` is not valid.
+`another_point = Point(my_point, x:10)` you can mention any number of structs of the same type
+they will all be merged
+
+N - Why not properly cast type name and value for nothing and error?
+`Nothing` will be the type and `nothing` the value
+`Error` will be the type and `error` the no-op value
+because these will be used alot and all lowercase makes them easier to type.
 
 
 
@@ -1272,10 +1287,97 @@ but we should be this simpler. no multiple fns. only one fn. no input. output is
 what if we don't want to make any changes?
 `int_Var = @[processData(1,2,3)]`
 ok. let's use `{}` for this.
-`int_Var = @{processData(1,2,3)}`
-`int_var = @{processData(1,2,3) fn{...} }`
+`int_Var = @{processData(1,2,3)}` in case of error, return the error without any change
+`int_var = @{processData(1,2,3) fn{...} }` 
+still I wish it could be simpler.
+we want sth that:
+1. is composable
+2. visually has borders
+3. allows you to just return error or return sth else using your code
+`int_var = processData(1,2,3)@`
+example: a web server during start up wants to set up a socket with specified port.
+if port is already in use, an error will be given to web server. now what should web server do with that?
+```
+socket = openSocket(port_number) //now if socket is already in use, I want to first log it and then return InvalidPort
+```
+but whoever throws the error should log it. not the higher level.
+this operator encourages people to ignore errors which is bad. so we should be very careful.
+it should do the minimum which is absolutely needed. anything else: just do it the normal way
+we can resolve the need to change by having just one error type.
+so `error` becomes a core type. defined in core but not built-in
+`error = struct (source: string, message: string, extra: string, parent: error)`
+`socket = @openSocket(port_number)` this will create a new child for error, automatically set its attributes and set its parent to 
+the error returned from openSocket function and return the result.
+`error = struct (type: string, source: string, message: string|nothing, cause: error)`
+sometimes we need to actually do sth based on the error type.
+for example if it is http404 we should exit but if it is xyz we should retry.
+so we need a type that uniquely determines the error.
+string is also ok but:
+1. it is not guaranteed to be unique
+2. it is difficult for compiler/ide to provide services before runtime. like code completion or making sure exception type is correct.
+but we said type, must be compile time! now, how can I use runtime variables of type type?
+`error = struct (key: type, message: string|nothing, cause: error|nothing)`
+`socket = @openSocket(port_number)` this will return error if any and immediately exit current function
+now, what if I want to return an error of type X if any error has happened?
+`socket = @{MyErrorType}openSocket(port_number)`
+if openSocket returns an error, a new error will be returned which wraps that error, with this new type: MyErrorType
+`socket = @{MyErrorType, "This is my error messsage"}openSocket(port_number)`
+can this be more elegant?
+`socket = @{error(MyErrorType, "My message", _)}openSocket(port_number)`
+`socket = openSocket(port_number)@error(MyErrorType, "My message")`
+it makes more sense to have the notation "after" function call, not before it.
+`socket = openSocket(port_number)catch(error(myErrorType, "My message"))`
+`socket = openSocket(port_number)throw{error(myErrorType, "My message")}` {} is confusing because people will think it is a code block
+`socket = openSocket(port_number)@myErrorType("My message")`
+`socket = openSocket(port_number)@`
+`result = expression@`
+`result = expression@CustomErrorType`
+or maybe we can create the error instance:
+```
+err = error(type: MyErrorCustom, message: "This is my error")
+result = expression@     //return the generated error
+result = expression@err  //return this value in case of error
+result = expression@MyErrorCustom  //wrap generated error in a new error of this type
+```
+**PROPOSAL2**
+1. There is a new core type: `error = struct (key: type, message: string|nothing, cause: error|nothing)`
+2. You can append an expression with `@` to indicate, if error happened, exit immediately and return the error as result
+3. `@` can be suffixed with a type or value to determine error type
+a nice advantage of this is that we can have early return with any type. because who can limit us to use a value of type `error` after `@`?
+`result = fnCall(1,2,3)@nothing`
+lets remove the case where we can specify a type after `@`. it is doable with `@err` model and if you're really interested in short code then just use `@`.
+**PROPOSAL2**
+1. There is a new core type: `error = struct (key: type, message: string|nothing, cause: error|nothing)`
+2. You can append an expression with `@` to indicate, if error happened, exit immediately and return the error as result
+3. `@` can be suffixed with a value to determine return value. if it is of `error` type, compiler will automatically set its `cause`.
+why a value? why not an expression?
+`result = fnCall(1,2,3)@makeError(4,5)`
+**PROPOSAL2**
+1. There is a new core type: `error = struct (key: type, message: string|nothing, cause: error|nothing)`
+2. You can append an expression with `@` to indicate, if error happened, exit immediately and return the error as result
+3. `@` can be suffixed with another expression to determine return value. if it is of `error` type, compiler will automatically set its `cause`.
+this can be easily used for any kind of validation which is primary use for early return.
+set up a validation function which returns error if data is invalid.
+like `nothing` we should have something like `err` as a no-op error instance to be used for quick cases.
+or maybe use `error` itself.
+in case you want to compose values using `@` you can use this:
+`result = process(1,2)@ + process(3,4)@`
+`result = process(1,2)@nothing + process(3,4)@nothing`
+what if the result is a function?
+`data = process(1,2)@getData(11)()` now, does getData return a function which we call and produce error value for process call?
+or maybe process returns `error|fn` and here we want to call the function?
+lets use `@[...]`
+`result = process(1,2)@ + process(3,4)@`
+`result = process(1,2)@[nothing] + process(3,4)@[nothing]`
+**PROPOSAL2**
+1. There is a new core type: `error = struct (key: type, message: string|nothing, cause: error|nothing)`.
+2. we also have a value `error` of error type which is a no-op error.
+3. at operator is used like these: `expression@` or `expression@[expression]`
+4. if left hand side expression resolves to an error, it will be returned (first case) or result of expression will be returned.
 
-? - Can we use `_` in struct initialization to automatically define a lambda?
-`ptGenerator = Point(x:10, y:20, z:_)`
+
+
 
 ? - If all options of a union have sth similar, can we use it without union dereferencing?
+for example if they are all functions that have no input but have different outputs.
+
