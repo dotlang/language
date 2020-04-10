@@ -204,6 +204,7 @@ hasType = fn(x: T|U, T: type, U: type -> bool) {
 4. You can use destruction to access unnamed fields inside a struct.
 5. You can add a function after definition of a struct type by `fn{...}` notation. This will be executed on each instantiation of that type and can be used for logging or validation purposes.
 6. Optional fields: When creating a value of struct type and don't specify value for fields which can be `nothing`, they will be set to `nothing`.
+7. Edit: You can create a new struct value based on one or more existing values. This will merge them all (`nothing`s will be overwritten with any existing value for the same field). (Example A).
 
 **Examples**
 
@@ -246,6 +247,10 @@ PointTemplate = struct(x:int, y:int)
         log("a new instance of point-template is created")
         validateCheck(x, y)
     }
+    
+#A
+another_point = Point(my_point, x:10)
+third_point = Point(point1, point2, point3, z: 10, delta: 99)
 ```
 
 ## Named types
