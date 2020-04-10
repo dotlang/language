@@ -203,6 +203,7 @@ hasType = fn(x: T|U, T: type, U: type -> bool) {
 3. You can define a struct type without a name (unnamed type).
 4. You can use destruction to access unnamed fields inside a struct.
 5. You can add a function after definition of a struct type by `fn{...}` notation. This will be executed on each instantiation of that type and can be used for logging or validation purposes.
+6. Optional fields: When creating a value of struct type and don't specify value for fields which can be `nothing`, they will be set to `nothing`.
 
 **Examples**
 
