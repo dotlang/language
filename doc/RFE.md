@@ -1207,6 +1207,17 @@ Error is more general.
 **PROPOSAL**
 1. An error type is any named type that ends with `Error`
 2. `@` operator works like `@expression` and if expression is an error type, returns it immediately. otherwise unwraps it.
+Maybe we can also allow changes with `@`
+`x = saveData(1,2,3)@[FileError: fn...`
+or maybe allow for a log or some other code. no change in the error, just log sth.
+`x=saveData(1,2,3)@fn(x: FileError|EmptyError ->){...}` 
+after `@` we can have a lambda. it will be called if it can accept the error.
+no this is too much.
+but still we need a notation that can be mixed
+e.g. `@f(@x, @y...)`
+`@x+@x`
+`@x.field` -> what is precedence of `@` vs dot?
+it is confusing to some extent but so it `+` in `1+x.t` which comes first?
 
 
 
