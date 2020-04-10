@@ -1207,6 +1207,7 @@ Error is more general.
 **PROPOSAL**
 1. An error type is any named type that ends with `Error`
 2. `@` operator works like `@expression` and if expression is an error type, returns it immediately. otherwise unwraps it.
+
 Maybe we can also allow changes with `@`
 `x = saveData(1,2,3)@[FileError: fn...`
 or maybe allow for a log or some other code. no change in the error, just log sth.
@@ -1218,7 +1219,63 @@ e.g. `@f(@x, @y...)`
 `@x+@x`
 `@x.field` -> what is precedence of `@` vs dot?
 it is confusing to some extent but so it `+` in `1+x.t` which comes first?
+but still it is a bit confusing. the concept of early return, hidden inside an operator.
+e.g. what if I pass a lambda which has this?
+```
+data = sortData(items, fn(x:int, y:int -> int) { @process(x) + @process(y) }
+```
+above means that the lambda can also return an error. 
+so, sortData may return that too! even though it is not aware of that.
+sortData is a function with output of type `[int]`
+so it has no idea about errors. 
+but it should. if not, then error becomes an invisible thing that is hidden from developer eyes.
+he sees a fn that returns an int, but it might also return other errors.
+another issue: we may need to re-shape error. 
+e.g. if divisionByZeroError has happened, I don't want to return it to caller, but I want to return InvalidArgError.
+```
+x = saveData(1,2,3)@  //this will return in case of error, without any change
+x = saveData(1,2,3)@SaveError(name: "A", type: "B", ...) //in case of error, return SaveError
+```
+q: how can I access the original error after `@`?
+q: this will reduce mixability.
+if we treat it like a fn, it can also cause confusions, but otoh above will be easy to achieve.
+`[]` is for seq and map and is already overloaded with semantics
+`{}` is supposed to only be for functions
+`<>`?
+something that is not like a function but explicitly determines the scope will be good.
+`[[...]]`
+maybe we can embed this in function call.
+```
+int_var = processData(1,2,3,4){}
+int_var = processData(1,2,3,4){ code to run if error happened result of which will return, like a catch }
+int_var = processData(1,2,3,4) {
+	
+}
+```
+no new notation! but still we need a notation to refer to the error from previous call.
+```
+int_var = processData(1,2,3,4) fn{ //function with no input and output inferred from code
+	
+}
+```
+if we put `fn{ ... }` in front of the call, then it will catch all errors.
+if we put `fn(x:int->int)` it will be called only if output is of type int.
+but this is too much flexibility which means too many moving parts -> lots of cases for orth.
+we should limit it so that it can be used only as much as absolutely needed.
+`int_var = processData(1,2,3)@MyError(code: "Err", message: "Error processing", source: _)`
+still confusing. what if I put a dot at the end? is it applied to `MyError`? or the whole thing?
+`int_var = @(processData(1,2,3), fn(x: MathError -> SaveError) { ...}, fn(x: IOError -> SaveError) { ... })`
+we have two error handler functions above.
+but we should be this simpler. no multiple fns. only one fn. no input. output is inferred:
+`int_var = @(processData(1,2,3), fn{...})`
+`int_var = @[processData(1,2,3) fn{...}]`
+what if we don't want to make any changes?
+`int_Var = @[processData(1,2,3)]`
+ok. let's use `{}` for this.
+`int_Var = @{processData(1,2,3)}`
+`int_var = @{processData(1,2,3) fn{...} }`
 
+? - Can we use `_` in struct initialization to automatically define a lambda?
+`ptGenerator = Point(x:10, y:20, z:_)`
 
-
-
+? - If all options of a union have sth similar, can we use it without union dereferencing?
