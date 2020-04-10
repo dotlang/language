@@ -1018,6 +1018,51 @@ we can write:
 `seq = fn(start:int, end:int)`
 `seqLen = fn(length:int)`
 
+N - Allow `|` notation for arg name (and struct fields)
+`seq = fn(start|length:int, end:int|nothing -> ...)`
+so start and length are labels pointing to the same thing.
+and if we allow/force arg name when calling function, it can also use any of these two names.
+with named args, we can never change function arg name but we have the same thing with structs.
+maybe we can transparently make struct and fn call args interchangeable.
+and allow above notation for struct too.
+
+N - struct use as function args
+the syntax is really similar. maybe we can merge them to simplify language and increase orthogonality.
+`process = fn(x:int, y:int -> int ) { x+y }`
+`process = fn(struct(x:int, y:int) -> int ) { x+y }`
+if we allow named args, what happens to function assignment?
+for example if I have `process = fn(x:int, y:int)`
+can I assign it to a variable of type `fn(a:int, b:int)`?
+There are many similarities between struct and fn args:
+- `|` notation (above item)
+- nothing default/optionals
+- visual similarity
+which one is the primary one? can we say fn args is a struct?
+can we make them interchangeable? 
+so we can call a fn with args or a struct
+q: what about args with one struct type input? won't it be confusing?
+maybe we can re-introduce struct destruction operator.
+but what problem are we solving? 
+- we want to unify two concepts so that number of concepts one needs to keep in mind decreases.
+Python: `myfun(1, *("foo", "bar"))`
+advantage: named arguments
+so we can write: `greet("A", from: "London")`
+code will be more readable.
+but if we do it, it should not be optional. it must be mandatory.
+so, we can say, all functions accepts structs as input. compiler provides syntax sugar so you dont need to have double parens.
+`process = func(x:int, y:int -> int)`
+`process = func(struct(int,int)(x:int, y:int) -> int) ...`
+`process(1,2)`
+`process(struct(int,int)(x:1, y:2))`
+but messing with functin type is confusing. we rely on fn type a lot.
+and a new hidden rule will make those stuff confusing.
+and having labels is also confusing. it promotes using one field for multiple purposes.
+this does not exist in any other lang except Swift
+
+
+
+
+
 
 
 ? - A dedicated syntax for error handling?
@@ -1162,37 +1207,6 @@ Error is more general.
 **PROPOSAL**
 1. An error type is any named type that ends with `Error`
 2. `@` operator works like `@expression` and if expression is an error type, returns it immediately. otherwise unwraps it.
-
-
-
-
-? - Allow `|`notation for arg name (and struct fields)
-`seq = fn(start|length:int, end:int|nothing -> ...)`
-so start and length are labels pointing to the same thing.
-and if we allow/force arg name when calling function, it can also use any of these two names.
-with named args, we can never change function arg name but we have the same thing with structs.
-maybe we can transparently make struct and fn call args interchangeable.
-and allow above notation for struct too.
-
-? - struct use as function args
-the syntax is really similar. maybe we can merge them to simplify language and increase orthogonality.
-`process = fn(x:int, y:int -> int ) { x+y }`
-`process = fn(struct(x:int, y:int) -> int ) { x+y }`
-if we allow named args, what happens to function assignment?
-for example if I have `process = fn(x:int, y:int)`
-can I assign it to a variable of type `fn(a:int, b:int)`?
-There are many similarities between struct and fn args:
-- `|` notation (above item)
-- nothing default/optionals
-- visual similarity
-which one is the primary one? can we say fn args is a struct?
-can we make them interchangeable? 
-so we can call a fn with args or a struct
-q: what about args with one struct type input? won't it be confusing?
-maybe we can re-introduce struct destruction operator.
-but what problem are we solving? 
-- we want to unify two concepts so that number of concepts one needs to keep in mind decreases.
-
 
 
 
