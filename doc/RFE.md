@@ -1,7 +1,11 @@
+X - Our goal is to minimize number of stuff the developer needs to keep in their head
 
-N - Use protothreads for lightweight threads implementation
+X - Not only dot is easy for users, it should also be easy for developers.
+so they should not need a lot to set up a dev env.
 
-N - Everything is a file
+X - Use protothreads for lightweight threads implementation
+
+X - Everything is a file
 Use this for stdio, sockets, ... 
 inspire from linux Kernel
 
@@ -971,11 +975,50 @@ function call with `:` should be forbidden.
 generic functions all have a type argument.
 structs have all values as arguments
 
+Y - Same as functions, allow if create a struct and don't set value for `|nothing` member, it will automatically be nothing.
 
-? - Our goal is to minimize number of stuff the developer needs to keep in their head
+N - variadic args
+Here https://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis
+author has suggested a very concise way of implementing APIs which are extendable, accept defaults and are easy to use.
+for example a config class and a set of lambdas which change sth in the config.
+this can be implemented via a sequence.
 
-? - Not only dot is easy for users, it should also be easy for developers.
-so they should not need a lot to set up a dev env.
+N - By using optional args, we have this:
+`seq = fn(start_or_length:int, end:int|nothing -> ...)`
+but argument name is not very clear.
+we want to have:
+`x = seq(5, 20)`
+or
+`x = seq(10)` from 1 to 10
+we cannot have two `seq` functions.
+if we accept structs as function input maybe we can do this:
+```
+seq = fn(start: int, end:int | length:int -> ...) {
+	//if input is lenght then ... else ...
+}
+```
+then you can call seq like: `seq(1,2)` or `seq(10)`.
+Like haskell:
+```
+fact :: Int -> Int 
+fact 0 = 1 
+fact n = n * fact ( n - 1 ) 
+```
+but we don't want to have multiple bodies for functions. so we have one body, with all alternate argument combinations.
+but using `|` can be confusing.
+```
+seq = fn(start: int, end:int) { ... } fn(length: int) { ... }
+```
+So `seq` is a function that has two bodies. because it can accept two input types.
+but this is soo confusing when combined with other stuff like lambda.
+if I write `seq(_,_)` and both bodies have two args, which one will it mean?
+no. let's don't add this new syntax which is completely new.
+`seq = fn(start_or_length:int, end:int|nothing -> ...)`
+we can write:
+`seq = fn(start:int, end:int)`
+`seqLen = fn(length:int)`
+
+
 
 ? - A dedicated syntax for error handling?
 Rust: `f.read_to_string(&mut s)?`
@@ -1119,4 +1162,38 @@ Error is more general.
 **PROPOSAL**
 1. An error type is any named type that ends with `Error`
 2. `@` operator works like `@expression` and if expression is an error type, returns it immediately. otherwise unwraps it.
+
+
+
+
+? - Allow `|`notation for arg name (and struct fields)
+`seq = fn(start|length:int, end:int|nothing -> ...)`
+so start and length are labels pointing to the same thing.
+and if we allow/force arg name when calling function, it can also use any of these two names.
+with named args, we can never change function arg name but we have the same thing with structs.
+maybe we can transparently make struct and fn call args interchangeable.
+and allow above notation for struct too.
+
+? - struct use as function args
+the syntax is really similar. maybe we can merge them to simplify language and increase orthogonality.
+`process = fn(x:int, y:int -> int ) { x+y }`
+`process = fn(struct(x:int, y:int) -> int ) { x+y }`
+if we allow named args, what happens to function assignment?
+for example if I have `process = fn(x:int, y:int)`
+can I assign it to a variable of type `fn(a:int, b:int)`?
+There are many similarities between struct and fn args:
+- `|` notation (above item)
+- nothing default/optionals
+- visual similarity
+which one is the primary one? can we say fn args is a struct?
+can we make them interchangeable? 
+so we can call a fn with args or a struct
+q: what about args with one struct type input? won't it be confusing?
+maybe we can re-introduce struct destruction operator.
+but what problem are we solving? 
+- we want to unify two concepts so that number of concepts one needs to keep in mind decreases.
+
+
+
+
 
