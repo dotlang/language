@@ -1500,6 +1500,65 @@ I should write a proper function like this:
 so that stuff like map of key to functions of different types becomes better handled.
 If all options of a union have sth similar, can we use it without union dereferencing?
 for example if they are all functions that have no input but have different outputs.
+rather than a map of `T` to `fn(T->U)` for example, we can have these as a list.
+this can make things less complicated.
+but how do we define that list?
+`MagicList = struct ( T: type, data: T, handler: (T->U), next: MagicList|nothing)`
+type of next, is MagicList of any type. we don't care. 
+this is fine for saving data or putting data there.
+but what about reading data from a magic list?
+suppose that I have `x: MagicList`, what can I do?
+`if x.data is of type G then call handler with this value and get U`
+but we don't have any idea what will U be. so how can we save U?
+`MagicList = struct ( T: type, U: type, data: T, handler: (T->U), next: MagicList(?, U)|nothing)`
+now, `MagicList(?, U)` means magicList of some type that I don't care about and U which is same as U I have here.
+lets continue with an example. what are examples: vtable, match for union
+```
+vtable = [Circle : drawCircle, Square: drawSquare]
+Vtable = struct(type: T, handler: fn(T,Canvas, float -> int), next: Vtable(?))
+shapesTable: Vtable = (type: Circle, handler: drawCircle, next:
+				(type: Square, handler: drawSquare, next:
+					(type: Triangle, handler: drawTriangle)))
+					
+findHandler = fn(table: Vtable, T: type -> fn(T, Canvas, float -> int)|nothing) {
+	if ( T == table. type ) then return table.handler
+    else return findHandler(table.next, T)
+}
+```
+this does not allow to treat all union options the same, though.
+another example: match for union types
+```
+matchUnion = fn(data: ?, branches: Branch(U) -> U)...
+Branch = (T: type, handler: (input: T -> U)
+```
+but then I will need to define types for each match or vtable that I need!
+too cumbersome and error prone.
+what if I had a feature that having a value of type T (which I don't know at compile time), and a list of functions that accept one input of type X and have same output int,
+I can find appropriate function based on T and call it and get the result?
+first q is, how can I store a list of functions that accept different types? 
+in other words, how can I store a list of bindings of different type? different in some part but have similarities too.
+what about a list?
+`list: [fn(T->int)]`
+why a list? this breaks a lot of assumptions. I cannot define type of this properly.
+we want a super-function.
+it binds multiple different but similar functions.
+upon calling the super function, one of its children will be called.
+this is determined at runtime.
+type of super-function represents common parts + using generic for the different part.
+for example: we have drawCircle, drawSquare and drawTriangle functions.
+what if I want to have a function like `draw` that can accept any of these?
+```
+draw = fn(shape: T, canvas: Canvas, arg: float -> int ) {
+    (shape)${
+        drawCircle(_, canvas, arg),
+        drawSquare(_, canvas, arg),
+        drawTriangle(_, canvas, arg)
+    }
+}
+```
+so notation is: `my_struct${lambda1, lambda2, lambda3, ...}`
+and lambdas should all accept my_struct.
+the one which has a matching type with my_struct will be invoked.
 
 
 
