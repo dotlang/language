@@ -1476,7 +1476,7 @@ maybe we should use `{}`.  we don't use fn prefix so it won't imply this is a fu
 1. There is a new core type: `error = struct (key: type, message: string|nothing, location: string|nothing, cause: error|nothing)`.
 2. we also have a value `error` of error type which is a no-op error.
 3. at operator is used like these: `expression@` or `expression@{expression}`
-4. if left hand side expression resolves to an error, it will be returned (first case) or result of expression will be returned.
+4. if left hand side expression evaluates to an error, it will be returned (first case) or result of expression will be returned.
 5. if expression we return resolves to an error, it will be bound to original error through `cause` field. also location field is auto-populated via compiler/runtime.
 ===
 rather than allowing users to create error types with any invalid value they want, we should provide a core function for this.
@@ -1484,16 +1484,22 @@ they only need to specify type and message. other fields can be auto-populated. 
 and type? so it will be only message. but type is setable by user because they know the actual exception type.
 no lets leave it like that and don't add a new exception/rule to the language.
 can this be simpler?
+I can write `error@` to immediately exit and return error
+or `error@{5}` to immediate exit and return 5
+can I write this: `x = divider(5, _)@{0}`?
+so if divider returns error it will return 0?
+no. left hand side expression is a lambda. 
+I should write a proper function like this:
+`x = fn(a:int->int) {  divider(5,a)@{0} }`
 
-
-? - If all options of a union have sth similar, can we use it without union dereferencing?
-for example if they are all functions that have no input but have different outputs.
 
 ? - Do we allow struct values without field name?
 `x = Point(1,2)`
 
 ? - We should provide some sane defaults and compiler helps for union types. 
 so that stuff like map of key to functions of different types becomes better handled.
+If all options of a union have sth similar, can we use it without union dereferencing?
+for example if they are all functions that have no input but have different outputs.
 
 
 
