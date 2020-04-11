@@ -1374,10 +1374,130 @@ lets use `@[...]`
 2. we also have a value `error` of error type which is a no-op error.
 3. at operator is used like these: `expression@` or `expression@[expression]`
 4. if left hand side expression resolves to an error, it will be returned (first case) or result of expression will be returned.
-
+problem: what if result of expression is a seq or map itself? then this notation will be confusing.
+maybe we should use `{}`.  we don't use fn prefix so it won't imply this is a function.
+`result = process(1,2)@ + process(3,4)@`
+`result = process(1,2)@{nothing} + process(3,4)@{nothing}`
+**PROPOSAL2**
+1. There is a new core type: `error = struct (key: type, message: string|nothing, location: string|nothing, cause: error|nothing)`.
+2. we also have a value `error` of error type which is a no-op error.
+3. at operator is used like these: `expression@` or `expression@{expression}`
+4. if left hand side expression resolves to an error, it will be returned (first case) or result of expression will be returned.
+5. if expression we return resolves to an error, it will be bound to original error through `cause` field. also location field is auto-populated via compiler/runtime.
+===
+rather than allowing users to create error types with any invalid value they want, we should provide a core function for this.
+they only need to specify type and message. other fields can be auto-populated. or we can set this rule that, you cannot set a value for location and cause.
+and type? so it will be only message. but type is setable by user because they know the actual exception type.
+no lets leave it like that and don't add a new exception/rule to the language.
 
 
 
 ? - If all options of a union have sth similar, can we use it without union dereferencing?
 for example if they are all functions that have no input but have different outputs.
+
+? - using seq and map for conditional is more a mis-use.
+`x = seq[condition]`
+`x = mymap[value]`
+we can replace this with a switch/match:
+if/else uses true/false?
+or maybe we can add their own notation: ifelse. but this can be done via function. so no need. 
+just implement what is absolutely essential.
+again we need a separator! `{}` is not good because it is supposed to only be for function (and prob soon it will be used for errors too)
+```
+result = expression @value: expression, @value2: expression2, @value3: expression3
+```
+we can go and implement sth like Racket or Scala for pattern matching but it will be very complex for reader of code and writer of it.
+let's keep it as simple as possible.
+type of pattern matching:
+- value matching (if a=b)
+- condition mathing (a: if <10 then ...)
+- tuple-matching: if a=1 and b=2 then ...
+- union matching: if float then ... if int then ...
+- regex matching
+- enum matching
+- multipel cond: if X and Y then ...
+maybe its time to use `{}` for this purpose
+```
+result = match(expression) {
+	value1 => expression1
+	value2 => expression2
+	value3, value4 => expression3
+	_ => expression4
+}
+result = match(union) {
+	x: int => expression1
+	y: float => expression2
+	_ => expression4
+}
+result = match {
+	value1>0 => expression1
+	value2<10 => expression2
+	value3==0 and value4!=0 => expression3
+	_ => expression4
+}
+```
+expression can also be anonymous struct: `(x,y,z)` and matches will be like `(1,2,3)`
+can't we do this via functions or other tools? this needs a lot of new notations:
+- match keyword, `=>` braces
+we define `match` function in core:
+`match = fn(exp: boolean, value1, lambda1, value2, lambda2, ...)`
+but then we cannot prevent evaluation of all cases. what if one of them is a comp heavy?
+`match = fn(exp: T, cases: [Case(T|nothing,U)], T,U: type -> U)`
+`Case = struct(value: T, handler: fn(->U))`
+there is an important diff between this and error handling.
+error handling is a syntax sugar + enables what was impossible before (early ret)
+to make code more readable. we can live without it but there will be lots of indents and complexity in the code.
+this is not a syntax sugar. we are adding a new notation and construct to the language.
+so for error handling, it is not as big a deal as this.
+what if we can do this without a new notation?
+`match = fn(exp: T, cases: [Case(T|nothing,U)] -> U) ...`
+`Case = struct(value: T, handler: fn(->U))`
+`matchVal = fn(exp: T, cases: [ValCase(T|nothing,U)] -> U) ...`
+`ValCase = struct(value: T|nothing, value: U)`
+so we can cover match on value (with value or lambda).
+for union we will address this separately.
+```
+result = process(1,2,3)
+data = match(result, [
+	(1, fn{ "it is one" }),
+	(2, fn{ "it is two" }),
+	(3, fn{ "it is three" })
+])
+```
+
+? - Do we allow struct values without field name?
+`x = Point(1,2)`
+
+
+? - general union
+what remains is a match over union.
+`result = match(int_or_float, fn(x:int -> string) ..., fn(y:float -> string)...)`
+but how are we going to define match function?
+`result = match(int_or_float, [fn(x:int -> string) ..., fn(y:float -> string)...])`
+`matchUnion = fn(x: T|U, cases: [fn(T -> V) | fn(U, V)])`
+how can we have this for any number of cases? e.g. a union with 3 or 4 types
+we want to define a generic type with a union type which can be a mix of multiple union types.
+`matchUnion = fn(x: T|U|B|N|M, cases: [fn(T -> V) | fn(U, V) | fn(B->V) | fn(N->V) | fn(M->V)])`
+this can also be useful in polymorphism and variadic generics.
+but this is complicated.
+what if we can have a map of `T` to a funct that has T? will this solve our problems?
+a map of `T` to a function that has no/some input and gives you `U`.
+this can definitely help with polymorphism because this will be our vtable.
+with matchUnion: cases will be exactly that map. lets call it magic map
+`matchUnion = fn(x: T|U|B|N|M, cases: magicMap(T,U,B,N,M,fnxV))`
+but what about the first item? a general union?
+how can I write a generic function that accepts general union type?
+so we need two things: general union, magic map
+maybe only having magic map is enough. we can look up in the magic map with a union and it will give us what we want.
+`magicMap = map of T|U|V|B|N|M to functions of those types`
+`MagicMap=[T:fn(->T)]`
+no this will be too complicated to write and read. 
+lets drop it.
+no match for unions.
+
+
+? - We should provide some sane defaults and compiler helps for union types. 
+so that stuff like map of key to functions of different types becomes better handled.
+
+
 
