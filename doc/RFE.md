@@ -1491,6 +1491,9 @@ so if divider returns error it will return 0?
 no. left hand side expression is a lambda. 
 I should write a proper function like this:
 `x = fn(a:int->int) {  divider(5,a)@{0} }`
+still people can misuse this: they can create a fn that returns error if sth is false.
+then: `checkWithError(cond)@{-1}` so if cond is false, function will return -1 immediately
+almost anything can be misused.
 
 
 ? - Do we allow struct values without field name?
@@ -1559,6 +1562,9 @@ draw = fn(shape: T, canvas: Canvas, arg: float -> int ) {
 so notation is: `my_struct${lambda1, lambda2, lambda3, ...}`
 and lambdas should all accept my_struct.
 the one which has a matching type with my_struct will be invoked.
+this is not composable.
+we don't know the exact "type" of this expression.
+if sth doesn't have a "type" it is not good. not orth/composable/...
 
 
 
