@@ -108,6 +108,18 @@ string process(int x) {
 }
 ```
 
+You can embed all of above in a `match` function like this:
+```
+match = fn(exp: T, cases: [Case(T|nothing,U)] -> U) ...
+Case = struct(value: T, handler: fn(->U)) ...
+...
+str_data = match(result, [
+	(1, fn{ "it is one" }),
+	(2, fn{ "it is two" }),
+	(3, fn{ "it is three" })
+])
+```
+
 ## Dependency management
 
 It is advised to put all import dependency paths in one module like `refs` and import it to specify import paths.
