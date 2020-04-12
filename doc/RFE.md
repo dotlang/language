@@ -1944,5 +1944,15 @@ shapesTable: Vtable = (type: Circle, handler: drawCircle, next:
 
 ```
 but we should formalize this notation a bit more. is it a union? is it a compile time thing or runtime?
+**PROPOSAL: Signature Types**
+1. Signature types are generic functions. These are similar to Java interfaces that have only one function.
+example: `ToStrSignature = fn(T: type -> type) { fn(x: T, T: type -> string) }`
+2. To define a child function of a signature type, you should define a concrete function with same signature and explicitly set its type. This is similar to implementing an interface in Java. Note that named types are never equal to underlying types.
+example: `toStringInt: ToStrSignature(int) = fn(x:int -> string) { ...}` this defines a child for `ToString` signature for `int` type.
+3. You can use `&SignatureType(args)` notation to invoke a child functions matching with a signature type and pass required arguments.
+example: `str_val = ToStrSignature&(int_var)`
+4.
+===
+
 
 ? - Can I define a named type inside a function?
