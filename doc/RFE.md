@@ -1771,7 +1771,7 @@ these are not functions. they are "types" and they are generic.
 **Signature Types**
 1. Signature types are generic function types that can be used to group multiple functions matching with their signature.
 example: `ToStrSignature = fn(T: type -> type) { fn(x: T, T: type -> string) }`
-2. any matching function, will be explicitly marked as having the signature type.
+2. any matching function, will be explicitly marked as having the signature type. Note that named types are never equal to underlying types.
 example: `toStringInt: ToStrSignature(int) = fn(x:int -> string) { ...}`
 3. you can use `&` to invoke any of child functions matching with a signature type and pass required arguments.
 example: `str_val = ToStrSignature&(int_var)`
@@ -1813,3 +1813,33 @@ but that's fine. author can add that to the documentation, also they can rely on
 but on the plus side, langage will not be polluted.
 right now, the only "actual" change in notation is `&()` call notation.
 if there are multiple candidates for a signature call, we can override by defining a local function. they have higher priority.
+some more examples:
+```
+Eq = fn(T: type -> type) { fn(a: T, b: T, T: type -> bool) }
+intEq: Eq(int) = fn(a:int, b:int -> bool) ...
+abcd = fn(a:int, b:int -> bool) ...
+```
+even if we don't mention signature type, the type of function matches with signature. 
+so, during runtime, how can we find out signature children? we can do this at compile time and provide choices at runtime.
+but in above, there should be no difference between `intEq` and `abcd` functions.
+so, why should a call to `Eq&` pick intEq and not abcd?
+the point is, named types are never equal to anything else.
+so `Eq(int)` and `fn(int,int->bool)` are two different types! even tough they have same type and input and output.
+```
+lookup = (data: T, source: [T], T: type -> int|nothing) {
+	foreach(source, fn(item:T-> boolean) {
+        if(Eq&(source, data)) then return true;
+    })
+}
+```
+so: re union issue we can write this:
+```
+int_or_float=getData()
+handler1: NumHandler(int) = ...
+handler2: NumHandler(float) = ...
+result = NumHandler&(int_or_float)
+```
+can I write this? `Eq&(int_var, _)`? in this case you can because `int_var` is enough to for compiler/runtime to find type needed.
+but `ShapeRender&(_)` is not valid. because without an input, we don't have anything.
+
+? - Can I define a named type inside a function?
