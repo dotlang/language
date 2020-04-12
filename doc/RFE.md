@@ -1775,6 +1775,8 @@ example: `ToStrSignature = fn(T: type -> type) { fn(x: T, T: type -> string) }`
 example: `toStringInt: ToStrSignature(int) = fn(x:int -> string) { ...}`
 3. you can use `&` to invoke any of child functions matching with a signature type and pass required arguments.
 example: `str_val = ToStrSignature&(int_var)`
+4. this is like interfaces in Java but with only one function per interface
+==
 still we have an issue with printf. how can we have multiple args of different types? not easily. 
 it can have a sequence of strings.
 the only issue is we treat a fn-type like an actual fn. but is can be justified by `&` usage and advantages that it will have.
@@ -1867,6 +1869,33 @@ lets do something else:
 if at any stage found one -> use it
 if found multiple -> error
 if not found anything -> try `nothing`, if not found runtime error
+other examples of typeclass/interface:
+- iterable: when you want to iterate oversomething which is not seq
+q: can I define signature for a group of types? for example all seq? or all Stacks of any type?
+e.g. equality for stack of T is equality of Ts of both stack
+```
+Eq = fn(T: type -> type) { fn(a: T, b: T, T: type -> bool) }
+intEq: Eq(int) = fn(a:int, b:int -> bool) ...
+Stack = fn(T: type -> type ) { struct (data: T, next: Stack(T)) }
+intStackEq: Eq(Stack(int)) =  fn(a: Stack(int), b: Stack(int) -> boolean) ...
+stackEq: Eq(Stack) = fn(a: Stack(T), b: Stack(T), T: type -> boolean) ...
+```
+does this make sense? `Stack`? is it a type? if so, we should be able to use it elsewhere.
+`stackEq: Eq(Stack)` should mean, this function is implementation of `Eq` signature for all Stacks regardless of their generic type.
+can I use `Stack` type in another function?
+for example: `process = fn(x: Stack, y: data ...)`
+if we allow above, this should also be allowed, which means any stack of T and we don't care what T is.
+this is like interface: if I have toString interface, can I implement it for a `Stack<T>` in Java?
+yes. I can easily add `implements ToString` to the definition of `Stack<T>` class and write the code.
+what about this?
+`stackEq: Eq(Stack(U: type)) = fn(a: Stack(T), b: Stack(T), T: type -> boolean) ...`
+q: what is type of this? `x = fn(a: Stack(T), b: Stack(T), T: type -> boolean) ...`
+is it `fn(Stack(T), Stack(T) -> boolean)`?
+lets say `Stack` represents all stack types regardless of their generic type.
+so we can use it as an input of any function. of course that function does not care about internal type of stack. if it did, it had to include a generic type.
+`len = fn(s: Stack, ...`
+then we can implement `Eq` for all Stacks like this:
+`stackEq: Eq(Stack) = fn(a: Stack(T), b: Stack(T), T: type -> boolean) ...`
 
 
 ? - Can I define a named type inside a function?
