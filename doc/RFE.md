@@ -1913,6 +1913,36 @@ Functor = struct(data: T, map: fn(mapper: fn(T->R) -> Functor(R)))
 ```
 maybe we should get rid of functors and keep it simple. because functor is a combination of interface and struct.
 we have a limited interface support via type signature but it is just a function, not struct.
+Also it looks like functor are merely lambads with pre-set stats: `process(5,_)`
+so back to first question: Assuming I have a type signature, how can I define it for a generic type?
+for example, implement equality for Stakcs.
+option 1: force user to implement it for each concrete type
+option 2: `stackEq: Eq(Stack(U: type)) = ...`
+option 3: `stackEq: Eq(Stack) = ...`
+option 2 is a completely new notation.
+option 3 is a huge change but not sth new.
+so if we have: `Converter = fn(T: type, U: type -> type) ...`
+then `Converter` is a type, `Converter(int,_)` is a type.
+but not including types is confusing. Converter is supposed to have always two type arguments.
+so maybe we can use place-holder for that. meaning we don't care. just like assignment placeholder.
+`x: Stack(_)`
+`y: Converter(int, _)`
+```
+Eq = fn(T: type -> type) { fn(a: T, b: T, T: type -> bool) }
+intEq: Eq(int) = fn(a:int, b:int -> bool) ...
+Stack = fn(T: type -> type ) { struct (data: T, next: Stack(T)) }
+intStackEq: Eq(Stack(int)) =  fn(a: Stack(int), b: Stack(int) -> boolean) ...
+stackEq: Eq(Stack(_)) = fn(a: Stack(T), b: Stack(T), T: type -> boolean) ...
+len = fn(x: Stack(_) -> int) ...
+```
+and this can be used to implement vtable!
+```
+Vtable = struct(type: T, handler: fn(T,Canvas, float -> int), next: Vtable(_))
+shapesTable: Vtable = (type: Circle, handler: drawCircle, next:
+				(type: Square, handler: drawSquare, next:
+					(type: Triangle, handler: drawTriangle)))
 
+```
+but we should formalize this notation a bit more. is it a union? is it a compile time thing or runtime?
 
 ? - Can I define a named type inside a function?
