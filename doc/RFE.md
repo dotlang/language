@@ -1841,5 +1841,32 @@ result = NumHandler&(int_or_float)
 ```
 can I write this? `Eq&(int_var, _)`? in this case you can because `int_var` is enough to for compiler/runtime to find type needed.
 but `ShapeRender&(_)` is not valid. because without an input, we don't have anything.
+we may still want to have a "fallback" implementation. for example for toString, if it is not implemented for some type, we don't want to exit app. just return some fixed string.
+we can use `nothing` for this purpose.
+```
+ToStrTag = fn(x: T, T: type -> string)
+toStringInt: ToStrTag = fn(x:int -> string) { ...}
+dasdsadsa: ToStrTag = fn(x:float -> string) { ...}
+fallback: ToStrTag(nothing) = fn(x: nothing -> string) { ... }
+...
+str_value = ToStrTag&(my_customer) #not found -> call ToStrTag(nothing)
+```
+basically, `T&` will give you all functions that implement generic type T (which can have one or more generic arguments).
+`T&(...)` will invoke the one that matches with input args provided.
+lookup:
+- local function
+- parent functions in order
+- local module
+- imported modules in order
+but then it will be too opaque. you won't be able to tell, exactly which function will be resolved when for example you call `ToStr&(int_var)`
+lets do something else: 
+- local function
+- parent functions
+- local module
+- all the scope
+if at any stage found one -> use it
+if found multiple -> error
+if not found anything -> try `nothing`, if not found runtime error
+
 
 ? - Can I define a named type inside a function?
