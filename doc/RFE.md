@@ -1565,6 +1565,251 @@ the one which has a matching type with my_struct will be invoked.
 this is not composable.
 we don't know the exact "type" of this expression.
 if sth doesn't have a "type" it is not good. not orth/composable/...
+so we have types for each of those functions. but we don't have a type for all of them collectively (except for a convoluted union type).
+- In Haskell ad-hoc polymorphism is achieved through typeclasses 
+- Typeclasses are a mechanism for overloading the meaning of names (values and functions) for different types.
+when I say a function's input is of type of a typeclass, it means that that input can be of any type that satisfies that typeclass.
+meaning that input is of type T where T supports the function that is defined in the typeclass so I can easily invoke that function.
+for example I can define Num typeclass with `+-*/...` operators as list of functions it has.
+then I can say `Point` is a Num and implement all above for a Point.
+typeclass desribes behavior we expect a type has. each type implements that behavior in its own way
+with example of Person and Employee for inheritance in oop, we can define Person as a typeclass and implement it for an Employee:
+```haskell
+class Person a where
+  firstName :: a -> String
+  lastName :: a -> String
+  age :: a -> Int
+  getFullName :: a -> String
+```
+now, we can define a typeclass for drawing. then implement it for Circle, Square, Triangle, ...
+```
+class Shape
+    draw :: T -> string
+    
+drawCircle = fn(c: Circle -> string) ... implemented for Shape
+drawSquare = fn(s: Square -> string) ... implemented for Square
+```
+Or we can define `Ord` typeclass and use it as argument type in sort function.
+Or `Stringer` typeclass which gives you string representation of a type. then use it in print function.
+or a find function where it looks up a value in a seq, needs to be sure type of that value is "comparable".
+a `Bounded` typeclass, assures you the type that implements it has two functions defined: min and max which give min and max possible values
+we need 3 concepts:
+1. how to define a typeclass?
+2. how to implement typeclass TC for type T?
+3. how to use typeclass in a function?
+3 is easy. we can use `type + TypeClass` for declaration in function args.
+for example for shapes:
+```
+#1 define typeclass
+typeclass drawShape = fn(shape:T, c: Canvas, f: float, T: type -> string)
+implement drawShape for Circle as drawCircle
+...
+process = fn(item: T, T: type+drawShape -> ...) {
+...
+str_value = drawShape(item)
+}
+```
+above example is also doable with function lambda.
+but what if have a seq of shapes?
+```
+renderScnee = fn(item: [T], T: type+drawShape -> ...) {
+...
+str_value = drawShape(item)
+}
+```
+we can think of typeclass as an interface. we need to implement interface for all of the types that need it.
+then when in use, we say function has an argument of that interface type.
+so its not generic.
+```
+process = fn(item: Shape, c: Canvas, f: float -> int) {
+    drawShape(item, c, f)
+}
+```
+q: What if I want to have different implementations of a typeclass for the same type? and use them based on the situation?
+under the hood Haskell is using a dictionary of functions. key is type, value is function. this becomes sth like a vtable.
+why not use the same?
+a good question is: How can I write a generic printf function?
+similar to interface, rather than declaring X is of interface type, we can say X is `T`, and provide functions to work with it separately as pointers
+two advantages of typeclass:
+- can be used with multiple different types in the same function. for example a sequence of shapes
+- can be extended easily. if you have a new type, just implement typeclass for that new type and you automatically have that typeclass for your type.
+simplest example: `toString` in `printf`.
+we need a convert function for all types. they cannot have the same name.
+and we don't want to use a convention.
+`printf` is a function that accepts any value and writes it to stdout as a string.
+now, printf is an easy function assuming we have the toString for all types. 
+`printf = fn(x: T, T: type -> nothing) { writeToStdOut(toString(x)) }`
+now we can have this:
+`printf = fn(x: T, toString: fn(T->string)) { writeToStdOut(toString(x)) }`
+but:
+q: what if we have multiple inputs? for example a printf with `n` arguments? or a sequence?
+q: can it be automated enough so i dont have to repeat function names, and flexible enough so that I can feed my own (new) functions?
+in java I write:
+`void printf(ToStringSupported x) { writeToStdOut(x.toString()) }`
+let's say, we use a real dictionary method but it can be either manually built or use the default, but this default should not be a hidden/implicit default.
+that global dictionary has all default methods. if you need, you can modify a copy of it and change the handler(s) you want.
+but, we are an immutable language. how can we have this?
+one solution: define separate functions with different naming but similar syntax. mark them with a tag.
+then use core to get a dictionary of all functions with that tag.
+or even drop the dictionary. just use core to call it.
+this is essentially dynamic dispatch.
+```
+$toStrTag
+toStringInt = fn(x:int -> string) { ...}
+$toStrTag
+dasdsadsa = fn(x:float -> string) { ...}
+...
+printf = fn(x: T, T: type -> nothing) {
+    str1 = invoke($toStrTag, x)
+    ...
+}
+```
+problem1: it is not typed.
+```
+ToStrTag = fn(x: T, T: type -> string)
 
+$toStrTag
+toStringInt = fn(x:int -> string) { ...}
+$toStrTag
+dasdsadsa = fn(x:float -> string) { ...}
+...
+printf = fn(x: T, T: type -> nothing) {
+    handler: fn(x: T, T: type -> string) = lookupFunctions(ToStrTag, T) //among all functions with this tag, find the one that matches with x of type T
+    str1 = handler(x)
+    ...
+}
+```
+now, it is typed. the only loose part is `lookupFunctions` which it the core function.
+q: what if we have multiple (and related) types?
+q: `lookupFunctions` is a super-function. it is not a normal function. maybe it should be replaced with a notation.
+examples for this:
+- toString
+- getHashCode
+- isEqual
+- drawShape
+- compare
+- getMinValue
+- getMaxValue
+- NumericAdd
+- NumericMultiply
+- Convert (this one has two types)
+Let's continue with printf example:
+```
+ToStrTag = fn(x: T, T: type -> string)
 
+//if function definition does not match with ToStrTag, compiler will complain
+//if two function definitions have overlap, compiler will complain
+toStringInt: ToStrTag = fn(x:int -> string) { ...}
 
+dasdsadsa: ToStrTag = fn(x:float -> string) { ...}
+_: ToStrTag = fn(x:Customer -> string) { ...}
+_: ToStrTag, fn(Client->string) = fn(x:Client -> string) { ...}
+...
+printf = fn(x: T, T: type -> nothing) {
+    #you can define your own local overrides here
+    myFunc: ToStrTag = fn(x:int -> string) {...}
+    //lookup a function of type ToStrTag (first local scope, then outer scopes) 
+    //that can accept x as input
+    str1 = &ToStrTag(x)  //among all functions of this type, find the one that matches with x of type T
+    ...
+}
+```
+`&` without `(x)` makes no sense. 
+maybe it should be like `ToStrTag&(x)` so people don't assume they can write `&ToStrTag` alone.
+the only big issue is this part: `toStringInt: ToStringTag = ...`
+does this make sense?
+`dasdsadsa: ToStrTag = fn(x:float -> string)`
+left side says, type of this binding is a function of T to string. but right side is not generic.
+maybe we can write this:
+`dasdsadsa: ToStrTag(int) = fn(x:float -> string)`
+now this makes complete sense because based on everything we have in the language, it is a correct expression.
+and when I write `str1 = ToStrTag&(x)` it means, based on type of x, find appropriate function and call it.
+```
+ShapeRender = fn(T: type -> type) { fn(shape:T, canvas: Canvas, arg: float, T: type -> int) }
+drawCircle: ShapeRender(Circle) = fn(c: Circle, canvas: Canvas, arg: float -> int) {...}
+drawSquare: ShapeRender(Square) = ...
+drawTriangle...
+...
+shape = getShape()
+ShapeRender&(shape) //shape can also be a union, runtime will find appropriate function to call and call it
+```
+q: what if nothing is found? will it be a runtime error?
+a: it should be a runtime error. compiler will check most of the cases, but anyway, if not there it is like calling a method on a child class which is not implemented.
+q: can I use union of type classes to look up into functions of both types?
+a: what comes before `&` is a gneric type. so, in principle this should be possible but what is the use case?
+if I have `V=T|U` type as generic, then `V&(args)` will consider functions of tag T or U.
+q: is it possible to assign a new type class to an existing code? for example function is in a lib I cannot change.
+a: yes. you can write a wrapper
+```
+#assume we have libFunc
+myFunc: ToStrTag(CustomClient) = fn(x: CustomClient -> float ) { libFunc(x) }
+#then:
+result = ToStrTag&(myClient) #this will call myFunc which will call library function
+```
+so, what should we call this? type class is to Haskelly. interface is too OOP.
+- polyfunction
+- superfunction
+- multi-function
+- supergeneric function type
+do we need a new name? It is just a type. like other types. it is generic and it points to a function.
+there is nothing special about it, at least when we define it.
+1 - define a generic function type: `ToStrTag = fn(T: type -> type) { fn(x: T, T: type -> string) }`
+2 - when declaring functions, mark their type based on above type: `intToStr: ToStrTag(int) = fn(x: int -> string) { ...}`
+3 - when needed, use `Type&(...)` notation to call a function from above group.
+this can be used for hash, equality, tostr, conversion, ordering, polymorphism and lots of other use cases.
+expression problem: for shapes and drawing them.
+- if we add a new operation: just write their functions and types.
+- if we add a new shape (e.g. Oval), just write functions for it.
+lets find a good name for these. these generic fn types are created with a purpose.
+these are not functions. they are "types" and they are generic.
+- signature type
+- prototypes
+- tag
+- annotation
+"type signature" or "signature type"? seond one makes more sense.
+**PROPOSAL** 
+**Signature Types**
+1. Signature types are generic function types that can be used to group multiple functions matching with their signature.
+example: `ToStrSignature = fn(T: type -> type) { fn(x: T, T: type -> string) }`
+2. any matching function, will be explicitly marked as having the signature type.
+example: `toStringInt: ToStrSignature(int) = fn(x:int -> string) { ...}`
+3. you can use `&` to invoke any of child functions matching with a signature type and pass required arguments.
+example: `str_val = ToStrSignature&(int_var)`
+still we have an issue with printf. how can we have multiple args of different types? not easily. 
+it can have a sequence of strings.
+the only issue is we treat a fn-type like an actual fn. but is can be justified by `&` usage and advantages that it will have.
+q: can we have a signature with multiple types?
+when we invoke, we only invoke one function.
+the only advantage is to group multiple related functions.
+for example `Num` typeclass in Haskell has all num-related functions like add, divide, ...
+also another advantage is we can write a function generic on type T, and declare that type must satisfy all those functions.
+q: how can we declare function needs `T` matching with a signature?
+we don't always do that. client function doesn't have to be generic. it can be on anything.
+but consider shape example:
+```
+ShapeRender = fn(T: type -> type) { fn(shape:T, canvas: Canvas, arg: float, T: type -> int) }
+drawCircle: ShapeRender(Circle) = fn(c: Circle, canvas: Canvas, arg: float -> int) {...}
+drawSquare: ShapeRender(Square) = ...
+drawTriangle...
+...
+process = fn(shape: T, T: type ...) {
+    ShapeRender&(shape)
+}
+```
+this is all good, but is there a way to say `T` must satisfy `ShapeRender` signature?
+```
+process = fn(shape: T, T: type ...) {
+    ShapeRender&(shape)
+}
+```
+if caller function is generic, compiler will do the check during code generation step.
+if it is not, compiler knows types of everything. so it will be one single type T or a union of multiple types (T1, T2, ...)
+now, if we have ShapeRender for T (or for T1, T2, ...) then it is fine.
+otherwise, compiler will throw an error.
+so runtime error will not happen.
+but still the user of my function, will not know what they need to implement.
+if they call `process` function above, they need to first implement `ShapeRender` function for their type. 
+but that's fine. author can add that to the documentation, also they can rely on compiler errors.
+but on the plus side, langage will not be polluted.
+right now, the only "actual" change in notation is `&()` call notation.
+if there are multiple candidates for a signature call, we can override by defining a local function. they have higher priority.
