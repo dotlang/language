@@ -1771,7 +1771,7 @@ these are not functions. they are "types" and they are generic.
 **Signature Types**
 1. Signature types are generic function types that can be used to group multiple functions matching with their signature.
 example: `ToStrSignature = fn(T: type -> type) { fn(x: T, T: type -> string) }`
-2. any matching function, will be explicitly marked as having the signature type. Note that named types are never equal to underlying types.
+2. any matching function, will need to be explicitly marked as having the signature type. Note that named types are never equal to underlying types.
 example: `toStringInt: ToStrSignature(int) = fn(x:int -> string) { ...}`
 3. you can use `&` to invoke any of child functions matching with a signature type and pass required arguments.
 example: `str_val = ToStrSignature&(int_var)`
@@ -1896,6 +1896,23 @@ so we can use it as an input of any function. of course that function does not c
 `len = fn(s: Stack, ...`
 then we can implement `Eq` for all Stacks like this:
 `stackEq: Eq(Stack) = fn(a: Stack(T), b: Stack(T), T: type -> boolean) ...`
+But this is a very important distinction. In haskell we can write:
+```
+instance Functor Maybe where
+  fmap _ Nothing = Nothing
+  fmap f (Just a) = Just (f a)
+```
+so fmap typeclass for `Maybe<T>` can have different results based on the value. if it is nothing, then result is nothing. otherwise it is calculated using given function.
+so can we write `nothingHandler: Functor(nothing) = fn...`
+and `somethingHandler: Functor = fn...`?
+that should be fine. but where is the function `f` in Haskell's code when we write `f a`?
+Functor applies a function on something. if that something is nothing then result is nothing. otherwise f is calculated. 
+for example f can be `+1`
+```
+Functor = struct(data: T, map: fn(mapper: fn(T->R) -> Functor(R)))
+```
+maybe we should get rid of functors and keep it simple. because functor is a combination of interface and struct.
+we have a limited interface support via type signature but it is just a function, not struct.
 
 
 ? - Can I define a named type inside a function?
