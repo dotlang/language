@@ -1493,8 +1493,6 @@ then: `checkWithError(cond)@{-1}` so if cond is false, function will return -1 i
 almost anything can be misused.
 
 
-
-
 ? - We should provide some sane defaults and compiler helps for union types. 
 so that stuff like map of key to functions of different types becomes better handled.
 If all options of a union have sth similar, can we use it without union dereferencing?
@@ -2040,6 +2038,250 @@ but it can.
 we can say `$Eq(int|float)` will find a function for `int|float`.
 but using the shortcut: `$Eq(int_or_float_var)` the if no function found for `int|float` it will look based on runtime type of the binding.
 still confusing. not very simple.
+problem: generic functions don't have a type.
+this is against everything we have written with `Eq` and all.
+```
+Eq = fn(a: T, b: T, T: type -> bool)
+intEq: Eq(int) = fn(a:int, b:int -> bool) ...
+```
+First line above is not ok. we cannot define a generic type with itself. we can define a generic function.
+second line is also incorrect. because we don't have a generic type.
+lets get back to the original problem: we want to have interface/typeclass support.
+so that things like drawing a shape or converting something to string or getting hashcode of something would be easily done.
+another usage: if we have a union of types, we should be able to call a function based on the type.
+goals/requirements
+1. support for runtime dispatch for union types
+2. support for compile-time dispatch with generic argument
+3. vtable-like implementation
+but 3 is used to specify (for example) draw functions for different shapes and use it to find which function to call. which can be achieved using 2.
+rather than `findHandler(my_vtable, T)(x,1,2)` we can write sth like `$DrawShape(x,1,2)`
+so lets simplify 2. lets walk throught with a simple example: Equality check.
+we want equality check for all of important types and then in a generic function based on `x:T` we can write `isEqual(x)` to invoke the appropriate function.
+suppose all of the types we have are int and float and string
+we want:
+1. 3 functions for equality check for int, string, float
+2. a notation to call something which resolves to one of above 3 functions. based on type of some input
+basically, 1 is a map of type to function. but we cannot use an actual map because value type is complicated.
+what about actually defining signature types as a type template for a number of functions:
+```
+SigEq = fn(a: T, b:T, T: type -> bool)
+intEq = fn(a: int, b:int -> bool) ...
+floatEq = fn(a: float, b: float -> bool) ...
+stringEq = fn(a: string, b: string -> bool) ...
+...
+```
+why not send the old function pointerr to where we need it? rather than using runtime/... to find correct function to call:
+`process = (x: T, y: T, equalitChecker: fn(T,T->boolean) ...`
+and what about other requirements? vtable maybe?
+if we can do vtable, we will be able to (almost) easily do runtime dispatch using union value. we just need to get type at runtime.
+vtable is essentially a map where value's type depends on key.
+it is `[T: Handler(T)]` but T differs for each entry and each value has a type based on key.
+this looks like "Dependant types"
+basically we have a list of dependant pairs, where "type" of second item depends on the "value" of the first item.
+so it is more like `[type: Handler(?)]`
+ok. we can replace this with a function and put all the logic we need inside the function body. so we just call the function with common arguments and it handles everything.
+so the only remaining requirement is: dynamic dispatch based on union type.
+so if we have a generic function like `draw` and a binding of type `Circle|Square` I want to call draw function with actual runtime type of the union.
+```
+Circle = ...
+Square = ...
+Triangle = ...
+draw = fn(shape: T, c: Canvas, arg: float, T: type -> int) ... #this works fine and is a generic function
+..
+x: Circle|Square|Triangle = readShapeData()
+#now, how can I call draw?
+draw($x, c, 1.1)
+```
+so `$` operator attaches to a union binding and unwraps.
+what is type of `$x`? we don't know at compile time. it can be any of union options.
+so, the only place we can use it is where any type is allowed: generic function
+so I cannot write `y = $x` because then type of y is unknown.
+we can write it like this: `${expression}` and it gives you unwrapped value of exp result (which should be a union, otherwise it is same as static type).
+we prefer small, simple notation which are easy to comprehend, write and read.
+what if we need different impl for different types? we can do it via a map in the generic function.
+```
+Circle = ...
+Square = ...
+Triangle = ...
+drawCircle ...
+drawSquare ...
+drawTriangle ...
+
+draw = fn(shape: T, c: Canvas, arg: float, T: type -> int) {
+    [
+      Circle: drawCircle(shape, _, _),
+      Square: drawSquare(shape, _, _),
+      Triangle: drawTriangle(shape, _, _)
+    ][T](c, arg)
+}
+..
+x: Circle|Square|Triangle = readShapeData()
+#now, how can I call draw?
+draw($x, c, 1.1)
+```
+but this won't work. because `drawCircle(shape, _,_)` should throw compiler error if we call `draw` with a Square. 
+another option: write a generic function, write implementations of it for concrete types with same name. runtime will handle everything else.
+```
+Circle = ...
+Square = ...
+Triangle = ...
+drawCircle  = fn(shape: Circle, c: Canvas, arg: float, T: type -> int) ...
+drawSquare  = fn(shape: Square, c: Canvas, arg: float, T: type -> int) ...
+drawTriangle  = fn(shape: Triangle, c: Canvas, arg: float, T: type -> int) ...
+draw = fn(shape: T, c: Canvas, arg: float, T: type -> int) { drawCircle, drawSquare, drawTriangle }
+..
+x: Circle|Square|Triangle = readShapeData()
+draw($x, c, 1.1)
+```
+back to the first proposal: tagging for functions
+```
+$toStrTag
+toStringInt = fn(x:int -> string) { ...}
+$toStrTag
+dasdsadsa = fn(x: string -> string) {...}
+...
+```
+option 1: tag concrete functions + call generic function with union
+option 2: call generic fn with union + keep a map of type to handler
+option 3: vtable (which is same as the map)
+option 4: a match notation specifically for unions
+```
+draw = fn(shape: T, ca: Canvas, T: type -> int) {
+    result = match ( shape ) {
+        c:Circle -> drawCircle(c, ca),
+        s: Square -> drawSquare(s, ca)
+    }
+    
+    result
+}
+```
+but the idea of tagging functions together is very interesting.
+for example for Eq, we can tag all functions checking Eq for a specific type with a tag
+- when we have a new object: Just implement the logic with that tag
+- when we have a new operation, define a function with tag and implement for all types we need
+```
+eq = fn(a: T, b: T, T: type -> bool) {}
+eqString$eq = fn(a: string, b: string -> bool) { ... }
+eqNumber$eq = fn(a: int, b:int -> bool) { ... }
+...
+process = fn(data1: T, data2: T, T: type -> bool) {
+    bool_result = eq(data1, data2)
+    bool_result
+}
+```
+notation for tagging a function?
+`eqString_eq`
+`eqString(eq)`
+`eqString$eq`
+q: should tab become part of function name? maybe not.
+in java we write `public class EqString implements Eq` so class name is completely different
+`eqString::eq`
+`eqString eq = fn...`
+`eqString: eq` no. this is super confusing, we expect a type after `:`
+the notation should imply the separation of function name and tag name.
+`eqString[eq]`
+`eqString{eq}`
+`eqString+eq`
+can a function implement multiple tags? that will be very rare.
+it is not like java, a class has n functions and each function can implement some interface.
+but here we have just one function.
+so lets assume a function can have only zero or one tag.
+`eqString+eq` this read: `eqString which adheres to eq signature is defined as ...`
+```
+eq = fn(a: T, b: T, T: type -> bool) {}
+eqInt+eq = fn(a: int, b:int -> bool ) ...
+eqString+eq = fn(a: string, b: string -> bool) ...
+...
+process = fn(a: T, b: T, T: type -> int) {
+    bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
+}
+```
+1. any generic function can be a signature
+q: what if signature fn has a body? that will complicate things. it must have an empty body
+so:
+signature fn definition -> normal except the fact that we don't return anything
+impl fns: normal except `+eq` notation after fn name.
+fn call: normal, we just call the signature function
+now, what if input is a union?
+still we will need `$` notation to unwrap:
+```
+bool_val = eq($int_or_string, $int_or_string2)
+```
+**PROPOSAL**:
+1. Signature function is a generic function without body
+2. you can implement signature function for any concrete type by defining a fn with compatible signature and add `+signature` to fn name.
+3. when you call signature function, it will automatically be redirected to an impl based on argument type.
+4. You can use `$union_val` to unwrap a union binding to its internal type.
+===
+the empty body is not very elegant. lets say they don't have a body.
+but then it will become kind of opaque and hidden from the user. 
+why not add a notation to do the redirection? in this way we may be able to do some common stuff too?
+for example:
+```
+eq = fn(a: T, b: T, T: type -> bool) {
+    a2 = preprocess(a)
+    +eq(a,b)
+}
+```
+this gives us some flexibility but at the same time increases complexity: we need a new notation for calling impl function.
+lets just have no body. 
+but we need some mechanism to make this explicit.
+```
+# $ for signature - like annotation in Java
+$eq = fn(a: T, b: T, T: type -> bool) {}
+$eq eqInt = fn(a: int, b:int -> bool ) ...
+$eq eqString = fn(a: string, b: string -> bool) ...
+...
+process = fn(a: T, b: T, T: type -> int) {
+    bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
+}
+
+bool2 = eq($int_or_string, $int_or_string2)
+```
+q: how can I implement eq for all stacks?
+```
+#this is like an interface, in interface there is no code or body, just definition
+#so here we only define input and output
+eq = fn(a: T, b: T, T: type -> bool)
+eqInt :: eq = fn(a: int, b:int -> bool ) ...
+eqString :: eq = fn(a: string, b: string -> bool) ...
+eqStack :: eq = fn(a: Stack(T), b: Stack(T), T: type -> bool) ...
+eqIntStack :: eq = fn(a: Stack(int), b: Stack(int) -> bool) ...
+...
+process = fn(a: T, b: T, T: type -> int) {
+    bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
+    bool2_val = eq(int_stack1, int_stack2)
+}
+
+bool2 = eq($int_or_string, $int_or_string2)
+```
+on one way, we want to make this explicit so we use `$` to visually differentiate this.
+otoh we want this to be as least distruptive as possible so that we can re-use existing notations and concepts.
+can we do `$` with a function?
+```
+unwrap = fn(a:T, T: type -> T)
+unwrapInt ???
+```
+
+
+? - support for wildcard for unions
+this can be helpful with vtable implementation or signature types implementation for generic types
+`Eq = fn(a: T, b: T, T: type -> bool)`
+`stackEq: Eq(Stack(_)) = fn(a: Stack(T), b: Stack(T), T: type -> boolean) ...`
+`Vtable = struct(type: T, handler: fn(T,Canvas, float -> int), next: Vtable(_))`
+**PROPOSAL**
+1. When specifying type of a binding, if it is a generic type and we don't care about the actual type value (we support every possible type) we can use `_` instead of the generic argument.
+2. for example `Eq(Stack(_))` means binding is of type function which accepts two arguments of generic type `Stack(T)` but does not care about what T is. It can be anything.
+I find this a bit confusing.
+q: How do we address an binding of type of a generic function?
+for example suppose that I have this:
+`Handler = fn(T,T->string)`?
+`process = fn(data: T, handler: Handler(T)?`
+ok. IIRC we don't have a "type" for generic functions. we only have type for concrete functions.
+so this is a valid type `fn(int->string)`
+but `fn(T->T)` is not a valid type.
+generic functions and data structures (which are also expressed via a generic function) are meta-functions. so they don't have their own type.
+each of their implementation has a type though.
 
 
 
