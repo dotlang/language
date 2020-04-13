@@ -13,14 +13,14 @@ drawSquare = fn(s: Square, c: Canvas, f: float -> int) {...}
 drawFunction = fn(Canvas, float -> int)
 
 #function to get another function to draw the given shape
-getShape = fn(name: String -> drawFunction) 
+getShapeDrawFunction = fn(shape: T, T: type -> drawFunction) 
 {
-    ["Circle": fn{
+    [Circle: fn{
 		c = Circle(...)
 		drawCircle(c, _, _)
      }, 
-	 "Square": ...
-	 ][name]()
+     Square: fn{ ...}
+    ][T]()
 }
 
 f = getShape("Circle")
