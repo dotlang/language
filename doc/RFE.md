@@ -1171,10 +1171,7 @@ no this will be too complicated to write and read.
 lets drop it.
 no match for unions.
 
-
-
-
-? - A dedicated syntax for error handling?
+Y - A dedicated syntax for error handling?
 Rust: `f.read_to_string(&mut s)?`
 Go2:
 ```
@@ -1473,7 +1470,7 @@ maybe we should use `{}`.  we don't use fn prefix so it won't imply this is a fu
 `result = process(1,2)@ + process(3,4)@`
 `result = process(1,2)@{nothing} + process(3,4)@{nothing}`
 **PROPOSAL2**
-1. There is a new core type: `error = struct (key: type, message: string|nothing, location: string|nothing, cause: error|nothing)`.
+1. There is a new core type: `error = struct (key: type|nothing, message: string|nothing, location: string|nothing, cause: error|nothing)`.
 2. we also have a value `error` of error type which is a no-op error.
 3. at operator is used like these: `expression@` or `expression@{expression}`
 4. if left hand side expression evaluates to an error, it will be returned (first case) or result of expression will be returned.
@@ -1496,8 +1493,7 @@ then: `checkWithError(cond)@{-1}` so if cond is false, function will return -1 i
 almost anything can be misused.
 
 
-? - Do we allow struct values without field name?
-`x = Point(1,2)`
+
 
 ? - We should provide some sane defaults and compiler helps for union types. 
 so that stuff like map of key to functions of different types becomes better handled.
@@ -2035,6 +2031,21 @@ and then call it: `$Eq(int)(var1)`
 so I can pass `$Eq(int)` to another function because it has a valid type: `Eq(int)` or `fn(int, int->bool)`
 and we can use a syntax sugar so: `$Eq(int)(var1, var2)` becomes: `$Eq(var1, var2)`
 `$Eq(var1, var2)` will call a function of type `Eq(int).`
+so I can pass `$Eq(int)` to a function to be used for int comparison.
+also, if needed I can pass `Eq` itself (it will be a generic argument) and inside that function I can use `$T(arg1, arg2)` to have compiler/runtime automatically find correct implementation.
+it is the other way around compared to java. In java we write interface, implement it and use implementations.
+here we have interface but don't use implementations. we work with interface and runtime/compiler automatically finds correct implementation for us.
+but: this will no longer support union types.
+but it can.
+we can say `$Eq(int|float)` will find a function for `int|float`.
+but using the shortcut: `$Eq(int_or_float_var)` the if no function found for `int|float` it will look based on runtime type of the binding.
+still confusing. not very simple.
+
+
+
+? - Do we allow struct values without field name?
+`x = Point(1,2)`
+
 
 ? - Can I define a named type inside a function?
 
