@@ -17,13 +17,14 @@
 13. **Generics**: `ValueKeeper = fn(T: type -> type) { struct(data: T) }` (A function that returns a type)
 14. **Generics**: `push = fn(x: T, stack: Stack(T), T: type -> Stack(T)) { ... }`
 15. **Enum**: `DayOfWeek = enum [saturday, sunday, monday, tuesday, wednesday, thursday, friday]`
+16. **Errors**: `result = validateData(a,b,c)@{makeError(InvalidArgument)}`
 
 ## Symbols
 
 01. `#`   Comment
 02. `.`   Access struct members
 03. `()`  Function declaration and call, struct declaration and literals
-04. `{}`  Code block, multiple selection from module namespace
+04. `{}`  Code block, multiple selection from module namespace, error check
 05. `[]`  Sequence and hashMap
 06. `|`   Union data type 
 07. `->`  Function declaration
@@ -31,13 +32,16 @@
 09. `:`   Type declaration (binding, struct field and function inputs), type alias, struct literal
 10. `=`   Binding declaration, named type
 11. `_`   Place-holder (lambda creator and assignment)
-12. `:=`  Parallel execution
-13. `..`  Access inside module
-14. `///` Select (concurrency)
+12. `@`   Error check
+13. `:=`  Parallel execution
+14. `..`  Access inside module
+15. `///` Select (concurrency)
 
 ## Reserved keywords
 
 **Primitive data types**: `int`, `float`, `char`, `byte`, `bool`, `string`, `nothing`, `type`
+
+**Core data types**: `error`
 
 **Operators**: `and`, `or`, `not`
 
