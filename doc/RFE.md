@@ -1941,7 +1941,12 @@ Vtable = struct(type: T, handler: fn(T,Canvas, float -> int), next: Vtable(_))
 shapesTable: Vtable = (type: Circle, handler: drawCircle, next:
 				(type: Square, handler: drawSquare, next:
 					(type: Triangle, handler: drawTriangle)))
-
+Draw = fn(shape: T, c: Canvas, f: float -> int)
+drawCircle: Draw(Circle) = fn(shape: Circle, c: Canvas, ...
+drawSquare: Draw(Square) = ...
+...
+x = Draw&(my_shape)  #runtime call resolution
+y = Draw&(my_circle) #compile time call resolution
 ```
 but we should formalize this notation a bit more. is it a union? is it a compile time thing or runtime?
 **PROPOSAL: Signature Types**
@@ -1951,8 +1956,85 @@ example: `ToStrSignature = fn(T: type -> type) { fn(x: T, T: type -> string) }`
 example: `toStringInt: ToStrSignature(int) = fn(x:int -> string) { ...}` this defines a child for `ToString` signature for `int` type.
 3. You can use `&SignatureType(args)` notation to invoke a child functions matching with a signature type and pass required arguments.
 example: `str_val = ToStrSignature&(int_var)`
-4.
+4. We have the `Type(_)` notation which is a wildcard for a generic type and denotes all generic types regardless of their T type.
 ===
-
+it would be good if the syntax could be more like a function. 
+one option is to define that function:
+```
+Draw = fn(shape: T, c: Canvas, f: float -> int)
+drawAnyShape: Draw(_) = Draw& #but then, what is type of drawAnyShape? remember: anything without a proper type, is an exception to the language
+```
+another option: tag the type definition with a function name (instead of `&` notation)
+```
+Draw = drawShape: fn(shape: T, c: Canvas, f: float -> int) 
+```
+if we use above notation, then `drawShape` will be a function we can invoke with a shape or union of shapes as `shape` argument (first argument) and it will redirect to the appropriate function.
+but if we call it with `int`, then there will be a runtime error (or maybe compiler error) because we don't draw an int.
+what if we do this for other stuff?
+`Customer = x: struct(name: string, age: int)`
+it makes no sense and there will be a compiler error
+what if I use it with non-functions? not allowed.
+this can only be used with generic function types.
+and will represent all functions that are of that type.
+(btw we dont need a fn define generic function. it is needed for data types)
+```
+Eq = isEqual: fn(a: T, b: T, T: type -> bool)
+intEq: Eq(int) = fn(a:int, b:int -> bool) ...
+Stack = fn(T: type -> type ) { struct (data: T, next: Stack(T)) }
+intStackEq: Eq(Stack(int)) =  fn(a: Stack(int), b: Stack(int) -> boolean) ...
+stackEq: Eq(Stack(_)) = fn(a: Stack(T), b: Stack(T), T: type -> boolean) ...
+...
+bool_val = isEqual(var1, var2)
+```
+what is type of `isEqual`? can I pass it to another function?
+separating the definition of the type/function and invoking it, causes confusion.
+what if instead of defining a generic type, we define a generic function?
+does `Eq = fn(T,T->bool)` make sense? this does not conflict with generics rules?
+```
+isEqual = fn(a: T, b: T, T: type -> bool)
+isEqual(int) = fn(a:int, b:int -> bool) ...
+Stack = fn(T: type -> type ) { struct (data: T, next: Stack(T)) }
+isEqual(Stack(int)) =  fn(a: Stack(int), b: Stack(int) -> boolean) ...
+isEqual(Stack(_)) = fn(a: Stack(T), b: Stack(T), T: type -> boolean) ...
+...
+bool_val = isEqual(var1, var2)
+```
+but having a function named `isEqual(int)` is confusing.
+how can I bind a normal function like intEquals to a generic function like `isEqual`?
+we make isEqual a type (and not a function) and then I ca define type of `intEquals` as `isEqual`.
+```
+Eq = fn(a: T, b: T, T: type -> bool)
+intEq: Eq(int) = fn(a:int, b:int -> bool) ...
+Stack = fn(T: type -> type ) { struct (data: T, next: Stack(T)) }
+intStackEq: Eq(Stack(int)) =  fn(a: Stack(int), b: Stack(int) -> boolean) ...
+stackEq: Eq(Stack(_)) = fn(a: Stack(T), b: Stack(T), T: type -> boolean) ...
+...
+result = Eq&(var1, var2)
+```
+But `Eq&` is not an actual expression. so we cannot pass it to somewhere else.
+can this become more explicit?
+`result = Eq[var1, var2]`
+no. looks like map/seq
+what if we have a notation to look up function? and then we use it to call.
+but it will be to verbose.
+like: `result = Eq[var1, var2](var1,var2)`
+or: `Eq.(var1, var2)`
+or: `Eq(int)(var1, var2)`
+or: `*Eq(int)(var1, var2)`
+where `*` means find correct function implementation
+`Eq(int)` specifies the type.
+`*Eq(int)` means find the best function that is of type `Eq(int)`
+this is a look up of function by type. can we generalize it?
+lookup a function of type X and give it to me. of course I know the type and it is a valid type.
+`Eq` is generic type.
+`Eq(int)` is concrete type
+`*Eq(int)` gives you a ptr to the function of that type (if exists)
+`$Eq(var1, var2)` does above in one step.
+`$Eq` is invalid in its own. you have to use `$Eq(int)` to find a function of that type.
+and then call it: `$Eq(int)(var1)`
+so I can pass `$Eq(int)` to another function because it has a valid type: `Eq(int)` or `fn(int, int->bool)`
+and we can use a syntax sugar so: `$Eq(int)(var1, var2)` becomes: `$Eq(var1, var2)`
+`$Eq(var1, var2)` will call a function of type `Eq(int).`
 
 ? - Can I define a named type inside a function?
+
