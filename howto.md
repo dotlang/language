@@ -30,21 +30,6 @@ f(my_canvas, 1.12)
 If you want to add a new shape (e.g. Triangle), you should define appropriate functions (e.g. `drawTriangle`), and modify the map in `getShape`.
 If you want to add a new operation (e.g. print), you will need to add a new function (e.g. `getShapePrinter`).
 
-Another approach to implement polymorphism is by using a minified VTable:
-
-```perl
-drawCircle = fn(s: Circle, c: Canvas, f: float -> int) {...}
-drawSquare = fn(s: Square, c: Canvas, f: float -> int) {...}
-
-getDraw = fn(x: T, T: type -> fn(Canvas, float -> int)) 
-{
-    vtable = [Circle : drawCircle, Square: drawSquare]
-    cast(fn(T, Canvas, float), vtable[T])(x, _, _)
-}
-
-f = getDraw(my_circle)(my_canvas, 1.52)
-```
-
 ## Conditionals
 
 If and Else constructs can be implemented using the fact that booleans converted to integer will result to `0` or `1` (for `false` and `true`).
