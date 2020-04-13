@@ -45,16 +45,6 @@ getDraw = fn(x: T, T: type -> fn(Canvas, float -> int))
 f = getDraw(my_circle)(my_canvas, 1.52)
 ```
 
-## Exception handling
-
-There is no explicit support for exceptions. You can return a specific `exception` type instead (or use `nothing` type to indicate exception).
-
-If a really unrecoverable error happens, you should exit the application by calling `exit` built-in function. 
-
-In special cases like a plugin system, where you must control exceptions, you can use built-in functions to call plugin. It will return an error result if the function which it calls exits unexpectedly.
-
-Example: `result = safeInvoke(myPluginHandler)`
-
 ## Conditionals
 
 If and Else constructs can be implemented using the fact that booleans converted to integer will result to `0` or `1` (for `false` and `true`).
