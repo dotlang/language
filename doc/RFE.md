@@ -2260,8 +2260,121 @@ otoh we want this to be as least distruptive as possible so that we can re-use e
 can we do `$` with a function?
 ```
 unwrap = fn(a:T, T: type -> T)
-unwrapInt ???
+unwrapInt :: unwrap = fn(a:int -> int) { a }
 ```
+yes that is possible and we can say compiler will automatically implement this for all available types.
+but does it make sense? I call unwrap with `int|float`. so it should be called with that type, not int, if the binding has an int.
+so we still need `$`.
+we also need sth to denote in a function that argument should have some signature
+```
+process = fn(a: T, b: T, T: type -> int) {
+    bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
+}
+```
+q: shouldn't `:: eq` be on the right side? because this is not about name of a function but about impl.
+```
+eqInt = fn(a: int, b:int -> bool ) :: eq ...
+```
+q: what about default impl? maybe that is what we can put instead of empty body
+```
+eq = fn(a: T, b: T, T: type -> bool) { default impl }
+eqInt = fn(a: int, b:int -> bool ) :: eq ...
+eqString = fn(a: string, b: string -> bool) :: eq ...
+eqStack = fn(a: Stack(T), b: Stack(T), T: type -> bool) :: eq ... #we dont write type after eq. compiler will infer
+eqIntStack = fn(a: Stack(int), b: Stack(int) -> bool) :: eq ...
+...
+process = fn(a: T, b: T, T: type -> int) :: eq(T) {
+    bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
+    bool2_val = eq(int_stack1, int_stack2)
+}
+
+bool2 = eq($int_or_string, $int_or_string2)
+```
+`:: eq` means this function is implementing eq for a more concrete type. like int or `Stack(T)`.
+`process = fn(a: T, b: T, T: type+eq -> int) {` so we can call `eq(a,b)`
+`process = fn(a: T, b: U, T,U: type+convert -> int) {` so we can call `convert(a,b)`
+or:
+`process = fn(a: T, b: T, T: type -> int) ::eq(T) {` so we can call `eq(a,b)`
+`process = fn(a: T, b: U, T,U: type -> int) ::convert(T,U) ::eq(T) {` so we can call `convert(a,b)`
+second is better because it is more intuitive (`eq(T)` vs `T: type+eq`) and puts the dependency outside function header.
+fn header is for defining input and output types and that should be it. signaturs we expect should be outside but still cannot be in the body as they are not code
+q: maybe we should also put generic types outside fn decl?
+`process = fn(a: T, b: T -> int) ::T ::eq(T) {` so we can call `eq(a,b)`
+`process = fn(a: T, b: U -> int) ::T ::U ::convert(T,U) ::eq(T) {` so we can call `convert(a,b)`
+lets discuss this point as another section.
+**PROPOSAL**:
+1. Signature function is a normal generic function (body is default implementation)
+2. you can implement signature function for any concrete type by defining a fn with compatible signature and add `:: Signature` after fn header.
+3. when you call signature function, it will automatically be redirected to an impl based on argument type.
+4. You can use `$union_val` to unwrap a union binding to its internal type.
+```
+eq = fn(a: T, b: T, T: type -> bool) { default impl }
+eqInt = fn(a: int, b:int -> bool ) :eq { ... }
+eqString = fn(a: string, b: string -> bool) :eq { ... }
+eqStack = fn(a: Stack(T), b: Stack(T), T: type -> bool) :eq ... #we dont write type after eq. compiler will infer
+eqIntStack = fn(a: Stack(int), b: Stack(int) -> bool) :eq ...
+...
+process = fn(a: T, b: T, T: type -> int) :: eq(T) {
+    bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
+    bool2_val = eq(int_stack1, int_stack2)
+}
+
+bool2 = eq($int_or_string, $int_or_string2)
+```
+===
+using same notation for two different purposes is a bit misleading. 1. we are implementing this signature function, 2. we expect T to satisfy this signature function.
+provide vs expect
+in java: `implements X`, vs `item: X`
+but here we can have multi-parameter signature function.
+we have two concepts: provides/implements and expects
+implements `:` expects `::`
+if we can define a default body for signature function, why do we need to emphasise an expectation?
+I mean, this is not so helpful for the compiler. it is only some kind of documentation for the user to know what they need to provide before calling this function.
+rather than `::T` we should use `T:eq` or `T,U:convert` because it makes mose sense. we say `T:eq` which means T satisfies `eq` function.
+and how can we mix these two? 
+a function that implements a type signature but also has some generic arguments which need to be implementing some signature?
+`test = fn(...) T:eq, U: eq, V,Z: convert, :signature1 { ... }`
+and maybe we should make them more explicit by using something to surround them:
+`test = fn(...) [T:eq, U: eq, T,V: convert, :signature1] { ... }`
+`test = fn(...) [eq(T), eq(U), convert(T,U), :signature1] { ... }`
+we should make order explicit: first signature you are satisfying then expectations:
+`test = fn(...) :signature [eq(T), eq(U), convert(T,U)] { ... }`
+so, any function call which uses generic type `T` must have a clause in `[]` section. otherwise it will be a compiler error.
+**PROPOSAL**:
+1. Signature function is a normal generic function (body is default implementation)
+2. you can implement signature function for any concrete type by defining a fn with compatible signature and add `: Signature` after fn header.
+3. when you call signature function, it will automatically be redirected to an impl based on argument type.
+4. You can use `$union_val` to unwrap a union binding to its internal type.
+5. You can also put a `[...]` clause after fn header to declare your expectations for generic argument.
+```
+eq = fn(a: T, b: T, T: type -> bool) { default impl }
+eqInt = fn(a: int, b:int -> bool ) :eq { ... }
+eqString = fn(a: string, b: string -> bool) :eq { ... }
+eqStack = fn(a: Stack(T), b: Stack(T), T: type -> bool) :eq ... #we dont write type after eq. compiler will infer
+eqIntStack = fn(a: Stack(int), b: Stack(int) -> bool) :eq ...
+...
+process = fn(a: T, b: T, T: type -> int) [ eq(T) ] {
+    bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
+    bool2_val = eq(int_stack1, int_stack2)
+}
+test = fn(...) :signature [eq(T), eq(U), convert(T,U)] { ... }
+bool2 = eq($int_or_string, $int_or_string2)
+```
+===
+
+
+
+
+
+
+
+? - Shall we put generic type stuff outside fn header?
+`process = fn(a: T, b: T -> int) ::T {`
+if so we can then say generic type must be one letter capital and all other types must be more than one letter long
+does this mean we will remove `type` keyword?
+how does this work with concurrency, error handling?
+
+
 
 
 ? - support for wildcard for unions
