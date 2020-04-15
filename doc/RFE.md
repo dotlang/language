@@ -1493,7 +1493,8 @@ then: `checkWithError(cond)@{-1}` so if cond is false, function will return -1 i
 almost anything can be misused.
 
 
-? - We should provide some sane defaults and compiler helps for union types. 
+N - (this is broken into multiple sections coming after this section)
+We should provide some sane defaults and compiler helps for union types. 
 so that stuff like map of key to functions of different types becomes better handled.
 If all options of a union have sth similar, can we use it without union dereferencing?
 for example if they are all functions that have no input but have different outputs.
@@ -2349,7 +2350,7 @@ so, any function call which uses generic type `T` must have a clause in `[]` sec
 ```
 eq = fn(a: T, b: T, T: type -> bool) { default impl }
 eqInt = fn(a: int, b:int -> bool ) :eq { ... }
-eqString = fn(a: string, b: string -> bool) :eq { ... }
+eqString = fn(a: string, b: string -> bool) eq { ... }
 eqStack = fn(a: Stack(T), b: Stack(T), T: type -> bool) :eq ... #we dont write type after eq. compiler will infer
 eqIntStack = fn(a: Stack(int), b: Stack(int) -> bool) :eq ...
 ...
@@ -2361,23 +2362,81 @@ test = fn(...) :signature [eq(T), eq(U), convert(T,U)] { ... }
 bool2 = eq($int_or_string, $int_or_string2)
 ```
 ===
+it should be very explicit to know which signature does a fn implement. because now we are adding some kind of opaque processing.
+when I call `eq` it may not call `eq` itself and it may call another function. so it should be very clear and explicit and easy to find and follow.
+what about clashes? if we have to impls for one signature func?
+can we do this for enums too? like having a function that accepts an enum and write impl for different enum values.
+maybe we should explicitly mark if a function allows it to have impls. But this will mean restrictions on the coding side.
+why not let them do whatever they want? of course we assume they know what they are doing.
+q: can this cause infinite loop? if impl calls generic function? no. it will be a recursive call. it becomes infinite loop only if there is no condition to terminate recursion.
+todo:
+1. make it more explicit if a fn is impl a signature
+`eqString = fn!eq(a: string, b: string -> bool) { ... }`
+2. what about clashes: two same impls?
+suppose that we have: `eqString = fn!eq(string...)`
+and I import another module which has: `customStringCompare = fn!eq(string...)`
+I prefer that, rather than adding a new notation during import or invoke, lets stick to the original rules of resolution.
+if you want to override, define a module-local impl, that calls the actual function.
+`myOverriderFn = fn!eq(string...) { customStringCompare }`
+3. enums?
+```
+process = fn(a: int, day: WeekDay -> bool) { default impl }
+processSaturday = fn!process(a: int, day: Saturday -> bool ) :eq { ... }
+```
+But `Saturday` is not a day. and also, enums have a fairly limited set of possible values.
+NO.
+4. what is order of resolution? this should be simple and well documented.
+it should be same as finding a function. current fn -> current module -> imported modules
+but wait, we cannot just call a function from imported module. 
+`You can ignore output of an import to have its definitions inside current namespace.`
+should we only look into these imported modules for a candidate or not?
+5. can we write impl for a union typed argument of a signature function?
+```
+process = fn(x:int|float, ...)
+processInt = fn!process(x:int ...
+```
+No. Lets not make things more complicated. the purpose of this signature types is providing a limited feature set for polymorphism.
+6. problem is, when looking at a generic function, we have no way of knowing that it is supposed to have implementations.
+and this makes reading code difficult.
+`eq = fn!(a: T, b: T, T: type -> bool) { default impl }`
+7. is it possible that `eqInt` implements `eq` and `eq` implements another function?
+like `eqIntStack` implements `eqStack` which implements `eq`
+`eq = fn(a: T, b: T, T: type -> bool) { default impl }`
+`eqStack = fn:eq(a: Stack(T), b: Stack(T), T: type -> bool) { default impl }`
+`eqStackInt = fn!eqStack(a: T, b: T, T: type -> bool) { default impl }`
+this will be a source of confusion. which one should I say I implement? the top one (eq)? or nearer one (eqStack)?
+we can say: you can only implement a signature type and `eqStack` is not a signature type.
+signature functions have `fn!` in their definition.
+**PROPOSAL**:
+1. Signature function is a normal generic function (body is default implementation) but has `fn!` instead of `fn`
+2. you can implement signature function for any concrete type by defining a fn with compatible signature and add `!signature` after fn keyword.
+3. when you call signature function, it will automatically be redirected to an impl based on argument type, if not found, will run default the body.
+4. You can use `$union_val` to unwrap a union binding to its internal type.
+5. You can also put a `[...]` clause after fn header to declare your expectations for generic argument.
+6. If there are multiple candidates for calling impl function, you can resolve the conflict by writing a module-local function and redirect to the correct impl.
+```
+eq = fn!(a: T, b: T, T: type -> bool) { default impl }
+eqInt = fn!eq(a: int, b:int -> bool ) { ... }
+eqString = fn!string(a: string, b: string -> bool) { ... }
+eqStack = fn!eq(a: Stack(T), b: Stack(T), T: type -> bool) ... #we dont write type after eq. compiler will infer
+eqIntStack = fn!eq(a: Stack(int), b: Stack(int) -> bool) ... #you cannot impl eqStack because it is not a signature function
+...
+process = fn(a: T, b: T, T: type -> int) [ eq(T) ] {
+    bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
+    bool2_val = eq(int_stack1, int_stack2)
+}
+test = fn!signature1(...) [eq(T), eq(U), convert(T,U)] { ... }
+bool2 = eq($int_or_string, $int_or_string2)
+```
+===
+This has become too big: typeclass -> wildcard for generics -> tagged functions -> functor
+lets break it up into multiple smaller pieces.
+
+N - Can I define a named type inside a function?
+no longer relevant.
 
 
-
-
-
-
-
-? - Shall we put generic type stuff outside fn header?
-`process = fn(a: T, b: T -> int) ::T {`
-if so we can then say generic type must be one letter capital and all other types must be more than one letter long
-does this mean we will remove `type` keyword?
-how does this work with concurrency, error handling?
-
-
-
-
-? - support for wildcard for unions
+N - support for wildcard for unions
 this can be helpful with vtable implementation or signature types implementation for generic types
 `Eq = fn(a: T, b: T, T: type -> bool)`
 `stackEq: Eq(Stack(_)) = fn(a: Stack(T), b: Stack(T), T: type -> boolean) ...`
@@ -2395,12 +2454,80 @@ so this is a valid type `fn(int->string)`
 but `fn(T->T)` is not a valid type.
 generic functions and data structures (which are also expressed via a generic function) are meta-functions. so they don't have their own type.
 each of their implementation has a type though.
+we no longer need it.
 
 
+================================================
+
+
+? - Signature functions
+1. Signature function is a normal generic function (body is default implementation) but has `fn!` instead of `fn`
+2. you can implement signature function for any concrete type by defining a fn with compatible signature and add `!signature` after fn keyword.
+3. when you call signature function, it will automatically be redirected to an impl based on argument type, if not found, will run default the body.
+4. If there are multiple candidates for calling impl function, you can resolve the conflict by writing a module-local function and redirect to the correct impl.
+```
+eq = fn!(a: T, b: T, T: type -> bool) { default impl }
+eqInt = fn!eq(a: int, b:int -> bool ) { ... }
+eqString = fn!string(a: string, b: string -> bool) { ... }
+eqStack = fn!eq(a: Stack(T), b: Stack(T), T: type -> bool) ... #we dont write type after eq. compiler will infer
+eqIntStack = fn!eq(a: Stack(int), b: Stack(int) -> bool) ... #you cannot impl eqStack because it is not a signature function
+process = fn(a: T, b: T, T: type -> int) {
+    bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
+    bool2_val = eq(int_stack1, int_stack2)
+}
+```
+
+
+? - Use `[eq(T)]` notation to declare what a generic function expects from its generic type.
+5. You can also put a `[...]` clause after fn header to declare your expectations for generic argument.
+
+```
+process = fn(a: T, b: T, T: type -> int) [ eq(T) ] {
+    bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
+    bool2_val = eq(int_stack1, int_stack2)
+}
+test = fn!signature1(...) [eq(T), eq(U), convert(T,U)] { ... }
+```
+
+? - can we simplify everything? all of this?
+is there a minimal, simple tool that can do all of this?
+even if it means writing some more lines of code.
+
+
+? - Use `$int_or_float` notation to unwrap a union when calling a generic function.
+4. You can use `$union_val` to unwrap a union binding to its internal type.
+bool2 = eq($int_or_string, $int_or_string2)
+
+
+? - Shall we put generic type stuff outside fn header?
+`process = fn(a: T, b: T -> int) ::T {`
+if so we can then say generic type must be one letter capital and all other types must be more than one letter long
+does this mean we will remove `type` keyword?
+how does this work with concurrency, error handling?
+what comes between `fn(...)` and `{` should be compile time checks.
+q: if we remove `type` keyword, what will change?
+q: how does this change data structures?
+```
+LinkedList = struct (
+        data: T,
+        next: LinkedList|nothing
+    )
+```
+we can invoke a generic fn just like a normal fn and compiler will take care of checking argument types.
+but we cannot do that with generic data structure.
+if I want to create a new linkedList, I must specify type of its data.
+what if a generic function accepts a generic fn? for example, sort needs a compare function.
+`sort = fn(a: [T] -> [T]) [T] { ... }`
+`sort = fn(a: [T], cmp: fn(T,T->int) -> [T]) [T] { ... }`
+maybe we can say you can have at most 4 generics args: `T, U, V, X`
+the problem is: we always have to repeat `T: type` and never pass it when calling a function. so what's the use of this?
+
+? - Can we use the `process = fn(...) [eq(T)]` notation for data structures too?
+e.g. we want set to only comparable types.
 
 ? - Do we allow struct values without field name?
 `x = Point(1,2)`
 
 
-? - Can I define a named type inside a function?
+
 
