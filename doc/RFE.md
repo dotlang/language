@@ -2476,27 +2476,49 @@ process = fn(a: T, b: T, T: type -> int) {
     bool2_val = eq(int_stack1, int_stack2)
 }
 ```
+- we should not have default impl. having body for this generic fn is like having body inside interface.
+- and don't use `!`. it is very different from other things. use `=0` instead of body.
+- we can say after `fn(...)` there is a `[...]` section to describe compile time requirements on types.
+- this section can also include whether this fn is implementing another fn.
+- we may later also add functions to use inside `[]` to say: `T must be an array` or `T must be a struct with a field name`
+or `T must be a struct compatible with this struct H` this last one is starting point for structural polymorphism and can be achieved compile time.
+q: are these limitations part of value or type? if value, then we will have issue with generic data types.
+if type then type assignment and comparison becomes difficult. 
+but in Java it is part of type. when we write:
+`static <K,V> Multimap<K,V>	filterEntries(Multimap<K,V> unfiltered, Predicate<? super Map.Entry<K,V>> entryPredicate)`
+all above items are part of function type.
+so:
+**PROPOSAL: Signature functions**
+1. Signature functions are generic functions without body (`=0` instead of body) and are like Java interfaces (A).
+2. you can implement signature function for any concrete type by defining a fn with compatible signature (B)
+3. when you call signature function, it will automatically be redirected to an impl based on argument type. (C)
+4. If there are multiple candidates for calling impl function, you can resolve the conflict by writing a module-local function and redirect to the correct impl.
+```
+#A
+eq = fn(a: T, b: T, T: type -> bool) = 0
 
+#B
+eqInt = fn(a: int, b:int -> bool ) [implements eq] { ... }
+eqString = fn(a: string, b: string -> bool) [implements eq] { ... }
+eqStack = fn(a: Stack(T), b: Stack(T), T: type -> bool) [implements eq]  ... #we dont write type after eq. compiler will infer
+eqIntStack = fn(a: Stack(int), b: Stack(int) -> bool) [implements eq] ... #you cannot impl eqStack because it is not a signature function
+
+#C
+process = fn(a: T, b: T, T: type -> int) {
+    bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
+    bool2_val = eq(int_stack1, int_stack2)
+}
+```
 
 ? - Use `[eq(T)]` notation to declare what a generic function expects from its generic type.
-5. You can also put a `[...]` clause after fn header to declare your expectations for generic argument.
-
+You can also put a `[...]` clause after fn header to declare your expectations for generic argument.
 ```
-process = fn(a: T, b: T, T: type -> int) [ eq(T) ] {
+process = fn(a: T, b: T, T: type -> int) [ expects eq(T) ] {
     bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
     bool2_val = eq(int_stack1, int_stack2)
 }
 test = fn!signature1(...) [eq(T), eq(U), convert(T,U)] { ... }
 ```
-
-? - can we simplify everything? all of this?
-is there a minimal, simple tool that can do all of this?
-even if it means writing some more lines of code.
-
-
-? - Use `$int_or_float` notation to unwrap a union when calling a generic function.
-4. You can use `$union_val` to unwrap a union binding to its internal type.
-bool2 = eq($int_or_string, $int_or_string2)
 
 
 ? - Shall we put generic type stuff outside fn header?
@@ -2522,11 +2544,31 @@ what if a generic function accepts a generic fn? for example, sort needs a compa
 maybe we can say you can have at most 4 generics args: `T, U, V, X`
 the problem is: we always have to repeat `T: type` and never pass it when calling a function. so what's the use of this?
 
+
+
 ? - Can we use the `process = fn(...) [eq(T)]` notation for data structures too?
 e.g. we want set to only comparable types.
+we can do the same for data structure. a generic data structure will look like a method. but it starts with a capiral letter so different from function.
+```
+LinkedList = struct(a: T, next: LinkedList(T)) [ type(T) ... ]
+#when using:
+x: LinkedList(int)
+```
+does not look intuitive. lets continue to use functions:
+```
+LinkedList = fn(T: type -> type) {
+	...
+}
+```
 
 ? - Do we allow struct values without field name?
 `x = Point(1,2)`
+
+
+
+? - Use `$int_or_float` notation to unwrap a union when calling a generic function.
+4. You can use `$union_val` to unwrap a union binding to its internal type.
+bool2 = eq($int_or_string, $int_or_string2)
 
 
 
