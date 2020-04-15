@@ -2457,6 +2457,31 @@ each of their implementation has a type though.
 we no longer need it.
 
 
+N - Shall we put generic type stuff outside fn header?
+`process = fn(a: T, b: T -> int) ::T {`
+if so we can then say generic type must be one letter capital and all other types must be more than one letter long
+does this mean we will remove `type` keyword?
+how does this work with concurrency, error handling?
+what comes between `fn(...)` and `{` should be compile time checks.
+q: if we remove `type` keyword, what will change?
+q: how does this change data structures?
+```
+LinkedList = struct (
+        data: T,
+        next: LinkedList|nothing
+    )
+```
+we can invoke a generic fn just like a normal fn and compiler will take care of checking argument types.
+but we cannot do that with generic data structure.
+if I want to create a new linkedList, I must specify type of its data.
+what if a generic function accepts a generic fn? for example, sort needs a compare function.
+`sort = fn(a: [T] -> [T]) [T] { ... }`
+`sort = fn(a: [T], cmp: fn(T,T->int) -> [T]) [T] { ... }`
+maybe we can say you can have at most 4 generics args: `T, U, V, X`
+the problem is: we always have to repeat `T: type` and never pass it when calling a function. so what's the use of this?
+this looks like a big change. lets not do it.
+
+
 ================================================
 
 
@@ -2509,6 +2534,50 @@ process = fn(a: T, b: T, T: type -> int) {
     bool2_val = eq(int_stack1, int_stack2)
 }
 ```
+- we may later also add functions to use inside `[]` to say: `T must be an array` or `T must be a struct with a field name`
+or `T must be a struct compatible with this struct H` this last one is starting point for structural polymorphism and can be achieved compile time.
+we can define a small set of notations for here.
+`eq(T)` expects T to have impl for eq signature
+`eq` this function implements for eq signature
+`T.name: string` T is a struct and has name field of type string
+`T.name: S` type of name is S
+`T.Point` T type is a struct and has all fields from Point type
+`T.List(S)` T is a struct and has all fields from `List(S)`
+`process = fn(a: T, b: T, T: type -> int) [eq(T),  T.age:int, T.Point, T: List(S)] {...}`
+between these, `eq` notation is the most confusing.
+lets use `!` notation. 
+`eqInt = fn!eq(a: int, b:int -> bool ) [constraints] { ... }`
+the fact that `eqInt` is implementing `eq` is not part of its type.
+and also it is not part of its name.
+we dont want to change anything in the name part because it is important and later might be used in other places like `_` operator to create a lambda.
+`T.age:int, T.Point, T: List(S)` these are not really needed.
+`T.age:int` -> pass age separately 
+`T.Point` pass point separately
+`T:List(S)` pass List(S) separately
+so the only necessary part is signature implementations: what signatures should generic types implement.
+`process = fn(a: T, b: T, T: type -> int) [eq(T), Iterable(T), Serializable(T)] {...}`
+What are some important Java interfaces? how can we have them here via signature types?
+- Iterable
+- Serializable
+- Closeable
+- Cloneable
+- Observable
+q: why can't we add a new function to inputs of process to check for equality?
+`process = fn(a: T, b: T, eq: fn(T,T->bool), T: type -> int) {...}`
+we can definitely do that. problem will be: everytime when I call this function, I will need to remember what function does that for me.
+and think we can have 100s of types and 10s of common functions.
+what function does equality check for Customer? what function does serialization for a Connection?
+what function does clone for an Employee type? 
+rather than keeping track of all of these, we organise them and automatically fetch them during compile time based on tags that we have introduced.
+but is it worth it?
+option 1: keep using functions as inputs to pass all the logic you need. new type: write new functions, new functions: implement for important types
+option 2: `!` notation, `[eq(T)]` notation. 
+so, for example: for iteration, rather than having `foreach = fn... [itearble(T)]`
+we write: `foreach = fn(data: T, ..., iterate: fn(T->T)...`
+remember: it is better having smaller number of powerful features that compose well, rather than having lots of confusing and less elegant features that some cannot compose with each other.
+
+
+? - How can I easily call draw functions for shapes based on value of a union binding?
 
 ? - Use `[eq(T)]` notation to declare what a generic function expects from its generic type.
 You can also put a `[...]` clause after fn header to declare your expectations for generic argument.
@@ -2517,32 +2586,10 @@ process = fn(a: T, b: T, T: type -> int) [ expects eq(T) ] {
     bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
     bool2_val = eq(int_stack1, int_stack2)
 }
-test = fn!signature1(...) [eq(T), eq(U), convert(T,U)] { ... }
+test = fn(...) [implements signature1, eq(T), eq(U), convert(T,U)] { ... }
 ```
-
-
-? - Shall we put generic type stuff outside fn header?
-`process = fn(a: T, b: T -> int) ::T {`
-if so we can then say generic type must be one letter capital and all other types must be more than one letter long
-does this mean we will remove `type` keyword?
-how does this work with concurrency, error handling?
-what comes between `fn(...)` and `{` should be compile time checks.
-q: if we remove `type` keyword, what will change?
-q: how does this change data structures?
-```
-LinkedList = struct (
-        data: T,
-        next: LinkedList|nothing
-    )
-```
-we can invoke a generic fn just like a normal fn and compiler will take care of checking argument types.
-but we cannot do that with generic data structure.
-if I want to create a new linkedList, I must specify type of its data.
-what if a generic function accepts a generic fn? for example, sort needs a compare function.
-`sort = fn(a: [T] -> [T]) [T] { ... }`
-`sort = fn(a: [T], cmp: fn(T,T->int) -> [T]) [T] { ... }`
-maybe we can say you can have at most 4 generics args: `T, U, V, X`
-the problem is: we always have to repeat `T: type` and never pass it when calling a function. so what's the use of this?
+- we may later also add functions to use inside `[]` to say: `T must be an array` or `T must be a struct with a field name`
+or `T must be a struct compatible with this struct H` this last one is starting point for structural polymorphism and can be achieved compile time.
 
 
 
