@@ -218,12 +218,13 @@ Point = struct (x:int, y:int)
 
 #create a binding of type Point, defined above
 point2 = Point(x:100, y:200) 
+point2new = Point(100, 200) 
 
 #untyped struct
 point1 = struct(int,int)(100, 200) 
 
 #struct type with no field names
-Point = (int, int)
+Point = struct (int, int)
 
 #update an existing struct binding and save as a new binding
 point4 = Point(x:point3.x, y : 101)
