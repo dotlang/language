@@ -2493,10 +2493,29 @@ test = fn(...) [implements signature1, eq(T), eq(U), convert(T,U)] { ... }
 - we may later also add functions to use inside `[]` to say: `T must be an array` or `T must be a struct with a field name`
 or `T must be a struct compatible with this struct H` this last one is starting point for structural polymorphism and can be achieved compile time.
 
-================================================
 
+N - (explained in another item) How can I easily call draw functions for shapes based on value of a union binding?
+`x: Circle|Square|Triangle`
+`drawCircle, drawSquare, drawTriangle`
+now, how can I call correct function based on runtime type of x?
+what is the most 
 
-? - Signature functions
+N - Can we use the `process = fn(...) [eq(T)]` notation for data structures too?
+e.g. we want set to only comparable types.
+we can do the same for data structure. a generic data structure will look like a method. but it starts with a capiral letter so different from function.
+```
+LinkedList = struct(a: T, next: LinkedList(T)) [ type(T) ... ]
+#when using:
+x: LinkedList(int)
+```
+does not look intuitive. lets continue to use functions:
+```
+LinkedList = fn(T: type -> type) {
+	...
+}
+```
+
+N - Signature functions
 1. Signature function is a normal generic function (body is default implementation) but has `fn!` instead of `fn`
 2. you can implement signature function for any concrete type by defining a fn with compatible signature and add `!signature` after fn keyword.
 3. when you call signature function, it will automatically be redirected to an impl based on argument type, if not found, will run default the body.
@@ -2594,39 +2613,214 @@ option 1 gives you flexibility but is less convenient
 option 2 is more convenient but less flexible and adds new notations: signature generic function and `!eq` notation and `[eq(T)]` notation..
 just like error handling with `@`, we need to compare these two.
 is the convenience worth loosing flexibility and added syntax?
-
-
-
-? - How can I easily call draw functions for shapes based on value of a union binding?
-`x: Circle|Square|Triangle`
-`drawCircle, drawSquare, drawTriangle`
-now, how can I call correct function based on runtime type of x?
-what is the most 
-
-? - Can we use the `process = fn(...) [eq(T)]` notation for data structures too?
-e.g. we want set to only comparable types.
-we can do the same for data structure. a generic data structure will look like a method. but it starts with a capiral letter so different from function.
+new syntaxes:
+1. `=0` notation to indicate a function is interface: `eq = fn(a: T, b: T, T: type -> bool) = 0`
+2. `!` notation to say we are implementing a function: `eqStack = fn!eq...`
+3. `[eq(T)]` notation to imply requirement for generic type: `process = fn(a: T, b: T, T: type -> int) [eq(T), Iterable(T), Serializable(T)] {...}`
+we can get rid of 1 and 2. re 1, we make body allowed and all generic functions are signature functions.
+re 2, we can say it is implied/hidden/opaque. so if a function has the same signature, then it is an implementation. just like go: if your class
+	has methods with same signature as interface, then your class is implementing that interface.
+3 is also informational. it is not needed by compiler, just by developer.
 ```
-LinkedList = struct(a: T, next: LinkedList(T)) [ type(T) ... ]
-#when using:
-x: LinkedList(int)
-```
-does not look intuitive. lets continue to use functions:
-```
-LinkedList = fn(T: type -> type) {
-	...
+eq = fn(a: T, b: T, T: type -> bool) { default impl which can be exit/assert(false) }
+eqInt = fn(a: int, b:int -> bool ) { ... } #it is implied that this fn implements eq, because it has same signature
+process = fn(a: T, b: T, T: type -> int) [eq(T)] {
+    bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
+    bool2_val = eq(int_stack1, int_stack2)
 }
 ```
+problem: in Golang functions have names and they match with interface, but here function names must be different. so there is a high chance that we have lots of functions withtwo input arguments of type int. 
+can we express these as functions? and then use that function name as type?
+```
+eq = fn(a: T, b: T, T: type -> bool) { false }
+myCustomEqInt = fn(a: int, b:int -> bool ) { ... }
+process = fn(a: T, b: T, T: type, eqHandler: fn(T,T->bool) -> int) {
+  #nothing new, just call eqHandler when you need to
+}
+```
+issue is now, we want to describe "relation" between types and it conflicts with the way we denote argument types.
+we always write `a:int, b:float` we don't need to say type of a and b together, they are separate and isolated.
+why can't we do the same for `T`? because a function has multiple inputs. so, for example if we have `convert = fn(a:int, b:float -> string)`
+it has two types. so if I want to make sure I can call it in my generic function, I must be sure that we have this function for BOTH types.
+```
+eq = fn(a: T, b: T, T: type -> bool) { false }
+myCustomEqInt = fn(a: int, b:int -> bool ) { ... }
+process = fn(a: T, b: T, T: type, eqHandler: fn(T,T->bool) -> int) {
+  #nothing new, just call eqHandler when you need to
+}
+```
+what about this? we just allow a similar limited functionalit for unions.
+for example: shape drawing.
+we have good functions to draw circle, square and triangle
+we also have `Shape` type which is a union of above types.
+now, I want to call correct function for my Shape.
+what is the easiest way?
+```
+shape = loadShape()
+fnMap = 
+result = 
+```
+we need a data structure to keep these functions. we cannot write them everytime we need them.
+this can be for 10 types over 6 functions. so we need to keep track of a central location to save all of the functions that do this.
+option 1: wildcard for generics -> dependant type
+option 2: combine functions with unwrap operator. how?
+```
+drawers: [type: fn(T????
+```
+option 3: a new notation like switch
+```
+draw = fn(x: Shape, c: Canvas, a: float -> int) {
+    ???	
+}
+```
+we can use a map but fn has no input, it uses clousure to get the shape and unwrap/cast it. but need to closure means no data struct.
+option 4: save a ptr to draw function in shape, and when you need it call it.
+it is ok if we have to write a fn for this. we don't escape from writing some more code if it makes sense and prevents things become hidden.
+and it gives us more flxibility.
+```
+drawCircle = fn(s: Circle, c: Canvas, f: float -> int) {...}
+drawSquare = fn(s: Square, c: Canvas, f: float -> int) {...}
 
-? - Do we allow struct values without field name?
+drawFunction = fn(Canvas, float -> int)
+
+#function to get another function to draw the given shape
+draw = fn(shape: Shape, c: Canvas, f: float -> int) 
+{
+    [
+        Circle: drawCircle(c???, _, _),
+        Square: drawSquare(...)
+    ][type(shape)](c, f)
+}
+
+shape = loadShape()
+result = draw(shape, my_canvas, 1.12)
+```
+another option: a squeez notation to compress multiple similar functions into one.
+but we will loos lots of flexibility. what if we have more than one generic type? what if we need some kind of logic?
+```
+drawCircle = fn(s: Circle, c: Canvas, f: float -> int) {...}
+drawSquare = fn(s: Square, c: Canvas, f: float -> int) {...}
+
+drawFunction = fn(Canvas, float -> int)
+
+#function to get another function to draw the given shape
+draw = fn(shape: Shape, c: Canvas, f: float -> int) 
+{
+    [
+        cr:Circle -> drawCircle(cr, _, _),
+        s: Square -> drawSquare(s, _,_)
+    ][type(shape)](c, f)
+}
+
+shape = loadShape()
+result = draw(shape, my_canvas, 1.12)
+```
+what about changing union structure? so that it has all types together.
+more like C unions, + a tag that shows which one is active.
+another option is using field name within union
+```
+Shape = s: Square|c: Circle|t:Triangle
+Shape = Square | Circle | Triangle
+x: Shape = ...
+x.type represents current type in x
+```
+another option: `.1, .2, ...` to refer to inner types
+```
+drawCircle = fn(s: Circle, c: Canvas, f: float -> int) {...}
+drawSquare = fn(s: Square, c: Canvas, f: float -> int) {...}
+
+drawFunction = fn(Canvas, float -> int)
+
+#function to get another function to draw the given shape
+draw = fn(shape: Shape, c: Canvas, f: float -> int) 
+{
+    [
+        Circle: drawCircle(c???, _, _),
+        Square: drawSquare(...)
+    ][type(shape)](c, f)
+}
+
+shape = loadShape()
+result = draw(shape, my_canvas, 1.12)
+```
+Just like structs: in fn input we see `Point` but in code we write `.x`. we have some kind of opaqueness.
+here too we can say it can be treated like a struct with `.1, .2, ...`. Just like struct, IDE can help user find out real type of these.
+and we can say `.0` is type.
+```
+drawCircle = fn(s: Circle, c: Canvas, f: float -> int) {...}
+drawSquare = fn(s: Square, c: Canvas, f: float -> int) {...}
+
+Shape = Circle | Square
+
+#function to get another function to draw the given shape
+draw = fn(shape: Shape, c: Canvas, f: float -> int) 
+{
+    [
+        Circle: drawCircle(shape.1, _, _),
+        Square: drawSquare(shape.2,...)
+    ][shape.0](c, f)
+}
+
+shape = loadShape()
+result = draw(shape, my_canvas, 1.12)
+```
+what about a generic function of type `T|U` and we pass `Square|Circle|Triangle` to it?
+then if `x: T|U`
+then `x.1` is of type Square.
+`x.2` is of type `Circle|Triangle`
+`x.0` can be Square or `Circle|Triangle`.
+another option: In gnerics we dont allow flexible union. Meaning generic type cannot be union!
+but this does not make sense. Generic is just like any other type.
+and if generic function expects `T` I can pass `int|string`
+so if it expects `T|U` I should be allowed to pass `int|string` or `int|string|float`.
+so, lets move this to another title and mark signature functions as No.
+
+Y - Do we allow struct values without field name?
 `x = Point(1,2)`
+we should.
 
-
-
-? - Use `$int_or_float` notation to unwrap a union when calling a generic function.
+N - Use `$int_or_float` notation to unwrap a union when calling a generic function.
 4. You can use `$union_val` to unwrap a union binding to its internal type.
 bool2 = eq($int_or_string, $int_or_string2)
 
 
+
+
+================================================
+
+
+? - Better support for unions
+Just like structs: in fn input we see `Point` but in code we write `.x`. we have some kind of opaqueness.
+here too we can say it can be treated like a struct with `.1, .2, ...`. Just like struct, IDE can help user find out real type of these.
+and we can say `.0` is type.
+```
+drawCircle = fn(s: Circle, c: Canvas, f: float -> int) {...}
+drawSquare = fn(s: Square, c: Canvas, f: float -> int) {...}
+
+Shape = Circle | Square
+
+#function to get another function to draw the given shape
+draw = fn(shape: Shape, c: Canvas, f: float -> int) 
+{
+    [
+        Circle: drawCircle(shape.1, _, _),
+        Square: drawSquare(shape.2,...)
+    ][shape.0](c, f)
+}
+
+shape = loadShape()
+result = draw(shape, my_canvas, 1.12)
+```
+what about a generic function of type `T|U` and we pass `Square|Circle|Triangle` to it?
+then if `x: T|U`
+then `x.1` is of type Square.
+`x.2` is of type `Circle|Triangle`
+`x.0` can be Square or `Circle|Triangle`.
+another option: In gnerics we dont allow flexible union. Meaning generic type cannot be union!
+but this does not make sense. Generic is just like any other type.
+and if generic function expects `T` I can pass `int|string`
+so if it expects `T|U` I should be allowed to pass `int|string` or `int|string|float`.
+what happens if I access `shape.1` when the second item has something? there should be a runtime error.
+another advantage of this is that with `shape.0` compiler gets a chance to verify map has all required cases based on union type definition.
 
 
