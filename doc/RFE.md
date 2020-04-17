@@ -2481,6 +2481,17 @@ maybe we can say you can have at most 4 generics args: `T, U, V, X`
 the problem is: we always have to repeat `T: type` and never pass it when calling a function. so what's the use of this?
 this looks like a big change. lets not do it.
 
+N - (discussed in another section) Use `[eq(T)]` notation to declare what a generic function expects from its generic type.
+You can also put a `[...]` clause after fn header to declare your expectations for generic argument.
+```
+process = fn(a: T, b: T, T: type -> int) [ expects eq(T) ] {
+    bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
+    bool2_val = eq(int_stack1, int_stack2)
+}
+test = fn(...) [implements signature1, eq(T), eq(U), convert(T,U)] { ... }
+```
+- we may later also add functions to use inside `[]` to say: `T must be an array` or `T must be a struct with a field name`
+or `T must be a struct compatible with this struct H` this last one is starting point for structural polymorphism and can be achieved compile time.
 
 ================================================
 
@@ -2575,23 +2586,22 @@ option 2: `!` notation, `[eq(T)]` notation.
 so, for example: for iteration, rather than having `foreach = fn... [itearble(T)]`
 we write: `foreach = fn(data: T, ..., iterate: fn(T->T)...`
 remember: it is better having smaller number of powerful features that compose well, rather than having lots of confusing and less elegant features that some cannot compose with each other.
+option 1, keeps language simple but needs lots of coding. actually coding is almost the same because we still need to implement the logic for our type. 
+for example if our function expects types to be comparable, we need a compare function for our types. the only difference is that with this option, we need to explicitly "pass" functions that does this. rather than having compiler/runtime infer the function for us (which is a hidden part).
+option 2: makes writing code easier because after we implement the logic for our type, we don't need to do anything and wiring them is automatically provided by compiler/runtime.
+I think it is a matter of convenience vs. flexibility. 
+option 1 gives you flexibility but is less convenient 
+option 2 is more convenient but less flexible and adds new notations: signature generic function and `!eq` notation and `[eq(T)]` notation..
+just like error handling with `@`, we need to compare these two.
+is the convenience worth loosing flexibility and added syntax?
+
 
 
 ? - How can I easily call draw functions for shapes based on value of a union binding?
-
-? - Use `[eq(T)]` notation to declare what a generic function expects from its generic type.
-You can also put a `[...]` clause after fn header to declare your expectations for generic argument.
-```
-process = fn(a: T, b: T, T: type -> int) [ expects eq(T) ] {
-    bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
-    bool2_val = eq(int_stack1, int_stack2)
-}
-test = fn(...) [implements signature1, eq(T), eq(U), convert(T,U)] { ... }
-```
-- we may later also add functions to use inside `[]` to say: `T must be an array` or `T must be a struct with a field name`
-or `T must be a struct compatible with this struct H` this last one is starting point for structural polymorphism and can be achieved compile time.
-
-
+`x: Circle|Square|Triangle`
+`drawCircle, drawSquare, drawTriangle`
+now, how can I call correct function based on runtime type of x?
+what is the most 
 
 ? - Can we use the `process = fn(...) [eq(T)]` notation for data structures too?
 e.g. we want set to only comparable types.
