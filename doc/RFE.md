@@ -2822,5 +2822,26 @@ and if generic function expects `T` I can pass `int|string`
 so if it expects `T|U` I should be allowed to pass `int|string` or `int|string|float`.
 what happens if I access `shape.1` when the second item has something? there should be a runtime error.
 another advantage of this is that with `shape.0` compiler gets a chance to verify map has all required cases based on union type definition.
+**Proposal: Enhanced unions**
+1. Each binding of type union allowed `.0, .1, .2, ...` notations.
+2. `.0` represents current type of the union
+3. `.1` represents value inside union if it has the first type of the definition.
+4. if `.0` says union binding has second type in it and you refer to `.1` there will be a runtime error.
+5. Fix example of polymorphism
+===
+maybe we should allow ref to any of `.1, ...`.
+in the happy scenario where developer checks first, there is no difference.
+in the bad scenario we will ignore the error! which is not good. there are times that we should fail fast.
 
 
+? - Remove `type` keyword. any type name which is one capital letter is generic type.
+what about generic data types? these are functions that accept only type argument.
+but what if user sends other args like int? even literal ints? why limit? if they are functions we should be able to define/call them anyway we want.
+`ValueKeeper = fn(T: type -> type) { struct(data: T) }`
+`ValueKeeper = fn(T) { struct(data: T) }`
+no. removing type will make it difficult for generic types and then we will need to add other notations elsewhere.
+
+? - One more thing we should consider is searchability of the language. 
+If someone wants to grep or grok a large source code to find samples of X, this should be done easily.
+this means: more keywords, less notations
+this means: each notation should have one and only one mearning
