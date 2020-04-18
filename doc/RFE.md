@@ -2783,6 +2783,12 @@ N - Use `$int_or_float` notation to unwrap a union when calling a generic functi
 4. You can use `$union_val` to unwrap a union binding to its internal type.
 bool2 = eq($int_or_string, $int_or_string2)
 
+N - Remove `type` keyword. any type name which is one capital letter is generic type.
+what about generic data types? these are functions that accept only type argument.
+but what if user sends other args like int? even literal ints? why limit? if they are functions we should be able to define/call them anyway we want.
+`ValueKeeper = fn(T: type -> type) { struct(data: T) }`
+`ValueKeeper = fn(T) { struct(data: T) }`
+no. removing type will make it difficult for generic types and then we will need to add other notations elsewhere.
 
 
 
@@ -2832,6 +2838,44 @@ another advantage of this is that with `shape.0` compiler gets a chance to verif
 maybe we should allow ref to any of `.1, ...`.
 in the happy scenario where developer checks first, there is no difference.
 in the bad scenario we will ignore the error! which is not good. there are times that we should fail fast.
+one more thing that can be useful: `T|nothing` types.
+`result = (validator//NopFunc3)(x, y, z)`
+suppose that we have a function or nothing and we want to call it if its not nothing.
+```
+result = [
+	nothing: 
+][validator.0]
+```
+q: why use `.0`? why not use a better name like `.type`?
+can't we have a generic function that accepts a function or nothing, and if nothing return nothing, otherwise call the function?
+can't wehave this notation:
+`union1.1(a,b,c)//union1.2//union1.3(1)`
+so, `.1(...)` means if union has that type make the call, otherwise return nothing.
+problem: maybe `.1` call actually returns nothing!
+```
+int_or_float.1? means int value or nothing
+```
+`union1.1?(a,b,c)//union1.2//union1.3(1)`
+we can reverse the order:
+```
+result = [
+	nothing: fn{nothing}
+	
+][validator.0]
+```
+but having to always write a map is difficult. sometimes its difficult to repeat complex types.
+we can say `.1?` is a boolean that says if `.1` has data.
+`result = ifElse(validator.1?, fn{validator.1(x,y,z)}, -1)`
+we can replace it with type: `result = ifElse(validator.type == nothing, -1, fn{validator.1(x,y,z)})`
+
+```
+data = match(shape.type, [
+	(Circle, fn{ drawCircle(shape.1) }),
+	(Square, fn{ drawSquare(shape.2) }),
+	(Triangle, fn{ drawTriangle(shape.3)} )
+])
+```
+
 
 ? - interfaces
 we can write a classic style function which takes function args for the job.
@@ -2842,13 +2886,6 @@ lookup = fn(x: T, arr: [T], T: type, cmp: Eq(T)) { ...}
 lookupInt = lookup(_,_,int, fn(a:int,b:int->bool){a==b})
 ```
 will it be useful?
-
-? - Remove `type` keyword. any type name which is one capital letter is generic type.
-what about generic data types? these are functions that accept only type argument.
-but what if user sends other args like int? even literal ints? why limit? if they are functions we should be able to define/call them anyway we want.
-`ValueKeeper = fn(T: type -> type) { struct(data: T) }`
-`ValueKeeper = fn(T) { struct(data: T) }`
-no. removing type will make it difficult for generic types and then we will need to add other notations elsewhere.
 
 ? - One more thing we should consider is searchability of the language. 
 If someone wants to grep or grok a large source code to find samples of X, this should be done easily.
