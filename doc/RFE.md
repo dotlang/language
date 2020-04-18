@@ -2833,6 +2833,15 @@ maybe we should allow ref to any of `.1, ...`.
 in the happy scenario where developer checks first, there is no difference.
 in the bad scenario we will ignore the error! which is not good. there are times that we should fail fast.
 
+? - interfaces
+we can write a classic style function which takes function args for the job.
+and another function which passes appropriate functions as lambdas.
+```
+Eq = fn(T: type -> type) { fn(T, T -> bool) }
+lookup = fn(x: T, arr: [T], T: type, cmp: Eq(T)) { ...}
+lookupInt = lookup(_,_,int, fn(a:int,b:int->bool){a==b})
+```
+will it be useful?
 
 ? - Remove `type` keyword. any type name which is one capital letter is generic type.
 what about generic data types? these are functions that accept only type argument.
