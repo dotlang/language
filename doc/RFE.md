@@ -2866,7 +2866,8 @@ result = [
 but having to always write a map is difficult. sometimes its difficult to repeat complex types.
 we can say `.1?` is a boolean that says if `.1` has data.
 `result = ifElse(validator.1?, fn{validator.1(x,y,z)}, -1)`
-we can replace it with type: `result = ifElse(validator.type == nothing, -1, fn{validator.1(x,y,z)})`
+we can replace it with type: 
+`result = ifElse(validator.type == nothing, -1, fn{validator.1(x,y,z)})`
 
 ```
 data = match(shape.type, [
@@ -2875,7 +2876,30 @@ data = match(shape.type, [
 	(Triangle, fn{ drawTriangle(shape.3)} )
 ])
 ```
-
+can we have a better notation than `.1`?
+`int_or_float.int` gets the int value. but this is not good for complex types.
+but we don't allow complex types! a union definition must be between type names, not type literals.
+`Type1 = fn(int, float -> [string]) | ...` is not valid.
+so if they are all type names like primitives or named types we can do this:
+`int_or_float.int`, `int_or_float.float`, ...
+but this dot notation is against struct syntax. what comes after dot is a field name.
+but the good thing is, type is documented.
+bad thing is, we need to type a lot.
+`shape.Circle`
+maybe we should use something else, not dot.
+but we can think of union as a type of struct.
+this struct, has a `type` field and n fields for n types.
+and only one of those fields has a value.
+we can force a label/name for each type but it makes union type definition complicated.
+`Iof = int|float`
+`x.int`, `x.float`, `x.Customer`
+or maybe we can use `.[]` notation.
+we can also have `.()` notation for fn type unions, so it gives nothing if union or nothing, or else calls the function.
+or maybe we can mix these two: `.[T](...) // X` if type is T, make this fn call, otherwise X.
+we need a notation that:
+1. is error resilient. so built-in we can guard against errors
+2. easy to use and intuitive
+3. gives you internal type of the union
 
 ? - interfaces
 we can write a classic style function which takes function args for the job.
