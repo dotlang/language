@@ -2900,6 +2900,9 @@ we need a notation that:
 1. is error resilient. so built-in we can guard against errors
 2. easy to use and intuitive
 3. gives you internal type of the union
+maybe we can use a notation like error control but say: if type was not X then do that.
+`data = int_or_float.int[...]@.float[...]`
+
 
 ? - interfaces
 we can write a classic style function which takes function args for the job.
