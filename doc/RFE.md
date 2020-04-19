@@ -2790,7 +2790,15 @@ but what if user sends other args like int? even literal ints? why limit? if the
 `ValueKeeper = fn(T) { struct(data: T) }`
 no. removing type will make it difficult for generic types and then we will need to add other notations elsewhere.
 
-
+N - interfaces
+we can write a classic style function which takes function args for the job.
+and another function which passes appropriate functions as lambdas.
+```
+Eq = fn(T: type -> type) { fn(T, T -> bool) }
+lookup = fn(x: T, arr: [T], T: type, cmp: Eq(T)) { ...}
+lookupInt = lookup(_,_,int, fn(a:int,b:int->bool){a==b})
+```
+will it be useful?
 
 ================================================
 
@@ -2902,17 +2910,113 @@ we need a notation that:
 3. gives you internal type of the union
 maybe we can use a notation like error control but say: if type was not X then do that.
 `data = int_or_float.int[...]@.float[...]`
-
-
-? - interfaces
-we can write a classic style function which takes function args for the job.
-and another function which passes appropriate functions as lambdas.
+`data = int_or_float.int?{...}`
+`resut = x.type1{...}.type2{...}.type3{...}`
+`result = x.(a: type1){a+1}.(b: type2){b-3}`
+with above notation, we don't need magical type and `.0, .1, ...`.
+how can we determine types? what if some `.(...){...}`s are missing? what will be the result?
+we may enforce this at compiler level: you must have cases for all types.
+`result = shape.(c: Circle){c.size}.(s: Square){s.item}`
 ```
-Eq = fn(T: type -> type) { fn(T, T -> bool) }
-lookup = fn(x: T, arr: [T], T: type, cmp: Eq(T)) { ...}
-lookupInt = lookup(_,_,int, fn(a:int,b:int->bool){a==b})
+result = shape
+	.(c: Circle) { c.size }
+	.(s: Square) { s.item_size }
 ```
-will it be useful?
+what type is what we write after the dot? is it a function? it looks like a function. so it must be a function.
+```
+result = shape
+	$drawCircle
+	$drawSquare
+	$drawTriangle
+result = union_var$func1$func2$func3
+```
+maybe we can extend this notation to have prefix function call. rather than `f(x)` we write `x$f`?
+```
+result = int_var$intHandler
+```
+can we bound this? so that it can be composable with other expressions?
+`result = int_var$(intHandler)`
+`x = int_var${intHandler}`
+q: what if we have multiple inputs? that should not be allowed. if allowed, it makes everything more complicated.
+`${...}` looks like error control. 
+`$[...]`
+`$(...)`
+but this is not good. because when it defies the notation of union.
+`int_or_float$int_function` is wrong! because right hand side of `$` should have only one input of the left hand side type.
+lets minimize usage of this notation so it will be a simple and minimal notation which is easy to use.
+each notation should be for one and only one task.
+```
+result = shape
+	${drawCircle}
+	${drawSquare}
+	${drawTriangle} + 9
+result = union_var$func1$func2$func3
+```
+option 1: `${...}` so it will be better composable
+option 2: `$...` it will need `()` to be composable but will be easier to type.
+**Proposal: Enhanced unions**
+1. You can use `${...}` notation to check and run multiple functions, one per union type option.
+```
+result = union_binding${fn1}${fn2}${fn3}
+result = shape
+	${drawCircle}
+	${drawSquare}
+	${drawTriangle}
+```
+2. Items after `$` should cover all cases for union. otherwise it will be compiler error.
+3. Fix example of polymorphism
+===
+how can we simulate `type` then? 
+```
+result = shape
+	${1}
+	${2}
+	${3}
+```
+but above is not ok because we expect a function!
+we can say: an expression or a lambda can come inside `{...}`
+but lambda is an expression too!
+```
+result = shape
+	${fn{1}}
+	${fn{2}}
+	${fn{3}}
+```
+still the functions do not have an input! how does compiler know which item to run for each type!
+```
+result = shape
+	${fn(c: Circle -> int){1}}
+	${fn(s: Square -> int){2}}
+	${fn(t: Triangle -> int) {3}}
+```
+I think double braces `}}` is fine.
+here is how we can simulate `.type` notation.
+can we do this for enums?
+Of course not! because here we are dealing with types so we can use lambdas.
+enums are values. how can we encode a value check? lets just use normal functions and select/case.
+this `union_binding${fn1}${fn2}${fn3}` notation does not look very composable.
+`union_binding.(fn1, fn2, fn3)`
+and if we make list of fns a seq, it will be more composable/orth, so developer can keep a sequence of functions.
+but that's not possible because those functions have different types, so lets don't encourage that.
+`union_binding${fn1, fn2, fn3}`
+```
+result = shape${
+	fn(c: Circle -> int) {1} ,
+	fn(s: Square -> int) {2} ,
+	fn(t: Triangle -> int) {3}
+}
+```
+
+? - Shall we have a notation for a function that has one input of type `T` and output inferred?
+to be used with unions.
+```
+data_type = shape${
+	fn(Circle){1} ,
+	fn(Square){2} ,
+	fn(Triangle) {3}
+}
+```
+
 
 ? - One more thing we should consider is searchability of the language. 
 If someone wants to grep or grok a large source code to find samples of X, this should be done easily.
