@@ -3006,6 +3006,57 @@ result = shape${
 	fn(t: Triangle -> int) {3}
 }
 ```
+what if we have more than one union?
+```
+result = (shape, canvas)${
+    fn(s: Circle, c: SolidCanvas -> int) {...}
+    fn(s: Square, cc: RedCanvas -> int) {...}
+}
+```
+in this case, a wildcard mechanism might be useful.
+for example a function that does NOT expect those types can be a catch-all.
+```
+result = (shape, canvas)${
+    fn(s: Circle, c: SolidCanvas -> int) {...}
+    fn(s: Square, cc: RedCanvas -> int) {...}
+    fn(cp: BlueCanvas -> int) { ... code for all shapes and blue canvas }
+}
+```
+but determining this via compiler is complicated and makes reading code difficult.
+it should be developers responsibility. they can do this inside the function.
+**Proposal: Enhanced unions**
+1. You can use `${...}` notation to check and run multiple functions, one per union type option.
+```
+result = union_binding${fn1, fn2, fn3}
+result = shape${
+	drawCircle,
+	drawSquare,
+	drawTriangle
+}
+result = (shape, canvas)${
+    drawCircleWithRedCanvas,
+    drawSquareWithBlueCanvas,
+    ...
+```
+2. Items after `$` should cover all cases for union. otherwise it will be compiler error.
+3. Fix example of polymorphism
+===
+maybe adding an `else/default` function makes things easier and it is explicit enough.
+```
+result = shape${
+	drawCircle,
+	drawSquare,
+	drawTriangle,
+    fn{0}  #a function with no input means catch all function/else clause
+}
+```
+can we make the notation even more compact?
+```
+result = (drawCircle(shape) || drawSquare(shape) || drawTriangle(shape))
+```
+Using comma to separate functions is not very nice. 
+`result = shape(drawCircle(_) || drawSquare(_) || drawTriangle(_) || fn{0})`
+
 
 ? - Shall we have a notation for a function that has one input of type `T` and output inferred?
 to be used with unions.
@@ -3016,6 +3067,27 @@ data_type = shape${
 	fn(Triangle) {3}
 }
 ```
+then we can just extend this: `fn(int, Circle)` for a function the accepts these two but doesn't care about their value.
+
+
+? - To solve draw problem, we can have this notation:
+```
+draw[T] = fn(shape:T , ...)
+draw[Circle] = fn(c: Circle...)
+draw[Square] = ...
+...
+shape: Circle|Square = getShape()
+draw[typeof(shape)](shape, ...)
+```
+first of all, this is not possible without union types.
+also with addition of `$` notation this can be written like:
+```
+result = shape${
+	fn(c: Circle -> ...
+	fn(s: Square -> ...
+```
+it is more flexible and powerful.
+and it can be put inside a function so we just need to call the fn.
 
 
 ? - One more thing we should consider is searchability of the language. 
