@@ -3100,8 +3100,26 @@ basically, this will be a new use case for the same notation.
 pro: no need to invenent a new notation for this, no need for comma, intuitive to some extent
 con: one notation is now a bit more complicated.
 `result = shape{drawCircle // drawSquare // drawTriangle // fn{10} }`
-
-
+**Proposal: Enhanced unions**
+1. You can use `${//}` notation to check and run multiple functions, one per union type option.
+```
+result = union_binding${fn1, fn2, fn3}
+result = shape${
+	drawCircle //
+	drawSquare //
+	drawRectanbleOrOval //
+	drawTriangle
+}
+result = (shape, canvas)${
+    drawCircleWithRedCanvas //
+    drawSquareWithBlueCanvas //
+    fn{10}
+}
+```
+2. Items should cover all cases for union. otherwise it will be compiler error.
+3. If one of the functions accepts a union, both types will be matched.
+4. Fix example of polymorphism
+===
 
 
 ? - Shall we have a notation for a function that has one input of type `T` and output inferred?
@@ -3116,3 +3134,14 @@ this means: more keywords, less notations
 this means: each notation should have one and only one mearning
 
 ? - A simple composable ifElse operator like `?:`?
+it should be much more intuitive and simpler than a function call, otherwise why bother?
+`result = cond${trueExp|falseExp}`
+`result = (x>0){10|20}` here we need mandatory `()` for cond.
+`result = {|x>0|10|20}` added chars: `${|}` 4 characters: prefix, boundary marker, item separators
+`sign = {|x>0|true|false}`
+is it easily composable?
+`data = {|x>0|true|{|x<0|9|{|x=0|10|0}}}`
+`data = (x>0?true|x<0?9|`
+I'm not sure. it adds complexity to stuff that code reader needs to remember. and is difficult to compose.
+
+
