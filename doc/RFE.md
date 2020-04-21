@@ -2819,6 +2819,22 @@ result = shape${
 it is more flexible and powerful.
 and it can be put inside a function so we just need to call the fn.
 
+N - A simple composable ifElse operator like `?:`?
+it should be much more intuitive and simpler than a function call, otherwise why bother?
+`result = cond${trueExp|falseExp}`
+`result = (x>0){10|20}` here we need mandatory `()` for cond.
+`result = {|x>0|10|20}` added chars: `${|}` 4 characters: prefix, boundary marker, item separators
+`sign = {|x>0|true|false}`
+is it easily composable?
+`data = {|x>0|true|{|x<0|9|{|x=0|10|0}}}`
+`data = (x>0?true|x<0?9|`
+I'm not sure. it adds complexity to stuff that code reader needs to remember. and is difficult to compose.
+but otoh it is very common and having expressions in these cases means more and more on-the-fly lambdas.
+`data = ifElse(isValid(x), 1, 2)`
+
+
+
+
 ================================================
 
 
@@ -3120,28 +3136,25 @@ result = (shape, canvas)${
 3. If one of the functions accepts a union, both types will be matched.
 4. Fix example of polymorphism
 ===
-
+but re-using an existing operator for a different purpose is dangerous and confusing.
+so whenever I see `//` I should look around it to check if it is inside `${}`
+```
+result = shape${
+	drawCircle,
+	drawSquare,
+	drawRectanbleOrOval,
+	drawTriangle
+}
+```
+comma or newline (space).
 
 ? - Shall we have a notation for a function that has one input of type `T` and output inferred?
 to be used with unions.
 then we can just extend this: `fn(int, Circle)` for a function the accepts these two but doesn't care about their value.
 
 
-
 ? - One more thing we should consider is searchability of the language. 
 If someone wants to grep or grok a large source code to find samples of X, this should be done easily.
 this means: more keywords, less notations
 this means: each notation should have one and only one mearning
-
-? - A simple composable ifElse operator like `?:`?
-it should be much more intuitive and simpler than a function call, otherwise why bother?
-`result = cond${trueExp|falseExp}`
-`result = (x>0){10|20}` here we need mandatory `()` for cond.
-`result = {|x>0|10|20}` added chars: `${|}` 4 characters: prefix, boundary marker, item separators
-`sign = {|x>0|true|false}`
-is it easily composable?
-`data = {|x>0|true|{|x<0|9|{|x=0|10|0}}}`
-`data = (x>0?true|x<0?9|`
-I'm not sure. it adds complexity to stuff that code reader needs to remember. and is difficult to compose.
-
 
