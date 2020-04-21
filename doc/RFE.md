@@ -2832,6 +2832,11 @@ I'm not sure. it adds complexity to stuff that code reader needs to remember. an
 but otoh it is very common and having expressions in these cases means more and more on-the-fly lambdas.
 `data = ifElse(isValid(x), 1, 2)`
 
+N - One more thing we should consider is searchability of the language. 
+If someone wants to grep or grok a large source code to find samples of X, this should be done easily.
+this means: more keywords, less notations
+this means: each notation should have one and only one mearning
+
 
 
 
@@ -3147,14 +3152,29 @@ result = shape${
 }
 ```
 comma or newline (space).
+**Proposal: Enhanced unions**
+1. You can use `${}` notation to check and run multiple functions, one per union type option.
+```
+result = union_binding${fn1, fn2, fn3}
+result = shape${
+	drawCircle ,
+	drawSquare ,
+	drawRectanbleOrOval ,
+	drawTriangle
+}
+result2 = (shape, canvas)${
+    drawCircleWithRedCanvas ,
+    drawSquareWithBlueCanvas ,
+    fn{10}
+}
+```
+2. Items should cover all cases for union. otherwise it will be compiler error.
+3. If one of the functions accepts a union, both types will be matched.
+4. Fix example of polymorphism
+===
 
 ? - Shall we have a notation for a function that has one input of type `T` and output inferred?
 to be used with unions.
 then we can just extend this: `fn(int, Circle)` for a function the accepts these two but doesn't care about their value.
 
-
-? - One more thing we should consider is searchability of the language. 
-If someone wants to grep or grok a large source code to find samples of X, this should be done easily.
-this means: more keywords, less notations
-this means: each notation should have one and only one mearning
 
