@@ -2800,6 +2800,25 @@ lookupInt = lookup(_,_,int, fn(a:int,b:int->bool){a==b})
 ```
 will it be useful?
 
+N - To solve draw problem, we can have this notation:
+```
+draw[T] = fn(shape:T , ...)
+draw[Circle] = fn(c: Circle...)
+draw[Square] = ...
+...
+shape: Circle|Square = getShape()
+draw[typeof(shape)](shape, ...)
+```
+first of all, this is not possible without union types.
+also with addition of `$` notation this can be written like:
+```
+result = shape${
+	fn(c: Circle -> ...
+	fn(s: Square -> ...
+```
+it is more flexible and powerful.
+and it can be put inside a function so we just need to call the fn.
+
 ================================================
 
 
@@ -3056,41 +3075,44 @@ result = (drawCircle(shape) || drawSquare(shape) || drawTriangle(shape))
 ```
 Using comma to separate functions is not very nice. 
 `result = shape(drawCircle(_) || drawSquare(_) || drawTriangle(_) || fn{0})`
+we can say: if you add functions it will give you a suprt function that can be treated just like a function of union of them.
+but then it will become to enforce by compiler and it make it availble for every other use case so it becomes nonpractical for compiler to check full coverage.
+lets limit it to this limited use case.
+`result = shape(drawCircle(_) || drawSquare(_) || drawTriangle(_) || fn{0})`
+- what if one of the functions accepts a union? it can work as OR in conditions.
+q: how do we combine functions? we have never done this before. 
+we can combine via new line.
+```
+result = shape${
+	drawCircle
+	drawSquare
+	drawTriangle
+}
+result = shape${drawCircle drawSquare drawTriangle }
+```
+can't we re-use `//` here? because it really matches with our use case.
+assuming functions don't return nothing.
+but even if they return nothing, we can continue and rest of the functions won't match.
+`result = shape${drawCircle drawSquare drawTriangle }`
+`result = shape${drawCircle // drawSquare // drawTriangle}`
+so, we can say, if function cannot accept that union's internal type, we move to the next function.
+basically, this will be a new use case for the same notation.
+pro: no need to invenent a new notation for this, no need for comma, intuitive to some extent
+con: one notation is now a bit more complicated.
+`result = shape{drawCircle // drawSquare // drawTriangle // fn{10} }`
+
+
 
 
 ? - Shall we have a notation for a function that has one input of type `T` and output inferred?
 to be used with unions.
-```
-data_type = shape${
-	fn(Circle){1} ,
-	fn(Square){2} ,
-	fn(Triangle) {3}
-}
-```
 then we can just extend this: `fn(int, Circle)` for a function the accepts these two but doesn't care about their value.
 
-
-? - To solve draw problem, we can have this notation:
-```
-draw[T] = fn(shape:T , ...)
-draw[Circle] = fn(c: Circle...)
-draw[Square] = ...
-...
-shape: Circle|Square = getShape()
-draw[typeof(shape)](shape, ...)
-```
-first of all, this is not possible without union types.
-also with addition of `$` notation this can be written like:
-```
-result = shape${
-	fn(c: Circle -> ...
-	fn(s: Square -> ...
-```
-it is more flexible and powerful.
-and it can be put inside a function so we just need to call the fn.
 
 
 ? - One more thing we should consider is searchability of the language. 
 If someone wants to grep or grok a large source code to find samples of X, this should be done easily.
 this means: more keywords, less notations
 this means: each notation should have one and only one mearning
+
+? - A simple composable ifElse operator like `?:`?
