@@ -3167,10 +3167,9 @@ result2 = (shape, canvas)${
 4. Fix example of polymorphism
 ===
 
-? - Shall we have a notation for a function that has one input of type `T` and output inferred?
+Y - Shall we have a notation for a function that has one input of type `T` and output inferred?
 to be used with unions.
 then we can just extend this: `fn(int, Circle)` for a function the accepts these two but doesn't care about their value.
-
 
 ? - modules and versioning
 we can ask user to pin a specific version in their imports if they want deterministic builds
