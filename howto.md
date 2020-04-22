@@ -4,31 +4,24 @@ Because a lot of non-essential features are removed from the language and core, 
 
 ## Polymorphism
 
-Polymorphism can be achieved using cloure and lambdas. 
+Polymorphism can be achieved using unions.
 
 ```perl
 drawCircle = fn(s: Circle, c: Canvas, f: float -> int) {...}
 drawSquare = fn(s: Square, c: Canvas, f: float -> int) {...}
 
-drawFunction = fn(Canvas, float -> int)
+shape = getShape()
 
-#function to get another function to draw the given shape
-getShapeDrawFunction = fn(shape: T, T: type -> drawFunction) 
-{
-    [Circle: fn{
-		c = Circle(...)
-		drawCircle(c, _, _)
-     }, 
-     Square: fn{ ...}
-    ][T]()
+result = shape${
+	drawCircle(_, c, 10),
+	drawSquare(_, c, 20),
+	drawRectanbleOrOval(_, c, 30),
+	drawTriangle(_, c, 40)
 }
-
-f = getShape("Circle")
-f(my_canvas, 1.12)
 ```
 
-If you want to add a new shape (e.g. Triangle), you should define appropriate functions (e.g. `drawTriangle`), and modify the map in `getShape`.
-If you want to add a new operation (e.g. print), you will need to add a new function (e.g. `getShapePrinter`).
+If you want to add a new shape (e.g. Oval), you should update the `Shape` type definition and add appropriate `draw` functions and update the union check block.
+If you want to add a new operation (e.g. print), you will need to add a new function (e.g. `getShapePrinter`) and one function per type.
 
 ## Conditionals
 
