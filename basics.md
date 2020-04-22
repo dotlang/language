@@ -339,7 +339,8 @@ For generics (types and functions) see Advanced section.
 7. Optional arguments: When calling a function, you can ommit arguments that are at the end and accept `nothing` (Example C).
 8. If a function is being called with literals (compile time known values), compiler will try to evaluate it during compilation (e.g. generics). 
 9. Module level functions that start with `_test` and have no input are considered unit test functions. You can later instruct compiler to run them (Example D).
-10. There is `assert` core function that can be used for checking assertions. You can disable assertions as a compiler flag.
+10. There is `assert` core function that can be used for checking assertions. You can disable assertions with a compiler flag.
+11. You can ignore argument names in function definition which means you don't care about the value. This can be useful in union switch.
 
 **Examples**
 
@@ -386,6 +387,13 @@ g = add(1,2)
 
 #D
 _testProcessWithInvalidInput = fn{...}
+
+#E
+union_type = shape${
+    fn(Circle) { 5 }
+    fn(Square) { 4 }
+    fn{0}
+}
 ```
 
 ## Function call resolution
@@ -454,4 +462,3 @@ a,_ = point
 
 a,_ = single_element_struct
 ```
-
