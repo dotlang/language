@@ -24,7 +24,7 @@
 01. `#`   Comment
 02. `.`   Access struct members
 03. `()`  Function declaration and call, struct declaration and literals
-04. `{}`  Code block, multiple selection from module namespace, error check
+04. `{}`  Code block, multiple selection from module namespace, error check, union check
 05. `[]`  Sequence and hashMap
 06. `|`   Union data type 
 07. `->`  Function declaration
@@ -33,9 +33,10 @@
 10. `=`   Binding declaration, named type
 11. `_`   Place-holder (lambda creator and assignment)
 12. `@`   Error check
-13. `:=`  Parallel execution
-14. `..`  Access inside module
-15. `///` Select (concurrency)
+13. `$`   Union check
+14. `:=`  Parallel execution
+15. `..`  Access inside module
+16. `///` Select (concurrency)
 
 ## Reserved keywords
 
@@ -175,9 +176,9 @@ bool = enum [true, false]
 
 1. Bindings of union type, can store any of multiple pre-defined types.
 2. Union type are shown as `T1|T2|T3|...`. 
-3. You can destruct a binding of union type. 
-4. Union destruction will give you a list of `T|nothing` values for each inner type of the union. 
-5. During destruction, you can use `_` to ignore one or more of outputs.
+3. You can use `${}` notation to do something based on actual type inside a union binding.
+4. From the list of functions inside `${}` the first one that can accept what's inside the union will be executed.
+5. Functions inside `${}` must cover all cases of the union(s), otherwise there will be a compiler error.
 
 **Examples**
 
@@ -186,17 +187,19 @@ int_or_float: int|float = 11
 int_or_float: int|float = "ABCD"
 int_or_nothing, float_or_nothing = int_or_float_or_nothing_value
 
-#assuming check function is already defined
 x: int|string|float = getData()
-result = check(x, fn(i:int -> boolean) { ... }) //
-         check(x, fn(s: string -> boolean) {...}) //
-         check(x, fn(f:float->boolean){...})
-     
-#although T type can be at any position in x's original type, 
-#but inside hasType T is the first type so "a" will be corresponding to type T
-hasType = fn(x: T|U, T: type, U: type -> bool) {
-    a,_ = x
-    a != nothing
+
+result = x ${ 
+    fn(a: int -> int) {a+1},
+    fn(a: string -> int) {5},
+    fn{100}   #default case when none of above functions can accept x
+}
+
+#shape and canvas are both union bindings
+result2 = (shape, canvas)${
+    drawCircleWithRedCanvas ,
+    drawSquareWithBlueCanvas ,
+    fn{10}
 }
 ```
 
