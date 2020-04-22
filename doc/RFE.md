@@ -2837,13 +2837,7 @@ If someone wants to grep or grok a large source code to find samples of X, this 
 this means: more keywords, less notations
 this means: each notation should have one and only one mearning
 
-
-
-
-================================================
-
-
-? - Better support for unions
+Y - Better support for unions
 Just like structs: in fn input we see `Point` but in code we write `.x`. we have some kind of opaqueness.
 here too we can say it can be treated like a struct with `.1, .2, ...`. Just like struct, IDE can help user find out real type of these.
 and we can say `.0` is type.
@@ -3178,3 +3172,27 @@ to be used with unions.
 then we can just extend this: `fn(int, Circle)` for a function the accepts these two but doesn't care about their value.
 
 
+? - modules and versioning
+we can ask user to pin a specific version in their imports if they want deterministic builds
+we need reproducible builds. meaning if I need `v1.5.*` of a dependency, it should compile exactly the same on my machine than any other machine (CI or team mate or ...)
+now, this can translate to `1.5.1` or `1.5.2` depending on some factors. so we need to lock that.
+one way compatible with current method is to act like this:
+```
+#autogen(/https/github.com/uber/web/@v1.9+.*/request/parser)
+path=""
+T = import(path)
+```
+when compiler compiles above for the first time it writes proper value for path and later will re-use it, until you run `dot update deps`
+```
+#autogen(/https/github.com/uber/web/@v1.9+.*/request/parser)
+path="/https/github.com/uber/web/@v1.9.16/request/parser" 
+T = import(path)
+```
+so this `@1+.*` syntax is only valid in autogen in comments. You cannot actually use it in import path.
+If you want to import a module you must either:
+1. specify an exact version
+2. use autogen as above and let compiler calculate a fixed version.
+3. the result will be inserted by the compiler as the value for binding after autogen.
+4. the value will remain there until developer does a dep-refresh command to update them.
+how can we have multiple modules/packages in one github repo?
+These questions are not really needed for initial lang design and compiler impl.
