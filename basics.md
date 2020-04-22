@@ -24,7 +24,7 @@
 01. `#`   Comment
 02. `.`   Access struct members
 03. `()`  Function declaration and call, struct declaration and literals
-04. `{}`  Code block, multiple selection from module namespace, error check, union check
+04. `{}`  Code block, multiple selection from module namespace, error check, union switch
 05. `[]`  Sequence and hashMap
 06. `|`   Union data type 
 07. `->`  Function declaration
@@ -33,7 +33,7 @@
 10. `=`   Binding declaration, named type
 11. `_`   Place-holder (lambda creator and assignment)
 12. `@`   Error check
-13. `$`   Union check
+13. `$`   Union switch
 14. `:=`  Parallel execution
 15. `..`  Access inside module
 16. `///` Select (concurrency)
@@ -176,7 +176,7 @@ bool = enum [true, false]
 
 1. Bindings of union type, can store any of multiple pre-defined types.
 2. Union type are shown as `T1|T2|T3|...`. 
-3. You can use `${}` notation to do something based on actual type inside a union binding.
+3. You can use `${}` notation (union switch) to do something based on actual type inside a union binding.
 4. From the list of functions inside `${}` the first one that can accept what's inside the union will be executed.
 5. Functions inside `${}` must cover all cases of the union(s), otherwise there will be a compiler error.
 
