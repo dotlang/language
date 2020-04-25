@@ -61,3 +61,4 @@ Below is history of changes (time + summary of what changed) to the dotLang spec
 - **Version 1.00**: Aug 1, 2019 - Clarification about using functions that accept more or return less that type-set we expect, back to channels for concurrency and use `///` for select, support validation using fn after struct type 
 - Apr 13, 2020: Added support for early return and error handling via `@{}` notation.
 - Apr 23, 2020: Added `${}` notation for union checks.
+- Apr 25, 2020: Some clarification about select and default option in concurrency
