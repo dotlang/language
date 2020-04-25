@@ -3195,3 +3195,7 @@ If you want to import a module you must either:
 4. the value will remain there until developer does a dep-refresh command to update them.
 how can we have multiple modules/packages in one github repo?
 These questions are not really needed for initial lang design and compiler impl.
+
+? - Can we use module as a type of interface?
+so interface means a module that implements some specific functions.
+but it is difficult to do that. its not flexible
