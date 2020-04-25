@@ -3171,6 +3171,43 @@ Y - Shall we have a notation for a function that has one input of type `T` and o
 to be used with unions.
 then we can just extend this: `fn(int, Circle)` for a function the accepts these two but doesn't care about their value.
 
+
+Y - How does default case work with `///` operator?
+If we want to process them by random, then it does not make sense. 
+suppose that we have 3 cases with default case and one of those cases is active.
+now `c1 /// c2 /// c3 /// default` may randomly hit the default and return with default, and ignore `c2` the active one.
+there should be a mechanism to say: check these and if none of them were active then return X.
+but this select call is supposed to be blocking.
+we can do this via a timeout. `c1 // c2 // c3 // timeout(1ms, 105)` so if any of channels are active, it wil be picked up, otherwise after 1ms we will have `105` default value.
+yes, but it is a bit counter-intuitive.
+but we can do this via the runtime arg. just pass something to see if this is a default channel or not.
+or maybe we can say this:
+- select always picks by order no matter what
+- if you need randomization, you need to mix them via a helper function and do it yourself.
+so this randomization function will call one of the inner channel fns depending on a random flag.
+can we use the same notation of union select for here?
+```
+union_type = shape${
+    fn(Circle) { 5 }
+    fn(Square) { 4 }
+    fn{0}
+}
+# all items in select accept a single argument int|nothing which is used for runtime
+data = select {
+	chFunc1,
+    chFunc2,
+    chFunc3(data, _)
+    makeTimeout(100)
+    defaultChannel(200)
+}
+```
+nope. it is structurally incompatible with union select.
+ok there is another way: the default function has a different contract. all other channel functions have `int|nothing` but default function accepts `nothing` ?
+then runtime can differentiate.
+
+N - Explain a bit more about concurrency
+- select: does it block if none of cases are ready?
+
 ? - modules and versioning
 we can ask user to pin a specific version in their imports if they want deterministic builds
 we need reproducible builds. meaning if I need `v1.5.*` of a dependency, it should compile exactly the same on my machine than any other machine (CI or team mate or ...)
@@ -3199,3 +3236,7 @@ These questions are not really needed for initial lang design and compiler impl.
 ? - Can we use module as a type of interface?
 so interface means a module that implements some specific functions.
 but it is difficult to do that. its not flexible
+
+? - We need built in support for map/filter/reduce?
+
+
