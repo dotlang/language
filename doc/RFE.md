@@ -1,3 +1,28 @@
+X - modules and versioning
+we can ask user to pin a specific version in their imports if they want deterministic builds
+we need reproducible builds. meaning if I need `v1.5.*` of a dependency, it should compile exactly the same on my machine than any other machine (CI or team mate or ...)
+now, this can translate to `1.5.1` or `1.5.2` depending on some factors. so we need to lock that.
+one way compatible with current method is to act like this:
+```
+#autogen(/https/github.com/uber/web/@v1.9+.*/request/parser)
+path=""
+T = import(path)
+```
+when compiler compiles above for the first time it writes proper value for path and later will re-use it, until you run `dot update deps`
+```
+#autogen(/https/github.com/uber/web/@v1.9+.*/request/parser)
+path="/https/github.com/uber/web/@v1.9.16/request/parser" 
+T = import(path)
+```
+so this `@1+.*` syntax is only valid in autogen in comments. You cannot actually use it in import path.
+If you want to import a module you must either:
+1. specify an exact version
+2. use autogen as above and let compiler calculate a fixed version.
+3. the result will be inserted by the compiler as the value for binding after autogen.
+4. the value will remain there until developer does a dep-refresh command to update them.
+how can we have multiple modules/packages in one github repo?
+These questions are not really needed for initial lang design and compiler impl.
+
 X - Our goal is to minimize number of stuff the developer needs to keep in their head
 
 X - Not only dot is easy for users, it should also be easy for developers.
@@ -3208,35 +3233,38 @@ then runtime can differentiate.
 N - Explain a bit more about concurrency
 - select: does it block if none of cases are ready?
 
-? - modules and versioning
-we can ask user to pin a specific version in their imports if they want deterministic builds
-we need reproducible builds. meaning if I need `v1.5.*` of a dependency, it should compile exactly the same on my machine than any other machine (CI or team mate or ...)
-now, this can translate to `1.5.1` or `1.5.2` depending on some factors. so we need to lock that.
-one way compatible with current method is to act like this:
-```
-#autogen(/https/github.com/uber/web/@v1.9+.*/request/parser)
-path=""
-T = import(path)
-```
-when compiler compiles above for the first time it writes proper value for path and later will re-use it, until you run `dot update deps`
-```
-#autogen(/https/github.com/uber/web/@v1.9+.*/request/parser)
-path="/https/github.com/uber/web/@v1.9.16/request/parser" 
-T = import(path)
-```
-so this `@1+.*` syntax is only valid in autogen in comments. You cannot actually use it in import path.
-If you want to import a module you must either:
-1. specify an exact version
-2. use autogen as above and let compiler calculate a fixed version.
-3. the result will be inserted by the compiler as the value for binding after autogen.
-4. the value will remain there until developer does a dep-refresh command to update them.
-how can we have multiple modules/packages in one github repo?
-These questions are not really needed for initial lang design and compiler impl.
-
-? - Can we use module as a type of interface?
+N - Can we use module as a type of interface?
 so interface means a module that implements some specific functions.
 but it is difficult to do that. its not flexible
 
 ? - We need built in support for map/filter/reduce?
+we can implement map and filter and find via reduce: https://maurobringolf.ch/2017/06/implementing-map-filter-and-find-with-reduce-in-javascript/
+```js
+function map(arr, fn) {
+	return arr.reduce((acc, item) => [...acc, fn(item)], [])
+}
+function filter(arr, fn) {
+	return arr.reduce((acc, item) => fn(item) ? [...acc, item] : acc, [])
+}
+unction find(arr, fn) {
+	return arr.reduce((acc, item) => fn(item) ? acc || item : acc, undefined)
+}
+```
+so it works like this:
+```
+reduce = fn(seq: [T], reducer: fn(acc: U, item: T -> U), start: U, T: type, U: type -> U) { ... }
+#for example for a find operation:
+result = reduce(int_list, fn(acc: bool, item: int -> bool) { if (item == result ) then return true otherwise return acc}, false)
+```
+but is it also efficient?
+for example for a map operation on 1000 element seq, we will create 1000 arrays of sizes 1 to 1000
+unless we can come up with an efficient way.
+- if we use a language notation, there will definitely be some other use cases which won'y be able to fit and we will need to define core fns.
+but if we define some basic core functions, anything else will be simply a combination of them without needing to add extra notations.
+
+
+
+
+
 
 
