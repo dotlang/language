@@ -95,8 +95,9 @@ Set, process, my_data = imported_module..{SetType, processFunc, my_data}
 3. A channel is represented via a function that can be used to read from or write to the channel (Example A).
 4. Calling channel function will block current thread if channel is not ready to read/write.
 5. You can use `///` operator to do a select among multiple channel operations (Example B). This will pick any of possible channel operations which is ready.
-6. Channel functions have an extra runtime argument of type `int|nothing` which is used by runtime.
-7. You can wrap a channel function inside another function as long as you preserve the runtime argument.
+6. Select will block if none of the provided options are ready.
+7. Channel functions have an extra runtime argument of type `int|nothing` which is used by runtime.
+8. You can wrap a channel function inside another function as long as you preserve the runtime argument.
 
 **Examples**
 
@@ -123,6 +124,7 @@ chFunc: fn(data: string|nothing, extra:int|nothing-> string)
 #makeTimeout creates a timeout channel which after 100ms, returns nothing and unblocks 
 #select operation, defaultChannel creates an always ready channel so if none of the other 
 #operations are ready, it will return 200 as result
+# not that the default option in a select has a different signature (it has no input). so runtime can differentiate between a normal and default option.
 result = chFunc1(nothing, _) /// chFunc2(nothing, _) /// chFunc3(data, _) /// makeTimeout(100) /// defaultChannel(200)
 ```
 
