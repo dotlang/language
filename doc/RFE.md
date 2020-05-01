@@ -3262,9 +3262,10 @@ unless we can come up with an efficient way.
 - if we use a language notation, there will definitely be some other use cases which won'y be able to fit and we will need to define core fns.
 but if we define some basic core functions, anything else will be simply a combination of them without needing to add extra notations.
 
-
-
-
-
-
-
+? - A notation for slice of a sequence
+```
+a[0:10]
+a[:10]
+a[0:]
+a[:]
+```
