@@ -3237,7 +3237,7 @@ N - Can we use module as a type of interface?
 so interface means a module that implements some specific functions.
 but it is difficult to do that. its not flexible
 
-? - We need built in support for map/filter/reduce?
+N - We need built in support for map/filter/reduce?
 we can implement map and filter and find via reduce: https://maurobringolf.ch/2017/06/implementing-map-filter-and-find-with-reduce-in-javascript/
 ```js
 function map(arr, fn) {
@@ -3274,3 +3274,10 @@ a[:]
 and we should be able to easily add to that group.
 but functions each have their own signature.
 so this is actually a struct of functions which is already available.
+```
+c = createCircle()
+draw = fn() { ... c ... }
+print = fn() { ... c ... }
+...
+return (draw, print, ...)
+```
