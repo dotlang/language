@@ -3269,3 +3269,8 @@ a[:10]
 a[0:]
 a[:]
 ```
+
+? - Should we make it easier to group a number of functions together? Maybe they have closure over some internal variable, for example.
+and we should be able to easily add to that group.
+but functions each have their own signature.
+so this is actually a struct of functions which is already available.
