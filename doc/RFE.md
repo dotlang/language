@@ -3520,19 +3520,14 @@ result = match {        #match with conditions same as match true { ... }
     isWrong(data) && isOutOfScope(x) => 9 #and conditions, you can also ue or
     default => { ... }
 }
-result = match enum_day_of_week, item2 { #same as value
-    Saturday,1 => exp1
-    Sunday,2 => exp2
+result = match enum_day_of_week { 
+    Saturday => exp1
+    Sunday => exp2
     default => exp3
 }
-result = match type shape { #match on union inner type
+result = match shape { #match on union inner type
     c:Circle => exp1 #here inner is of type Circle
     s:Square => exp2 #here inner is of type Square
-    default => exp3
-}
-result = match type canvas, shape { #match on union inner type
-    x: BlueCanvas, c:Circle => exp1 #here inner is of type Circle
-    y: RedCanvas, s:Square => exp2 #here inner is of type Square
     default => exp3
 }
 result = match channel { #channel is the keyword for channel data type
@@ -3545,8 +3540,9 @@ result = match channel { #channel is the keyword for channel data type
 ```
 q: can we use default in partial matches? `5, default => ...`
 q: a shortcut for `match x { true => a, false => b}`? ifelse?
-
-
+the more flexibility we give, the more edge cases and assumptions we need to make.
+we should define a critical mission for `match` keyword and only deliver that.
+- nore match for multiple items. only one expression
 
 ? - The notation for channel read/write is confusing. even for me. I sometimes get confused.
 create channel will give you a channel identifier? 
