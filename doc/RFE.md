@@ -3297,6 +3297,72 @@ result = ${
 ```
 No we are going to use match.
 
+Y - The notation for channel read/write is confusing. even for me. I sometimes get confused.
+create channel will give you a channel identifier? 
+`x::()` will read from channel
+`x::(w)` will write to channel
+but using functions gives us advantage of composing.
+but then it becomes ugly because we need to add runtmie arg and include it everywhere!
+and this will be a new data type. just like go.
+Channel can be a generic data type.
+and it can have two functions: read and write + other functions that can be useful like getBufferSize, peek, ...
+```
+Channel = fn(T: type -> type) {
+    struct {
+        identifier: int,
+        tp: type,
+        getStatus: fn(->bool),
+        max_size: int,
+        read: fn(->T),
+        write: fn(data: T -> ),
+        close: fn(->)
+    }
+}
+```
+and then we deal with those functions.
+Same for channel select. we can do it in a function in std.
+**Proposal**:
+1. No notation for channel read or write or select.
+2. Channels are generic structs that have all needed functions.
+```
+Channel = fn(T: type -> type) {
+    struct {
+        identifier: int,
+        tp: type,
+        getStatus: fn(->bool),
+        max_size: int,
+        read: fn(->T),
+        write: fn(data: T -> ),
+        close: fn(->)
+    }
+}
+```
+
+N - (moved to above item) Remove notation for channel select.
+https://wiki.dlang.org/Go_to_D#Select
+Here in dlang, they do this via a normal function.
+In Quasar:
+```
+SelectAction sa = Selector.select(Selector.receive(ch1), Selector.send(ch2, msg));
+```
+Kotlin:
+```
+select<Unit> { // <Unit> means that this select expression does not produce any result 
+        fizz.onReceive { value ->  // this is the first select clause
+            println("fizz -> '$value'")
+        }
+        buzz.onReceive { value ->  // this is the second select clause
+            println("buzz -> '$value'")
+        }
+    }
+```
+I think we can rely on this being done on std with help from core (in the Channel struct).
+
+N - if we adopt match, can we replace `//` with it?
+`result = a // b`
+`result = match a==nothing { b, a}`
+
+
 ? - A better notation for struct
 - type definition
 - binding/literal decl
@@ -3678,68 +3744,4 @@ result = match a,b {
     default => 90
 }
 ```
-
-? - The notation for channel read/write is confusing. even for me. I sometimes get confused.
-create channel will give you a channel identifier? 
-`x::()` will read from channel
-`x::(w)` will write to channel
-but using functions gives us advantage of composing.
-but then it becomes ugly because we need to add runtmie arg and include it everywhere!
-and this will be a new data type. just like go.
-Channel can be a generic data type.
-and it can have two functions: read and write + other functions that can be useful like getBufferSize, peek, ...
-```
-Channel = fn(T: type -> type) {
-    struct {
-        identifier: int,
-        tp: type,
-        getStatus: fn(->bool),
-        max_size: int,
-        read: fn(->T),
-        write: fn(data: T -> ),
-        close: fn(->)
-    }
-}
-```
-and then we deal with those functions.
-**Proposal**:
-1. No notation for channel read or write or select.
-2. Channels are generic structs that have all needed functions.
-```
-Channel = fn(T: type -> type) {
-    struct {
-        identifier: int,
-        tp: type,
-        getStatus: fn(->bool),
-        max_size: int,
-        read: fn(->T),
-        write: fn(data: T -> ),
-        close: fn(->)
-    }
-}
-```
-
-? - Remove notation for channel select.
-https://wiki.dlang.org/Go_to_D#Select
-Here in dlang, they do this via a normal function.
-In Quasar:
-```
-SelectAction sa = Selector.select(Selector.receive(ch1), Selector.send(ch2, msg));
-```
-Kotlin:
-```
-select<Unit> { // <Unit> means that this select expression does not produce any result 
-        fizz.onReceive { value ->  // this is the first select clause
-            println("fizz -> '$value'")
-        }
-        buzz.onReceive { value ->  // this is the second select clause
-            println("buzz -> '$value'")
-        }
-    }
-```
-I think we can rely on this being done on std with help from core (in the Channel struct).
-
-N - if we adopt match, can we replace `//` with it?
-`result = a // b`
-`result = match a==nothing { b, a}`
 
