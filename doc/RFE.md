@@ -3262,15 +3262,16 @@ unless we can come up with an efficient way.
 - if we use a language notation, there will definitely be some other use cases which won'y be able to fit and we will need to define core fns.
 but if we define some basic core functions, anything else will be simply a combination of them without needing to add extra notations.
 
-? - A notation for slice of a sequence
+N - A notation for slice of a sequence
 ```
 a[0:10]
 a[:10]
 a[0:]
 a[:]
 ```
+Maybe later. does not need anything and nothing else is dependent on this.
 
-? - Should we make it easier to group a number of functions together? Maybe they have closure over some internal variable, for example.
+N - Should we make it easier to group a number of functions together? Maybe they have closure over some internal variable, for example.
 and we should be able to easily add to that group.
 but functions each have their own signature.
 so this is actually a struct of functions which is already available.
@@ -3282,7 +3283,7 @@ print = fn() { ... c ... }
 return (draw, print, ...)
 ```
 
-? - Can we allow `${}` for enums too? then it can handle if/else.
+N - Can we allow `${}` for enums too? then it can handle if/else.
 ```
 result = is_valid${
     true { 5 }
@@ -3294,6 +3295,7 @@ result = ${
     true { ... }
 }
 ```
+No we are going to use match.
 
 ? - A better notation for struct
 - type definition
@@ -3369,6 +3371,41 @@ Point!{x:100, y:200}
 
 #modification
 third_point = Point!{point1, point2, point3, z: 10, delta: 99}
+```
+if we use `//` for comments, we can use `#` here too. 
+but `!` implies not. and also is an operator `!=` so is a bit confusing.
+we should try to come up with a syntax which is easy to parse by compiler if we do that, it will also be easy to read for a developer.
+`{...}` notation for struct is not very clear because same notation is used for function body.
+```
+#named type definition
+Point = &{x:int, y:int}
+Point = &{int, int}
+
+#instantiation
+Point&{100, 200}
+Point&{x:100, y:200}
+&{int,int}&{100, 200}
+&{100, 200}
+
+#modification
+third_point = Point&{point1, point2, point3, z: 10, delta: 99}
+```
+can we have two notations for type vs. literal of struct?
+`&{...}` for literals
+`^{...}` for type
+or maybe use struct keyword!
+```
+#named type definition
+Point = struct {x:int, y:int}
+Point = struct {int, int}
+
+#instantiation
+Point&{100, 200}
+Point&{x:100, y:200}
+&{100, 200}
+
+#modification
+third_point = Point&{point1, point2, point3, z: 10, delta: 99}
 ```
 
 ? - Should we use a keyword for switch? with above proposal, we will use `!{}` for struct, so struct keyword will be gone.
@@ -3543,6 +3580,104 @@ q: a shortcut for `match x { true => a, false => b}`? ifelse?
 the more flexibility we give, the more edge cases and assumptions we need to make.
 we should define a critical mission for `match` keyword and only deliver that.
 - nore match for multiple items. only one expression
+```
+result = match item {   
+	1 => 40
+    2 => exp1
+    3 => { #this is not a lambda, just a separator
+        cmd1
+        resut
+    }
+    4 =>
+    5 => 
+    6 => 100 #on item for 3 cases
+    default => exp3
+}
+result = match {        #match with conditions same as match true { ... }
+    isValid(data) or isGenera(item) => 10 #or conditions
+    isWrong(data) && isOutOfScope(x) => 9 #and conditions, you can also ue or
+    default => { ... }
+}
+result = match enum_day_of_week { 
+    Saturday => exp1
+    Sunday => exp2
+    default => exp3
+}
+result = match shape { #match on union inner type
+    c:Circle => exp1 
+    s:Square => exp2 
+    default => exp3
+}
+```
+match without operand is used to compress multiple if statements. we do not like compresson. let them write it normally.
+```
+result = match item {   
+	1 => 40
+    3 => fn{
+        cmd1
+        resut
+    }()
+    4 =>
+    5 => 
+    6 => 100 #one item for 3 cases
+    default => exp3
+}
+result = match enum_day_of_week { 
+    Saturday => exp1
+    Sunday => exp2
+    default => exp3
+}
+result = match shape { #match on union inner type
+    c:Circle => exp1 
+    s:Square => exp2 
+    default => exp3
+}
+```
+we need a syntax sugar for this:
+```
+result = match item { 1, 2 }
+result = match item { 
+    1
+    2
+}
+result = match isDone 10 20
+result = match isDone 10:20
+result = match isdone 10, 20
+>>> result = match isDone { 10, 20 } #this is valid only if using expressions, for code block, you should normal syntax
+result = match isDone ( 10, 20 )
+```
+Having multiple items can be useful. but can't we do it via struct?
+```
+result = match item {   
+	1 => 40
+    3 => fn{
+        cmd1
+        resut
+    }()
+    4 =>
+    5 => 
+    6 => 100 #one item for 3 cases
+    default => exp3
+}
+result = match enum_day_of_week { 
+    Saturday => exp1
+    Sunday => exp2
+    default => exp3
+}
+result = match shape { 
+    c:Circle => exp1 
+    s:Square => exp2 
+    default => exp3
+}
+result = match isDone { 10, 20 }
+result = match a,b {
+    10, 20 => 1
+    20, 30 => 2
+    30, default => 100
+    default, 20 => 100
+    default => 90
+}
+```
 
 ? - The notation for channel read/write is confusing. even for me. I sometimes get confused.
 create channel will give you a channel identifier? 
@@ -3551,4 +3686,60 @@ create channel will give you a channel identifier?
 but using functions gives us advantage of composing.
 but then it becomes ugly because we need to add runtmie arg and include it everywhere!
 and this will be a new data type. just like go.
+Channel can be a generic data type.
+and it can have two functions: read and write + other functions that can be useful like getBufferSize, peek, ...
+```
+Channel = fn(T: type -> type) {
+    struct {
+        identifier: int,
+        tp: type,
+        getStatus: fn(->bool),
+        max_size: int,
+        read: fn(->T),
+        write: fn(data: T -> ),
+        close: fn(->)
+    }
+}
+```
+and then we deal with those functions.
+**Proposal**:
+1. No notation for channel read or write or select.
+2. Channels are generic structs that have all needed functions.
+```
+Channel = fn(T: type -> type) {
+    struct {
+        identifier: int,
+        tp: type,
+        getStatus: fn(->bool),
+        max_size: int,
+        read: fn(->T),
+        write: fn(data: T -> ),
+        close: fn(->)
+    }
+}
+```
+
+? - Remove notation for channel select.
+https://wiki.dlang.org/Go_to_D#Select
+Here in dlang, they do this via a normal function.
+In Quasar:
+```
+SelectAction sa = Selector.select(Selector.receive(ch1), Selector.send(ch2, msg));
+```
+Kotlin:
+```
+select<Unit> { // <Unit> means that this select expression does not produce any result 
+        fizz.onReceive { value ->  // this is the first select clause
+            println("fizz -> '$value'")
+        }
+        buzz.onReceive { value ->  // this is the second select clause
+            println("buzz -> '$value'")
+        }
+    }
+```
+I think we can rely on this being done on std with help from core (in the Channel struct).
+
+N - if we adopt match, can we replace `//` with it?
+`result = a // b`
+`result = match a==nothing { b, a}`
 
