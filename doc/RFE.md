@@ -3355,4 +3355,204 @@ Point!(x:100, y:200)
 third_point = Point!(point1, point2, point3, z: 10, delta: 99)
 ```
 so `!` comes before `(` which denotes struct type or literal.
+so, why can't we just use `{}` now?
+```
+#named type definition
+Point = !{x:int, y:int}
+Point = !{int, int}
+
+#instantiation
+Point!{100, 200}
+Point!{x:100, y:200}
+!{int,int}!{100, 200}
+!{100, 200}
+
+#modification
+third_point = Point!{point1, point2, point3, z: 10, delta: 99}
+```
+
+? - Should we use a keyword for switch? with above proposal, we will use `!{}` for struct, so struct keyword will be gone.
+we can trade it with `select` or `switch` or `match` keyword.
+maybe then we can extend it for 3 purposes:
+1. expression switch
+2. union type switch
+3. channel selection
+```
+result = x ${ 
+    fn(a: int -> int) {a+1},
+    fn(a: string -> int) {5},
+    fn{100}   #default case when none of above functions can accept x
+}
+```
+Scala:
+```
+x match {
+  case 0 => "zero"
+  case 1 => "one"
+  case 2 => "two"
+  case _ => "other"
+}
+```
+Kotlin:
+```
+when (x) {
+    1 -> print("x == 1")
+    2 -> print("x == 2")
+    else -> print("x is neither 1 nor 2")
+}
+```
+Rust:
+```
+    match x {
+        1 => println!("one"),
+        2 => println!("two"),
+        3 => println!("three"),
+        _ => println!("anything"),
+    }
+```
+Go:
+```
+switch i {
+    case 1:
+        fmt.Println("one")
+    case 2:
+        fmt.Println("two")
+    case 3:
+        fmt.Println("three")
+    }
+switch {
+    case t.Hour() < 12:
+        fmt.Println("It's before noon")
+    default:
+        fmt.Println("It's after noon")
+    }
+    switch t := i.(type) {
+        case bool:
+            fmt.Println("I'm a bool")
+        case int:
+            fmt.Println("I'm an int")
+        default:
+            fmt.Printf("Don't know type %T\n", t)
+        }
+switch v := x.(type) {
+case nil:
+    fmt.Println("x is nil")            // here v has type interface{}
+case int: 
+    fmt.Println("x is", v)             // here v has type int
+case bool, string:
+    fmt.Println("x is bool or string") // here v has type interface{}
+default:
+    fmt.Println("type unknown")        // here v has type interface{}
+}
+```
+match/switch/when: I think match makes more sense.
+`result = match item { ... }`
+where item can be missing, a value expression, an enum expression or a union. for missing, cases can be conditions or functions for channels.
+```
+result = match item {   #simple match with value
+	1 => 40
+    2 => exp1
+    3 => {
+        cmd1
+        cmd2
+        cmd3
+        resut
+    }
+    default => exp3
+}
+result = match {        #match with conditions same as match true { ... }
+    isValid(data) => 10
+    isWrong(data) => 9
+    default => { ... }
+}
+result = match enum_day_of_week { #same as value
+    Saturday => exp1
+    Sunday => exp2
+    default => exp3
+}
+result = match:shape { #match on union inner type
+    c:Circle => exp1 #here inner is of type Circle
+    s:Square => exp2 #here inner is of type Square
+    default => exp3
+}
+result = match:: {
+    data = channel1::() => 5+data #read
+    data = chFunc2::() => 6-data
+    out: chFunc3::(data) => 2
+    makeTimeout(100) => -1
+    default => 100
+}
+```
+left side of `=>` can be expressions. they will be evaluated in order.
+advanced pattern matching: multiple items, regex, range match(a to z)
+for vlaues you can use `a,b,c` to match with any of them
+for conditions, you can use `and, or` to combine conditions. but again, `,` will act as OR
+for `match::` this is not supported :-(
+for union match, only one is supported
+q: what if key expression is multiple? e.g. a struct?
+then values can be structs. for union, value can be struct (of type). note that we can store type literals in a struct.
+range match: not useful. makes things more complicated.
+regex: for later
+**PROPOSAL**:
+1. We will add two new keywords: `match` and `default`.
+2. General syntax is `left_side_value = match exp { cases }`
+3. exp can be a value (value binding or enum), missing, union or `::` for channel selection
+4. cases are of the form `exp1 => exp2`, exp1 can be a value (for bindings), `x: type` for union or channel operation for `match::`
+5. top expression can be a struct (of values or types) in which case, exp1 in cases should be on the same structure.
+examples:
+```
+result = match item {   
+	1 => 40
+    2 => exp1
+    3 => { #this is not a lambda, just a separator
+        cmd1
+        cmd2
+        cmd3
+        resut
+    }
+    4 =>
+    5 => 
+    6 => 100 #on item for 3 cases
+    default => exp3
+}
+result = match {        #match with conditions same as match true { ... }
+    isValid(data) or isGenera(item) => 10 #or conditions
+    isWrong(data) && isOutOfScope(x) => 9 #and conditions, you can also ue or
+    default => { ... }
+}
+result = match enum_day_of_week, item2 { #same as value
+    Saturday,1 => exp1
+    Sunday,2 => exp2
+    default => exp3
+}
+result = match type shape { #match on union inner type
+    c:Circle => exp1 #here inner is of type Circle
+    s:Square => exp2 #here inner is of type Square
+    default => exp3
+}
+result = match type canvas, shape { #match on union inner type
+    x: BlueCanvas, c:Circle => exp1 #here inner is of type Circle
+    y: RedCanvas, s:Square => exp2 #here inner is of type Square
+    default => exp3
+}
+result = match channel { #channel is the keyword for channel data type
+    data = channel1::() => 5+data #read
+    data = chFunc2::() => 6-data
+    out: chFunc3::(data) => 2
+    makeTimeout(100) => -1
+    default => 100
+}
+```
+q: can we use default in partial matches? `5, default => ...`
+q: a shortcut for `match x { true => a, false => b}`? ifelse?
+
+
+
+? - The notation for channel read/write is confusing. even for me. I sometimes get confused.
+create channel will give you a channel identifier? 
+`x::()` will read from channel
+`x::(w)` will write to channel
+but using functions gives us advantage of composing.
+but then it becomes ugly because we need to add runtmie arg and include it everywhere!
+and this will be a new data type. just like go.
 
