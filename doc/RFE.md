@@ -3281,3 +3281,78 @@ print = fn() { ... c ... }
 ...
 return (draw, print, ...)
 ```
+
+? - Can we allow `${}` for enums too? then it can handle if/else.
+```
+result = is_valid${
+    true { 5 }
+    false { 6 }
+}
+result = ${
+    isValid(data) { 5 }
+    isStaleData(date) { 6 }
+    true { ... }
+}
+```
+
+? - A better notation for struct
+- type definition
+- binding/literal decl
+- assignment/copy/modify
+Rust:
+```
+struct User {
+    username: String,
+    email: String,
+    sign_in_count: u64,
+    active: bool,
+}
+```
+`{}` is used for code block, import, union select and error handling!
+`[]` for array and map
+`()` for fn call
+```
+#named type definition
+Point = struct (x:int, y:int) 
+Point = struct (int, int)
+
+#instantiation
+Point(100, 200) 
+Point(x:100, y:200) 
+struct(int,int)(100, 200) 
+
+#modification
+third_point = Point(point1, point2, point3, z: 10, delta: 99)
+```
+maybe we can keep using `()` but make it more elegant/explicit/beautiful.
+right now it looks like function and generic functions, which is confusing.
+```
+#named type definition
+Point = <x:int, y:int>
+Point = <int, int>
+
+#instantiation
+Point<100, 200>
+Point<x:100, y:200>
+<int,int><100, 200>
+<100, 200>
+
+#modification
+third_point = Point<point1, point2, point3, z: 10, delta: 99>
+```
+```
+#named type definition
+Point = !(x:int, y:int)
+Point = !(int, int)
+
+#instantiation
+Point!(100, 200)
+Point!(x:100, y:200)
+!(int,int)!(100, 200)
+!(100, 200)
+
+#modification
+third_point = Point!(point1, point2, point3, z: 10, delta: 99)
+```
+so `!` comes before `(` which denotes struct type or literal.
+
