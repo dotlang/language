@@ -131,7 +131,6 @@ Grammar of dotLang in a notation similar to EBNF can be found [here](./grammar.m
 13. `$`   Union switch
 14. `:=`  Parallel execution
 15. `..`  Access inside module
-16. `///` Select (concurrency)
 
 ## Reserved keywords
 
