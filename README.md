@@ -62,3 +62,4 @@ Below is history of changes (time + summary of what changed) to the dotLang spec
 - Apr 13, 2020: Added support for early return and error handling via `@{}` notation.
 - Apr 23, 2020: Added `${}` notation for union checks.
 - Apr 25, 2020: Some clarification about select and default option in concurrency
+- May 11, 2020: Channels are struct and select is done via std methods (struct with functions makes more sense that esoteric notations like `f() vs. f(data)` and runtime arg.
