@@ -3362,251 +3362,9 @@ N - if we adopt match, can we replace `//` with it?
 `result = a // b`
 `result = match a==nothing { b, a}`
 
+N - After adding match, remove the note that using bool for seq index makes it int.
 
-? - A better notation for struct
-- type definition
-- binding/literal decl
-- assignment/copy/modify
-Rust:
-```
-struct User {
-    username: String,
-    email: String,
-    sign_in_count: u64,
-    active: bool,
-}
-```
-`{}` is used for code block, import, union select and error handling!
-`[]` for array and map
-`()` for fn call
-```
-#named type definition
-Point = struct (x:int, y:int) 
-Point = struct (int, int)
-
-#instantiation
-Point(100, 200) 
-Point(x:100, y:200) 
-struct(int,int)(100, 200) 
-
-#modification
-third_point = Point(point1, point2, point3, z: 10, delta: 99)
-```
-maybe we can keep using `()` but make it more elegant/explicit/beautiful.
-right now it looks like function and generic functions, which is confusing.
-```
-#named type definition
-Point = <x:int, y:int>
-Point = <int, int>
-
-#instantiation
-Point<100, 200>
-Point<x:100, y:200>
-<int,int><100, 200>
-<100, 200>
-
-#modification
-third_point = Point<point1, point2, point3, z: 10, delta: 99>
-```
-```
-#named type definition
-Point = !(x:int, y:int)
-Point = !(int, int)
-
-#instantiation
-Point!(100, 200)
-Point!(x:100, y:200)
-!(int,int)!(100, 200)
-!(100, 200)
-
-#modification
-third_point = Point!(point1, point2, point3, z: 10, delta: 99)
-```
-so `!` comes before `(` which denotes struct type or literal.
-so, why can't we just use `{}` now?
-```
-#named type definition
-Point = !{x:int, y:int}
-Point = !{int, int}
-
-#instantiation
-Point!{100, 200}
-Point!{x:100, y:200}
-!{int,int}!{100, 200}
-!{100, 200}
-
-#modification
-third_point = Point!{point1, point2, point3, z: 10, delta: 99}
-```
-if we use `//` for comments, we can use `#` here too. 
-but `!` implies not. and also is an operator `!=` so is a bit confusing.
-we should try to come up with a syntax which is easy to parse by compiler if we do that, it will also be easy to read for a developer.
-`{...}` notation for struct is not very clear because same notation is used for function body.
-```
-#named type definition
-Point = &{x:int, y:int}
-Point = &{int, int}
-
-#instantiation
-Point&{100, 200}
-Point&{x:100, y:200}
-&{int,int}&{100, 200}
-&{100, 200}
-
-#modification
-third_point = Point&{point1, point2, point3, z: 10, delta: 99}
-```
-can we have two notations for type vs. literal of struct?
-`&{...}` for literals
-`^{...}` for type
-or maybe use struct keyword!
-| new                                   | current                           |
-|-----                                  |---------                          |
-|`Point = struct {x:int, y:int}`        | `Point = struct (x:int, y:int)`   |
-|`Point = struct {int, int}`            | `Point = struct (int, int)`       |
-|`Point&{100, 200}`                     | `Point(100, 200)`                 |
-|`Point&{x:100, y:200}`                 | `Point(x:100, y:200)`             |
-|`&{100, 200}`                          | `struct(int,int)(100, 200)`       |
-|`Point&{point1, z: 10, delta: 99}`     | `Point(x:11, y:my_point.y + 200)` |
-what is type of `&{12}`? it is an unnamed struct with one int field.
-now, if `MyInt = int` and I write `MyInt&{12}` then what is type of the result? it should be MyInt.
-these two are having conflicts.
-what about this? `&{x:100, y:200}.(Point)` which does casting?
-`12.(MyInt)` it is a bit counter intuitive. I expect type to come first.
-but we usually have `x:int` so we have data/var then type.
-`12.(MyInt)` is like `12: MyInt`
-we can say, all struct bindings are untypes unless we provide a type for them.
-`&{x:100, y:200}.(Point)` this is better than `Point(&{x:100,...})`
-because `(&{` is 3 notations one after each other which is confusing and also I need to add an end boundary with `)` at the end.
-`&{x:100, y:200}:Point`
-`12:MyInt`
-`x:MyInt` this is confusing. is it decl or type cast?
-`x::MyInt` 
-`12::MyInt`
-`&{...}::Point`
-| new                                   | current                           |
-|-----                                  |---------                          |
-|`Point = struct {x:int, y:int}`        | `Point = struct (x:int, y:int)`   |
-|`Point = struct {int, int}`            | `Point = struct (int, int)`       |
-|`&{100, 200}::Point`                   | `Point(100, 200)`                 |
-|`&{x:100, y:200}::Point`               | `Point(x:100, y:200)`             |
-|`&{100, 200}`                          | `struct(int,int)(100, 200)`       |
-|`&{point1, z: 10, delta: 99}::Point`   | `Point(x:11, y:my_point.y + 200)` |
-`myint_var = 12::Point`
-`my_circle = shape::Circle`
-we can then use `::` for casting in general.
-cast named types.
-numbers (int, float, byte ...)
-union to inner types `shape::Circle`
-- can we save the result? can we check if conversion fails? for union?
-we can say, `::` returns `nothing` if conversion fails.
-`shape::Circle` if not nothing, then is of type Circle
-in golang we write: `t, ok := i.(T)`
-we need to somehow consolidate two things here: result of casting, and if casting was successfull
-we can do it like golang:
-`circle, ok = shape::Circle`
-but how can I directly access to ok without assignment? I need this for match.
-solution: wrong `::` will give you runtime error. you should use match to make sure it is correct.
-problem: is not composable!
-`shape::Circle.radius` this is super confusing. what does `.` act on? we want it to act on the whole expression.
-`shape.(Circle)`
-what about structs?
-`&{point1, z: 10, delta: 99}.(Point)`
-another way:
-`Point&{point1, z: 10, delta: 99}`
-`Circle{shape}`
-`MyInt{12}`
-so for struct literal, we use `&` prefix. for other values we just weite `{}`
-or:
-`&Point{point1, z: 10, delta: 99}`
-`&Circle{shape}`
-`&MyInt{12}`
-but, we want to discriminate this from code block.
-`&T{literal}`
-- explicitly different from code block or match block
-- is composable
-- two different meaning about what comes after `&T` but that should be fine.
-but what about match?
-match has a special semantics for union types and we use this notation inside union matched blocks.
-| new                                   | current                           |
-|-----                                  |---------                          |
-|`Point = struct {x:int, y:int}`        | `Point = struct (x:int, y:int)`   |
-|`Point = struct {int, int}`            | `Point = struct (int, int)`       |
-|`&Point{100, 200}`                     | `Point(100, 200)`                 |
-|`&Point{x:100, y:200}`                 | `Point(x:100, y:200)`             |
-|`&{100, 200}`                          | `struct(int,int)(100, 200)`       |
-|`&Point{point1, z: 10, delta: 99}`     | `Point(x:11, y:my_point.y + 200)` |
-`myint_var = &MyInt{12}`
-`my_circle = &Circle{shape}` gives Circle or a runtime error
-we can make this more flexible by saying: cast will return nothing if cast is not possible.
-on one hand, we need `&Circle{shape} // ???` everywhere, otoh we don't need to check for correctness of the casting.
-note that this is only for unions. for everything else, it is checked and enforced at compile time. so we don't need to worry about that at runtime.
-I think with match, this is not very useful. we add a match clause and inside that we are sure about the type.
-still there is some confusion. `&MyPt{100}` is a struct litearl of type Point. `&MyInt{100}` is named type, MyInt.
-in both cases, type is what we have between `&` and `{`. what comes inside `{}`? on the left, it is struct
-on the left it is a number (or can be anything).
-what about this? we use `&` only for struct literals?
-| new                                   | current                           |
-|-----                                  |---------                          |
-|`Point = struct {x:int, y:int}`        | `Point = struct (x:int, y:int)`   |
-|`Point = struct {int, int}`            | `Point = struct (int, int)`       |
-|`Point&{100, 200}`                     | `Point(100, 200)`                 |
-|`Point&{x:100, y:200}`                 | `Point(x:100, y:200)`             |
-|`&{100, 200}`                          | `struct(int,int)(100, 200)`       |
-|`Point&{point1, z: 10, delta: 99}`     | `Point(x:11, y:my_point.y + 200)` |
-`myint_var = MyInt{12}`
-`my_circle = Circle{shape}` gives Circle or a runtime error
-so the syntax is `T{V}` or `T&{V}` for structs.
-still they overlap.
-note that struct type is also a named type. so we should be able to use `MyInt{12}` notation.
-we should say, literal comes inside `{}`. which makes sense for named type. but for struct named type:
-literal includes `{}`! -> conflict
-int literal: 12
-point litearl: `&{100,200}`
-type conversion: `literal.Type` but this is not composable.
-type conversion: `litearl.(Type)`
-| new                                   | current                           |
-|-----                                  |---------                          |
-|`Point = struct {x:int, y:int}`        | `Point = struct (x:int, y:int)`   |
-|`Point = struct {int, int}`            | `Point = struct (int, int)`       |
-|`&{100, 200}.(Point)`                  | `Point(100, 200)`                 |
-|`&{x:100, y:200}.(Point)`              | `Point(x:100, y:200)`             |
-|`&{100, 200}`                          | `struct(int,int)(100, 200)`       |
-|`&{point1, z: 10, delta: 99}.(Point)`  | `Point(x:11, y:my_point.y + 200)` |
-`myint_var = 12.(MyInt)`
-`my_circle = shape.(Circle)` gives Circle or a runtime error
-or, if we want to decrease shift key press we can use `[]`.
-| new                                   | current                           |
-|-----                                  |---------                          |
-|`Point = struct {x:int, y:int}`        | `Point = struct (x:int, y:int)`   |
-|`Point = struct {int, int}`            | `Point = struct (int, int)`       |
-|`&{100, 200}.[Point]`                  | `Point(100, 200)`                 |
-|`&{x:100, y:200}.[Point]`              | `Point(x:100, y:200)`             |
-|`&{100, 200}`                          | `struct(int,int)(100, 200)`       |
-|`&{point1, z: 10, delta: 99}.[Point]`  | `Point(x:11, y:my_point.y + 200)` |
-`myint_var = 12.[MyInt]`
-`my_circle = shape.[Circle]` gives Circle or a runtime error
-or: we can use `T[litearl]` notation. Can't this be confused with array/map? for seq and map, what comes before `[]` is a binding name.
-we can also use `T.[]`
-| new                                   | current                           |
-|-----                                  |---------                          |
-|`Point = struct {x:int, y:int}`        | `Point = struct (x:int, y:int)`   |
-|`Point = struct {int, int}`            | `Point = struct (int, int)`       |
-|`&{100, 200}`                          | `struct(int,int)(100, 200)`       |
-|`Point.[&{100, 200}]`                  | `Point(100, 200)`                 |
-|`Point.[&{x:100, y:200}]`              | `Point(x:100, y:200)`             |
-|`Point.[&{point1, z: 10, delta: 99}]`  | `Point(x:11, y:my_point.y + 200)` |
-`myint_var = MyInt.[12]`
-`my_circle = Circle.[shape]` gives Circle or a runtime error
-
-
-? - if we adopt new notation for match and cast for union, remove the part that says about destructing union type.
-
-
-? - After adding match, remove the note that using bool for seq index makes it int.
-
-
-? - Should we use a keyword for switch? with above proposal, we will use `!{}` for struct, so struct keyword will be gone.
+N - Should we use a keyword for switch? with above proposal, we will use `!{}` for struct, so struct keyword will be gone.
 we can trade it with `select` or `switch` or `match` keyword.
 maybe then we can extend it for 3 purposes:
 1. expression switch
@@ -3876,11 +3634,272 @@ result = match a,b {
     default => 90
 }
 ```
+but can't we easily do this by map?
+```
+result = [   
+	1: 40,
+    3: fn{
+        cmd1
+        resut
+    }(),
+    6: 100 #one item for 3 cases
+][item]
+result = [ 
+    Circle: Circle.[shape]... 
+    Square: Square.[shape]...
+][type(shape)]
+```
+Are we trying to simplify something which is not complicated?
+`result = [10, 20][isDone]`
+so, essentially the only thing we really need is a core function to return internal type inside a union.
 
-? - How can I type a literal with a named type?
+N - How can I type a literal with a named type?
 `MyInt = int`
 `processData(12)` but processData needs MyInt
 how can I cast?
 golang: `processData(person{"Bob", 20})`
 we can generalise `&` notation: `T&{literal}` will cast literal to type T, of course literal and T should be of the same type.
 `processData(MyInt&{12})`
+This is described in the section about structs
+
+
+? - A better notation for struct
+- type definition
+- binding/literal decl
+- assignment/copy/modify
+Rust:
+```
+struct User {
+    username: String,
+    email: String,
+    sign_in_count: u64,
+    active: bool,
+}
+```
+`{}` is used for code block, import, union select and error handling!
+`[]` for array and map
+`()` for fn call
+```
+#named type definition
+Point = struct (x:int, y:int) 
+Point = struct (int, int)
+
+#instantiation
+Point(100, 200) 
+Point(x:100, y:200) 
+struct(int,int)(100, 200) 
+
+#modification
+third_point = Point(point1, point2, point3, z: 10, delta: 99)
+```
+maybe we can keep using `()` but make it more elegant/explicit/beautiful.
+right now it looks like function and generic functions, which is confusing.
+```
+#named type definition
+Point = <x:int, y:int>
+Point = <int, int>
+
+#instantiation
+Point<100, 200>
+Point<x:100, y:200>
+<int,int><100, 200>
+<100, 200>
+
+#modification
+third_point = Point<point1, point2, point3, z: 10, delta: 99>
+```
+```
+#named type definition
+Point = !(x:int, y:int)
+Point = !(int, int)
+
+#instantiation
+Point!(100, 200)
+Point!(x:100, y:200)
+!(int,int)!(100, 200)
+!(100, 200)
+
+#modification
+third_point = Point!(point1, point2, point3, z: 10, delta: 99)
+```
+so `!` comes before `(` which denotes struct type or literal.
+so, why can't we just use `{}` now?
+```
+#named type definition
+Point = !{x:int, y:int}
+Point = !{int, int}
+
+#instantiation
+Point!{100, 200}
+Point!{x:100, y:200}
+!{int,int}!{100, 200}
+!{100, 200}
+
+#modification
+third_point = Point!{point1, point2, point3, z: 10, delta: 99}
+```
+if we use `//` for comments, we can use `#` here too. 
+but `!` implies not. and also is an operator `!=` so is a bit confusing.
+we should try to come up with a syntax which is easy to parse by compiler if we do that, it will also be easy to read for a developer.
+`{...}` notation for struct is not very clear because same notation is used for function body.
+```
+#named type definition
+Point = &{x:int, y:int}
+Point = &{int, int}
+
+#instantiation
+Point&{100, 200}
+Point&{x:100, y:200}
+&{int,int}&{100, 200}
+&{100, 200}
+
+#modification
+third_point = Point&{point1, point2, point3, z: 10, delta: 99}
+```
+can we have two notations for type vs. literal of struct?
+`&{...}` for literals
+`^{...}` for type
+or maybe use struct keyword!
+| new                                   | current                           |
+|-----                                  |---------                          |
+|`Point = struct {x:int, y:int}`        | `Point = struct (x:int, y:int)`   |
+|`Point = struct {int, int}`            | `Point = struct (int, int)`       |
+|`Point&{100, 200}`                     | `Point(100, 200)`                 |
+|`Point&{x:100, y:200}`                 | `Point(x:100, y:200)`             |
+|`&{100, 200}`                          | `struct(int,int)(100, 200)`       |
+|`Point&{point1, z: 10, delta: 99}`     | `Point(x:11, y:my_point.y + 200)` |
+what is type of `&{12}`? it is an unnamed struct with one int field.
+now, if `MyInt = int` and I write `MyInt&{12}` then what is type of the result? it should be MyInt.
+these two are having conflicts.
+what about this? `&{x:100, y:200}.(Point)` which does casting?
+`12.(MyInt)` it is a bit counter intuitive. I expect type to come first.
+but we usually have `x:int` so we have data/var then type.
+`12.(MyInt)` is like `12: MyInt`
+we can say, all struct bindings are untypes unless we provide a type for them.
+`&{x:100, y:200}.(Point)` this is better than `Point(&{x:100,...})`
+because `(&{` is 3 notations one after each other which is confusing and also I need to add an end boundary with `)` at the end.
+`&{x:100, y:200}:Point`
+`12:MyInt`
+`x:MyInt` this is confusing. is it decl or type cast?
+`x::MyInt` 
+`12::MyInt`
+`&{...}::Point`
+| new                                   | current                           |
+|-----                                  |---------                          |
+|`Point = struct {x:int, y:int}`        | `Point = struct (x:int, y:int)`   |
+|`Point = struct {int, int}`            | `Point = struct (int, int)`       |
+|`&{100, 200}::Point`                   | `Point(100, 200)`                 |
+|`&{x:100, y:200}::Point`               | `Point(x:100, y:200)`             |
+|`&{100, 200}`                          | `struct(int,int)(100, 200)`       |
+|`&{point1, z: 10, delta: 99}::Point`   | `Point(x:11, y:my_point.y + 200)` |
+`myint_var = 12::Point`
+`my_circle = shape::Circle`
+we can then use `::` for casting in general.
+cast named types.
+numbers (int, float, byte ...)
+union to inner types `shape::Circle`
+- can we save the result? can we check if conversion fails? for union?
+we can say, `::` returns `nothing` if conversion fails.
+`shape::Circle` if not nothing, then is of type Circle
+in golang we write: `t, ok := i.(T)`
+we need to somehow consolidate two things here: result of casting, and if casting was successfull
+we can do it like golang:
+`circle, ok = shape::Circle`
+but how can I directly access to ok without assignment? I need this for match.
+solution: wrong `::` will give you runtime error. you should use match to make sure it is correct.
+problem: is not composable!
+`shape::Circle.radius` this is super confusing. what does `.` act on? we want it to act on the whole expression.
+`shape.(Circle)`
+what about structs?
+`&{point1, z: 10, delta: 99}.(Point)`
+another way:
+`Point&{point1, z: 10, delta: 99}`
+`Circle{shape}`
+`MyInt{12}`
+so for struct literal, we use `&` prefix. for other values we just weite `{}`
+or:
+`&Point{point1, z: 10, delta: 99}`
+`&Circle{shape}`
+`&MyInt{12}`
+but, we want to discriminate this from code block.
+`&T{literal}`
+- explicitly different from code block or match block
+- is composable
+- two different meaning about what comes after `&T` but that should be fine.
+but what about match?
+match has a special semantics for union types and we use this notation inside union matched blocks.
+| new                                   | current                           |
+|-----                                  |---------                          |
+|`Point = struct {x:int, y:int}`        | `Point = struct (x:int, y:int)`   |
+|`Point = struct {int, int}`            | `Point = struct (int, int)`       |
+|`&Point{100, 200}`                     | `Point(100, 200)`                 |
+|`&Point{x:100, y:200}`                 | `Point(x:100, y:200)`             |
+|`&{100, 200}`                          | `struct(int,int)(100, 200)`       |
+|`&Point{point1, z: 10, delta: 99}`     | `Point(x:11, y:my_point.y + 200)` |
+`myint_var = &MyInt{12}`
+`my_circle = &Circle{shape}` gives Circle or a runtime error
+we can make this more flexible by saying: cast will return nothing if cast is not possible.
+on one hand, we need `&Circle{shape} // ???` everywhere, otoh we don't need to check for correctness of the casting.
+note that this is only for unions. for everything else, it is checked and enforced at compile time. so we don't need to worry about that at runtime.
+I think with match, this is not very useful. we add a match clause and inside that we are sure about the type.
+still there is some confusion. `&MyPt{100}` is a struct litearl of type Point. `&MyInt{100}` is named type, MyInt.
+in both cases, type is what we have between `&` and `{`. what comes inside `{}`? on the left, it is struct
+on the left it is a number (or can be anything).
+what about this? we use `&` only for struct literals?
+| new                                   | current                           |
+|-----                                  |---------                          |
+|`Point = struct {x:int, y:int}`        | `Point = struct (x:int, y:int)`   |
+|`Point = struct {int, int}`            | `Point = struct (int, int)`       |
+|`Point&{100, 200}`                     | `Point(100, 200)`                 |
+|`Point&{x:100, y:200}`                 | `Point(x:100, y:200)`             |
+|`&{100, 200}`                          | `struct(int,int)(100, 200)`       |
+|`Point&{point1, z: 10, delta: 99}`     | `Point(x:11, y:my_point.y + 200)` |
+`myint_var = MyInt{12}`
+`my_circle = Circle{shape}` gives Circle or a runtime error
+so the syntax is `T{V}` or `T&{V}` for structs.
+still they overlap.
+note that struct type is also a named type. so we should be able to use `MyInt{12}` notation.
+we should say, literal comes inside `{}`. which makes sense for named type. but for struct named type:
+literal includes `{}`! -> conflict
+int literal: 12
+point litearl: `&{100,200}`
+type conversion: `literal.Type` but this is not composable.
+type conversion: `litearl.(Type)`
+| new                                   | current                           |
+|-----                                  |---------                          |
+|`Point = struct {x:int, y:int}`        | `Point = struct (x:int, y:int)`   |
+|`Point = struct {int, int}`            | `Point = struct (int, int)`       |
+|`&{100, 200}.(Point)`                  | `Point(100, 200)`                 |
+|`&{x:100, y:200}.(Point)`              | `Point(x:100, y:200)`             |
+|`&{100, 200}`                          | `struct(int,int)(100, 200)`       |
+|`&{point1, z: 10, delta: 99}.(Point)`  | `Point(x:11, y:my_point.y + 200)` |
+`myint_var = 12.(MyInt)`
+`my_circle = shape.(Circle)` gives Circle or a runtime error
+or, if we want to decrease shift key press we can use `[]`.
+| new                                   | current                           |
+|-----                                  |---------                          |
+|`Point = struct {x:int, y:int}`        | `Point = struct (x:int, y:int)`   |
+|`Point = struct {int, int}`            | `Point = struct (int, int)`       |
+|`&{100, 200}.[Point]`                  | `Point(100, 200)`                 |
+|`&{x:100, y:200}.[Point]`              | `Point(x:100, y:200)`             |
+|`&{100, 200}`                          | `struct(int,int)(100, 200)`       |
+|`&{point1, z: 10, delta: 99}.[Point]`  | `Point(x:11, y:my_point.y + 200)` |
+`myint_var = 12.[MyInt]`
+`my_circle = shape.[Circle]` gives Circle or a runtime error
+or: we can use `T[litearl]` notation. Can't this be confused with array/map? for seq and map, what comes before `[]` is a binding name.
+we can also use `T.[]`
+| new                                   | current                           |
+|-----                                  |---------                          |
+|`Point = struct {x:int, y:int}`        | `Point = struct (x:int, y:int)`   |
+|`Point = struct {int, int}`            | `Point = struct (int, int)`       |
+|`&{100, 200}`                          | `struct(int,int)(100, 200)`       |
+|`Point.[&{100, 200}]`                  | `Point(100, 200)`                 |
+|`Point.[&{x:100, y:200}]`              | `Point(x:100, y:200)`             |
+|`Point.[&{point1, z: 10, delta: 99}]`  | `Point(x:11, y:my_point.y + 200)` |
+`myint_var = MyInt.[12]`
+`my_circle = Circle.[shape]` gives Circle or a runtime error
+
+
+? - if we adopt new notation for match and cast for union, remove the part that says about destructing union type.
+
+
