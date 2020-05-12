@@ -3898,6 +3898,34 @@ we can also use `T.[]`
 |`Point.[&{point1, z: 10, delta: 99}]`  | `Point(x:11, y:my_point.y + 200)` |
 `myint_var = MyInt.[12]`
 `my_circle = Circle.[shape]` gives Circle or a runtime error
+maybe we can simplify this.
+we can say `T.L` this is not composable by itself. but is composable for structs.
+also, people can write `T.(L)` if needed to be composable.
+but it is too similar to struct element access.
+what about `T::L`
+it should be `L::T` because we put item first and type second.
+in go we write: `person{name: name}`
+| new                                   | current                           |
+|-----                                  |---------                          |
+|`Point = struct {x:int, y:int}`        | `Point = struct (x:int, y:int)`   |
+|`Point = struct {int, int}`            | `Point = struct (int, int)`       |
+|`&{100, 200}`                          | `struct(int,int)(100, 200)`       |
+|`Point{100, 200}`                  | `Point(100, 200)`                 |
+|`Point{x:100, y:200}`              | `Point(x:100, y:200)`             |
+|`Point{point1, z: 10, delta: 99}`  | `Point(x:11, y:my_point.y + 200)` |
+`myint_var = MyInt{12}`
+`my_circle = Circle{shape}` gives Circle or a runtime error
+- we can say `&` is needed for struct literals without type
+- now, the syntax for typed struct literal, is similar to casting. maybe we should have a different notation for them.
+`myint_var = MyInt(12)`
+`my_circle = Circle(shape)`
+but then, is this a type to cast or a generic function to call?
+Maybe it is ok to use `T{L}` in all cases (struct literal, union cast, named type cast).
+we say result of `T{L}` is of type `T` all the time.
+`L` is a literal which can be `12` or `shape` or list of fields for a struct.
+- can we remove `&` from `&{100,200}`?
+- when `L` is `200` we don't know whether it is a named type casting of 200 or a cast to struct. it can be both. the named type can be a struct.
+so, we need to see what the type is.
 
 
 ? - if we adopt new notation for match and cast for union, remove the part that says about destructing union type.
