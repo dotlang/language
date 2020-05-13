@@ -105,11 +105,11 @@ Grammar of dotLang in a notation similar to EBNF can be found [here](./grammar.m
 06. **Named type**: `MyInt = int` (Defines a new type `MyInt` with same binary representation as `int`).
 07. **Type alias**: `IntType : int` (A different name for the same type).
 08. **Struct type**: `Point = struct(x: int, y:int, data: float)` (Like C `struct`).
-09. **Struct literal**: `location = Point(x:10, y:20, data:1.19)`.
+09. **Struct literal**: `location = Point{x:10, y:20, data:1.19}`.
 10. **Union type**: `MaybeInt = int | nothing` (Can store either of two types, note that this is a named type).
 11. **Function**: `calculate = fn(x:int, y:int -> float) { x/y }` (Functions are all lambdas, the last expression in the body is return value).
 12. **Concurrency**: `my_task := processData(x,y,z)` (Start a new micro-thread and evaluate an expression in parallel).
-13. **Generics**: `ValueKeeper = fn(T: type -> type) { struct(data: T) }` (A function that returns a type)
+13. **Generics**: `ValueKeeper = fn(T: type -> type) { struct{data: T} }` (A function that returns a type)
 14. **Generics**: `push = fn(x: T, stack: Stack(T), T: type -> Stack(T)) { ... }`
 15. **Enum**: `DayOfWeek = enum [saturday, sunday, monday, tuesday, wednesday, thursday, friday]`
 16. **Errors**: `result = validateData(a,b,c)@{makeError(InvalidArgument)}`
@@ -128,9 +128,8 @@ Grammar of dotLang in a notation similar to EBNF can be found [here](./grammar.m
 10. `=`   Binding declaration, named type
 11. `_`   Place-holder (lambda creator and assignment)
 12. `@`   Error check
-13. `$`   Union switch
-14. `:=`  Parallel execution
-15. `..`  Access inside module
+13. `:=`  Parallel execution
+14. `..`  Access inside module
 
 ## Reserved keywords
 
