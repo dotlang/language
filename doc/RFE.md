@@ -4094,7 +4094,7 @@ x = fn(x:int->int, float|string, fn(...->...))
 no. this looks like a natural extension to single return functions.
 has no side effect on existing code that returns one type.
 
-? - a compact ifelse?
+Y - a compact ifelse?
 kotlin: `val result = if (condition) trueBody else falseBody`
 `a = 1 > 2 ? 3 : 4`
 Haskell:
@@ -4155,13 +4155,24 @@ or `[cond: exp, !cond: nothing][true]`
 `result = (data == nothing : 100) // data` no this will become confusing.
 **PROPOSAL**:
 1. A new operator `::` is added which is a syntax sugar to support if statement.
-2. `(exp1 :: exp2)` will evaluate exp1, if it is true, then result will be exp2, otherwise, it wil be `nothing`.
+2. `(exp1 :: exp2)` will first evaluate exp1, if it is true, then result will be exp2, otherwise, it wil be `nothing`.
 3. You can mix `::` with `//` to provide ifElse.
 Example:
 `home_dir = (has_home :: getHomeDir()) // "/root"`
 how can we chain these?
 `home_dir = (is_root :: "/root") // (is_default_user :: "/default") // (is_unknown :: "unknown") // "/tmp"`
-
+`x = (is_root@ :: helper@)` means evaluate is_root, if error then early return.
+if false then x will be nothing. if true then evaluate helper.
+q: if I write `cond() :: exp()` when will exp() be evaluated?
+- if will not be evaluated (exp will not be called) if cond evaluates to null.
+**PROPOSAL**:
+1. A new operator `::` is added which is a syntax sugar to support if statement.
+2. `(exp1 :: exp2)` will first evaluate exp1, if it is true, then exp2 will be evaluated and determine expression result, otherwise, exp2 will not be evaluated and result will be nothing.
+3. You can mix `::` with `//` to provide ifElse.
+Example:
+`home_dir = (has_home :: getHomeDir()) // "/root"`
+how can we chain these?
+`home_dir = (is_root :: "/root") // (is_default_user :: "/default") // (is_unknown :: "unknown") // "/tmp"`
 
 
 
