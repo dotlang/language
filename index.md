@@ -118,8 +118,8 @@ Grammar of dotLang in a notation similar to EBNF can be found [here](./grammar.m
 
 01. `#`   Comment
 02. `.`   Access struct members
-03. `()`  Function declaration and call, struct declaration and literals
-04. `{}`  Code block, multiple selection from module namespace, error check, union switch
+03. `()`  Function declaration and call
+04. `{}`  Code block, multiple selection from module namespace, error check, struct declaration and literals
 05. `[]`  Sequence and hashMap
 06. `|`   Union data type 
 07. `->`  Function declaration
