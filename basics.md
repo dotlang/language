@@ -103,78 +103,43 @@ bool = enum [true, false]
 
 1. Bindings of union type, can store any of multiple pre-defined types.
 2. Union type are shown as `T1|T2|T3|...`. 
-3. You can use `${}` notation (union switch) to do something based on actual type inside a union binding.
-4. From the list of functions inside `${}` the first one that can accept what's inside the union will be executed.
-5. Functions inside `${}` must cover all cases of the union(s), otherwise there will be a compiler error.
+3. You can use casting to check what's inside a union binding or cast it to a type.
 
 **Examples**
 
 ```perl    
 int_or_float: int|float = 11
 int_or_float: int|float = "ABCD"
-int_or_nothing, float_or_nothing = int_or_float_or_nothing_value
 
-x: int|string|float = getData()
-
-result = x ${ 
-    fn(a: int -> int) {a+1},
-    fn(a: string -> int) {5},
-    fn{100}   #default case when none of above functions can accept x
-}
-
-#shape and canvas are both union bindings
-result2 = (shape, canvas)${
-    drawCircleWithRedCanvas ,
-    drawSquareWithBlueCanvas ,
-    fn{10}
-}
+my_int = int(int_or_float) #this will fail if input binding does not have an int
+maybe_int = int|nothing(int_or_float) #if binding has a float, you will get a nothing as a result of this cast
 ```
 
 ## Struct
 
 1. A struct, similar to C, represents a set of related named types. 
-2. To create a binding based on a struct, you should use a struct literal (e.g. `Type(field1:value1, field2:value2, ...)`.
-3. You can define a struct type without a name (unnamed type).
-4. You can use destruction to access unnamed fields inside a struct.
-5. You can add a function after definition of a struct type by `fn{...}` notation. This will be executed on each instantiation of that type and can be used for logging or validation purposes.
-6. Optional fields: When creating a value of struct type and don't specify value for fields which can be `nothing`, they will be set to `nothing`.
-7. Edit: You can create a new struct value based on one or more existing values. This will merge them all (`nothing`s will be overwritten with any existing value for the same field). (Example A).
+2. To create a binding based on a struct, you should use a struct literal (e.g. `Type{field1:value1, field2:value2, ...}`.
+3. Type name in struct litearl and field names in struct type are mandatory.
+4. You can add a function after definition of a struct type by `fn{...}` notation. This will be executed on each instantiation of that type and can be used for logging or validation purposes.
+5. Optional fields: When creating a value of struct type and don't specify value for fields which can be `nothing`, they will be set to `nothing`.
+6. Edit: You can create a new struct value based an existing value. This will merge them all. (Example A).
 
 **Examples**
 
 ```perl    
 #defining a struct type
-Point = struct (x:int, y:int) 
+Point = struct {x:int, y:int}
 
 #create a binding of type Point, defined above
-point2 = Point(x:100, y:200) 
-point2new = Point(100, 200) 
-
-#untyped struct
-point1 = struct(int,int)(100, 200) 
-
-#struct type with no field names
-Point = struct (int, int)
+point2 = Point{x:100, y:200}
+point2new = Point{100, 200}
 
 #update an existing struct binding and save as a new binding
-point4 = Point(x:point3.x, y : 101)
+point4 = Point{x:point3.x, y : 101}
 
-#destruction to access struct data
-x,y = point1
+process = fn(x: struct {id:int, age:int} -> int) { x.age }
 
-another_point = Point(x:11, y:my_point.y + 200)
-
-#You can use _ during destruction to ignore one or more of results
-_, x = point1 
-
-process = fn(x: struct (id:int, age:int) -> int) { x.age }
-
-process2 = fn(x: struct (int, int) -> int) { 
-    _,a = x
-    a
-}
-
-PointTemplate = struct(x:int, y:int) 
+PointTemplate = struct{x:int, y:int}
     fn{
         assert(x>0)
         assert(y<0)
@@ -184,8 +149,8 @@ PointTemplate = struct(x:int, y:int)
     }
     
 #A
-another_point = Point(my_point, x:10)
-third_point = Point(point1, point2, point3, z: 10, delta: 99)
+another_point = Point{my_point, x:10}
+third_point = Point{point1, z: 10, delta: 9}
 ```
 
 ## Named types
@@ -230,21 +195,18 @@ process = fn(x:MyInt -> int) { x }
 
 ## Casting
 
-1. For casting between primitive types (e.g. float to int), core functions are provided.
-2. In order to cast across named types, you will need to write an identity function (a function that only returns its input), but with correct types (Example 1).
-3. Note that, there is no automatic casting provided. All type changes must be explicitly specified in the code.
-4. Literals (e.g. `1` or `"Hello world"`) will get value of the most primitive type inferred by the compiler (`int`, `string`, ...). 
+1. We use `T(value)` notation to cast value to a specific type.
+2. Casting can be done for primitive types, named types or unions.
+3. For union, you can use casting to get underlying type. If you cast a union binding to a wrong type, there will be a runtime error.
+4. You can cast a union to `T|nothing` to do a safe cast. You will get `nothing` it type T is not inside the union binding.
+5. Literals (e.g. `1` or `"Hello world"`) will get value of the most primitive type inferred by the compiler (`int`, `string`, ...). 
 5. Based on 4, you cannot assign an untyped literal to a named type without casting. Because for example `1` literal is an `int` literal not a named type that maps to `int`.
 
 **Examples**
 
 ```perl    
 MyInt = int
-toInt = fn(x: MyInt -> int) { x }
-toMyInt = fn(x: int -> MyInt) { x }
-h: MyInt = getMyInt()
-g = toInt(h)
-j = toMyInt(g)
+myint_var = MyInt(12)
 ```
 
 # Functions
