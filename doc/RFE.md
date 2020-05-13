@@ -4193,6 +4193,10 @@ output - comments about the output
 DataTypeX = struct {x:int, ...}
 ```
 
-
-
-
+? - The `..` notation for modules is not common and if we want developers to use module namespaces more, will be difficult to work with.
+```
+Socket = import("../core/st/socket")
+data = Socket..processData(1,2,3)
+```
+in go we have `fmt.Println`
+in Rust we have `char::from_digit(4, 10)`
