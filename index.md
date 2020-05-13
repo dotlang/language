@@ -162,5 +162,7 @@ Operators are mostly similar to C language:
 * Arithmetic: `+, -, *, /, %, %%, >>, <<, **`
 * Note that `==` will do a comparison based on contents of its operands.
 * `A // B` will evaluate to A if it is not `nothing`, else it will be evaluated to B (e.g. `y = x // y // z // 0`).
+* `A :: B` will evaluate boolean expression A first, if true will evaluate to B, otherwise will evaluate to `nothing`. This can be mixed with `//` to provide ifElse construct.
+*   Example: `home_dir = (is_root :: "/root") // (is_default_user :: "/default") // (is_unknown :: "unknown") // "/tmp"`
 * Conditional operators return `true` or `false` which are equal to `1` and `0` respectively when used as index of a sequence.
 * Comments can appear anywhere in the code and start with `#`. Anything after `#` till end of the line is comment.
