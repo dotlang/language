@@ -4080,13 +4080,90 @@ my_circle = Circle(shape)
 maybe_circle = Circle|nothing(shape)
 ```
 
-? - Allow functions to return multiple items
+Y - Allow functions to return multiple items
 and ban structs without type.
 `x = fn(a:int, b:int -> int,int) { ...  5,6 }`
 so on the right side of `->` you write a comma separated type list
 and caller must provide bindings for each return, or `_` to ignore it.
 `x,y = getTwoValues()`
 `x,_ = getTwoValues()`
+can this cause confusion when defining a fn?
+```
+x = fn(x:int->int, float|string, fn(...->...))
+```
+no. this looks like a natural extension to single return functions.
+has no side effect on existing code that returns one type.
+
+? - a compact ifelse?
+kotlin: `val result = if (condition) trueBody else falseBody`
+`a = 1 > 2 ? 3 : 4`
+Haskell:
+```
+if var `rem` 2 == 0 
+      then putStrLn "Number is Even" 
+   else putStrLn "Number is Odd"
+```
+F#: `if boolean-expression then expression1 [ else expression2 ]`
+`result = trueCase if condition else falseCase`
+i don't like above because it is a bit confusing. I see `trueCase` but the important part (condition) is coming later and it affects the whole thing.
+`result = if condition trueCase else falseCase`
+`result = if isValid 100 else 200`
+`result = data // 100` this is an if else in itself.
+maybe we can modify it.
+`result = if data == nothing then data else 100`
+`result = data == nothing // data // 100`
+`data == nothing // data` will evaluate to nothing if data is nothing
+it will evaluate to data if data is not nothing.
+`data == nothing // data` ~ `if data == nothing then nothing else data`
+`condition // result` ~ `if condition == true then nothing else result`
+`condition || result` if condition is not met, then result, else nothing
+and we mix above with `//`
+`condition || resultFalse // resultTrue`
+but this is not intuitive. i want true case to come first.
+`result = data == nothing // 100 // data`
+`result = cond // trueCase // falseCase`
+we can use `//` with boolean
+so, if `T // x` and T is not accepting a nothing and T is a boolean then this is if.
+`bool_item // x // y` means if bool_item is true then x else y
+so this is built of two parts:
+1. `bool_item // x` this will evaluate to nothing if bool_item is false.
+2. `something // y` this is normal `//` we have seen before.
+but using `//` for a different purpose is confusing. 
+let's use `::` which means: `A :: B` will evaluate to nothing if A is false, or B if A is true
+`A :: B` ~ `if A == true then B else nothing`
+so we can write:
+`result = data == nothing :: 100 // data`
+but how do we separate `// data` to not be included as a part of  `100` expression?
+`result = data == nothing :: (100 // data)`
+`result = (data == nothing :: 100) // data`
+one option:
+`result = (data == nothing).{100} // data`
+so lets simplify. we don't want ifElse construct.
+we want to be able to write this:
+`if A == true then B else nothing` having A condition and B expression.
+`A.{B}` is one option (we can later mix this with `//` to provide else.
+`(A).{B}` to have complete borders
+`result = (data == nothing).{100}`
+but then we can just use `()`:
+`result = (data == nothing) :: (100)`
+but still we need a surrounder for the whole things.
+`result = (data == nothing :: 100)`
+so with else:
+`result = (data == nothing :: 100) // data`
+`result = (cond :: exp)` ~~ `if cond then result = exp else result = nothing` ~~ `result = [true: exp, false: nothing][cond]`
+or `[cond: exp, !cond: nothing][true]`
+`result = (data == nothing : 100) // data` no this will become confusing.
+**PROPOSAL**:
+1. A new operator `::` is added which is a syntax sugar to support if statement.
+2. `(exp1 :: exp2)` will evaluate exp1, if it is true, then result will be exp2, otherwise, it wil be `nothing`.
+3. You can mix `::` with `//` to provide ifElse.
+Example:
+`home_dir = (has_home :: getHomeDir()) // "/root"`
+how can we chain these?
+`home_dir = (is_root :: "/root") // (is_default_user :: "/default") // (is_unknown :: "unknown") // "/tmp"`
+
+
+
 
 
 
