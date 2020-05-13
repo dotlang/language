@@ -63,4 +63,4 @@ Below is history of changes (time + summary of what changed) to the dotLang spec
 - Apr 23, 2020: Added `${}` notation for union checks.
 - Apr 25, 2020: Some clarification about select and default option in concurrency
 - May 11, 2020: Channels are structs, select is done via std, struct with functions makes more sense that esoteric notations like `f() vs. f(data)` and runtime arg.
-- May 13, 2020: Remove `${}` notation. We can use casting to achieve almost the same thing. Casting is done via `T(value)` notation, allow functions that return multiple items
+- May 13, 2020: Remove `${}` notation. We can use casting to achieve almost the same thing. Casting is done via `T(value)` notation, allow functions that return multiple items, `::` notation for if.
