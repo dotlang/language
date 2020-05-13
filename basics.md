@@ -219,30 +219,33 @@ For generics (types and functions) see Advanced section.
 
 ## Declaration
 
-1. `functionName = fn(name1: type1, name2: type2... -> OutputType) { code block }`
-2. Note that functions are namaed camelCased.
+1. `functionName = fn(name1: type1, name2: type2... -> OutputType1, OutputTyp2, ...) { code block }`
+2. Function names are camelCased.
 3. Functions contain a set of bindings and the last expression in the code block determines function output.
-4. There is no function overloading. Functions should have unique names in their defining module.
-5. You can alias a function by defining another binding pointing to it (example A). 
-6. If a function has no input, you can can eliminate input/output type declaration part (Example B). In this case, compiler will infer output type.
-7. Optional arguments: When calling a function, you can ommit arguments that are at the end and accept `nothing` (Example C).
-8. If a function is being called with literals (compile time known values), compiler will try to evaluate it during compilation (e.g. generics). 
-9. Module level functions that start with `_test` and have no input are considered unit test functions. You can later instruct compiler to run them (Example D).
-10. There is `assert` core function that can be used for checking assertions. You can disable assertions with a compiler flag.
-11. You can ignore argument names in function definition which means you don't care about the value. This can be useful in union switch.
+4. If calling a function that returns multiple bindings, you can use `_` to ignore one of them.
+5. There is no function overloading. Functions should have unique names in their context.
+6. You can alias a function by defining another binding pointing to it (example A). 
+7. If a function has no input, you can can eliminate input/output type declaration part (Example B). In this case, compiler will infer output type.
+8. Optional arguments: When calling a function, you can ommit arguments that are at the end and accept `nothing` (Example C).
+9. If a function is being called with literals (compile time known values), compiler will try to evaluate it during compilation (e.g. generics). 
+10. Module level functions that start with `_test` and have no input are considered unit test functions. You can later instruct compiler to run them (Example D).
+11. There is `assert` core function that can be used for checking assertions. You can disable assertions with a compiler flag.
 
 **Examples**
 
 ```perl    
 myFunc = fn(x:int, y:int -> int) { 6+y+x }
 
+tester = fn(x:int -> int, string) {x+1, "a"}
+int1, str1 = tester(100)
+int1, _ = tester(100)
+_, str1 = tester(100)
+
 log = fn(s: string -> nothing) { print(s) } #this function returns nothing, pun not intended
 
-process2 = fn(pt: Point -> struct (int,int)) { return struct(int,int)(pt.x, pt.y) } #this function returns a struct
+process2 = fn(pt: Point -> int,int) { pt.x, pt.y } #this function returns a struct
 
-process = fn(x: int|Point -> int) { ... } #this function can accept either int or Point type as input or int|Point type
-
-_,b = process2(myPoint) #ignore second output of the function
+process = fn(x: int|Point -> int) { ... } #this function can accept either int or Point or int|Point as input
 
 process = fn(x:int -> int) 
 { 
@@ -277,12 +280,6 @@ g = add(1,2)
 #D
 _testProcessWithInvalidInput = fn{...}
 
-#E
-union_type = shape${
-    fn(Circle) { 5 }
-    fn(Square) { 4 }
-    fn{0}
-}
 ```
 
 ## Function call resolution
@@ -344,7 +341,7 @@ x : int = 12
 g = 19.8 
 
 #B
-a,b = struct(int,int){1, 100}
+a,b = Tuple{1, 100}
 
 #C
 a,_ = point
