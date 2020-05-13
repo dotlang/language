@@ -4174,7 +4174,24 @@ Example:
 how can we chain these?
 `home_dir = (is_root :: "/root") // (is_default_user :: "/default") // (is_unknown :: "unknown") // "/tmp"`
 
+Y - Should we formalize docs?
+e.g. for functions
+normal comments start with `#`
+special comments start with `##` as first two characters of the line.
+they can be in markdown.
+they can appear for:
+bindings and types and functions
+```
+## some documentation about g and what it does
+g = ...
 
+## 
+some docs about this type
+x:int - comments about this input
+output - comments about the output
+##
+DataTypeX = struct {x:int, ...}
+```
 
 
 
