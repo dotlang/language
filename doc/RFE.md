@@ -3662,8 +3662,19 @@ we can generalise `&` notation: `T&{literal}` will cast literal to type T, of co
 `processData(MyInt&{12})`
 This is described in the section about structs
 
+Y - If we allow for `:` and `::` notations for union, can we get rid of union switch?
+```
+result = x ${ 
+    fn(a: int -> int) {a+1},
+    fn(a: string -> int) {5},
+    fn{100}   #default case when none of above functions can accept x
+}
+result = switchCoreFunction(shape, Circle, fn...
+```
 
-? - A better notation for struct
+Y - if we adopt new notation for match and cast for union, remove the part that says about destructing union type.
+
+Y - A better notation for struct
 - type definition
 - binding/literal decl
 - assignment/copy/modify
@@ -3910,9 +3921,9 @@ in go we write: `person{name: name}`
 |`Point = struct {x:int, y:int}`        | `Point = struct (x:int, y:int)`   |
 |`Point = struct {int, int}`            | `Point = struct (int, int)`       |
 |`&{100, 200}`                          | `struct(int,int)(100, 200)`       |
-|`Point{100, 200}`                  | `Point(100, 200)`                 |
-|`Point{x:100, y:200}`              | `Point(x:100, y:200)`             |
-|`Point{point1, z: 10, delta: 99}`  | `Point(x:11, y:my_point.y + 200)` |
+|`Point{100, 200}`                      | `Point(100, 200)`                 |
+|`Point{x:100, y:200}`                  | `Point(x:100, y:200)`             |
+|`Point{point1, z: 10, delta: 99}`      | `Point(x:11, y:my_point.y + 200)` |
 `myint_var = MyInt{12}`
 `my_circle = Circle{shape}` gives Circle or a runtime error
 - we can say `&` is needed for struct literals without type
@@ -3926,8 +3937,157 @@ we say result of `T{L}` is of type `T` all the time.
 - can we remove `&` from `&{100,200}`?
 - when `L` is `200` we don't know whether it is a named type casting of 200 or a cast to struct. it can be both. the named type can be a struct.
 so, we need to see what the type is.
+why are we using the same notation for struct and casting? these are two different things.
+although we can say that struct literal is "casted" to a named type, but no casting happens in fact.
+let's discuss casting in a separate point.
+**PROPOSAL**
+we define a new notation for struct. which is more distinct from fn call.
+| new                                   | current                           |
+|-----                                  |---------                          |
+|`Point = struct {x:int, y:int}`        | `Point = struct (x:int, y:int)`   |
+|`Point = struct {int, int}`            | `Point = struct (int, int)`       |
+|`&{100, 200}`                          | `struct(int,int)(100, 200)`       |
+|`Point{100, 200}`                      | `Point(100, 200)`                 |
+|`Point{x:100, y:200}`                  | `Point(x:100, y:200)`             |
+|`Point{point1, z: 10, delta: 99}`      | `Point(x:11, y:my_point.y + 200)` |
+but why not unify them? we can say we have a general casting. and we have untyped struct literals. these can be cast to a named type via casting notation.
+of course compiler will optimize that to stop an actual casting to happen, but in reading/writing it will be more unified and consistent.
+casting notation is: 
+`T{L}` not good because conflicts with struct. then we will have to write: `Point{&{x:100,y:200}}` which is confusing.
+`T.(L)`
+`T.[L]`
+`T ? open L close`
+`T open L close`
+`L:T`
+`L:[T]`
+`12:MyInt`
+```
+Point = struct {x:int, y:int}
+Point = struct {int, int}
+&{100, 200}
+&{100, 200}:Point
+&{x:100, y:200}:Point
+&{point1, z: 10, delta: 99}:Point
+myint_var = 12:MyInt
+my_circle = shape:Circle
+```
+we can even say `union::type` will return a boolean which says whether the type is right or not.
+if we need to mix, we can mix because after `:` we expect just one identifier.
+so `x:func(int->int)` is not correct.
+`y:int|float` is not correct.
+why not?
+we can say any valid type is accepted.
+but if it is not a simple identifier, you will need to `()` the whole thing to prevent confusion.
+we can generally say `::` is a tryCast which will return `T|nothing`
+so it can be used for casting string to int or union to its type.
+**PROPOSAL**
+1. We use `Binding:Type` expression to do casting.
+2. This can be used to cast primitive types, named types, struct or unions.
+3. `Binding::Type` can also be used to do a try cast which returns `Type|nothing`
+can't we simulate `::` via `:T|nothing`?
+this is for unions mainly. so we write: `my_shape:Circle|nothing`. if `my_shape` has a circle, we will have a circle, if it has square or ... we will have a nothing.
+`my_str:int|nothing` same. if string is not a valid number, we will have nothing.
+i think this makes sense and is orth.
+**PROPOSAL**
+1. We allow `exp:Type` notation to do cast from exp to Type.
+2. This can be used for primitives, named types, struct or union.
+3. struct literals should be prefixed with `&` and are in `&{...}` form.
+4. You can cast to `T|nothing` to allow room for failures. In case casting to `T` is not possible, you will have a nothing.
+```
+Point = struct {x:int, y:int}
+Point = struct {int, int}
+&{100, 200}
+&{100, 200}:Point
+&{x:100, y:200}:Point
+&{point1, z: 10, delta: 99}:Point
+myint_var = 12:MyInt
+my_circle = shape:Circle
+maybe_circle = shape:Circle|nothing
+```
+but `&{x:100, y:200}:Point.x` is a bit confusing. because `.x` and the actual struct on which we get x field is far from it.
+so, visually, it is difficult to read.
+`maybe_circle = shape:Circle|nothing`
+we can use `T::V` notation.
+`maybe_circle = Circle|nothing::shape`
+`Point::&{100, 200}`
+```
+Point = struct {x:int, y:int}
+Point = struct {int, int}
+&{100, 200}
+Point::&{100, 200}
+Point::&{x:100, y:200}
+Point::&{point1, z: 10, delta: 99}
+myint_var = MyInt::12
+my_circle = Circle::shape
+maybe_circle = Circle|nothing::shape
+```
+still, `Circle::shape.radius` looks strange. we need more separators/surrounders
+which means we cannot use `:` or `::`
+`MyInt:(12)`
+```
+Point = struct {x:int, y:int}
+Point = struct {int, int}
+&{100, 200}
+Point:(&{100, 200}) #this is not good. too many letters
+Point:(&{x:100, y:200})
+Point:(&{point1, z: 10, delta: 99})
+myint_var = MyInt:(12)
+my_circle = Circle:(shape)
+maybe_circle = Circle|nothing:(shape)
+```
+what about this? we need `struct` and `&` to make struct distinct from code block.
+what if we use a different notation?
+`Point:(&{x:100, y:200}`
+go: `rectangle{10.5, 25.10, "red"}`
+why not force type for all struct literals? when do we need a struct literal without type? when we want to return multiple items from a fn.
+maybe we should allow that.
+```
+Point = struct {x:int, y:int}
+Point = struct {int, int}
+&{100, 200} #this is now invalid
+Point{100, 200} #normal struct litearl. type is mandatory
+Point{x:100, y:200}
+Point{point1, z: 10, delta: 99}
+myint_var = MyInt{12}
+my_circle = Circle{shape}
+maybe_circle = Circle|nothing{shape}
+```
+and, have a distinct notation for casting.
+go: `var b MyInt = MyInt(a)`
+```
+myint_var = MyInt(12)
+my_circle = Circle(shape)
+maybe_circle = Circle|nothing(shape)
+```
+the only problem: we will not know if `T(x)` is a generic function or a type cast.
+`MyInt(x)` is def a type cast.
+generic function accepts types and only types.
+**PROPOSAL**
+1. We use `T{...}` notation to define struct literal. Type is mandatory.
+2. Casting is done via `T(x)` notation.
+3. You can cast a union to `T|nothing` to do a safe check about type inside the union.
+4. Remove `${}` notation.
+5. Remove `.0` notation to access struct fields.
+- when type is mandatory, fields have all names. so `.0` notation is no longer needed.
+```
+Point = struct {x:int, y:int}
+Point = struct {int, int}
+Point{100, 200}
+Point{x:100, y:200}
+Point{point1, z: 10, delta: 99}
+myint_var = MyInt(12)
+my_circle = Circle(shape)
+maybe_circle = Circle|nothing(shape)
+```
+
+? - Allow functions to return multiple items
+and ban structs without type.
+`x = fn(a:int, b:int -> int,int) { ...  5,6 }`
+so on the right side of `->` you write a comma separated type list
+and caller must provide bindings for each return, or `_` to ignore it.
+`x,y = getTwoValues()`
+`x,_ = getTwoValues()`
 
 
-? - if we adopt new notation for match and cast for union, remove the part that says about destructing union type.
 
 
