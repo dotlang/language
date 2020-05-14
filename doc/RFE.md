@@ -4200,3 +4200,19 @@ data = Socket..processData(1,2,3)
 ```
 in go we have `fmt.Println`
 in Rust we have `char::from_digit(4, 10)`
+
+? - In oop languages we can use `a.b.c.d` notation to easily chain multiple function calls. so we can have:
+`customers.filter(x -> x.name...).filter(...).map(c -> ddd).allMatch(...)`
+but in dotLang, we need to write sth like `allMAtch(map(filter(...` which is not intuitive.
+we can put these functions inside seq or map and treat them as structs, but it is not intuitive and also not extensible (what is user defined a new function?).
+we need a notation to do the chaining:
+F# `100 |> addone |> double`
+something like `$`?
+`x$addOne` is like `addOne(x)`
+then, can we use a struct for multiple elements? no. it makes things complicated, what if we really want to send the struct as input?
+what if a fn returns multiple output?
+can we still chain them? if so then we should allow for initial chain. a chain with multiple inputs
+`x$f`
+`(x,y)$f`
+`x$f$g` where f produces two inputs and g accepts two inputs
+`x$f$g(1,_)`
