@@ -230,6 +230,7 @@ For generics (types and functions) see Advanced section.
 9. If a function is being called with literals (compile time known values), compiler will try to evaluate it during compilation (e.g. generics). 
 10. Module level functions that start with `_test` and have no input are considered unit test functions. You can later instruct compiler to run them (Example D).
 11. There is `assert` core function that can be used for checking assertions. You can disable assertions with a compiler flag.
+12. You can chain multiple nested function calls in reverse order via `^` operator (Example E).
 
 **Examples**
 
@@ -280,6 +281,11 @@ g = add(1,2)
 #D
 _testProcessWithInvalidInput = fn{...}
 
+#E
+resut = f(g(x)) 
+result = x ^ g ^ f
+# calculate average score for new good students
+student ^ filter(isGoodStudent, _) ^ map(createNewStudent, _) ^ calculateAverage
 ```
 
 ## Function call resolution
