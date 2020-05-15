@@ -4193,15 +4193,41 @@ output - comments about the output
 DataTypeX = struct {x:int, ...}
 ```
 
-? - The `..` notation for modules is not common and if we want developers to use module namespaces more, will be difficult to work with.
+N - The `..` notation for modules is not common and if we want developers to use module namespaces more, will be difficult to work with.
 ```
 Socket = import("../core/st/socket")
 data = Socket..processData(1,2,3)
 ```
 in go we have `fmt.Println`
 in Rust we have `char::from_digit(4, 10)`
+`..` is weird. 
+we have two options:
+1. use special naming for modules + `.`
+2. use another operator and normal naming
+- pony: `use "time" ... time.now()`
+- ocaml: `module Gr = Graphics;; Gr.open_graph " 640x480";;`
+- hack: `namespace NS2 { use type NS1\{C, I, T};`
+- Elm: `import Json.Decode as D ...D.Decoder`
+- c++ `ContosoData::ObjectManager mgr;`
+- python `import draw ... draw.draw_game(result)`
+- ruby `require "trig" require "action"`
+y = Trig.sin(Trig::PI/4)
+we can use `\` just like the way we address modules.
+but these are different things. `\` in the module path represents files, but inside the file we dont have a filesystem.
+`x=import '/dsadasd/net/http'`
+`x..NetSocket`
+`x\NetSocket`
+if we go with options 1, it should be a very easy to type prefix/suffix.
+with option 2, the operator should be a single keypress.
+`->`? no
+almost everywhere we use `.` so lets' stick with it. (so we will have `.{a,b,c}` to import multiple items
+so, we need a special naming for module items.
+these are not bindings. you cannot pass them to a function.
+you can only use what is inside them. 
+what are one press keys that are easy to type? `,.;'[]`
+none of them are good. maybe we should stick with `..`\
 
-? - In oop languages we can use `a.b.c.d` notation to easily chain multiple function calls. so we can have:
+Y - In oop languages we can use `a.b.c.d` notation to easily chain multiple function calls. so we can have:
 `customers.filter(x -> x.name...).filter(...).map(c -> ddd).allMatch(...)`
 but in dotLang, we need to write sth like `allMAtch(map(filter(...` which is not intuitive.
 we can put these functions inside seq or map and treat them as structs, but it is not intuitive and also not extensible (what is user defined a new function?).
@@ -4216,3 +4242,37 @@ can we still chain them? if so then we should allow for initial chain. a chain w
 `(x,y)$f`
 `x$f$g` where f produces two inputs and g accepts two inputs
 `x$f$g(1,_)`
+`(x).f`
+`x.(sort(_,1))`
+`x..sort(_,10)..map(toInt,_)..`
+we can use double dot here.
+`(1,2,3)..add3Numbers`
+`(1,2)..add3Numbers(100,_,_)`
+`get3Numbers..add3Numbers`
+so syntax is: 
+`binding..lambda` which is same as `lambda(binding)`
+`binding.(lambda)`
+but we need `()` both for binding and lambda. 
+`x >> filter(_, isPositive)`
+we use and, or, xor. so `&|^` are available!
+`x | filter(_, isPositive)` this makes sense and is compatible with bash notation
+`(1,2,3) | add3Numbers`
+`students | map(_, convertStudent) | filter(fn(x: Student -> bool) { ... }) | calculateAverage ...`
+one good syntax sugar is to say: if lambda on the right side of `|` has only one input we don't need to write `(_)` but that is already there.
+what I want is:
+`students | filter(isGoodStudent)`
+rather than:
+`students | filter(isGoodStudent, _)`
+`filter = fn(x: fn(t: T -> boolean, T: type -> fn(list: [T]->[T])) { ... }`
+we can act like Haskell and say if f has two inputs, giving only one of its inputs, creates a lambda that has one input.
+but that is too much change.
+UNION TYPE USES `|`
+`students || filter(isGoodStudent, _)`
+`student ^ filter(isGoodStudent, _) ^ map(createNewStudent, _) ^ calculateAverage`
+`map(createNewStudent, _)`
+if you really want to have the simple notation of `map(xyz)` then write appropriate function.
+a function that accepting a mapping function, generates a mapper function that accepting a sequence, generates a new sequence.
+**PROPOSAL**
+1. Introduce `^` operator for function call composition. So rather than `f(g(x))` we can write `x ^ g ^ f`
+
+
