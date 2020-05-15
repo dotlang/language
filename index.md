@@ -127,10 +127,11 @@ Grammar of dotLang in a notation similar to EBNF can be found [here](./grammar.m
 09. `:`   Type declaration (binding, struct field and function inputs), type alias, struct literal
 10. `=`   Binding declaration, named type
 11. `_`   Place-holder (lambda creator and assignment)
-12. `@`   Error check
-13. `::`  If operator
-14. `:=`  Parallel execution
-15. `..`  Access inside module
+12. `^`   Function call composition
+13. `@`   Error check
+14. `::`  If operator
+15. `:=`  Parallel execution
+16. `..`  Access inside module
 
 ## Reserved keywords
 
