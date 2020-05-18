@@ -168,21 +168,20 @@ Operators are mostly similar to C language:
 * Conditional operators return `true` or `false` which are equal to `1` and `0` respectively when used as index of a sequence.
 * Comments can appear anywhere in the code and start with `#`. Anything after `#` till end of the line is comment.
 * Meta comments start with `##` as first two characters of the line and can be defined for a binding, type or function. These will be scanned with tools to automatically generate documentation. If `##` is the only thing in the line, it starts a block comment until another `##` appears in the file.
-```
-## 
-some docs about this function
-x:int - comments about this input
--> string - comments about the output
-##
-process = fn(x:int -> string) { ... }
 
-##Meta comment in one line
-x = 12
+    ## 
+    some docs about this function
+    x:int - comments about this input
+    -> string - comments about the output
+    ##
+    process = fn(x:int -> string) { ... }
 
-## 
-some docs about this type
-x:int - comments about this field
-y: string - comments about the y
-##
-DataTypeX = struct {x:int, y:string}
-```
+    ##Meta comment in one line
+    x = 12
+
+    ## 
+    some docs about this type
+    x:int - comments about this field
+    y: string - comments about the y
+    ##
+    DataTypeX = struct {x:int, y:string}
