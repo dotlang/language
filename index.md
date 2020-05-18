@@ -176,7 +176,7 @@ x:int - comments about this input
 ##
 process = fn(x:int -> string) { ... }
 
-## Meta comment in one line
+##Meta comment in one line
 x = 12
 
 ## 
