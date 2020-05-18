@@ -171,8 +171,8 @@ Operators are mostly similar to C language:
 ```
 ## 
 some docs about this function
-`x:int` - comments about this input
-`-> string` - comments about the output
+x:int - comments about this input
+-> string - comments about the output
 ##
 process = fn(x:int -> string) { ... }
 
