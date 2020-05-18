@@ -4275,4 +4275,8 @@ a function that accepting a mapping function, generates a mapper function that a
 **PROPOSAL**
 1. Introduce `^` operator for function call composition. So rather than `f(g(x))` we can write `x ^ g ^ f`
 
-
+Y - Its better to use `::` for composition because it is easier to type.
+`f(g(x))` becomes `x :: g :: f`
+and for conditional, where `x ? y` evaluates to y if x is true, othertise nothing, we can use `^`?
+or maybe `?` and it makes sense
+`home_dir = (is_root ? "/root") // (is_default_user ? "/default") // (is_unknown ? "unknown") // "/tmp"`
