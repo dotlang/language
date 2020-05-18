@@ -4280,3 +4280,8 @@ Y - Its better to use `::` for composition because it is easier to type.
 and for conditional, where `x ? y` evaluates to y if x is true, othertise nothing, we can use `^`?
 or maybe `?` and it makes sense
 `home_dir = (is_root ? "/root") // (is_default_user ? "/default") // (is_unknown ? "unknown") // "/tmp"`
+
+? - For future: support shortcut to define lambda
+when function result is an expression and input/output types can be inferred from context:
+instead of `fn(x:int, y:int -> int) { x+y }`
+write: `x,y -> x+y`
