@@ -127,9 +127,9 @@ Grammar of dotLang in a notation similar to EBNF can be found [here](./grammar.m
 09. `:`   Type declaration (binding, struct field and function inputs), type alias, struct literal
 10. `=`   Binding declaration, named type
 11. `_`   Place-holder (lambda creator and assignment)
-12. `^`   Function call composition
+12. `::`  Function call composition
 13. `@`   Error check
-14. `::`  If operator
+14. `?`   If operator
 15. `:=`  Parallel execution
 16. `..`  Access inside module
 
@@ -163,8 +163,8 @@ Operators are mostly similar to C language:
 * Arithmetic: `+, -, *, /, %, %%, >>, <<, **`
 * Note that `==` will do a comparison based on contents of its operands.
 * `A // B` will evaluate to A if it is not `nothing`, else it will be evaluated to B (e.g. `y = x // y // z // 0`).
-* `A :: B` will evaluate boolean expression A first, if true will evaluate to B, otherwise will evaluate to `nothing`. This can be mixed with `//` to provide ifElse construct.
-*   Example: `home_dir = (is_root :: "/root") // (is_default_user :: "/default") // (is_unknown :: "unknown") // "/tmp"`
+* `A ? B` will evaluate boolean expression A first, if true will evaluate to B, otherwise will evaluate to `nothing`. This can be mixed with `//` to provide ifElse construct.
+*   Example: `home_dir = (is_root ? "/root") // (is_default_user ? "/default") // (is_unknown ? "unknown") // "/tmp"`
 * Conditional operators return `true` or `false` which are equal to `1` and `0` respectively when used as index of a sequence.
 * Comments can appear anywhere in the code and start with `#`. Anything after `#` till end of the line is comment.
 * Meta comments start with `##` as first two characters of the line and can be defined for a binding, type or function. These will be scanned with tools to automatically generate documentation. If `##` is the only thing in the line, it starts a block comment until another `##` appears in the file.
