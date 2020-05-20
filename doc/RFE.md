@@ -4,7 +4,7 @@ we need reproducible builds. meaning if I need `v1.5.*` of a dependency, it shou
 now, this can translate to `1.5.1` or `1.5.2` depending on some factors. so we need to lock that.
 one way compatible with current method is to act like this:
 ```
-#autogen(/https/github.com/uber/web/@v1.9+.*/request/parser)
+# autogen(/https/github.com/uber/web/@v1.9+.*/request/parser)
 path=""
 T = import(path)
 ```
