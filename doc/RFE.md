@@ -4285,3 +4285,5 @@ or maybe `?` and it makes sense
 when function result is an expression and input/output types can be inferred from context:
 instead of `fn(x:int, y:int -> int) { x+y }`
 write: `x,y -> x+y`
+
+? - Maybe we should change comment character. so we can write code easily in markdown code block.
