@@ -4287,3 +4287,34 @@ instead of `fn(x:int, y:int -> int) { x+y }`
 write: `x,y -> x+y`
 
 ? - Maybe we should change comment character. so we can write code easily in markdown code block.
+this seems fine
+```
+#dsada
+x = 12
+```
+
+? - a use case: Chromedp library in golang. we have different command types (e.g. getDocument, getComputedCss, getSnapshot, ...)
+and each command has its own optional set of parameters.
+for example, getDocument has an optional depth, so they design it like this:
+```go
+dom.GetDocument().WithDepth(-1).Do(ctx)
+```
+so, when you call getDocument, you just get an empty struct with no parameters.
+by calling `withDepth` you set value for depth inside that struct.
+then calling `Do` will perform that action.
+`Do` and `withDepth` and `withPierce` are functions defined for the type generated via `getDocument`.
+So, people have optionality and also visibility: by pressing dot they can see all available options they can do.
+in D we have UFCS, uniform function call syntax:
+```
+void func(X thisObj);
+
+X obj;
+obj.func();
+```
+we can support that.
+what if x is a struct?
+then pressing `.` in the IDE, will show its members + all functions that accept x as their first argument.
+`x.print` calls `print(x)`
+what about functions in other modules?
+`x.module1..draw()` calls `modules..draw(x)` because draw has one argument of type T and type of x is T.
+by combining this and named types, we can achieve above goal.
