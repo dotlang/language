@@ -4281,17 +4281,18 @@ and for conditional, where `x ? y` evaluates to y if x is true, othertise nothin
 or maybe `?` and it makes sense
 `home_dir = (is_root ? "/root") // (is_default_user ? "/default") // (is_unknown ? "unknown") // "/tmp"`
 
-? - For future: support shortcut to define lambda
-when function result is an expression and input/output types can be inferred from context:
-instead of `fn(x:int, y:int -> int) { x+y }`
-write: `x,y -> x+y`
-
-? - Maybe we should change comment character. so we can write code easily in markdown code block.
+N - Maybe we should change comment character. so we can write code easily in markdown code block.
 this seems fine
 ```
 #dsada
 x = 12
 ```
+
+? - For future: support shortcut to define lambda
+when function result is an expression and input/output types can be inferred from context:
+instead of `fn(x:int, y:int -> int) { x+y }`
+write: `x,y -> x+y`
+or: `fn(x,y -> x+y)`
 
 ? - a use case: Chromedp library in golang. we have different command types (e.g. getDocument, getComputedCss, getSnapshot, ...)
 and each command has its own optional set of parameters.
@@ -4318,3 +4319,8 @@ then pressing `.` in the IDE, will show its members + all functions that accept 
 what about functions in other modules?
 `x.module1..draw()` calls `modules..draw(x)` because draw has one argument of type T and type of x is T.
 by combining this and named types, we can achieve above goal.
+But this does not work well with modules and also with functions that return multiple elements.
+
+? - Early return via `@` notation?
+`result = validateData(a,b,c)@{makeError(InvalidArgument)}`
+i'm not sure if it is worth that.
