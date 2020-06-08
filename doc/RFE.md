@@ -4288,13 +4288,7 @@ this seems fine
 x = 12
 ```
 
-? - For future: support shortcut to define lambda
-when function result is an expression and input/output types can be inferred from context:
-instead of `fn(x:int, y:int -> int) { x+y }`
-write: `x,y -> x+y`
-or: `fn(x,y -> x+y)`
-
-? - a use case: Chromedp library in golang. we have different command types (e.g. getDocument, getComputedCss, getSnapshot, ...)
+N - a use case: Chromedp library in golang. we have different command types (e.g. getDocument, getComputedCss, getSnapshot, ...)
 and each command has its own optional set of parameters.
 for example, getDocument has an optional depth, so they design it like this:
 ```go
@@ -4320,6 +4314,13 @@ what about functions in other modules?
 `x.module1..draw()` calls `modules..draw(x)` because draw has one argument of type T and type of x is T.
 by combining this and named types, we can achieve above goal.
 But this does not work well with modules and also with functions that return multiple elements.
+we have `::` which can be used to achieve something similar to above.
+
+? - For future: support shortcut to define lambda
+when function result is an expression and input/output types can be inferred from context:
+instead of `fn(x:int, y:int -> int) { x+y }`
+write: `x,y -> x+y`
+or: `fn(x,y -> x+y)`
 
 ? - Early return via `@` notation?
 `result = validateData(a,b,c)@{makeError(InvalidArgument)}`
