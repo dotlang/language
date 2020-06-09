@@ -4343,3 +4343,9 @@ can we use this to model multiple outputs?
 `getData = (x:int -> int,int)` multiple items can be only be at the end of the list
 if we force `fn(x:int -> y:int -> int)` notation, then are we still allowed to write
 `fn(x:int, y:int -> int`)? no. there should only be one way to do something.
+in Scala we have: `def modN(n: Int)(x: Int) = ((x % n) == 0)`
+`println(filter(nums, modN(2)))`
+and it is called currying.
+another option: let function writer handle this:
+instead of `getData = (x:int -> int -> int)`
+function writer can write: `getData = fn(x:int -> fn(int->int))`
