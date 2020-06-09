@@ -34,6 +34,16 @@ X - Everything is a file
 Use this for stdio, sockets, ... 
 inspire from linux Kernel
 
+X - We may need a function in core like `createStream` to create a stream with custom logic.
+or to read from file or network
+
+X - For future: support shortcut to define lambda
+when function result is an expression and input/output types can be inferred from context:
+instead of `fn(x:int, y:int -> int) { x+y }`
+write: `x,y -> x+y`
+or: `fn(x,y -> x+y)`
+
+
 N - We can add a built in function to convert between struct and json.
 
 Y - Builtin support for testing and doc
@@ -4316,17 +4326,7 @@ by combining this and named types, we can achieve above goal.
 But this does not work well with modules and also with functions that return multiple elements.
 we have `::` which can be used to achieve something similar to above.
 
-? - For future: support shortcut to define lambda
-when function result is an expression and input/output types can be inferred from context:
-instead of `fn(x:int, y:int -> int) { x+y }`
-write: `x,y -> x+y`
-or: `fn(x,y -> x+y)`
-
-? - Early return via `@` notation?
-`result = validateData(a,b,c)@{makeError(InvalidArgument)}`
-i'm not sure if it is worth that.
-
-? - Can we say, excluding last argument(s) from function call creates a lambda?
+N - Can we say, excluding last argument(s) from function call creates a lambda?
 `add = fn(x:int, y:int -> int) ...`
 `add5 = add(5)`
 maybe change function decl to something like Haskell?
@@ -4349,3 +4349,26 @@ and it is called currying.
 another option: let function writer handle this:
 instead of `getData = (x:int -> int -> int)`
 function writer can write: `getData = fn(x:int -> fn(int->int))`
+this is better, needs to change and gives fn writer option to decide about this.
+
+
+N - How can we have streams in dotlang?
+In java there are two types of streams:
+- used to work woth collections in a declarative mannger (e.g. map this array, filter this hashtable, ...): this is already there 
+- used to read a series of data where we don't know about size/end.
+In Java the base stream class has these:
+- close
+- read
+- reset
+- skip
+also we can write to a stream.
+what are applications?
+- reading from a file
+- reading from network
+- reading from a memory region
+they all have an internal "position reference" or "next avialable byte" which means they are inherently mutable.
+just like createChannel, we can have `createStream` with all the custom logic we need.
+
+N - Early return via `@` notation?
+`result = validateData(a,b,c)@{makeError(InvalidArgument)}`
+i'm not sure if it is worth that.
