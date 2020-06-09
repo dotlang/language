@@ -4325,3 +4325,21 @@ or: `fn(x,y -> x+y)`
 ? - Early return via `@` notation?
 `result = validateData(a,b,c)@{makeError(InvalidArgument)}`
 i'm not sure if it is worth that.
+
+? - Can we say, excluding last argument(s) from function call creates a lambda?
+`add = fn(x:int, y:int -> int) ...`
+`add5 = add(5)`
+maybe change function decl to something like Haskell?
+`add = fn(x:int -> y:int -> int)`
+then `add(1)` will give you a lambda
+`add(1,2)` will give you an int
+this will make fn composition easier:
+`5 :: add(4)` means `add(4, 5)`
+what about this? `5,4 :: add`
+or `5 :: 4 :: add`  no this is not correct.
+`(5,4) :: add` is same as `5,4 :: add`
+can we use this to model multiple outputs?
+`getData = (x:int -> int -> int)`? if we pass an int, we will get a function that gives us two integers? no.
+`getData = (x:int -> int,int)` multiple items can be only be at the end of the list
+if we force `fn(x:int -> y:int -> int)` notation, then are we still allowed to write
+`fn(x:int, y:int -> int`)? no. there should only be one way to do something.
