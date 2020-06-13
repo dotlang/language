@@ -2491,7 +2491,6 @@ generic functions and data structures (which are also expressed via a generic fu
 each of their implementation has a type though.
 we no longer need it.
 
-
 N - Shall we put generic type stuff outside fn header?
 `process = fn(a: T, b: T -> int) ::T {`
 if so we can then say generic type must be one letter capital and all other types must be more than one letter long
@@ -4438,4 +4437,126 @@ Employee = {c: Customer, empId: int}
 printCustomer = fn(c: Customer -> ...)
 e = createEmployee()
 printCustomer(e.c)
+```
+
+? - Trait/type-classes/toString/getHashCode/serialize/compare
+We sometimes need to implement something for our types to be used everywhere
+e.g. to be used as a map in hash function, you must have a way to calculate hashCode. This is done 
+by runtime/compiler for basic types (int, function, seq, ...) but you can override or write for your own types.
+first problem with this is it is a bit hidden, there are things that happen behind the scene and are not explicit.
+but it doesn't have to.
+there are two use cases:
+1. Key type for map must have a way to get hashcode
+2. my generic function can only accept type Ts where T has some functions supported.
+basically 2, is explicit version of 1. 1 is special use case and it hidden in nature (when declaring a map, I don't specify any requirement or hash function).
+also 1 can be modelled via 2 (a generic function in core to create a map but expects a key type which has functions provided)
+so the scope is:
+- When defining a generic function accepting generic types T, U, V, ..., I want to be able to put restrictions on these types.
+- By restrictions, I mean there should be appropriate functions defined for these types.
+- Now, as soon as we want a function there are 2 questions: what is the function name? and what is the function signature?
+- We can specify signature because it is the core requirement. but what about name?
+- e.g. a find function on a sequence of type T, needs a comparison function.
+- But we can accept that comparison function as a function argument.
+- yes we can. but the point of this feature is to make things easy. So we don't have to pass a function all the time.
+- when we want to make things easy, there are certain decisions that language designer/compiler/runtime make instead of the developer.
+- so this by default decreases flexibility.
+as a result, this is essentially a tradeoff between flexibility and easy of use.
+high flexibility: define function input arguments based on what you expect from your generic types. Anyone calls you fn need to provide those functions.
+`finder = fn(a: T, b: [T], comparator: fn(T,T->bool)...`
+ease of use: implicitly define expectations for your functions and anyone who calls your function, needs to use types that meet those expectations.
+`finder = fn(a: T, b: [T]) [eq(T)]`
+`eq = fn!(a: T, b: T, T: type -> bool)`
+for above case, `eq` is not a binding, because we don't want to provide a code block as the default impl for equality check.
+so, it is a type.
+`Eq = fn(T, T, T: type -> bool)`
+this is a generic type. a generic data type. doesn't it need a fn?
+```
+Eq = fn(T: type -> type) {
+    fn(T, T -> boolean)
+}
+```
+maybe. but anyway, `Eq(T)` is a type for a function that checks equality of two bindings of type T.
+now, easiest way to have this feature is:
+`finder = fn(a: T, b: [T], T: Eq(type)) ...`
+this means, e.g. if I cann finder with an int:
+`finder = fn(a: int, b: [int], T: Eq(int))...`
+so, T must be of type `Eq(int)` which means, T must be a function?
+no. 
+T can be any type, but we filter that to the types that support Eq. but how are they going to support that?
+if we allow for implicit support it will be hidden, automatic and less flexible.
+if we allow for explicit support, then even if a type does not already support, you can easily define a redirect function with support and redirect to the function that does the job.
+so, we want "explicit support" which means, a function explicitly says: yes I implement Eq for type `int`.
+and in finder function I can write:
+`finder = fn(a: T, b: [T], T: type+Eq) ...`
+q for future: what about multi-type constraints?
+for now, let's focus on single type constraints.
+so, we have a finder function:
+`finder = fn(a: T, b: [T], T: type+Eq) ...`
+and Eq type:
+```
+Eq = fn(T: type -> type) {
+    fn(T, T -> boolean)
+}
+```
+this means, you can call finder with any type you want, as long as it satisfies Eq type contraint. 
+Note that type constraint is just a type itself. (q: can type constraint be a struct? why not)
+you can define a type constraint as:
+```
+HasNameField = struct {name: string}
+getData = (a: T, T: type + HasNameField)...
+```
+and inside getData you can refer to `a.name`
+although this does not make a lot of sense. if you want that, don't define a generic function. just define a function with `name: string` argument.
+so let's say, generic type constraints can only be functions.
+```
+Eq = fn(T: type -> type) {
+    fn(T, T -> boolean)
+}
+finder = fn(a: T, b: [T], T: type+Eq) ...
+```
+Now, we have a generic type (nothing new) and we have a finder function (`+ Eq` is new).
+You can call the generic `finder` function with any input, as long as input has a type T which satisfies `Eq`
+This means, there should be a function with some name, in the current namespace, which explicitly declares implementing `Eq` and has a suitable syntax.
+ok. suppose I have a very complex type called `Constituent` but two constituents are equal if just two of their fields are equal. I don't need to compare rest of 100 fields.
+```
+Constituent = struct { id: string, field1: string, field2: int, field3: float, field4: string, ...}
+```
+or let's work on a different example: `toString` - suppose a log function writes to some output and needs to convert input to string.
+```
+Stringer = fn(T: type -> type) {
+    fn(T -> string)
+}
+log = fn(a: T, T: type+Stringer) ...
+```
+but then I can just call string function on constituent myself.
+I'm not sure, but this new addition to language `+Eq` and a new notation to explicitly say this function implements this type constraint.
+Maybe it's too much. 
+old proposals:
+```
+eq = fn!(a: T, b: T, T: type -> bool) { default impl }
+eqInt = fn!eq(a: int, b:int -> bool ) { ... }
+eqString = fn!string(a: string, b: string -> bool) { ... }
+eqStack = fn!eq(a: Stack(T), b: Stack(T), T: type -> bool) ... #we dont write type after eq. compiler will infer
+eqIntStack = fn!eq(a: Stack(int), b: Stack(int) -> bool) ... #you cannot impl eqStack because it is not a signature function
+...
+process = fn(a: T, b: T, T: type -> int) [ eq(T) ] {
+    bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
+    bool2_val = eq(int_stack1, int_stack2)
+}
+```
+```
+#A
+eq = fn(a: T, b: T, T: type -> bool) = 0
+
+#B
+eqInt = fn(a: int, b:int -> bool ) [implements eq] { ... }
+eqString = fn(a: string, b: string -> bool) [implements eq] { ... }
+eqStack = fn(a: Stack(T), b: Stack(T), T: type -> bool) [implements eq]  ... #we dont write type after eq. compiler will infer
+eqIntStack = fn(a: Stack(int), b: Stack(int) -> bool) [implements eq] ... #you cannot impl eqStack because it is not a signature function
+
+#C
+process = fn(a: T, b: T, T: type -> int) {
+    bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
+    bool2_val = eq(int_stack1, int_stack2)
+}
 ```
