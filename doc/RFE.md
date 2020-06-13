@@ -4372,3 +4372,70 @@ just like createChannel, we can have `createStream` with all the custom logic we
 N - Early return via `@` notation?
 `result = validateData(a,b,c)@{makeError(InvalidArgument)}`
 i'm not sure if it is worth that.
+
+? - Extensibility
+there are three types:
+- function overriding: multiple functions with the same name accepting different arguments
+- generic: one function one code block but works with multiple instantiations of one generic type
+- subtyping: one function one code block but work with different types that have something in common
+do we need third item above?
+for example: a function that prints out customer name:
+`Customer = struct {name: string, address: string}`
+`printCustomer = fn(c: Customer -> ...)`
+and you can call it with whatever type you want as long as it has fields of a customer (same name and type)
+so you can call it with Employee too (if employee struct has string name and string address)
+```
+Employee = {name: string, address: string, empId: int}
+e = createEmployee()
+printCustomer(e)
+```
+if we want above there are two options:
+1. Allow it built-in: you can just pass it and compiler/runtime will handle conversion
+2. Allow for more powerful casting: not only you can cast float to int, but also you can cast Employee to Customer (because they have same field name and types)
+second option is more powerful and less disuptive to the current status.
+first option above is called Structural Type System (https://en.wikipedia.org/wiki/Structural_type_system)
+> Structural subtyping is arguably more flexible than nominative subtyping, as it permits the creation of ad hoc types and protocols; 
+also first item allows you to define a function which accepts empty struct, and you can call it with anything you want.
+the opposite of 1 is nominal subtyping where types should explicitly declare their parent types.
+maybe we can mix 1 and 2: you can cast struct type A to B if A has all the fields of B in the beginning.
+this either means in A definition, you explicitly mention B fields, or embed B inside A.
+so first way (mentioning B fields) is the normal way.
+but the second way, embedding, needs some syntax:
+```
+Customer = struct {name: string, address: string}
+Employee = {Customer, empId: int}
+```
+but again, you don't really need this new notation. you can define a field in Employee of type Customer:
+```
+Customer = struct {name: string, address: string}
+Employee = {c: Customer, empId: int}
+printCustomer = fn(c: Customer -> ...)
+e = createEmployee()
+printCustomer(e.c)
+```
+In Golang you have above but with noname embedded struct, you don't need to explicitly mention name:
+```
+type Ball struct {
+    Radius   int
+    Material string
+}
+type Football struct {
+    Ball
+}
+//Here Football has all the fields of Ball
+func (b Ball) Bounce() {
+    fmt.Printf("Bouncing ball %+v\n", b)
+}
+//so, if you have a function which works on a Ball
+fb := Football{Ball{Radius: 5, Material: "leather"}}
+fb.Bounce()
+//you can call it on with a FootBall
+```
+I prefer the explicit method, where you add a field of type Ball in FootBall struct and have functions that accept Ball.
+```
+Customer = struct {name: string, address: string}
+Employee = {c: Customer, empId: int}
+printCustomer = fn(c: Customer -> ...)
+e = createEmployee()
+printCustomer(e.c)
+```
