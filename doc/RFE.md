@@ -4560,3 +4560,12 @@ process = fn(a: T, b: T, T: type -> int) {
     bool2_val = eq(int_stack1, int_stack2)
 }
 ```
+
+? - With early return `@{}` we not have a case for defer.
+
+? - Should we add some notations to mix switch with enums?
+or maybe we can add a function, but how is it going to check we have covered all cases for the enum?
+`DayOfWeek = enum [saturday, sunday, ...]`
+enums look like array. we can define a function to accept enum type + map of value to handler to do the job.
+and that function can use core to check we have covered all enum cases.
+so we just need a function in core to let us know about enum cases and check if we have all of them covered.
