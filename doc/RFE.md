@@ -4372,7 +4372,7 @@ N - Early return via `@` notation?
 `result = validateData(a,b,c)@{makeError(InvalidArgument)}`
 i'm not sure if it is worth that.
 
-? - Extensibility
+N - Extensibility
 there are three types:
 - function overriding: multiple functions with the same name accepting different arguments
 - generic: one function one code block but works with multiple instantiations of one generic type
@@ -4439,7 +4439,7 @@ e = createEmployee()
 printCustomer(e.c)
 ```
 
-? - Trait/type-classes/toString/getHashCode/serialize/compare
+N - Trait/type-classes/toString/getHashCode/serialize/compare
 We sometimes need to implement something for our types to be used everywhere
 e.g. to be used as a map in hash function, you must have a way to calculate hashCode. This is done 
 by runtime/compiler for basic types (int, function, seq, ...) but you can override or write for your own types.
@@ -4562,6 +4562,31 @@ process = fn(a: T, b: T, T: type -> int) {
 ```
 
 ? - With early return `@{}` we not have a case for defer.
+defer: close a connection, close a file, release a resource, ...
+we advertise for transparency and "everything happens because of a developer's command".
+So this type of "automatic release behind the scene" is not a very good thing.
+but otoh, compiler has all the information it needs to decide about closing something (maybe we need to formalise that).
+just like function resolution which does not need explicit instructions from developer.
+we can say: if we have a function called `close = fn(x: T ...)` then anywhere using a binding of type T, this function will be called.
+but again, it is too much hidden stuff.
+so, what can we do? should developer decide when to close a file?
+and what if they forget?
+- close a file, db connection, open sql statement, socket, context, channel, ...
+just like error handling where we force user to take an action in case of error, it is also better to be explicit here too.
+even though compiler can infer stuff, it is better if developer explicitly closes resources.
+this also frees us from "close/dispose function name" protocol and makes things more flexible.
+so it is like `defer` or `finally`.
+`conclude`
+`eventually`
+maybe we can mix this with "post-requirement": crystal has `ensure`
+but post-req is sth totally different.
+**PROPOSAL**:
+1. In a function body, we can use `ensure expression` whic means expression will be evaluated after function is finished (either normally or early return via `@`)
+example:
+```
+f = fileOpen(...)
+ensure fileClose(f)
+```
 
 ? - Should we add some notations to mix switch with enums?
 or maybe we can add a function, but how is it going to check we have covered all cases for the enum?
@@ -4569,3 +4594,42 @@ or maybe we can add a function, but how is it going to check we have covered all
 enums look like array. we can define a function to accept enum type + map of value to handler to do the job.
 and that function can use core to check we have covered all enum cases.
 so we just need a function in core to let us know about enum cases and check if we have all of them covered.
+But we cannot define sucj a function. because that will be a generic function which can only accept enums.
+no other language has this. why should we?
+I don't like adding a new keyword for this. maybe we can still use a normal function.
+core can give us a function to return number/values of an enum, or nothing if it is nt enum. 
+and a generic function can use this.
+but that above core function is not a runtime function, it is a compile time function
+which is fine.
+**PROPOSAL**
+1. Add this to enum section: Core has functions to convert enum type name to a sequence of values + a function to act as a switch statement which also,
+makes sure all cases of the enum are covered.
+
+? - Should we allow for varargs functions?
+Now that we want to do most of built-in stuff via functions, they can make things easy. rather than defining a seq type and literal,
+we define function vararg.
+for example to simulate switch statement, or enum matching or printf.
+`switch = fn(x: [T], handlers: fn(T->boolean)...`
+in golang:
+```
+func sum(nums ...int) {
+    fmt.Print(nums, " ")
+    total := 0
+    for _, num := range nums {
+        total += num
+    }
+    fmt.Println(total)
+}
+```
+and what happens inside the function?
+the variadic argument will be a normal sequence. you can check its length or get its elements.
+**PROPOSAL**
+1. Allow for variadic functions: these functions can have one last argument of type `T...` which means caller can send any (including 0) number of items for that argument.
+2. Inside the function, the variadic is just a normal sequence.
+q: what if a variadic fn wants to call another variadic fn? can it just pass `x` input arg? it should be.
+so:
+**PROPOSAL**
+1. Allow variadic functions `sum = fn(x: int... -> int)`
+2. Inside function, variadic arg is just a sequence
+3. You can call a variadic function with a list of items `1,2,3,4,...` or just pass a sequence instead: `[1,2,3,4]`
+4. Above helps a variadic function call another variadic function.
