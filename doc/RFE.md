@@ -4633,3 +4633,28 @@ so:
 2. Inside function, variadic arg is just a sequence
 3. You can call a variadic function with a list of items `1,2,3,4,...` or just pass a sequence instead: `[1,2,3,4]`
 4. Above helps a variadic function call another variadic function.
+we have this in Java, Scala and Golang.
+
+? - List of statements that we have: 
+- assignment (`a = b`)
+- run in parallel (`a := b`)
+- ensure
+- import `_ = import(...)`
+
+? - Should we allow creation of a struct without any type?
+for example for `switch` function we need a tuple: value and handler.
+if data matches with the value, then handler will run. now if we don't want to define a new struct type for this tuple, 
+we can just write:
+`switch = fn(data: T, struct{value: T, handler: fn(T->int)}... -> ...)`
+and call it via:
+`switch(my_number, {value: 10, handler: AAA}, {value: 12, handler: BBB}, {value: 13, handler: CCC})`
+no prefix is not good. there must be something.
+`_` is an option, although it has many other usages.
+`&{value: 12, handler: AAA}` is also good.
+`Point2new = Point{100, 200}` is ok so we can even write:
+`&{12, AAA}`
+but on the caller side, all fields have names.
+**PROPOSAL**:
+1. You can use `&{...}` notation to create a tuple on the fly without any specific type.
+but what if I write: `x = &{10, 20, 30}`
+then what is type of x? how can I access fields inside x?
