@@ -63,3 +63,4 @@ Below is history of changes (time + summary of what changed) to the dotLang spec
  - May 11, 2020: Channels are structs, select is done via std, struct with functions makes more sense that esoteric notations like `f() vs. f(data)` and runtime arg.
  - May 13, 2020: Casting is done via `T(value)` notation, allow functions that return multiple items, `::` notation for if, `##` comments, `^` for function chaining
  - May 18, 2020: Use `::` for composition and `?` for conditional
+ - June 22, 2020: Struct literals can use `&` instead of type if it can be inferred.
