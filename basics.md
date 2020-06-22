@@ -124,6 +124,7 @@ maybe_int = int|nothing(int_or_float) #if binding has a float, you will get a no
 4. You can add a function after definition of a struct type by `fn{...}` notation. This will be executed on each instantiation of that type and can be used for logging or validation purposes.
 5. Optional fields: When creating a value of struct type and don't specify value for fields which can be `nothing`, they will be set to `nothing`.
 6. Edit: You can create a new struct value based an existing value. This will merge them all. (Example A).
+7. If struct literal type can be inferred from context, you can omit type and use `&{...}` notation (Example B).
 
 **Examples**
 
@@ -152,6 +153,9 @@ PointTemplate = struct{x:int, y:int}
 #A
 another_point = Point{my_point, x:10}
 third_point = Point{point1, z: 10, delta: 9}
+
+#B
+switchOnValue(my_number, &{value: 10, handler: AAA}, &{12, BBB}, &{13, CCC})
 ```
 
 ## Named types
