@@ -130,8 +130,9 @@ Grammar of dotLang in a notation similar to EBNF can be found [here](./grammar.m
 12. `::`  Function call composition
 13. `@`   Error check
 14. `?`   If operator
-15. `:=`  Parallel execution
-16. `..`  Access inside module
+15. `&`   Type inference for struct literals
+16. `:=`  Parallel execution
+17. `..`  Access inside module
 
 ## Reserved keywords
 
