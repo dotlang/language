@@ -4744,5 +4744,16 @@ I don't like dtor because it is hidden. I like things to be transparent and "man
 so, if I pick `defer` method and later decide to go with refcount, would that be possible and make sense?
 let's assume we have `defer` system and we want to use refcount GC.
 I think actually, this will even help GC because its logic will be easier. It won't need to "call" any dtor.
-
-
+so there are two things:
+1. manage memeory (release, allocation) - this is handled via GC (m&s or ref-count)
+2. manage resources (this is handled via defer)
+for the second item, we definitely need defer because each resource has its own release mechanism.
+**PROPOSAL**
+1. You can use `defer lambda` notation to tell runtime to call lambda after function finished (after leaving function body). 
+2. The defer lambda has no output and can have no input (called finaliser) or inputs same as parent function output (called post condition)
+3. the lambda for defer, is a normal function so it can have its own defer.
+---
+so we have these control mechanism:
+1. `@{}` notation
+2. normal exit
+2. defer
