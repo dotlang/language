@@ -43,6 +43,10 @@ instead of `fn(x:int, y:int -> int) { x+y }`
 write: `x,y -> x+y`
 or: `fn(x,y -> x+y)`
 
+X - Core needs to have support for these
+- serialisation deserialisation
+
+
 
 N - We can add a built in function to convert between struct and json.
 
@@ -4561,51 +4565,7 @@ process = fn(a: T, b: T, T: type -> int) {
 }
 ```
 
-? - With early return `@{}` we not have a case for defer.
-defer: close a connection, close a file, release a resource, ...
-we advertise for transparency and "everything happens because of a developer's command".
-So this type of "automatic release behind the scene" is not a very good thing.
-but otoh, compiler has all the information it needs to decide about closing something (maybe we need to formalise that).
-just like function resolution which does not need explicit instructions from developer.
-we can say: if we have a function called `close = fn(x: T ...)` then anywhere using a binding of type T, this function will be called.
-but again, it is too much hidden stuff.
-so, what can we do? should developer decide when to close a file?
-and what if they forget?
-- close a file, db connection, open sql statement, socket, context, channel, ...
-just like error handling where we force user to take an action in case of error, it is also better to be explicit here too.
-even though compiler can infer stuff, it is better if developer explicitly closes resources.
-this also frees us from "close/dispose function name" protocol and makes things more flexible.
-so it is like `defer` or `finally`.
-`conclude`
-`eventually`
-maybe we can mix this with "post-requirement": crystal has `ensure`
-but post-req is sth totally different.
-**PROPOSAL**:
-1. In a function body, we can use `ensure expression` whic means expression will be evaluated after function is finished (either normally or early return via `@`)
-example:
-```
-f = fileOpen(...)
-ensure fileClose(f)
-```
-
-? - Should we add some notations to mix switch with enums?
-or maybe we can add a function, but how is it going to check we have covered all cases for the enum?
-`DayOfWeek = enum [saturday, sunday, ...]`
-enums look like array. we can define a function to accept enum type + map of value to handler to do the job.
-and that function can use core to check we have covered all enum cases.
-so we just need a function in core to let us know about enum cases and check if we have all of them covered.
-But we cannot define sucj a function. because that will be a generic function which can only accept enums.
-no other language has this. why should we?
-I don't like adding a new keyword for this. maybe we can still use a normal function.
-core can give us a function to return number/values of an enum, or nothing if it is nt enum. 
-and a generic function can use this.
-but that above core function is not a runtime function, it is a compile time function
-which is fine.
-**PROPOSAL**
-1. Add this to enum section: Core has functions to convert enum type name to a sequence of values + a function to act as a switch statement which also,
-makes sure all cases of the enum are covered.
-
-? - Should we allow for varargs functions?
+N - Should we allow for varargs functions?
 Now that we want to do most of built-in stuff via functions, they can make things easy. rather than defining a seq type and literal,
 we define function vararg.
 for example to simulate switch statement, or enum matching or printf.
@@ -4634,14 +4594,37 @@ so:
 3. You can call a variadic function with a list of items `1,2,3,4,...` or just pass a sequence instead: `[1,2,3,4]`
 4. Above helps a variadic function call another variadic function.
 we have this in Java, Scala and Golang.
+q: can't we change it and say: if last arg of a function is a sequence, you can write a list of literals.
+this should be possible if seq and variadic want to be interchangeable.
+then what real advantage does variadic give us?
+here is argues that variadic is not essential and without it lang will be simpler:
+https://pointersgonewild.com/2012/02/27/are-variadic-functions-necessary/
+so, no.
 
-? - List of statements that we have: 
+N - List of statements that we have: 
 - assignment (`a = b`)
 - run in parallel (`a := b`)
 - ensure
 - import `_ = import(...)`
 
-? - Should we allow creation of a struct without any type?
+N - Should we add some notations to mix switch with enums?
+or maybe we can add a function, but how is it going to check we have covered all cases for the enum?
+`DayOfWeek = enum [saturday, sunday, ...]`
+enums look like array. we can define a function to accept enum type + map of value to handler to do the job.
+and that function can use core to check we have covered all enum cases.
+so we just need a function in core to let us know about enum cases and check if we have all of them covered.
+But we cannot define sucj a function. because that will be a generic function which can only accept enums.
+no other language has this. why should we?
+I don't like adding a new keyword for this. maybe we can still use a normal function.
+core can give us a function to return number/values of an enum, or nothing if it is nt enum. 
+and a generic function can use this.
+but that above core function is not a runtime function, it is a compile time function
+which is fine.
+**PROPOSAL**
+1. Add this to enum section: Core has functions to convert enum type name to a sequence of values + a function to act as a switch statement which also,
+makes sure all cases of the enum are covered.
+
+Y - Should we allow creation of a struct without any type?
 for example for `switch` function we need a tuple: value and handler.
 if data matches with the value, then handler will run. now if we don't want to define a new struct type for this tuple, 
 we can just write:
@@ -4658,3 +4641,107 @@ but on the caller side, all fields have names.
 1. You can use `&{...}` notation to create a tuple on the fly without any specific type.
 but what if I write: `x = &{10, 20, 30}`
 then what is type of x? how can I access fields inside x?
+but why would someone need to create a tuple on the fly without a type? why not define separate bindings?
+if you want to pass them to some other function, you need a type for them.
+solution: no change. you still need types. but you can omit them if they are available.
+**PROPOSAL**
+1. If type of struct can be inferred from the context, then you can omit type when writing a struct literal and replace with `&`.
+this is a syntax sugar.
+so you can write: `switch(my_number, &{value: 10, handler: AAA}, &{12, BBB}, &{13, CCC})`
+
+
+===============
+
+? - With early return `@{}` we now have a case for defer.
+defer: close a connection, close a file, release a resource, ...
+we advertise for transparency and "everything happens because of a developer's command".
+So this type of "automatic release behind the scene" is not a very good thing.
+but otoh, compiler has all the information it needs to decide about closing something (maybe we need to formalise that).
+just like function resolution which does not need explicit instructions from developer.
+we can say: if we have a function called `close = fn(x: T ...)` then anywhere using a binding of type T, this function will be called.
+but again, it is too much hidden stuff.
+so, what can we do? should developer decide when to close a file?
+and what if they forget?
+- close a file, db connection, open sql statement, socket, context, channel, ...
+just like error handling where we force user to take an action in case of error, it is also better to be explicit here too.
+even though compiler can infer stuff, it is better if developer explicitly closes resources.
+this also frees us from "close/dispose function name" protocol and makes things more flexible.
+so it is like `defer` or `finally`.
+`conclude`
+`eventually`
+maybe we can mix this with "post-requirement": crystal has `ensure`
+but post-req is sth totally different.
+**PROPOSAL**:
+1. In a function body, we can use `ensure fn{expression}` whic means lambda will be called after function is finished (either normally or early return via `@`)
+example:
+```
+f = fileOpen(...)
+ensure fn{fileClose(f)}
+```
+can we refer to function output inside ensure? if yes then it can be used to implement post-requirements
+```
+process = fn(x:int -> a:int, b:int) {
+	...
+    ensure fn{a>0}
+    ensure fn{b>0}
+}
+```
+ensure just calls the function. throwing error or logging something or ... should be done by the user.
+option1: functions can define a name for their output
+option2: ensure can be either an inputless function, or a function with input matching function output and no output.
+in the latter case, input to ensure function will be output of the parent function.
+```
+process = fn(x:int -> int, int) {
+	...
+    ensure fn{a>0}
+    ensure fn{b>0}
+    ensure fn(x:int, y:int ->) {...}
+}
+```
+option 2 does not need any change in the notation. we re-use functions with ensure.
+if a function has no output, then case 1 and 2 are the same and we cannot have any kind of post-check.
+`ensure` does not imply it will run "at the end of function execution".
+- ensure
+- eventual
+- conclude
+- final
+- finally
+- defer
+and it only applies to current semantic function. not higher ups.
+q: what if we have multiple defers? they will run in reverse order just like golang.
+q: what if we have defer inside defer? what comes after defer is a function. so it can have its own "defer" but they will be its own, not for the parent function.
+q: defer inside `@{}` block? not allowed. because you can only have exp inside early ret block. defer is a stmt.
+**PROPOSAL**
+1. You can use `defer lambda` notation to tell runtime to call lambda after function finished. lambda has no output.
+2. lambda can be inputless (called finalizer), or accepting inputs matching with parent function (called post condition).
+3. the lambda for defer, is a normal function so it can have its own defer.
+---
+we have another option: destructors for structs.
+but there are two problems:
+- it is a bit hidden still
+- not flexible enough. e.g. what about closing a channel easrlier than function close, or post-req?
+defer in Go: 
+> This actually has nothing to do with not having "classes" in Go: the language designers just avoid magic as much as practically possible.
+But are we going to have GC? If not, then C++ way may make more sense: destructors.
+and similarly, we do have ctors.
+types of gc: mark-and-sweep or tracing, reference counting
+Discussion of pro/cons of above two: http://flyingfrogblog.blogspot.com/2013/09/how-do-reference-counting-and-tracing.html
+ref counting:
+- during compilation, compiler inserts statements like `retaing` and `release` to keep track of ref count for any reference
+- if reference count drops to zero, it can be freed at the spot. so it is deterministic.
+- so it is not a background process.
+mark-and-sweep vs. ref count performance can be seen in androind vs ios performance.
+But can't this be checked later? Do we need to know type of GC in advance for lang design?
+we definitely need clean-up code for our objects.
+m&s or tracing: Java,Go: no dtor, `defer` in golang, `finalize` in Java
+refcount: Swift, C++ (with smart pointers): has dtor
+problem is, when I allocate an OS socket, I want to be able to release it as soon as possible because it is a precious system resource.
+now, if in future we decide to do m&s, can we still use destructors?
+or, if in future we decide to use refcount, can we still use `defer`?
+can we make choise of GC method independent from release mechanism?
+I don't like dtor because it is hidden. I like things to be transparent and "manual".
+so, if I pick `defer` method and later decide to go with refcount, would that be possible and make sense?
+let's assume we have `defer` system and we want to use refcount GC.
+I think actually, this will even help GC because its logic will be easier. It won't need to "call" any dtor.
+
+
