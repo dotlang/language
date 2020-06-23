@@ -4757,3 +4757,13 @@ so we have these control mechanism:
 1. `@{}` notation
 2. normal exit
 2. defer
+another option: use dtor. they will be automatically called when they are moved out of scope. and maybe they can be called explicitly.
+so, when defining a struct, you also have an option to define dtor.
+rust does that. automatic drop call when resource is no longer needed.
+ambiguity 1 with defer: what if I release sth in defer but return it?
+```
+defer fileClose(f)
+...
+return f
+```
+and we really don't know post-condition check because in case of error there is no such check and in case of happy path, we can simply insert the code to do that.
