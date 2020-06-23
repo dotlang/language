@@ -4732,6 +4732,7 @@ ref counting:
 - so it is not a background process.
 mark-and-sweep vs. ref count performance can be seen in androind vs ios performance.
 But can't this be checked later? Do we need to know type of GC in advance for lang design?
+
 we definitely need clean-up code for our objects.
 m&s or tracing: Java,Go: no dtor, `defer` in golang, `finalize` in Java
 refcount: Swift, C++ (with smart pointers): has dtor
