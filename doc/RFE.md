@@ -4760,10 +4760,232 @@ so we have these control mechanism:
 another option: use dtor. they will be automatically called when they are moved out of scope. and maybe they can be called explicitly.
 so, when defining a struct, you also have an option to define dtor.
 rust does that. automatic drop call when resource is no longer needed.
-ambiguity 1 with defer: what if I release sth in defer but return it?
+**ambiguity 1 with defer: what if I release sth in defer but return it?**
 ```
 defer fileClose(f)
 ...
 return f
 ```
 and we really don't know post-condition check because in case of error there is no such check and in case of happy path, we can simply insert the code to do that.
+what about nested dtor? 
+we can say dtor is defined as:
+- for primitives, seq and hash: free their memory and their elements
+- for structs: free memory and call their dtor function
+q: what if map has n elements? do we also free key and values? yes. c++ does.
+problem with dtor is being hidden.
+the ambiguity of defer, assumes fileClose function closese a file. but this is a mutation.
+bigger issue with defer is that it is inherently doing mutation.
+**defer pros** - explicit and transparent and more flexible
+**defer cons** - ambiguous - what if we release/unallocate something in defer and then return it (e.g. close a socket or kill a process)
+**dtor pros** - will only release something which is going out of scope
+**dtor cons** - it is hidden and implicit and not flexible
+can we make defer non-ambiguougs? for example, if something is checked on defer, it cannot be returned. but it is confusing.
+can we make dtor explicit? maybe tell developer they have to call dtor in their code. in that case it will not be dtor, but will be `deinit`
+and, we can say any binding which is deinited, cannot be returned.
+and you call deinit with `x = _` notation. 
+but this is also confusing. I want to be able to call properly named methods: `closeSocket`, `killProcess`, `destroyConnection`...
+these functions are mutating. they change something that makes the binding unusable. so we cannot refer to the binding after call or return it.
+so, we can have any function we want and call it in a defer block. But how can we prevent return? in a simple, elegant manner?
+```
+conn = openConnection(...)
+defer fn{closeConnection(conn)}
+...
+return conn
+```
+how can we prevent above scenario naturally?
+we can say, defer runs just before return. so return cannot refer to something released in a defer.
+or, we can "bind" defer code to the binding so that when binding is out of scope, that defer will run.
+it can run when current function finishes. or when parent function is done or ...
+so we, attach a dtor to it. Basically, we combine dtor and defer: it is explicit because we must attach the code and it is flexible because its our code.
+but this must be done when the binding is introduced. 
+q: can a binding have multiple dtors?
+with dtor it is just one. but with defer we have the same issue. we may call fileClose multiple times in the defer code.
+let's for now forget about this ambiguity.
+```
+file = fileOpen(...)
+file.deinit = fn{...}
+```
+the "binding" between deinit code and the binding can be done in a struct field.
+we are immutable, so we can create a copy or ask creator to set deinit field for us.
+```
+file = fileOpen(..., fn(x: File ->){...})
+```
+so, whenever file is out of scope, the deinit lambda will be called.
+but deinit, cannot be inputless. in that case it can do anything.
+it must have one and only one input which is the binding to be dtored.
+or, we can even use eisting functions
+`file = fileOpen(..., fileCloseHandler)`
+fileCloseHandler is a function which accepts a File.
+so, we can only have one handler. even though chaining is possible by developer.
+```
+file = fileOpen(...)
+actualFile = File{file, _destructor: fn{...}}
+```
+it is a bit, verbose and confusing. because then we should say this is a "special" attribute for a struct.
+and has special treatment.
+what about using through a keyword?
+```
+file = fileOpen(...)
+defer file :: fileClose(_) #1
+vs. defer fileClose(file) #2
+```
+number 1 is our option.
+number 2 is the Golang version. in number 2, we don't know the subject of defer. 
+so, we can only call the code whatever it is, at the end of the function.
+and also, no 2 is too flexible. you can write anything.
+but 1 is a bit more restricted. you must have a function with only one input.
+`defer file :: fileClose(_)` means: when `file` bindign is out of scope and no longer referenced, call `fileClose` for it.
+so it is explicit, transparent, flexible, works with scope so doesn't get trapped with return with ambiguity
+the only concern: what if I call it more than once?
+I think this can be a compiler error or runtime error.
+or we can support multiple calls. just call all of them in fifo order.
+`finalise file :: fileClose(_)`
+after this, you can still return the file. this finalize code will stay with the file binding, until it goes out of scope.
+and it works with any bindings.
+but, can't runtime do this automatically? for any binding, call correct dtor when it goes out of scope.
+because, under what circumstance, do we want to call something other than `fileClose` for a file which is moving out of scope?
+I think this is a 1-1 mapping between type and dtor. 
+it is good to force developer to do stuff so code is better maintained, but not for trivial stuff which is easy to do with compiler.
+```
+PointTemplate = struct{x:int, y:int}
+    fn{
+        assert(x>0)
+        assert(y<0)
+        assert(x+y<100)
+        log("a new instance of point-template is created")
+        validateCheck(x, y)
+    }
+```
+the validation function needs access to struct fields. which is why we need to have it there.
+but outside struct, is really counter intuitive and different.
+can't we move both validate and dtor inside struct?
+```
+PointTemplate = struct{x:int, y:int, 
+	_invariant:}
+```
+if we move these inside struct, we have to have same notation of `A:B` then we have to find a field name for them which makes things complicated.
+```
+PointTemplate = struct{x:int, y:int}
+    fn{
+        assert(x>0)
+        assert(y<0)
+        assert(x+y<100)
+        log("a new instance of point-template is created")
+        validateCheck(x, y)
+    }, fn{
+        fileClose(handler)
+    }
+```
+can't we make use of `{}` for struct type decl?
+we don't want to call another fn because we need to pass all needed parameters.
+but, what if I write `f2 = f1` and f1 goes out of scope. this function should not be called because we still have f2.
+so, the code will only run when binding is out of scope and no longer referenced (depending on GC strategy).
+we want to define these functions but don't (can't) define them inside struct block.
+and also, these functions are not part of type. are they?
+if I have `struct{int,int}` can I assign binding of that type to a PointTemplate binding?
+no. they are different types. so these two functions ARE part of type.but we don't want to put them inside struct.
+maybe we can even define them separately. in that case, they don't need closure-like access. they accept an instance of that type.
+```
+PointTemplate = struct{x:int, y:int}
+    fn(p: PointTemplate->) {
+        assert(x>0)
+        assert(y<0)
+        assert(x+y<100)
+        log("a new instance of point-template is created")
+        validateCheck(x, y)
+    }, fn(p: PointTemplate->) {
+        fileClose(handler)
+    }
+```
+or
+```
+PointTemplate = struct {x:int, y:int} invariantFunc, deInitFunc
+```
+can we extend this notation for other useful functions like `toString` or `hashCode`?
+```
+PointTemplate = struct{x:int, y:int}
+    {
+        _invariant = fn(p: PointTemplate->) {
+            assert(x>0)
+            log("a new instance of point-template is created")
+            validateCheck(x, y)
+        }
+        _destructor = fn(p: PointTemplate->) {
+            fileClose(handler)
+        }
+    }
+```
+why not put function outside struct section?
+```
+PointTemplate = struct{x:int, y:int}
+
+_invariant = fn(p: PointTemplate->) {
+    assert(x>0)
+    log("a new instance of point-template is created")
+    validateCheck(x, y)
+}
+
+_destructor = fn(p: PointTemplate->) {
+    fileClose(handler)
+}
+_toString = fn(p:PointTemplate->string){
+    ...
+}
+```
+Is this not like protocol/interface? but single type?
+so, we can say: any type that supports this function is implementing this protocol.
+`_toString: fn(x: T, T: type -> string)`
+no. this is too complex.
+for above cases, just define whatever function you want and pass it to wherver needs to convert T to string.
+we need this mechanism for special cases where runtime needs to do stuff. you cannot pass functions to runtime because you don't 
+know when exactly is binding going to be out of scope.
+```
+PointTemplate = struct{x:int, y:int}
+
+_invariant = fn(p: PointTemplate->) {
+    assert(x>0)
+    log("a new instance of point-template is created")
+    validateCheck(x, y)
+}
+
+_destructor = fn(p: PointTemplate->) {
+    fileClose(handler)
+}
+```
+but if we decouple them so much, then it will become confusing.
+q: can we set default values for struct members? if so, we can use fields with default name.
+so, if a struct field has default value, you cannot change it.
+```
+PointTemplate = struct{x:int, y:int, 
+    _invariant: fn(x: PointTemplate->) = pointChecker,
+    _destructor: fn(x: PointTemplate->) = pointDeinit
+}
+```
+no one can stop developer to continue the same and define e.g. toString:
+```
+PointTemplate = struct{x:int, y:int, 
+    _invariant = pointChecker,
+    _destructor = pointDeinit,
+    _toString = ...,
+    _myFunc = ...,
+    _calculateHashCode = ...,
+    _isEqualTo = ...
+}
+```
+so, all above fields are normal fields with the change that you set value for them.
+the only special fields are `_invariant` and `_destructor`.
+**PROPOSAL**
+1. When defining a struct, you can set values for some of the fields. These won't accept values when struct is instantiated.
+2. There are 2 special values for a struct that are used by runtime, if defined.
+3. `_invariant` is the validation logic. a function that accepts parent type and returns nothing.
+4. `_destructor` is de-init code. called via runtime when binding is out of scope and no longer needed.
+---
+why not follow the same with other functions like hashCode, toString, ...? and make them special.
+so when I write `string(my_point)` compiler will call `_toString` for `my_point` if defined.
+but what for? instead of `string(my_point)` just call `my_point._toString()`.
+for any case where you manually call a function, you don't need a support from compiler/runtime.
+The support is only needed for invaraiant and dtor.
+
+
+? - instead of adding a fn after struct for validation, can't we define it inside struct definition?
+like a field named `validate` inside the struct?
