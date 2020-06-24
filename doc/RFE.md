@@ -4985,7 +4985,91 @@ so when I write `string(my_point)` compiler will call `_toString` for `my_point`
 but what for? instead of `string(my_point)` just call `my_point._toString()`.
 for any case where you manually call a function, you don't need a support from compiler/runtime.
 The support is only needed for invaraiant and dtor.
+But again this is binding data and behavior, at language design level. 
+we don't want this.
+In Rust, you never have to close a socket.
+But, how many system resources do we have? file, socket, net, ...
+we can handle them at core level. so, if you have a very custom data type that needs resource release, do it yourself and don't rely on runtime 
+to do it for you.
+but, it is not orth. having something for "special" types but not for user types.
+so we want to 1) unbind data from behavior, even if behavior is critical. 2) allow this dtor for all types.
+but I don't want to have a case where dev A defines type T without dtor and dev B who uses type T, defines a dtor for it.
+one option: when creating a struct, also provide invariant and dtor for it.
+but what if developer forgets? maybe we can force it?
+```
+File = struct { ... }
+my_file = File{...} ???
+```
+No. creator cannot state what invariant should be for a type.
+**defer pros** - explicit and transparent and more flexible
+**defer cons** - ambiguous - what if we release/unallocate something in defer and then return it (e.g. close a socket or kill a process)
+**dtor pros** - will only release something which is going out of scope
+**dtor cons** - it is hidden and implicit and not flexible
+why not use defer, but run the lambda when binding goes out of scope?
+so if we destroy binding in defer but return it, defer will not run until binding is out of scope.
+so, it changes from `defer lambda` to `defer binding lambda`
+but still it will be confusing. because in a function, if I get a file handle, should I assign a fileClose for it or is it already done?
+and also, the dtor is fixed. you shouldn't be able to provide your own lambda here.
+so we get back to the previous option: bind a function to a struct as invariant or dtor.
+and if we do that, we should be able to do other stuff functions too: which means OOP like classes.
+if we do that, structs will have some fields + some functions. isn't it same as a module?
+then we can say, import's output will give you a struct!!! that you can pick from. then we no longer need `..` notation because
+"module is a struct".
+except for types. if we allow for types to be defined inside a struct, then they will match completely.
+we had this discussion before and decided not to do this.
+*cases against allowing function inside struct, which makes struct same as module*
+- q1: what is output of import? is it struct type or a struct itself?
+- "defining functions inside structs is nice but will be a huge problem when solving expression problem. "
+- "fn inside struct, can we allow it to have access to parent struct? no. because we assume functions and structs are totally different. "
+- https://github.com/ziglang/zig/issues/1250
+- "But if you then decide to allow "functions on structs" you kill that uniformity. "
+So, let's not do this. Struct can only have "data" (including function pointers but not actual functions).
+and behavior will be outside struct as independent functions.
+now, we want to bind one or more functions to a struct. these functions cal validate or destruct struct when needed.
+how can we bind and not bind?
+why do we need this?
+Examples fro k8s repo:
+```
+storage, _, server := newStorage(t)
+defer server.Terminate(t)
+defer storage.Store.DestroyFunc()
+
+s.RLock()
+defer s.RUnlock()
+
+tf := cmdtesting.NewTestFactory().WithNamespace("non-default")
+defer tf.Cleanup()
+
+_, s, closeFn := framework.RunAMaster(nil)
+defer closeFn()
+
+s, err := m.OpenService(service)
+if err != nil {
+    return fmt.Errorf("could not access service %s: %v", service, err)
+}
+defer s.Close()
+	
+ctx, cancel := cloud.ContextWithCallTimeout()
+defer cancel()
+```
+I think we can fix defer's con:
+**defer cons** - ambiguous - what if we release/unallocate something in defer and then return it (e.g. close a socket or kill a process)
+we can say it will throw a runtime error or if compiler can, it will throw compiler error.
+so, we do not bind dtor to struct. we just define it there prob with a convention.
+and in the code user has to manually, explicitly call it:
+```
+file = fileOpen(...)
+defer fileClose(file)
+```
+this change is mutation of the state. is it ok with multi-thread or immutability?
+we do this when leaving function. so no one will longer access this.
+can we make it more clear what binding is worked with in a defer block?
+like: `defer(file) fileClose(_)`
+dtor way needs binding between struct and dtor function which is not good.
 
 
 ? - instead of adding a fn after struct for validation, can't we define it inside struct definition?
 like a field named `validate` inside the struct?
+no. against our rule of separation of data from behavior.
+but, we can define a function to create instance of the struct. and inside that function we can implement that logic.
+`x = Point{....}` this can call a function to create/post-process a new instance of Point.
