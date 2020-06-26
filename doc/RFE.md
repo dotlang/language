@@ -5256,7 +5256,36 @@ process = fn(a: T, b: T, T: type.eq -> int) { #if eq has not default impl, then 
 we can call it contract instead of interface or tag.
 How do we refer to all of the types that have implemented eq contract? `T: type.eq`
 but dot is for structs.
-`T: type&eq`
+`T: type&eq` `&` is used for automatic type inference for struct literal.
+`T: type+eq` is good.
+```
+vtor = fn(a:T, T: type -> nothing) #this is a type generator. call it and it will generate a new function type
+dtor = fn!(a:T, T: type -> nothing)
+socketDtor = [dtor] fn(a: Socket -> nothing) ...
+eq = fn!(a: T, b: T, T: type -> bool) { default impl }
+eqInt = [eq] fn(a: int, b:int -> bool ) { ... }
+eqString = [eq] fn(a: string, b: string -> bool) { ... }
+eqStack = fn!eq(a: Stack(T), b: Stack(T), T: type -> bool) ... #we dont write type after eq. compiler will infer
+eqIntStack = [eq] fn(a: Stack(int), b: Stack(int) -> bool) ... #you cannot impl eqStack because it is not a signature function
+...
+type.eq means AND of type and eq. type means all types. eq means all types that implemented eq contract
+process = fn(a: T, b: T, T: type.eq -> int) { #if eq has not default impl, then T must have implemented eq contract
+    bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
+    bool2_val = eq(int_stack1, int_stack2)
+}
+```
+no.
+confusing. lots of new notations. means more connections means less flexibility.
+let's define function outside struct. but it must come exactly after struct. nothing in between.
+```
+Point = struct { ... } +myCustomValidatorFunction -pointDestructor
+myCustomValidatorFunction = fn(x: Point -> nothing ) { ... }
+pointDestructor = fn(x: Point -> nothing ) { ... }
+```
+`+x` means run function x exactly after an instance of this struct is created.
+`-x` means run function x after an instance of this struct is gone.
+with above notation, you don't need to put functions exactly after struct. but it would make sense to do so.
+
 
 ? - instead of adding a fn after struct for validation, can't we define it inside struct definition?
 like a field named `validate` inside the struct?
