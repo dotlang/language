@@ -5066,6 +5066,95 @@ we do this when leaving function. so no one will longer access this.
 can we make it more clear what binding is worked with in a defer block?
 like: `defer(file) fileClose(_)`
 dtor way needs binding between struct and dtor function which is not good.
+**PROPOSAL**
+1. For previous resources (built in or user defined), there is a release function defined.
+2. After instantiating the resource, you can use `defer release_func` to invoke release function when resource goes out of scope.
+---
+But this makes no sense. If it "MUST" be called, then why not do it automatically?
+because then there needs to be a binding. 
+and if we allow for binding of a type to resource release function, then it should be allowed for other actions too.
+or maybe not. We can only allow for release. not for other purposes.
+```
+Point = {x:int, y:int} fn{validation}, ~fn{destroy logic}
+```
+we definitely want to keep functions outside the type, not inside struct. because this will mean binding data and behavior.
+but, putting them after the type definition is not very readable.
+can't we put them as standalone functions?
+like tests: `Module level functions that start with _test and have no input are considered unit test functions.`
+We can have a naming convention. but what if we have a type alias?
+```
+Point = struct {...}
+_Point_dtor = fn(...)
+MyPoint : Point
+_MyPoint_dtor = fn(...)???
+```
+nope. this must be done at the point of type decl to avoid confusions with type alias, named type and naming conventions.
+so, this extends struct type declaration.
+```
+Point = struct {x: int, y:int} 
+```
+This is an important topics because it affects robustness and reliability of apps.
+Example of resource:
+> anything that needs to be cleaned-up (file handle,sockets, locks, values from a foreign runtime...)
+In golang, you have to manually close a socket or file. so why not do the same here?
+Rob Pike: Clear is better than clever.
+> Instead of hiding resource management somewhere else, manage the resources as closely to the code where they are used and as explicitly as you possibly can.
+q: what if we release/unallocate something in defer and then return it?
+I don't want to force developer to specify binding which is freed in defer. because it will be a limitation.
+but, if I write `defer fileClose(h)` and I am returning `h` in the function, what should happen?
+issue is, I always assume immutability. with this assumption, `fileClose(h)` makes no change to `h`
+but resource management is all about mutation: mutate a socket, connection, file, memory range, ...
+so, I think this is the bigger issue with defer: if we allow user to decide when/what to release, it exposes mutation to the application.
+and this is against some important assumptions.
+**defer pros** - explicit, transparent, flexible
+**defer cons** - ambiguous, exposes mutation
+**dtor pros** - hides mutation, handles out of scope so no issue with return + release
+**dtor cons** - hidden, implicit, not flexible, needs binding of a function to a piece of data
+so, let's focus on cons of dtor:
+- not flexible: you should be able to define dtor for any of your types, that is all flexibility we can provide
+- implicit: if it was explicit it would expose mutation, you can make it explicit by a syntax though: `x = _` for example
+- hidden: same as above, we need to hide details here, or else developer can access mutated variable
+- binding of type to function: the big issue
+**Proposal**
+1. Type owner can define dtor for the type which will run when bindings of that type go out of scope
+2. There should be a mechanism to manually invoke dtor like `x = _` so compiler can also check x is no longer used
+3. big question: how should dtor be defined for a type?
+---
+dtor: 
+- should be bound to a type so that type alias or named type cannot make it confusing
+- should be a normal function. we don't want to "invent" something new.
+Maybe we can mis-use casting notation. So, dtor will run when you cast a type to `nothing`.
+now, it allows people to write a casting for a type if it is not already defined but that does not do any harm.
+we add support for defining custom casting functions.
+BUT then we will have same name functions!
+```
+Point = struct {x:int, y:int}
+nothing = fn(item: Point) { ... } #then we will have lot of functions with same name
+_ = fn(item:Point) {...} #does not make sense
+```
+or: 
+we can define a function named same as type. BUT they are named differently. 
+that's fine. this is a special function. so it will be named like a type. 
+it will then look like generic functions.
+but for now lets ignore that.
+```
+Point = struct {x:int, y:int}
+^Ponit = fn(item: Point -> nothing) { validation code }
+~Point = fn(item: Point -> nothing) { dtor code }
+```
+above works fine. is explicit, flexible, no need to bind function to the type.
+hides immutability of the data. 
+but what I don't like is the fact that we add two new notations. I prefer names/keywords rather than `%W$#$#@$~`
+- if we use a fixed name like `dtor` then we will have multiple functions with the same name
+- if we use prefix char then it will be confusing
+- if we use random names, then how can we bind?
+we can do sth else:
+- inside struct def, define a field of specific type. set value of it to the dtor function
+- or we can say dtor function should have the same name as that field
+```
+Point = struct {x:int, y:int, _dtor: fn(x: Point -> nothing)
+```
+
 
 
 ? - instead of adding a fn after struct for validation, can't we define it inside struct definition?
@@ -5073,3 +5162,11 @@ like a field named `validate` inside the struct?
 no. against our rule of separation of data from behavior.
 but, we can define a function to create instance of the struct. and inside that function we can implement that logic.
 `x = Point{....}` this can call a function to create/post-process a new instance of Point.
+maybe we can use custom casting function. 
+
+? - What are top examples of apps that must be written in dotLang?
+- app server
+- web server
+- database
+- jq
+...?
