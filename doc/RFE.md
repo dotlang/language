@@ -5154,6 +5154,7 @@ we can do sth else:
 ```
 Point = struct {x:int, y:int, _dtor: fn(x: Point -> nothing)
 ```
+but with `~TT` naming convention we still have the issue of type alias and named types.
 
 
 
