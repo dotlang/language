@@ -5155,8 +5155,108 @@ we can do sth else:
 Point = struct {x:int, y:int, _dtor: fn(x: Point -> nothing)
 ```
 but with `~TT` naming convention we still have the issue of type alias and named types.
-
-
+so these functions MUST attach to the type definition, and because they are not going to be part of a struct, they can be defined for any named type.
+```
+Point = struct{x:int, y:int}, 
+	validate = fn(x: Point -> nothing) {...}
+	destroy = fn(x:Point -> nothing) {...}
+```
+OR: we can just discard this whole thing. no dtor, no defer, no custom deinit, ...
+user cannot define custom dtor. for special resources of the system, runtime automatically handles that. 
+no need to worry from user side. 
+it is not very flexible and it is hidden and cannot be controlled much but using this way we avoid a can of worm.
+and also, user can manually call dtor function if they like.
+but opening a connection without closing it, looks a bit weird. but this is what C++ is doing all the time.
+RAII is important and so is deterministic destruction.
+other option: allow assigning values to bindings inside struct.
+but do not go further so that modules will be separate from structs.
+q: if we have nested structs, how does closure work for these functions?
+let's not have closure at all. module is different from struct, no type in struct.
+**Proposal**
+1. You can define validator and dtor for a struct type and set values.
+2. This will give you some kind of oop like behavior.
+3. some of struct fields can have compile-time values.
+4. when creating a new binding of struct type, you cannot set value for those fields.
+---
+what else do we want to support?
+Java object has these methods:
+- toString
+- equals
+- getHashCode
+- validate
+- finalise
+q is: can we extend this? but this binding of struct and function prevents extension of existing types.
+```
+Point = struct { x:int, y:int,
+	 validate = func(x: Point -> nothing) { ... }
+}
+...
+p = Point{...}
+p.validate(p)??? yes you can call it like this.
+```
+struct does not give you closure. function does.
+so struct members which are functions with values (like dtor or vtor) do not have direct access to their owner struct fields.
+so, let's just limit this to vtor and dtor:
+```
+Point = struct { x:int, y:int,
+	 _ = func(x: Point -> nothing) { ... } #destructor
+	 _ = func(x: Point -> nothing) { ... }
+}
+...
+p = Point{...}
+p.validate(p)??? yes you can call it like this.
+```
+BUT this is still confusing. what if I have:
+`p = Point{...}`
+`q = Point{...}`
+the `p.dtor(q)` or `q.dtor(p)`. are they different? p and q are not the same. so how can I know if p.dtor and q.dtor are same?
+so:
+- we cannot add function inside struct because of confusion with modules and naming and requiring a new exception for struct
+- we cannot add function outside struct because then it will be confusing. others can add it for types that don't already have it. and name needs to be unique.
+what about tagging proposal we had before?
+**Proposal**
+1. We can tag a function with another function type
+2. tag is like interface
+3. we have special tags to define validator and dtor
+4. we can have custom tags for toString, getHashCode, ...
+5. generic functions can use custom tags to define their expectations.
+6. and we don't support multi-type tags.
+```
+vtor = fn!(a:T, T: type -> nothing) 
+dtor = fn!(a:T, T: type -> nothing)
+socketDtor = fn!dtor(a: Socket -> nothing) ...
+eq = fn!(a: T, b: T, T: type -> bool) { default impl }
+eqInt = fn!eq(a: int, b:int -> bool ) { ... }
+eqString = fn!string(a: string, b: string -> bool) { ... }
+eqStack = fn!eq(a: Stack(T), b: Stack(T), T: type -> bool) ... #we dont write type after eq. compiler will infer
+eqIntStack = fn!eq(a: Stack(int), b: Stack(int) -> bool) ... #you cannot impl eqStack because it is not a signature function
+...
+process = fn(a: T, b: T, T: type+eq -> int) {
+    bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
+    bool2_val = eq(int_stack1, int_stack2)
+}
+```
+tagging concept is not very obvious. mixing tag name in `fn!` is not very good.
+```
+vtor = fn!(a:T, T: type -> nothing) #this is a type generator. call it and it will generate a new function type
+dtor = fn!(a:T, T: type -> nothing)
+socketDtor = [dtor] fn(a: Socket -> nothing) ...
+eq = fn!(a: T, b: T, T: type -> bool) { default impl }
+eqInt = [eq] fn(a: int, b:int -> bool ) { ... }
+eqString = [eq] fn(a: string, b: string -> bool) { ... }
+eqStack = fn!eq(a: Stack(T), b: Stack(T), T: type -> bool) ... #we dont write type after eq. compiler will infer
+eqIntStack = [eq] fn(a: Stack(int), b: Stack(int) -> bool) ... #you cannot impl eqStack because it is not a signature function
+...
+type.eq means AND of type and eq. type means all types. eq means all types that implemented eq contract
+process = fn(a: T, b: T, T: type.eq -> int) { #if eq has not default impl, then T must have implemented eq contract
+    bool_val = eq(a, b) #here we call the function that implements eq signature and matches with type of a and b
+    bool2_val = eq(int_stack1, int_stack2)
+}
+```
+we can call it contract instead of interface or tag.
+How do we refer to all of the types that have implemented eq contract? `T: type.eq`
+but dot is for structs.
+`T: type&eq`
 
 ? - instead of adding a fn after struct for validation, can't we define it inside struct definition?
 like a field named `validate` inside the struct?
