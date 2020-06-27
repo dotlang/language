@@ -5285,7 +5285,20 @@ pointDestructor = fn(x: Point -> nothing ) { ... }
 `+x` means run function x exactly after an instance of this struct is created.
 `-x` means run function x after an instance of this struct is gone.
 with above notation, you don't need to put functions exactly after struct. but it would make sense to do so.
-
+we should be able to write `fn` directly, or to mention function name.
+```
+Point = struct { ... }
+	+fn(x: Point->nothing){...}
+	-deleteMyPoint
+```
+q: can we do this for other types too? like a sequence where it makes sure it only has N elements?
+q: how can I explicitly call this?
+- vtor is called automatically. but dtor can be called via `x = _`. after this line, you cannot refer to x.
+```
+Point = struct { ... }
+	+fn(x: Point->nothing){...}
+	~deleteMyPoint
+```
 
 ? - instead of adding a fn after struct for validation, can't we define it inside struct definition?
 like a field named `validate` inside the struct?
@@ -5293,6 +5306,12 @@ no. against our rule of separation of data from behavior.
 but, we can define a function to create instance of the struct. and inside that function we can implement that logic.
 `x = Point{....}` this can call a function to create/post-process a new instance of Point.
 maybe we can use custom casting function. 
+based on above, we can use `+x` notation.
+```
+Point = struct { ... }
+	+validatePoint
+	~deleteMyPoint
+```
 
 ? - What are top examples of apps that must be written in dotLang?
 - app server
