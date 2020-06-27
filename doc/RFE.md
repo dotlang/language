@@ -5067,7 +5067,7 @@ can we make it more clear what binding is worked with in a defer block?
 like: `defer(file) fileClose(_)`
 dtor way needs binding between struct and dtor function which is not good.
 **PROPOSAL**
-1. For previous resources (built in or user defined), there is a release function defined.
+1. For precious resources (built in or user defined), there is a release function defined.
 2. After instantiating the resource, you can use `defer release_func` to invoke release function when resource goes out of scope.
 ---
 But this makes no sense. If it "MUST" be called, then why not do it automatically?
@@ -5299,6 +5299,40 @@ Point = struct { ... }
 	+fn(x: Point->nothing){...}
 	~deleteMyPoint
 ```
+**Proposal**
+1. You can define validator and destructor for named types.
+2. Validator function is defined with `+` prefix, `~` for destructor.
+3. validator is called exactly after an instance is created
+4. destructor is called exactly after instance is gone out of scope.
+---
+but actually, we only need this for struct. what do we have other than struct? seq, map, primitive
+none of these are system resources.
+so, let's bind it to struct definition
+```
+Point = struct { ... }
+	+fn(x: Point->nothing){...}
+	~deleteMyPoint
+```
+this is a 3 element. there should be a separator.
+```
+Point = struct {
+	x: int,
+	y: int,
+	Point(x: Point -> nothing) {...}
+	~Point(x: Point -> nothing) {...}
+}
+```
+q: what if we make everything more explicit? both vtor and dtor.
+you can define a vtor for your type in which case, user must call it to create that type.
+you can define a dtor for your type in which case, user can use `defer` to invoke it.
+Another proposal:
+1. no need to treat vtor differently. Just define a creator function that does all the logic and ask users to call that, rather than `Type{...}`
+2. dtor is a simple function.
+3. `defer` keyword can be used to invoke dtor explicitly. must be used.
+q: what if I refer to something after calling dtor? compiler does now know if `f(x)` is a dtor or not.
+q: dtor exposes mutation. and is ambiguous. 
+But this makes no sense. If it "MUST" be called, then why not do it automatically? because automatic, means lot of notations to make it explicit what needs to be called.
+
 
 ? - instead of adding a fn after struct for validation, can't we define it inside struct definition?
 like a field named `validate` inside the struct?
