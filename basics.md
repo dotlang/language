@@ -233,7 +233,7 @@ For generics (types and functions) see Advanced section.
 7. If a function has no input, you can can eliminate input/output type declaration part (Example B). In this case, compiler will infer output type.
 8. Optional arguments: When calling a function, you can ommit arguments that are at the end and accept `nothing` (Example C).
 9. If a function is being called with literals (compile time known values), compiler will try to evaluate it during compilation (e.g. generics). 
-10. Module level functions that start with `_test` and have no input are considered unit test functions. You can later instruct compiler to run them (Example D).
+10. Module level functions that start with `_test` and have no input/output are considered unit test functions. You can later instruct compiler to run them (Example D).
 11. There is `assert` core function that can be used for checking assertions. You can disable assertions with a compiler flag.
 12. You can chain multiple nested function calls in reverse order via `::` operator (Example E).
 
