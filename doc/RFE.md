@@ -5332,6 +5332,34 @@ Another proposal:
 q: what if I refer to something after calling dtor? compiler does now know if `f(x)` is a dtor or not.
 q: dtor exposes mutation. and is ambiguous. 
 But this makes no sense. If it "MUST" be called, then why not do it automatically? because automatic, means lot of notations to make it explicit what needs to be called.
+returning a destructed binding, is a runtime error.
+like golang working with a closed channel.
+how should dtor work? not all dtors expose mutations.
+we can add a notation to say after calling this function with input X, you can no longer use X. but that will be a lot or notation and memory requirements in dev mind.
+we can also throw runtime error.
+q: if I call `process(file)` will it close my file?
+we can say: you can destruct a binding only if you have created it. but how are we supposed to know if a function call will destruct the binding?
+**if we allow developer to manually, explicitly destruct a precious system resource, it will expose mutation to the outside world.**
+1. no need to treat vtor differently. Just define a creator function that does all the logic and ask users to call that, rather than `Type{...}`
+2. No support for dtor or defer. Runtime will handle those resources which are limited.
+BUT this means we can only define those resources in core! db connection, socket, file, ...
+but, what am I supposed to do in dotLang for example to close a file? not call os/system/core level functions?
+ok, in order by bypass immutability concerns, I can write `x = _` after which x is not reachable.
+but what if X is already being used in parallel code.
+nope! 
+**the only valid case which has no confusion and does not endanger immutability, is automatic resource release by runtime when it is safe to do so**
+which means, when binding is not in scope, release it.
+and it is only needed for some special resources:
+- file
+- socket
+- thread
+- process
+if we allow `fileClose` function, then it implies mutation. so we shuold not have such a function.
+even `x=_` is like that.
+**Proposal**:
+1. no need to treat vtor differently. Just define a creator function that does all the logic and ask users to call that, rather than `Type{...}`
+2. No support for dtor or defer or `x=_`. Runtime will handle those resources which are limited, and release them when they are no longer referenced.
+
 
 
 ? - instead of adding a fn after struct for validation, can't we define it inside struct definition?
@@ -5353,3 +5381,5 @@ Point = struct { ... }
 - database
 - jq
 ...?
+
+? - If fn returns multuple items, will `@{...}` support that?
