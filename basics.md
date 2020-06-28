@@ -121,10 +121,9 @@ maybe_int = int|nothing(int_or_float) #if binding has a float, you will get a no
 1. A struct, similar to C, represents a set of related named types. 
 2. To create a binding based on a struct, you should use a struct literal (e.g. `Type{field1:value1, field2:value2, ...}`.
 3. Type name in struct litearl and field names in struct type are mandatory.
-4. You can add a function after definition of a struct type by `fn{...}` notation. This will be executed on each instantiation of that type and can be used for logging or validation purposes.
-5. Optional fields: When creating a value of struct type and don't specify value for fields which can be `nothing`, they will be set to `nothing`.
-6. Edit: You can create a new struct value based an existing value. This will merge them all. (Example A).
-7. If struct literal type can be inferred from context, you can omit type and use `&{...}` notation (Example B).
+4. Optional fields: When creating a value of struct type and don't specify value for fields which can be `nothing`, they will be set to `nothing`.
+5. Edit: You can create a new struct value based an existing value. This will merge them all. (Example A).
+6. If struct literal type can be inferred from context, you can omit type and use `&{...}` notation (Example B).
 
 **Examples**
 
@@ -140,15 +139,6 @@ point2new = Point{100, 200}
 point4 = Point{x:point3.x, y : 101}
 
 process = fn(x: struct {id:int, age:int} -> int) { x.age }
-
-PointTemplate = struct{x:int, y:int}
-    fn{
-        assert(x>0)
-        assert(y<0)
-        assert(x+y<100)
-        log("a new instance of point-template is created")
-        validateCheck(x, y)
-    }
     
 #A
 another_point = Point{my_point, x:10}
