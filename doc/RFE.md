@@ -5445,3 +5445,34 @@ alternative: don't do it. developer can just write a map/conversion to convert S
 compression utility
 video/audio encoder/decoder
 web api
+
+? - We can provide subtyping in a very flexible way by using sealer/unsearler.
+https://wiki.c2.com/?NominativeAndStructuralTyping:
+I won't claim to have the only answer, but the approach I'm taking is related to EeLanguage's RightsAmplification by sealer/unsealer pairs. Basically, if I really want a type to be 'hidden', I 'instantiate' a sealer/unsealer pair as part of the module. This allows me to 'seal' values, which may then be passed around by arbitrary external modules (and even external processes). When the value comes back to me, I unseal it to operate on it.
+```
+c = createCircle(...)
+processShape(c) #this will not work
+```
+if c is a circle, I can write this expression: `{c, fn(a: Circle -> Shape) {...}}`
+and it will be a new binding. It can automatically convert c into a shape using provided converter.
+should I attach sealer to a binding? an expression? or a function call?
+I think expression is more general one.
+`s = fn(c: Circle->Shape){...}processShape(my_circle)`
+`s = processShape(my_circle) implicit fn(c: Circle->Shape){...}`
+implicit changes the function call dispatch rules.
+implicit function has one input and one output.
+if processShape needs a shape, implicit function will do the conversion.
+q: what if functio needs a list of shapes?
+`s = processShape(my_circle_sequence) implicit fn(c: Circle->Shape){...}`
+q: what if inside Shape we have SolidCanvas but a function inside process needs Canvas?
+q: what if we have a map of shape to ...?
+https://en.wikipedia.org/wiki/Subtyping#Coercions: In coercive subtyping systems, subtypes are defined by implicit type conversion functions from subtype to supertype. 
+`s = processShape(my_circle) implicit fn(c: Circle->Shape){...}`
+we should be able to re-use that type coercing. so, it should be possible to put it in a data structure like map.
+map where key is a tuple of types and value is a function. but of what type? this is like polymorphism problem.
+another way which is less flexible is to define it as separate type coercion functions and mark them as such. but it is implicit and hidden. 
+you don't know that when you call a function.
+`s = &[fn(c: Circle->Shape){...}] processShape(my_circle)`
+after `&[...]` notation, IDE can accept any function that accepts circle or shape. 
+
+
