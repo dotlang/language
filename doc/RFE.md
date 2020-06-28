@@ -5375,17 +5375,7 @@ Point = struct { ... }
 ```
 we don't need it at language level.
 
-
-
-? - What are top examples of apps that must be written in dotLang?
-- app server
-- web server
-- database
-- jq
-...?
-
-
-? - Golang has two important features: subtyping by struct embedding and support for interface
+N - Golang has two important features: subtyping by struct embedding and support for interface
 nominal subtyping: types are sub only if explicitly specified
 structural subtyping: types are sub, only if they struct like that
 if we have a function that sorts a list of supertypes, can it also work on list of subtypes?
@@ -5445,3 +5435,13 @@ so let's say: You can pass type T to a function that needs type S, if T is a str
 what if T has Y and Y has S?
 this ends to all sorts of confusions and questions. for each of them, either we need to add a new rule or a new limit or exception or convention.
 alternative: don't do it. developer can just write a map/conversion to convert S to T as he needs.
+
+? - What are top examples of apps that must be written in dotLang?
+- app server
+- web server
+- database
+- jq
+...?
+compression utility
+video/audio encoder/decoder
+web api
