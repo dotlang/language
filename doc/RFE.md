@@ -4649,10 +4649,11 @@ solution: no change. you still need types. but you can omit them if they are ava
 this is a syntax sugar.
 so you can write: `switch(my_number, &{value: 10, handler: AAA}, &{12, BBB}, &{13, CCC})`
 
+N - If fn returns multuple items, will `@{...}` support that?
+yes why not.
+`callProcess()@{1,2,3}` if call process failed, return these 3 integers.
 
-===============
-
-? - With early return `@{}` we now have a case for defer.
+Y - With early return `@{}` we now have a case for defer.
 defer: close a connection, close a file, release a resource, ...
 we advertise for transparency and "everything happens because of a developer's command".
 So this type of "automatic release behind the scene" is not a very good thing.
@@ -5360,9 +5361,7 @@ even `x=_` is like that.
 1. no need to treat vtor differently. Just define a creator function that does all the logic and ask users to call that, rather than `Type{...}`
 2. No support for dtor or defer or `x=_`. Runtime will handle those resources which are limited, and release them when they are no longer referenced.
 
-
-
-? - instead of adding a fn after struct for validation, can't we define it inside struct definition?
+Y - instead of adding a fn after struct for validation, can't we define it inside struct definition?
 like a field named `validate` inside the struct?
 no. against our rule of separation of data from behavior.
 but, we can define a function to create instance of the struct. and inside that function we can implement that logic.
@@ -5374,6 +5373,9 @@ Point = struct { ... }
 	+validatePoint
 	~deleteMyPoint
 ```
+we don't need it at language level.
+
+
 
 ? - What are top examples of apps that must be written in dotLang?
 - app server
@@ -5382,4 +5384,27 @@ Point = struct { ... }
 - jq
 ...?
 
-? - If fn returns multuple items, will `@{...}` support that?
+
+? - Golang has two important features: subtyping by struct embedding and support for interface
+nominal subtyping: types are sub only if explicitly specified
+structural subtyping: types are sub, only if they struct like that
+if we have a function that sorts a list of supertypes, can it also work on list of subtypes?
+A pitfall of structural typing versus nominative typing is that two separately defined types intended for different purposes, but accidentally holding the same properties (e.g. both composed of a pair of integers), could be considered the same type by the type system, simply because they happen to have identical structure.
+http://whiley.org/2010/12/13/why-not-use-structural-subtyping/: The issue is really about what is more important: flexibility or safety.
+assume we have a function that sorts Humans. We have a list of employees but each employee is a human (has a human field or has attrbiutes common with human struct).
+so how can I use this function to sort employee list?
+we can limit it, exclude anything non-struct and demand composition, not inclusion.
+```
+Human = struct {...}
+Employee = struct{ h: Human, ... }
+```
+now you can pass an employee to a function that needs human
+`processHuman(my_employee)`
+but you can easily write: `processHuman(my_employee.h)`
+but, what if you have a seq? or a map of them? or a graph/tree/list or other data structures?
+q: does this affect named types as being separate types?
+q: what if Employee has two attributes of type human?
+q: How deep do we go? do we also check struct types inside employee.h?
+I think this will make compiler difficult.
+it reads human, but when writing output, it should write parent.
+note that this does not involve runtime function call dispatch.
