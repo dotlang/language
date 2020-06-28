@@ -64,3 +64,4 @@ Below is history of changes (time + summary of what changed) to the dotLang spec
  - May 13, 2020: Casting is done via `T(value)` notation, allow functions that return multiple items, `::` notation for if, `##` comments, `^` for function chaining
  - May 18, 2020: Use `::` for composition and `?` for conditional
  - June 22, 2020: Struct literals can use `&` instead of type if it can be inferred.
+ - June 28, 2020: Remove support for validator function attached to struct types to validate new instances (can be done via custom functions)
