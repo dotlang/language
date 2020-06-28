@@ -5408,3 +5408,40 @@ q: How deep do we go? do we also check struct types inside employee.h?
 I think this will make compiler difficult.
 it reads human, but when writing output, it should write parent.
 note that this does not involve runtime function call dispatch.
+another idea:
+if there is a function F that works with Human and I have a list of employees or any other type, I can call F but pass employee + an implicit conversion function.
+so i don't generate a new type. All types already exist.
+I just pass type T, where type S is expected, but also pass `fn(T->S)` with it. usually this conversion is simple and can be inlined by compiler.
+```
+T = struct {x:int}
+S = struct {y:int, z: float}
+process = fn(x:T->nothing) { ...}
+s_item = createS(100,1.1)
+#now I want to call process, but pass s_item
+process(s_item+fn(s:S->T){s.y})
+```
+what about more complicated types? like a tree? or a map?
+nope. this needs to be automatic. either by explicit marking from developer, or implicitly by runtime based on rules.
+this cannot be done by passing a simple lambda. type may be at different locations (or types).
+so if we want to have this, there needs to be rules.
+subtyping: Allows me to call functions that need shape with a circle
+what if function returns a shape? what if function calls another function that needs circle? or shape?
+another way: manual conversion to fit with target function's requirement
+because there is no mutation, function can only read data.
+https://news.ycombinator.com/item?id=20583176: SML gets this right in my opinion. If I create a record `{foo = "abc", bar = 123}`, I can pass that record on to ANY function that needs a record that looks like {foo:string, bar:int} fields because it looks at the structure rather than the type of the record constructor.
+https://wiki.c2.com/?NominativeAndStructuralTyping: Many of the statically-typed FunctionalProgrammingLanguages, such as HaskellLanguage and the numerous variants of ML, are structurally typed.
+structural subtyping is also not very safe. because they can be misused. In this system, for example, WeightInKg and WeightInLb are same. so you can pass any of them to a function that needs them. because they both have a floating number attribute.
+but we can limit that: types are interchangeanle with their child structs.
+so, `Circle = {s: Shape, r: float}` then Circle can be treated as a Shape. e.g. sent to a function that needs a shape.
+or a seq of circles can be sent to a function that needs a seq of shapes.
+what about field name?
+what if Circle has two shapes?
+https://news.ycombinator.com/item?id=13253066: Go doesn't have subtyping. It has coercions,
+Go does not have function overloading so maybe this (subtyping) is enough to make language useful enough.
+if we have `Circle = struct {s: Shape, t: Shape, x: float}` then calling a shape function with an instance of circle will cause confusion.
+q: what if circle has `Shape|nothing`? can I send it to a function that expects `Shape|nothing`?
+what about `Shap|int`? if we limit this to structs, it won't work well with union types.
+so let's say: You can pass type T to a function that needs type S, if T is a struct and has a field of type `S`.
+what if T has Y and Y has S?
+this ends to all sorts of confusions and questions. for each of them, either we need to add a new rule or a new limit or exception or convention.
+alternative: don't do it. developer can just write a map/conversion to convert S to T as he needs.
