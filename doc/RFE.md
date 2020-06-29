@@ -5474,5 +5474,9 @@ another way which is less flexible is to define it as separate type coercion fun
 you don't know that when you call a function.
 `s = &[fn(c: Circle->Shape){...}] processShape(my_circle)`
 after `&[...]` notation, IDE can accept any function that accepts circle or shape. 
-
+- This can be useful in different scenarios.
+For example when sorting customers, we can seal a custom in an integer. send them to sort function (which only works on int). and then retrieve them.
+internally this will be like a tuple where first element is int, and second element is a customer.
+compiler works with this but it is just like an int.
+so everything is hidden from outside world, even compiler. functions work on integers and at the end, the owner, reverses the seal.
 
