@@ -5436,7 +5436,51 @@ what if T has Y and Y has S?
 this ends to all sorts of confusions and questions. for each of them, either we need to add a new rule or a new limit or exception or convention.
 alternative: don't do it. developer can just write a map/conversion to convert S to T as he needs.
 
-? - What are top examples of apps that must be written in dotLang?
+N - How do we address SOLID? S and D are good. but:
+O: entities should be open for extension, closed for modification, expression problem -> algebraic data types
+L: Liskov substitution principle: objects should be replacable with their subtypes -> Contravariance
+I: many small interfaces are better than one big one.
+OCP:we can use lambdas with closure.
+>> Haskell (and many other languages) doesn’t support subtype polymorphism
+>>>In any case, subtyping just complicates things. And a problem that can be solved with subtyping can just as easily be solved with an injective function. That is, instead of having Candy <: Thing, you just have a function Candy -> Thing.
+
+N - Maybe we need type classes to address L (Liskov principle)
+so that if I have SimpleNode and CustomNode in a graph, I can traverse the graph easily.
+let's list some very good examples for the case for type classes:
+- a graph of basic and custom nodes. each node has different processing rule. I want to process the graph.
+  - we can use struct of functions for graph members and each node has functions related to its type.
+- an expression parser `+-*/` each operation has different impl.
+  - same as above
+  
+N - Do we need wildcard generics?
+we can have a map of type + functions.
+function is `T->string` but each function is different.
+e.g. `f = [string: toString, int: toInt, ...]`
+this is not possible right now because with map, all key/values must have same type.
+we need a "type" that can define multiple types.
+Java:
+- `public static void process(List<? extends Foo> list)`
+- `public static void printList(List<?> list)`
+this can be used to simulate polymorphism/vtable:
+```
+drawCircle = fn(s: Circle, Canvas, float -> int) {...}
+drawSquare = fn(s: Square, Canvas, float -> int) {...}
+vtable = [Circle : drawCircle, Square: drawSquare]
+vtable[T](x, _, _)
+```
+but we can do this:
+```
+getDraw = fn(T: type, x: T -> fn(Canvas, float -> int)) 
+{
+	vtable = [Circle : fn{drawCircle(x, _, _)},
+                Square: fn{drawSquare(x, _, _)}]
+                
+    vtable[T]()
+}
+```
+so we call a function with a circle or square and get a draw function for that.
+
+N - What are top examples of apps that must be written in dotLang?
 - app server
 - web server
 - database
@@ -5446,7 +5490,7 @@ compression utility
 video/audio encoder/decoder
 web api
 
-? - We can provide subtyping in a very flexible way by using sealer/unsearler.
+N - We can provide subtyping in a very flexible way by using sealer/unsearler.
 https://wiki.c2.com/?NominativeAndStructuralTyping:
 I won't claim to have the only answer, but the approach I'm taking is related to EeLanguage's RightsAmplification by sealer/unsealer pairs. Basically, if I really want a type to be 'hidden', I 'instantiate' a sealer/unsealer pair as part of the module. This allows me to 'seal' values, which may then be passed around by arbitrary external modules (and even external processes). When the value comes back to me, I unseal it to operate on it.
 ```
@@ -5479,4 +5523,21 @@ For example when sorting customers, we can seal a custom in an integer. send the
 internally this will be like a tuple where first element is int, and second element is a customer.
 compiler works with this but it is just like an int.
 so everything is hidden from outside world, even compiler. functions work on integers and at the end, the owner, reverses the seal.
+so, we create a new binding or sequence or ... . it boils down to creating a new binding.
+we create a new binding of type S, and put a T and `fn(T->S)` in it.
+but the function may slow down performance. it might be better to keep instances of S and T.
+```
+my_circle = createCircle()
+my_shape = my_circle.shape [my_circle] #we have a normal shape. but it also has a pointer to circle
+processShape(my_shape)
+```
+because we are immutable, sealing will not give us anything new for a single binding.
+there is no difference with:
+```
+my_circle = createCircle()
+my_shape = my_circle.shape
+processShape(my_shape)
+```
+the only useful feature I can think of is seq ordering for sort. where I convert circle to shape. sort them and then I have circles sorted.
+this can help call `drawShape` function with a circle. but we already have that with `drawShape(my_circle.shape)`.
 
