@@ -188,6 +188,27 @@ Example:
 `Shape = Circle | Square | Triangle`
 `my_shape = createShape(...)`
 `result = drawCircle?(my_shape) // drawSquare?(my_shape) // drawTriangle?(my_shape)`
+this will help solve the problem of polymorphism in a less disruptive way.
+still does not replace interface, trait or type classes.
+it can be used for a switch/case/match based on union type:
+```
+code = switch([ fn(x: Circle->int){1}?(my_shape), fn(x: Square->int){2}?(my_shape) ]);
+```
+in above code, code will be 1 if we have a circle, 2 if we have a Square.
+input to switch is a sequence of `int|nothing`s.
+`?` is for IF. 
+`result = drawCircle!(my_shape) // drawSquare!(my_shape) // drawTriangle!(my_shape)`
+`result = drawCircle^(my_shape) // drawSquare^(my_shape) // drawTriangle^(my_shape)`
+`result = drawCircle~(my_shape) // drawSquare~(my_shape) // drawTriangle~(my_shape)`
+`result = drawCircle$(my_shape) // drawSquare$(my_shape) // drawTriangle$(my_shape)`
+`code = [ fn(x: Circle->int){1}!(my_shape), fn(x: Square->int){2}!(my_shape) ]`
+
+? - Can I define a generic function that accepts type T and returns integer number x?
+```
+CodeFunc = fn(x: T, ret: int -> int) {
+  ret
+}
+```
 
 
 
