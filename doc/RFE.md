@@ -157,6 +157,37 @@ definitions should be as general as possible.
 so `myFunction?(...)` means try to call this function. or try to create a lambda with these inputs.
 so, if you pass a type which is "completely" wrong, there will be a compiler error.
 but if you pass a type that "may" be compatible at runtime, then at runtime you get nothing or actual function.
+```
+adder = fn(x:int, y:int -> int) {...}
+adder?("A","B") #compiler error
+x = getMaybeInt()
+z = adder?(x, y) #if x is nothing, this will evaluate to nothing, otherwise will call adder and give you the result
+#above is same as:
+if type(x) == int: z = adder(int(x),y)
+else: z = nothing
+```
+also:
+```
+Shape = Circle | Square
+Canvas = SolidCanvas | EmptyCanvas
+drawCircle = fn(x: Circle, c: SolidCanvas -> ...
+r = drawCircle?(my_shape, my_canvas) #if my_shape is a circle AND my_canvas is a SolidCanvas, call will be made
+if type(my_shape) == Circle && type(my_canvas) == SolidCanvas: r = drawCircle(Circle(my_shape), SolidCanvas(my_canvas))
+else: r = nothing
+```
+we can even write:
+`result = drawCircle?(my_shape) // drawSquare?(my_shape) // drawTriangle?(my_shape)`
+or:
+`draw = drawMap[type(my_shape)]`
+**Proposal**
+1. We inroduce a new way to call a function: `?` which is called "checked-call".
+2. If you checked-call a function by passing some arguments, it those arguments' type match with function input types, call will be made. otherwise `nothing` will be returned.
+3. Checked calling a function with wrong input type will result in a compile time error.
+4. Checked calling a function which accepts type T with a union binding as input, will be evaluated at runtime. If correct type is inside the binding, call will be made. Otherwise, `nothing` will be result of the expression.
+Example:
+`Shape = Circle | Square | Triangle`
+`my_shape = createShape(...)`
+`result = drawCircle?(my_shape) // drawSquare?(my_shape) // drawTriangle?(my_shape)`
 
 
 
