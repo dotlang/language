@@ -48,8 +48,16 @@ or: `fn(x,y -> x+y)`
 X - Core needs to have support for these
 - serialisation deserialisation
 
+N - Can I define a generic function that accepts type T and returns integer number x?
+```
+CodeFunc = fn(T: type, x: T,ret: int -> int) {
+  ret
+}
+code = [ CodeFunc!(Circle, my_shape, 1), CodeFunc!(Squre, my_shape, 2) ]
+```
 
-? - Type classes or some other similar method to have some kind of flexibility in function call dispatch
+Y - Update how to section about polymorphism
+original ask: Type classes or some other similar method to have some kind of flexibility in function call dispatch
 what are the alternatives?
 - interface in Go
 - trait
@@ -202,15 +210,62 @@ input to switch is a sequence of `int|nothing`s.
 `result = drawCircle~(my_shape) // drawSquare~(my_shape) // drawTriangle~(my_shape)`
 `result = drawCircle$(my_shape) // drawSquare$(my_shape) // drawTriangle$(my_shape)`
 `code = [ fn(x: Circle->int){1}!(my_shape), fn(x: Square->int){2}!(my_shape) ]`
-
-? - Can I define a generic function that accepts type T and returns integer number x?
+So, what does this mean: `drawCircle!`? does it have a meaning?
+it has no specific meaning. `!` is used when you call a function or create a lambda.
+but `drawCircle` IS a lambda. So, `drawCircle!` gives you a new lambda which when called will return nothing or make the call? no. this is too confusing
+we want a new notation to "call" a function or create a lambda.
+but when I write `drawCircle!(my_shape, _, _)` I do create a lambda. 
+but `!` without passing any parameter just makes no sense.
+q2: can I do this: `drawCircle!(my_shape,_,_)!(my_canvas,_)(1.1)`?
+this should be fine. `drawCircle!(my_shape,_,_)` will give you a lambda which needs two other arguments.
+q3: what is type of `drawCircle!(my_shape, _, _)`? if output of drawCircle function is int, type of this is a function with output of `int|nothing`.
+so, `drawCircle!` is a function which can accept a circle and two other inputs, and if didn't match, will return nothing. 
+confusing!
+maybe we should just embed it in the concept of a function call. so it applies everywhere.
+`Shape = Circle | Square | Triangle`
+`my_shape = createShape(...)`
+`drawCircle = fn(x: Circle->int) {...}`
+`result = drawCircle(my_shape) // drawSquare(my_shape) // drawTriangle(my_shape)`
+how about this?
+`drawCircle = fn(x: Shape->int|nothing) { if typeof(x) != Circle return nothing else ...}`
+it is possible but not very clean and also if we have more than one union input, becomes messy. also we loose advantages of static typing.
+`result = drawCircle(my_shape) // drawSquare(my_shape) // drawTriangle(my_shape)`
+what about this?
+`drawCircle = fn(x: Circle|nothing->int|nothing) {...}`
+`result = drawCircle(Circle|nothing(my_shape)) // drawSquare(Square|nothing(my_shape)) // drawTriangle(Triangle|nothing(my_shape))`
+it needs a bit more code, but is more flexible. and no special magic by compiler/runtime.
+also we can help to reduce boilerplate:
+`drawCircle = fn(x: Circle|nothing->int|nothing) { checkNothing(x)@{nothing} #if nothing is passed, return nothing...}`
+`drawSquare = fn(x: Square|nothing->int|nothing) {...}`
+`drawTriangle = fn(x: Triangle|nothing->int|nothing) {...}`
+`maybeCast = fn(x: T, S: type, T: type -> S|nothing) { (S|nothing)(x) }`
+`result = drawCircle(maybeCast(my_shape, Circle)) // drawSquare(maybeCast(my_shape, Square)) // drawTriangle(maybeCast(my_shape, Triangle))`
+so:
+1. no need to change anything or add any new notation. just use existing tools: casting, error checking
+2. in function side, we allow for `nothing` instead of actual type and handle that
+3. in casller side, we try to cast union binding to the actual type. if not match, then `nothing`
+4. we can now, modify this to return something else, if we need to.
+**Proposal**
+1. No change to language, notations or rules.
+2. An example of polymorphism by using type casting and error handling:
+`drawCircle = fn(x: Circle|nothing->int|nothing) { checkNothing(x)@{nothing} #if nothing is passed, return nothing...}`
+`drawSquare = fn(x: Square|nothing->int|nothing) {...}`
+`drawTriangle = fn(x: Triangle|nothing->int|nothing) {...}`
+`maybeCast = fn(x: T, S: type, T: type -> S|nothing) { (S|nothing)(x) }`
+`result = drawCircle(maybeCast(my_shape, Circle)) // drawSquare(maybeCast(my_shape, Square)) // drawTriangle(maybeCast(my_shape, Triangle))`
 ```
-CodeFunc = fn(x: T, ret: int -> int) {
-  ret
+superDraw = fn(s: Shape, c: Canvas, f: float->nothing) {
+  #here key is type, and value is a lambda which takes a canvas and a float
+  draw = [Circle: drawCircle(maybeCast(s, Circle),_,_), Square: drawSquare(maybeCast(s, Square),_,_), Triangle: drawTriangle(maybeCast(s, Triangle),_,_)]
+  drawFunction = draw[type(s)] #get compile time type of "s"
+  drawFunction(c, f)
+}
+#or if we want to make it more efficient:
+superDraw = fn(s: Shape, c: Canvas, f: float->nothing) {
+  #here key is type, and value is a lambda which takes a canvas and a float
+  draw = [Circle: fn{drawCircle(maybeCast(s, Circle),_,_)}, Square: fn{drawSquare(maybeCast(s, Square),_,_)}, Triangle: fn{drawTriangle(maybeCast(s, Triangle),_,_)}]
+  drawFunction = draw[type(s)]() #get compile time type of "s"
+  drawFunction(c, f)
 }
 ```
-
-
-
-
-
+? - Can I now create a VTable?
