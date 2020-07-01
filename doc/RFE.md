@@ -50,4 +50,115 @@ X - Core needs to have support for these
 
 
 ? - Type classes or some other similar method to have some kind of flexibility in function call dispatch
+what are the alternatives?
+- interface in Go
+- trait
+- mixin
+- type class
+- generics with `?` wildcard?
+we want the simplest and least surprising solution which is minimal, does not need developer to memorize stuff and is not complicated.
+objectives:
+- Provide Liskov substitution principle but without subtyping because it makes things complicated
+- no function overloading
+- it should be flexible: no attachment between data and behavior
+what are some real world examples of this?
+- support we have a drawing application. we have lots of shapes each with it's own draw.
+now I want to load a drawing file. which basically is a list of shapes.
+how can I draw the whole scene?
+```
+drawCircle = fn...
+drawSquare = fn...
+drawTriangle = fn...
+
+Shape = Circle | Square | Triangle
+shape_sequence = loadFile()
+```
+Now, there is no easy way to call specific functions based on type inside shape.
+I can write my own dispatcher:
+```
+superDraw = fn(s: Shape->nothing) {
+  draw = [Circle: drawCircle, Square: drawSquare, Triangle: drawTriangle]
+  drawFunction = draw[type(s)] #get compile time type of "s"
+  drawFunction(s)
+}
+```
+problems:
+1. type of `draw` map on above function is really confusing and difficult to get.
+2. how can I invoke drawFunction? I don't know its input.
+```
+DrawFunction = fn(T: type -> type) { 
+  fn(shape:T->nothing)
+}
+```
+we can define a generic type as above. and define all draw functions based on that:
+```
+drawCircle: DrawFunction(Circle) = fn...
+drawSquare: DrawFunction(Square) = fn...
+drawTriangle: DrawFunction(Triangle) = fn...
+```
+then type of:
+`draw = [Circle: drawCircle, Square: drawSquare, Triangle: drawTriangle]`
+draw will be map of type, to `DrawFunction(Square)|DrawFunction(Triangle)|...`.
+still confusing.
+we can say, type of draw, is `[type:fn(?->nothing)]`?
+this is clearly a dependent type. a map where value is of type which depends on key.
+but it is a lot. we want to simplify it.
+we also want to put developer in control. so not a lot of hidden automatical behind the scene stuff.
+maybe this can be solved via a case function for unions.
+```
+superDraw = fn(s: Shape->nothing) {
+  selectCase(type(s), 
+    [Circle: drawCircle, Square: drawSquare, Triangle: drawTriangle])
+}
+```
+but again, we don't know type of the seq we are passing.
+also, what if function needs extra inputs? this will just make things more complicated.
+we really need a function to call. rather that a function to call our function.
+can we use closure? excluding circle, triangle, ... all these functions look the same.
+so we can say, we have a map where key is type, value is of type `fn(Canvas, float->nothing)`. 
+so all keys have the same type. we just find and invoke.
+now, this solves second problem and also first one (because this map has now a proper type).
+but how can we build values?
+```
+superDraw = fn(s: Shape, c: Canvas, f: float->nothing) {
+  draw = [Circle: drawCircle(c,_,_), Square: drawSquare(c,_,_), Triangle: drawTriangle(c,_,_)]
+  drawFunction = draw[type(s)] #get compile time type of "s"
+  drawFunction(c, f)
+}
+```
+above works fine except that we now have a new way to create a lambda:
+`myFunction(shape, _,_)` where shape is a unin.
+I think this is the least conflicting and disruptive way we can do that.
+- creating lambda based on a function which accepts type T, passing a union value of type T|S|U|..., will give you nothing if types don't match. or the function.
+```
+x = getShape()
+drawCircle(x, _, _) is nothing if x is not a circle
+drawCircle(x, _, _) gives you an actual function if runtime type of x is what drawCircle expects.
+```
+maybe we should make it more explicit.
+```
+x = getShape()
+^drawCircle(x, _, _) is nothing if x is not a circle
+^drawCircle(x, _, _) gives you an actual function if runtime type of x is what drawCircle expects.
+```
+so, if function accepts `T|Y` and internal type of the binding matches, it's fine.
+if not , nothing.
+so, this should be allowed to be used on any function, even those that don't support unions.
+```
+x = getShape()
+drawCircle?(x, _, _) is nothing if x is not a circle
+drawCircle?(x, _, _) gives you an actual function if runtime type of x is what drawCircle expects.
+```
+so, `lambda?(.....)` will give you nothing if what you are passing, is not as expected. it is like "try to call" or "try to create a lambda".
+so, `addIntegers?("A","B")` will give you nothing.
+which is confusing.
+maybe we should only allow this with lambda creation. but this means a new restriction.
+definitions should be as general as possible.
+so `myFunction?(...)` means try to call this function. or try to create a lambda with these inputs.
+so, if you pass a type which is "completely" wrong, there will be a compiler error.
+but if you pass a type that "may" be compatible at runtime, then at runtime you get nothing or actual function.
+
+
+
+
 
