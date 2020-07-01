@@ -4,89 +4,30 @@ Because a lot of non-essential features are removed from the language and core, 
 
 ## Polymorphism
 
-Polymorphism can be achieved using unions.
+Polymorphism can be achieved using unions, type casting and error handling.
+
+We need corresponding functions to accept `nothing` as an input. In this case, caller will cast union to the correct type, or `nothing` if not possible.
 
 ```perl
-drawCircle = fn(s: Circle, c: Canvas, f: float -> int) {...}
-drawSquare = fn(s: Square, c: Canvas, f: float -> int) {...}
+drawCircle = fn(x: Circle|nothing->int|nothing) { checkNothing(x)@{nothing} #if nothing is passed, return nothing...}
+drawSquare = ...
+drawTriangle = ...
 
-shape = getShape()
+maybeCast = fn(x: T, S: type, T: type -> S|nothing) { (S|nothing)(x) }
 
-result = shape${
-	drawCircle(_, c, 10),
-	drawSquare(_, c, 20),
-	drawRectanbleOrOval(_, c, 30),
-	drawTriangle(_, c, 40)
+superDraw = fn(s: Shape->nothing) {
+  #here key is type, and value is a lambda which takes a canvas and a float
+  draw = [Circle: fn{drawCircle(maybeCast(s, Circle),_,_)}, Square: fn{drawSquare(maybeCast(s, Square),_,_)}, Triangle: fn{drawTriangle(maybeCast(s, Triangle),_,_)}]
+  drawFunction = draw[type(s)]() #get compile time type of "s"
+  drawFunction()
 }
+
+#Or we can use // operator:
+result = drawCircle(maybeCast(my_shape, Circle)) // drawSquare(maybeCast(my_shape, Square)) // drawTriangle(maybeCast(my_shape, Triangle))
 ```
 
 If you want to add a new shape (e.g. Oval), you should update the `Shape` type definition and add appropriate `draw` functions and update the union check block.
 If you want to add a new operation (e.g. print), you will need to add a new function (e.g. `getShapePrinter`) and one function per type.
-
-## Conditionals
-
-If and Else constructs can be implemented using the fact that booleans converted to integer will result to `0` or `1` (for `false` and `true`).
-
-```perl
-ifElse = fn(cond: bool, true_case: T, false_case:T, T: type -> T) 
-{
-	[true: true_case, false: false_case][cond]
-}
-```
-
-Another example:
-
-```perl
-process = fn(x:int -> string)
-{
-	options = [x>0 : fn{ saveLargeFileToDB("SDSDASDA") }, 
-			x<=0: fn{ innerProcess(x) }  
-           ]
-
-	options[true]()
-}
-```
-
-Above sample implemented using ifElse function:
-
-```perl
-process = fn(x:int -> string)
-{
-    ifElse(x>0, fn{
-        saveLargeFileToDB("SDSDASDA") 
-    }, fn{
-        innerProcess(x)
-    })()
-}
-```
-
-Above is translation of below C code:
-
-```perl
-string process(int x) {
-    char* result;
-    
-    if ( x > 0 ) {
-        result = saveLargeFileToDB("SDSDASDA");
-    } else {
-        result = innerProcess(x);
-    }
-    
-    return result;
-}
-```
-
-You can embed all of above in a `match` function like this:
-```
-match = fn(exp: T, cases: [Case(T|nothing,U)] -> U) ...
-Case = struct(value: T, handler: fn(->U)) ...
-...
-str_data = match(result, [
-	(1, fn{ "it is one" }),
-	(2, fn{ "it is two" }),
-	(3, fn{ "it is three" })
-])
-```
 
 ## Dependency management
 
