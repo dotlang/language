@@ -268,4 +268,190 @@ superDraw = fn(s: Shape, c: Canvas, f: float->nothing) {
   drawFunction(c, f)
 }
 ```
-? - Can I now create a VTable?
+
+N - Can I now create a VTable?
+`draw = [Circle: drawCircle(maybeCast(s, Circle),_,_), Square: drawSquare(maybeCast(s, Square),_,_), Triangle: drawTriangle(maybeCast(s, Triangle),_,_)]`
+above is not a VTable. it is a map. it needs `s` as a shape.
+we can have a function which returns vTable, but accepting a shape:
+```
+getShapeVTable = fn(s: Shape -> fn(Canvas, float->nothing), fn(File, float->nothing), fn(Paper, float->nothing)){
+  vtable_draw = [Circle: drawCircle(maybeCast(s, Circle),_,_), Square: drawSquare(maybeCast(s, Square),_,_), Triangle: drawTriangle(maybeCast(s, Triangle),_,_)]
+  vtable_save = [Circle: saveCircle(maybeCast(s, Circle),_,_), Square: saveSquare(maybeCast(s, Square),_,_), Triangle: saveTriangle(maybeCast(s, Triangle),_,_)]
+  vtable_print = [Circle: printCircle(maybeCast(s, Circle),_,_), Square: printSquare(maybeCast(s, Square),_,_), Triangle: printTriangle(maybeCast(s, Triangle),_,_)]
+  
+  return vtable_draw[type(s)], vtable_save[type(s)], vtable_print[type(s)
+}
+```
+
+? - Do we need abstraction?
+we can do that via functions.
+
+? - Do we need functor?
+```
+Take concept of function application: f.apply(x)
+Inverse: x.map(f)
+Call x a functor
+
+interface Functor<T> {
+    Functor<R> map(Function<T, R> f);
+}
+```
+so we can write:
+```
+Functor = fn(T: type, R: type-> type) {
+    struct { data: T, map: fn(mapper: fn(T->R) -> Functor(R)) }
+}
+Functor = fn(T: type, R: type-> type) {
+    fn(mapper: fn(T->R) -> Functor(R))
+}
+```
+can I write `T(R)` as type of an argument?
+```
+process = fn(data: T(R), T: type, R: type -> int) ...
+```
+we can write this:
+`[1, 2, 3].map(x => x.toString()).map(x -> x+"A").map(...)`
+functor is a mapping function which takes another function and applies it on something and result will be another functor.
+We have this in Java
+```
+Identity idString = new Identity<>("something interesting!");
+Identity idInteger = idString.map(String::length);
+
+@FunctionalInterface
+public interface Functor<T, F extends Functor> {
+
+    private final T value;
+
+    public Identity(T value) {
+        this.value = value;
+    }
+
+    @Override
+    public  Identity<?> map(Function<T, R> f) {
+        final R result = f.apply(value);
+        return new Identity<>(result);
+    }
+}
+```
+A functor is a piece of data (like an integer) + a mapping function which accepts a lambda from int to string for example. output of this mapping function is another functor 
+which has another piece of data (of string type, in this example).
+So it is like an applicator of a function to its internal piece of data. but not directly. It applies the function and returns another functor.
+so, it is abstract. and composable (you can pass any mapping function you want).
+this internal piece of data, I think can be provided through closure or using a struct.
+what we know for sure, is that outside world does not have direct access to this piece of data.
+```
+Data = struct {x: T, map: fn(mapper: fn(T->R) -> Data(R)}
+initial = createIdentity(100) #generates an instance of Data above with initial x as value 100
+initial.map(toString).map(getLength).map(adder)...
+```
+or we can use closure:
+```
+Functor = fn(T: type -> type) {
+    fn(mapper: fn(T->R), T: type, R: type -> Functor(R))
+}
+
+initial = createIdentity(100) #generates an instance of Functor above with initial x as value 100 through closure
+initial.map(toString).map(getLength).map(adder)...
+
+createIdentity = fn(data: T -> Functor(T)) {
+    fn(mapper: fn(T->R), T: type, R: type -> Functor(R) ) {
+        result = mapper(data)
+        return createIdentity(result)
+    }
+}
+```
+problem is: when I write map function for my functor, it accepts a function `T->R` but I don't know anything about type R.
+not until map function is called.
+In java we have `?`: `class Identity<T> implements Functor<T,Identity<?>>`
+when I call `createIdentity` I know T (e.g. int), but I don't know R. It will be determined throughout lifecycle of the data.
+it can be string, or float, or int, or Customer or anything.
+is `Functor(int)` a correct type?
+it gives me, `fn(mapper: fn(int->R), R: type -> Functor(R))`. 
+so, calling `createIdentity(100)` gives me above. it is good but I have to decide what is R at compile time.
+Maybe I should write it like this:
+```
+Functor = fn(T: type -> type) {
+    fn(R: type -> type) {
+        fn(mapper: fn(T->R), T: type, R: type -> Functor(R))
+    }
+}
+```
+So, if you call `Functor(int)` it will give you another function, which when called with a correct type, gives you a real mapper.
+but this means I need to know R before calling mapper. 
+`createIdentity(100).map(toString)`
+so this should be: `createIdentity(100)(String).map(toString)`. 
+```
+Functor = fn(T: type -> type) {
+    struct { data: T, mapper: fn(m: fn(T->R), T: type, R: type -> Functor(R))
+}
+
+initial = createIdentity(100) #generates an instance of Functor above with initial x as value 100 through closure
+initial.map(toString).map(getLength).map(adder)...
+
+createIdentity = fn(data: T -> Functor(T)) {
+    &{data: data,
+        mapper: fn(m: fn(T->R), T: type, R: type -> Functor(R) ) {
+            result = m(data)
+            return createIdentity(result)
+        }
+    }
+}
+```
+no. struct is not ok. because map function inside struct will not have closure access to struct fields. because closure is only for functions. 
+if we want access, we should pass an instance of the functor to the mapping function which is weird: `x=createIdentity(100); x.map(x, toString)`
+so we have to work with closure:
+```
+# we have to specify both T and R when declaring type
+# but during call, we won't always have a value for R, until we call mapper function
+Functor = fn(T: type, R: type -> type) {
+    fn(mapper: fn(T->R), T: type, R: type -> Functor(R))
+}
+
+initial = createIdentity(100) #generates an instance of Functor above with initial x as value 100 through closure
+initial(toString)(getLength)(adder)...
+
+createIdentity = fn(data: T, T: type -> Functor(T, R)) {
+    fn(mapper: fn(T->R), T: type, R: type -> Functor(R) ) {
+        result = mapper(data)
+        return createIdentity(result)
+    }
+}
+```
+in Java, we only need `T` to create an instance of the functor.
+but when we call it, `R` will be automatically inferred.
+in java, creation of functor and calling it are two separate steps.
+when we create, we pass an int number, and get a class with a function.
+when we call the function, R becomes known. 
+we merge both in one step: `createIdentity`. Maybe we should provide a dummy R (noop function) too.
+```
+# we have to specify both T and R when declaring type
+# but during call, we won't always have a value for R, until we call mapper function
+Functor = fn(T: type -> type) {
+    fn(R: type -> type) {
+        fn(mapper: fn(T->R), T: type, R: type -> Functor(R))
+    }
+}
+
+initial = createIdentity(100) #generates an instance of Functor above with initial x as value 100 through closure
+initial(toString)(getLength)(adder)...
+
+createIdentity = fn(data: T, T: type -> Functor(T)) {
+    fn(mapper: fn(T->R), T: type, R: type -> Functor(R) ) {
+        result = mapper(data)
+        return createIdentity(result, R)
+    }
+}
+```
+q: can we have a generic type, which when instantiated gives you a generic type? yes. above Functor
+q: when does above loop finish? ???
+when I call createIdentity, I will have a function. but input to that function is not determined, until I call that function.
+let's assume I call `createIdentity(100)` what do I have? a `Functor(int)` which means a function
+a generic function which needs `R` type to be called. 
+If I call it -> R is clear from source code
+if I don't call it -> no need to worry about it.
+I think this can be declared and clarified in the language manual.
+with proper examples and clarification.
+1. we can have a generic function which generates a generic function/type
+2. we can implement functor via double generic functions + closure + recursive calls
+3. add examples of Maybe functor and Identity functor for clarification
+
