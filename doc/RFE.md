@@ -454,4 +454,32 @@ with proper examples and clarification.
 1. we can have a generic function which generates a generic function/type
 2. we can implement functor via double generic functions + closure + recursive calls
 3. add examples of Maybe functor and Identity functor for clarification
+can't we separate instantiation from map? this way, we don't need that confusing generics notation.
+point is, when we define a functor, we don't know anything about the mapping function which will be applied at some point in future.
+so, putting type of it inside those definitions is confusing.
+but, we have a promise not to bind behavior (mapping) and data (internal x).
+```
+# we have to specify both T and R when declaring type
+# but during call, we won't always have a value for R, until we call mapper function
+Functor = fn(T: type -> type) {
+    fn(R: type -> type) {
+        fn(mapper: fn(T->R), T: type, R: type -> Functor(R))
+    }
+}
+
+initial = createIdentity(100) #generates an instance of Functor above with initial x as value 100 through closure
+initial(toString)(getLength)(adder)...
+
+createIdentity = fn(data: T, T: type -> Functor(T)) {
+    fn(mapper: fn(T->R), T: type, R: type -> Functor(R) ) {
+        result = mapper(data)
+        return createIdentity(result, R)
+    }
+}
+```
+if I write `x = createIdentity(100)` what is type of x? x is a function.
+x is a generic function that needs R argument. with R, it is a function accepting `fn(int->R)` and giving another generic function on R.
+but we said, you cannot play with generics, only instantiate them. 
+now, what happens if I pass `initial` to a function?
+initial is of type `Functor(int)` meaning it has an integer inside it. and accepts a mapper function which maps int to some other type R.
 
