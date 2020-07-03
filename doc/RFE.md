@@ -482,4 +482,28 @@ x is a generic function that needs R argument. with R, it is a function acceptin
 but we said, you cannot play with generics, only instantiate them. 
 now, what happens if I pass `initial` to a function?
 initial is of type `Functor(int)` meaning it has an integer inside it. and accepts a mapper function which maps int to some other type R.
+```
+# we have to specify both T and R when declaring type
+# but during call, we won't always have a value for R, until we call mapper function
+Functor = fn(T: type -> type) {
+  struct { 
+      data: T,
+      map: fn( fn(T->R), T: type, R: type -> Functor(R)) #this is a generic function, not a generic data structure
+  }
+}
 
+createIdentity = fn(input: T, T: type -> Functor(T)) {
+    myMapper = fn( mapper: fn(T->R), T: type, R: type -> Functor(R) ) {
+        result = mapper(input) #type of result is R
+        return createIdentity(result)
+    }
+    Functor(T) {
+        data: input,
+        map: myMapper
+    }
+}
+
+
+initial = createIdentity(100) #generates an instance of Functor above with initial x as value 100 through closure
+initial.map(toString).map(getLength).map(adder)...
+```
