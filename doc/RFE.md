@@ -283,10 +283,10 @@ getShapeVTable = fn(s: Shape -> fn(Canvas, float->nothing), fn(File, float->noth
 }
 ```
 
-? - Do we need abstraction?
+N - Do we need abstraction?
 we can do that via functions.
 
-? - Do we need functor?
+N - Do we need functor?
 ```
 Take concept of function application: f.apply(x)
 Inverse: x.map(f)
@@ -583,15 +583,132 @@ now, `Functor(T)` is wrong. it should be: `Functor(T, _, _)` so we use `_` for t
 Functor = fn(T: type, R: type, mapper: fn(T->R) -> Functor(R, _, _))
 
 createIdentity = fn(data: T, T: type -> Functor(T, _, _)) {
-    fn(T: type, R: type, mapper: fn(T->R) -> Functor(R, _, _) ) {
+    fn(R: type, mapper: fn(T->R) -> Functor(R, _, _) ) {
         result:R = mapper(data)
         return createIdentity(result, R)
     }
 }
 
-initial = createIdentity(100) #type of initial is: fn(R: type, mapper: fn(int->R) -> Functor(R))
-second = initial(string, intToString) #type of second is: fn(R: type, mapper: fn(string->R) -> Functor(R))
-initial(string, intToString)(int, getStringLength)(int, timesTwo)...
+initialHolder = createIdentity(100) #type of initial is: fn(R: type, mapper: fn(int->R) -> Functor(R))
+second = initialHolder(string, intToString) #type of second is: fn(R: type, mapper: fn(string->R) -> Functor(R))
+initialHolder(string, intToString)(int, getStringLength)(int, timesTwo)...
 ```
+we call functors like functions. 
+q: We can do above with a simple function call chain.
+`100 :: intToString :: getStringLength :: ...`
+why do we need this? what advantages does it bring?
+The key is in the map function (the one defined inside createIdentity). It can have all sorts of logic.
+for example it can process for optional values `T|nothing` and if it is nothing, it won't call the mapper function.
+so, mapper function has no idea about nothing. It only works with `T->R` but map function handles that.
+This is like a function call with pre-processing.
+We can also implement logging, interception, ... for it. Any processing we want to do before/after a function call.
+generally: this gives us ability to invoke a function (any function) in a controlled environment. so we can control some stuff.
+for example calling `doubleMe` function on `int|nothing`. control: if it is nothing, don't call function, otherwise call it with an int.
+what about this?
+```
+map = fn(data: T, mapper: fn(T->R), T: type, R: type -> R ) {
+        result:R = mapper(data)
+        result
+    }
+}
 
+initialHolder = 100
+second = map(100, intToString)
+map(initialHolder, intToString) :: map(_, getStringLength) :: map(_, timesTwo)...
+```
+we have a place to apply our logic (inside map function). and also, it is not exotic.
+and we have an environment to control function execution.
+for example we can write:
+```
+map = fn(data: T|nothing, mapper: fn(T->R), T: type, R: type -> R|nothing ) {
+    if T is nothing then return nothing
+    else return mapper(T(data))
+}
+```
+or for list:
+```
+map = fn(data: [T], mapper: fn(T->R), T: type, R: type -> [R] ) {
+    run mapper on all elements in data and create [R] and return
+}
+```
+Maybe this itself is a functor!
+Laws of functor in Haskell:
+```
+fmap id = id
+fmap (f . g)  ==  fmap f . fmap g
+```
+so, we should write map, in a way that `mapper` returns same thing, we return the same thing.
+also, if we call `map(data, function1) :: map(_, function2)` it should be same as `map(data, fn(x -> y} { function1(function2(x))}`
+so, we already have functor! no need to complicate stuff.
+using previously discussed functions makes syntax more "interesting" because it allows for direct chaining. but imposes a lot on compiler and runtime.
+
+N - Should I be able to pass a generic function to another function?
+```
+push = fn(T: type, data: T, stack: Stack(T) -> Stack(T)) { ... }
+
+process(push)
+#inside process function
+push(int_var, int_stack)
+push(float_var, float_stack)
+```
+so, what should be pushed into stack when I call process?
+we can only push one pointer. 
+but when I call push for int and push for float, they are two separate functions.
+option1: push is a map and push of int is an entry inside that map.
+so at runtime, there is one more redirection. 
+when I call `push(int...)` first runtime needs to check push to find out actual address of push function for integers. and then call it.
+option 2: I can encode type names inside assembly level function names. `push_int`, `push_float`, ...
+but we don't have access to push in process. We just have a `fn(T: type, data: T, stack: Stack(T) -> Stack(T))` binding.
+caller cannot know what will process do with push.
+that is why we don't allow for passing of generic functions.
+but with functors, this is needed. 
+so when I call `createIdentity(100)` I have a functor of int. which basically means it is a generic function, put into a binding.
+q: how should a functor be named? it is a binding but has a function inside. so it should be named like a function.
+`initialHolder = createIdentity(100)`
+type of initial is: `fn(R: type, mapper: fn(int->R) -> Functor(R))`
+option 2: we do one more round of compiler to scan all invocations of a generic lambda.
+so, after this round we know `push(int)` and `push(float)` are called. but we don't really know what function do they call (in compile time). 
+there are two problems here:
+1. how is callee want to know which code to run exactly? e.g. when running `push(int)`?
+2. how does compiler know what code to generate?
+so, how can we have this in a library where we don't know how WILL call us?
+
+N - How do we provide SOLID?
+Open/Closed Principle: use higher order function to modify, 
+Liskov Substitution Principle: function pointers, maybe abstraction
+Interface Segregation Principle: specify smallest set of data in function input
+Dependency Inversion Principle: function composition, first class functions
+
+N - Do we need abstraction?
+why do we need that?
+example: we have a function that takes a graph node and does something on it.
+now we want to be able to pass any graph node to it.
+if behavior of the function is the same for all graph node types, then it is a generic function.
+for example, avg function works in numbers. what if someone calls it with `Customer`?
+they should be immediately notified.
+or max or any statistical function.
+in some cases, type really doesn't matter: e.g. stack or linked list.
+because we act just as a holder, we don't read their value.
+but for max, or for sort, or ... we need that.
+is it really an important feature that we need?
+we separate data and behavior. so if you need to call a function on a piece of data, just define the function as as input.
+rather than expecting some kind of constraint or interface or contract to provide it to you.
+problem is: if a developer calls my generic function, how do they know what should be provided?
+well, it is in function inputs.
+but, when we separate these, expecting a function to define data and their behavior does not make sense.
+if there is such requirement, they must be separate: data input, behavior input.
+
+N - Current solution for polymorphism is ugly.
+all implementation methods must support nothing.
+`drawCircle = fn(x: Circle|nothing->int|nothing) { checkNothing(x)@{nothing}`
+which is not possible all the time.
+`draw = [Circle: fn{drawCircle(maybeCast(s, Circle),_,_)}, Square: fn{drawSquare(maybeCast(s, Square),_,_)}, Triangle: fn{drawTriangle(maybeCast(s, Triangle),_,_)}]`
+`drawFunction = draw[type(s)]()`
+how can we simplify it with minimum change in the language?
+```
+drawCircle = fn(x: Circle->int|nothing) { ... }
+draw = [Circle: fn{ drawCircle(getType(x, Circle)@,_,_) }, Square: fn{ drawSquare(getType(x, Square)@,_,_) }, Triangle: fn{ drawTriangle(getType(x, Triangle)@,_,_) }]
+drawFunction = draw[type(s)]()
+```
+getType returns error if it cannot do the casting.
 
