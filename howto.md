@@ -9,25 +9,25 @@ Polymorphism can be achieved using unions, type casting and error handling.
 We need corresponding functions to accept `nothing` as an input. In this case, caller will cast union to the correct type, or `nothing` if not possible.
 
 ```perl
-drawCircle = fn(x: Circle|nothing->int|nothing) { checkNothing(x)@{nothing} #if nothing is passed, return nothing...}
+drawCircle = fn(x: Circle, c: Canvas, f: Color->int) {...}
 drawSquare = ...
 drawTriangle = ...
 
-maybeCast = fn(x: T, S: type, T: type -> S|nothing) { (S|nothing)(x) }
-
 superDraw = fn(s: Shape->nothing) {
-  #here key is type, and value is a lambda which takes a canvas and a float
-  draw = [Circle: fn{drawCircle(maybeCast(s, Circle),_,_)}, Square: fn{drawSquare(maybeCast(s, Square),_,_)}, Triangle: fn{drawTriangle(maybeCast(s, Triangle),_,_)}]
-  drawFunction = draw[type(s)]() #get compile time type of "s"
-  drawFunction()
+  	#here key is type, and value is a lambda which takes a canvas and a color and returns error or int
+  	draw = [
+		Circle: fn{ drawCircle(getType(x, Circle)@,_,_) }, 
+		Square: fn{ drawSquare(getType(x, Square)@,_,_) }, 
+		Triangle: fn{ drawTriangle(getType(x, Triangle)@,_,_) }
+	]
+  	drawFunction = draw[type(s)]() #get compile time type of "s"
+  	drawFunction()
 }
 
-#Or we can use // operator:
-result = drawCircle(maybeCast(my_shape, Circle)) // drawSquare(maybeCast(my_shape, Square)) // drawTriangle(maybeCast(my_shape, Triangle))
 ```
 
-If you want to add a new shape (e.g. Oval), you should update the `Shape` type definition and add appropriate `draw` functions and update the union check block.
-If you want to add a new operation (e.g. print), you will need to add a new function (e.g. `getShapePrinter`) and one function per type.
+If you want to add a new shape (e.g. Oval), you should update the `Shape` type definition and add appropriate `draw` functions and update the superDraw function.
+If you want to add a new operation (e.g. print), you will need to add a new function (e.g. `superPrint`).
 
 ## Dependency management
 
