@@ -507,3 +507,91 @@ createIdentity = fn(input: T, T: type -> Functor(T)) {
 initial = createIdentity(100) #generates an instance of Functor above with initial x as value 100 through closure
 initial.map(toString).map(getLength).map(adder)...
 ```
+This is fine, if we allow for generic lambdas. so you can pass them and call them anywhere.
+```
+# we have to specify both T and R when declaring type
+# but during call, we won't always have a value for R, until we call mapper function
+Functor = fn(mapper: fn(T->R), T: type, R: type -> Functor(R))
+
+initial = createIdentity(100) #generates an instance of Functor above with initial x as value 100 through closure
+initial(toString)(getLength)(adder)...
+
+createIdentity = fn(data: T, T: type -> Functor(T)) {
+    fn(mapper: fn(T->R), T: type, R: type -> Functor(R) ) {
+        result = mapper(data)
+        return createIdentity(result, R)
+    }
+}
+```
+Nope. Functor is a container. It is not a function.
+but container is provided using closure.
+above we are mixing normal inputs (mapper) and generic inputs.
+so, what does `Functor(T)` mean? functor has 3 inputs: mapper, T and R.
+```
+# we have to specify both T and R when declaring type
+# but during call, we won't always have a value for R, until we call mapper function
+# We use Functor(T) to say: this is a function that accepts a T->R mapper. What is R? we don't know yet.
+# we will know R when someone calls the function. Actually this indirection, helps us simulate ? in Java
+Functor = fn(T: type -> type) {
+    fn(mapper: fn(T->R), T: type, R: type -> Functor(R))
+}
+
+createIdentity = fn(data: T, T: type -> Functor(T)) {
+    fn(mapper: fn(T->R), T: type, R: type -> Functor(R) ) {
+        result = mapper(data)
+        return createIdentity(result, R)
+    }
+}
+
+initial = createIdentity(100) #generates an instance of Functor above with initial x as value 100 through closure
+initial(toString)(getLength)(adder)...
+```
+Functions that generate a type are named like a type.
+Bindings that are a function, are named like a function.
+another way:
+```
+# we have to specify both T and R when declaring type
+# but during call, we won't always have a value for R, until we call mapper function
+# We use Functor(T) to say: this is a function that accepts a T->R mapper. What is R? we don't know yet.
+# we will know R when someone calls the function. Actually this indirection, helps us simulate ? in Java
+Functor = fn(mapper: fn(T->R), T: type, R: type -> Functor(R))
+
+createIdentity = fn(data: T, T: type -> Functor(T, ?)) {
+    fn(mapper: fn(T->R), T: type, R: type -> Functor(R, ?) ) {
+        result = mapper(data)
+        return createIdentity(result, R)
+    }
+}
+
+initial = createIdentity(100) #generates an instance of Functor above with initial x as value 100 through closure
+initial(toString)(getLength)(adder)...
+```
+ّIn Java, when you call map function, input is a `T->R` function and output is `Functor(R)`. So you don't need to specify the second type.
+So, in Java, functor class has only one type argument: what it has inside.
+but here, we want to merge class and function. so we want to provide two types. but we don't know the second type yet.
+what is output of createIdentity? is it a function? if so, that function has 3 inputs: T, R and mapper.
+suppose that I have:
+`push = fn(T: type, data: T, stack: Stack(T) -> Stack(T)) { ... }`
+now what does `push(int)` mean?
+correct way is: `push(int, _, _)` which means: this is a lambda that accepts an integer and a stack of int and gives you a stack of int.
+now, `Functor(T)` is wrong. it should be: `Functor(T, _, _)` so we use `_` for type too, which is not surprising.
+```
+# we have to specify both T and R when declaring type
+# but during call, we won't always have a value for R, until we call mapper function
+# We use Functor(T) to say: this is a function that accepts a T->R mapper. What is R? we don't know yet.
+# we will know R when someone calls the function. Actually this indirection, helps us simulate ? in Java
+Functor = fn(T: type, R: type, mapper: fn(T->R) -> Functor(R, _, _))
+
+createIdentity = fn(data: T, T: type -> Functor(T, _, _)) {
+    fn(T: type, R: type, mapper: fn(T->R) -> Functor(R, _, _) ) {
+        result:R = mapper(data)
+        return createIdentity(result, R)
+    }
+}
+
+initial = createIdentity(100) #type of initial is: fn(R: type, mapper: fn(int->R) -> Functor(R))
+second = initial(string, intToString) #type of second is: fn(R: type, mapper: fn(string->R) -> Functor(R))
+initial(string, intToString)(int, getStringLength)(int, timesTwo)...
+```
+
+
