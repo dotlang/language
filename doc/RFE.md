@@ -1039,3 +1039,116 @@ so for example if contract is `Contract(S,T,U,V)` compiler/runtime will first fi
 then we will have something like `Contract(int, string, float, Customer)` and then all functions of type `Contract` will be searched.
 not that, if call is made with a union e.g. `int|string` and above search fails during compile time, runtime will use dynamic type of the union binding to dispatch the call.
 but compiler will make sure all of the union cases have a candidate.
+I think it is still a bit implicit. Not explicit enough. When a function implements a contract, we definitely need to set its type, otherwise it will be plain wrong.
+but maybe we should made contract types more explicit. rather than `fn!` maybe we should add `!` to the name.
+so everyone everywhere knows this is a contract.
+```
+ToString! = fn(T: type -> type) { fn(data: T -> string) }
+intToString: ToString!(int) = fn(x: int -> string) ...
+myFunction = fn(item: T, stringer: ToString!(T), T: type -> int) { ... result = stringer(data) ... }
+
+myFunction(int_var, intToString)
+myFunction(int_or_float)
+
+Draw! = fn(S: type, C: type -> type) { fn(shape: S, canvas: C, color: float -> string) }
+drawCircleOnSolidCanvas: Draw!(Circle, SolidCanvas) = fn(shape: Circle, canvas: SolidCanvas, color: float -> string) { ... }
+drawSquareOnAnyCanvas: Draw!(Circle, Canvas) = fn(shape: Circle, canvas: Canvas, color: float -> string) { ... }
+process = fn(item: T, canvas: S,S: type, T: type, drawFunction: Draw!(S,T) -> int) { ... result = drawFunction(item, canvas) ... }
+...
+```
+what does it mean to define a contract which is not generic? it makes no sense. it is a simple type.
+the only way we can have multiple functions with the same signature is with generic types.
+q: Can I have a generic contract of type struct?
+then a function can say, I expect `Shape(T)` and then we return a binding of that type based on T?
+**Proposal: Open functions**
+2. A contract is a generic type type suffixed with `!`: `ToString! = fn(T: type -> type) { fn(data: T -> string) }`
+3. An implementation function, implementes a contract for a concrete type: `intToString: ToString!(int) = fn(x: int -> string) ...`
+Example:
+```
+ToString! = fn(T: type -> type) { fn(data: T -> string) }
+intToString: ToString!(int) = fn(x: int -> string) ...
+myFunction = fn(item: T, stringer: ToString!(T), T: type -> int) { ... result = stringer(data) ... }
+
+myFunction(int_var, intToString)
+myFunction(int_or_float)
+
+Draw! = fn(S: type, C: type -> type) { fn(shape: S, canvas: C, color: float -> string) }
+drawCircleOnSolidCanvas: Draw!(Circle, SolidCanvas) = fn(shape: Circle, canvas: SolidCanvas, color: float -> string) { ... }
+drawSquareOnAnyCanvas: Draw!(Circle, Canvas) = fn(shape: Circle, canvas: Canvas, color: float -> string) { ... }
+process = fn(item: T, canvas: S,S: type, T: type, drawFunction: Draw!(S,T) -> int) { ... result = drawFunction(item, canvas) ... }
+```
+Caller has an option to pass a function for those contract arguments but if omitted, Runtime/compiler will automatically find them for you.
+if compiler cannot find an impl for static type of the binding, and we have impl for all possible cases of dynamic type (for unions), the it will be done at runtime.
+you can define contracts based on structs or other types too, but runtime/compiler won't be able to automatically resolve them for you. you have to do it yourself.
+--
+q: Can I have a generic contract of type struct?
+but suppose that we allow for that. runtime won't be able to automatically find it for you! because runtime can find types, it cannot look for bindings of that type.
+but even without runtime help, this might be useful. I have a generic function that accepts data of type T, and I want that data to have a field named `.age`.
+```
+Aged! = fn(T: type -> type) { struct { age: T } }
+process = (data: T, aged: Aged!(int) -> ... ) {
+  result = aged.age
+  ...
+  
+}
+process(my_int, Aged!(int)(my_struct)
+```
+well, we cannot forbid that. Contract is any generic type marked with `!`. But user will have to manually do the casting.
+suffixing is better because they still start with a capital letter.
+on one hand this `!` notation makes things explicit which is good. on the other hand, it adds a new mental burden for the developer so he has to keep in mind that.
+can't we just drop all new notations and rely on `:>` below to say: compiler/runtime please find something for here?
+minimum disruption
+```
+ToString = fn(T: type -> type) { fn(data: T -> string) }
+intToString: ToString(int) = fn(x: int -> string) ...
+myFunction = fn(item: T, stringer:> ToString(T), T: type -> int) { ... result = stringer(data) ... }
+
+myFunction(int_var, intToString)
+myFunction(int_or_float)
+
+Draw = fn(S: type, C: type -> type) { fn(shape: S, canvas: C, color: float -> string) }
+drawCircleOnSolidCanvas: Draw(Circle, SolidCanvas) = fn(shape: Circle, canvas: SolidCanvas, color: float -> string) { ... }
+drawSquareOnAnyCanvas: Draw(Circle, Canvas) = fn(shape: Circle, canvas: Canvas, color: float -> string) { ... }
+process = fn(item: T, canvas: S,S: type, T: type, drawFunction:> Draw(S,T) -> int) { ... result = drawFunction(item, canvas) ... }
+```
+so, we don't have anything unusual, new or made up notation.
+everything, EVERYTHING, is just like before. you define types, you write functions, you call those functions.
+BUT the new part is `:>` notation where we ask compiler/runtime to provide value for an argument if it is not sent from caller site.
+so, if you use `:>` on a something which is a generic function, based on how function is called, it will be mapped to a correct function.
+of course there must only be one matching function. otherwise there will be compiler errors.
+so, e.g. if I have `draw:> Draw(T)` and T is a Shape, you must either have a function of type `Draw(Shape)` or functions of type `Draw(S)` for each S as an option for Shape union.
+I think this makes more sense.
+rather than defining new concepts and names, just stick to the normal way but add support for automation.
+**Proposal: Automatic Resolution**
+1. When using generic arguments, you can ask compiler/runtime to automatically resolve them for you.
+2. For example if you expect a function of type `ToString(T)` and function is called with `T=int`, you can ask compiler to automatically find a function of type `ToString(int)` for you so caller does not need to pass them explicitly.
+Example:
+```
+ToString = fn(T: type -> type) { fn(data: T -> string) }
+intToString: ToString(int) = fn(x: int -> string) ...
+myFunction = fn(item: T, stringer:> ToString(T), T: type -> int) { ... result = stringer(data) ... }
+
+myFunction(int_var, intToString)
+myFunction(int_or_float)
+
+Draw = fn(S: type, C: type -> type) { fn(shape: S, canvas: C, color: float -> string) }
+drawCircleOnSolidCanvas: Draw(Circle, SolidCanvas) = fn(shape: Circle, canvas: SolidCanvas, color: float -> string) { ... }
+drawSquareOnAnyCanvas: Draw(Circle, Canvas) = fn(shape: Circle, canvas: Canvas, color: float -> string) { ... }
+process = fn(item: T, canvas: S,S: type, T: type, drawFunction:> Draw(S,T) -> int) { ... result = drawFunction(item, canvas) ... }
+```
+Of course, caller can still explicitly pass values for those arguments.
+if compiler cannot find an impl for static type of the binding, and we have impl for all possible cases of dynamic type (for unions), the it will be done at runtime.
+Note that there are rules (explained in the next section), on how/what can be resolved automatically.
+
+? - should we make it explicit that we expect runtime to provide value for a function argument?
+For:
+- Type arguments: infer from caller site
+- `T|nothing` arguments: pass `nothing`
+- Contract arguments: Resolution
+- Numbers: Pass 0
+- Manual: 
+`process = fn(x: int, data: T, T: type, stringer: ToString!(T), len: int|nothing -> string) { ... }`
+`process = fn(x: int, data: T, T :> type, stringer:> ToString!(T), len:> int|nothing -> string) { ... }`
+this looks better. and is explicit.
+so function argument of the pattern `name :> type` means if it is not provided, compiler/runtime should try to find a value for it.
+
