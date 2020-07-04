@@ -712,6 +712,18 @@ drawFunction = draw[type(s)]()
 ```
 getType returns error if it cannot do the casting.
 
+N - should we make it explicit that we expect runtime to provide value for a function argument?
+For:
+- Type arguments: infer from caller site
+- `T|nothing` arguments: pass `nothing`
+- Contract arguments: Resolution
+- Numbers: Pass 0
+- Manual: `x:10> int` no this is too much
+`process = fn(x: int, data: T, T: type, stringer: ToString!(T), len: int|nothing -> string) { ... }`
+`process = fn(x: int, data: T, T :> type, stringer:> ToString!(T), len:> int|nothing -> string) { ... }`
+this looks better. and is explicit.
+so function argument of the pattern `name :> type` means if it is not provided, compiler/runtime should try to find a value for it.
+
 ? - Expression problem
 adding new operation: this is easy in FP. but what about us?
 we have a `superDraw` function which does draw. So adding a new operation is just adding new functions for them.
@@ -1169,17 +1181,64 @@ makeMap = fn(K: type, V: type, hasher :> Hasher(K) -> [K:V]) { ... }
 so, in above graph example, you cannot simply call any of two process functions (basic or complext), by just having a union binding of them.
 you need to write a function to do that:
 `processGraphNode = fn(x: T, T:> type, processor:> ProcessNode(T) -> string) { processor(x) }`
+**Proposal: Automatic Resolution**
+1. You can use `:>` when declaring a function to indicate that argument should be optional and if missing, inferred via compiler/runtime.
+2. For example if you expect an argument which is a function of type `:> ToString(T)` and function is called with `T=int`, if this argument is missing, compiler/runtime will automatically find a function of type `ToString(int)` for you so caller does not need to pass them explicitly.
+3. For `x :> T|nothing` nothing will be used. For `x :> int` zero will be used if missing.
+4: for `T :> type` compiler will infer type.
+5. For `x :> ToString(T)` and T is a union function, if no impl exists for static type of x, compiler will make sure impl for each option of union type T is there and delegate the rest to runtime
+Example:
+```
+ToString = fn(T: type -> type) { fn(data: T -> string) }
+genericToString: ToString = fn(T: type, data: T -> string) ... #top level catch all impl
+intToString: ToString(int) = fn(x: int -> string) ...
+myFunction = fn(item: T, stringer:> ToString(T), T:> type -> int) { ... result = stringer(data) ... }
 
+myFunction(int_var, intToString)
+myFunction(int_or_float)
 
-? - should we make it explicit that we expect runtime to provide value for a function argument?
-For:
-- Type arguments: infer from caller site
-- `T|nothing` arguments: pass `nothing`
-- Contract arguments: Resolution
-- Numbers: Pass 0
-- Manual: `x:10> int` no this is too much
-`process = fn(x: int, data: T, T: type, stringer: ToString!(T), len: int|nothing -> string) { ... }`
-`process = fn(x: int, data: T, T :> type, stringer:> ToString!(T), len:> int|nothing -> string) { ... }`
-this looks better. and is explicit.
-so function argument of the pattern `name :> type` means if it is not provided, compiler/runtime should try to find a value for it.
+Draw = fn(S: type, C: type -> type) { fn(shape: S, canvas: C, color: float -> string) }
+drawCircleOnSolidCanvas: Draw(Circle, SolidCanvas) = fn(shape: Circle, canvas: SolidCanvas, color: float -> string) { ... }
+drawSquareOnAnyCanvas: Draw(Circle, Canvas) = fn(shape: Circle, canvas: Canvas, color: float -> string) { ... }
+process = fn(item: T, canvas: S,S: type, T: type, drawFunction:> Draw(S,T) -> int) { ... result = drawFunction(item, canvas) ... }
+
+Hasher = fn(T: type -> type) { fn(data: T, T: type -> int) }
+genericHash: Hasher = fn(T: type, data: T -> int) { ... }
+intHasher: Hasher(int) = fn...
+stringHasher: Hasher(string) = fn...
+...
+process = fn(data: T, hasher:> Hasher(T), ... 
+makeMap = fn(K: type, V: type, hasher :> Hasher(K) -> [K:V]) { ... }
+```
+q: why do I need a level of redirection when defining ToString?
+`ToString = fn(T: type, data: T -> string)`
+If I have above, is `ToString(int, _)` a function type? should be. but keeping them separate makes decl easier to read.
+A generic function is just like an interface. You can implement it for any type by defining functions of that type but with concrete internal types.
+yes! we can have generic default impl for them.
+how does this allow us to solve expression problem?
+so, for each generic funtion type like Hasher, we have N implementations for different types. (or one for T which is the default implementation).
+so, we define a generic type function for each operation and one impl for each type.
+new type -> add a new impl for all available operations (`drawOval: Draw(Oval) ...`)
+new operation -> define a new type function and impl it for existing types: `Printer = ..., printCircle = ...`
+so, each generic type function is an interface.
+you can have a default implementation for it too.
+Shall we use a special name for these generic type functions? Let's call them contract.
+and each function of that type is an implementation of a contract.
+and when I write `process = fn(...hasher:> Hasher(T)...)` it means I need an implementation for that contract based on the type my function is called.
+and if used with `:>` it gives me runtime dynamic dispatch for union types.
+But note that, still in a generic function, I cannot say this function only accepts `T|S`. It could be called with any type.
+The onyl way I can filter, is to add a contract impl so that if a type doesn't have that impl, caller cannot call my function.
+q: can I have contract impl for getting a field value from a struct?
+like: getRankFromT. So it can be used in sorting.
+```
+Ranker = fn(T: type -> type) { fn(data: T -> int) }
+customerRanker: Ranker(Customer) = fn(data: Customer -> int) {data.age}
+Sort = fn(data: [T], ranking:> Ranker(T) -> [T])...
+```
+
+? - Is this notation ok?
+`MyFund = fn(T: type -> type) { fn(data: T->int) }`
+we can define it in one go.
+but this sometimes helps us define the function type easier without needing to use `_`s.
+
 
