@@ -975,4 +975,20 @@ a bit more verbose but more flexible and developer has more control.
 what about multi-types?
 `Draw = fn(S: type, T: type -> type) { ... }`
 `drawFunction = runtimeFindImpl(my_shape, my_canvas, Draw)`
+**Proposal: Open functions**
+1. Body is optional for all functions. If a bodyless function is called, there will be compiler/runtime errors.
+2. A contract is a generic function type marked with `!`: `ToString = fn!(T: type -> type) { fn(data: T -> string) }`
+3. An implementation function, implementes a contract for a concrete type: `intToString: ToString(int) = fn(x: int -> string) ...`
+Example: `ToString` contract.
+```
+ToString = fn!(T: type -> type) { fn(data: T -> string) }
+intToString: ToString(int) = fn(x: int -> string) ...
+myFunction = fn(item: T, stringer: ToString(T), T: type -> int) { ... result = stringer(data) ... }
+process = fn(item: T, canvas: S,S: type, T: type, drawFunction: Draw(S,T) -> int) { ... result = drawFunction(item, canvas) ... }
+...
+myFunction(int_var, intToString)
+myFunction(int_or_float)
+```
+so, you can omit passing functions which are of a contract type. Runtime/compiler will automatically find them for you.
+if compiler cannot find an impl for static type of the binding, and we have impl for all possible cases of dynamic type (for unions), the it will be done at runtime.
 
