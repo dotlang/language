@@ -991,4 +991,51 @@ myFunction(int_or_float)
 ```
 so, you can omit passing functions which are of a contract type. Runtime/compiler will automatically find them for you.
 if compiler cannot find an impl for static type of the binding, and we have impl for all possible cases of dynamic type (for unions), the it will be done at runtime.
+q: How can I implement type `Draw(S,T)` for Circle and all types of Canvas?
+we can define `Draw(S)` which returns a generic function: `fn(shape: S, canvas: C, C: type -> ...`
+and then implement it: `myCustomDraw: Draw(Circle) = fn(shape: Circle, canvas: C, C: type -> ...`
+then how can I declare function process needs this?
+`process = fn(item: T, canvas: S,S: type, T: type, drawFunction: Draw(S,T) -> int)`
+type decl is a bit weird. Why not use it after fn? It is a new notation. type decl is necessary because we have said, named type are not same as underlying type.
+so when process function needs `stringer: ToString(T)` only a function of that type is allowed.
+```
+ToString = fn!(T: type -> type) { fn(data: T -> string) }
+intToString: ToString(int) = fn(x: int -> string) ...
+myFunction = fn(item: T, stringer: ToString(T), T: type -> int) { ... result = stringer(data) ... }
 
+Draw = fn!(S: type, C: type -> type) { fn(shape: S, canvas: C, color: float -> string) }
+drawCircleOnSolidCanvas: Draw(Circle, SolidCanvas) = fn(shape: Circle, canvas: SolidCanvas, color: float -> string) { ... }
+process = fn(item: T, canvas: S,S: type, T: type, drawFunction: Draw(S,T) -> int) { ... result = drawFunction(item, canvas) ... }
+...
+myFunction(int_var, intToString)
+myFunction(int_or_float)
+```
+and you cannot mix contracts, because you cannot type a named type:
+`MyInt: float = int` does not make sense.
+so you cannot write `Draw: GenericDraw = fn!(...)`
+and no, you cannot define a function with only specifying one generic type value. All generic types must have concrete types.
+```
+drawCircleOnSolidCanvas: Draw(Circle, SolidCanvas) = fn(shape: Circle, canvas: SolidCanvas, color: float -> string) { ... }
+drawSquareOnAnyCanvas: Draw(Circle, Canvas) = fn(shape: Circle, canvas: Canvas, color: float -> string) { ... }
+```
+so, here we assume Canvas is a union type and not generic. which is fine.
+__in all cases, caller of a function has the option to specifically provide an appropriately typed function as implementation of a contract__
+```
+ToString = fn!(T: type -> type) { fn(data: T -> string) }
+intToString: ToString(int) = fn(x: int -> string) ...
+myFunction = fn(item: T, stringer: ToString(T), T: type -> int) { ... result = stringer(data) ... }
+
+myFunction(int_var, intToString)
+myFunction(int_or_float)
+
+Draw = fn!(S: type, C: type -> type) { fn(shape: S, canvas: C, color: float -> string) }
+drawCircleOnSolidCanvas: Draw(Circle, SolidCanvas) = fn(shape: Circle, canvas: SolidCanvas, color: float -> string) { ... }
+drawSquareOnAnyCanvas: Draw(Circle, Canvas) = fn(shape: Circle, canvas: Canvas, color: float -> string) { ... }
+process = fn(item: T, canvas: S,S: type, T: type, drawFunction: Draw(S,T) -> int) { ... result = drawFunction(item, canvas) ... }
+...
+```
+so, if you omit value for a contract when calling a function, runtime will find something for it.
+so for example if contract is `Contract(S,T,U,V)` compiler/runtime will first find values for S,T,U,V types based on rest of the parameters used to call the function.
+then we will have something like `Contract(int, string, float, Customer)` and then all functions of type `Contract` will be searched.
+not that, if call is made with a union e.g. `int|string` and above search fails during compile time, runtime will use dynamic type of the union binding to dispatch the call.
+but compiler will make sure all of the union cases have a candidate.
