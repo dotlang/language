@@ -1139,6 +1139,33 @@ process = fn(item: T, canvas: S,S: type, T: type, drawFunction:> Draw(S,T) -> in
 Of course, caller can still explicitly pass values for those arguments.
 if compiler cannot find an impl for static type of the binding, and we have impl for all possible cases of dynamic type (for unions), the it will be done at runtime.
 Note that there are rules (explained in the next section), on how/what can be resolved automatically.
+So, suppose that we want to write a graph traversal algorithm. Graph can have two types of nodes: basic (leaf) and complex (non-left).
+Each one has its own processing.
+```
+NodeType = BasicNode | CompleNode
+MyGraph = Graph(NodeType)
+ProcessNode = fn(T: type -> type) { fn(node: T, T: type -> string) }
+processBasicNode: ProcessNode(BasicNode) = fn(node: BasicNode ...
+processComplexNode: ProcessNode(CompleNode) = fn(node: CompleNode, ...
+
+processGraphNode = fn(x: T, T:> type, processor:> ProcessNode(T) -> string) { processor(x) }
+processGraph = fn(g: NodeType -> string) {
+  data = processGraphNode(g)
+  foreach node in g.rootNode.children:
+    processGraph(node)
+}
+```
+whenever you call `processGraphNode` you should also have a processor function for the type you are sending.
+q: Is it still possible to provide default impl?
+q: how can we use this for getHashCode?
+```
+Hasher = fn(T: type -> type) { fn(data: T, T: type -> int) }
+intHasher: Hasher(int) = fn...
+stringHasher: Hasher(string) = fn...
+...
+process = fn(data: T, hasher:> Hasher(T), ... 
+```
+
 
 ? - should we make it explicit that we expect runtime to provide value for a function argument?
 For:
@@ -1146,7 +1173,7 @@ For:
 - `T|nothing` arguments: pass `nothing`
 - Contract arguments: Resolution
 - Numbers: Pass 0
-- Manual: 
+- Manual: `x:10> int` no this is too much
 `process = fn(x: int, data: T, T: type, stringer: ToString!(T), len: int|nothing -> string) { ... }`
 `process = fn(x: int, data: T, T :> type, stringer:> ToString!(T), len:> int|nothing -> string) { ... }`
 this looks better. and is explicit.
