@@ -822,9 +822,157 @@ interface? no.
 open method? method is for OOP
 open function. sounds good.
 Defining an open function: `draw = fn!(shape: T, c: Canvas, color: float, T: type -> nothing)`
-Implementing an open function for a specific type: `drawCircle = fn!draw(shape: Circle, c: Canvas, color: float -> nothing) {...}`
+Specializing an open function for a specific type: `drawCircle = fn!draw(shape: Circle, c: Canvas, color: float -> nothing) {...}`
 Calling an open function: `result = draw(my_shape)` or `result = draw(my_circle)`
 `draw(my_circle)` will do this:
 1. find draw -> it is an open function
 2. find a single function which says `fn!draw` and has a circle input type
 3. invoke that function.
+q: what if open function has multiple generic types?
+q: how can I specialize draw for `Stack` generic type? and also for `Stack(int)` type?
+**Proposal: Open functions**
+1. You can define a generic function as open by adding `!` after fn. 
+2. As they are generic, you cannot pass them around.
+3. An open function, is a function which can be specialized for different types, with different behavior for each type.
+4. To specialize an open function you should use `fn!A` in specialized function where A is name of the open function.
+5. When a call is made to the open function, it is automatically redirected to the correct specialization based on type of arguments.
+===
+q: what if I have specialized draw for `Circle|Square`? Then calling with a binding of that type will call that specialization.
+so, if you call an open function with a union, the best specialization will be picked at runtime.
+if it is `T|S` and we have a specialization fot that specific type, it will be invoked.
+Otherwise, runtime type of the binding will be used.
+Function call resolution: When an open function is called, compiler/runtime will search in all functions with `fn!A` in definition.
+The fact that this function is specializing open method X, should it be reflected on the function name or function decl?
+```
+draw = fn!(shape: T, c: Canvas, color: float, T: type -> nothing)
+draw[Circle] = fn(shape: Circle, c: Canvas, color: float -> nothing) {...}
+```
+there is no point in forcing developer to provide a default function body for open function.
+but also there is no point in banning that.
+so to make it general, we can say, __any function can have an optional body.__
+of course if you call a function that has no body, runtime error will happen.
+```
+draw = fn!(shape: T, c: Canvas, color: float, T: type -> nothing)
+draw[Circle] = fn(shape: Circle, c: Canvas, color: float -> nothing) {...}
+drawMyCircle = fn!draw(...)
+drawCircle!draw = fn(...)
+```
+if I put it with `fn!draw` then what if I define a local lambda with that notation?
+then function dispatch will not be compile time.
+but we cannot differentiate between module level and fn level lambdas.
+in other words, is this a feature of the function type? specializing an open function?
+I think it is.
+__specialization of an open function is property of a type__
+q: what if open function has multiple generic types? 
+you can still specialize it by providing concrete types for one of more of its generic types.
+It will result in a hierarchy of specializations.
+at runtime, the best function, will be called.
+BUT suppose that open function has `Shape, Canvas` type arguments.
+we specialize it for `Circle, Canvas` and also `Shape, SolidCanvas`.
+and then we call the function with `Circle, SolidCanvas`. 
+What happens? there must be a specialization matching "exactly" with concrete types.
+so there will be a compiler/runtime error unless you have a specialization for `Circle, SolidCanvas`.
+q: what if I have stringify, and specialize it for `Stack(T)` and also `Stack(int)`? how can that be done?
+```
+stringer = fn(x: T -> string) 
+stackToString = fn!stringer(x: Stack(T), T: type -> string) ...
+intStackToString = fn!stringer(x: Stack(int) -> string) ...
+```
+now, calling stringer with `Stack(int)` will invoke `intStackToString` but calling it with any other stack will invoke `stackToString`.
+**Proposal: Open functions**
+1. Body is optional for functions. If a bodyless function is called, there will be compiler/runtime errors.
+2. An open function is a generic function marked with `!`: `draw = fn!(shape: T, c: Canvas, color: float, T: type -> nothing)`
+3. An implementation function, implementes an open function for a concrete type: `drawMyCircle = fn!draw(shape: Circle, c: Canvas, color: float -> nothing) {...}`
+4. When an open function is being called, compiler/runtime will check all functions in scope who have `!A` in their type. And the one that exactly matches with input types will be called. If nothing is found, the open function itself is invoked. If a union is passed and has no match, runtime type of the union will be used.
+Example: `toString` open function.
+```
+toString = fn!(x: T, T: type -> string)
+intToString = fn!toString(x: int -> string) ...
+floatToString = fn!toString(x: float -> string) ...
+stackToString = fn!toString(x: Stack(T), T: type -> string) ...
+intStackToString = fn!toString(x: Stack(int) -> string) ...
+```
+If you call `toString` with a `Stack(float)` then `stackToString` will be called.
+If you call `toString` with `int|float`, runtime type of the union will be used to do the dispatch.
+===
+q: can I call an open function with T generic type? yes but based on rule of generics, T must have a value at compile time.
+so, what does this add?
+1. `fn!` notation for both open function and implementation.
+q: when writing a function, how can I say, I expect `toString` open function to have an implementation for this generic type T?
+```
+process = fn(data: T, T: type -> int) { ... result = toString(data) ... }
+```
+problem is, the open function can have multiple types:
+`draw = fn!(shape: T, canvas: S, color: float, T: type, S: type -> nothing)`
+`drawCircleOnSolidCanvas = fn!draw(shape: Circle, canvas: SolidCanvas, color: float -> nothing) { ... }`
+now, I have a process function, which needs to call draw
+`process = fn(item: T, canvas: S,S: type, T: type, draw(S,T): fn -> int) { ... result = toString(data) ... }`
+`draw(S,T): fn` means draw open function must be implemented for types S and T.
+so I should be able to write: `draw(item, canvas, ...)`
+q: why not make open functions, types?
+and implementations are just of that type?
+```
+ToString = fn(T: type -> type) { fn(x: T, T: type -> string) } #nothing new
+toStringInt: ToString(int) = fn(x:int -> string) { ... } #nothing new
+genericToString = fn!ToString(T)(data: T -> string) { (optional) default impl } #!ToString - define an open method
+str_val = genericToString(int_var) #nothing new
+process = fn!ToString(T)(data: T -> float) { here we know T has an implementation for ToString
+```
+vs
+```
+toString = fn!(x: T, T: type -> string) #body is optional
+intToString = fn!toString(x: int -> string) ...
+
+process = fn(data: T -> float) + toString(T) { ... here I want to be able to call toString(data) ... }
+```
+better not to mix this open function concept with type declaration for functions.
+`+ toString(T)` means this function expects `toString` function to be defined for type T.
+**Proposal: Open functions**
+1. Body is optional for all functions. If a bodyless function is called, there will be compiler/runtime errors.
+2. An open function is a generic function marked with `!`: `draw = fn!(shape: T, c: Canvas, color: float, T: type -> nothing)`
+3. An implementation function, implementes an open function for a concrete type: `drawMyCircle = fn!draw(shape: Circle, c: Canvas, color: float -> nothing) {...}`
+4. When an open function is being called, compiler/runtime will check all functions in scope who have `!A` in their type. And the one that exactly matches with input types will be called. If nothing is found, the open function itself is invoked. If a union is passed and has no match, runtime type of the union will be used.
+Example: `toString` open function.
+```
+toString = fn!(x: T, T: type -> string)
+intToString = fn!toString(x: int -> string) ...
+floatToString = fn!toString(x: float -> string) ...
+stackToString = fn!toString(x: Stack(T), T: type -> string) ...
+intStackToString = fn!toString(x: Stack(int) -> string) ...
+process = fn(data: T -> float) + toString(T) { ... } #the process generic function expects type T to have an impl for toString function
+```
+If you call `toString` with a `Stack(float)` then `stackToString` will be called.
+If you call `toString` with `int|float`, runtime type of the union will be used to do the dispatch.
+---
+this should be super easy and super explicit.
+explicit: need `!` when defining open function. need `!NAME` when defining implementations.
+maybe we should separate generic type and rest of the arguments. so `toString(T)` makes sense.
+```
+ToString = fn!(T: type -> type) { fn(data: T -> string) }
+intToString: ToString(int) = fn(x: int -> string) ...
+floatToString: ToString(float) = fn(x: float -> string) ...
+stackToString: ToString(Stack) = fn(x: Stack(T), T: type -> string) ...
+intStackToString: ToString(Stack(int)) = fn(x: Stack(int) -> string) ...
+process = fn(data: T -> float) + ToString(T) { ... } #the process generic function expects type T to have an impl for toString function
+```
+using a type here needs less new notations. but we no longer have default impl.
+also, how am I supposed to call the function that implements ToString for my type T inside process?
+`process = fn(data: T, toString: ToString(T), T: type -> float) { ... }`
+this works well with multiple types:
+`process = fn(item: T, canvas: S,S: type, T: type, drawFunction: Draw(S,T) -> int) { ... result = toString(data) ... }`
+then when calling process:
+`x = process(my_int, intToString, int)`
+so this is fine except for:
+1. it is difficult to remember all impl functions for all types
+2. what about union?
+`drawShape = (s: T, drawFunc: Draw(T) -> ...`
+```
+my_shape = loadShape(...)
+drawFunction = runtimeFindImpl(my_shape, Draw) #find a function of type Draw(T) where T is runtime type of my_shape
+drawShape(my_shape, drawFunction)
+```
+a bit more verbose but more flexible and developer has more control.
+what about multi-types?
+`Draw = fn(S: type, T: type -> type) { ... }`
+`drawFunction = runtimeFindImpl(my_shape, my_canvas, Draw)`
+
