@@ -1156,7 +1156,7 @@ processGraph = fn(g: NodeType -> string) {
 }
 ```
 whenever you call `processGraphNode` you should also have a processor function for the type you are sending.
-q: Is it still possible to provide default impl?
+q: Is it still possible to provide default impl? no.
 q: how can we use this for getHashCode?
 ```
 Hasher = fn(T: type -> type) { fn(data: T, T: type -> int) }
@@ -1164,7 +1164,11 @@ intHasher: Hasher(int) = fn...
 stringHasher: Hasher(string) = fn...
 ...
 process = fn(data: T, hasher:> Hasher(T), ... 
+makeMap = fn(K: type, V: type, hasher :> Hasher(K) -> [K:V]) { ... }
 ```
+so, in above graph example, you cannot simply call any of two process functions (basic or complext), by just having a union binding of them.
+you need to write a function to do that:
+`processGraphNode = fn(x: T, T:> type, processor:> ProcessNode(T) -> string) { processor(x) }`
 
 
 ? - should we make it explicit that we expect runtime to provide value for a function argument?
