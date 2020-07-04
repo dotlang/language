@@ -712,3 +712,119 @@ drawFunction = draw[type(s)]()
 ```
 getType returns error if it cannot do the casting.
 
+? - Expression problem
+adding new operation: this is easy in FP. but what about us?
+we have a `superDraw` function which does draw. So adding a new operation is just adding new functions for them.
+those types can be anywhere.
+But what about new type?
+if we add "Oval", then what happens to superDraw?
+```
+drawCircle = fn(x: Circle, c: Canvas, f: Color->int) {...}
+drawSquare = ...
+drawTriangle = ...
+
+superDraw = fn(s: Shape->nothing) {
+      #here key is type, and value is a lambda which takes a canvas and a color and returns error or int
+      draw = [
+        Circle: fn{ drawCircle(getType(x, Circle)@,_,_) }, 
+        Square: fn{ drawSquare(getType(x, Square)@,_,_) }, 
+        Triangle: fn{ drawTriangle(getType(x, Triangle)@,_,_) }
+    ]
+      drawFunction = draw[type(s)]() #get compile time type of "s"
+      drawFunction()
+}
+```
+we can solve this via multimethods.
+Clojure has protocols to solve expression problem but they dispatch only on type of the first argument. which is not efficient.
+```clojure
+(defmulti evaluate class)
+
+(defmethod evaluate Constant
+  [c] (:value c))
+
+(defmethod evaluate BinaryPlus
+  [bp] (+ (evaluate (:lhs bp)) (evaluate (:rhs bp))))
+
+//Adding a new operation
+(defmulti stringify class)
+
+(defmethod stringify Constant
+  [c] (str (:value c)))
+
+(defmethod stringify BinaryPlus
+  [bp]
+  (clojure.string/join " + " [(stringify (:lhs bp))
+                              (stringify (:rhs bp))]))
+                              
+//Adding a new data type like FunctionCall
+(defmethod evaluate FunctionCall
+  [fc] ((:func fc) (evaluate (:argument fc))))
+
+(defmethod stringify FunctionCall
+  [fc] (str (clojure.repl/demunge (str (:func fc)))
+            "("
+            (stringify (:argument fc))
+            ")"))
+```
+This solution introduces a new concept: multi-method. Which is actually "open-method". A method which is open. You can add to it. 
+What would this look like in dotLang?
+```
+evaluate = fn!()
+evaluateConstant = fn!evaluate(x: constant -> constant) { x }
+evaluateBinaryPlus = fn!evaluate(left: ?, right: ? -> int) { left + right}
+#new operation
+stringify = fn!()
+stringgifyConstant = fn!stringify(x: constant -> string ) ...
+#adding new type
+FunctionCall = struct ...
+evaluateFnCall = fn!evaluate(x: FunctionCall -> ...
+stringifyFnCall = fn!stringify(x: FunctionCall -> ...
+```
+This clearly solves expression problem.
+Also, we don't need to write multiple functions with the same name. They continue to exist with their own name.
+what is new?
+1. we mark a function as an open-method `evaluate = fn!()`
+2. we mark other functions as an extension for an open method `x = fn!parent...`
+===
+we need to specify structure of the files in the open method.
+what about calling?
+`x = evaluate(item)` item can be anything for which we have implemented evaluate open method.
+so, evaluate is a real function, but its pieces are gathered and assembled during compile time and dispatched during runtime.
+in evaluate we need to specif function signatures.
+Let's rewrite above for shapes:
+```
+draw = fn!()
+drawCircle = fn!draw(...)
+drawSquare = fn!draw(...)
+#new operation
+stringify = fn!()
+intToString = fn!stringify...
+floatToString = fn!stringify...
+#new shape
+drawOval = fn!draw(...)
+```
+now, all draw functions must have the same signature. otherwise people cannot call them via their parent.
+this common signature is defined in parent function `draw`
+`draw = fn!(shape: T, c: Canvas, color: float, T: type -> nothing)`
+then we can implement this open method for any type we want:
+`drawCircle = fn!draw(shape: Circle, c: Canvas, color: float -> nothing) {...}`
+and how can I actually draw something?
+```
+Shape = Circle | Square
+my_shape = readShape()
+draw(my_shape, canvas1, red_color)
+```
+above `draw` call will be dispatched to the correct function based on type of `my_shape`.
+we can also simply call draw with a concrete type: `draw(my_circle, canvas1, red)`
+q: how can we say in a generic function, I accept type T, but the type T must have implemented that open method?
+q: what should this be called? contract is not good because takes away the fact that it is just a function.
+interface? no.
+open method? method is for OOP
+open function. sounds good.
+Defining an open function: `draw = fn!(shape: T, c: Canvas, color: float, T: type -> nothing)`
+Implementing an open function for a specific type: `drawCircle = fn!draw(shape: Circle, c: Canvas, color: float -> nothing) {...}`
+Calling an open function: `result = draw(my_shape)` or `result = draw(my_circle)`
+`draw(my_circle)` will do this:
+1. find draw -> it is an open function
+2. find a single function which says `fn!draw` and has a circle input type
+3. invoke that function.
