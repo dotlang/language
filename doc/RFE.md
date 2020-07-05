@@ -1235,10 +1235,36 @@ Ranker = fn(T: type -> type) { fn(data: T -> int) }
 customerRanker: Ranker(Customer) = fn(data: Customer -> int) {data.age}
 Sort = fn(data: [T], ranking:> Ranker(T) -> [T])...
 ```
+We can even use this to filter out specific types.
+```
+IsNumber = fn(T: type -> type) { fn(nothing -> boolean) }
+intIsNumber: IsNumber(int) = fn(nothing->boolean) { true }
+
+process = fn(data: T, T:> type, isNumber :> IsNumber(T) -> string) { ...}
+```
+Here in process, we want to make sure type T is a number.
 
 ? - Is this notation ok?
 `MyFund = fn(T: type -> type) { fn(data: T->int) }`
 we can define it in one go.
 but this sometimes helps us define the function type easier without needing to use `_`s.
 
+? - Module level constants should be all caps with more than one letter.
+Generic type names must be single letter caps.
 
+? - Indicate that:
+`string = [char]`
+`bool = true|false`
+
+? - Is it correct to say, struct fields must have name?
+
+? - Should we allow optional args `:>` in the middle of arg list?
+caller can call function with: `process(1,2,,3)` notation.
+not very useful but one less rule.
+
+? - Can you import multiple items and pass them to a function in one go?
+`processIntegers(import('a')..{num1, num2, num3})`
+or you should define them separately
+what about function call?
+`process3Integers(get3Integers())`
+is this ok?
