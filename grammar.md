@@ -1,8 +1,6 @@
 # EBNF-like grammar
 
-## Legend
-
-Format: 
+## Format
 
 ```ebnf
 Result  ::= component1 ( component2 | component3 ) | component4 | [component5] component6
@@ -13,10 +11,10 @@ Result  ::= component1 ( component2 | component3 ) | component4 | [component5] c
 - [A]: Optional A
 - (A)* : Repeating A zero or more times
 - (A)+ : Repeating A one or more times
-- {A}  : Repeating A zero or more times, separated with comma
+- {A}*  : Repeating A zero or more times, separated with comma
 ```
 
-## Main parts
+## Top level
 
 ```ebnf
 Module                  ::= ( ImportDecl | TypeDecl | BindingDecl )*  
@@ -25,16 +23,18 @@ Module                  ::= ( ImportDecl | TypeDecl | BindingDecl )*
 ## Naming basics
 
 ```ebnf
-TypeName                ::= CAPITAL_LETTER CHAR*
-BindingName             ::= ['_test'] (CHAR|'_')*
-ModuleAlias             ::= (CHAR|'_')*
+TypeName                ::= CAPITAL_LETTER (ALPHABET)*
+BindingName             ::= ValueBindingName | TypeName | FunctionName
+ValueBidningName        ::= (LOWERCASE) (LOWECASE | '_')*
+FunctionName            ::= LOWERCASE (LOWERCASE | CAPITAL_LETTER)*
+ModuleAlias             ::= ValueBidningName
 ```
 
 ## Import
 
 ```ebnf
 ImportDecl              ::= ImportAliasDecl | ImportSelectiveDecl  
-ImportAliasDecl         ::= [ ModuleAlias '=' ] Import  
+ImportAliasDecl         ::= (ModuleAlias | '_') '=' Import  
 Import                  ::= 'import' '(' ImportString ')'
 ImportSelectiveDecl     ::= { BindingName } '=' Import '..' '{' { BindingName } '}'
 ImportString            ::= STRING | BindingName | STRING '+' StringLiteral       
