@@ -66,7 +66,8 @@ MulExpression           ::= UnaryExpression  { ('*'|'/'|'%'|'%%') UnaryExpressio
 UnaryExpression         ::= ['not'|'-']      BasicExpression
 BasicExpression         ::= ['('] PrimaryExpression [')']
 PrimaryExpression       ::= Literal | Identifier | StructAccessExpression | MapSeqAccessExpression | 
-                                FnCallExpression | StructExpression | LambdaCreatorExpression | FnDeclaration
+                                FnCallExpression | StructExpression | LambdaCreatorExpression | FnDeclaration |
+                                IfExpression | ElseExpression | ErrorCheckExpression
 StructAccessExpression  ::= Expression '.' Identifier
 MapSeqAccessExpression  ::= Expression '[' Expression ']'
 FnCallExpression        ::= Expression '(' { Expression }* ')'
@@ -74,7 +75,9 @@ StructExpression        ::= ( TypeName | StructType | '&' ) '{' {FieldValueList}
 FieldValueList          ::= { [ Identifier ':' ] Expression }
 LambdaCreatorExpression ::= Expression '(' { Expression | '_' }* ')'
 FnDeclaration           ::= 'fn' ['(' { Identifier ':' Type } '->' {Type}+ ')'] '{' Expression+ '}'
-
+IfExpression            ::= Expression '?' Expression
+ElseExpression          ::= Expression '//' Expression
+ErrorCheckExpression    ::= Expression '@' [ '{' Expression '}' ]
 Literal                 ::= IntLiteral | FloatLiteral | CharLiterl | StringLiteral | NothingLiteral | 
                                 BoolLiteral | SeqLiteral | MapLiteral | StructLiteral | TypeLiteral
 ```
@@ -83,5 +86,5 @@ Literal                 ::= IntLiteral | FloatLiteral | CharLiterl | StringLiter
 # To Be Added Later
 
 - Generics
-- Concurrency
+- Concurrency and channels 
 - Modules and import
