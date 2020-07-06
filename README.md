@@ -66,3 +66,4 @@ Below is history of changes (time + summary of what changed) to the dotLang spec
  - June 22, 2020: Struct literals can use `&` instead of type if it can be inferred.
  - June 28, 2020: Remove support for validator function attached to struct types (can be done via custom functions), notes about resource management and destructors
  - July 1, 2020: Updated How-To section with a better example for polymorphism
+ - July 6, 2020: Added `:>` notation for type inference, optional arguments and contracts. 
