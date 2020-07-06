@@ -724,6 +724,42 @@ For:
 this looks better. and is explicit.
 so function argument of the pattern `name :> type` means if it is not provided, compiler/runtime should try to find a value for it.
 
+N - Indicate that:
+`string = [char]`
+`bool = true|false`
+
+N - Is it correct to say, struct fields must have name?
+yes
+
+N - Is this notation ok?
+`MyFund = fn(T: type -> type) { fn(data: T->int) }`
+we can define it in one go.
+but this sometimes helps us define the function type easier without needing to use `_`s.
+yes it is fine.
+
+N - Module level constants should be all caps with more than one letter.
+Generic type names must be single letter caps.
+
+N - Can you import multiple items and pass them to a function in one go?
+`processIntegers(import('a')..{num1, num2, num3})`
+or you should define them separately
+I think this should be allowed because they are the same.
+it is confusing, but we cannot prevent it.
+why not? it makes reading code harder because at firt sight someone may think processIntegers has only one input.
+Let's say, the only allowed notation is `A,B,C,... = import("...")..{a, b, c, ...}`
+or: `x,y,z = t..{a,b,c}`
+
+Y - what about function call?
+`process3Integers(get3Integers())`
+is this ok?
+
+Y - If I have `MyType = fn(a: T, T: type ->int)` is `MyType(_, int)` a type? can I use it in other places?
+yes we can. another way to simplify this is:
+```
+MyType = fn(T: type -> type) { fn(x: T -> int) }
+process = fn(x: MyType(int) -> ...)
+```
+
 ? - Expression problem
 adding new operation: this is easy in FP. but what about us?
 we have a `superDraw` function which does draw. So adding a new operation is just adding new functions for them.
@@ -1186,7 +1222,7 @@ you need to write a function to do that:
 2. For example if you expect an argument which is a function of type `:> ToString(T)` and function is called with `T=int`, if this argument is missing, compiler/runtime will automatically find a function of type `ToString(int)` for you so caller does not need to pass them explicitly.
 3. For `x :> T|nothing` nothing will be used. For `x :> int` zero will be used if missing.
 4: for `T :> type` compiler will infer type.
-5. For `x :> ToString(T)` and T is a union function, if no impl exists for static type of x, compiler will make sure impl for each option of union type T is there and delegate the rest to runtime
+5. For `x :> ToString(T)` and T is a union, if no impl exists for static type of x, compiler will make sure impl for each option of union type T is there and delegate the rest to runtime
 Example:
 ```
 ToString = fn(T: type -> type) { fn(data: T -> string) }
@@ -1244,27 +1280,9 @@ process = fn(data: T, T:> type, isNumber :> IsNumber(T) -> string) { ...}
 ```
 Here in process, we want to make sure type T is a number.
 
-? - Is this notation ok?
-`MyFund = fn(T: type -> type) { fn(data: T->int) }`
-we can define it in one go.
-but this sometimes helps us define the function type easier without needing to use `_`s.
-
-? - Module level constants should be all caps with more than one letter.
-Generic type names must be single letter caps.
-
-? - Indicate that:
-`string = [char]`
-`bool = true|false`
-
-? - Is it correct to say, struct fields must have name?
 
 ? - Should we allow optional args `:>` in the middle of arg list?
 caller can call function with: `process(1,2,,3)` notation.
 not very useful but one less rule.
+caller can ignore them if they are all at the end. otherwise, an empty comma should be used.
 
-? - Can you import multiple items and pass them to a function in one go?
-`processIntegers(import('a')..{num1, num2, num3})`
-or you should define them separately
-what about function call?
-`process3Integers(get3Integers())`
-is this ok?
