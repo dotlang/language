@@ -760,7 +760,7 @@ MyType = fn(T: type -> type) { fn(x: T -> int) }
 process = fn(x: MyType(int) -> ...)
 ```
 
-? - Expression problem
+Y - Expression problem
 adding new operation: this is easy in FP. but what about us?
 we have a `superDraw` function which does draw. So adding a new operation is just adding new functions for them.
 those types can be anywhere.
@@ -1281,8 +1281,11 @@ process = fn(data: T, T:> type, isNumber :> IsNumber(T) -> string) { ...}
 Here in process, we want to make sure type T is a number.
 
 
-? - Should we allow optional args `:>` in the middle of arg list?
+Y - Should we allow optional args `:>` in the middle of arg list?
 caller can call function with: `process(1,2,,3)` notation.
 not very useful but one less rule.
 caller can ignore them if they are all at the end. otherwise, an empty comma should be used.
 
+N - To solve expression problem, when a new type is added, we need to modify original union type.
+you don't have to. you can use generic functions.
+but if you have a specific function that for example reads shapes from file, then yes you have to modify that function and if it returns a `Shape` then you have to modify it.
