@@ -1289,3 +1289,184 @@ caller can ignore them if they are all at the end. otherwise, an empty comma sho
 N - To solve expression problem, when a new type is added, we need to modify original union type.
 you don't have to. you can use generic functions.
 but if you have a specific function that for example reads shapes from file, then yes you have to modify that function and if it returns a `Shape` then you have to modify it.
+
+? - The fact that I cannot edit a union type later, is a bit counter intuitive.
+if contracts are like interfaces, I can implement them for any type I want. So no need for union type.
+but, what about the code that reads shapes from a file or database or network?
+I can make that code polymorphic too:
+```
+ShapeReader = fn(T: type -> type) { fn(file: File -> T) }
+circleReader: ShapeReader(Circle) = fn(file: File -> Circle) { ... }
+squareReader: ShapeReader(Square) = fn(file: File -> Square) { ... }
+...
+readShapeInner = fn(T: type, reader :> ShapeReader(T) -> ? ) { ... }
+readShape = fn(f: File -> ?) {
+  type = f.getType()
+  readShapeInner(type)
+}
+```
+What is the output type of the generic function that reads all types of shapes?
+We need a dynamic union.
+union of all types T where we have implemented `ShapeReader` for them.
+`Shape = ShapeReader(_)`
+what if contract has multiple types?
+`Shape = Drawer(_, SolidCanvas)`
+`Shape = Drawer(_, _)`?
+`Shape = T where Drawer(T)`
+or we may have a function that generates those type?
+`Shape = fn(->type) { Drawer(T) }`
+`Shape = forall T: type -> Drawer(T)`
+rather than binding based on function signature we should bind based on type.
+because we may have multiple contracts and maybe some of those types don't have an impl.
+https://wiki.haskell.org/Existential_type:
+has a good example
+```Haskell
+class Shape_ a where
+   perimeter :: a -> Double
+   area      :: a -> Double
+ 
+ data Shape = forall a. Shape_ a => Shape a
+ 
+ type Radius = Double
+ type Side   = Double
+  
+ data Circle    = Circle    Radius
+ data Rectangle = Rectangle Side Side
+ data Square    = Square    Side
+ ```
+ ```
+ Shape = struct{}
+ Circle: Shape = {r: float}
+ Square: Shape = {n: int}
+```
+no.
+we need a notation to find list of all types that implement a contract.
+`Shape = fn(->type) { Drawer(T) }`
+`Shape = forall T: type -> Drawer(T)`
+`Shape = Drawer(?)` - union of all types that implement this Drawer contract
+Nope. This is confusing. 
+is there a way that we don't need to do this?
+we can put these in functions + closure.
+`ShapeReader = fn(T: type -> type) { fn(file: File -> T) }`
+Now, `ShapeReader(Circle)` will give you a circle.
+```
+readShapeInner = fn(T: type, reader :> ShapeReader(T) -> T ) { ... }
+readShape = fn(f: File -> ?) {
+  type = f.getType()
+  readShapeInner(type)
+}
+```
+Can't we follow the same for types?
+we define a general contract (function-contract) and implement it for different types.
+we define a generic type-contract and implement it for different types.
+A contract on behavior: `Drawer = fn(T: type -> type) { fn(x: T -> string) }`
+A contract on type: `Shape = fn(T: type -> type) { Shape | T }`
+`Circle: Shape(Circle)`?
+we implement a behavior contract by defining a function of the given type.
+we implement a type contract by defining an unnamed type with that contract.
+`Circle = struct{...}`
+`_ = Shape(Circle)` a named type without a name. 
+`Shape = fn(T: type -> type) { Shape | T }`
+above implies, any call to type `Shape` with type `T` will enrich union type Shape with T.
+why not use the direct way?
+```
+Shape = 
+Shape |= Circle
+Shape |= Square
+```
+In haskell we define existential types as all types that satisfy a type class.
+```
+Draw = fn(S: type, C: type -> type) { fn(shape: S, canvas: C, color: float -> string) }
+drawCircleOnSolidCanvas: Draw(Circle, SolidCanvas) = fn(shape: Circle, canvas: SolidCanvas, color: float -> string) { ... }
+drawSquareOnAnyCanvas: Draw(Circle, Canvas) = fn(shape: Circle, canvas: Canvas, color: float -> string) { ... }
+process = fn(item: T, canvas: S,S: type, T: type, drawFunction:> Draw(S,T) -> int) { ... result = drawFunction(item, canvas) ... }
+```
+in `process` function above, `T` is limited by `:>` because T must be something that implements that function `Draw(S)`.
+can't we do the same for a type?
+`Shape = fn(S:> type, drawFunction:> Draw(S)->type)` This can imply `Shape` is a type where you don't have to pass a type to it.
+`Shape = fn(S:> type, _ :> Draw(S)->type) { S }`
+then when I write `x: Shape()` or `loadShape = fn(name: string -> Shape())` it means union of all types.
+`Shape = |fn(S:> type, _ :> Draw(S)->type)|`
+`Shape = |S| : Draw(S)` union of all S types where we have Draw implemented for them
+can we have multiple conditions? all types that satisfy contract A and B
+for OR we can simply | them: `NewType = A | B`
+`Shape = |S| :> Draw(S), Hasher(S), ...`
+q: what about multi-type contracts?
+for example we may have a contract of shape+canvas to draw shape on a canvas.
+`Drawer = fn(S,T -> type) { ... }`
+then, what if I need all shape types that have Drawer defined. for any canvas type?
+`Shape = |S| :> fn(S: type, _ :> Draw(S), _ :> Hasher(S), ...)`
+`Shape = |S| :> fn(S: type, T: type, _ :> Draw(S, T), _ :> Hasher(S, T), ...)` All S types where they have implemented Draw and Hasher contracts for any T
+`Shape = |S| :> fn(S: type, _ :> Draw(S, SolidCanvas), _ :> Hasher(S, NullCanvas), ...)` All S types where they have implemented Draw + SolidCanvas or Hasher for S and NullCanvas.
+**Proposal**:
+1. You can define a dynamic union based on implementations of one or more contracts.
+2. `XType = |T| :> fn(T: type, _ :> Contract1(T), :> Contract2(T), ...)`
+3. Above means XType will be union of all types like T where we have an implementation for Contract1 and Contract2 for T.
+4. This also supports multi-type contracts:
+`Shape = |S| :> fn(S: type, T: type, _ :> Draw(S, T), _ :> Hasher(S, T), ...)` All S types where they have implemented Draw and Hasher contracts for any T
+`Shape = |S| :> fn(S: type, _ :> Draw(S, SolidCanvas), _ :> Hasher(S, NullCanvas), ...)` All S types where they have implemented Draw + SolidCanvas or Hasher for S and NullCanvas.
+This becomes a bit fuzzy if someone decides to use this inside function decl.
+let's ban that.
+can't we simplify that?
+`XType = |T| :> Contract1(T), Contract2(T)`
+`Shape = |S| :> T: type, Draw(S, T), Hasher(S, T)`
+`Shape = |S| :> Draw(S, _), Hasher(S, _)`
+`Shape = |S| :> Draw(S, SolidCanvas), Hasher(S, NullCanvas)`
+With the help of this, can I extend a `readShape` function to read new types?
+```
+readShapeInner = fn(T: type, reader :> ShapeReader(T) -> Shape) { ... }
+```
+if above function is in a library which supports square and circle, can I extend above to support triangle?
+assuming I add a function for triangle?
+`readTriangle: ShapeReader(Triangle) = ...`
+Can we simplify multi-types?
+A `XType = |T| :> Contract1(T) + Contract2(T)`
+B `Shape = |S| :> Draw(S, _) + Hasher(S, _)`
+C `Shape = |S| :> Draw(S, SolidCanvas) + Hasher(S, NullCanvas)`
+D `Shape = |S| :> Draw(S) + Hasher(S) + ShapeSaver(S)`
+S above implies that if I have something of type `Shape` I have implementation of draw and has function and save function for it.
+so: if I write this:
+`process = fn(item: Shape -> string) { ... }`
+can I call `draw(item)` in it? you can but who is going to cast `draw` to `drawAAAA` actual function?
+That is why we added `:>` notation:
+`process = fn(item: T, T: type, drawFunction :> Draw(T) ) { ... drawFunction(item) ... }`
+in above, we need caller/compiler/runtime to give us a pointer to the actual draw function.
+so, process says I am a generic function which can work with any type T you can imagine, but it must have a drawFunction.
+D definition above says, `Shape` is a union of all types like S which implement Draw.
+these two are clearly related.
+can we make the relation more explicit?
+`process = fn(item: T, T: type[Shape], drawFunction :> Draw(T) ) { ... drawFunction(item) ... }`
+what does oop do? in oop, `Shape` is an interface with all functions needed. and you say `process` needs an argument of type `Shape`.
+ther you have access to impl of all of those functions.
+maybe we should not make the relation explicit. let it be more flexible.
+maybe some function needs a draw function but not for only a shape. anything that has that function is accepted.
+if I have a seq of Shapes how can I draw all of them?
+```
+drawOneShape = fn(item: T, T: type, drawFunction :> Draw(T) ) { drawFunction() }
+drawShapes = fn(items: [Shape] -> nothing) {
+  foreach x: Shape inside items: drawOneShape(x)
+}
+```
+but, if declaring supported functions for `Shape` is not going to be used anywhere, why declare them?
+just manually add types to it. other places are enforcing required functions which works and developer knows that to send/provide.
+so, rather than: `Shape = |S| :> Draw(S) + Hasher(S)`
+we write: `process = fn(data: T, T: type, drawFunc :> Draw(T), hashFunc :> Hasher(T) -> ...`
+then what is the point of Shape?
+we don't really need to put those specific requirements on type T.
+Because it is not going to be needed by functions. It might be useful for the developer as a documentation source but why 
+add so many new things to the language just for docs?
+so, what can we do?
+we need a union type which is extensible, but we don't want to have a strange inclusion criteria.
+simple types.
+to declare shape type `Shape = enum [Circle, Square]`
+to extend shape type `Shape = enum [Shape, Triangle]` 
+`ShapeEnum = enum [ShapeEnum, Circle, Square]`
+`ShapeEnum = enum [ShapeEnum, Triangle]`
+and how to define a union type?
+`Shape = |ShapeEnum|`
+why not merge above?
+`Shape = Shape | Circle | Square` this definition enables extension of the union type
+`Shape = Shape | Triangle`
+**Proposal**
+1. You can define a dynamic union by using union type on the right side: `T = T | S | U`
+2. For a dynamic union, it can be extended at any place in the code: `T = T | P` This adds P as a new case type for union type T
