@@ -1290,7 +1290,7 @@ N - To solve expression problem, when a new type is added, we need to modify ori
 you don't have to. you can use generic functions.
 but if you have a specific function that for example reads shapes from file, then yes you have to modify that function and if it returns a `Shape` then you have to modify it.
 
-? - The fact that I cannot edit a union type later, is a bit counter intuitive.
+Y - The fact that I cannot edit a union type later, is a bit counter intuitive.
 if contracts are like interfaces, I can implement them for any type I want. So no need for union type.
 but, what about the code that reads shapes from a file or database or network?
 I can make that code polymorphic too:
@@ -1470,3 +1470,6 @@ why not merge above?
 **Proposal**
 1. You can define a dynamic union by using union type on the right side: `T = T | S | U`
 2. For a dynamic union, it can be extended at any place in the code: `T = T | P` This adds P as a new case type for union type T
+---
+But this means that when I write a code to work with Shape, I cannot simply assume it will be only cases that I have specified.
+But that should be fine.
