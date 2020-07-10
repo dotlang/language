@@ -1473,3 +1473,46 @@ why not merge above?
 ---
 But this means that when I write a code to work with Shape, I cannot simply assume it will be only cases that I have specified.
 But that should be fine.
+
+N - How does dynamic union work with contracts?
+```Elixir
+Shape = Shape | Circle | Square
+Draw = fn(T: type -> type) { fn(item: T -> nothing) }
+drawCircle: Draw(Circle) = fn(item: Circle -> nothing) { ... }
+drawSquare: Draw(Square) = fn(item: Square -> nothing) { ... }
+draw = fn(item: T, T:>type, drawFunc:>Draw(T) -> nothing) { drawFunc(item) }
+drawAll = fn(shapes: [Shape] -> nothing) {
+  for each shape in shapes:
+      draw(shape)
+}
+```
+but in above code, what will be value of `T`? will it be actual type of the shape? or Shape?
+maybe we should call it like this: `draw(shape, internalType(shape))`
+anyway, how is dynamic union used?
+```
+Shape = Shape | Triangle
+drawTriangle: Draw(Triangle) = fn...
+#no change needed in draw function or drawAll
+```
+we can say, if you want `:>` to use static data then ... to use dynamic data use ... but it is confusing.
+how can developer know in advance?
+so, if `T` is a normal type then everything is ok.
+but if we call function with a union T, then there is the question of: should T be `A|B|C` or actual A or B or C type of what is passed?
+this only applies to generic functions.
+`draw = fn(item: T, T:>type, drawFunc:>Draw(T) -> nothing) { drawFunc(item) }`
+option 1: instead of `type` we can write `type+Shape` to indicate runtime type of T should be used.
+option 2: we can write `T:>>type` to say, T should be runtime type of the arguments, not static type.
+`draw = fn(item: T, T:>>type, drawFunc:>Draw(T) -> nothing) { drawFunc(item) }`
+because if we call draw with `Circle|Square` should T be `Circle|Square` or the actual type inside T?
+who should decide about this? caller? or function?
+consider this function:
+```
+myFunction = fn(item: T, stringer:> ToString(T), T:> type -> int) {
+  ... result = stringer(data) ... 
+}
+```
+when you call myFunction with `Circle|Square` what will be value of T?
+if call is for a non-union, everything is clear at compile time.
+if call is for a union type, and there is only type inference, compiler will infer to union type.
+if call is for a union and there is also function inference, compiler will check. If we have a function for union type, then it will be used to T will be union type.
+if we don't have a function for union type but we have a fn for union options, then T will be runtime type.
