@@ -1516,3 +1516,36 @@ if call is for a non-union, everything is clear at compile time.
 if call is for a union type, and there is only type inference, compiler will infer to union type.
 if call is for a union and there is also function inference, compiler will check. If we have a function for union type, then it will be used to T will be union type.
 if we don't have a function for union type but we have a fn for union options, then T will be runtime type.
+
+? - The dynamic union notation looks counter intuitive.
+old proposal
+A `XType = |T| :> Contract1(T) + Contract2(T)`
+B `Shape = |S| :> Draw(S, _) + Hasher(S, _)`
+C `Shape = |S| :> Draw(S, SolidCanvas) + Hasher(S, NullCanvas)`
+D `Shape = |S| :> Draw(S) + Hasher(S) + ShapeSaver(S)`
+Now, union looks like Java interface: support for multiple functions
+Contract is an interface with only one function
+union is all of the types that support one or more contracts.
+q: can we have union of type tuples? like Circle+SolidCanvas, Square+NopCanvas, ...?
+B above means Shape is union of all types like S where you can call Draw(S,T) for all Ts? like all possible types?
+no usually this is only for some types.
+So, I think if we have a multi-type contract, we should include all types in the union.
+but how?
+in Union we say int or float. how can we have multiple types?
+`MyUnion = int,float|string,char`
+Nope. This is too complicated.
+we can have multi-type contracts:
+`process = fn(x: T, y: S, saverFunc :> Saver(T,S) -> string) { ... }`
+so, defining a union using contracts, means multi-type unions.
+so:
+option 1: define dynamic union completely manually: `Shape = Shape | Triangle`
+option 2: define union using contracts they support: `Shape = |S| :> Contract1(S,_)`
+we can use option 2 but instead of `_` force user to write down type names.
+`Canvas = |C| :> CanvasCreator(C)`
+`MColor = BaseColor | ExtendedColor`
+`Shape = |S| :> Contract1(S,Canvas) + Contract2(S, MColor)`
+so, each parameter in the contract decl should be either of these:
+1. Normal type (Circle)
+2. Union (`int|string`)
+3. Another dynamic union
+q: is circular reference allowed in dynamic union? A refers to B, B refers to A?
