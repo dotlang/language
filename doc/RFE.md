@@ -1545,7 +1545,112 @@ we can use option 2 but instead of `_` force user to write down type names.
 `MColor = BaseColor | ExtendedColor`
 `Shape = |S| :> Contract1(S,Canvas) + Contract2(S, MColor)`
 so, each parameter in the contract decl should be either of these:
-1. Normal type (Circle)
-2. Union (`int|string`)
-3. Another dynamic union
+1. Normal concrete type (Circle or `int|string`)
+2. Another dynamic union
 q: is circular reference allowed in dynamic union? A refers to B, B refers to A?
+**Proposal**
+1. Static union is a union with fixed set of options: `Result = int|string`
+2. Dynamic union is a union defined based on functions defined over a type.
+Example:
+`Canvas = |C| : CanvasCreator(C)`
+`MColor = BaseColor | ExtendedColor`
+`Shape = |S| : Contract1(S,Canvas) + Contract2(S, MColor)`
+Syntax:
+`MyType = |X| : Contract1(X,Y,Z) + Contract2(T,K,X) + Contract3(...X...) + ...`
+so in above case, MType is a union of all types like X, for which all of the contracts above are implemented as declared.
+Terms on the right side are connected via `+` which means AND.
+Each term is of the format `Contract(A,B,C,...,N)` where Contract is a contract (a typed generic function) and arguments are contract arguments.
+At least one of the contract arguments should be X, the union type.
+Other arguments can either be concrete types like `int`, `Custmer` or `int|float` or they should be other dynamic unions.
+---
+so, how can this be linked to functions using contract?
+`process = fn(x: T, T: type, draw :> Draw(T) -> string ) {...}`
+now, if `Shape = |C| : Draw(C)` then Shape is all of the types that have Draw function implemented.
+but still someone can call `process` with `int` if they have implemented `Draw(int)`. but in that case, int will be part of Shape.
+so, can I write:
+`process = fn(x: T, T: type+Shape -> string) { draw(x) }`
+but then what about multi-type contracts? T and S?
+`process = fn(x: T, cnvs: C, T: type, C: type, draw :> Draw(S,T) -> string) { draw(x, cnvs) }`
+so dynamic union does not help us with these.
+`readShapes = fn(string: fileName -> [Shape]) { ... }`
+`readShape = fn(handle: int, T: type, reader :> ShapeReader(T) -> T) { ... }`
+I think I am making everything more and more complicated.
+more features, more notations, more cases, more rules, ...
+what is the absolute simplest method to get this done?
+problems:
+1. expression problem
+1.a: adding a new shape
+1.b: adding a save operation
+2. reading shapes from a drawing file
+3. drawing a sequence of shapes
+---
+start from 3: input seq of Shapes. so we have a union of all possible shapes.
+```
+drawShape = fn(x: T, T:> type, draw :> Draw(T) -> nothing) { draw(x) }
+drawShapes = fn(x: [Shape] -> nothing) {
+  foreach y: Shape in x:
+    drawShape(x)
+}
+```
+solved.
+problem 2: read list of shapes
+input: filename
+output: `[Shape]`
+```
+shapeReader = fn(name: string -> [Shape]) {
+  result = [for each block from file(name):
+              readSingle(block)]
+}
+readShapeSingle = fn(block: string, T: type, readerFunction:> Reader(T) -> T) { readerFunction(block) }
+readSingle = fn(block: string -> Shape) {
+  xshapeType = block[0]
+  ShapeType = convert(xShapeType)
+  readShapeSingle(block, ShapeType)
+}
+```
+so all done, except for the conver part: we need a mechanism to convert int/string/... to a UnionType.
+so, maybe we need to convert a union type to int and vice versa. A core function.
+but also one more thing: we said types are only for compile time! not runtime
+here we create a new type at runtime.
+what if don't use core and have some kind of switch?
+```
+readSingle = fn(block: string -> Shape) {
+  xshapeType = block[0]
+  if xShapeType == Circle then readCircle(...)
+  else if ... then readSquare(...)
+}
+```
+this also works but is not very elegant.
+```
+readSingle = fn(block: string -> Shape) {
+  xshapeType = block[0]
+  if xShapeType == Circle then read(block, Circle,...)
+  else if ... then read(block, Square...)
+}
+```
+and read function will call the correct function for that type.
+so solved. no need for any notation.
+1b. Adding a new operation like save for expression problem
+```
+Save = fn(T: type -> type) { fn(data:T->nothing) }
+saveCircle: Save(Circle) = fn(data: Circle->...
+saveSquare: ...
+```
+works fine.
+1a. Adding a new shape.
+What if I define a union not based on types, but based on contracts?
+`Shape = Circle | Square`
+`Shape = Draw(_)`
+`Shape = Draw(_, SolidCanvas)`
+this sounds better (simpler).
+but what if I want multiple contracts?
+what if I want: All types that satisfy contract A and B?
+`Shape = Draw(_, SolidCanvas) + ToString(_)` All types that can be put in places of `_` are in the union.
+and let's say, this is just a type and nothing more. Just a union.
+so if you have a variable of this type, how can I get corresponding implementations?
+the only way is to define a dedicated function:
+```
+helperFunc = fn(x: T, T: type, draw :> Draw(T) -> fn(T->nothing)) { draw }
+...helperFunc(my_shape)(my_shape)
+```
+
