@@ -819,7 +819,7 @@ What would this look like in dotLang?
 ```
 evaluate = fn!()
 evaluateConstant = fn!evaluate(x: constant -> constant) { x }
-evaluateBinaryPlus = fn!evaluate(left: ?, right: ? -> int) { left + right}
+evaluateBinaryPlus = fn!evaluate(left: ?, right: x -> int) { left + right}
 #new operation
 stringify = fn!()
 stringgifyConstant = fn!stringify(x: constant -> string ) ...
@@ -1517,7 +1517,7 @@ if call is for a union type, and there is only type inference, compiler will inf
 if call is for a union and there is also function inference, compiler will check. If we have a function for union type, then it will be used to T will be union type.
 if we don't have a function for union type but we have a fn for union options, then T will be runtime type.
 
-? - The dynamic union notation looks counter intuitive.
+Y - The dynamic union notation looks counter intuitive.
 old proposal
 A `XType = |T| :> Contract1(T) + Contract2(T)`
 B `Shape = |S| :> Draw(S, _) + Hasher(S, _)`
@@ -1820,3 +1820,30 @@ So, if I write `x: Shape` then x can be of any type with Shape tag.
 so, if we want a new shape: `Triangle = ...@Shape`
 if we want a new behavior: `Print = fn(T: type -> ...`
 and then we can capture that behavior in our functions.
+```
+Shape = ^
+Circle: Shape = struct{...}
+Square: Shape = ...
+```
+problem is we can only have one type here. what if Circle wants to be part of two unions?
+should we put tag in the type decl or type name?
+I think this is a property of the type name, not type definition.
+also, if Circle wants to be part of two unions we can use?
+because union options should be identifiers. so we should assign this tag to type names. not `struct{x:int}`
+```
+Shape = || #Shape is an open union - better than dynamic because dynamic implies runtime
+Circle: Shape = struct{...}
+Square: Shape = ...
+```
+This notation is confusing. `Type = type-decl` is what we have worked with so far.
+maybe we should do it separately.
+```
+Shape = ||
+Circle = sutrct {radius: float}
+Shape |= Circle
+```
+this is just like tagging. We tag Circle with Shape.
+same as what we already have: `Shape = Shape | Circle`
+**Proposal: Open Union**
+1. You can define an open union with `MyType = ||` notation.
+2. To add any type to an open union write: `MyType |= SomeType`
