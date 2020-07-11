@@ -1653,4 +1653,98 @@ the only way is to define a dedicated function:
 helperFunc = fn(x: T, T: type, draw :> Draw(T) -> fn(T->nothing)) { draw }
 ...helperFunc(my_shape)(my_shape)
 ```
-
+ok. Let's do something else.
+Let's have something like Haskell's type classes.
+in that way, union remains union for its own purposes.
+and we have a new type which is typeclass.
+so, we can say Shape is a typeClass and not a union.
+in that way, you can use typeClass when you need extensibility.
+type-class is set of contracts.
+can they be multi-type?
+```
+Shape = Draw(_) + Publish(_,_)
+```
+Shape is a type-class of all types which support draw or publish.
+so when I write: `x: Shape` it means x can be of any of those types.
+but what if Shape is multi-type?
+nope. 
+we have a tool to get access to multi-type contracts which is "function declaration".
+type-class or dynamic union or multi-type contract, defines a relationship between multiple types.
+that relationship is the behavior supported by functions.
+now, it doesn't have anything to do with a single "type". 
+So they cannot be a type. they can be a list of sequence of types.
+`[ {int, string}, {Circle, SolidCanvas}, {Square, NoopCanvas}, ...]`
+so, think of typeclass as something like above.
+Now that is not a "Type".
+so it doesn't solve problem 1a (adding a new shape).
+how does oop solve this? with subtyping.
+they define base/parent type like Shape
+and derive from it to define Circle, Square, ...
+new type means new derivation.
+but (in most cases) this is a tree, not a graph.
+so each type has one and only one parent.
+maybe we should stick to that, to make type-classes easier.
+so we define single-type typeclass.
+and add a new rule: "You cannot define a type-class with multiple types"
+so type class will be all types like T which support these functions: ....
+and now I can write name of type class as a real type because it is represents a list of valid types.
+```
+Shape = Draw(_)
+readShape = fn(block: string -> Shape) { ... }
+```
+and immediately we can ask: can we make a hierarchy?
+`X = Shape(_) + Hasher(_)`
+example of using multiple-types in function:
+`process = fn(shape: T, canvas: S, T: type, S: type, painter:>Paint(S,T) -> string) { ... }`
+how do we define a Shape type in this context? Shape type is any type for which I can invoke `process` function.
+Shape is any type T that I can invoke `process` for that type T.
+even if there are multi-type contracts, we bind only to one of their types. so other types can be anything. we don't care.
+so type-class T: find all functions that implement contract `(T,S)`. Union of type T is my type (whatever S is).
+This means, I can call any function on that contract but with some types for S. But this is a different story and I can define 
+that expectation in the function signature.
+so, dynamic union is a set of contracts each with only one variable type, other types are just `?`.
+`Shape = |S| : Draw(S, ?) + Hasher(S, ?) + Compare(S, S)`
+So all types that have implementation for Draw and Hasher and Compare, are considered Shape.
+and we can use another dynamic union too:
+`Shape = |S| : Object + Draw(S,?) + Read(S)`
+`GoodShape = |S| : Shape + IsGood(S)`
+Where Object is another union. So it means, all types in Object union type whcih also support Draw contract.
+then you can write:
+`readShape = fn(block: string, T: type, readFucntion :> Read(T) -> Shape) { ... }`
+this is really niche because we read from external source.
+what about another example: Graph processing where graph has different node types.
+but those types are mostly fixed.
+but what if we want to add a new type?
+```
+MyGraphNode = |S| : Traverse(S)
+Traverse = fn(T: type -> type) { fn(node: T -> int) }
+traverseNode = fn(node: T, T: type, traverse :> Traverse(T) -> int) { traverse(node) }
+bfs = (x: Graph(MyGraphNode) -> int) { traverseNode(x.child[0]) ... }
+```
+still this looks counter-intuitive. why do I need to repeat Traverse twice?
+when I say graph has nodes of type 'Traverse(S)' then I should already have access to those impl everywhere I have something of type MyGraphNode.
+let's do this: MyGraphNode becomes a struct of functions. so I have access to those functions as members of the struct and can invoke them.
+```
+MyGraphNode = |S| : { traverse: fn(node: S -> int) }
+bfs = (x: Graph(MyGraphNode) -> int ) { x.child[0].traverse(x.child[0]) }
+```
+Again I have to repeat `x.child[0]`. This is much better with `:>` notation.
+can't I re-use generic constructs to define that type?
+Like a graph builder function (we need to somehow create graph) which works with generic T, but output is T.
+can I have multiple functions in `:>` notation? for different types?
+`buildGraph = fn(source: string, nodeBuilders :> [type:NodeBuilder(?????)`
+so far this is the best option:
+```
+Object = |T| : ToString(T)
+Shape = |S| : Object + Draw(S,?) + Read(S)
+MyGraphNode = |S| : Traverse(S)
+Traverse = fn(T: type -> type) { fn(node: T -> int) }
+traverseNode = fn(node: T, T: type, traverse :> Traverse(T) -> int) { traverse(node) }
+bfs = (x: Graph(MyGraphNode) -> int) { traverseNode(x.child[0]) ... }
+```
+so, if we need to add a new node type, like SpecialNode:
+```
+SpecialNode = struct {id: int}
+tt: Traverse(SpecialNode) = fn(x: SpecialNode -> int) { ... }
+```
+After this point, we can have SpecialNode inside Graph nodes.
