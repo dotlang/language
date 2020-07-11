@@ -1791,3 +1791,19 @@ but under the hood, this is a union. Just options are not in one place.
 It is not even "dynamic" because you cannot add new types at runtime.
 so, it should be called "union with rules and sets". 
 or just "type set". and we say, type sets are union types that their options are not explicit. They are defined with some rules.
+q: can we use unions/type-sets with generics? why do we need this?
+**Proposal: Type Set**
+1. A type set is a special kind of union where options is determined using a set of acceptable types.
+2. A type is acceptable if it satisfies all of the rules used to define type set.
+3. Each rule of type set is either another type set or a contract with one free variable (denoted with `?`).
+4. In contracts, you can use `_` to denote "any type/I don't care" or use a concrete type.
+Example: `Shape = Object + Draw(?,SolidCanvas) + Read(?) + Store(?, _)`
+Here Shape is a type-set which is all types that are member of "Object" type set AND are first type in all implementations of `Draw(T, SolidCanvas)` AND satisfy Read contract and are first type in all of `Store` contract implementations.
+5. A contract is a generic function generator and implementation of a contract is a concrete function of the contract type.
+6. So each rule is either in the form of `OtherTypeSet` or `MyContract(A, B, _, ?, _, D, _, ...)` where A,B,D are other types, `_` means everything and `?` is the type we want to include in the set generated with that rule.
+---
+can we make this simpler? or more intuitive?
+maybe instead of re-using existing concepts like generic function, I should just introduce new concepts like interface.
+interface is a generic function with one or more generic types.
+`interface Draw = fn(T: type, S: type, item: T, canvas: S -> int)`
+so, instead of using 
