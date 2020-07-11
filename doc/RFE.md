@@ -1736,7 +1736,7 @@ can I have multiple functions in `:>` notation? for different types?
 so far this is the best option:
 ```
 Object = |T| : ToString(T)
-Shape = |S| : Object + Draw(S,?) + Read(S)
+Shape = |S| : Object + Draw(S,Object) + Read(S) + Store(S, ?)
 MyGraphNode = |S| : Traverse(S)
 Traverse = fn(T: type -> type) { fn(node: T -> int) }
 traverseNode = fn(node: T, T: type, traverse :> Traverse(T) -> int) { traverse(node) }
@@ -1748,3 +1748,46 @@ SpecialNode = struct {id: int}
 tt: Traverse(SpecialNode) = fn(x: SpecialNode -> int) { ... }
 ```
 After this point, we can have SpecialNode inside Graph nodes.
+We should simplify the way we define dynamic union.
+Dynamic union is a union of all types like T that are members of one or more sets.
+Each set is defined with one of these ways:
+1. Contract: `Contract(T)`: set of all types that satisfy this contract
+2. Another dynamic union like `DynamicUnion1`
+Combination of sets is "intersection". If you want union of sets, you can define two dynamic unions and `|` them in a static union type.
+So:
+A dynamic union is a union where valid types is a set of types determind based on intersection of a number of type sets.
+Each type set is either another dynamic union or a contract where at least one of the types is a free variable.
+So, based on these, we don't really need `|S|` part. Because it is only one type. just replace it with a notation.
+```
+Object = ToString(?)
+Shape = Object + Draw(?,Object) + Read(?) + Store(?, _)
+MyGraphNode = Traverse(?)
+Traverse = fn(T: type -> type) { fn(node: T -> int) }
+traverseNode = fn(node: T, T: type, traverse :> Traverse(T) -> int) { traverse(node) }
+bfs = (x: Graph(MyGraphNode) -> int) { traverseNode(x.child[0]) ... }
+```
+so even though dynamic union guarantees some function implementations, you don't have access to those function unless you use `:>` notation in a file.
+`?` means the types that is a member of the set.
+`_` means can be any type.
+`ShapeOnSolidCanvas = Object + Draw(?,SolidCanvas)`
+With dynamic unions, we already have a set of types.
+With contracts, we need to specify type arguments. Only one type argument can be `?` which means members of the result set.
+Other type arguments can either be `_` which means anything, or a concrete type.
+so when I write `Shape = Draw(?)` It means any type that can be in the place of `?` is a member of `Shape` dynamic union.
+`Shape = Object` means shape and object are same types. so they have same set. 
+`Shape = Draw(?,_)` means list all implementations of `Draw(S,T)`. Prepare a list of tuples: `[{S,T}, {S1,T1}, {S2,T2}, ...]`
+Then drop T part. So we will have `[S1, S2, S3, ...]` that is the list we want.
+If we have `Shape = Draw(?,_) + Object` It means intersection of `[S1,S2,S3,...]` and members of Object set.
+**Proposal: Dynamic Union**
+1. A dynamic union is a set of types generated based on some rules and those types are options of the union.
+2. Rules that generate type set of a dynamic union are other sets and intersection of those sets is result type set.
+3. Sets that define rules of a dynamic union can either be another dynamic union or a contract where at least one of the types is a free variable denoted with `?`.
+4. In contracts, you can use `_` to denote "any type/I don't care" or use a concrete type.
+---
+Maybe we shouldn't name it dynamic union because it can be confusing for some people.
+Maybe we should name it type class or type-set.
+So it is a new way to define a type: union of a type set.
+but under the hood, this is a union. Just options are not in one place.
+It is not even "dynamic" because you cannot add new types at runtime.
+so, it should be called "union with rules and sets". 
+or just "type set". and we say, type sets are union types that their options are not explicit. They are defined with some rules.
