@@ -1806,4 +1806,17 @@ can we make this simpler? or more intuitive?
 maybe instead of re-using existing concepts like generic function, I should just introduce new concepts like interface.
 interface is a generic function with one or more generic types.
 `interface Draw = fn(T: type, S: type, item: T, canvas: S -> int)`
-so, instead of using 
+Problem: Even if I do `Shape = Draw(?)` then later I cannot add a new operation to Shape (if I don't have access to this definition).
+So it won't be extensible.
+Goal: Define a union type in an extensible way
+and also, If I'm not going to have access to the impl, then what is the point of so much new notation and concepts?
+Another option: Tagged union
+```
+Shape = @
+Circle = struct{...}@Shape
+Square = ...@Shape
+```
+So, if I write `x: Shape` then x can be of any type with Shape tag.
+so, if we want a new shape: `Triangle = ...@Shape`
+if we want a new behavior: `Print = fn(T: type -> ...`
+and then we can capture that behavior in our functions.
