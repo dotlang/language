@@ -1847,3 +1847,9 @@ same as what we already have: `Shape = Shape | Circle`
 **Proposal: Open Union**
 1. You can define an open union with `MyType = ||` notation.
 2. To add any type to an open union write: `MyType |= SomeType`
+
+? - Allowing optional args at any place is not a good idea. Because we are not looking for "less rules" just because of interest in less rules.
+We are looking for that so language becomes easier to comprehend.
+Allowing optional args at any position, will make reading code more difficult.
+
+? - Why do we want to have extendable unions?
