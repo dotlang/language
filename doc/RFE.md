@@ -1848,8 +1848,121 @@ same as what we already have: `Shape = Shape | Circle`
 1. You can define an open union with `MyType = ||` notation.
 2. To add any type to an open union write: `MyType |= SomeType`
 
+N - Instead of extensible union, I think matching is more useful.
+At least for union or enums where all cases are known. Can be `bool` too because it can act like a union.
+```rust
+let x = match x {
+  a => 1
+  b => 2
+  _ => 3
+}
+```
+```scala
+result = x match { 
+  case 1 => "a"
+  case 2 => "b"
+  case _ => "c"
+}
+```
+Why can't we do this via maps?
+```
+y = [a:1, b:2, c:3][x]
+result = [1:"a", 2: "b", 3:"c"][x]
+```
+we can use functions and call selected function to calculate result.
+no support for else case. but is that really important?
+we can add a notation to add same value for multiple keys in map:
+```
+data = ["a":1, "b":2, "c","d": 3]?
+```
+no. let's leave it.
+
 ? - Allowing optional args at any place is not a good idea. Because we are not looking for "less rules" just because of interest in less rules.
 We are looking for that so language becomes easier to comprehend.
 Allowing optional args at any position, will make reading code more difficult.
 
-? - Why do we want to have extendable unions?
+? - Why do we want to have extendable unions? It definitely helps solving expression problem, but do we really want to do that?
+we should get rid of it.
+
+? - The catch all syntax for contract does not make sense
+`ToString = fn(T: type -> type) { fn(data: T -> string) }`
+`genericToString: ToString = fn(T: type, data: T -> string) ...`
+ToString alone is a function that needs only one T argument. 
+This one also should be removed.
+
+? - review concurrency notations.
+why not have a select notation?
+```
+channel = fn(T: type -> type) { struct(read: fn(->T), write: fn(T->nothing)) }
+```
+this is fine I think, but what about select?
+select should not work with functions because there is no guarantee that they will be channel functions.
+they should work with channels and if so, we cannot determine read or write is our purpose.
+let's assume we have selectRead and selectWrite. each of these accepts a sequence of `channel`s? but what if they have different types.
+alternatively, we can use a simple struct with no functions. functions will be core functions: read, write.
+so, channel is a struct with a dummy type (compile time) and a handle (used internally).
+it would be greate if we could use map where key is channel and value is a function (for read) or value (for write).
+but keys should have all the same type.
+```
+int_channel = ....
+string_channel = ...
+result = [
+  int_channel.write_buffer_handle: 
+]
+```
+go solves this by using specialised notations for reading, writing and querying to read and querying to write.
+```
+int_data = [
+  int_channel.is_ready_for_write: fn{write(int_channel, 100);-1},
+  string_channel:is_ready_for_read: fn{read(string_channel)}
+]
+```
+but this cannot be a map. 
+```
+reader, writer = createChannel(int, 10)
+x: int = reader()
+y
+```
+what if we can create a channel based on multiple other channels? 
+so I create a new channel and connect multiple other "read" channel functions to it. so as soon as something is vailable in any of those channels, result will be pushed into the new channel.
+or, connect multiple "write" channel functions to a new channel write function. so, if any of those channels are available for write, my channel will be available for write.
+so problem becomes simpler: we have only two channel functions: read and write. and want to select.
+can't we break this into two problems?
+we should.
+q: how do we handle channels of different type?
+q: for read/write, how do we know which channel is the source/destination of the data?
+for read, maybe we want to know which channel this is read from.
+for write, maybe we want to know which channel this is going to be written to. maybe we have different data for different channels.
+```
+ch1 += data #to write
+x: int = ch2.
+```
+with keyword:
+```
+select {
+  ch1 => data { ... }
+  data => ch2 { ... }
+}
+select {
+  ch1.accept(data) fn{ ... }
+  ch2.read() { data = ch2.get() ... }
+}
+```
+both accept and read functions, return functions that have no input. their output is a boolean where true means success.
+so we can have a map where key is `fn(->boolean)` and value is `fn(->)`. each fn in the key, when called and given true, means we can call value.
+```
+select:
+while ( true ) 
+  for(key: keys) {
+    if ( key() == true ) value()
+  }
+}
+```
+so:
+```
+data = select([ch1.accept(data): fn{...}, ch2.read(): fn{data=ch2.read(); ... }])
+select = fn([fn(->bool):fn(->)])
+```
+you can use your own functions here but it will be useless: if they return true -> they will always get avtivated
+if they return false -> never.
+this is for the use case where function relies on another thread to send/receive something
