@@ -1966,3 +1966,4 @@ select = fn([fn(->bool):fn(->)])
 you can use your own functions here but it will be useless: if they return true -> they will always get avtivated
 if they return false -> never.
 this is for the use case where function relies on another thread to send/receive something
+Problem is, runtime needs the channel itself to do its internal operations. but code needs to mention the operation (e.g. `channel.write(data1)`).
