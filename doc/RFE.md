@@ -1877,14 +1877,16 @@ data = ["a":1, "b":2, "c","d": 3]?
 ```
 no. let's leave it.
 
-? - Allowing optional args at any place is not a good idea. Because we are not looking for "less rules" just because of interest in less rules.
+Y - Allowing optional args at any place is not a good idea. Because we are not looking for "less rules" just because of interest in less rules.
 We are looking for that so language becomes easier to comprehend.
 Allowing optional args at any position, will make reading code more difficult.
+**Proposal**: Only allow optional args at the end of arg list
 
-? - Why do we want to have extendable unions? It definitely helps solving expression problem, but do we really want to do that?
+Y - Why do we want to have extendable unions? It definitely helps solving expression problem, but do we really want to do that?
 we should get rid of it.
+**Proposal**: remove extensible unions
 
-? - The catch all syntax for contract does not make sense
+Y - The catch all syntax for contract does not make sense
 `ToString = fn(T: type -> type) { fn(data: T -> string) }`
 `genericToString: ToString = fn(T: type, data: T -> string) ...`
 ToString alone is a function that needs only one T argument. 
@@ -1967,3 +1969,4 @@ you can use your own functions here but it will be useless: if they return true 
 if they return false -> never.
 this is for the use case where function relies on another thread to send/receive something
 Problem is, runtime needs the channel itself to do its internal operations. but code needs to mention the operation (e.g. `channel.write(data1)`).
+we want a nice and clean syntax. but it should not be too general, because then you can use any non-channel function too!
