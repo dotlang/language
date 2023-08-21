@@ -1970,3 +1970,10 @@ if they return false -> never.
 this is for the use case where function relies on another thread to send/receive something
 Problem is, runtime needs the channel itself to do its internal operations. but code needs to mention the operation (e.g. `channel.write(data1)`).
 we want a nice and clean syntax. but it should not be too general, because then you can use any non-channel function too!
+
+
+? - Use JS's `...` operator to modify a sequence, map or struct.
+
+? - use `:::` operator like `foreach`: 
+`data :: fn1` === `fn1(data)`
+`seq1 ::: fn1` === `sequence of items where each item is fn1(x) where x is an element in seq1`
